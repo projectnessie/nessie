@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (C) 2020 Dremio
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>iceberg-alley-backends</artifactId>
+    <groupId>com.dremio.iceberg</groupId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <name>Iceberg Alley - Backends - Dynamodb</name>
+  <artifactId>iceberg-alley-backends-dynamodb</artifactId>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <argLine>@{argLine} -Dsqlite4java.library.path=${basedir}/target/dependencies
+            -Daws.accessKeyId=XXX -Daws.secretAccessKey=XXX
+          </argLine>
+          <systemPropertyVariables>
+            <AWS_ACCESS_KEY_ID>xxx</AWS_ACCESS_KEY_ID>
+            <AWS_SECRET_ACCESS_KEY>xxx</AWS_SECRET_ACCESS_KEY>
+          </systemPropertyVariables>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.1</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+              <excludeGroupIds>com.dremio.iceberg,com.amazonaws,org.slf4j,org.eclipse.jetty,junit
+              </excludeGroupIds>
+              <excludeTransitive>true</excludeTransitive>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+    <dependency>
+      <groupId>com.dremio.iceberg</groupId>
+      <artifactId>iceberg-alley-model</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>dynamodb-enhanced</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>DynamoDBLocal</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.almworks.sqlite4java</groupId>
+      <artifactId>libsqlite4java-linux-i386</artifactId>
+      <version>${sqlite.version}</version>
+      <type>so</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.almworks.sqlite4java</groupId>
+      <artifactId>libsqlite4java-linux-amd64</artifactId>
+      <version>${sqlite.version}</version>
+      <type>so</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.almworks.sqlite4java</groupId>
+      <artifactId>sqlite4java-win32-x64</artifactId>
+      <version>${sqlite.version}</version>
+      <type>dll</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.almworks.sqlite4java</groupId>
+      <artifactId>sqlite4java-win32-x86</artifactId>
+      <version>${sqlite.version}</version>
+      <type>dll</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.almworks.sqlite4java</groupId>
+      <artifactId>libsqlite4java-osx</artifactId>
+      <version>${sqlite.version}</version>
+      <type>dylib</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
