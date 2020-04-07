@@ -43,6 +43,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dremio.iceberg.client.AlleyCatalog;
+import com.dremio.iceberg.client.AlleyClient;
 import com.dremio.iceberg.model.Table;
 
 public class CatalogTest {
@@ -50,40 +51,25 @@ public class CatalogTest {
   private static TestAlleyServer server;
   private static File alleyLocalDir;
   private AlleyCatalog catalog;
-  private Client client;
-  private WebTarget webTarget;
-  private String authHeader;
+  private AlleyClient client;
 
   @BeforeClass
   public static void create() throws Exception {
     server = new TestAlleyServer();
-    server.start();
-    alleyLocalDir = Files.createTempDirectory("test",
-      PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxrwx"))).toFile();
+    server.start(9992);
   }
 
   @Before
   public void getCatalog() {
     Configuration hadoopConfig = new Configuration();
-    hadoopConfig.set("fs.defaultFS", alleyLocalDir.toURI().toString());
-    hadoopConfig.set("fs.file.impl",
-      org.apache.hadoop.fs.LocalFileSystem.class.getName()
-    );
     hadoopConfig.set("iceberg.alley.host", "localhost");
-    hadoopConfig.set("iceberg.alley.port", "19120");
+    hadoopConfig.set("iceberg.alley.port", "9992");
     hadoopConfig.set("iceberg.alley.ssl", "false");
     hadoopConfig.set("iceberg.alley.base", "api/v1");
     hadoopConfig.set("iceberg.alley.username", "admin_user");
     hadoopConfig.set("iceberg.alley.password", "test123");
     catalog = new AlleyCatalog(new com.dremio.iceberg.model.Configuration(hadoopConfig));
-    client = ClientBuilder.newClient(); //todo create this on the fly rather than keeping it open. with a try block
-    webTarget = client.target("http://localhost:19120/api/v1"); // todo config driven & safety tests
-    MultivaluedMap<String, String> creds = new MultivaluedHashMap();
-    creds.add("username", "admin_user");
-    creds.add("password", "test123");
-    webTarget = client.target("http://localhost:19120/api/v1"); // todo config driven & safety tests
-    Response response = webTarget.path("login").request(MediaType.APPLICATION_FORM_URLENCODED).post(Entity.form(creds));
-    authHeader = response.getHeaderString(HttpHeaders.AUTHORIZATION);
+    client = new AlleyClient(hadoopConfig); //todo create this on the fly rather than keeping it open. with a try block
   }
 
   @Test
@@ -106,9 +92,7 @@ public class CatalogTest {
     catalog.close();
     client.close();
     catalog = null;
-    webTarget = null;
     client = null;
-    authHeader = null;
   }
 
   @AfterClass
@@ -118,8 +102,7 @@ public class CatalogTest {
 
   private void createTable(TableIdentifier tableIdentifier) {
     Table table = new Table(tableIdentifier.toString(), null);
-    webTarget.path("tables").request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, authHeader)
-      .post(Entity.entity(table, MediaType.APPLICATION_JSON));
+    client.createTable(table);
   }
 
 }

@@ -22,16 +22,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermissions;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -44,6 +34,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dremio.iceberg.client.AlleyCatalog;
+import com.dremio.iceberg.client.AlleyClient;
 
 public class AlleyTableTest {
 
@@ -54,17 +45,15 @@ public class AlleyTableTest {
   private static File alleyLocalDir;
 
   private AlleyCatalog catalog;
-  private Client client;
-  private WebTarget webTarget;
+  private AlleyClient client;
   private Path tableLocation;
   private org.apache.hadoop.conf.Configuration hadoopConfig;
-  private String authHeader;
 
 
   @BeforeClass
   public static void create() throws Exception {
     server = new TestAlleyServer();
-    server.start();
+    server.start(9991);
     alleyLocalDir = Files.createTempDirectory("test",
       PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxrwx"))).toFile();
   }
@@ -77,19 +66,13 @@ public class AlleyTableTest {
       org.apache.hadoop.fs.LocalFileSystem.class.getName()
     );
     hadoopConfig.set("iceberg.alley.host", "localhost");
-    hadoopConfig.set("iceberg.alley.port", "19120");
+    hadoopConfig.set("iceberg.alley.port", "9991");
     hadoopConfig.set("iceberg.alley.ssl", "false");
     hadoopConfig.set("iceberg.alley.base", "api/v1");
     hadoopConfig.set("iceberg.alley.username", "admin_user");
     hadoopConfig.set("iceberg.alley.password", "test123");
     catalog = new AlleyCatalog(new com.dremio.iceberg.model.Configuration(hadoopConfig));
-    client = ClientBuilder.newClient(); //todo create this on the fly rather than keeping it open. with a try block
-    MultivaluedMap<String, String> creds = new MultivaluedHashMap();
-    creds.add("username", "admin_user");
-    creds.add("password", "test123");
-    webTarget = client.target("http://localhost:19120/api/v1"); // todo config driven & safety tests
-    Response response = webTarget.path("login").request(MediaType.APPLICATION_FORM_URLENCODED).post(Entity.form(creds));
-    authHeader = response.getHeaderString(HttpHeaders.AUTHORIZATION);
+    client = new AlleyClient(hadoopConfig);
 
     this.tableLocation = new Path(catalog.createTable(TABLE_IDENTIFIER, schema()).location());
 
@@ -104,9 +87,7 @@ public class AlleyTableTest {
     catalog.close();
     client.close();
     catalog = null;
-    webTarget = null;
     client = null;
-    authHeader = null;
   }
 
   @AfterClass
@@ -123,9 +104,7 @@ public class AlleyTableTest {
 //  }
 
   private com.dremio.iceberg.model.Table getTable(TableIdentifier tableIdentifier) {
-    return webTarget.path("tables/" + tableIdentifier.toString()).request(MediaType.APPLICATION_JSON)
-      .header(HttpHeaders.AUTHORIZATION, authHeader)
-      .get(com.dremio.iceberg.model.Table.class);
+    return client.getTable(tableIdentifier.name());
   }
 
   private static Schema schema() {

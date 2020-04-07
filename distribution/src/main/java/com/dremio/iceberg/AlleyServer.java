@@ -18,6 +18,7 @@ package com.dremio.iceberg;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.net.URISyntaxException;
 import java.util.EnumSet;
 
 import javax.servlet.DispatcherType;
@@ -29,9 +30,11 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.resource.Resource;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,9 +100,21 @@ public class AlleyServer implements Closeable {
     restHolder.setInitOrder(2);
     servletContextHandler.addServlet(restHolder, "/api/v1/*");
 
+    final String markerPath = "swagger-ui/index.html";
+    ServletHolder holder = new ServletHolder("swagger-ui", DefaultServlet.class);
+    addStaticPath(holder, "swagger-ui", markerPath);
+    servletContextHandler.addServlet(holder, "/swagger-ui/*");
     server.start();
 
     logger.info("Started on http://localhost:19120");
+  }
+
+  protected void addStaticPath(ServletHolder holder, String basePath, String relativeMarkerPathToResource) throws URISyntaxException {
+    String path = Resource.newClassPathResource(relativeMarkerPathToResource).getURL().toString();
+    final String fullBasePath = path.substring(0, path.length() - relativeMarkerPathToResource.length()) + basePath;
+    holder.setInitParameter("dirAllowed", "false");
+    holder.setInitParameter("pathInfoOnly", "true");
+    holder.setInitParameter("resourceBase", fullBasePath);
   }
 
   private void metrics() {

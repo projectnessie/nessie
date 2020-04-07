@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -70,6 +72,22 @@ public class AlleyClient implements AutoCloseable {
     timer.scheduleAtFixedRate(task, 1000 * 60 * 10, 1000 * 60 * 10);
   }
 
+  private void checkResponse(Response response) {
+    if (response.getStatus() == 200 || response.getStatus() == 201) {
+      return;
+    }
+    if (response.getStatus() == 404) {
+      throw new NotFoundException(response);
+    }
+    if (response.getStatus() == 403) {
+      throw new ForbiddenException(response);
+    }
+    if (response.getStatus() == 401) {
+      throw new NotAuthorizedException(response);
+    }
+    throw new RuntimeException("Unknown exception");
+  }
+
   private String login(String username, String password) {
     try (AutoCloseableClient client = new AutoCloseableClient()) {
       MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
@@ -77,12 +95,7 @@ public class AlleyClient implements AutoCloseable {
       formData.add("password", password);
       Response response = client.get(endpoint, "login", MediaType.APPLICATION_FORM_URLENCODED, null)
         .post(Entity.form(formData));
-      if (response.getStatus() == 401) {
-        throw new NotAuthorizedException(response.getEntity());
-      }
-      if (response.getStatus() != 200) {
-        throw new UnknownError();//todo
-      }
+      checkResponse(response);
       return response.getHeaderString(HttpHeaders.AUTHORIZATION);
     }
   }
@@ -90,9 +103,7 @@ public class AlleyClient implements AutoCloseable {
   public List<Table> getTables() {
     try (AutoCloseableClient client = new AutoCloseableClient()) {
       Response response = client.get(endpoint, "tables/", MediaType.APPLICATION_JSON, authHeader).get();
-      if (response.getStatus() != 200) {
-        throw new RuntimeException(); //todo
-      }
+      checkResponse(response);
       Tables tables = response.readEntity(Tables.class);
       return tables.getTables();
     }
@@ -102,9 +113,11 @@ public class AlleyClient implements AutoCloseable {
     try (AutoCloseableClient client = new AutoCloseableClient()) {
       Response response = client.get(endpoint, "tables/" + tableName, MediaType.APPLICATION_JSON, authHeader)
         .get();
-//      if (response.getStatus() != 200) {
-//        throw new RuntimeException(); //todo
-//      }
+      try {
+        checkResponse(response);
+      } catch (NotFoundException e) {
+        return null;
+      }
       Table table = response.readEntity(Table.class);
       if (table != null) {
         String tag = response.getHeaders().getFirst(HttpHeaders.ETAG).toString();
@@ -118,9 +131,7 @@ public class AlleyClient implements AutoCloseable {
     try (AutoCloseableClient client = new AutoCloseableClient()) {
       Response response = client.get(endpoint, "tables/" + tableName, MediaType.APPLICATION_JSON, authHeader)
         .delete();
-      if (response.getStatus() != 200) {
-        throw new RuntimeException(); //todo
-      }
+      checkResponse(response);
     }
   }
 
@@ -132,9 +143,7 @@ public class AlleyClient implements AutoCloseable {
         request.header(HttpHeaders.IF_MATCH, table.getEtag());
       }
       Response response = request.put(Entity.entity(table, MediaType.APPLICATION_JSON));
-      if (response.getStatus() != 200) {
-        throw new RuntimeException(); //todo
-      }
+      checkResponse(response);
     }
   }
 
@@ -143,11 +152,15 @@ public class AlleyClient implements AutoCloseable {
     try (AutoCloseableClient client = new AutoCloseableClient()) {
       Response response = client.get(endpoint, "tables/", MediaType.APPLICATION_JSON, authHeader)
         .post(Entity.entity(table, MediaType.APPLICATION_JSON));
+      if (response.getStatus() == 403) {
+        throw new ForbiddenException(response);
+      }
       if (response.getStatus() != 201) {
         throw new RuntimeException(); //todo
       }
       response = client.get(endpoint, "tables/" + table.getTableName(), MediaType.APPLICATION_JSON, authHeader)
         .get();
+      checkResponse(response);
       Table newTable = response.readEntity(Table.class);
       newTable.setEtag(response.getHeaders().getFirst(HttpHeaders.ETAG).toString());
       return newTable;

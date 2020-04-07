@@ -250,6 +250,7 @@
             <exclude>**/pom.xml.versionsBackup</exclude>
             <exclude>**/q</exclude>
             <exclude>**/c.java</exclude>
+            <exclude>**/swagger-ui/**</exclude>
 
             <!-- by directory name -->
             <exclude>**/node_modules/**</exclude>
@@ -372,6 +373,36 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+        <version>2.1.1</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-jaxrs2</artifactId>
+        <version>2.1.1</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
         <groupId>org.glassfish.jersey.inject</groupId>
         <artifactId>jersey-hk2</artifactId>
         <version>${jersey.version}</version>
@@ -394,6 +425,11 @@
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-jersey2</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
         <version>${dropwizard.version}</version>
       </dependency>
       <dependency>

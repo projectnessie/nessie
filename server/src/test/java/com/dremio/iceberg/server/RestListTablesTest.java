@@ -50,7 +50,6 @@ public class RestListTablesTest extends JerseyTest {
     return rc;
   }
 
-  //todo test put and delete
   @Test
   public void tablesTest() {
     Response response = target("tables").request(MediaType.APPLICATION_JSON_TYPE)
@@ -62,6 +61,9 @@ public class RestListTablesTest extends JerseyTest {
     Tables tables = target("tables").request().get(Tables.class);
     Assert.assertEquals(1, tables.getTables().size());
     Assert.assertEquals(table, tables.getTables().get(0));
+    target("tables/test1").request().delete();
+    tables = target("tables").request().get(Tables.class);
+    Assert.assertTrue(tables.getTables().isEmpty());
   }
 
   @Rule
@@ -146,5 +148,9 @@ public class RestListTablesTest extends JerseyTest {
       .header("If-Match", responseU2.getHeaders().getFirst("ETag"))
       .put(Entity.entity(tableU2, MediaType.APPLICATION_JSON));
     Assert.assertEquals(200, response.getStatus());
+    target("tables/test3").request().delete();
+    Tables tables = target("tables").request().get(Tables.class);
+    Assert.assertTrue(tables.getTables().isEmpty());
+
   }
 }

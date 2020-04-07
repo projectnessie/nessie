@@ -18,6 +18,7 @@ package com.dremio.iceberg.server.rest;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.HttpHeaders;
@@ -46,6 +47,8 @@ public class Login {
     try {
       String token = userService.authorize(login, password);
       return Response.ok().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build();
+    } catch (NotAuthorizedException e) {
+      return Response.status(401, "not authorized").build();
     } catch (Throwable t) {
       return Response.status(400, "something went wrong").build(); //todo
     }
