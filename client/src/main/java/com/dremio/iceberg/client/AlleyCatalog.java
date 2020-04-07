@@ -22,10 +22,12 @@ import java.util.stream.Collectors;
 
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.iceberg.BaseMetastoreCatalog;
+import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,12 +100,22 @@ public class AlleyCatalog extends BaseMetastoreCatalog implements Closeable {
 
   @Override
   public boolean dropTable(TableIdentifier identifier, boolean purge) {
-    Table table = tableFromTableIdentifier(identifier);
-    Table existingTable = client.getTable(table.getTableName());
+    Table existingTable = client.getTableByName(identifier.name(), identifier.namespace().toString());
     if (existingTable == null) {
       return false;
     }
-    client.deleteTable(existingTable.getTableName(), purge);
+    TableOperations ops = newTableOps(identifier);
+    TableMetadata lastMetadata;
+    if (purge && ops.current() != null) {
+      lastMetadata = ops.current();
+    } else {
+      lastMetadata = null;
+    }
+
+    client.deleteTable(existingTable.getUuid(), purge);
+    if (purge && lastMetadata != null) {
+      dropTableData(ops.io(), lastMetadata);
+    }
     return true;
   }
 
@@ -121,6 +133,10 @@ public class AlleyCatalog extends BaseMetastoreCatalog implements Closeable {
       throw new AlreadyExistsException("table {} already exists", to.name());
     }
     Table updatedTable = existingFromTable.rename(to.name(), to.namespace().toString());
-    client.updateTable(updatedTable);
+    try {
+      client.updateTable(updatedTable);
+    } catch (Throwable t) {
+      throw new CommitFailedException(t, "failed");
+    }
   }
 }

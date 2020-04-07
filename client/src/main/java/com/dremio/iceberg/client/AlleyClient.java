@@ -16,6 +16,7 @@
 package com.dremio.iceberg.client;
 
 import java.io.IOException;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -85,6 +86,9 @@ public class AlleyClient implements AutoCloseable {
     }
     if (response.getStatus() == 401) {
       throw new NotAuthorizedException(response);
+    }
+    if (response.getStatus() == 412) {
+      throw new ConcurrentModificationException();
     }
     throw new RuntimeException("Unknown exception");
   }

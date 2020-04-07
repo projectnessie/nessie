@@ -18,6 +18,8 @@ package com.dremio.iceberg.client;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseMetastoreTableOperations;
 import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.exceptions.CommitFailedException;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
 
@@ -57,12 +59,12 @@ public class AlleyTableOperations extends BaseMetastoreTableOperations {
         table = client.createTable(modifiedTable);
       } else {
         Table modifiedTable = table.newMetadataLocation(newMetadataLocation);
-        client.updateTable(table);
-        table = modifiedTable;
+        client.updateTable(modifiedTable);
+        table = client.getTable(table.getUuid());
       }
     } catch (Throwable e) {
       io().deleteFile(newMetadataLocation);
-      throw e;
+      throw new CommitFailedException(e, "failed");
     }
   }
 
