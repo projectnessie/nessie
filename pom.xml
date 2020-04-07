@@ -1,75 +1,996 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    Copyright (C) 2020 Dremio
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.mycompany.app</groupId>
-  <artifactId>my-app</artifactId>
+  <groupId>com.dremio.iceberg</groupId>
+  <artifactId>iceberg-alley</artifactId>
   <version>1.0-SNAPSHOT</version>
-
-  <name>my-app</name>
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
+  <modules>
+    <module>model</module>
+    <module>server</module>
+    <module>client</module>
+    <module>deltalake</module>
+    <module>distribution</module>
+    <module>backends</module>
+    <module>ui</module>
+    <module>serverless</module>
+  </modules>
+  <packaging>pom</packaging>
 
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <awssdk.version>2.13.3</awssdk.version>
+    <bouncycastle.version>1.60</bouncycastle.version>
+    <deltalake.version>0.5.0</deltalake.version>
+    <dropwizard.version>4.1.5</dropwizard.version>
+    <dynamodb.version>1.12.0</dynamodb.version>
+    <guava.version>28.1-jre</guava.version>
+    <hadoop.version>3.2.0</hadoop.version>
+    <!--    <iceberg.version>4b679568.dirty</iceberg.version>-->
+    <iceberg.version>0.7.0-incubating</iceberg.version>
+    <jackson.version>2.10.2</jackson.version>
+    <javax.version>3.1.0</javax.version>
+    <jersey.version>2.30</jersey.version>
+    <jetty.version>9.4.26.v20200117</jetty.version>
+    <jjwt.version>0.11.1</jjwt.version>
+    <junit.version>4.12</junit.version>
+    <logback.version>1.2.3</logback.version>
+    <prometheus.version>0.8.1</prometheus.version>
+    <serverless.version>1.5</serverless.version>
+    <slf4j.version>1.7.16</slf4j.version>
+    <spark.version>2.4.4</spark.version>
+    <sqlite.version>1.0.392</sqlite.version>
+    <!-- Surefire/Failsafe argline property -->
+    <argLine></argLine>
   </properties>
-
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-
   <build>
-    <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
+
+    <pluginManagement>
       <plugins>
-        <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.0.0</version>
         </plugin>
-        <!-- default lifecycle, jar packaging: see https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.1.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>2.6</version>
         </plugin>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.0</version>
+          <version>3.8.1</version>
         </plugin>
         <plugin>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.1</version>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>3.0.0-M3</version>
         </plugin>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
           <version>3.0.2</version>
         </plugin>
         <plugin>
-          <artifactId>maven-install-plugin</artifactId>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.0.0-M3</version>
+          <configuration>
+            <argLine>
+              @{argLine}
+            </argLine>
+            <enableAssertions>true</enableAssertions>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>3.0.0-M3</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
           <version>2.5.2</version>
         </plugin>
         <plugin>
-          <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.8.2</version>
-        </plugin>
-        <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
-        <plugin>
-          <artifactId>maven-site-plugin</artifactId>
-          <version>3.7.1</version>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>3.1.1</version>
         </plugin>
         <plugin>
-          <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.0.0</version>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.2.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-plugin-plugin</artifactId>
+          <version>3.6.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>1.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>1.6.0</version>
+          <dependencies>
+            <!-- Updating slf4j version to avoid classpath issues -->
+            <dependency>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-api</artifactId>
+              <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-jdk14</artifactId>
+              <version>${slf4j.version}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>flatten-maven-plugin</artifactId>
+          <version>1.1.0</version>
+        </plugin>
+        <plugin>
+          <groupId>com.github.eirslett</groupId>
+          <artifactId>frontend-maven-plugin</artifactId>
+          <version>1.9.1</version>
+          <configuration>
+            <installDirectory>target</installDirectory>
+            <nodeVersion>v12.16.2</nodeVersion>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.4</version>
+        </plugin>
+        <plugin>
+          <groupId>com.googlecode.maven-download-plugin</groupId>
+          <artifactId>download-maven-plugin</artifactId>
+          <version>1.2.0</version>
         </plugin>
       </plugins>
     </pluginManagement>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.5.0.Final</version>
+      </extension>
+    </extensions>
+
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.6.2</version>
+        <executions>
+          <execution>
+            <phase>initialize</phase>
+            <goals>
+              <goal>detect</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <!-- Specify source and test directories to not included generated source directories -->
+          <sourceDirectories>
+            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+          </sourceDirectories>
+          <testSourceDirectories>
+            <testSourceDirectory>${project.basedir}/src/test/java</testSourceDirectory>
+          </testSourceDirectories>
+          <encoding>UTF-8</encoding>
+          <failsOnError>true</failsOnError>
+          <consoleOutput>true</consoleOutput>
+          <includeResources>true</includeResources>
+          <includeTestResources>true</includeTestResources>
+          <resourceIncludes>**/*.properties,**/*.conf,**/*.json,**/*.xml</resourceIncludes>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <configLocation>checkstyle/checkstyle-config.xml</configLocation>
+          <suppressionsLocation>checkstyle/checkstyle-suppressions.xml</suppressionsLocation>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>8.11</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>checkstyle-verification</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>3.0</version>
+        <configuration>
+          <inlineHeader>
+Copyright (C) ${project.inceptionYear} ${owner}
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+          </inlineHeader>
+          <properties>
+            <owner>Dremio</owner>
+            <project.inceptionYear>2020</project.inceptionYear>
+          </properties>
+          <project>
+            <inceptionYear>2020</inceptionYear>
+          </project>
+          <failIfUnknown>true</failIfUnknown>
+          <useDefaultExcludes>false</useDefaultExcludes>
+
+          <includes>
+            <include>src/**</include>
+            <include>*</include>
+            <include>**/.mvn/**</include>
+          </includes>
+          <excludes>
+            <!-- default excludes (minus some items) from https://github.com/mycila/license-maven-plugin/blob/61f65ac65bfc38246a15fb84083796c5e3afb053/license-maven-plugin/src/main/java/com/mycila/maven/plugin/license/Default.java -->
+            <exclude>**/*~</exclude>
+            <exclude>**/#*#</exclude>
+            <exclude>**/.#*</exclude>
+            <exclude>**/%*%</exclude>
+            <exclude>**/._*</exclude>
+            <exclude>**/.repository/**</exclude>
+            <exclude>**/CVS</exclude>
+            <exclude>**/CVS/**</exclude>
+            <exclude>**/.cvsignore</exclude>
+            <exclude>**/RCS</exclude>
+            <exclude>**/RCS/**</exclude>
+            <exclude>**/SCCS</exclude>
+            <exclude>**/SCCS/**</exclude>
+            <exclude>**/vssver.scc</exclude>
+            <exclude>**/.svn</exclude>
+            <exclude>**/.svn/**</exclude>
+            <exclude>**/.arch-ids</exclude>
+            <exclude>**/.arch-ids/**</exclude>
+            <exclude>**/.bzr</exclude>
+            <exclude>**/.bzr/**</exclude>
+            <exclude>**/.MySCMServerInfo</exclude>
+            <exclude>**/.DS_Store</exclude>
+            <exclude>**/.metadata</exclude>
+            <exclude>**/.metadata/**</exclude>
+            <exclude>**/.hg</exclude>
+            <exclude>**/.hg/**</exclude>
+            <exclude>**/.hgignore</exclude>
+            <exclude>**/.git</exclude>
+            <exclude>**/.git/**</exclude>
+            <exclude>**/.gitignore</exclude>
+            <exclude>**/.gitmodules</exclude>
+            <exclude>**/BitKeeper</exclude>
+            <exclude>**/BitKeeper/**</exclude>
+            <exclude>**/ChangeSet</exclude>
+            <exclude>**/ChangeSet/**</exclude>
+            <exclude>**/_darcs</exclude>
+            <exclude>**/_darcs/**</exclude>
+            <exclude>**/.darcsrepo</exclude>
+            <exclude>**/.darcsrepo/**</exclude>
+            <exclude>**/-darcs-backup*</exclude>
+            <exclude>**/.darcs-temp-mail</exclude>
+            <!-- <exclude>**/target/**</exclude> want this for add-license-for-java-generated-from-proto -->
+            <exclude>**/test-output/**</exclude>
+            <exclude>**/release.properties</exclude>
+            <exclude>**/dependency-reduced-pom.xml</exclude>
+            <exclude>**/release-pom.xml</exclude>
+            <exclude>**/pom.xml.releaseBackup</exclude>
+            <exclude>**/cobertura.ser</exclude>
+            <exclude>**/.clover/**</exclude>
+            <exclude>**/.classpath</exclude>
+            <exclude>**/.project</exclude>
+            <exclude>**/.settings/**</exclude>
+            <exclude>**/*.iml</exclude>
+            <exclude>**/*.ipr</exclude>
+            <exclude>**/*.iws</exclude>
+            <exclude>.idea/**</exclude>
+            <exclude>**/nb-configuration.xml</exclude>
+            <exclude>**/MANIFEST.MF</exclude>
+            <exclude>**/*.jpg</exclude>
+            <exclude>**/*.png</exclude>
+            <exclude>**/*.gif</exclude>
+            <exclude>**/*.ico</exclude>
+            <exclude>**/*.bmp</exclude>
+            <exclude>**/*.tiff</exclude>
+            <exclude>**/*.tif</exclude>
+            <exclude>**/*.cr2</exclude>
+            <exclude>**/*.xcf</exclude>
+            <exclude>**/*.class</exclude>
+            <exclude>**/*.exe</exclude>
+            <exclude>**/*.dll</exclude>
+            <exclude>**/*.so</exclude>
+            <exclude>**/*.md5</exclude>
+            <exclude>**/*.sha1</exclude>
+            <exclude>**/*.jar</exclude>
+            <exclude>**/*.zip</exclude>
+            <exclude>**/*.rar</exclude>
+            <exclude>**/*.tar</exclude>
+            <exclude>**/*.tar.gz</exclude>
+            <exclude>**/*.tar.bz2</exclude>
+            <exclude>**/*.gz</exclude>
+            <exclude>**/*.xls</exclude>
+            <exclude>**/META-INF/services/**</exclude>
+            <exclude>**/*.md</exclude>
+            <exclude>**/*.xls</exclude>
+            <exclude>**/*.doc</exclude>
+            <exclude>**/*.odt</exclude>
+            <exclude>**/*.ods</exclude>
+            <exclude>**/*.pdf</exclude>
+            <exclude>**/.travis.yml</exclude>
+            <exclude>**/*.swf</exclude>
+            <exclude>**/*.json</exclude>
+            <!-- <exclude>**/*.svg</exclude> -->
+            <exclude>**/*.eot</exclude>
+            <exclude>**/*.ttf</exclude>
+            <exclude>**/*.woff</exclude>
+            <exclude>**/*.xlsx</exclude>
+            <exclude>**/*.docx</exclude>
+            <exclude>**/*.ppt</exclude>
+            <exclude>**/*.pptx</exclude>
+            <exclude>**/*.patch</exclude>
+            <!-- end default excludes -->
+
+            <!-- by file extension -->
+            <exclude>**/*.log</exclude>
+            <exclude>**/*.txt</exclude>
+            <exclude>**/*.csv</exclude>
+            <exclude>**/*.tsv</exclude>
+            <exclude>**/*.parquet</exclude>
+            <exclude>**/*.jks</exclude>
+            <exclude>**/*.nonformat</exclude>
+            <exclude>**/*.gzip</exclude>
+            <exclude>**/*.k</exclude>
+            <exclude>**/*.q</exclude>
+            <exclude>**/*.dat</exclude>
+
+            <!-- by file name -->
+            <exclude>**/Jenkinsfile</exclude>
+            <exclude>**/LICENSE</exclude>
+            <exclude>**/NOTICE</exclude>
+            <exclude>**/postinstall</exclude>
+            <exclude>**/.babelrc</exclude>
+            <exclude>**/.checkstyle</exclude>
+            <exclude>**/.eslintcache</exclude>
+            <exclude>**/.eslintignore</exclude>
+            <exclude>**/.eslintrc</exclude>
+            <exclude>**/git.properties</exclude>
+            <exclude>**/pom.xml.versionsBackup</exclude>
+            <exclude>**/q</exclude>
+            <exclude>**/c.java</exclude>
+            <exclude>**/swagger-ui/**</exclude>
+
+            <!-- by directory name -->
+            <exclude>**/node_modules/**</exclude>
+            <exclude>**/.idea/**</exclude>
+            <exclude>**/db/**</exclude>
+            <exclude>**/*.ipynb</exclude>
+          </excludes>
+          <mapping>
+            <java>SLASHSTAR_STYLE</java>
+            <hql>DOUBLEDASHES_STYLE</hql>
+            <jnk>DOUBLESLASH_STYLE</jnk>
+            <stg>DOUBLESLASH_STYLE</stg>
+            <g>DOUBLESLASH_STYLE</g>
+            <proto>SLASHSTAR_STYLE</proto>
+            <less>SLASHSTAR_STYLE</less>
+            <hpp>SLASHSTAR_STYLE</hpp>
+            <cc>SLASHSTAR_STYLE</cc>
+            <tdd>SCRIPT_STYLE</tdd>
+            <command>SCRIPT_STYLE</command>
+            <fmpp>SCRIPT_STYLE</fmpp>
+            <q>DOUBLEDASHES_STYLE</q>
+            <conf>SCRIPT_STYLE</conf>
+            <jj>SLASHSTAR_STYLE</jj>
+            <dss>SCRIPT_STYLE</dss>
+            <rc>SCRIPT_STYLE</rc>
+            <service>SCRIPT_STYLE</service>
+            <svg>XML_STYLE</svg>
+            <mvnw>SCRIPT_STYLE</mvnw>
+            <jsx>SLASHSTAR_STYLE</jsx>
+          </mapping>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-cli</id>
+            <goals>
+              <goal>format</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>verify-license-headers</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.4.1</version>
+        <executions>
+          <execution>
+            <id>avoid_bad_dependencies</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>commons-logging</exclude>
+                    <exclude>javax.servlet:servlet-api</exclude>
+                    <exclude>org.mortbay.jetty:servlet-api</exclude>
+                    <exclude>org.mortbay.jetty:servlet-api-2.5</exclude>
+                    <exclude>log4j:log4j</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>8</source>
+          <target>8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>4.3.1</version>
+        <executions>
+          <execution>
+            <id>scala-compile-first</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>add-source</goal>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>scala-test-compile</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
+
+
+  <!--  compile "org.glassfish.jersey.inject:jersey-hk2:2.30"-->
+  <!--  compile("io.swagger.core.v3:swagger-jaxrs2:2.1.1") {-->
+  <!--  exclude group: 'javax.validation', module: 'validation-api'-->
+  <!--  exclude group: 'javax.xml.bind', module: 'jaxb-api'-->
+  <!--  exclude group: 'org.slf4j', module: 'slf4j-simple'-->
+  <!--  }-->
+  <!--  compile("io.swagger.core.v3:swagger-jaxrs2-servlet-initializer:2.1.1") {-->
+  <!--  exclude group: 'javax.validation', module: 'validation-api'-->
+  <!--  exclude group: 'javax.xml.bind', module: 'jaxb-api'-->
+  <!--  exclude group: 'org.slf4j', module: 'slf4j-simple'-->
+  <!--  }-->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.delta</groupId>
+        <artifactId>delta-core_2.11</artifactId>
+        <version>${deltalake.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-core_2.11</artifactId>
+        <version>${spark.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>aws-java-sdk-bom</artifactId>
+        <version>${awssdk.version}</version>
+        <type>pom</type>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>dynamodb-enhanced</artifactId>
+        <version>${awssdk.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>DynamoDBLocal</artifactId>
+        <version>${dynamodb.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-client</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+        <version>2.1.1</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-jaxrs2</artifactId>
+        <version>2.1.1</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.jersey.inject</groupId>
+        <artifactId>jersey-hk2</artifactId>
+        <version>${jersey.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-servlet</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-jvm</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-logback</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-jersey2</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-api</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-impl</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-jackson</artifactId>
+        <version>${jjwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk15on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-common</artifactId>
+        <version>${hadoop.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.mortbay.jetty</groupId>
+            <artifactId>servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.mortbay.jetty</groupId>
+            <artifactId>servlet-api-2.5</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.mortbay.jetty</groupId>
+            <artifactId>servlet-api-2.5</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>jsp-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-yarn-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <artifactId>jets3t</artifactId>
+            <groupId>net.java.dev.jets3t</groupId>
+          </exclusion>
+          <exclusion>
+            <artifactId>log4j</artifactId>
+            <groupId>log4j</groupId>
+          </exclusion>
+          <exclusion>
+            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>org.slf4j</groupId>
+          </exclusion>
+          <exclusion>
+            <artifactId>mockito-all</artifactId>
+            <groupId>org.mockito</groupId>
+          </exclusion>
+          <exclusion>
+            <artifactId>commons-logging-api</artifactId>
+            <groupId>commons-logging</groupId>
+          </exclusion>
+          <exclusion>
+            <artifactId>commons-logging</artifactId>
+            <groupId>commons-logging</groupId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+          </exclusion>
+          <exclusion>
+            <artifactId>core</artifactId>
+            <groupId>org.eclipse.jdt</groupId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-xc</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-jaxrs</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-webapp</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.iceberg</groupId>
+        <artifactId>iceberg-core</artifactId>
+        <version>${iceberg.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.jaxrs</groupId>
+        <artifactId>jackson-jaxrs-json-provider</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-parameter-names</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jsr310</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jdk8</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.dataformat</groupId>
+        <artifactId>jackson-dataformat-yaml</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.jersey.test-framework.providers</groupId>
+        <artifactId>jersey-test-framework-provider-jdk-http</artifactId>
+        <version>${jersey.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.jersey.media</groupId>
+        <artifactId>jersey-media-json-jackson</artifactId>
+        <version>${jersey.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>javax.servlet-api</artifactId>
+        <version>${javax.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.jersey.core</groupId>
+        <artifactId>jersey-client</artifactId>
+        <version>${jersey.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.jersey.containers</groupId>
+        <artifactId>jersey-container-jetty-servlet</artifactId>
+        <version>${jersey.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-servlets</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-util</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-annotations</artifactId>
+        <version>${jetty.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-server</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-servlet</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-client</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.scala-lang</groupId>
+        <artifactId>scala-library</artifactId>
+        <version>2.11.6</version>
+      </dependency>
+      <dependency>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest_2.11</artifactId>
+        <version>2.2.5</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-core</artifactId>
+        <version>${logback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${logback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-access</artifactId>
+        <version>${logback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient_dropwizard</artifactId>
+        <version>${prometheus.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient_servlet</artifactId>
+        <version>${prometheus.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws.serverless</groupId>
+        <artifactId>aws-serverless-java-container-jersey</artifactId>
+        <version>${serverless.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <profiles>
+    <profile>
+      <id>code-coverage</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>default-prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>default-prepare-agent-integration</id>
+                <goals>
+                  <goal>prepare-agent-integration</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>default-report</id>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>default-report-integration</id>
+                <goals>
+                  <goal>report-integration</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+  <repositories>
+    <repository>
+      <id>dynamodb-local-oregon</id>
+      <name>DynamoDB Local Release Repository</name>
+<!--      <url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</url>-->
+    <url>https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release</url>
+    </repository>
+  </repositories>
 </project>
