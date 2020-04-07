@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2017-2019 Dremio Corporation
+ * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.iceberg.server;
 
 import java.io.IOException;
@@ -99,7 +98,7 @@ public class AuthTests {
     Assert.assertTrue(tables.isEmpty());
     tryEndpointPass(() -> client.createTable(new Table("x", "x")));
     tryEndpointPass(() -> client.updateTable(new Table("x", "x")));
-    tryEndpointPass(() -> client.deleteTable("x"));
+    tryEndpointPass(() -> client.deleteTable("x", false));
     Table table = client.getTable("x");
     Assert.assertNull(table);
   }
@@ -110,7 +109,7 @@ public class AuthTests {
     List<Table> tables = client.getTables();
     Assert.assertTrue(tables.isEmpty());
     tryEndpointFail(() -> client.createTable(new Table("x", "x")));
-    tryEndpointFail(() -> client.deleteTable("x"));
+    tryEndpointFail(() -> client.deleteTable("x", false));
     tryEndpointFail(() -> client.updateTable(new Table("x", "x")));
     Table table = client.getTable("x");
     Assert.assertNull(table);

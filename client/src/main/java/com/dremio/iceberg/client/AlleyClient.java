@@ -1,23 +1,23 @@
 /*
  * Copyright (C) 2020 Dremio
  *
- *             Licensed under the Apache License, Version 2.0 (the "License");
- *             you may not use this file except in compliance with the License.
- *             You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *             http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *             Unless required by applicable law or agreed to in writing, software
- *             distributed under the License is distributed on an "AS IS" BASIS,
- *             WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *             See the License for the specific language governing permissions and
- *             limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package com.dremio.iceberg.client;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -39,19 +39,20 @@ import org.apache.hadoop.conf.Configuration;
 
 import com.dremio.iceberg.model.Table;
 import com.dremio.iceberg.model.Tables;
+import com.google.common.collect.ImmutableMap;
 
 public class AlleyClient implements AutoCloseable {
 
   private final String endpoint;
   private final Timer timer;
+  private final String base;
   private String authHeader;
 
   public AlleyClient(Configuration config) {
-//    endpoint = "http://localhost:19120/api/v1"; // todo config driven & safety tests
     String host = config.get("iceberg.alley.host");
     String port = config.get("iceberg.alley.port");
     boolean ssl = Boolean.parseBoolean(config.get("iceberg.alley.ssl"));
-    String base = config.get("iceberg.alley.base");
+    base = config.get("iceberg.alley.base");
     String username = config.get("iceberg.alley.username");
     String password = config.get("iceberg.alley.password");
     endpoint = (ssl ? "https" : "http") +
@@ -101,8 +102,18 @@ public class AlleyClient implements AutoCloseable {
   }
 
   public List<Table> getTables() {
+    return getTables(null);
+  }
+
+  public List<Table> getTables(String namespace) {
     try (AutoCloseableClient client = new AutoCloseableClient()) {
-      Response response = client.get(endpoint, "tables/", MediaType.APPLICATION_JSON, authHeader).get();
+      Response response;
+      if (namespace != null) {
+        response = client.get(endpoint, "tables/", MediaType.APPLICATION_JSON, authHeader,
+          ImmutableMap.of("namespace", namespace)).get();
+      } else {
+        response = client.get(endpoint, "tables/", MediaType.APPLICATION_JSON, authHeader).get();
+      }
       checkResponse(response);
       Tables tables = response.readEntity(Tables.class);
       return tables.getTables();
@@ -113,23 +124,38 @@ public class AlleyClient implements AutoCloseable {
     try (AutoCloseableClient client = new AutoCloseableClient()) {
       Response response = client.get(endpoint, "tables/" + tableName, MediaType.APPLICATION_JSON, authHeader)
         .get();
-      try {
-        checkResponse(response);
-      } catch (NotFoundException e) {
-        return null;
-      }
-      Table table = response.readEntity(Table.class);
-      if (table != null) {
-        String tag = response.getHeaders().getFirst(HttpHeaders.ETAG).toString();
-        table.setEtag(tag);
-      }
-      return table;
+      return checkTable(response);
     }
   }
 
-  public void deleteTable(String tableName) {
+  private Table checkTable(Response response) {
+    try {
+      checkResponse(response);
+    } catch (NotFoundException e) {
+      return null;
+    }
+    Table table = response.readEntity(Table.class);
+    if (table != null) {
+      String tag = response.getHeaders().getFirst(HttpHeaders.ETAG).toString();
+      table.setEtag(tag);
+    }
+    return table;
+  }
+
+  public Table getTableByName(String tableName, String namespace) {
     try (AutoCloseableClient client = new AutoCloseableClient()) {
-      Response response = client.get(endpoint, "tables/" + tableName, MediaType.APPLICATION_JSON, authHeader)
+      Response response = client.get(endpoint, "tables/by-name/" + tableName, MediaType.APPLICATION_JSON,
+        authHeader, ImmutableMap.of("namespace", namespace)).get();
+      return checkTable(response);
+    }
+  }
+
+  public void deleteTable(String tableName, boolean purge) {
+    try (AutoCloseableClient client = new AutoCloseableClient()) {
+      Response response = client
+        .get(endpoint, "tables/" + tableName, MediaType.APPLICATION_JSON, authHeader,
+          ImmutableMap.of("purge", Boolean.toString(purge))
+        )
         .delete();
       checkResponse(response);
     }
@@ -137,7 +163,7 @@ public class AlleyClient implements AutoCloseable {
 
   public void updateTable(Table table) {
     try (AutoCloseableClient client = new AutoCloseableClient()) {
-      Invocation.Builder request = client.get(endpoint, "tables/" + table.getTableName(),
+      Invocation.Builder request = client.get(endpoint, "tables/" + table.getUuid(),
         MediaType.APPLICATION_JSON, authHeader);
       if (table.getEtag() != null) {
         request.header(HttpHeaders.IF_MATCH, table.getEtag());
@@ -152,14 +178,9 @@ public class AlleyClient implements AutoCloseable {
     try (AutoCloseableClient client = new AutoCloseableClient()) {
       Response response = client.get(endpoint, "tables/", MediaType.APPLICATION_JSON, authHeader)
         .post(Entity.entity(table, MediaType.APPLICATION_JSON));
-      if (response.getStatus() == 403) {
-        throw new ForbiddenException(response);
-      }
-      if (response.getStatus() != 201) {
-        throw new RuntimeException(); //todo
-      }
-      response = client.get(endpoint, "tables/" + table.getTableName(), MediaType.APPLICATION_JSON, authHeader)
-        .get();
+      checkResponse(response);
+      String id = response.getLocation().getRawPath().replace(base, "").replace("//", "");
+      response = client.get(endpoint, id, MediaType.APPLICATION_JSON, authHeader).get();
       checkResponse(response);
       Table newTable = response.readEntity(Table.class);
       newTable.setEtag(response.getHeaders().getFirst(HttpHeaders.ETAG).toString());
@@ -185,7 +206,16 @@ public class AlleyClient implements AutoCloseable {
     }
 
     public Invocation.Builder get(String endpoint, String path, String mediaType, String authHeader) {
+      Map<String, String> params = ImmutableMap.of();
+      return get(endpoint, path, mediaType, authHeader, params);
+    }
+
+    public Invocation.Builder get(String endpoint, String path, String mediaType, String authHeader,
+                                  Map<String, String> queryParams) {
       WebTarget webTarget = client.target(endpoint);
+      for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+        webTarget = webTarget.queryParam(entry.getKey(), entry.getValue());
+      }
       Invocation.Builder builder = webTarget.path(path).request(mediaType);
       if (authHeader != null) {
         builder.header(HttpHeaders.AUTHORIZATION, authHeader);

@@ -1,17 +1,17 @@
 /*
  * Copyright (C) 2020 Dremio
  *
- *             Licensed under the Apache License, Version 2.0 (the "License");
- *             you may not use this file except in compliance with the License.
- *             You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *             http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *             Unless required by applicable law or agreed to in writing, software
- *             distributed under the License is distributed on an "AS IS" BASIS,
- *             WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *             See the License for the specific language governing permissions and
- *             limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.dremio.iceberg.client;
 
@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.iceberg.model.Configuration;
 import com.dremio.iceberg.model.Table;
+import com.google.common.base.Joiner;
 
 public class AlleyCatalog extends BaseMetastoreCatalog implements Closeable {
   private static final Logger LOG = LoggerFactory.getLogger(AlleyCatalog.class);
@@ -60,35 +61,39 @@ public class AlleyCatalog extends BaseMetastoreCatalog implements Closeable {
 
   @Override
   protected TableOperations newTableOps(TableIdentifier tableIdentifier) {
-    Table table = tableFromTableIdentifier(tableIdentifier);
-    table = client.getTable(table.getTableName());
+    Table table = client.getTableByName(tableIdentifier.name(), tableIdentifier.namespace().toString());
     if (table == null) {
       table = tableFromTableIdentifier(tableIdentifier);
     }
-    //todo checks for safety!
     return new AlleyTableOperations(config.getConfiguration(), table);
   }
 
   private Table tableFromTableIdentifier(TableIdentifier tableIdentifier) {
-    return new Table(tableIdentifier.toString(), warehouseLocation);
+    if (tableIdentifier.hasNamespace()) {
+      return new Table(tableIdentifier.name(), tableIdentifier.namespace().toString(), warehouseLocation);
+    } else {
+      return new Table(tableIdentifier.name(), warehouseLocation);
+    }
   }
 
   @Override
   protected String defaultWarehouseLocation(TableIdentifier tableIdentifier) {
-    Table table = tableFromTableIdentifier(tableIdentifier);
-    table = client.getTable(table.getTableName());
+    Table table = client.getTableByName(tableIdentifier.name(), tableIdentifier.namespace().toString());
     if (table == null) {
       table = tableFromTableIdentifier(tableIdentifier);
     }
-    // todo safety checks
-    return table.getBaseLocation() + "/" + table.getTableName();
+    String namespace = (table.getNamespace() == null || table.getNamespace().equals("")) ? "" :
+      (Joiner.on('/').join(table.getNamespace().split("\\.")) + "/");
+    return table.getBaseLocation() + "/" + namespace + table.getTableName();
   }
 
   @Override
   public List<TableIdentifier> listTables(Namespace namespace) {
-    List<Table> tables = client.getTables();
-    // todo safety checks
-    return tables.stream().map(t -> TableIdentifier.parse(t.getTableName())).collect(Collectors.toList());
+    List<Table> tables = client.getTables(namespace == null ? null : namespace.toString());
+    return tables.stream().map(t -> {
+      Namespace n = t.getNamespace() == null ? Namespace.empty() : Namespace.of(t.getNamespace());
+      return TableIdentifier.of(n, t.getTableName());
+    }).collect(Collectors.toList());
   }
 
   @Override
@@ -98,31 +103,24 @@ public class AlleyCatalog extends BaseMetastoreCatalog implements Closeable {
     if (existingTable == null) {
       return false;
     }
-    if (purge) {
-      client.deleteTable(existingTable.getTableName());
-    } else {
-      existingTable.setDeleted(true);
-      client.updateTable(existingTable);
-    }
+    client.deleteTable(existingTable.getTableName(), purge);
     return true;
   }
 
   @Override
   public void renameTable(TableIdentifier from, TableIdentifier to) {
-    Table table = tableFromTableIdentifier(from);
-    Table existingFromTable = client.getTable(table.getTableName());
+    Table existingFromTable = client.getTableByName(from.name(), from.namespace().toString());
     if (existingFromTable == null) {
-      throw new NoSuchTableException("table {} doesn't exists", table.getTableName());
+      throw new NoSuchTableException("table {} doesn't exists", from.name());
     }
     if (existingFromTable.isDeleted()) {
-      throw new NoSuchTableException("table {} doesn't exists", table.getTableName());
+      throw new NoSuchTableException("table {} doesn't exists", existingFromTable.getTableName());
     }
-    table = tableFromTableIdentifier(to);
-    Table existingToTable = client.getTable(table.getTableName());
+    Table existingToTable = client.getTableByName(to.name(), to.namespace().toString());
     if (existingToTable != null && !existingToTable.isDeleted()) {
-      throw new AlreadyExistsException("table {} already exists", table.getTableName());
+      throw new AlreadyExistsException("table {} already exists", to.name());
     }
-    client.deleteTable(existingFromTable.getTableName());
-    client.createTable(existingFromTable.rename(table.getTableName()));
+    Table updatedTable = existingFromTable.rename(to.name(), to.namespace().toString());
+    client.updateTable(updatedTable);
   }
 }
