@@ -15,5 +15,45 @@
  */
 package com.dremio.iceberg.server;
 
+import java.io.IOException;
+import java.net.URL;
+
+import org.glassfish.hk2.api.Factory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
 public class ConfigurationImpl implements Configuration {
+  private static final Logger logger = LoggerFactory.getLogger(ConfigurationImpl.class);
+  private final String dbClassName;
+
+  public ConfigurationImpl() {
+    dbClassName = "com.dremio.iceberg.backend.simple.InMemory";
+  }
+
+  @Override
+  public String getDbClassName() {
+    return dbClassName;
+  }
+
+  public static class ConfigurationFactory implements Factory<Configuration> {
+    private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    @Override
+    public Configuration provide() {
+      try {
+        URL config = getClass().getClassLoader().getResource("config.yaml");
+        return mapper.readValue(config, ConfigurationImpl.class);
+      } catch (IOException | NullPointerException e) {
+        logger.error("Unable to read config, continuing with defaults", e);
+        return new ConfigurationImpl();
+      }
+    }
+
+    @Override
+    public void dispose(Configuration configuration) {
+
+    }
+  }
 }

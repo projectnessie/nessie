@@ -15,11 +15,16 @@
  */
 package com.dremio.iceberg.model;
 
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class Table {
   private final String tableName;
@@ -28,6 +33,11 @@ public class Table {
   private String metadataLocation = null;
   private String uuid;
   private boolean deleted = false;
+  private String sourceId;
+  private List<Snapshot> snapshots = Lists.newArrayList();
+  private String schema;
+  private Map<String, String> extraAttrs = Maps.newHashMap();
+
   @JsonIgnore
   private String etag;
 
@@ -38,13 +48,21 @@ public class Table {
       @JsonProperty("namespace") String namespace,
       @JsonProperty("baseLocation") String baseLocation,
       @JsonProperty("metadataLocation") String metadataLocation,
-      @JsonProperty("deleted") boolean deleted) {
+      @JsonProperty("sourceId") String sourceId,
+      @JsonProperty("schema") String schema,
+      @JsonProperty("snapshots") List<Snapshot> snapshots,
+      @JsonProperty("deleted") boolean deleted,
+      @JsonProperty("extraAttrs") Map<String, String> extraAttrs) {
     this.uuid = uuid;
     this.tableName = tableName;
     this.namespace = namespace;
     this.metadataLocation = metadataLocation;
+    this.sourceId = sourceId;
+    this.schema = schema;
+    this.snapshots = snapshots == null ? this.snapshots : snapshots;
     this.deleted = deleted;
     this.baseLocation = baseLocation;
+    this.extraAttrs = extraAttrs;
   }
 
   public Table(String tableName, String baseLocation) {
@@ -101,6 +119,45 @@ public class Table {
     return namespace;
   }
 
+  public String getSourceId() {
+    return sourceId;
+  }
+
+  public void setSourceId(String sourceId) {
+    this.sourceId = sourceId;
+  }
+
+  public List<Snapshot> getSnapshots() {
+    return snapshots;
+  }
+
+  public void setSnapshots(List<Snapshot> snapshots) {
+    this.snapshots = snapshots;
+  }
+
+  public void addSnapshot(Snapshot snapshot) {
+    if (snapshot == null) {
+      return;
+    }
+    snapshots.add(snapshot);
+  }
+
+  public String getSchema() {
+    return schema;
+  }
+
+  public void setSchema(String schema) {
+    this.schema = schema;
+  }
+
+  public Map<String, String> getExtraAttrs() {
+    return extraAttrs;
+  }
+
+  public void setExtraAttrs(Map<String, String> extraAttrs) {
+    this.extraAttrs = extraAttrs;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -110,18 +167,17 @@ public class Table {
       return false;
     }
     Table table = (Table) o;
-    return deleted == table.deleted &&
-      Objects.equal(tableName, table.tableName) &&
+    return Objects.equal(tableName, table.tableName) &&
       Objects.equal(baseLocation, table.baseLocation) &&
       Objects.equal(namespace, table.namespace) &&
       Objects.equal(metadataLocation, table.metadataLocation) &&
       Objects.equal(uuid, table.uuid) &&
-      Objects.equal(etag, table.etag);
+      Objects.equal(schema, table.schema);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(tableName, baseLocation, namespace, metadataLocation, uuid, deleted, etag);
+    return Objects.hashCode(tableName, baseLocation, namespace, metadataLocation, uuid, schema);
   }
 
   @Override
@@ -133,20 +189,23 @@ public class Table {
       .add("metadataLocation", metadataLocation)
       .add("uuid", uuid)
       .add("deleted", deleted)
+      .add("sourceId", sourceId)
+      .add("snapshots", snapshots)
+      .add("schema", schema)
       .add("etag", etag)
       .toString();
   }
 
   public Table rename(String name, String namespace) {
     Table table = new Table(this.uuid, name, namespace, this.getBaseLocation(), this.getMetadataLocation(),
-      this.isDeleted());
+      this.getSourceId(), this.getSchema(), this.getSnapshots(), this.isDeleted(), this.getExtraAttrs());
     table.setEtag(this.getEtag());
     return table;
   }
 
   public Table newMetadataLocation(String metadataLoc) {
     Table table = new Table(this.uuid, this.getTableName(), this.namespace, this.getBaseLocation(), metadataLoc,
-      this.isDeleted());
+      this.getSourceId(), this.getSchema(), this.getSnapshots(), this.isDeleted(), this.getExtraAttrs());
     table.setEtag(this.getEtag());
     return table;
   }

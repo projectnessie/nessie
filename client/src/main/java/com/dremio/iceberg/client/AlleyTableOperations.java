@@ -13,16 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.dremio.iceberg.client;
+
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseMetastoreTableOperations;
+import org.apache.iceberg.SchemaParser;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.exceptions.CommitFailedException;
-import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
 
+import com.dremio.iceberg.model.DataFile;
+import com.dremio.iceberg.model.Snapshot;
 import com.dremio.iceberg.model.Table;
 
 public class AlleyTableOperations extends BaseMetastoreTableOperations {
@@ -59,6 +65,9 @@ public class AlleyTableOperations extends BaseMetastoreTableOperations {
         table = client.createTable(modifiedTable);
       } else {
         Table modifiedTable = table.newMetadataLocation(newMetadataLocation);
+        modifiedTable.setSchema(SchemaParser.toJson(current().schema()));
+        modifiedTable.setSourceId(current().uuid());
+        modifiedTable.addSnapshot(transformSnapshot(current().currentSnapshot()));
         client.updateTable(modifiedTable);
         table = client.getTable(table.getUuid());
       }
@@ -66,6 +75,36 @@ public class AlleyTableOperations extends BaseMetastoreTableOperations {
       io().deleteFile(newMetadataLocation);
       throw new CommitFailedException(e, "failed");
     }
+  }
+
+  private Snapshot transformSnapshot(org.apache.iceberg.Snapshot currentSnapshot) {
+    if (currentSnapshot == null) {
+      return null;
+    }
+    return new Snapshot(
+      currentSnapshot.snapshotId(),
+      currentSnapshot.parentId(),
+      currentSnapshot.timestampMillis(),
+      currentSnapshot.operation(),
+      currentSnapshot.summary(),
+      transformDataFiles(currentSnapshot.addedFiles()),
+      transformDataFiles(currentSnapshot.deletedFiles()),
+      currentSnapshot.manifestListLocation()
+    );
+  }
+
+  private Iterable<DataFile> transformDataFiles(Iterable<org.apache.iceberg.DataFile> deletedFiles) {
+    return StreamSupport.stream(deletedFiles.spliterator(), false).map(id -> new DataFile(
+      id.path().toString(),
+      id.format().name(),
+      id.recordCount(),
+      id.fileSizeInBytes(),
+      id.fileOrdinal(),
+      id.sortColumns(),
+      id.columnSizes(),
+      id.valueCounts(),
+      id.nullValueCounts()
+    )).collect(Collectors.toList());
   }
 
   @Override

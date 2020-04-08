@@ -19,14 +19,13 @@ import javax.ws.rs.core.SecurityContext;
 
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
+import com.dremio.iceberg.backend.simple.InMemory;
 import com.dremio.iceberg.server.auth.AlleySecurityContext;
 import com.dremio.iceberg.server.auth.BasicKeyGenerator;
-import com.dremio.iceberg.server.auth.BasicUserService;
 import com.dremio.iceberg.server.auth.KeyGenerator;
 import com.dremio.iceberg.server.auth.User;
 import com.dremio.iceberg.server.auth.UserService;
-import com.dremio.iceberg.server.db.Backend;
-import com.dremio.iceberg.server.db.InMemory;
+import com.dremio.iceberg.backend.Backend;
 
 public class AlleyTestServerBinder extends AbstractBinder {
   @Override

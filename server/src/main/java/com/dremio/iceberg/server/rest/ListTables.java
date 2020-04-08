@@ -15,10 +15,8 @@
  */
 package com.dremio.iceberg.server.rest;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -38,7 +36,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -47,11 +44,11 @@ import org.slf4j.LoggerFactory;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Metered;
 import com.codahale.metrics.annotation.Timed;
+import com.dremio.iceberg.backend.Backend;
 import com.dremio.iceberg.model.Table;
 import com.dremio.iceberg.model.Tables;
 import com.dremio.iceberg.server.Configuration;
 import com.dremio.iceberg.server.auth.Secured;
-import com.dremio.iceberg.server.db.Backend;
 
 @Path("tables")
 public class ListTables {
@@ -74,19 +71,7 @@ public class ListTables {
   @Timed(name="timed-readall")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getTables(@QueryParam("namespace") String namespace) {
-    System.out.println("FOOBAR!" + namespace);
-    Tables tables = new Tables(backend.getAll()
-        .getTables()
-        .stream()
-        .filter(t -> !t.isDeleted())
-        .filter(t -> {
-          System.out.println("MONKEY " + t.toString());
-          if (namespace == null) {
-            return true;
-          }
-          return StringUtils.compare(namespace, t.getNamespace()) == 0;
-        })
-        .collect(Collectors.toList()));
+    Tables tables = new Tables(backend.getAll(namespace, false).getTables());
     return Response.ok(tables).build();
   }
 
@@ -117,10 +102,8 @@ public class ListTables {
   @Timed(name="timed-read-name")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getTableByName(@PathParam("name") String name, @QueryParam("namespace") String namespace) {
-    Optional<Table> table = backend.getAll().getTables().stream()
-      .filter(t -> !t.isDeleted())
-      .filter(t -> t.getTableName().equals(name))
-      .filter(t -> StringUtils.compare(t.getNamespace(), namespace) == 0).findFirst();
+    Optional<Table> table = backend.getAll(namespace, false).getTables().stream()
+      .filter(t -> t.getTableName().equals(name)).findFirst();
     if (!table.isPresent() || table.get().isDeleted()) {
       return Response.status(404, "table does not exist").build();
     }
@@ -137,8 +120,7 @@ public class ListTables {
   @Consumes(MediaType.APPLICATION_JSON)
   public Response setTable(Table table) {
     try {
-      Optional<Table> tableExisting = backend.getAll().getTables().stream()
-        .filter(t -> !t.isDeleted())
+      Optional<Table> tableExisting = backend.getAll(table.getNamespace(), false).getTables().stream()
         .filter(t -> t.getTableName().equals(table.getTableName()))
         .filter(t -> StringUtils.compare(t.getNamespace(), table.getNamespace()) == 0).findFirst();
       if (tableExisting.isPresent()) {

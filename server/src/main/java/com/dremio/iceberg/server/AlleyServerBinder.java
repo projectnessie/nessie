@@ -24,14 +24,25 @@ import com.dremio.iceberg.server.auth.BasicKeyGenerator;
 import com.dremio.iceberg.server.auth.BasicUserService;
 import com.dremio.iceberg.server.auth.KeyGenerator;
 import com.dremio.iceberg.server.auth.UserService;
-import com.dremio.iceberg.server.db.Backend;
-import com.dremio.iceberg.server.db.InMemory;
+import com.dremio.iceberg.backend.Backend;
 
 public class AlleyServerBinder extends AbstractBinder {
   @Override
   protected void configure() {
-    bind(ConfigurationImpl.class).to(Configuration.class);
-    bind(InMemory.class).to(Backend.class);
+
+    bindFactory(ConfigurationImpl.ConfigurationFactory.class).to(Configuration.class);
+    Configuration configuration = new ConfigurationImpl.ConfigurationFactory().provide();
+    Class<?> dbClazz;
+    try {
+      dbClazz = Class.forName(configuration.getDbClassName());
+    } catch (ClassNotFoundException e) {
+      try {
+        dbClazz = Class.forName("com.dremio.iceberg.backend.simple.InMemory");
+      } catch (ClassNotFoundException classNotFoundException) {
+        throw new RuntimeException(classNotFoundException);
+      }
+    }
+    bind(dbClazz).to(Backend.class);
     bind(AlleySecurityContext.class).to(SecurityContext.class);
     bind(BasicUserService.class).to(UserService.class);
     bind(BasicKeyGenerator.class).to(KeyGenerator.class);

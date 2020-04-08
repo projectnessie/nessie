@@ -30,6 +30,7 @@
     <module>client</module>
     <module>deltalake</module>
     <module>distribution</module>
+    <module>backends</module>
   </modules>
   <packaging>pom</packaging>
 
@@ -592,6 +593,11 @@ limitations under the License.
         <version>${jackson.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.fasterxml.jackson.dataformat</groupId>
+        <artifactId>jackson-dataformat-yaml</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.glassfish.jersey.test-framework.providers</groupId>
         <artifactId>jersey-test-framework-provider-jdk-http</artifactId>
         <version>${jersey.version}</version>
@@ -643,6 +649,11 @@ limitations under the License.
         <version>${jetty.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-client</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.scala-lang</groupId>
         <artifactId>scala-library</artifactId>
         <version>2.11.6</version>
@@ -665,4 +676,11 @@ limitations under the License.
     </dependencies>
   </dependencyManagement>
 
+  <repositories>
+    <repository>
+      <id>dynamodb-local-oregon</id>
+      <name>DynamoDB Local Release Repository</name>
+      <url>https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release</url>
+    </repository>
+  </repositories>
 </project>

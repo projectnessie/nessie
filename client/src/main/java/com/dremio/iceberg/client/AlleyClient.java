@@ -50,6 +50,7 @@ public class AlleyClient implements AutoCloseable {
   private String authHeader;
 
   public AlleyClient(Configuration config) {
+    //todo die nicely when these aren't around
     String host = config.get("iceberg.alley.host");
     String port = config.get("iceberg.alley.port");
     boolean ssl = Boolean.parseBoolean(config.get("iceberg.alley.ssl"));

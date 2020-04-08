@@ -31,6 +31,10 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.jaxrs</groupId>
       <artifactId>jackson-jaxrs-json-provider</artifactId>
     </dependency>
@@ -53,6 +57,17 @@
     <dependency>
       <groupId>com.dremio.iceberg</groupId>
       <artifactId>iceberg-alley-model</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dremio.iceberg</groupId>
+      <artifactId>iceberg-alley-backends-simple</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dremio.iceberg</groupId>
+      <artifactId>iceberg-alley-backends-dynamodb</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

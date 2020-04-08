@@ -122,7 +122,11 @@ public class RestListTablesTest extends JerseyTest {
       table.getNamespace(),
       "loc2",
       table.getMetadataLocation(),
-      table.isDeleted());
+      table.getSourceId(),
+      table.getSchema(),
+      table.getSnapshots(),
+      table.isDeleted(),
+      table.getExtraAttrs());
     response = target(tableName).request(MediaType.APPLICATION_JSON)
       .header(HttpHeaders.AUTHORIZATION, authHeader)
       .put(Entity.entity(newTable, MediaType.APPLICATION_JSON));

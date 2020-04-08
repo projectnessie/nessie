@@ -13,8 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.iceberg.server;
+package com.dremio.iceberg.backend;
 
-public interface Configuration {
-  String getDbClassName();
+
+import com.dremio.iceberg.model.Table;
+import com.dremio.iceberg.model.Tables;
+
+public interface Backend {
+
+  Table get(String name);
+
+  Tables getAll(String namespace, boolean includeDeleted);
+
+
+  void create(String name, Table table);
+
+
+  void update(String name, Table table);
+
+
+  void remove(String name);
 }
