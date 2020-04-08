@@ -47,18 +47,18 @@ import com.codahale.metrics.annotation.Timed;
 import com.dremio.iceberg.backend.Backend;
 import com.dremio.iceberg.model.Table;
 import com.dremio.iceberg.model.Tables;
-import com.dremio.iceberg.server.Configuration;
+import com.dremio.iceberg.server.ServerConfiguration;
 import com.dremio.iceberg.server.auth.Secured;
 
 @Path("tables")
 public class ListTables {
 
   private static final Logger logger = LoggerFactory.getLogger(ListTables.class);
-  private Configuration config;
+  private ServerConfiguration config;
   private Backend backend;
 
   @Inject
-  public ListTables(Configuration config, Backend backend) {
+  public ListTables(ServerConfiguration config, Backend backend) {
     this.config = config;
     this.backend = backend;
   }
@@ -71,7 +71,7 @@ public class ListTables {
   @Timed(name="timed-readall")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getTables(@QueryParam("namespace") String namespace) {
-    Tables tables = new Tables(backend.getAll(namespace, false).getTables());
+    Tables tables = new Tables(backend.tableBackend().getAll(namespace, false));
     return Response.ok(tables).build();
   }
 
@@ -85,7 +85,7 @@ public class ListTables {
   @Timed(name="timed-read")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getTable(@PathParam("name") String name, @Context Request request) {
-    Table table = backend.get(name);
+    Table table = backend.tableBackend().get(name);
     if (table == null || table.isDeleted()) {
       return Response.status(404, "table does not exist").build();
     }
@@ -102,7 +102,7 @@ public class ListTables {
   @Timed(name="timed-read-name")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getTableByName(@PathParam("name") String name, @QueryParam("namespace") String namespace) {
-    Optional<Table> table = backend.getAll(namespace, false).getTables().stream()
+    Optional<Table> table = backend.tableBackend().getAll(namespace, false).stream()
       .filter(t -> t.getTableName().equals(name)).findFirst();
     if (!table.isPresent() || table.get().isDeleted()) {
       return Response.status(404, "table does not exist").build();
@@ -120,7 +120,7 @@ public class ListTables {
   @Consumes(MediaType.APPLICATION_JSON)
   public Response setTable(Table table) {
     try {
-      Optional<Table> tableExisting = backend.getAll(table.getNamespace(), false).getTables().stream()
+      Optional<Table> tableExisting = backend.tableBackend().getAll(table.getNamespace(), false).stream()
         .filter(t -> t.getTableName().equals(table.getTableName()))
         .filter(t -> StringUtils.compare(t.getNamespace(), table.getNamespace()) == 0).findFirst();
       if (tableExisting.isPresent()) {
@@ -128,7 +128,7 @@ public class ListTables {
       }
       String id = UUID.randomUUID().toString();
       table.setUuid(id);
-      backend.create(id, table);
+      backend.tableBackend().create(id, table);
       return Response.status(201).header(HttpHeaders.LOCATION, "tables/" + id).build();
     } catch (Throwable t) {
       return Response.status(400, "something went wrong").build();
@@ -146,15 +146,15 @@ public class ListTables {
     @PathParam("name") String name,
     @DefaultValue("false") @QueryParam("purge") boolean purge) {
     try {
-      if (backend.get(name) == null || backend.get(name).isDeleted()) {
+      if (backend.tableBackend().get(name) == null || backend.tableBackend().get(name).isDeleted()) {
         throw new RuntimeException();
       }
       if (purge) {
-        backend.remove(name);
+        backend.tableBackend().remove(name);
       } else {
-        Table table = backend.get(name);
+        Table table = backend.tableBackend().get(name);
         table.setDeleted(true);
-        backend.update(name, table);
+        backend.tableBackend().update(name, table);
       }
       return Response.status(200).build();
     } catch (Throwable t) {
@@ -171,11 +171,11 @@ public class ListTables {
   @Path("{name}")
   @Consumes(MediaType.APPLICATION_JSON)
   public Response updateTable(@PathParam("name") String name, @Context Request request, Table table) {
-    EntityTag eTag = new EntityTag(Integer.toString(backend.get(name).hashCode()));
+    EntityTag eTag = new EntityTag(Integer.toString(backend.tableBackend().get(name).hashCode()));
     Response.ResponseBuilder evaluationResultBuilder = request.evaluatePreconditions(eTag);
     if (evaluationResultBuilder == null) {
       try {
-        backend.update(name, table);
+        backend.tableBackend().update(name, table);
         return Response.status(200).build();
       } catch (Throwable t) {
         return Response.status(404, "something went wrong").build();

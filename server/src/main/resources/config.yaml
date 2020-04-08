@@ -14,4 +14,7 @@
 # limitations under the License.
 #
 
-dbClassName: com.dremio.iceberg.backend.simple.InMemory
+dbClassName: com.dremio.iceberg.backend.dynamodb.DynamoDBBackend
+dbProps:
+  endpoint: http://localhost:8000
+  region: us-west-2

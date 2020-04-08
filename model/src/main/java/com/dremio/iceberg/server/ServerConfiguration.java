@@ -15,6 +15,10 @@
  */
 package com.dremio.iceberg.server;
 
-public interface Configuration {
+import java.util.Map;
+
+public interface ServerConfiguration {
   String getDbClassName();
+
+  Map<String, String> getDbProps();
 }

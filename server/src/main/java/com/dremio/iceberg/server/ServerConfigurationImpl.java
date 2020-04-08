@@ -17,6 +17,7 @@ package com.dremio.iceberg.server;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Map;
 
 import org.glassfish.hk2.api.Factory;
 import org.slf4j.Logger;
@@ -24,13 +25,16 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.collect.Maps;
 
-public class ConfigurationImpl implements Configuration {
-  private static final Logger logger = LoggerFactory.getLogger(ConfigurationImpl.class);
+public class ServerConfigurationImpl implements ServerConfiguration {
+  private static final Logger logger = LoggerFactory.getLogger(ServerConfigurationImpl.class);
   private final String dbClassName;
+  private final Map<String, String> dbProps;
 
-  public ConfigurationImpl() {
+  public ServerConfigurationImpl() {
     dbClassName = "com.dremio.iceberg.backend.simple.InMemory";
+    dbProps = Maps.newHashMap();
   }
 
   @Override
@@ -38,21 +42,26 @@ public class ConfigurationImpl implements Configuration {
     return dbClassName;
   }
 
-  public static class ConfigurationFactory implements Factory<Configuration> {
+  @Override
+  public Map<String, String> getDbProps() {
+    return dbProps;
+  }
+
+  public static class ConfigurationFactory implements Factory<ServerConfiguration> {
     private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     @Override
-    public Configuration provide() {
+    public ServerConfiguration provide() {
       try {
         URL config = getClass().getClassLoader().getResource("config.yaml");
-        return mapper.readValue(config, ConfigurationImpl.class);
+        return mapper.readValue(config, ServerConfigurationImpl.class);
       } catch (IOException | NullPointerException e) {
         logger.error("Unable to read config, continuing with defaults", e);
-        return new ConfigurationImpl();
+        return new ServerConfigurationImpl();
       }
     }
 
     @Override
-    public void dispose(Configuration configuration) {
+    public void dispose(ServerConfiguration configuration) {
 
     }
   }

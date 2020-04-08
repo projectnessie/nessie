@@ -31,7 +31,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 
-@DynamoDBTable(tableName="Tables")
+@DynamoDBTable(tableName="IcebergAlleyTables")
 public class Table {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 

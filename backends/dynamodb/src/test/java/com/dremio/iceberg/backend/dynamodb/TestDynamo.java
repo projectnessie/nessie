@@ -62,26 +62,26 @@ public class TestDynamo {
   public void testCrud() {
     Table table = new Table("test", "test1");
     table.setUuid("1");
-    backend.create("", table);
+    backend.tableBackend().create("", table);
 
-    Assert.assertEquals(1, backend.getAll(null, false).getTables().size());
+    Assert.assertEquals(1, backend.tableBackend().getAll(null, false).size());
 
-    table = backend.get("1");
+    table = backend.tableBackend().get("1");
     Assert.assertEquals("test", table.getTableName());
     Assert.assertEquals("test1", table.getBaseLocation());
 
     table.setMetadataLocation("foo");
-    backend.update("", table);
+    backend.tableBackend().update("", table);
 
-    table = backend.get("1");
+    table = backend.tableBackend().get("1");
     Assert.assertEquals("test", table.getTableName());
     Assert.assertEquals("test1", table.getBaseLocation());
     Assert.assertEquals("foo", table.getMetadataLocation());
 
-    backend.remove("1");
+    backend.tableBackend().remove("1");
 
-    Assert.assertNull(backend.get("1"));
-    Assert.assertTrue(backend.getAll(null, false).getTables().isEmpty());
+    Assert.assertNull(backend.tableBackend().get("1"));
+    Assert.assertTrue(backend.tableBackend().getAll(null, false).isEmpty());
 
   }
 
@@ -89,32 +89,32 @@ public class TestDynamo {
   public void testOptimisticLocking() {
     Table table = new Table("test", "test1");
     table.setUuid("1");
-    backend.create("", table);
+    backend.tableBackend().create("", table);
 
-    Table table1 = backend.get("1");
-    Table table2 = backend.get("1");
+    Table table1 = backend.tableBackend().get("1");
+    Table table2 = backend.tableBackend().get("1");
 
     table1.setSourceId("xyz");
-    backend.update("", table1);
+    backend.tableBackend().update("", table1);
 
     table2.setMetadataLocation("foobar");
     try {
-      backend.update("", table1);
+      backend.tableBackend().update("", table1);
       Assert.fail();
     } catch (Throwable t) {
       System.out.println(t);
     }
-    table2 = backend.get("1");
+    table2 = backend.tableBackend().get("1");
     table2.setMetadataLocation("foobar");
-    backend.update("", table2);
+    backend.tableBackend().update("", table2);
 
-    table = backend.get("1");
+    table = backend.tableBackend().get("1");
     Assert.assertEquals("test", table.getTableName());
     Assert.assertEquals("test1", table.getBaseLocation());
     Assert.assertEquals("foobar", table.getMetadataLocation());
     Assert.assertEquals("xyz", table.getSourceId());
 
-    backend.remove("1");
-    Assert.assertNull(backend.get("1"));
+    backend.tableBackend().remove("1");
+    Assert.assertNull(backend.tableBackend().get("1"));
   }
 }

@@ -16,14 +16,26 @@
 package com.dremio.iceberg.backend;
 
 
-import com.dremio.iceberg.model.Table;
+import java.util.List;
+
 import com.dremio.iceberg.server.ServerConfiguration;
 
-public interface Backend {
+public interface EntityBackend<T> {
 
-  EntityBackend<Table> tableBackend();
+  T get(String name);
+
+  List<T> getAll(String namespace, boolean includeDeleted);
+
+
+  void create(String name, T table);
+
+
+  void update(String name, T table);
+
+
+  void remove(String name);
 
   interface Factory {
-    Backend create(ServerConfiguration config);
+    EntityBackend create(ServerConfiguration config);
   }
 }

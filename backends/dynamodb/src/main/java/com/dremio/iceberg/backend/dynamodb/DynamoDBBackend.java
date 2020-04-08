@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.dremio.iceberg.backend.dynamodb;
 
 import java.util.List;
@@ -27,8 +28,9 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.dremio.iceberg.backend.Backend;
+import com.dremio.iceberg.backend.EntityBackend;
 import com.dremio.iceberg.model.Table;
-import com.dremio.iceberg.model.Tables;
+import com.dremio.iceberg.server.ServerConfiguration;
 import com.google.common.collect.Maps;
 
 public class DynamoDBBackend implements Backend, AutoCloseable {
@@ -50,13 +52,14 @@ public class DynamoDBBackend implements Backend, AutoCloseable {
   }
 
   public DynamoDBBackend(String region, String endpoint) {
-    AmazonDynamoDBClientBuilder clientBuilder = AmazonDynamoDBClientBuilder.standard()
-      .withRegion(region);
+    AmazonDynamoDBClientBuilder clientBuilder = AmazonDynamoDBClientBuilder.standard();
     if (endpoint != null) {
-      clientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, region));
+      clientBuilder = clientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, region));
+    } else {
+      clientBuilder = clientBuilder.withRegion(region);
     }
 
-     client = clientBuilder
+    client = clientBuilder
 //      .withMetricsCollector()
 //      .withMonitoringListener() //todo
       .build();
@@ -67,55 +70,85 @@ public class DynamoDBBackend implements Backend, AutoCloseable {
   }
 
   @Override
-  public Table get(String name) {
-    com.dremio.iceberg.backend.dynamodb.model.Table table =
-      mapper.load(com.dremio.iceberg.backend.dynamodb.model.Table.class, name, config);
-    if (table == null) {
-      return null;
-    }
-    return table.toModelTable();
-  }
-
-  @Override
-  public Tables getAll(String namespace, boolean includeDeleted) {
-    Map<String, AttributeValue> eav = Maps.newHashMap();
-    eav.put(":val1", new AttributeValue().withS(namespace));
-
-    DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
-
-    if (namespace != null) {
-      scanExpression = scanExpression
-        .withFilterExpression("namespace = :val1").withExpressionAttributeValues(eav);
-    }
-
-    List<com.dremio.iceberg.backend.dynamodb.model.Table> scanResult =
-      mapper.parallelScan(com.dremio.iceberg.backend.dynamodb.model.Table.class,
-        scanExpression, 4); //todo
-    return new Tables(scanResult.stream()
-      .map(com.dremio.iceberg.backend.dynamodb.model.Table::toModelTable)
-      .filter(t -> includeDeleted || !t.isDeleted())
-      .collect(Collectors.toList()));
-  }
-
-  @Override
-  public void create(String name, Table table) {
-    com.dremio.iceberg.backend.dynamodb.model.Table dynamoTable =
-      com.dremio.iceberg.backend.dynamodb.model.Table.fromModelTable(table);
-    mapper.save(dynamoTable, config);
-  }
-
-  @Override
-  public void update(String name, Table table) {
-    create(name, table);
-  }
-
-  @Override
-  public void remove(String name) {
-    mapper.delete(com.dremio.iceberg.backend.dynamodb.model.Table.fromModelTable(get(name)), config);
+  public EntityBackend<Table> tableBackend() {
+    return new TableDynamoDBBackend(client, config, mapper);
   }
 
   @Override
   public void close() throws Exception {
-    client.shutdown();
+
   }
+
+  public static class TableDynamoDBBackend implements EntityBackend<Table>, AutoCloseable {
+    private final AmazonDynamoDB client;
+    private final DynamoDBMapperConfig config;
+    private final DynamoDBMapper mapper;
+
+    public TableDynamoDBBackend(AmazonDynamoDB client, DynamoDBMapperConfig config, DynamoDBMapper mapper) {
+      this.client = client;
+      this.config = config;
+      this.mapper = mapper;
+    }
+
+    @Override
+    public Table get(String name) {
+      com.dremio.iceberg.backend.dynamodb.model.Table table =
+        mapper.load(com.dremio.iceberg.backend.dynamodb.model.Table.class, name, config);
+      if (table == null) {
+        return null;
+      }
+      return table.toModelTable();
+    }
+
+    @Override
+    public List<Table> getAll(String namespace, boolean includeDeleted) {
+      Map<String, AttributeValue> eav = Maps.newHashMap();
+      eav.put(":val1", new AttributeValue().withS(namespace));
+
+      DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
+
+      if (namespace != null) {
+        scanExpression = scanExpression
+          .withFilterExpression("namespace = :val1").withExpressionAttributeValues(eav);
+      }
+
+      List<com.dremio.iceberg.backend.dynamodb.model.Table> scanResult =
+        mapper.scan(com.dremio.iceberg.backend.dynamodb.model.Table.class, scanExpression, config); //todo make parallel?
+      return scanResult.stream()
+        .map(com.dremio.iceberg.backend.dynamodb.model.Table::toModelTable)
+        .filter(t -> includeDeleted || !t.isDeleted())
+        .collect(Collectors.toList());
+    }
+
+    @Override
+    public void create(String name, Table table) {
+      com.dremio.iceberg.backend.dynamodb.model.Table dynamoTable =
+        com.dremio.iceberg.backend.dynamodb.model.Table.fromModelTable(table);
+      mapper.save(dynamoTable, config);
+    }
+
+    @Override
+    public void update(String name, Table table) {
+      create(name, table);
+    }
+
+    @Override
+    public void remove(String name) {
+      mapper.delete(com.dremio.iceberg.backend.dynamodb.model.Table.fromModelTable(get(name)), config);
+    }
+
+    @Override
+    public void close() throws Exception {
+      client.shutdown();
+    }
+  }
+
+  public static class BackendFactory implements Backend.Factory {
+
+    @Override
+    public Backend create(ServerConfiguration config) {
+      return new DynamoDBBackend(config.getDbProps().get("region"), config.getDbProps().get("endpoint"));
+    }
+  }
+
 }

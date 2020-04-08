@@ -13,61 +13,69 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.dremio.iceberg.backend.simple;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.dremio.iceberg.backend.Backend;
+import com.dremio.iceberg.backend.EntityBackend;
 import com.dremio.iceberg.model.Table;
-import com.dremio.iceberg.model.Tables;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 
 public class InMemory implements Backend {
-  private static final Map<String, Table> tables = Maps.newHashMap();
-
-  public InMemory() {
-  }
 
   @Override
-  public Table get(String name) {
-    return tables.get(name);
+  public EntityBackend<Table> tableBackend() {
+    return new EntityInMemory();
   }
 
-  @Override
-  public Tables getAll(String namespace, boolean includeDeleted) {
+  public static class EntityInMemory implements EntityBackend<Table> {
+    private static final Map<String, Table> tables = Maps.newHashMap();
 
-    return new Tables(tables.values().stream()
-      .filter(t -> includeDeleted || !t.isDeleted())
-      .filter(t -> {
-        if (namespace == null) {
-          return true;
-        }
-        return StringUtils.compare(namespace, t.getNamespace()) == 0;
-      })
-      .collect(Collectors.toList()));
-  }
-
-  @Override
-  public void create(String name, Table table) {
-    if (tables.containsKey(name)) {
-      throw new UnsupportedOperationException("Table " + name + " already exists");
+    public EntityInMemory() {
     }
-    tables.put(name, table);
-  }
 
-  @Override
-  public void update(String name, Table table) {
-    tables.put(name, table);
-  }
+    @Override
+    public Table get(String name) {
+      return tables.get(name);
+    }
 
-  @Override
-  public void remove(String name) {
-    tables.remove(name);
-  }
+    @Override
+    public List<Table> getAll(String namespace, boolean includeDeleted) {
 
+      return tables.values().stream()
+        .filter(t -> includeDeleted || !t.isDeleted())
+        .filter(t -> {
+          if (namespace == null) {
+            return true;
+          }
+          return StringUtils.compare(namespace, t.getNamespace()) == 0;
+        })
+        .collect(Collectors.toList());
+    }
+
+    @Override
+    public void create(String name, Table table) {
+      if (tables.containsKey(name)) {
+        throw new UnsupportedOperationException("Table " + name + " already exists");
+      }
+      tables.put(name, table);
+    }
+
+    @Override
+    public void update(String name, Table table) {
+      tables.put(name, table);
+    }
+
+    @Override
+    public void remove(String name) {
+      tables.remove(name);
+    }
+
+  }
 }
