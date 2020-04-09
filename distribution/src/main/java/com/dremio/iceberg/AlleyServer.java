@@ -104,6 +104,11 @@ public class AlleyServer implements Closeable {
     ServletHolder holder = new ServletHolder("swagger-ui", DefaultServlet.class);
     addStaticPath(holder, "swagger-ui", markerPath);
     servletContextHandler.addServlet(holder, "/swagger-ui/*");
+
+    final String uiMarkerPath = "build/index.html";
+    ServletHolder uiHolder = new ServletHolder("iceberg-alley-ui", DefaultServlet.class);
+    addStaticPath(uiHolder, "iceberg-alley-ui", uiMarkerPath);
+    servletContextHandler.addServlet(holder, "/*");
     server.start();
 
     logger.info("Started on http://localhost:19120");

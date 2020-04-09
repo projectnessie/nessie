@@ -24,9 +24,8 @@ import com.dremio.iceberg.backend.dynamodb.model.Tag;
 public class TagDynamoDBBackend extends AbstractEntityDynamoDBBackend<Tag, com.dremio.iceberg.model.Tag> {
   public TagDynamoDBBackend(AmazonDynamoDB client,
                             DynamoDBMapperConfig config,
-                            DynamoDBMapper mapper,
-                            Class<com.dremio.iceberg.backend.dynamodb.model.Tag> tagClass) {
-    super(client, config, mapper, tagClass);
+                            DynamoDBMapper mapper) {
+    super(client, config, mapper, Tag.class);
   }
 
   @Override

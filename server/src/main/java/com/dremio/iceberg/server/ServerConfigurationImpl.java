@@ -30,11 +30,13 @@ import com.google.common.collect.Maps;
 public class ServerConfigurationImpl implements ServerConfiguration {
   private static final Logger logger = LoggerFactory.getLogger(ServerConfigurationImpl.class);
   private final String dbClassName;
+  private final String userServiceClassName;
   private final Map<String, String> dbProps;
 
   public ServerConfigurationImpl() {
     dbClassName = "com.dremio.iceberg.backend.simple.InMemory";
     dbProps = Maps.newHashMap();
+    userServiceClassName = "com.dremio.iceberg.server.auth.BasicUserService";
   }
 
   @Override
@@ -45,6 +47,11 @@ public class ServerConfigurationImpl implements ServerConfiguration {
   @Override
   public Map<String, String> getDbProps() {
     return dbProps;
+  }
+
+  @Override
+  public String getUserServiceClassName() {
+    return userServiceClassName;
   }
 
   public static class ConfigurationFactory implements Factory<ServerConfiguration> {

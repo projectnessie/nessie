@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.dremio.iceberg.server.rest;
 
 import javax.inject.Inject;
@@ -21,15 +22,15 @@ import javax.ws.rs.FormParam;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Metered;
 import com.codahale.metrics.annotation.Timed;
-import com.dremio.iceberg.server.auth.UserService;
+import com.dremio.iceberg.auth.UserService;
 
 @Path("login")
 public class Login {
@@ -39,14 +40,16 @@ public class Login {
 
   @POST
   @Metered
-  @ExceptionMetered(name="exception-login")
-  @Timed(name="timed-login")
+  @ExceptionMetered(name = "exception-login")
+  @Timed(name = "timed-login")
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+  @Produces(MediaType.APPLICATION_JSON)
   public Response login(@FormParam("username") String login,
                         @FormParam("password") String password) {
     try {
       String token = userService.authorize(login, password);
-      return Response.ok().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build();
+      return Response.ok("{\"token\":\"" + token + "\"}")
+        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build();
     } catch (NotAuthorizedException e) {
       return Response.status(401, "not authorized").build();
     } catch (Throwable t) {

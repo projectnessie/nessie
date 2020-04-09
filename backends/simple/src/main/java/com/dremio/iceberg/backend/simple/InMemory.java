@@ -26,6 +26,7 @@ import com.dremio.iceberg.backend.Backend;
 import com.dremio.iceberg.backend.EntityBackend;
 import com.dremio.iceberg.model.Table;
 import com.dremio.iceberg.model.Tag;
+import com.dremio.iceberg.model.User;
 import com.google.common.collect.Maps;
 
 public class InMemory implements Backend {
@@ -38,6 +39,11 @@ public class InMemory implements Backend {
   @Override
   public EntityBackend<Tag> tagBackend() {
     return new TagInMemory();
+  }
+
+  @Override
+  public EntityBackend<User> userBackend() {
+    throw new UnsupportedOperationException("cant use in memory backend with database");
   }
 
   public static class TableInMemory implements EntityBackend<Table> {

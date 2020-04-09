@@ -25,6 +25,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 
+import com.dremio.iceberg.auth.User;
+import com.dremio.iceberg.auth.UserService;
+
 /**
  * Read cookie from request and validate it.
  */

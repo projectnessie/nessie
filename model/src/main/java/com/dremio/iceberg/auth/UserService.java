@@ -13,28 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.iceberg.server.auth;
+package com.dremio.iceberg.auth;
 
-import java.security.Principal;
-import java.util.Set;
+import java.util.List;
+import java.util.Optional;
 
-import com.google.common.collect.Sets;
+public interface UserService {
 
-public class User implements Principal {
-  private final String username;
-  private final Set<String> roles;
+  String authorize(String login, String password);
 
-  public User(String username, String roles) {
-    this.username = username;
-    this.roles = Sets.newHashSet(roles.split(","));
-  }
+  User validate(String token);
 
-  @Override
-  public String getName() {
-    return username;
-  }
+  Optional<User> fetch(String username);
 
-  public boolean isInRoles(String role) {
-     return roles.contains(role);
-  }
+  List<User> fetchAll();
+
+  void create(User user);
+
 }

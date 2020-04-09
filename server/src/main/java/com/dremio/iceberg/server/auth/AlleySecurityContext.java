@@ -20,6 +20,8 @@ import java.security.Principal;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.SecurityContext;
 
+import com.dremio.iceberg.auth.User;
+
 public class AlleySecurityContext implements SecurityContext {
   private final User user;
   private final ContainerRequestContext requestContext;

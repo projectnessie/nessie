@@ -28,7 +28,9 @@ import com.codahale.metrics.jersey2.InstrumentedResourceMethodApplicationListene
 import com.codahale.metrics.servlet.InstrumentedFilter;
 import com.dremio.iceberg.server.auth.AlleyAuthFilter;
 import com.dremio.iceberg.server.rest.ListTables;
+import com.dremio.iceberg.server.rest.ListTags;
 import com.dremio.iceberg.server.rest.Login;
+import com.dremio.iceberg.server.rest.Users;
 import com.fasterxml.jackson.jaxrs.base.JsonMappingExceptionMapper;
 import com.fasterxml.jackson.jaxrs.base.JsonParseExceptionMapper;
 
@@ -55,6 +57,8 @@ public class RestServerV1 extends ResourceConfig {
     // RESOURCES //
     register(ListTables.class);
     register(Login.class);
+    register(ListTags.class);
+    register(Users.class);
 
     // EXCEPTION MAPPERS //
     register(JsonParseExceptionMapper.class);

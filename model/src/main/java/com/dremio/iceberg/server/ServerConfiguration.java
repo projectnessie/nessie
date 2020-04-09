@@ -21,4 +21,6 @@ public interface ServerConfiguration {
   String getDbClassName();
 
   Map<String, String> getDbProps();
+
+  String getUserServiceClassName();
 }

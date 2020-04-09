@@ -25,6 +25,7 @@ import com.dremio.iceberg.backend.Backend;
 import com.dremio.iceberg.backend.EntityBackend;
 import com.dremio.iceberg.model.Table;
 import com.dremio.iceberg.model.Tag;
+import com.dremio.iceberg.model.User;
 import com.dremio.iceberg.server.ServerConfiguration;
 
 public class DynamoDBBackend implements Backend, AutoCloseable {
@@ -65,12 +66,16 @@ public class DynamoDBBackend implements Backend, AutoCloseable {
 
   @Override
   public EntityBackend<Table> tableBackend() {
-    return new TableDynamoDBBackend(client, config, mapper, com.dremio.iceberg.backend.dynamodb.model.Table.class);
+    return new TableDynamoDBBackend(client, config, mapper);
+  }
+
+  public EntityBackend<User> userBackend() {
+    return new UserDynamoDBBackend(client, config, mapper);
   }
 
   @Override
   public EntityBackend<Tag> tagBackend() {
-    return new TagDynamoDBBackend(client, config, mapper, com.dremio.iceberg.backend.dynamodb.model.Tag.class);
+    return new TagDynamoDBBackend(client, config, mapper);
   }
 
   @Override

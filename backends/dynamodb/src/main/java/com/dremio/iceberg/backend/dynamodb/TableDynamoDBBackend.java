@@ -23,9 +23,8 @@ import com.dremio.iceberg.backend.dynamodb.model.Table;
 public class TableDynamoDBBackend extends AbstractEntityDynamoDBBackend<Table, com.dremio.iceberg.model.Table> {
   public TableDynamoDBBackend(AmazonDynamoDB client,
                               DynamoDBMapperConfig config,
-                              DynamoDBMapper mapper,
-                              Class<Table> clazz) {
-    super(client, config, mapper, clazz);
+                              DynamoDBMapper mapper ) {
+    super(client, config, mapper, Table.class);
   }
 
   @Override

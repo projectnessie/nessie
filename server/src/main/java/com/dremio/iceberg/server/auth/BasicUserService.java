@@ -15,29 +15,28 @@
  */
 package com.dremio.iceberg.server.auth;
 
-import java.security.Key;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
 
+import com.dremio.iceberg.auth.User;
+import com.dremio.iceberg.auth.UserService;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtParser;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 
 public class BasicUserService implements UserService {
+  private static final Joiner JOINER = Joiner.on(',');
   private static final Map<String, String> users =
       ImmutableMap.of("admin_user", "test123", "plain_user", "hello123");
   private static final Map<String, Set<String>> roles = ImmutableMap.<String, Set<String>>builder()
@@ -60,31 +59,32 @@ public class BasicUserService implements UserService {
     if (expectedPassword == null || !expectedPassword.equals(password)) {
       throw new NotAuthorizedException("User/password are incorrect");
     }
-    Key key = keyGenerator.generateKey();
-    String jwtToken = Jwts.builder()
-        .setSubject(login)
-        .setIssuer(uriInfo.getAbsolutePath().toString())
-        .setIssuedAt(new Date())
-        .setExpiration(toDate(LocalDateTime.now().plusMinutes(15L)))
-        .signWith(key, SignatureAlgorithm.HS512)
-        .claim("roles", Joiner.on(',').join(roles.get(login)))
-        .compact();
-    return jwtToken;
+    return JwtUtils.issueToken(keyGenerator, JOINER.join(roles.get(login)), uriInfo, login);
   }
 
   @Override
   public User validate(String token) {
-    try {
-      Key key = keyGenerator.generateKey();
-      JwtParser parser = Jwts.parserBuilder().setSigningKey(key).build();
-      Jws<Claims> claims = parser.parseClaimsJws(token);
+      Jws<Claims> claims = JwtUtils.checkToken(keyGenerator, token);
       return new User(claims.getBody().getSubject(), (String) claims.getBody().get("roles"));
-    } catch (Throwable t) {
-      throw new NotAuthorizedException(t);
-    }
   }
 
-  private Date toDate(LocalDateTime localDateTime) {
-    return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+  @Override
+  public Optional<User> fetch(String username) {
+    if (!users.containsKey(username)) {
+      return Optional.empty();
+    }
+
+    return Optional.of(new User(username, JOINER.join(roles.get(username))));
   }
+
+  @Override
+  public List<User> fetchAll() {
+    return users.keySet().stream().map(u -> new User(u, JOINER.join(roles.get(u)))).collect(Collectors.toList());
+  }
+
+  @Override
+  public void create(User user) {
+    throw new UnsupportedOperationException("Can't add users to simple user service");
+  }
+
 }

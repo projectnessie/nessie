@@ -13,21 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.iceberg.backend;
+package com.dremio.iceberg.server.auth;
 
-
-import com.dremio.iceberg.model.Table;
-import com.dremio.iceberg.model.Tag;
+import com.dremio.iceberg.backend.EntityBackend;
 import com.dremio.iceberg.model.User;
-import com.dremio.iceberg.server.ServerConfiguration;
 
-public interface Backend {
-
-  EntityBackend<Table> tableBackend();
-  EntityBackend<Tag> tagBackend();
-  EntityBackend<User> userBackend();
-
-  interface Factory {
-    Backend create(ServerConfiguration config);
-  }
+public interface UserServiceDbBackend extends EntityBackend<User> {
 }

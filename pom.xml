@@ -31,6 +31,7 @@
     <module>deltalake</module>
     <module>distribution</module>
     <module>backends</module>
+    <module>ui</module>
   </modules>
   <packaging>pom</packaging>
 
@@ -280,6 +281,7 @@ limitations under the License.
             <service>SCRIPT_STYLE</service>
             <svg>XML_STYLE</svg>
             <mvnw>SCRIPT_STYLE</mvnw>
+            <jsx>SLASHSTAR_STYLE</jsx>
           </mapping>
         </configuration>
         <executions>

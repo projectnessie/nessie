@@ -13,11 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.iceberg.server.auth;
+package com.dremio.iceberg.model;
 
-public interface UserService {
+import java.util.List;
 
-  String authorize(String login, String password);
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-  User validate(String token);
+public class Users {
+  private List<User> users;
+
+  @JsonCreator
+  public Users(@JsonProperty("users") List<User> users) {
+
+    this.users = users;
+  }
+
+  public List<User> getTags() {
+    return users;
+  }
+
+  public void setTags(List<User> users) {
+    this.users = users;
+  }
 }

@@ -15,6 +15,9 @@
  */
 package com.dremio.iceberg.server;
 
+import java.util.List;
+import java.util.Optional;
+
 import javax.ws.rs.core.SecurityContext;
 
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -23,9 +26,10 @@ import com.dremio.iceberg.backend.simple.InMemory;
 import com.dremio.iceberg.server.auth.AlleySecurityContext;
 import com.dremio.iceberg.server.auth.BasicKeyGenerator;
 import com.dremio.iceberg.server.auth.KeyGenerator;
-import com.dremio.iceberg.server.auth.User;
-import com.dremio.iceberg.server.auth.UserService;
+import com.dremio.iceberg.auth.User;
+import com.dremio.iceberg.auth.UserService;
 import com.dremio.iceberg.backend.Backend;
+import com.google.common.collect.ImmutableList;
 
 public class AlleyTestServerBinder extends AbstractBinder {
   @Override
@@ -47,6 +51,21 @@ public class AlleyTestServerBinder extends AbstractBinder {
     @Override
     public User validate(String token) {
       return new User("test", "admin,user");
+    }
+
+    @Override
+    public Optional<User> fetch(String username) {
+      return Optional.of(new User("test", "admin,user"));
+    }
+
+    @Override
+    public List<User> fetchAll() {
+      return ImmutableList.of(new User("test", "admin.user"));
+    }
+
+    @Override
+    public void create(User user) {
+
     }
   }
 }

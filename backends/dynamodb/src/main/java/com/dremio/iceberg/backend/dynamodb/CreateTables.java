@@ -62,7 +62,7 @@ public class CreateTables {
     String region = "us-west-2";
     String endpoint = "http://localhost:8000";
     CreateTables tables = new CreateTables(region, endpoint);
-    for(String table: new String[]{"Table"}) {
+    for(String table: new String[]{"Table", "Tag", "User"}) {
       try {
         tables.create(table);
       } catch (ResourceInUseException e) {

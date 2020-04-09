@@ -133,6 +133,12 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.dremio.iceberg</groupId>
+      <artifactId>iceberg-alley-ui</artifactId>
+      <version>${project.version}</version>
+      <classifier>resources</classifier>
+    </dependency>
+    <dependency>
       <groupId>io.dropwizard.metrics</groupId>
       <artifactId>metrics-jvm</artifactId>
     </dependency>
