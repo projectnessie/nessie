@@ -62,7 +62,7 @@ public class TestAlleyServer {
     errorHandler.setShowMessageInTitle(true);
     server.setErrorHandler(errorHandler);
 
-    RestServerV1 restServer = new RestServerV1();
+    RestServerV1 restServer = new RestServerV1(new AlleyTestServerBinder());
 
     final ServletHolder restHolder = new ServletHolder(new ServletContainer(restServer));
     restHolder.setInitOrder(2);

@@ -17,6 +17,7 @@ package com.dremio.iceberg.server;
 
 import javax.ws.rs.ApplicationPath;
 
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.util.PropertiesHelper;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -35,8 +36,12 @@ import com.fasterxml.jackson.jaxrs.base.JsonParseExceptionMapper;
 public class RestServerV1 extends ResourceConfig {
 
   public RestServerV1() {
+    this(new AlleyServerBinder());
+  }
+
+  public RestServerV1(AbstractBinder binder) {
     super.packages("io.swagger.sample.resource", "io.swagger.v3.jaxrs2.integration.resources");
-    super.register(new AlleyServerBinder());
+    super.register(binder);
     super.register(RolesAllowedDynamicFeature.class);
     init();
   }

@@ -40,7 +40,7 @@ public class RestListTablesTest extends JerseyTest {
   @Override
   protected Application configure() {
     ResourceConfig rc = new ResourceConfig(ListTables.class);
-    rc.register(new AlleyServerBinder());
+    rc.register(new AlleyTestServerBinder());
     return rc;
   }
 

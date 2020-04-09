@@ -13,19 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.iceberg.backend;
+package com.dremio.iceberg.model;
 
+import java.util.List;
 
-import com.dremio.iceberg.model.Table;
-import com.dremio.iceberg.model.Tag;
-import com.dremio.iceberg.server.ServerConfiguration;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public interface Backend {
+public class Tags {
+  private List<Tag> tags;
 
-  EntityBackend<Table> tableBackend();
-  EntityBackend<Tag> tagBackend();
+  @JsonCreator
+  public Tags(@JsonProperty("tags") List<Tag> tags) {
 
-  interface Factory {
-    Backend create(ServerConfiguration config);
+    this.tags = tags;
+  }
+
+  public List<Tag> getTags() {
+    return tags;
+  }
+
+  public void setTags(List<Tag> tags) {
+    this.tags = tags;
   }
 }

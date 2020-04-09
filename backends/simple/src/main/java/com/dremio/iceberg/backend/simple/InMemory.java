@@ -25,24 +25,35 @@ import org.apache.commons.lang3.StringUtils;
 import com.dremio.iceberg.backend.Backend;
 import com.dremio.iceberg.backend.EntityBackend;
 import com.dremio.iceberg.model.Table;
+import com.dremio.iceberg.model.Tag;
 import com.google.common.collect.Maps;
 
 public class InMemory implements Backend {
 
   @Override
   public EntityBackend<Table> tableBackend() {
-    return new EntityInMemory();
+    return new TableInMemory();
   }
 
-  public static class EntityInMemory implements EntityBackend<Table> {
+  @Override
+  public EntityBackend<Tag> tagBackend() {
+    return new TagInMemory();
+  }
+
+  public static class TableInMemory implements EntityBackend<Table> {
     private static final Map<String, Table> tables = Maps.newHashMap();
 
-    public EntityInMemory() {
+    public TableInMemory() {
     }
 
     @Override
     public Table get(String name) {
       return tables.get(name);
+    }
+
+    @Override
+    public List<Table> getAll(boolean includeDeleted) {
+      return getAll(null, includeDeleted);
     }
 
     @Override
@@ -69,6 +80,50 @@ public class InMemory implements Backend {
 
     @Override
     public void update(String name, Table table) {
+      tables.put(name, table);
+    }
+
+    @Override
+    public void remove(String name) {
+      tables.remove(name);
+    }
+
+  }
+
+  public static class TagInMemory implements EntityBackend<Tag> {
+    private static final Map<String, Tag> tables = Maps.newHashMap();
+
+    public TagInMemory() {
+    }
+
+    @Override
+    public Tag get(String name) {
+      return tables.get(name);
+    }
+
+    @Override
+    public List<Tag> getAll(boolean includeDeleted) {
+      return getAll(null, includeDeleted);
+    }
+
+    @Override
+    public List<Tag> getAll(String namespace, boolean includeDeleted) {
+
+      return tables.values().stream()
+        .filter(t -> includeDeleted || !t.isDeleted())
+        .collect(Collectors.toList());
+    }
+
+    @Override
+    public void create(String name, Tag table) {
+      if (tables.containsKey(name)) {
+        throw new UnsupportedOperationException("Table " + name + " already exists");
+      }
+      tables.put(name, table);
+    }
+
+    @Override
+    public void update(String name, Tag table) {
       tables.put(name, table);
     }
 

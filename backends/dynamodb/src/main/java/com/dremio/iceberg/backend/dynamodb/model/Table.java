@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 
 @DynamoDBTable(tableName="IcebergAlleyTables")
-public class Table {
+public class Table implements Base{
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private String tableName;

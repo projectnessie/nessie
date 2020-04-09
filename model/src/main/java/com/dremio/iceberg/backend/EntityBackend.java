@@ -18,13 +18,15 @@ package com.dremio.iceberg.backend;
 
 import java.util.List;
 
-import com.dremio.iceberg.server.ServerConfiguration;
-
 public interface EntityBackend<T> {
 
   T get(String name);
 
-  List<T> getAll(String namespace, boolean includeDeleted);
+  List<T> getAll(boolean includeDeleted);
+
+  default List<T> getAll(String namespace, boolean includeDeleted) {
+    return getAll(includeDeleted);
+  }
 
 
   void create(String name, T table);
@@ -35,7 +37,4 @@ public interface EntityBackend<T> {
 
   void remove(String name);
 
-  interface Factory {
-    EntityBackend create(ServerConfiguration config);
-  }
 }

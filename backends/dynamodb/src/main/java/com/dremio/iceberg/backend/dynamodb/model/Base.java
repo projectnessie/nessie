@@ -13,19 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.iceberg.backend;
+package com.dremio.iceberg.backend.dynamodb.model;
 
+public interface Base {
 
-import com.dremio.iceberg.model.Table;
-import com.dremio.iceberg.model.Tag;
-import com.dremio.iceberg.server.ServerConfiguration;
+  boolean isDeleted();
 
-public interface Backend {
+  Long getVersion();
 
-  EntityBackend<Table> tableBackend();
-  EntityBackend<Tag> tagBackend();
-
-  interface Factory {
-    Backend create(ServerConfiguration config);
-  }
+  String getUuid();
 }
