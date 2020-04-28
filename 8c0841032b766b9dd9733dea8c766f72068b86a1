@@ -1,0 +1,1072 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ad38c172_c0c00e9e",
+        "filename": ".gitignore",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "let\u0027s clean what\u0027s specific to dremio/drill (like contrib/native or CMake/Make/etc...)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f9c50cb_f29f82cc",
+        "filename": ".mvn/extensions.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "usually not common for OSS projects to add maven extensions (people can add them to their own maven installation)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25016b8a_c50ac224",
+        "filename": ".mvn/extensions.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "(style) no trailing space",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "001744b8_46ebb54e",
+        "filename": ".mvn/wrapper/maven-wrapper.properties",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "I think both wrapper and maven have more recent versions (dremio is a bit behind)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "642b5a54_b61f5d35",
+        "filename": "backends/dynamodb/pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "to be consistent, all plugin versions should be managed from the top level pom under pluginManagement",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22cfd22e_e4e28199",
+        "filename": "backends/dynamodb/pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "can you explain why all dependencies are copied over?",
+      "range": {
+        "startLine": 45,
+        "startChar": 6,
+        "endLine": 64,
+        "endChar": 15
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63a66713_8b7e4dfa",
+        "filename": "backends/dynamodb/pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "should consider importing BOM file for AWS dependencies (https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-project-maven.html). Also any specific reason choosing v1 version of the sdk over v2?",
+      "range": {
+        "startLine": 74,
+        "startChar": 3,
+        "endLine": 84,
+        "endChar": 17
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c506a4ea_7e572bcf",
+        "filename": "backends/dynamodb/pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "overall let\u0027s manage all dependencies versions using top level pom file (with dependencyManagement)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a4dab24_6f7a6d2c",
+        "filename": "backends/dynamodb/pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "not sure why we are excluding jetty to add it back just after...",
+      "range": {
+        "startLine": 94,
+        "startChar": 6,
+        "endLine": 99,
+        "endChar": 19
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddbd6ed2_f019fe5e",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/AbstractEntityDynamoDBBackend.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "should this be final?",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca642689_5a0f9584",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/AbstractEntityDynamoDBBackend.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "are there ordering considerations?",
+      "range": {
+        "startLine": 83,
+        "startChar": 69,
+        "endLine": 83,
+        "endChar": 90
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23c24aa3_c3dbb8c8",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/AbstractEntityDynamoDBBackend.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "extra space?",
+      "range": {
+        "startLine": 84,
+        "startChar": 30,
+        "endLine": 84,
+        "endChar": 31
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9bcda8c_319462db",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/AbstractEntityDynamoDBBackend.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s necessary?",
+      "range": {
+        "startLine": 104,
+        "startChar": 22,
+        "endLine": 104,
+        "endChar": 38
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a621cc4_ed0d3b0b",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/CreateTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "so client is not shared? isn\u0027t that quite inefficient?",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e88e3e9_deac6146",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/CreateTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "javadoc?",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2fe2bb24_cd8b3117",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/DynamoDBBackend.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "(style) maybe introduce some static factory methods and one single (private) constructor to handle you different cases. It avoid having different logic to initialize the object and limit code duplication...",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 3
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27d96619_ff60b54d",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/DynamoDBBackend.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "can be omitted?",
+      "range": {
+        "startLine": 82,
+        "startChar": 22,
+        "endLine": 82,
+        "endChar": 38
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f77657a5_80c653ac",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/model/Base.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "should we consider using OptionalLong to limit exposing null?",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34266b45_fa27e183",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/model/Base.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "javadoc...",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 1
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2be642c5_49b692c9",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/model/Table.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "can we make this class immutable (which is a safer design pattern when writing clients?)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6265a90b_b67c6aa2",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/model/Table.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "can we avoid json string inside json?",
+      "range": {
+        "startLine": 167,
+        "startChar": 4,
+        "endLine": 173,
+        "endChar": 62
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de785b7e_d7d65ca8",
+        "filename": "backends/dynamodb/src/test/java/com/dremio/iceberg/backend/dynamodb/TestDynamo.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "this is really an integration test, not a unit test. Pe convention, class name should start with IT instead of Test, and we should use the maven failsafe plugin to run it instead of surefire.",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26718ee6_086b73eb",
+        "filename": "client/src/main/checkstyle/checkstyle-config.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "copy paste always bite you back :) Let\u0027s use something a bit more ambitious than the Dremio ones which are very lax (it\u0027s easier to be strict at the beginning of the project). Maybe we can start with Google style (which comes with checkstyle)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecbe371e_5ad49055",
+        "filename": "client/src/main/checkstyle/checkstyle-config.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "this list comes from all the dremio dependencies, none of them are used here...",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b89033d6_40acb09f",
+        "filename": "distribution/src/main/java/com/dremio/iceberg/RequestLogImpl_Jetty_Fix.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "this has been fixed...",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bca5ccdd_1094adce",
+        "filename": "model/pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "(style) not sure I like model so much vs api...",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cb6c00f_3ce67c3b",
+        "filename": "model/src/main/java/com/dremio/iceberg/auth/AuthResponse.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "Couple of comments regarding model classes:\n- classes should probably be final\n- should probably also implement toString() method to have a nice message (useful for logging/debugging)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f4757b5_cdf2505e",
+        "filename": "model/src/main/java/com/dremio/iceberg/auth/AuthResponse.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "with java8 and using paranamer module, @JsonProperty annotations are not needed...",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c5511e4_a3185f0e",
+        "filename": "model/src/main/java/com/dremio/iceberg/auth/User.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "not used? (that would be a nice thing to catch up when running checkstyle...)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f128f54e_ef35f8fd",
+        "filename": "model/src/main/java/com/dremio/iceberg/auth/User.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "Principal has requirement regarding object identity which are not implemented here. Maybe User should not implement this interface?",
+      "range": {
+        "startLine": 25,
+        "startChar": 17,
+        "endLine": 25,
+        "endChar": 38
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "181da267_a96d46f9",
+        "filename": "model/src/main/java/com/dremio/iceberg/auth/User.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "I would recommend to do version/etag management outside of the POJOs so that each backend can choose what\u0027s the most appropriate/efficient",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "845a7d3d_8a115f2f",
+        "filename": "model/src/main/java/com/dremio/iceberg/auth/User.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "this is deprecated usage (you can use new HashSet\u003c\u003e(Collection)).\n\nAlso in order for your object to be properly immutable, it is preferable to use ImmutableSet instead",
+      "range": {
+        "startLine": 58,
+        "startChar": 17,
+        "endLine": 58,
+        "endChar": 32
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "023ce1d4_ec6774e2",
+        "filename": "model/src/main/java/com/dremio/iceberg/auth/User.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "(style) consider having a single constructor and factory method.",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 3
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c7594ed_ecbef139",
+        "filename": "model/src/main/java/com/dremio/iceberg/auth/UserService.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "javadoc\n\nI know this is comes from Dremio but not sure it would be compatible with some OAuth flow or other...",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e602a37_ffba27bc",
+        "filename": "model/src/main/java/com/dremio/iceberg/backend/Backend.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "javadoc?",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 1
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3322fdc8_8db0f118",
+        "filename": "model/src/main/java/com/dremio/iceberg/backend/EntityBackend.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "this is a very simply model but I wonder if this will become too simple (like you would need some specialization/complex logic in some cases...)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27c00cc3_53b48d0c",
+        "filename": "model/src/main/java/com/dremio/iceberg/backend/EntityBackend.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "javadoc",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22c5db83_8e9620b2",
+        "filename": "model/src/main/java/com/dremio/iceberg/model/AlleyConfiguration.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "let\u0027s use Java8 version",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf05433f_4009792f",
+        "filename": "model/src/main/java/com/dremio/iceberg/model/AlleyConfiguration.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "class should probably be final to make sure there\u0027s no surprise with this statement)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4e5f869_49d6e24f",
+        "filename": "model/src/main/java/com/dremio/iceberg/model/Base.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "maybe we can omit?",
+      "range": {
+        "startLine": 16,
+        "startChar": 27,
+        "endLine": 16,
+        "endChar": 32
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4c77479_c3db830f",
+        "filename": "model/src/main/java/com/dremio/iceberg/model/Base.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "javadoc",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae53b3d7_0da32b88",
+        "filename": "model/src/main/java/com/dremio/iceberg/model/Base.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "Mentioned it elsewhere but I would recomment to make version management external to the model objects (using wrapping?)",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d0220cf_e30e86e4",
+        "filename": "model/src/main/java/com/dremio/iceberg/model/Base.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "(style) getUuid.\n\nAlso why not using UUID instead of String and maybe simply name it getId() if this is the primary id?",
+      "range": {
+        "startLine": 22,
+        "startChar": 9,
+        "endLine": 22,
+        "endChar": 16
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9328132_7ea4e4e5",
+        "filename": "model/src/main/java/com/dremio/iceberg/model/Base.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "this makes your model mutable....",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eab5509c_0c50a263",
+        "filename": "model/src/main/java/com/dremio/iceberg/model/BaseCollection.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "why is a wrapper needed over collections?",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 1
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1110a69c_70fb97c9",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/auth/Secured.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "Annotation for resources which require authentification/authorization",
+      "range": {
+        "startLine": 27,
+        "startChar": 3,
+        "endLine": 27,
+        "endChar": 62
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92571123_4b0ed4b9",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "I would try to bring not too many dependencies in our code, and we already use guava. Also you didn\u0027t declare it in the pom file...",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73c2fcd5_83a3e62c",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "I guess we need to figure out how to use a fixed auth scheme per resource?",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 70,
+        "endChar": 1
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0381124d_4f0af8ac",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "(first resource I\u0027m looking at).\nwow, it\u0027s really verbose...",
+      "range": {
+        "startLine": 83,
+        "startChar": 0,
+        "endLine": 100,
+        "endChar": 3
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2075d090_6c40ca41",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "design wise, why not returning Tables directly and let jersey handles the response?",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 105,
+        "endChar": 3
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10c61cd6_ee6f3498",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "why is the request needed?",
+      "range": {
+        "startLine": 116,
+        "startChar": 57,
+        "endLine": 116,
+        "endChar": 83
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea695c8c_128683cd",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "should use symbols...",
+      "range": {
+        "startLine": 119,
+        "startChar": 29,
+        "endLine": 119,
+        "endChar": 32
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77ba38f3_138bf63f",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "instead of return a response, maybe a subclass of WebApplicationException can be thrown?\n\nAlso shouldn\u0027t we try to provide structured error message?",
+      "range": {
+        "startLine": 118,
+        "startChar": 4,
+        "endLine": 120,
+        "endChar": 5
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b188cf6_fe62d5d3",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-04-28T05:45:37Z",
+      "side": 1,
+      "message": "Objects.equals(first, second)?",
+      "range": {
+        "startLine": 159,
+        "startChar": 61,
+        "endLine": 160,
+        "endChar": 80
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    }
+  ]
+}
