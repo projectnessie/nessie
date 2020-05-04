@@ -20,14 +20,14 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>iceberg-alley</artifactId>
-    <groupId>com.dremio.iceberg</groupId>
+    <artifactId>nessie</artifactId>
+    <groupId>com.dremio.nessie</groupId>
     <version>1.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <name>Iceberg Alley - Server</name>
-  <artifactId>iceberg-alley-server</artifactId>
+  <name>Nessie - Server</name>
+  <artifactId>nessie-server</artifactId>
 
   <dependencies>
     <dependency>
@@ -39,8 +39,13 @@
       <artifactId>jackson-jaxrs-json-provider</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.dremio.iceberg</groupId>
-      <artifactId>iceberg-alley-utils</artifactId>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-jgit-store</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -48,19 +53,19 @@
       <artifactId>bcprov-jdk15on</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.dremio.iceberg</groupId>
-      <artifactId>iceberg-alley-model</artifactId>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-model</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.dremio.iceberg</groupId>
-      <artifactId>iceberg-alley-backends-simple</artifactId>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-backends-simple</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.dremio.iceberg</groupId>
-      <artifactId>iceberg-alley-backends-dynamodb</artifactId>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-backends-dynamodb</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -122,10 +127,16 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.dremio.iceberg</groupId>
-      <artifactId>iceberg-alley-client</artifactId>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-client</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>

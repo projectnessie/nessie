@@ -21,8 +21,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.dremio.iceberg</groupId>
-  <artifactId>iceberg-alley</artifactId>
+  <groupId>com.dremio.nessie</groupId>
+  <artifactId>nessie</artifactId>
   <version>1.0-SNAPSHOT</version>
   <modules>
     <module>model</module>
@@ -34,11 +34,12 @@
     <module>ui</module>
     <module>serverless</module>
     <module>utils</module>
+    <module>jgit</module>
   </modules>
   <packaging>pom</packaging>
 
   <properties>
-    <awssdk.version>2.13.3</awssdk.version>
+    <awssdk.version>2.13.31</awssdk.version>
     <bouncycastle.version>1.60</bouncycastle.version>
     <deltalake.version>0.5.0</deltalake.version>
     <dropwizard.version>4.1.5</dropwizard.version>
@@ -55,6 +56,7 @@
     <jjwt.version>0.11.1</jjwt.version>
     <junit.version>5.4.0</junit.version>
     <logback.version>1.2.3</logback.version>
+    <protobuf.version>3.9.1</protobuf.version>
     <prometheus.version>0.8.1</prometheus.version>
     <serverless.version>1.5</serverless.version>
     <slf4j.version>1.7.16</slf4j.version>
@@ -957,6 +959,11 @@ limitations under the License.
         <groupId>org.immutables</groupId>
         <artifactId>value</artifactId>
         <version>${immutables.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jgit</groupId>
+        <artifactId>org.eclipse.jgit</artifactId>
+        <version>5.7.0.202003110725-r</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
