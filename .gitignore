@@ -40,3 +40,5 @@ target/
 # node
 node_modules/
 
+#mvn extensions
+.mvn/extensions.xml

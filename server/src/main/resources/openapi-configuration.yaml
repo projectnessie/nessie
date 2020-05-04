@@ -15,14 +15,14 @@
 #
 
 resourcePackages:
-  - com.dremio.iceberg.server.rest
+  - com.dremio.nessie.server.rest
 prettyPrint: true
 cacheTTL: 0
 openAPI:
   info:
     version: '1.0'
-    title: Iceberg Alley REST Config file
-    description: 'Iceberg Alley REST endpoints'
+    title: Nessie REST Config file
+    description: 'Nessie REST endpoints'
     termsOfService: http://dremio.com
     contact:
       email: rymurr@dremio.com
