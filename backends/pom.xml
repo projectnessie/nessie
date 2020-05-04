@@ -20,18 +20,18 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>iceberg-alley</artifactId>
-    <groupId>com.dremio.iceberg</groupId>
+    <artifactId>nessie</artifactId>
+    <groupId>com.dremio.nessie</groupId>
     <version>1.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <name>Iceberg Alley - Backends</name>
+  <name>Nessie - Backends</name>
   <modules>
     <module>dynamodb</module>
     <module>simple</module>
   </modules>
-  <artifactId>iceberg-alley-backends</artifactId>
+  <artifactId>nessie-backends</artifactId>
   <packaging>pom</packaging>
 
 
