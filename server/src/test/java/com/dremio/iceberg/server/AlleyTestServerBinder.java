@@ -19,18 +19,25 @@ package com.dremio.iceberg.server;
 import com.dremio.iceberg.auth.User;
 import com.dremio.iceberg.auth.UserService;
 import com.dremio.iceberg.backend.Backend;
+import com.dremio.iceberg.backend.dynamodb.DynamoDbBackend;
 import com.dremio.iceberg.backend.simple.InMemory;
 import com.dremio.iceberg.jwt.KeyGenerator;
 import com.dremio.iceberg.model.ImmutableUser;
+import com.dremio.iceberg.server.ServerConfigurationImpl.ServerDatabaseConfigurationImpl;
 import com.dremio.iceberg.server.auth.AlleySecurityContext;
 import com.dremio.iceberg.server.auth.PrivateKeyGenerator;
+import com.dremio.iceberg.server.jgit.JGitContainer;
+import com.dremio.iceberg.server.jgit.JGitContainerImpl;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.inject.Inject;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.SecurityContext;
 import org.glassfish.hk2.api.Factory;
@@ -40,13 +47,83 @@ public class AlleyTestServerBinder extends AbstractBinder {
 
   public static final TestServerConfigurationImpl settings = new TestServerConfigurationImpl();
 
+  private final String database;
+
+  public AlleyTestServerBinder() {
+    database = "in-memory";
+  }
+
+  public AlleyTestServerBinder(String database) {
+    this.database = database;
+  }
+
   @Override
   protected void configure() {
     bindFactory(TestServerConfigurationFactory.class).to(ServerConfiguration.class);
-    bindFactory(BackendFactory.class).to(Backend.class);
+    if (database.equals("dynamo")) {
+      bindFactory(DynamoDbBackendFactory.class).to(Backend.class);
+    } else {
+      bindFactory(BackendFactory.class).to(Backend.class);
+    }
     bind(AlleySecurityContext.class).to(SecurityContext.class);
     bind(TestUserService.class).to(UserService.class);
     bind(PrivateKeyGenerator.class).to(KeyGenerator.class);
+    bindFactory(JGitContainerFactory.class).to(JGitContainer.class);
+  }
+
+  public static class JGitContainerFactory implements Factory<JGitContainer> {
+    private static boolean enabled = false;
+
+    private final Backend backend;
+
+    @Inject
+    private JGitContainerFactory(Backend backend) {
+      this.backend = backend;
+    }
+
+    @Override
+    public JGitContainer provide() {
+      JGitContainerImpl jgc = new JGitContainerImpl(backend);
+      if (enabled) {
+        return jgc;
+      }
+      try {
+        jgc.create("master", null, null);
+        enabled = true;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      return jgc;
+    }
+
+    @Override
+    public void dispose(JGitContainer instance) {
+
+    }
+  }
+  public static final class DynamoDbBackendFactory implements Factory<Backend> {
+
+    @Override
+    public Backend provide() {
+      Map<String, String> dbProps = ImmutableMap.of("region", "us-west-2",
+                                                             "endpoint", "http://localhost:8000");
+      Backend backend = new DynamoDbBackend.BackendFactory().create(new ServerConfigurationImpl(
+        new ServerDatabaseConfigurationImpl(null, dbProps),
+        null,
+        null,
+        "master"
+      ));
+      return backend;
+    }
+
+    @Override
+    public void dispose(Backend instance) {
+      try {
+        instance.close();
+      } catch (Exception e) {
+        //pass
+      }
+    }
   }
 
   public static final class BackendFactory implements Factory<Backend> {

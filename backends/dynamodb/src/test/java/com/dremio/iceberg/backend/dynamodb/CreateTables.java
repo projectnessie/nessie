@@ -48,9 +48,17 @@ public class CreateTables {
                                                       .build();
     BeanTableSchema<Table> schema = TableSchema.fromBean(
         com.dremio.iceberg.backend.dynamodb.model.Table.class);
-    DynamoDbTable<Table> table = ec.table(
-        "IcebergAlley" + tableName + "s",
+    DynamoDbTable<Table> table;
+    if (tableName.equals("GitObject")) {
+      table = ec.table(
+        "NessieGitObjectDatabase",
+        schema
+      );
+    } else {
+      table = ec.table(
+        "Nessie" + tableName + "s",
         schema);
+    }
     table.createTable();
   }
 
@@ -69,7 +77,7 @@ public class CreateTables {
     String region = "us-west-2";
     String endpoint = "http://localhost:8000";
     CreateTables tables = new CreateTables(region, endpoint);
-    for (String table : new String[] {"Table", "Tag", "User"}) {
+    for (String table : new String[] {"Table", "Tag", "User", "GitObject"}) {
       try {
         tables.create(table);
       } catch (ResourceInUseException e) {

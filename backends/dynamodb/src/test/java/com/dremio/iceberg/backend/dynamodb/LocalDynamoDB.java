@@ -22,7 +22,7 @@ import java.net.URI;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-class LocalDynamoDB implements AutoCloseable {
+public class LocalDynamoDB implements AutoCloseable {
   private DynamoDBProxyServer server = null;
 
   public void start() throws Exception {

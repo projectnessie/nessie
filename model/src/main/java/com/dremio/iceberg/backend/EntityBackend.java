@@ -19,6 +19,7 @@ package com.dremio.iceberg.backend;
 
 import com.dremio.iceberg.model.VersionedWrapper;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -31,6 +32,10 @@ import java.util.List;
 public interface EntityBackend<T> extends AutoCloseable {
 
   VersionedWrapper<T> get(String name);
+
+  default VersionedWrapper<T> get(String name, String sortKey) {
+    return get(name);
+  }
 
   default List<VersionedWrapper<T>> getAll(boolean includeDeleted) {
     return getAll(null, null, includeDeleted);
@@ -54,4 +59,7 @@ public interface EntityBackend<T> extends AutoCloseable {
 
   void remove(String name);
 
+  default void updateAll(Map<String, VersionedWrapper<T>> transaction) {
+    transaction.forEach(this::update);
+  };
 }

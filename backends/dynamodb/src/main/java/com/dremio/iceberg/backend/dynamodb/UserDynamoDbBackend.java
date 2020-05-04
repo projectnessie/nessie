@@ -33,7 +33,7 @@ public class UserDynamoDbBackend
   private static final Joiner JOINER = Joiner.on(",");
 
   public UserDynamoDbBackend(DynamoDbClient client, DynamoDbEnhancedClient mapper) {
-    super(client, mapper, User.class, "IcebergAlleyUsers");
+    super(client, mapper, User.class, "NessieUsers", "namespace");
   }
 
 
