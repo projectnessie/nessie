@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.iceberg.jwt;
+package com.dremio.nessie.jwt;
 
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Encoders;

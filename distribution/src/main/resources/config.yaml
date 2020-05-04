@@ -16,12 +16,12 @@
 
 defaultTag: HEAD
 databaseConfiguration:
-  dbClassName: com.dremio.iceberg.backend.dynamodb.DynamoDbBackend
+  dbClassName: com.dremio.nessie.backend.dynamodb.DynamoDbBackend
   dbProps:
     endpoint: http://localhost:8000
     region: us-west-2
 authenticationConfiguration:
-  userServiceClassName: com.dremio.iceberg.server.auth.BasicUserService
+  userServiceClassName: com.dremio.nessie.server.auth.BasicUserService
   enableLoginEndpoint: true
   enableUsersEndpoint: true
 serviceConfiguration:
