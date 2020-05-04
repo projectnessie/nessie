@@ -28,7 +28,7 @@ public class TagDynamoDbBackend
     extends AbstractEntityDynamoDbBackend<Tag, com.dremio.iceberg.model.Tag> {
 
   public TagDynamoDbBackend(DynamoDbClient client, DynamoDbEnhancedClient mapper) {
-    super(client, mapper, Tag.class, "IcebergAlleyTags");
+    super(client, mapper, Tag.class, "NessieTags", "namespace");
   }
 
   @Override

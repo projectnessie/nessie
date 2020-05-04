@@ -18,6 +18,8 @@ package com.dremio.iceberg.backend.dynamodb;
 
 import com.dremio.iceberg.backend.Backend;
 import com.dremio.iceberg.backend.EntityBackend;
+import com.dremio.iceberg.model.GitContainer;
+import com.dremio.iceberg.model.GitObject;
 import com.dremio.iceberg.model.Table;
 import com.dremio.iceberg.model.Tag;
 import com.dremio.iceberg.model.User;
@@ -51,7 +53,8 @@ public class DynamoDbBackend implements Backend {
     DynamoDbClientBuilder clientBuilder = DynamoDbClient.builder();
     if (endpoint != null) {
       clientBuilder = clientBuilder.endpointOverride(URI.create(endpoint));
-    } else {
+    }
+    if (region != null) {
       clientBuilder = clientBuilder.region(Region.of(region));
     }
 
@@ -72,6 +75,10 @@ public class DynamoDbBackend implements Backend {
   @Override
   public EntityBackend<Tag> tagBackend() {
     return new TagDynamoDbBackend(client, mapper);
+  }
+
+  public EntityBackend<GitContainer> gitBackend() {
+    return new GitObjectDynamoDbBackend(client, mapper);
   }
 
   @Override
