@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2020 Dremio
  *
@@ -16,12 +17,17 @@
 
 package com.dremio.iceberg.server;
 
+import com.dremio.nessie.server.ServerConfiguration;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import org.glassfish.hk2.api.Factory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,14 +39,18 @@ public class ServerConfigurationImpl implements ServerConfiguration {
 
   private static final Logger logger = LoggerFactory.getLogger(ServerConfigurationImpl.class);
   private final ServerDatabaseConfigurationImpl databaseConfiguration;
-  private final ServerAuthenticationConfigurationImpl authenticationConfiguration;
+  private final ServerAuthConfigurationImpl authenticationConfiguration;
   private final ServiceConfigurationImpl serviceConfiguration;
   private final String defaultTag;
 
-  public ServerConfigurationImpl(ServerDatabaseConfigurationImpl databaseConfiguration,
-                                 ServerAuthenticationConfigurationImpl authenticationConfiguration,
-                                 ServiceConfigurationImpl serviceConfiguration,
-                                 String defaultTag) {
+  @JsonCreator
+  public ServerConfigurationImpl(@JsonProperty("databaseConfiguration")
+                                   ServerDatabaseConfigurationImpl databaseConfiguration,
+                                 @JsonProperty("authenticationConfiguration")
+                                   ServerAuthConfigurationImpl authenticationConfiguration,
+                                 @JsonProperty("serviceConfiguration")
+                                   ServiceConfigurationImpl serviceConfiguration,
+                                 @JsonProperty("defaultTag") String defaultTag) {
     this.databaseConfiguration = databaseConfiguration;
     this.authenticationConfiguration = authenticationConfiguration;
     this.serviceConfiguration = serviceConfiguration;
@@ -49,7 +59,7 @@ public class ServerConfigurationImpl implements ServerConfiguration {
 
   public ServerConfigurationImpl() {
     databaseConfiguration = new ServerDatabaseConfigurationImpl();
-    authenticationConfiguration = new ServerAuthenticationConfigurationImpl();
+    authenticationConfiguration = new ServerAuthConfigurationImpl();
     serviceConfiguration = new ServiceConfigurationImpl(19120, true, true, true);
     defaultTag = null;
   }
@@ -104,9 +114,49 @@ public class ServerConfigurationImpl implements ServerConfiguration {
     private final String dbClassName;
     private final Map<String, String> dbProps;
 
+    @JsonCreator
+    public ServerDatabaseConfigurationImpl(@JsonProperty("dbClassName") String dbClassName,
+                                           @JsonProperty("dbProps") Map<String, String> dbProps) {
+      this(dbClassName, dbProps, false);
+    }
+
     public ServerDatabaseConfigurationImpl() {
-      dbClassName = "com.dremio.iceberg.backend.simple.InMemory";
-      dbProps = new HashMap<>();
+      this("com.dremio.iceberg.backend.simple.InMemory", new HashMap<>());
+    }
+
+    public ServerDatabaseConfigurationImpl(String dbClassName,
+                                           Map<String, String> dbProps,
+                                           boolean skip) {
+      if (skip) {
+        this.dbClassName = dbClassName;
+        this.dbProps = dbProps;
+      } else {
+        ServerDatabaseConfigurationImpl x = jvmArgParse(dbClassName, dbProps);
+        this.dbProps = x.dbProps;
+        this.dbClassName = x.dbClassName;
+      }
+
+    }
+
+    private static ServerDatabaseConfigurationImpl jvmArgParse(String dbClassName,
+                                                               Map<String, String> dbProps) {
+      Map<String, String> envProps = System.getenv().entrySet()
+                                           .stream()
+                                           .filter(x -> x.getKey().contains("NESSIE_DB_PROPS"))
+                                           .collect(Collectors.toMap(Map.Entry::getKey,
+                                                                     Map.Entry::getValue));
+      Map<String, String> jvmProps = new HashMap<>();
+      for (Entry<Object, Object> x : System.getProperties().entrySet()) {
+        if (((String) x.getKey()).contains("NESSIE_DB_PROPS")) {
+          jvmProps.put((String) x.getKey(), (String) x.getValue());
+        }
+      }
+      dbProps.putAll(envProps);
+      dbProps.putAll(jvmProps);
+      return new ServerDatabaseConfigurationImpl(
+        getEnv("nessie.db.impl", "NESSIE_DB_IMPL", dbClassName),
+        dbProps
+      );
     }
 
     @Override
@@ -120,25 +170,27 @@ public class ServerConfigurationImpl implements ServerConfiguration {
     }
   }
 
-  public static class ServerAuthenticationConfigurationImpl implements
-                                                            ServerAuthenticationConfiguration {
+  public static class ServerAuthConfigurationImpl implements
+                                                  ServerAuthenticationConfiguration {
 
     private final String userServiceClassName;
     private final boolean enableLoginEndpoint;
     private final boolean enableUsersEndpoint;
 
-    public ServerAuthenticationConfigurationImpl(String userServiceClassName,
-                                                 boolean enableLoginEndpoint,
-                                                 boolean enableUsersEndpoint) {
+    @JsonCreator
+    public ServerAuthConfigurationImpl(@JsonProperty("userServiceClassName")
+                                         String userServiceClassName,
+                                       @JsonProperty("userServiceClassName")
+                                         boolean enableLoginEndpoint,
+                                       @JsonProperty("userServiceClassName")
+                                         boolean enableUsersEndpoint) {
       this.userServiceClassName = userServiceClassName;
       this.enableLoginEndpoint = enableLoginEndpoint;
       this.enableUsersEndpoint = enableUsersEndpoint;
     }
 
-    public ServerAuthenticationConfigurationImpl() {
-      userServiceClassName = "com.dremio.iceberg.server.auth.BasicUserService";
-      enableLoginEndpoint = true;
-      enableUsersEndpoint = true;
+    public ServerAuthConfigurationImpl() {
+      this("com.dremio.iceberg.server.auth.BasicUserService", true, true);
     }
 
     @Override
@@ -168,10 +220,11 @@ public class ServerConfigurationImpl implements ServerConfiguration {
       this(19120, true, true, true);
     }
 
-    public ServiceConfigurationImpl(int port,
-                                    boolean ui,
-                                    boolean swagger,
-                                    boolean metrics) {
+    @JsonCreator
+    public ServiceConfigurationImpl(@JsonProperty("port") int port,
+                                    @JsonProperty("ui") boolean ui,
+                                    @JsonProperty("swagger") boolean swagger,
+                                    @JsonProperty("metrics") boolean metrics) {
       this.port = port;
       this.ui = ui;
       this.swagger = swagger;
@@ -197,5 +250,10 @@ public class ServerConfigurationImpl implements ServerConfiguration {
     public boolean getMetrics() {
       return metrics;
     }
+  }
+
+  private static String getEnv(String jvmName, String envName, String def) {
+    String val = System.getenv(envName);
+    return System.getProperty(jvmName, val == null ? def : val);
   }
 }

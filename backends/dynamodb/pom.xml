@@ -20,14 +20,14 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>iceberg-alley-backends</artifactId>
-    <groupId>com.dremio.iceberg</groupId>
+    <artifactId>nessie-backends</artifactId>
+    <groupId>com.dremio.nessie</groupId>
     <version>1.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <name>Iceberg Alley - Backends - Dynamodb</name>
-  <artifactId>iceberg-alley-backends-dynamodb</artifactId>
+  <name>Nessie - Backends - Dynamodb</name>
+  <artifactId>nessie-backends-dynamodb</artifactId>
 
   <build>
     <plugins>
@@ -66,7 +66,7 @@
               <overWriteReleases>false</overWriteReleases>
               <overWriteSnapshots>false</overWriteSnapshots>
               <overWriteIfNewer>true</overWriteIfNewer>
-              <excludeGroupIds>com.dremio.iceberg,com.amazonaws,org.slf4j,org.eclipse.jetty,junit
+              <excludeGroupIds>com.dremio.nessie,com.amazonaws,org.slf4j,org.eclipse.jetty,junit
               </excludeGroupIds>
               <excludeTransitive>true</excludeTransitive>
             </configuration>
@@ -77,8 +77,8 @@
   </build>
   <dependencies>
     <dependency>
-      <groupId>com.dremio.iceberg</groupId>
-      <artifactId>iceberg-alley-model</artifactId>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-model</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -92,36 +92,6 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>DynamoDBLocal</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.almworks.sqlite4java</groupId>
-      <artifactId>libsqlite4java-linux-i386</artifactId>
-      <type>so</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.almworks.sqlite4java</groupId>
-      <artifactId>libsqlite4java-linux-amd64</artifactId>
-      <type>so</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.almworks.sqlite4java</groupId>
-      <artifactId>sqlite4java-win32-x64</artifactId>
-      <type>dll</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.almworks.sqlite4java</groupId>
-      <artifactId>sqlite4java-win32-x86</artifactId>
-      <type>dll</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.almworks.sqlite4java</groupId>
-      <artifactId>libsqlite4java-osx</artifactId>
-      <type>dylib</type>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -140,4 +110,49 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <activation>
+        <os><family>unix</family></os>
+      </activation>
+      <id>linux</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.almworks.sqlite4java</groupId>
+          <artifactId>libsqlite4java-linux-amd64</artifactId>
+          <type>so</type>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <activation>
+        <os><family>mac</family></os>
+      </activation>
+      <id>mac</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.almworks.sqlite4java</groupId>
+          <artifactId>libsqlite4java-osx</artifactId>
+          <type>dylib</type>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <activation>
+        <os><family>windows</family></os>
+      </activation>
+      <id>windows</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.almworks.sqlite4java</groupId>
+          <artifactId>sqlite4java-win32-x64</artifactId>
+          <type>dll</type>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>
