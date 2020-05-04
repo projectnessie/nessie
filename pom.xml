@@ -29,8 +29,6 @@
   <modules>
     <module>model</module>
     <module>server</module>
-    <module>client</module>
-    <module>deltalake</module>
     <module>distribution</module>
     <module>backends</module>
     <module>ui</module>

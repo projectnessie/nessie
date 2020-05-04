@@ -1,0 +1,50 @@
+#
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS Serverless Jersey API - my.service::jersey-sample
+Resources:
+  JerseyNessieFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: com.dremio.nessie.serverless.NessieLambda::handleRequest
+      Runtime: java8
+      CodeUri: target/nessie-serverless-1.0-SNAPSHOT.jar
+      MemorySize: 512
+      Policies: AWSLambdaBasicExecutionRole
+      Timeout: 60
+      Environment:
+        Variables:
+          NESSIE_DB_PROPS_REGION: !Ref DynamoRegion
+          NESSIE_DB_PROPS_ENDPOINT: !Ref DynamoEndpoint
+      Events:
+        GetResource:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: any
+Parameters:
+  DynamoEndpoint:
+    Type: String
+  DynamoRegion:
+    Type: String
+Outputs:
+  JerseyNessieApi:
+    Description: URL for application
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/objects'
+    Export:
+      Name: JerseyNessieApi
