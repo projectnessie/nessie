@@ -1,0 +1,428 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1853e1b8_802c86e0",
+        "filename": "backends/dynamodb/pom.xml",
+        "patchSetId": 9
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "there should probably be some warnings already, but it\u0027s better/easier to simply pass all properties using systemPropertyVariable (vs argline). And so you have kind of duplicates too...",
+      "range": {
+        "startLine": 38,
+        "startChar": 30,
+        "endLine": 39,
+        "endChar": 59
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed55bed9_b8e063da",
+        "filename": "backends/dynamodb/pom.xml",
+        "patchSetId": 9
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "my guess is that we could the os-plugin to get the right version? (it is also super old dependency...)",
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fbea796_85256a78",
+        "filename": "backends/dynamodb/pom.xml",
+        "patchSetId": 9
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "maybe for the next patches, we should consider migrating to junit5 directly since it\u0027s a new project...",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 156,
+        "endChar": 16
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b668ebd_98d8111b",
+        "filename": "backends/simple/src/main/java/com/dremio/iceberg/backend/simple/InMemory.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "it is probably better to make it instance fields and allow to create multiple InMemory backends instead (singleton as static fields is usually a smell pattern, notably because it creates coupling and make testing very hard...)",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 37,
+        "endChar": 59
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27d79745_81a0936f",
+        "filename": "backends/simple/src/main/java/com/dremio/iceberg/backend/simple/InMemory.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "since namespace/names are constants, we don\u0027t need to add the filters operations if they are null instead of doing the check for each object? (Compiler won\u0027t probably optimize it, not sure if the JVM would be)\n\n(this happens in several places)",
+      "range": {
+        "startLine": 81,
+        "startChar": 19,
+        "endLine": 92,
+        "endChar": 21
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2e32ad5_9e6401fc",
+        "filename": "backends/simple/src/main/java/com/dremio/iceberg/backend/simple/InMemory.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "no version check? (same for other places)?",
+      "range": {
+        "startLine": 104,
+        "startChar": 4,
+        "endLine": 107,
+        "endChar": 5
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3117050d_2965e52f",
+        "filename": "backends/simple/src/main/java/com/dremio/iceberg/backend/simple/InMemory.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "I wonder if you could use a generic class instead of separate implementations...\n\n  public static class EntityBackendImpl\u003cT extends Base\u003e implements EntityBackend\u003cT\u003e {\n    private final Map\u003cString, VersionedWrapper\u003cT\u003e\u003e entities \u003d new HashMap\u003c\u003e();\n    private final String entityName;\n\n   public EntityBackendImpl(String entityName) {\n     this.entityName \u003d Preconditions.checkNotNull(entityName);\n   }\n\n    ...\n  }",
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09f0c510_03072d65",
+        "filename": "backends/simple/src/main/java/com/dremio/iceberg/backend/simple/InMemory.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "I don\u0027t think this should be static but per instance...",
+      "range": {
+        "startLine": 121,
+        "startChar": 12,
+        "endLine": 121,
+        "endChar": 18
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f38016e7_b63af024",
+        "filename": "backends/simple/src/main/java/com/dremio/iceberg/backend/simple/InMemory.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "(style) those guava methods are deprecated...",
+      "range": {
+        "startLine": 121,
+        "startChar": 67,
+        "endLine": 121,
+        "endChar": 85
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4dfac0ef_13791a63",
+        "filename": "checkstyle/checkstyle-config.xml",
+        "patchSetId": 9
+      },
+      "lineNbr": 314,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "😉",
+      "range": {
+        "startLine": 309,
+        "startChar": 0,
+        "endLine": 314,
+        "endChar": 24
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "544ee27f_d539be71",
+        "filename": "client/src/main/java/com/dremio/iceberg/client/AlleyCatalog.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "It looks like it uses String.format format (%s). AFAIK {} placeholder is only used by slf4j",
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a09a7e5_db15ed4a",
+        "filename": "client/src/main/java/com/dremio/iceberg/client/AlleyCatalog.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "I\u0027m always suspicious about catching Throwable... Do we want to wrap things like VirtualMachineError for example...",
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8c788c4_44eb63e0",
+        "filename": "client/src/main/java/com/dremio/iceberg/client/AlleyClient.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "Hadoop Configuration is not that great. Wonder if we should have something better for that class, and maybe a factory method to convert a Hadoop configuration into this new class internally",
+      "range": {
+        "startLine": 42,
+        "startChar": 21,
+        "endLine": 42,
+        "endChar": 41
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f84f0a9_aa8bed42",
+        "filename": "client/src/main/java/com/dremio/iceberg/client/AlleyClient.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "Why not passing URL directly? (it could also allow for adding a path component too which could be nice for Dremio or other servers...)",
+      "range": {
+        "startLine": 44,
+        "startChar": 0,
+        "endLine": 46,
+        "endChar": 72
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9df12dbe_5a6b56fc",
+        "filename": "client/src/main/java/com/dremio/iceberg/client/AlleyClient.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "doesn\u0027t jwt provides some expiration date, maybe frequency should be based on that?",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 68
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66126f75_40d46a68",
+        "filename": "client/src/main/java/com/dremio/iceberg/client/BaseClient.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "Having this client managing the cache is probably not a great long term solution. First it is unbounded with no expiration policy, and also we have no idea how to retain objects. Probably something which need to be explroed more...",
+      "range": {
+        "startLine": 143,
+        "startChar": 0,
+        "endLine": 148,
+        "endChar": 5
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a53c282_fc08e82c",
+        "filename": "client/src/main/java/com/dremio/iceberg/client/BaseClient.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "creating a new client each time means we are paying for extra latency (we should probably align the client lifetime to the Alley client lifetime...)",
+      "range": {
+        "startLine": 155,
+        "startChar": 4,
+        "endLine": 163,
+        "endChar": 5
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "780ad2dc_d91e6c0e",
+        "filename": "client/src/main/java/com/dremio/iceberg/client/rest/ConflictException.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "we should probably avoid throwing an exception while creating a new exception...",
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e7c16c5_415d63a6",
+        "filename": "client/src/main/java/com/dremio/iceberg/client/tag/Tag.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "are we committing a new tag or the current tag?",
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f8b36d7_d7c58553",
+        "filename": "client/src/main/java/com/dremio/iceberg/client/tag/Tag.java",
+        "patchSetId": 9
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "javadoc?",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 20
+      },
+      "revId": "0b9f70900e5d23cfe76cd183b5b821fb3dd4c5c7",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    }
+  ]
+}

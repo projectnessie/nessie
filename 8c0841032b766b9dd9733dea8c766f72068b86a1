@@ -335,6 +335,30 @@
     },
     {
       "key": {
+        "uuid": "c8f0ef7a_703ac9b2",
+        "filename": "backends/dynamodb/pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "that\u0027s something we can address by adding it to dependencyManagement (which basically allow to force the version for dependencies, including transitive dependencies)",
+      "parentUuid": "9e4ada26_a28c3429",
+      "range": {
+        "startLine": 94,
+        "startChar": 6,
+        "endLine": 99,
+        "endChar": 19
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ddbd6ed2_f019fe5e",
         "filename": "backends/dynamodb/src/main/java/com/dremio/iceberg/backend/dynamodb/AbstractEntityDynamoDBBackend.java",
         "patchSetId": 4
@@ -868,6 +892,24 @@
       "side": 1,
       "message": "Done",
       "parentUuid": "de785b7e_d7d65ca8",
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff27262a_b1630ebe",
+        "filename": "backends/dynamodb/src/test/java/com/dremio/iceberg/backend/dynamodb/TestDynamo.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "convention based: surefire by default looks for classes with Test in the name, failsafe looks for IT (Integration Test)",
+      "parentUuid": "96380676_c04313d1",
       "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
       "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
       "unresolved": true
@@ -1978,6 +2020,30 @@
     },
     {
       "key": {
+        "uuid": "ff4d888a_5d759a80",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "There are enums you can use for status code (Response.Status)",
+      "parentUuid": "0caf8bbb_5bb51f64",
+      "range": {
+        "startLine": 119,
+        "startChar": 29,
+        "endLine": 119,
+        "endChar": 32
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "77ba38f3_138bf63f",
         "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
         "patchSetId": 4
@@ -2013,6 +2079,30 @@
       "side": 1,
       "message": "Agreed re responses. Do you mean structured in the sense of JSON?",
       "parentUuid": "77ba38f3_138bf63f",
+      "range": {
+        "startLine": 118,
+        "startChar": 4,
+        "endLine": 120,
+        "endChar": 5
+      },
+      "revId": "8c0841032b766b9dd9733dea8c766f72068b86a1",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d06d6c67_be205bed",
+        "filename": "server/src/main/java/com/dremio/iceberg/server/rest/ListTables.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-05-04T06:15:12Z",
+      "side": 1,
+      "message": "Yes",
+      "parentUuid": "dc4daf77_03757fa3",
       "range": {
         "startLine": 118,
         "startChar": 4,
