@@ -40,11 +40,16 @@ abstract class AbstractEntityDynamoDbBackend<T extends Base, M> implements Entit
 
   private final DynamoDbClient client;
   private final DynamoDbTable<T> table;
+  private final String namespace;
+  private final DynamoDbEnhancedClient mapper;
 
   public AbstractEntityDynamoDbBackend(DynamoDbClient client,
                                        DynamoDbEnhancedClient mapper,
                                        Class<T> clazz,
-                                       String tableName) {
+                                       String tableName,
+                                       String namespace) {
+    this.namespace = namespace;
+    this.mapper = mapper;
     TableSchema<T> schema = TableSchema.fromBean(clazz);
     table = mapper.table(tableName, schema);
     this.client = client;
@@ -58,7 +63,24 @@ abstract class AbstractEntityDynamoDbBackend<T extends Base, M> implements Entit
   public VersionedWrapper<M> get(String name) {
     T obj = table.getItem(GetItemEnhancedRequest.builder()
                                                 .consistentRead(true)
-                                                .key(Key.builder().partitionValue(name).build())
+                                                .key(Key.builder()
+                                                        .partitionValue(name)
+                                                        .build())
+                                                .build());
+    if (obj == null) {
+      return null;
+    }
+    return fromDynamoDB(obj);
+  }
+
+  @Override
+  public VersionedWrapper<M> get(String name, String sortKey) {
+    T obj = table.getItem(GetItemEnhancedRequest.builder()
+                                                .consistentRead(true)
+                                                .key(Key.builder()
+                                                        .partitionValue(name)
+                                                        .sortValue(sortKey)
+                                                        .build())
                                                 .build());
     if (obj == null) {
       return null;
@@ -73,9 +95,11 @@ abstract class AbstractEntityDynamoDbBackend<T extends Base, M> implements Entit
     Expression.Builder builder = Expression.builder();
     String expression = "";
     Map<String, AttributeValue> values = new HashMap<>();
+    Map<String, String> expressions = new HashMap<>();
     if (namespace != null && !namespace.isEmpty()) {
-      expression += "namespace = :nspc";
+      expression += "#t = :nspc";
       values.put(":nspc", AttributeValue.builder().s(namespace).build());
+      expressions.put("#t", this.namespace);
     }
     if (name != null) {
       if (expression.isEmpty()) {
@@ -84,8 +108,9 @@ abstract class AbstractEntityDynamoDbBackend<T extends Base, M> implements Entit
         expression += " and #n = :nval";
       }
       values.put(":nval", AttributeValue.builder().s(name).build());
-      builder.expressionNames(ImmutableMap.of("#n", "name"));
+      expressions.put("#n", "name");
     }
+    builder.expressionNames(expressions);
     if (!includeDeleted) {
       if (expression.isEmpty()) {
         expression += "deleted = :delval";

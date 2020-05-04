@@ -18,6 +18,7 @@ package com.dremio.iceberg.backend.simple;
 
 import com.dremio.iceberg.backend.Backend;
 import com.dremio.iceberg.backend.EntityBackend;
+import com.dremio.iceberg.model.GitContainer;
 import com.dremio.iceberg.model.Table;
 import com.dremio.iceberg.model.Tag;
 import com.dremio.iceberg.model.User;
@@ -48,6 +49,11 @@ public class InMemory implements Backend {
 
   @Override
   public EntityBackend<User> userBackend() {
+    throw new UnsupportedOperationException("cant use in memory backend with database");
+  }
+
+  @Override
+  public EntityBackend<GitContainer> gitBackend() {
     throw new UnsupportedOperationException("cant use in memory backend with database");
   }
 

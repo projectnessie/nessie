@@ -28,7 +28,7 @@ public class TableDynamoDbBackend
     extends AbstractEntityDynamoDbBackend<Table, com.dremio.iceberg.model.Table> {
 
   public TableDynamoDbBackend(DynamoDbClient client, DynamoDbEnhancedClient mapper) {
-    super(client, mapper, Table.class, "IcebergAlleyTables");
+    super(client, mapper, Table.class, "NessieTables", "namespace");
   }
 
   @Override
