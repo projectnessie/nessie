@@ -38,7 +38,7 @@
   <packaging>pom</packaging>
 
   <properties>
-    <awssdk.version>2.13.3</awssdk.version>
+    <awssdk.version>2.13.31</awssdk.version>
     <bouncycastle.version>1.60</bouncycastle.version>
     <deltalake.version>0.5.0</deltalake.version>
     <dropwizard.version>4.1.5</dropwizard.version>
@@ -957,6 +957,11 @@ limitations under the License.
         <groupId>org.immutables</groupId>
         <artifactId>value</artifactId>
         <version>${immutables.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jgit</groupId>
+        <artifactId>org.eclipse.jgit</artifactId>
+        <version>5.7.0.202003110725-r</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

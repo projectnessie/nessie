@@ -33,6 +33,17 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <configuration>
           <argLine>@{argLine} -Dsqlite4java.library.path=${basedir}/target/dependencies
@@ -113,41 +124,6 @@
       <artifactId>jetty-client</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.almworks.sqlite4java</groupId>
-      <artifactId>libsqlite4java-linux-i386</artifactId>
-      <version>${sqlite.version}</version>
-      <type>so</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.almworks.sqlite4java</groupId>
-      <artifactId>libsqlite4java-linux-amd64</artifactId>
-      <version>${sqlite.version}</version>
-      <type>so</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.almworks.sqlite4java</groupId>
-      <artifactId>sqlite4java-win32-x64</artifactId>
-      <version>${sqlite.version}</version>
-      <type>dll</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.almworks.sqlite4java</groupId>
-      <artifactId>sqlite4java-win32-x86</artifactId>
-      <version>${sqlite.version}</version>
-      <type>dll</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.almworks.sqlite4java</groupId>
-      <artifactId>libsqlite4java-osx</artifactId>
-      <version>${sqlite.version}</version>
-      <type>dylib</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
@@ -163,4 +139,52 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <activation>
+        <os><family>unix</family></os>
+      </activation>
+      <id>linux</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.almworks.sqlite4java</groupId>
+          <artifactId>libsqlite4java-linux-amd64</artifactId>
+          <version>${sqlite.version}</version>
+          <type>so</type>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <activation>
+        <os><family>mac</family></os>
+      </activation>
+      <id>mac</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.almworks.sqlite4java</groupId>
+          <artifactId>libsqlite4java-osx</artifactId>
+          <version>${sqlite.version}</version>
+          <type>dylib</type>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <activation>
+        <os><family>windows</family></os>
+      </activation>
+      <id>windows</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.almworks.sqlite4java</groupId>
+          <artifactId>sqlite4java-win32-x64</artifactId>
+          <version>${sqlite.version}</version>
+          <type>dll</type>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>
