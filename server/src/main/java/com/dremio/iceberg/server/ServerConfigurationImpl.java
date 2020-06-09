@@ -106,6 +106,12 @@ public class ServerConfigurationImpl implements ServerConfiguration {
       dbProps = new HashMap<>();
     }
 
+    public ServerDatabaseConfigurationImpl(String dbClassName,
+                                           Map<String, String> dbProps) {
+      this.dbClassName = dbClassName;
+      this.dbProps = dbProps;
+    }
+
     @Override
     public String getDbClassName() {
       return dbClassName;

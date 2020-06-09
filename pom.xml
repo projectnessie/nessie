@@ -38,7 +38,7 @@
   <packaging>pom</packaging>
 
   <properties>
-    <awssdk.version>2.13.3</awssdk.version>
+    <awssdk.version>2.13.31</awssdk.version>
     <bouncycastle.version>1.60</bouncycastle.version>
     <deltalake.version>0.5.0</deltalake.version>
     <dropwizard.version>4.1.5</dropwizard.version>

@@ -17,6 +17,7 @@
 package com.dremio.iceberg.backend;
 
 
+import com.dremio.iceberg.model.GitContainer;
 import com.dremio.iceberg.model.Table;
 import com.dremio.iceberg.model.Tag;
 import com.dremio.iceberg.model.User;
@@ -32,6 +33,8 @@ public interface Backend extends AutoCloseable {
   EntityBackend<Tag> tagBackend();
 
   EntityBackend<User> userBackend();
+
+  EntityBackend<GitContainer> gitBackend();
 
   /**
    * factory interface to create a backend. All backends must have a Factory
