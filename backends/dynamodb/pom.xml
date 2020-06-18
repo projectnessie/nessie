@@ -54,7 +54,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.1.1</version>
         <executions>
           <execution>
             <id>copy-dependencies</id>
@@ -82,16 +81,9 @@
       <artifactId>iceberg-alley-model</artifactId>
       <version>${project.version}</version>
     </dependency>
-
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>dynamodb-enhanced</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -101,49 +93,34 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>DynamoDBLocal</artifactId>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-client</artifactId>
     </dependency>
     <dependency>
       <groupId>com.almworks.sqlite4java</groupId>
       <artifactId>libsqlite4java-linux-i386</artifactId>
-      <version>${sqlite.version}</version>
       <type>so</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.almworks.sqlite4java</groupId>
       <artifactId>libsqlite4java-linux-amd64</artifactId>
-      <version>${sqlite.version}</version>
       <type>so</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.almworks.sqlite4java</groupId>
       <artifactId>sqlite4java-win32-x64</artifactId>
-      <version>${sqlite.version}</version>
       <type>dll</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.almworks.sqlite4java</groupId>
       <artifactId>sqlite4java-win32-x86</artifactId>
-      <version>${sqlite.version}</version>
       <type>dll</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.almworks.sqlite4java</groupId>
       <artifactId>libsqlite4java-osx</artifactId>
-      <version>${sqlite.version}</version>
       <type>dylib</type>
       <scope>test</scope>
     </dependency>

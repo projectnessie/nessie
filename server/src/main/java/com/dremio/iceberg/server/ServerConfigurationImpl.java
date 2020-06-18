@@ -18,7 +18,6 @@ package com.dremio.iceberg.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.Maps;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
@@ -81,10 +80,14 @@ public class ServerConfigurationImpl implements ServerConfiguration {
 
     @Override
     public ServerConfiguration provide() {
+      final URL config = getClass().getClassLoader().getResource("config.yaml");
+      if (config == null) {
+        logger.info("No config found, continuing with defaults");
+        return new ServerConfigurationImpl();
+      }
       try {
-        URL config = getClass().getClassLoader().getResource("config.yaml");
         return mapper.readValue(config, ServerConfigurationImpl.class);
-      } catch (IOException | NullPointerException e) {
+      } catch (IOException e) {
         logger.error("Unable to read config, continuing with defaults", e);
         return new ServerConfigurationImpl();
       }
