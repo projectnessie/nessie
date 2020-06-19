@@ -99,6 +99,33 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <configuration>
+          <to>iceberg-alley</to>
+          <container>
+            <mainClass>com.dremio.iceberg.AlleyServer</mainClass>
+            <jvmFlags>
+              <jvmFlag>-Xms512m</jvmFlag>
+              <jvmFlag>-Xmx4g</jvmFlag>
+            </jvmFlags>
+            <ports>
+              <port>19120</port>
+            </ports>
+          </container>
+        </configuration>
+        <executions>
+          <execution>
+            <id>package-docker</id>
+            <phase>package</phase>
+            <goals>
+              <goal>buildTar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <dependencies>
