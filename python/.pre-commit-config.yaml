@@ -1,0 +1,28 @@
+repos:
+-   repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+    - id: black
+      language_version: python3.6
+-   repo: https://github.com/asottile/reorder_python_imports
+    rev: v2.3.0
+    hooks:
+    - id: reorder-python-imports
+      args:
+          - --py3-plus
+          - --application-directories=nessie_client:tests:python/nessie_client:python:tests
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v1.2.3
+    hooks:
+    - id: trailing-whitespace
+    - id: check-added-large-files
+    - id: check-ast
+    - id: check-json
+    - id: debug-statements
+    - id: detect-aws-credentials
+    - id: detect-private-key
+    - id: fix-encoding-pragma
+    - id: requirements-txt-fixer
+    - id: mixed-line-ending
+    - id: check-yaml
+    - id: end-of-file-fixer
