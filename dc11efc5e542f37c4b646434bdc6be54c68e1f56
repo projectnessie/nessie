@@ -1,0 +1,7 @@
+Verified+1: jenkins (via gerrit) <jenkins@dremio.com>
+Code-Review+2: Ryan Murray <rymurr@dremio.com>
+Submitted-by: Laurent Goujon <laurent@dremio.com>
+Submitted-at: Mon, 22 Jun 2020 15:35:52 +0000
+Reviewed-on: https://gerrit.drem.io/gerrit/c/iceberg-alley/+/18324
+Project: iceberg-alley
+Branch: refs/heads/master
