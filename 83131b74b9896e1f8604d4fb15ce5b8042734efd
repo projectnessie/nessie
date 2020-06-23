@@ -1,0 +1,147 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9661a500_ba6aa8d1",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-06-23T19:57:53Z",
+      "side": 1,
+      "message": "Although javac is smart enough to do it internally, it\u0027s still recommended to use StringBuilder to construct the string",
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dce4df3_21f89ec8",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-06-23T19:57:53Z",
+      "side": 1,
+      "message": "isn\u0027t it simpler to use builder#putExpressionValue and builder#putExpressionName and not maintain the maps ourselves?\n\nThere\u0027s also some confusion about namespace vs this.namespace, the latter being the field name? maybe we should rename one of them to avoid confusion.",
+      "range": {
+        "startLine": 107,
+        "startChar": 6,
+        "endLine": 108,
+        "endChar": 44
+      },
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0981acb_3a810818",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-06-23T19:57:53Z",
+      "side": 1,
+      "message": "looks like we could use a list of clauses and join them together...",
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3d1ac5a_66249b21",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-06-23T19:57:53Z",
+      "side": 1,
+      "message": "is there a reason why not replacing #n with name directly in the expression?",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 117,
+        "endChar": 5
+      },
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e03bce3f_59c0cbb7",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/GitObjectDynamoDbBackend.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-06-23T19:57:53Z",
+      "side": 1,
+      "message": "it is not possible to use an empty array?",
+      "range": {
+        "startLine": 40,
+        "startChar": 44,
+        "endLine": 40,
+        "endChar": 58
+      },
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddf87ad6_fc841d76",
+        "filename": "clients/client/src/main/java/com/dremio/nessie/client/RestUtils.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-06-23T19:57:53Z",
+      "side": 1,
+      "message": "I wonder if doing a switch on Response#getStatusInfo()#toEnum() is more readable/idiomatic?",
+      "range": {
+        "startLine": 48,
+        "startChar": 4,
+        "endLine": 71,
+        "endChar": 93
+      },
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4cb4c8e1_67a583f8",
+        "filename": "clients/client/src/main/java/com/dremio/nessie/client/auth/PublicKeyGenerator.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1000015
+      },
+      "writtenOn": "2020-06-23T19:57:53Z",
+      "side": 1,
+      "message": "(security) to address later?, but storing a private key in code is equivalent of storing a password...",
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    }
+  ]
+}
