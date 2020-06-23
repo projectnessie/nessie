@@ -142,6 +142,29 @@
       "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
       "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be5aa146_1be326d1",
+        "filename": "pom.xml",
+        "patchSetId": 13
+      },
+      "lineNbr": 502,
+      "author": {
+        "id": 1000001
+      },
+      "writtenOn": "2020-06-23T23:58:36Z",
+      "side": 1,
+      "message": "I don\u0027t think this should be in the plugins section, only the plugin management section. Then it can be referred to in the one module that needs it (Deltalake, I think)",
+      "range": {
+        "startLine": 478,
+        "startChar": 0,
+        "endLine": 502,
+        "endChar": 15
+      },
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
     }
   ]
 }
