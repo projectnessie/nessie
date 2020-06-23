@@ -8,7 +8,10 @@ from setuptools import setup
 with open("README.rst") as readme_file:
     readme = readme_file.read()
 
-requirements = ["Click>=7.0"]
+with open("HISTORY.rst") as history_file:
+    history = history_file.read()
+
+requirements = ["Click>=7.0", "requests", "simplejson", "confuse", "desert", "marshmallow", "attrs"]
 
 setup_requirements = ["pytest-runner", "pip"]
 
@@ -29,10 +32,10 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     description="Python Boilerplate contains all the boilerplate you need to create a Python package.",
-    entry_points={"console_scripts": ["nessie_client=nessie_client.cli:main",],},
+    entry_points={"console_scripts": ["nessie_client=nessie_client.cli:cli",],},
     install_requires=requirements,
     license="Apache Software License 2.0",
-    long_description=readme,
+    long_description=readme + "\n" + history,
     include_package_data=True,
     keywords="nessie_client",
     name="nessie_client",
