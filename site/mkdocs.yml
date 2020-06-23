@@ -1,0 +1,45 @@
+site_name: Nessie
+site_description: A table metadata controller
+
+remote_name: dremio
+remote_branch: gh-pages
+use_directory_urls: true
+
+theme: cinder
+copyright: "Copyright 2020 Dremio Corporation"
+extra_css:
+  - css/extra.css
+plugins:
+  - redirects
+markdown_extensions:
+  - toc:
+      permalink: True
+  - smarty
+  - sane_lists
+  - extra
+  - tables
+  - admonition
+  - pymdownx.tilde
+nav:
+  - About: index.md
+  - Server:
+    - Getting Started: getting-started.md
+    - Configuration: configuration.md
+    - Branching Model: branches.md
+    - Time Travel: time-travel.md
+  - Java:
+    - Git Repo: https://github.com/dremio/nessie
+    - Quickstart: java-api-quickstart.md
+    - Iceberg: iceberg.md
+    - Delta Lake: delta.md
+    - Javadoc: /javadoc/
+  - Python:
+    - Git Repo: https://github.com/dremio/nessie/tree/master/python
+    - Quickstart: python-quickstart.md
+    - CLI: python-cli.md
+    - PyDoc: /pydoc/
+  - Format:
+    - Spec: spec.md
+  - Nessie on GitHub: https://github.com/dremio/nessie
+redirects:
+  time-travel/index: snapshots/index
