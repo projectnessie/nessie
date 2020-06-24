@@ -18,22 +18,27 @@ package com.dremio.nessie.deltalake;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.Table;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileAlreadyExistsException;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -46,10 +51,13 @@ import org.apache.spark.SparkConf;
  */
 public class DeltaLake extends LogStoreWrapper {
 
+  private static final BigInteger BI_2_64 = BigInteger.ONE.shiftLeft(64);
+
   private final SparkConf sparkConf;
   private final Configuration configuration;
-  private final String baseDirectory;
   private final NessieClient client;
+  private final AtomicReference<Branch> branch;
+
 
   /**
    * Construct the Nessie Delta Lake Log store.
@@ -57,14 +65,22 @@ public class DeltaLake extends LogStoreWrapper {
   public DeltaLake(SparkConf sparkConf, Configuration config) {
     this.sparkConf = sparkConf;
     this.configuration = config;
-    // base dir should come from config
-    this.baseDirectory = "/home/ryan/workspace/iceberg/python/";
     String path = config.get("nessie.url");
     String username = config.get("nessie.username");
     String password = config.get("nessie.password");
     String authTypeStr = config.get("nessie.auth.type");
-    AuthType authType = AuthType.valueOf(authTypeStr);
+    AuthType authType = AuthType.valueOf(authTypeStr.toUpperCase());
     this.client = new NessieClient(authType, path, username, password);
+    branch = new AtomicReference<>(getOrCreate(config.get("nessie.view-branch",
+                                                          client.getConfig().getDefaultBranch())));
+  }
+
+  private Branch getOrCreate(String branchName) {
+    Branch branch = client.getBranch(branchName);
+    if (branch == null) {
+      branch = client.createBranch(ImmutableBranch.builder().name(branchName).id("master").build());
+    }
+    return branch;
   }
 
   /**
@@ -75,84 +91,108 @@ public class DeltaLake extends LogStoreWrapper {
   }
 
   private String extractTableName(Path path) {
-    String[] pathParts = path.getName().replace(baseDirectory, "").split("_delta_log");
-    return pathParts[0].replace("/", "");
+    return path.getParent().getParent().toUri().getPath();
   }
 
   /**
    * Read data from path.
    */
+  @Override
   public List<String> readImpl(Path path) throws IOException {
     FileSystem fs = path.getFileSystem(configuration);
     // todo don't read if it a path is greater than the current pointer
-    try (FSDataInputStream stream = fs.open(path)) {
+    Table table = client.getTable(branch.get().getName(),
+                                  path.getParent().getParent().toUri().getPath(),
+                                  null);
+    if (table == null) {
+      throw new FileNotFoundException(path.toString() + " does not exist");
+    }
+    Path metadataPath = new Path(table.getMetadataLocation());
+    String extension = FilenameUtils.getExtension(metadataPath.getName());
+    String requestedExtension = FilenameUtils.getExtension(path.getName());
+    Path requestedPath = new Path(metadataPath.getParent(),
+                                  metadataPath.getName().replace(extension, requestedExtension));
+    try (FSDataInputStream stream = fs.open(requestedPath)) {
       BufferedReader reader =
-          new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+        new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
       return IOUtils.readLines(reader).stream().map(String::trim).collect(Collectors.toList());
     }
   }
 
-  private void overwrite(Path path, FileSystem fs, List<String> actions, boolean isMetadata)
-      throws IOException {
-    //todo this isn't safe
-    try (FSDataOutputStream stream = fs.create(path, true)) {
-      for (String x : actions) {
-        String str = x + "\n";
-        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
-        stream.write(bytes);
-      }
-    }
+  private Path unConvertPath(Path path) {
+    String originalFilename = path.getName();
+    String extension = "." + FilenameUtils.getExtension(originalFilename);
+    String file = originalFilename.replace(extension, "");
 
-    if (isMetadata) {
-      for (int i = 0; i < 5; i++) {
-        try {
-          //todo namespace
-          Table table =
-              client.getTable("master", extractTableName(path), null);
-          table = ImmutableTable.builder().from(table).metadataLocation(path.toString()).build();
-          client.commit(client.getBranch("master"), table);
-        } catch (RuntimeException e) {
-          // pass
-        }
-      }
-    }
+    return new Path(path.getParent(), file.substring(0, 20) + extension);
   }
 
-  private void noOverwrite(Path path, FileSystem fs, List<String> actions, boolean isMetadata)
-      throws IOException {
-    //todo this isn't safe
-    if (fs.exists(path)) {
-      throw new FileAlreadyExistsException(path.toString());
+  private Path convertPath(Path path) {
+    String originalFilename = path.getName();
+    String extension = "." + FilenameUtils.getExtension(originalFilename);
+    String file = originalFilename.replace(extension, "");
+    Long fileId = Long.parseLong(file);
+    long uuid = ThreadLocalRandom.current().nextLong(1_000L);
+
+    long newFileId = uuid;
+    if (newFileId > (long) Integer.MAX_VALUE) {
+      throw new UnsupportedOperationException("Too many snapshots! " + newFileId);
     }
-    boolean streamClosed = false; // This flag is to avoid double close
-    boolean renameDone = false; // This flag is to save the delete operation in most of cases.
-    FSDataOutputStream stream = fs.create(path);
-    try {
+    return new Path(path.getParent(), String.format("%020d", newFileId) + extension);
+  }
+
+  private Path convertPathForMaster(Path path, Path originalPath) {
+    String originalFilename = originalPath.getName();
+    String extension = "." + FilenameUtils.getExtension(originalFilename);
+    String file = originalFilename.replace(extension, "");
+    Long fileId = Long.parseLong(file) + 1;
+    String newFileId = String.format("%08d%012d", fileId, 0L);
+
+    return new Path(path.getParent(), newFileId + extension);
+  }
+
+  private void doWrite(Path path, FileSystem fs, List<String> actions, boolean isMetadata)
+    throws IOException {
+
+    Path newPath = convertPath(path);
+
+    try (FSDataOutputStream stream = fs.create(newPath)) {
       for (String s : actions) {
         String s1 = s + "\n";
         byte[] bytes = s1.getBytes(StandardCharsets.UTF_8);
         stream.write(bytes);
       }
-      stream.close();
-      streamClosed = true;
-      if (isMetadata) {
-        try {
-          //todo namespace
-          Table table =
-              client.getTable("master", extractTableName(path), null);
-          table = ImmutableTable.builder().from(table).metadataLocation(path.toString()).build();
-          client.commit(client.getBranch("master"), table);
-          renameDone = true;
-        } catch (RuntimeException e) {
-          throw new FileNotFoundException(path.toString());
+    }
+    if (isMetadata) {
+      try {
+        String tableName = extractTableName(newPath);
+        Table table = client.getTable(branch.get().getName(), tableName, null);
+        if (table == null) {
+          table = ImmutableTable.builder()
+                                .id(tableName)
+                                .name(tableName)
+                                .metadataLocation(newPath.toString())
+                                //todo metadata
+                                .build();
+        } else {
+          table = ImmutableTable.builder()
+                                .from(table)
+                                .metadataLocation(newPath.getName())
+                                //todo metadata
+                                .build();
         }
-      }
-    } finally {
-      if (!streamClosed) {
-        stream.close();
-      }
-      if (!renameDone) {
-        fs.delete(path, false);
+        client.commit(branch.get(), table);
+//        if (branch.get().getName().equals("master")) {
+//          try (FSDataOutputStream masterStream = fs.create(convertPathForMaster(newPath, path))) {
+//            for (String s : actions) {
+//              String s1 = s + "\n";
+//              byte[] bytes = s1.getBytes(StandardCharsets.UTF_8);
+//              masterStream.write(bytes);
+//            }
+//          }
+//        }
+      } catch (RuntimeException e) {
+        throw new FileNotFoundException(path.toString());
       }
     }
   }
@@ -160,28 +200,30 @@ public class DeltaLake extends LogStoreWrapper {
   /**
    * Write data to path.
    */
+  @Override
   public void writeImpl(Path path, List<String> actions, boolean overwrite) throws IOException {
     FileSystem fs = path.getFileSystem(configuration);
 
     if (!fs.exists(path.getParent())) {
       throw new FileNotFoundException("No such file or directory: ${path.getParent}");
     }
-    boolean isMetadata = !path.toString()
-                              .endsWith("crc")
-                         && !path.toString()
-                                 .endsWith("checkpoint");
-    if (overwrite) {
-      overwrite(path, fs, actions, isMetadata);
-    } else {
-      noOverwrite(path, fs, actions, isMetadata);
-    }
+    boolean isMetadata = !path.toString().endsWith("crc")
+                         && !path.toString().endsWith("checkpoint");
+    doWrite(path, fs, actions, isMetadata);
   }
 
   /**
    * List all data at this path.
    */
+  @Override
   public List<FileStatus> listFromImpl(Path path) throws IOException {
     // todo remove from this list any file that is greater than the current pointer
+    Table table = client.getTable(branch.get().getName(),
+                                  path.getParent().getParent().toUri().getPath(),
+                                  null);
+    if (table == null) {
+      throw new FileNotFoundException(path.toString() + " does not exist");
+    }
     FileSystem fs = path.getFileSystem(configuration);
     if (!fs.exists(path.getParent())) {
       throw new FileNotFoundException("No such file or directory: ${path.getParent}");
@@ -189,12 +231,36 @@ public class DeltaLake extends LogStoreWrapper {
     FileStatus[] files = fs.listStatus(path.getParent());
     List<FileStatus> collect = new ArrayList<>();
     for (FileStatus file : files) {
-      if (file.getPath().getName().compareTo(path.getName()) >= 0) {
+      String filename = file.getPath().getName();
+      String currentMetadataName = new Path(table.getMetadataLocation()).getName();
+      if (filename.equals(currentMetadataName)) {
+        file.setPath(file.getPath());
         collect.add(file);
       }
+    }
+    if (collect.size() == 1) {
+      path = collect.get(0).getPath();
+      String extension = "." + FilenameUtils.getExtension(path.getName());
+      String file = path.getName().replace(extension, "");
+      int endId = Math.toIntExact(Long.parseLong(file));
+      List<FileStatus> statuses = getAll(endId, path.getParent(), FilenameUtils.getExtension(path.getName()));
+      statuses.add(endId, collect.get(0));
+      return statuses;
     }
     collect.sort(Comparator.comparing(p -> p.getPath().getName()));
     return collect;
   }
 
+  private static List<FileStatus> getAll(int endId, Path parent, String extension) {
+    List<FileStatus> results = new ArrayList<FileStatus>(endId+1);
+    for (int i = 0; i < endId; i++) {
+      results.add(i, get(i, parent, extension));
+    }
+    return results;
+  }
+
+  private static FileStatus get(long id, Path parent, String extension) {
+    Path path = new Path(parent, String.format("%020d.%s", id, extension));
+    return new FileStatus(1, false, 0, 0, 0, path);
+  }
 }

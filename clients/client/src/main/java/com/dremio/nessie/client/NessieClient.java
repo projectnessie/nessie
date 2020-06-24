@@ -21,9 +21,13 @@ import com.dremio.nessie.client.auth.BasicAuth;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.Table;
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import java.io.Closeable;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Entity;
@@ -98,18 +102,21 @@ public class NessieClient implements Closeable {
    */
   public Table getTable(String branch, String name, String namespace) {
     String table = (namespace == null) ? name : (namespace + "." + name);
-    Response response = client.get(endpoint,
-                                   SLASH.join("objects", branch, table),
-                                   MediaType.APPLICATION_JSON,
-                                   checkKey())
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .get();
+
     try {
+      table = URLEncoder.encode(table, StandardCharsets.UTF_8.toString());
+      Response response = client.get(endpoint,
+                                     SLASH.join("objects", branch, table),
+                                     MediaType.APPLICATION_JSON,
+                                     checkKey())
+                                .accept(MediaType.APPLICATION_JSON_TYPE)
+                                .get();
       RestUtils.checkResponse(response);
-    } catch (NotFoundException e) {
+      return response.readEntity(Table.class);
+    } catch (NotFoundException | UnsupportedEncodingException e) {
       return null;
     }
-    return response.readEntity(Table.class);
+
   }
 
   /**
