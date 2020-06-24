@@ -17,6 +17,8 @@
 package com.dremio.nessie.deltalake;
 
 import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.Table;
 import java.io.BufferedReader;
@@ -27,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -47,18 +50,26 @@ public class DeltaLake extends LogStoreWrapper {
 
   private final SparkConf sparkConf;
   private final Configuration configuration;
-  private final String baseDirectory;
   private final NessieClient client;
+  private final AtomicReference<Branch> branch;
 
   public DeltaLake(SparkConf sparkConf, Configuration config) {
     this.sparkConf = sparkConf;
     this.configuration = config;
-    // base dir should come from config
-    this.baseDirectory = "/home/ryan/workspace/iceberg/python/";
     String path = config.get("nessie.url");
     String username = config.get("nessie.username");
     String password = config.get("nessie.password");
     this.client = new NessieClient(path, username, password);
+    branch = new AtomicReference<>(getOrCreate(config.get("nessie.view-branch",
+                                                          client.getConfig().getDefaultBranch())));
+  }
+
+  private Branch getOrCreate(String branchName) {
+    Branch branch = client.getBranch(branchName);
+    if (branch == null) {
+      branch = client.createBranch(ImmutableBranch.builder().name(branchName).id("master").build());
+    }
+    return branch;
   }
 
   /**
@@ -69,10 +80,11 @@ public class DeltaLake extends LogStoreWrapper {
   }
 
   private String extractTableName(Path path) {
-    String[] pathParts = path.getName().replace(baseDirectory, "").split("_delta_log");
+    String[] pathParts = path.getName().replace("xxx", "").split("_delta_log");
     return pathParts[0].replace("/", "");
   }
 
+  @Override
   public List<String> readImpl(Path path) throws IOException {
     FileSystem fs = path.getFileSystem(configuration);
     // todo don't read if it a path is greater than the current pointer
@@ -98,12 +110,12 @@ public class DeltaLake extends LogStoreWrapper {
       for (int i = 0; i < 5; i++) {
         try {
           //todo namespace
-          Table table =
-              client.getTable("master", extractTableName(path), null);
+          Table table = client.getTable("master", extractTableName(path), null);
           table = ImmutableTable.builder().from(table).metadataLocation(path.toString()).build();
           client.commit(client.getBranch("master"), table);
         } catch (RuntimeException e) {
           // pass
+          System.out.println("foobar ");
         }
       }
     }
@@ -129,10 +141,9 @@ public class DeltaLake extends LogStoreWrapper {
       if (isMetadata) {
         try {
           //todo namespace
-          Table table =
-              client.getTable("master", extractTableName(path), null);
+          Table table = client.getTable("master", extractTableName(path), null);
           table = ImmutableTable.builder().from(table).metadataLocation(path.toString()).build();
-          client.commit(client.getBranch("master"), table);
+          client.commit(branch.get(), table);
           renameDone = true;
         } catch (RuntimeException e) {
           throw new FileNotFoundException(path.toString());
@@ -148,6 +159,7 @@ public class DeltaLake extends LogStoreWrapper {
     }
   }
 
+  @Override
   public void writeImpl(Path path, List<String> actions, boolean overwrite) throws IOException {
     FileSystem fs = path.getFileSystem(configuration);
 
@@ -165,6 +177,7 @@ public class DeltaLake extends LogStoreWrapper {
     }
   }
 
+  @Override
   public List<FileStatus> listFromImpl(Path path) throws IOException {
     // todo remove from this list any file that is greater than the current pointer
     FileSystem fs = path.getFileSystem(configuration);
