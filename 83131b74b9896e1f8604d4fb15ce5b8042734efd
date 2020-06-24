@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "becd246b_d2621629",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1000124
+      },
+      "writtenOn": "2020-06-24T13:09:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9661a500_ba6aa8d1",
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2dce4df3_21f89ec8",
         "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
         "patchSetId": 13
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "d7b09ae5_081078ca",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1000124
+      },
+      "writtenOn": "2020-06-24T13:09:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2dce4df3_21f89ec8",
+      "range": {
+        "startLine": 107,
+        "startChar": 6,
+        "endLine": 108,
+        "endChar": 44
+      },
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0981acb_3a810818",
         "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
         "patchSetId": 13
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "85712254_2245a94f",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1000124
+      },
+      "writtenOn": "2020-06-24T13:09:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e0981acb_3a810818",
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a3d1ac5a_66249b21",
         "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
         "patchSetId": 13
@@ -70,6 +130,30 @@
       "writtenOn": "2020-06-23T19:57:53Z",
       "side": 1,
       "message": "is there a reason why not replacing #n with name directly in the expression?",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 117,
+        "endChar": 5
+      },
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0784c7a5_2e252357",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/AbstractEntityDynamoDbBackend.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1000124
+      },
+      "writtenOn": "2020-06-24T13:09:00Z",
+      "side": 1,
+      "message": "name is a reserved word in Dynamo so isn\u0027t usable directly in a clause. weird right?",
+      "parentUuid": "a3d1ac5a_66249b21",
       "range": {
         "startLine": 117,
         "startChar": 0,
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "e7ce5221_6bc36d5a",
+        "filename": "backends/dynamodb/src/main/java/com/dremio/nessie/backend/dynamodb/GitObjectDynamoDbBackend.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1000124
+      },
+      "writtenOn": "2020-06-24T13:09:00Z",
+      "side": 1,
+      "message": "Sadly no :-( dynamo doesn\u0027t accept empty byte array values",
+      "parentUuid": "e03bce3f_59c0cbb7",
+      "range": {
+        "startLine": 40,
+        "startChar": 44,
+        "endLine": 40,
+        "endChar": 58
+      },
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ddf87ad6_fc841d76",
         "filename": "clients/client/src/main/java/com/dremio/nessie/client/RestUtils.java",
         "patchSetId": 13
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "6babba69_c03eea20",
+        "filename": "clients/client/src/main/java/com/dremio/nessie/client/RestUtils.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1000124
+      },
+      "writtenOn": "2020-06-24T13:09:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ddf87ad6_fc841d76",
+      "range": {
+        "startLine": 48,
+        "startChar": 4,
+        "endLine": 71,
+        "endChar": 93
+      },
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4cb4c8e1_67a583f8",
         "filename": "clients/client/src/main/java/com/dremio/nessie/client/auth/PublicKeyGenerator.java",
         "patchSetId": 13
@@ -139,6 +271,24 @@
       "writtenOn": "2020-06-23T19:57:53Z",
       "side": 1,
       "message": "(security) to address later?, but storing a private key in code is equivalent of storing a password...",
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7c140c3_a30b0797",
+        "filename": "clients/client/src/main/java/com/dremio/nessie/client/auth/PublicKeyGenerator.java",
+        "patchSetId": 13
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1000124
+      },
+      "writtenOn": "2020-06-24T13:09:00Z",
+      "side": 1,
+      "message": "I know, this is terrible :-( I have been meaning to set up some time w/ you for a decent security review. It is (clearly) not my forte. Can do this before this is merged or immediately after but before its sent to Expedia",
+      "parentUuid": "4cb4c8e1_67a583f8",
       "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
       "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
       "unresolved": true
@@ -165,6 +315,30 @@
       "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
       "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb4522c8_4ef33638",
+        "filename": "pom.xml",
+        "patchSetId": 13
+      },
+      "lineNbr": 502,
+      "author": {
+        "id": 1000124
+      },
+      "writtenOn": "2020-06-24T13:09:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be5aa146_1be326d1",
+      "range": {
+        "startLine": 478,
+        "startChar": 0,
+        "endLine": 502,
+        "endChar": 15
+      },
+      "revId": "83131b74b9896e1f8604d4fb15ce5b8042734efd",
+      "serverId": "8ca9cf2d-83f4-421d-8552-b009c9e056de",
+      "unresolved": false
     }
   ]
 }
