@@ -48,7 +48,7 @@
     <!-- Version properties -->
     <awssdk.version>2.13.3</awssdk.version>
     <bouncycastle.version>1.60</bouncycastle.version>
-    <deltalake.version>0.5.0</deltalake.version>
+    <deltalake.version>0.6.1</deltalake.version>
     <dropwizard.version>4.1.5</dropwizard.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <guava.version>28.1-jre</guava.version>
@@ -67,7 +67,7 @@
     <prometheus.version>0.8.1</prometheus.version>
     <serverless.version>1.5</serverless.version>
     <slf4j.version>1.7.16</slf4j.version>
-    <spark.version>2.4.4</spark.version>
+    <spark.version>2.4.2</spark.version>
     <sqlite.version>1.0.392</sqlite.version>
   </properties>
 
@@ -481,7 +481,6 @@ limitations under the License.
         <configuration>
           <sendJavaToScalac>false</sendJavaToScalac>
         </configuration>
-        <version>4.3.1</version>
         <executions>
           <execution>
             <id>scala-compile-first</id>
@@ -508,23 +507,8 @@ limitations under the License.
     <dependencies>
       <dependency>
         <groupId>io.delta</groupId>
-        <artifactId>delta-core_2.11</artifactId>
+        <artifactId>delta-core_2.12</artifactId>
         <version>${deltalake.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.spark</groupId>
-        <artifactId>spark-sql_2.11</artifactId>
-        <version>${spark.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.google.protobuf</groupId>
@@ -538,19 +522,49 @@ limitations under the License.
       </dependency>
       <dependency>
         <groupId>org.apache.spark</groupId>
-        <artifactId>spark-core_2.11</artifactId>
+        <artifactId>spark-core_2.12</artifactId>
         <version>${spark.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-core_2.12</artifactId>
+        <version>${spark.version}</version>
+        <classifier>tests</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-sql_2.12</artifactId>
+        <version>${spark.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-sql_2.12</artifactId>
+        <version>${spark.version}</version>
+        <classifier>tests</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-catalyst_2.12</artifactId>
+        <version>${spark.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-catalyst_2.12</artifactId>
+        <version>${spark.version}</version>
+        <classifier>tests</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-hive_2.12</artifactId>
+        <version>${spark.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-hive_2.12</artifactId>
+        <version>${spark.version}</version>
+        <classifier>tests</classifier>
+      </dependency>
+
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
@@ -824,12 +838,12 @@ limitations under the License.
       <dependency>
         <groupId>org.scala-lang</groupId>
         <artifactId>scala-library</artifactId>
-        <version>2.11.6</version>
+        <version>2.12.8</version>
       </dependency>
       <dependency>
         <groupId>org.scalatest</groupId>
-        <artifactId>scalatest_2.11</artifactId>
-        <version>2.2.5</version>
+        <artifactId>scalatest_2.12</artifactId>
+        <version>3.0.5</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
