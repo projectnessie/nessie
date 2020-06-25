@@ -17,15 +17,17 @@
 package com.dremio.nessie.server.auth;
 
 import com.dremio.nessie.jwt.KeyGenerator;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import java.security.Key;
+import java.util.Base64;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * key generator for testing purposes only.
  */
+@SuppressWarnings("LineLength")
 public class BasicKeyGenerator implements KeyGenerator {
-  private static final Key KEY = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+  private static final String KEY_STR = "6pRjiKcViKgqwDi7yhDjPa4Wmdu8vviN2na19uAfm3+1SXuAeYkT44XWlfYztK/Vo1I/gNrNKdZc62j1MvoMyw==";
+  private static Key KEY = new SecretKeySpec(Base64.getDecoder().decode(KEY_STR.getBytes()), "HmacSHA256");
 
   @Override
   public Key generateKey() {

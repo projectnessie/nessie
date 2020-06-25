@@ -1,0 +1,3 @@
+[
+  ["javax.ws.rs.core.UriInfo","org.glassfish.hk2.api.ProxyCtl", "org.glassfish.jersey.server.ExtendedUriInfo", "javax.ws.rs.container.ResourceInfo"]
+]

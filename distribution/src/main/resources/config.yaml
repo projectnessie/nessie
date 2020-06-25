@@ -26,6 +26,6 @@ authenticationConfiguration:
   enableUsersEndpoint: true
 serviceConfiguration:
   port: 19120
-  ui: true
+  ui: false
   swagger: true
   metrics: true

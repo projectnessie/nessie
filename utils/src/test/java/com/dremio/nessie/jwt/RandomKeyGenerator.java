@@ -17,15 +17,21 @@
 package com.dremio.nessie.jwt;
 
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.impl.crypto.MacProvider;
 import java.security.Key;
+import java.util.Base64;
 
 public class RandomKeyGenerator implements KeyGenerator {
 
-  private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+  private final Key key = MacProvider.generateKey(SignatureAlgorithm.HS512);
 
   @Override
   public Key generateKey() {
     return key;
+  }
+
+  public static void main(String[] args) {
+    String key = new String(Base64.getEncoder().encode(new RandomKeyGenerator().key.getEncoded()));
+    System.out.println(key);
   }
 }

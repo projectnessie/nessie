@@ -1,0 +1,20 @@
+{
+  "resources":[
+    {"pattern":"\\QMETA-INF/services/javax.ws.rs.ext.RuntimeDelegate\\E"}, 
+    {"pattern":"\\QMETA-INF/services/org.glassfish.hk2.extension.ServiceLocatorGenerator\\E"}, 
+    {"pattern":"\\QMETA-INF/services/org.glassfish.jersey.internal.inject.InjectionManagerFactory\\E"}, 
+    {"pattern":"\\QMETA-INF/services/org.glassfish.jersey.internal.spi.AutoDiscoverable\\E"}, 
+    {"pattern":"\\QMETA-INF/services/org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable\\E"}, 
+    {"pattern":"\\QMETA-INF/services/org.glassfish.jersey.model.internal.spi.ParameterServiceProvider\\E"}, 
+    {"pattern":"\\QMETA-INF/services/org.glassfish.jersey.server.spi.ContainerProvider\\E"}, 
+    {"pattern":"\\Qconfig.yaml\\E"}, 
+    {"pattern":"\\Qio/swagger/v3/jaxrs2/integration/resources\\E"}, 
+    {"pattern":"\\Qorg/glassfish/jersey/internal/build.properties\\E"}, 
+    {"pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"}
+  ],
+  "bundles":[
+    {"name":"org.glassfish.jersey.client.internal.localization"}, 
+    {"name":"org.glassfish.jersey.internal.localization"}, 
+    {"name":"org.glassfish.jersey.server.internal.localization"}
+  ]
+}

@@ -41,16 +41,17 @@
   <properties>
     <!-- Build properties -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
     <argLine></argLine>
 
     <!-- Version properties -->
-    <awssdk.version>2.13.3</awssdk.version>
+    <awssdk.version>2.13.31</awssdk.version>
     <bouncycastle.version>1.60</bouncycastle.version>
     <deltalake.version>0.5.0</deltalake.version>
     <dropwizard.version>4.1.5</dropwizard.version>
     <dynamodb.version>1.12.0</dynamodb.version>
+    <graalvm.version>20.1.0</graalvm.version>
     <guava.version>28.1-jre</guava.version>
     <hadoop.version>3.2.0</hadoop.version>
     <iceberg.version>0.8.0-incubating</iceberg.version>
@@ -178,7 +179,7 @@
           <version>3.0.0</version>
         </plugin>
         <plugin>
-           <groupId>org.codehaus.mojo</groupId>
+          <groupId>org.codehaus.mojo</groupId>
           <artifactId>flatten-maven-plugin</artifactId>
           <version>1.2.2</version>
         </plugin>
@@ -186,6 +187,11 @@
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
           <version>0.8.5</version>
+        </plugin>
+        <plugin>
+          <groupId>org.graalvm.nativeimage</groupId>
+          <artifactId>native-image-maven-plugin</artifactId>
+          <version>${graalvm.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -224,6 +230,7 @@
           <resourceIncludes>**/*.properties,**/*.conf,**/*.json,**/*.xml</resourceIncludes>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <configLocation>checkstyle/checkstyle-config.xml</configLocation>
+          <suppressionsLocation>checkstyle/checkstyle-suppressions.xml</suppressionsLocation>
         </configuration>
         <executions>
           <execution>
@@ -900,6 +907,12 @@ limitations under the License.
         <groupId>org.immutables</groupId>
         <artifactId>value</artifactId>
         <version>${immutables.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.graalvm.sdk</groupId>
+        <artifactId>graal-sdk</artifactId>
+        <version>${graalvm.version}</version>
+        <scope>provided</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>

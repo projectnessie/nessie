@@ -1,0 +1,946 @@
+[
+{
+  "name":"com.amazonaws.serverless.proxy.jersey.JerseyLambdaContainerHandler$1",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name": "org.glassfish.jersey.client.JerseyClientBuilder",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AlbContext",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AlbContext$Access4JacksonDeserializer8a9de18e",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AlbContext$Creator4JacksonDeserializer119435cc",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.ApiGatewayAuthorizerContext",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.ApiGatewayAuthorizerContext$Access4JacksonDeserializer81d54a7b",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.ApiGatewayAuthorizerContext$Creator4JacksonDeserializer03b24b1d",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.ApiGatewayRequestIdentity",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.ApiGatewayRequestIdentity$Access4JacksonDeserializerb4a46544",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.ApiGatewayRequestIdentity$Creator4JacksonDeserializer8cb9487a",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AwsProxyRequest",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AwsProxyRequest$Access4JacksonDeserializeraa5d21e7",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AwsProxyRequest$Creator4JacksonDeserializere6c43ca1",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AwsProxyRequestContext",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AwsProxyRequestContext$Access4JacksonDeserializer6b44436f",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AwsProxyRequestContext$Creator4JacksonDeserializer76f34565",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AwsProxyResponse",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.AwsProxyResponse$Access4JacksonSerializer62bf7c9f",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.CognitoAuthorizerClaims",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.CognitoAuthorizerClaims$Access4JacksonDeserializere6cd81b1",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.CognitoAuthorizerClaims$Creator4JacksonDeserializer01f04622",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.Headers",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.amazonaws.serverless.proxy.model.MultiValuedTreeMap",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.codahale.metrics.jersey2.InstrumentedResourceMethodApplicationListener",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"com.codahale.metrics.servlet.AbstractInstrumentedFilter",
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"com.codahale.metrics.servlet.InstrumentedFilter",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"com.dremio.nessie.auth.Users",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"com.dremio.nessie.json.ObjectMapperContextResolver",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.dremio.nessie.server.NessieServerBinder",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"com.dremio.nessie.server.ServerConfiguration",
+  "allDeclaredMethods":true
+},
+{
+  "name":"com.dremio.nessie.server.ServerConfiguration$ServerAuthenticationConfiguration",
+  "allDeclaredMethods":true
+},
+{
+  "name":"com.dremio.nessie.server.ServerConfiguration$ServerDatabaseConfiguration",
+  "allDeclaredMethods":true
+},
+{
+  "name":"com.dremio.nessie.server.ServerConfiguration$ServiceConfiguration",
+  "allDeclaredMethods":true
+},
+{
+  "name":"com.dremio.nessie.server.ServerConfigurationImpl",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.dremio.nessie.server.ServerConfigurationImpl$ServerAuthConfigurationImpl",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.dremio.nessie.server.ServerConfigurationImpl$ServerDatabaseConfigurationImpl",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.dremio.nessie.server.ServerConfigurationImpl$ServiceConfigurationImpl",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.dremio.nessie.server.auth.BasicKeyGenerator",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.dremio.nessie.server.auth.BasicUserService",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.dremio.nessie.server.auth.NessieAuthFilter",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"com.dremio.nessie.server.rest.Login",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"com.dremio.nessie.server.rest.ServerStatus",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"com.dremio.nessie.server.rest.TableBranchOperations",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"com.fasterxml.jackson.core.Versioned",
+  "allPublicMethods":true
+},
+{
+  "name":"com.fasterxml.jackson.databind.deser.BeanDeserializerModifier[]"
+},
+{
+  "name":"com.fasterxml.jackson.databind.deser.Deserializers[]"
+},
+{
+  "name":"com.fasterxml.jackson.databind.deser.KeyDeserializers[]"
+},
+{
+  "name":"com.fasterxml.jackson.databind.deser.ValueInstantiators[]"
+},
+{
+  "name":"com.fasterxml.jackson.databind.ext.Java7HandlersImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.fasterxml.jackson.databind.ext.Java7SupportImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.fasterxml.jackson.databind.ser.BeanSerializerModifier[]"
+},
+{
+  "name":"com.fasterxml.jackson.databind.ser.Serializers[]"
+},
+{
+  "name":"com.fasterxml.jackson.databind.type.TypeModifier[]"
+},
+{
+  "name":"com.fasterxml.jackson.jaxrs.base.JsonMappingExceptionMapper",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"com.fasterxml.jackson.jaxrs.base.JsonParseExceptionMapper",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource",
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"io.swagger.v3.jaxrs2.integration.resources.OpenApiResource",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"java.awt.image.RenderedImage"
+},
+{
+  "name":"java.io.Serializable",
+  "allDeclaredMethods":true
+},
+{
+  "name":"java.lang.Boolean",
+  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"java.lang.ClassLoader",
+  "methods":[
+    {"name":"defineClass","parameterTypes":["java.lang.String","byte[]","int","int"] }, 
+    {"name":"findLoadedClass","parameterTypes":["java.lang.String"] }, 
+    {"name":"resolveClass","parameterTypes":["java.lang.Class"] }
+  ]
+},
+{
+  "name":"java.lang.Class[]"
+},
+{
+  "name":"java.lang.Cloneable",
+  "allDeclaredMethods":true
+},
+{
+  "name":"java.lang.Object",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"java.lang.String",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"java.sql.Date"
+},
+{
+  "name":"java.sql.Timestamp"
+},
+{
+  "name":"java.util.Map",
+  "allDeclaredMethods":true
+},
+{
+  "name":"javax.inject.Named",
+  "allDeclaredMethods":true
+},
+{
+  "name":"javax.inject.Singleton",
+  "allDeclaredMethods":true
+},
+{
+  "name":"javax.naming.InitialContext",
+  "methods":[
+    {"name":"<init>","parameterTypes":[] }, 
+    {"name":"lookup","parameterTypes":["java.lang.String"] }
+  ]
+},
+{
+  "name":"javax.servlet.Filter",
+  "methods":[
+    {"name":"destroy","parameterTypes":[] }, 
+    {"name":"doFilter","parameterTypes":["javax.servlet.ServletRequest","javax.servlet.ServletResponse","javax.servlet.FilterChain"] }, 
+    {"name":"init","parameterTypes":["javax.servlet.FilterConfig"] }
+  ]
+},
+{
+  "name":"javax.ws.rs.container.ContainerRequestFilter",
+  "methods":[{"name":"filter","parameterTypes":["javax.ws.rs.container.ContainerRequestContext"] }]
+},
+{
+  "name":"javax.ws.rs.container.DynamicFeature",
+  "methods":[{"name":"configure","parameterTypes":["javax.ws.rs.container.ResourceInfo","javax.ws.rs.core.FeatureContext"] }]
+},
+{
+  "name":"javax.ws.rs.core.Feature",
+  "allPublicMethods":true
+},
+{
+  "name":"javax.ws.rs.core.MultivaluedMap",
+  "allDeclaredMethods":true
+},
+{
+  "name":"javax.ws.rs.ext.ContextResolver",
+  "methods":[{"name":"getContext","parameterTypes":["java.lang.Class"] }]
+},
+{
+  "name":"javax.ws.rs.ext.ExceptionMapper",
+  "allPublicMethods":true
+},
+{
+  "name":"javax.ws.rs.ext.MessageBodyReader",
+  "allPublicMethods":true
+},
+{
+  "name":"javax.ws.rs.ext.MessageBodyWriter",
+  "allPublicMethods":true
+},
+{
+  "name":"javax.xml.transform.Source"
+},
+{
+  "name":"javax.xml.transform.dom.DOMSource"
+},
+{
+  "name":"javax.xml.transform.sax.SAXSource"
+},
+{
+  "name":"javax.xml.transform.stream.StreamSource"
+},
+{
+  "name":"org.glassfish.hk2.api.DynamicConfiguration",
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.hk2.internal.PerThreadContext",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.hk2.utilities.Binder",
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.hk2.utilities.binding.AbstractBinder",
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.client.ChunkedInputReader",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.client.ClientAsyncExecutor",
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.client.ClientBackgroundScheduler",
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.inject.hk2.ContextInjectionResolverImpl",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.inject.hk2.Hk2InjectionManagerFactory",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.glassfish.jersey.inject.hk2.Hk2RequestScope",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.inject.hk2.InstanceSupplierFactoryBridge",
+  "methods":[{"name":"provide","parameterTypes":[] }]
+},
+{
+  "name":"org.glassfish.jersey.inject.hk2.JerseyErrorService",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.inject.hk2.RequestContext",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.inject.hk2.SupplierFactoryBridge",
+  "methods":[{"name":"provide","parameterTypes":[] }]
+},
+{
+  "name":"org.glassfish.jersey.internal.JaxrsProviders",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.internal.config.ExternalPropertiesAutoDiscoverable",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.internal.config.ExternalPropertiesConfigurationFeature",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.internal.inject.AbstractBinder",
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.internal.inject.Binder",
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.internal.inject.Custom",
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jackson.JacksonFeature",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jackson.internal.JacksonAutoDiscoverable",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jackson.internal.jackson.jaxrs.base.JsonMappingExceptionMapper",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jackson.internal.jackson.jaxrs.base.JsonParseExceptionMapper",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jackson.internal.jackson.jaxrs.base.ProviderBase",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJaxbJsonProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jackson.internal.jackson.jaxrs.json.JacksonJsonProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.AbstractCollectionJaxbProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.AbstractJaxbElementProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.AbstractJaxbProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.AbstractRootElementJaxbProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.DocumentProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.JaxbAutoDiscoverable",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.JaxbMessagingBinder",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.JaxbParamConverterBinder",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.JaxbStringReaderProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.JaxbStringReaderProvider$RootElementProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlCollectionJaxbProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlCollectionJaxbProvider$App",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlCollectionJaxbProvider$General",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlCollectionJaxbProvider$Text",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlJaxbElementProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlJaxbElementProvider$App",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlJaxbElementProvider$General",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlJaxbElementProvider$Text",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlRootElementJaxbProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlRootElementJaxbProvider$App",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlRootElementJaxbProvider$General",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlRootElementJaxbProvider$Text",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlRootObjectJaxbProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlRootObjectJaxbProvider$App",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlRootObjectJaxbProvider$General",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jaxb.internal.XmlRootObjectJaxbProvider$Text",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.jetty.JettyHttpContainerProvider"
+},
+{
+  "name":"org.glassfish.jersey.logging.LoggingFeatureAutoDiscoverable",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.AbstractFormProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.AbstractMessageReaderWriterProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.BasicTypesMessageProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.ByteArrayProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.DataSourceProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.FileProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.FormMultivaluedMapProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.FormProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.InputStreamProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.ReaderProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.RenderedImageProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.SourceProvider$DomSourceReader",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.SourceProvider$SaxSourceReader",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.SourceProvider$SourceWriter",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.SourceProvider$StreamSourceReader",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.StreamingOutputProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.message.internal.StringMessageProvider",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.process.Inflector",
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.process.internal.RequestScope",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.server.BackgroundScheduler",
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.server.ChunkedResponseWriter",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.ManagedAsyncExecutor",
+  "allDeclaredMethods":true
+},
+{
+  "name":"org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.filter.internal.ServerFiltersAutoDiscoverable",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.internal.JsonWithPaddingInterceptor",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.internal.MappableExceptionWrapperInterceptor",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.internal.monitoring.MonitoringAutodiscoverable",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.internal.monitoring.MonitoringContainerListener",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.model.ModelProcessor",
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.server.model.Parameter$ServerParameterService",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.glassfish.jersey.server.monitoring.ApplicationEventListener",
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.server.wadl.WadlFeature",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.wadl.WadlFeature$1",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true
+},
+{
+  "name":"org.glassfish.jersey.server.wadl.internal.WadlAutoDiscoverable",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.wadl.internal.WadlResource",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.wadl.processor.OptionsMethodProcessor$GenericOptionsInflector",
+  "allPublicMethods":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.wadl.processor.OptionsMethodProcessor$PlainTextOptionsInflector",
+  "allPublicMethods":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.wadl.processor.WadlModelProcessor",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allPublicMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.glassfish.jersey.server.wadl.processor.WadlModelProcessor$OptionsHandler",
+  "allPublicMethods":true,
+  "allPublicConstructors":true
+},
+{
+  "name":"org.jvnet.hk2.internal.DynamicConfigurationServiceImpl",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+},
+{
+  "name":"org.jvnet.hk2.internal.ServiceLocatorRuntimeImpl",
+  "allDeclaredFields":true,
+  "allDeclaredMethods":true,
+  "allDeclaredConstructors":true
+}
+]
