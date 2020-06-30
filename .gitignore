@@ -39,3 +39,9 @@ target/
 
 # node
 node_modules/
+
+# Eclipse IDE
+.classpath
+.factorypath
+.project
+.settings
