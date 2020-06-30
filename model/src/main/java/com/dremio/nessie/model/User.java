@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -30,6 +31,7 @@ import org.immutables.value.Value.Default;
 /**
  * API representation of a User of Nessie.
  */
+@RegisterForReflection
 @Value.Immutable
 @JsonSerialize(as = ImmutableUser.class)
 @JsonDeserialize(as = ImmutableUser.class)

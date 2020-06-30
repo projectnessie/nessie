@@ -18,6 +18,7 @@ package com.dremio.nessie.server.auth;
 
 import com.dremio.nessie.auth.User;
 import com.dremio.nessie.auth.UserService;
+import com.dremio.nessie.services.auth.Secured;
 import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.ws.rs.NotAuthorizedException;

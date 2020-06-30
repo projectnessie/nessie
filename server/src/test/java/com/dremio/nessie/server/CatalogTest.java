@@ -19,6 +19,7 @@ package com.dremio.nessie.server;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
 import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +71,7 @@ public class CatalogTest {
     hadoopConfig.set("nessie.username", username);
     hadoopConfig.set("nessie.password", password);
     hadoopConfig.set("nessie.view-branch", "master");
-    this.client = new NessieClient(path, username, password);
+    this.client = new NessieClient(AuthType.BASIC, path, username, password);
     catalog = new NessieCatalog(hadoopConfig);
   }
 
@@ -92,7 +93,7 @@ public class CatalogTest {
   }
 
   @AfterEach
-  public void closeCatalog() throws IOException {
+  public void closeCatalog() throws Exception {
     catalog.close();
     client.close();
     catalog = null;

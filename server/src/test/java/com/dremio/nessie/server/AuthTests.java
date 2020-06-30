@@ -17,10 +17,12 @@
 package com.dremio.nessie.server;
 
 import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.Table;
+import com.google.common.collect.Lists;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
 import org.junit.jupiter.api.AfterAll;
@@ -43,7 +45,7 @@ public class AuthTests {
 
   public void getCatalog(String username, String password) {
     String path = "http://localhost:9993/api/v1";
-    this.client = new NessieClient(path, username, password);
+    this.client = new NessieClient(AuthType.BASIC, path, username, password);
   }
 
   @AfterAll
@@ -86,8 +88,8 @@ public class AuthTests {
   public void testAdmin() {
     getCatalog("test", "test123");
     Branch branch = client.getBranch("master");
-    String[] tables = client.getAllTables("master", null);
-    Assertions.assertEquals(0, tables.length);
+    Iterable<String> tables = client.getAllTables("master", null);
+    Assertions.assertTrue(Lists.newArrayList(tables).isEmpty());
     tryEndpointPass(() -> client.commit(branch, createTable("x", "x")));
     final Table table = client.getTable("master", "x", null);
     tryEndpointPass(() -> client.commit(branch, table));
@@ -107,8 +109,8 @@ public class AuthTests {
     tryEndpointPass(() -> client.commit(branch, createTable("x", "x")));
     getCatalog("normal", "hello123");
     final Table table = client.getTable("master", "x", null);
-    String[] tables = client.getAllTables("master", null);
-    Assertions.assertEquals(1, tables.length);
+    Iterable<String> tables = client.getAllTables("master", null);
+    Assertions.assertEquals(1, Lists.newArrayList(tables).size());
     tryEndpointFail(() -> client.commit(branch, createTable("y", "x")));
     tryEndpointFail(() -> client.commit(branch, table));
     tryEndpointFail(() -> client.createBranch(branch));

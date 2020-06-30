@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.server.rest;
+package com.dremio.nessie.services.rest;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Metered;
@@ -27,7 +27,7 @@ import com.dremio.nessie.model.CommitMeta.Action;
 import com.dremio.nessie.model.ImmutableCommitMeta;
 import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.Table;
-import com.dremio.nessie.server.auth.Secured;
+import com.dremio.nessie.services.auth.Secured;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.annotation.security.RolesAllowed;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -64,14 +65,13 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-import org.glassfish.jersey.message.internal.HttpHeaderReader;
-import org.glassfish.jersey.message.internal.MatchingEntityTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * REST endpoint for CRUD operations on tables.
  */
+@ApplicationScoped
 @Path("objects")
 @SecurityScheme(
     name = "nessie-auth",
@@ -699,12 +699,8 @@ public class TableBranchOperations {
   private static String version(HttpHeaders headers) {
     try {
       String ifMatch = headers.getHeaderString(HttpHeaders.IF_MATCH);
-      Set<MatchingEntityTag> ifMatchCondition = HttpHeaderReader.readMatchingEntityTag(ifMatch);
-      MatchingEntityTag headVersion = ifMatchCondition.stream()
-                                                      .findFirst()
-                                                      .orElse(null);
-      return headVersion.getValue();
-    } catch (ParseException | NullPointerException | NoSuchElementException e) {
+      return EntityTag.valueOf(ifMatch).getValue();
+    } catch (NullPointerException | NoSuchElementException e) {
       return null;
     }
   }

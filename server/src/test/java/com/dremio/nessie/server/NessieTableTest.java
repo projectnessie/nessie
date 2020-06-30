@@ -22,6 +22,7 @@ import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
 import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ImmutableTable;
@@ -102,14 +103,14 @@ public class NessieTableTest {
     hadoopConfig.set("nessie.password", password);
     hadoopConfig.set("nessie.view-branch", "master");
     catalog = new NessieCatalog(hadoopConfig);
-    client = new NessieClient(path, username, password);
+    client = new NessieClient(AuthType.BASIC, path, username, password);
 
     this.tableLocation = new Path(catalog.createTable(TABLE_IDENTIFIER, schema).location());
 
   }
 
   @AfterEach
-  public void closeCatalog() throws IOException {
+  public void closeCatalog() throws Exception {
     // drop the table data
     tableLocation.getFileSystem(hadoopConfig).delete(tableLocation, true);
     catalog.refreshBranch();

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.server.auth;
+package com.dremio.nessie.services.auth;
 
 
 import java.lang.annotation.ElementType;

@@ -29,6 +29,24 @@
   <name>Nessie - Server</name>
   <artifactId>nessie-server</artifactId>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jboss.jandex</groupId>
+        <artifactId>jandex-maven-plugin</artifactId>
+        <version>1.0.7</version>
+        <executions>
+          <execution>
+            <id>make-index</id>
+            <goals>
+              <goal>jandex</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
   <dependencies>
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -46,6 +64,11 @@
     <dependency>
       <groupId>com.dremio.nessie</groupId>
       <artifactId>nessie-jgit-store</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-services</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

@@ -21,7 +21,7 @@ import com.codahale.metrics.annotation.Metered;
 import com.codahale.metrics.annotation.Timed;
 import com.dremio.nessie.model.ImmutableUser;
 import com.dremio.nessie.model.User;
-import com.dremio.nessie.server.auth.Secured;
+import com.dremio.nessie.services.auth.Secured;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;

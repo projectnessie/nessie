@@ -93,7 +93,7 @@ public final class JwtUtils {
     try {
       JwtParser parser = Jwts.parserBuilder().build();
       int i = token.lastIndexOf('.');
-      String withoutSignature = token.substring(0, i + 1);
+      String withoutSignature = i == -1 ? token : token.substring(0, i + 1);
       return parser.parseClaimsJwt(withoutSignature);
     } catch (Throwable t) {
       throw new NotAuthorizedException(t);

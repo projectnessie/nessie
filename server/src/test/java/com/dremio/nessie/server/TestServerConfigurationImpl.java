@@ -153,6 +153,11 @@ public class TestServerConfigurationImpl implements ServerConfiguration {
     public boolean getEnableUsersEndpoint() {
       return enableUsersEndpoint;
     }
+
+    @Override
+    public String getAuthFilterClassName() {
+      return "com.dremio.nessie.server.auth.NessieAuthFilter";
+    }
   }
 
   public static class ServiceConfigurationImpl implements ServiceConfiguration {

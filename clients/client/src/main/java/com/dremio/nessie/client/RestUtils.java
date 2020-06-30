@@ -16,6 +16,7 @@
 
 package com.dremio.nessie.client;
 
+import com.dremio.nessie.client.auth.AwsAuth;
 import com.dremio.nessie.client.rest.ConflictException;
 import com.dremio.nessie.client.rest.PreconditionFailedException;
 import com.dremio.nessie.json.ObjectMapperContextResolver;
@@ -44,7 +45,10 @@ public final class RestUtils {
 
   }
 
-  static void checkResponse(Response response) {
+  /**
+   * check that response had a valid return code. Throw exception if not.
+   */
+  public static void checkResponse(Response response) {
     Status status = Status.fromStatusCode(response.getStatus());
     switch (status) {
 
@@ -69,12 +73,20 @@ public final class RestUtils {
     }
   }
 
-  static class ClientWithHelpers {
+  /**
+   * Helper to interact with Jersey client.
+   */
+  public static class ClientWithHelpers {
 
     private final Client client;
 
-    ClientWithHelpers() {
-      this.client = ClientBuilder.newBuilder().register(ObjectMapperContextResolver.class).build();
+    ClientWithHelpers(boolean isAws) {
+      ClientBuilder builder = ClientBuilder.newBuilder()
+                                           .register(ObjectMapperContextResolver.class);
+      if (isAws) {
+        builder.register(AwsAuth.class);
+      }
+      this.client = builder.build();
     }
 
     public void close() {
@@ -87,6 +99,9 @@ public final class RestUtils {
       return get(endpoint, path, mediaType, authHeader, params);
     }
 
+    /**
+     * build http request with given auth header, media type and query params.
+     */
     public Invocation.Builder get(String endpoint, String path, String mediaType, String authHeader,
                                   Map<String, String> queryParams) {
       WebTarget webTarget = client.target(endpoint);

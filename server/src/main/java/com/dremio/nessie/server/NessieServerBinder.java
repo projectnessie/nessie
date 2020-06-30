@@ -39,15 +39,15 @@ import org.slf4j.LoggerFactory;
  * Binder for jersey app.
  */
 public class NessieServerBinder extends AbstractBinder {
+
   private static final Logger logger = LoggerFactory.getLogger(NessieServerBinder.class);
 
   @Override
   protected void configure() {
-    bindFactory(ServerConfigurationImpl.ConfigurationFactory.class).to(ServerConfiguration.class);
-    String userServiceClass = new ServerConfigurationImpl
-        .ConfigurationFactory().provide()
-                             .getAuthenticationConfiguration()
-                             .getUserServiceClassName();
+    bindFactory(ConfigurationFactory.class).to(ServerConfiguration.class);
+    String userServiceClass = new ConfigurationFactory().provide()
+                                                        .getAuthenticationConfiguration()
+                                                        .getUserServiceClassName();
 
     bind(BasicKeyGenerator.class).to(KeyGenerator.class);
     bindFactory(BackendFactory.class).to(Backend.class);
@@ -124,7 +124,8 @@ public class NessieServerBinder extends AbstractBinder {
         }
 
         @Override
-        public void close() { }
+        public void close() {
+        }
       };
     }
 

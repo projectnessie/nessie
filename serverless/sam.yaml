@@ -17,34 +17,175 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: AWS Serverless Jersey API - my.service::jersey-sample
+Globals:
+  Api:
+    EndpointConfiguration: REGIONAL
+    BinaryMediaTypes:
+      - "*/*"
 Resources:
+  NessieGitObjectDatabase:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: uuid
+          AttributeType: S
+      KeySchema:
+        - AttributeName: uuid
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      TableName: NessieGitObjectDatabase
+  NessieGitRefDatabase:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: uuid
+          AttributeType: S
+      KeySchema:
+        - AttributeName: uuid
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      TableName: NessieGitRefDatabase
+  NessieAdminRole:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: nessie-admin-policy
+      Groups:
+        - !Ref NessieAdminGroup
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'execute-api:Invoke'
+            Resource: !Join
+              - ''
+              - - 'arn:aws:execute-api:'
+                - !Ref 'AWS::Region'
+                - ':*:'
+                - !Ref JerseyNessieApiGateway
+                - '/Prod/*/api/v1/{proxy+}'
+  NessieUserRole:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: nessie-user-policy
+      Groups:
+        - !Ref NessieUserGroup
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'execute-api:Invoke'
+            Resource: !Join
+              - ''
+              - - 'arn:aws:execute-api:'
+                - !Ref 'AWS::Region'
+                - ':*:'
+                - !Ref JerseyNessieApiGateway
+                - '/Prod/GET/api/v1/{proxy+}'
+  NessieAdminGroup:
+    Type: AWS::IAM::Group
+  NessieUserGroup:
+    Type: AWS::IAM::Group
+  NessieDynamoDbRole:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: NessieDynamodbAccessRole
+      Roles:
+        - !Ref JerseyNessieFunctionRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:ConditionCheckItem
+              - dynamodb:PutItem
+              - dynamodb:DescribeTable
+              - dynamodb:DeleteItem
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:Query
+              - dynamodb:UpdateItem
+            Resource:
+              - !Join
+                - ''
+                - - 'arn:aws:dynamodb:'
+                  - !Ref 'AWS::Region'
+                  - ':'
+                  - !Ref 'AWS::AccountId'
+                  - ':table/NessieGitObjectDatabase'
+              - !Join
+                - ''
+                - - 'arn:aws:dynamodb:'
+                  - !Ref 'AWS::Region'
+                  - ':'
+                  - !Ref 'AWS::AccountId'
+                  - ':table/NessieGitRefDatabase'
+  JerseyNessieFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      RoleName: NessieLambdaRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  JerseyNessieApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Auth:
+        DefaultAuthorizer: AWS_IAM
+        InvokeRole: CALLER_CREDENTIALS
   JerseyNessieFunction:
     Type: AWS::Serverless::Function
+    DependsOn: JerseyNessieFunctionRole
     Properties:
       Handler: com.dremio.nessie.serverless.NessieLambda::handleRequest
-      Runtime: java8
-      CodeUri: target/nessie-serverless-1.0-SNAPSHOT.jar
-      MemorySize: 512
-      Policies: AWSLambdaBasicExecutionRole
+      Runtime: provided
+      CodeUri: target/function.zip
+      MemorySize: 128
+      Role: !GetAtt JerseyNessieFunctionRole.Arn
       Timeout: 60
       Environment:
         Variables:
-          NESSIE_DB_PROPS_REGION: !Ref DynamoRegion
-          NESSIE_DB_PROPS_ENDPOINT: !Ref DynamoEndpoint
+          DISABLE_SIGNAL_HANDLERS: true
+          NESSIE_DB_PROPS_REGION: !Ref AWS::Region
+          NESSIE_DB_PROPS_ENDPOINT: !Sub https://dynamodb.${AWS::Region}.amazonaws.com
       Events:
         GetResource:
           Type: Api
           Properties:
-            Path: /{proxy+}
-            Method: any
-Parameters:
-  DynamoEndpoint:
-    Type: String
-  DynamoRegion:
-    Type: String
+            RestApiId: !Ref JerseyNessieApiGateway
+            Path: /api/v1/{proxy+}
+            Method: get
+        PutResource:
+          Type: Api
+          Properties:
+            RestApiId: !Ref JerseyNessieApiGateway
+            Path: /api/v1/{proxy+}
+            Method: put
+        PostResource:
+          Type: Api
+          Properties:
+            RestApiId: !Ref JerseyNessieApiGateway
+            Path: /api/v1/{proxy+}
+            Method: post
+        DeleteResource:
+          Type: Api
+          Properties:
+            RestApiId: !Ref JerseyNessieApiGateway
+            Path: /api/v1/{proxy+}
+            Method: delete
 Outputs:
   JerseyNessieApi:
     Description: URL for application
-    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/v1/objects'
-    Export:
-      Name: JerseyNessieApi
+    Value: !Sub 'https://${JerseyNessieApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/v1/'

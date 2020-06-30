@@ -18,6 +18,7 @@ package com.dremio.nessie.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
@@ -29,6 +30,7 @@ import org.immutables.value.Value;
  *   The table metadata is optional and is currently only needed by the UI.
  * </p>
  */
+@RegisterForReflection
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableTable.class)
 @JsonDeserialize(as = ImmutableTable.class)
