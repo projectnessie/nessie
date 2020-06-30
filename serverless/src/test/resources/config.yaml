@@ -22,6 +22,7 @@ databaseConfiguration:
     region: us-west-2
 authenticationConfiguration:
   userServiceClassName: com.dremio.nessie.server.auth.BasicUserService
+  authFilterClassName: com.dremio.nessie.server.auth.NessieAuthFilter
   enableLoginEndpoint: true
   enableUsersEndpoint: true
 serviceConfiguration:

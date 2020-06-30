@@ -33,12 +33,15 @@ import org.glassfish.jersey.internal.util.PropertiesHelper;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Main entry point for Nessie REST service.
  */
 @ApplicationPath("/api/v1")
 public class RestServerV1 extends ResourceConfig {
+  private static final Logger logger = LoggerFactory.getLogger(RestServerV1.class);
 
   public RestServerV1() {
     this(new NessieServerBinder());
@@ -75,7 +78,14 @@ public class RestServerV1 extends ResourceConfig {
     register(JsonParseExceptionMapper.class);
     register(JsonMappingExceptionMapper.class);
 
-    register(NessieAuthFilter.class);
+    try {
+      String name = config.getAuthenticationConfiguration().getAuthFilterClassName();
+      Class<?> clazz = Class.forName(name);
+      register(clazz);
+    } catch (ClassNotFoundException e) {
+      logger.error("Auth filter class not found, unable to start");
+      throw new RuntimeException(e);
+    }
     register(ObjectMapperContextResolver.class);
     // PROPERTIES //
     property(ServerProperties.RESPONSE_SET_STATUS_OVER_SEND_ERROR, "true");

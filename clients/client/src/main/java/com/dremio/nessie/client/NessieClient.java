@@ -16,40 +16,31 @@
 
 package com.dremio.nessie.client;
 
-import com.dremio.nessie.auth.AuthResponse;
 import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
-import com.dremio.nessie.jwt.JwtUtils;
+import com.dremio.nessie.client.auth.BasicAuth;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.Table;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jwt;
-import java.util.Date;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 /**
  * Client side of Nessie. Performs HTTP requests to Server
  */
-public class NessieClient implements AutoCloseable {
+public class NessieClient implements BaseClient {
 
   private static final Joiner SLASH = Joiner.on("/");
 
   private final String endpoint;
-  private final String username;
-  private final String password;
   private final ClientWithHelpers client;
-  private String authHeader;
-  private Date expiryDate;
+  private final BasicAuth auth;
 
   /**
    * create new nessie client. All REST api endpoints are mapped here.
@@ -57,37 +48,12 @@ public class NessieClient implements AutoCloseable {
    */
   public NessieClient(String path, String username, String password) {
     endpoint = path;
-    this.password = password;
-    this.username = username;
     client = new ClientWithHelpers();
-    login(username, password);
-  }
-
-  private void login(String username, String password) {
-    MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
-    formData.add("username", username);
-    formData.add("password", password);
-    formData.add("grant_type", "password");
-    Response response = client.get(endpoint, "login", MediaType.APPLICATION_FORM_URLENCODED, null)
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .post(Entity.form(formData));
-    RestUtils.checkResponse(response);
-    AuthResponse authToken = response.readEntity(AuthResponse.class);
-    try {
-      Jwt<Header, Claims> claims = JwtUtils.checkToken(authToken.getToken());
-      expiryDate = claims.getBody().getExpiration();
-    } catch (Exception e) {
-      expiryDate = new Date(Long.MAX_VALUE);
-    }
-    authHeader = response.getHeaderString(HttpHeaders.AUTHORIZATION);
+    auth = new BasicAuth(endpoint, username, password, client);
   }
 
   private String checkKey() {
-    Date now = new Date();
-    if (now.after(expiryDate)) {
-      login(username, password);
-    }
-    return authHeader;
+    return auth.checkKey();
   }
 
   /**
@@ -101,6 +67,14 @@ public class NessieClient implements AutoCloseable {
   }
 
   @Override
+  public Branch[] getBranches() {
+    Response response = client.get(endpoint, "objects", MediaType.APPLICATION_JSON, checkKey())
+                              .get();
+    RestUtils.checkResponse(response);
+    return response.readEntity(Branch[].class);
+  }
+
+  @Override
   public void close() {
     client.close();
   }
@@ -108,6 +82,7 @@ public class NessieClient implements AutoCloseable {
   /**
    * Get a single table specific to a given branch.
    */
+  @Override
   public Table getTable(String branch, String name, String namespace) {
     String table = (namespace == null) ? name : (namespace + "." + name);
     Response response = client.get(endpoint,
@@ -127,6 +102,7 @@ public class NessieClient implements AutoCloseable {
   /**
    * Get a branch for a given name.
    */
+  @Override
   public Branch getBranch(String branchName) {
     Response response = client.get(endpoint,
                                    SLASH.join("objects", branchName),
@@ -148,6 +124,7 @@ public class NessieClient implements AutoCloseable {
   /**
    * Create a new branch. Branch name is the branch name and id is the branch to copy from.
    */
+  @Override
   public Branch createBranch(Branch branch) {
     Response response = client.get(endpoint,
                                    SLASH.join("objects", branch.getName()),
@@ -170,6 +147,7 @@ public class NessieClient implements AutoCloseable {
    * @param branch The branch to commit on. Its id is the commit version to commit on top of
    * @param tables list of tables to be added, deleted or modified
    */
+  @Override
   public void commit(Branch branch, Table... tables) {
     Response response = client.get(endpoint,
                                    SLASH.join("objects", branch.getName()),
@@ -189,6 +167,7 @@ public class NessieClient implements AutoCloseable {
    *   filtered by namespace
    * </p>
    */
+  @Override
   public String[] getAllTables(String branch, String namespace) {
     Response response = client.get(endpoint,
                                    SLASH.join("objects", branch, "tables"),
@@ -209,6 +188,7 @@ public class NessieClient implements AutoCloseable {
   /**
    * Merge all commits from updateBranch onto branch. Optionally forcing.
    */
+  @Override
   public void mergeBranch(com.dremio.nessie.model.Branch branch,
                           String updateBranch,
                           boolean force) {
@@ -230,6 +210,7 @@ public class NessieClient implements AutoCloseable {
   /**
    * Delete a branch. Note this is potentially damaging if the branch is not fully merged.
    */
+  @Override
   public void deleteBranch(Branch branch) {
     Response response = client.get(endpoint,
                                    SLASH.join("objects", branch.getName()),

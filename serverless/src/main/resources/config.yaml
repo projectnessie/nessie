@@ -18,14 +18,15 @@ defaultTag: HEAD
 databaseConfiguration:
   dbClassName: com.dremio.nessie.backend.dynamodb.DynamoDbBackend
   dbProps:
-    endpoint: http://localhost:8000
+    endpoint: https://dynamodb.us-west-2.amazonaws.com
     region: us-west-2
 authenticationConfiguration:
-  userServiceClassName: com.dremio.nessie.server.auth.BasicUserService
-  enableLoginEndpoint: true
-  enableUsersEndpoint: true
+  userServiceClassName: com.dremio.nessie.serverless.IamUserService
+  authFilterClassName: com.dremio.nessie.serverless.IamAuthFilter
+  enableLoginEndpoint: false
+  enableUsersEndpoint: false
 serviceConfiguration:
   port: 19120
-  ui: true
-  swagger: true
-  metrics: true
+  ui: false
+  swagger: false
+  metrics: false
