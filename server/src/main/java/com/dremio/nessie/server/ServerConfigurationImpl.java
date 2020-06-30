@@ -185,6 +185,7 @@ public class ServerConfigurationImpl implements ServerConfiguration {
     private final String userServiceClassName;
     private final boolean enableLoginEndpoint;
     private final boolean enableUsersEndpoint;
+    private final String authFilterClassName;
 
     /**
      * Constructor for Jackson.
@@ -195,14 +196,23 @@ public class ServerConfigurationImpl implements ServerConfiguration {
                                        @JsonProperty("enableLoginEndpoint")
                                          boolean enableLoginEndpoint,
                                        @JsonProperty("enableUsersEndpoint")
-                                         boolean enableUsersEndpoint) {
+                                         boolean enableUsersEndpoint,
+                                       @JsonProperty("authFilterClassName")
+                                       String authFilterClassName) {
       this.userServiceClassName = userServiceClassName;
       this.enableLoginEndpoint = enableLoginEndpoint;
       this.enableUsersEndpoint = enableUsersEndpoint;
+      this.authFilterClassName = authFilterClassName;
     }
 
+    /**
+     * construct new config object.
+     */
     public ServerAuthConfigurationImpl() {
-      this("com.dremio.nessie.server.auth.BasicUserService", true, true);
+      this("com.dremio.nessie.server.auth.BasicUserService",
+           true,
+           true,
+           "com.dremio.nessie.server.auth.NessieAuthFilter");
     }
 
     @Override
@@ -218,6 +228,11 @@ public class ServerConfigurationImpl implements ServerConfiguration {
     @Override
     public boolean getEnableUsersEndpoint() {
       return enableUsersEndpoint;
+    }
+
+    @Override
+    public String getAuthFilterClassName() {
+      return authFilterClassName;
     }
   }
 

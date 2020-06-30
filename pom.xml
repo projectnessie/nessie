@@ -31,7 +31,6 @@
     <module>server</module>
     <module>distribution</module>
     <module>backends</module>
-    <module>ui</module>
     <module>serverless</module>
     <module>utils</module>
     <module>clients</module>
@@ -981,6 +980,12 @@ limitations under the License.
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>ui</id>
+      <modules>
+        <module>ui</module>
+      </modules>
     </profile>
   </profiles>
   <repositories>

@@ -16,6 +16,7 @@
 
 package com.dremio.nessie.serverless;
 
+import com.amazonaws.serverless.proxy.internal.LambdaContainerHandler;
 import com.amazonaws.serverless.proxy.jersey.JerseyLambdaContainerHandler;
 import com.amazonaws.serverless.proxy.model.AwsProxyRequest;
 import com.amazonaws.serverless.proxy.model.AwsProxyResponse;
@@ -31,6 +32,11 @@ public class NessieLambda implements RequestStreamHandler {
   private static final ResourceConfig JERSEY_APPLICATION = new RestServerV1();
   private static final JerseyLambdaContainerHandler<AwsProxyRequest, AwsProxyResponse> HANDLER
       = JerseyLambdaContainerHandler.getAwsProxyHandler(JERSEY_APPLICATION);
+
+  static {
+    LambdaContainerHandler.getContainerConfig().setServiceBasePath("api/v1");
+    LambdaContainerHandler.getContainerConfig().setStripBasePath(true);
+  }
 
   @Override
   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context)
