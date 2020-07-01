@@ -1,6 +1,6 @@
 # Nessie
 
-[![Build Status](https://github.com/dremio-hub/nessie/workflows/maven/badge.svg)](https://github.com/dremio-hub/nessie/actions)
+[![Build Status](https://github.com/dremio-hub/nessie/workflows/Java%20CI%20with%20Maven/badge.svg)](https://github.com/dremio-hub/nessie/actions)
 
 Nessie is a metadata store for [Iceberg](https://iceberg.incubator.apache.org/) that can function the same as the
 Hive Metastore for Iceberg tables. It provides atomic transactions for all Iceberg operations on all Data Lake sources.
