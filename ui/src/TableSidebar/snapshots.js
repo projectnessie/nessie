@@ -16,7 +16,7 @@
 import {Card, CardGroup, Col, OverlayTrigger, Row, Table, Tooltip} from "react-bootstrap";
 import CheckIcon from "@material-ui/icons/Check";
 import Form from "react-bootstrap/Form";
-import React, {useState} from "react";
+import React from "react";
 
 function listToObj(l) {
   const obj = Object.assign({}, l)

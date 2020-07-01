@@ -15,7 +15,7 @@
  */
 import React from 'react';
 import './App.css';
-import {Navbar, Nav, Button, Container, Row, Col} from "react-bootstrap";
+import {Navbar, Nav, Button} from "react-bootstrap";
 import {Router, Route} from 'react-router-dom';
 
 import {history} from './utils';
