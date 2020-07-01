@@ -59,17 +59,11 @@ function displaySchema(table) {
 }
 
 
-
-function displayMetadata(table) {
-  return (<div/>)
-}
-
-
 function displayActive(active, table, snapshotIndex, setSnapshotIndex) {
-  if (active == 1) {
+  if (active === 1) {
     return displaySchema(table);
   }
-  if (active == 2) {
+  if (active === 2) {
     return <DisplaySnapshots table={table} snapshotIndex={snapshotIndex} setSnapshotIndex={setSnapshotIndex}/>
   }
   return <DisplayMetadata table={table}/>

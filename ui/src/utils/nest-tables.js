@@ -39,6 +39,7 @@ export function nestTables(tables) {
     t['name'] = t['tableName'];
     // t['id'] = (counter++).toString();
     x.children.push(t);
+    return t;
   }, tables);
   nestedTables['id'] = (counter++).toString();
   return nestedTables;

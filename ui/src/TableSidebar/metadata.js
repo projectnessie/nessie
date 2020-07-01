@@ -13,20 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {Card, CardGroup, Col, OverlayTrigger, Row, Table, Tooltip} from "react-bootstrap";
-import CheckIcon from "@material-ui/icons/Check";
-import Form from "react-bootstrap/Form";
-import React, {useState} from "react";
+import {Card, CardGroup} from "react-bootstrap";
+import React from "react";
 import * as R from "ramda";
-
-function listToObj(l) {
-  const obj = Object.assign({}, l)
-  const ret = {};
-  Object.keys(obj).forEach(key => {
-    ret[obj[key].snapshotId] = key;
-  });
-  return ret;
-}
 
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
