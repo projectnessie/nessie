@@ -17,120 +17,115 @@
 package com.dremio.nessie.backend.dynamodb;
 
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.backend.dynamodb.model.Base;
 import com.dremio.nessie.model.VersionedWrapper;
-import com.google.common.base.Joiner;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Expression;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.model.GetItemEnhancedRequest;
-import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
-import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
-import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch;
-import software.amazon.awssdk.enhanced.dynamodb.model.WriteBatch.Builder;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
+import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest.Builder;
+import software.amazon.awssdk.services.dynamodb.model.PutRequest;
+import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
+import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
+import software.amazon.awssdk.services.dynamodb.paginators.ScanIterable;
 
-abstract class AbstractEntityDynamoDbBackend<T extends Base, M> implements EntityBackend<M> {
-  private static final Joiner AND = Joiner.on(" and ");
+abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
+
 
   private final DynamoDbClient client;
-  private final DynamoDbTable<T> table;
-  private final Class<T> clazz;
-  private final DynamoDbEnhancedClient mapper;
+  private final String tableName;
+  private final boolean versioned;
 
-  public AbstractEntityDynamoDbBackend(DynamoDbClient client,
-                                       DynamoDbEnhancedClient mapper,
-                                       Class<T> clazz,
-                                       String tableName) {
-    this.clazz = clazz;
-    this.mapper = mapper;
-    TableSchema<T> schema = TableSchema.fromBean(clazz);
-    table = mapper.table(tableName, schema);
+  public AbstractEntityDynamoDbBackend(DynamoDbClient client, String tableName, boolean versioned) {
     this.client = client;
+    this.tableName = tableName;
+    this.versioned = versioned;
   }
 
-  protected abstract T toDynamoDB(VersionedWrapper<M> from);
+  protected abstract Map<String, AttributeValue> toDynamoDB(VersionedWrapper<M> from);
 
-  protected abstract VersionedWrapper<M> fromDynamoDB(T from);
+  protected abstract VersionedWrapper<M> fromDynamoDB(Map<String, AttributeValue> from);
 
   @Override
   public VersionedWrapper<M> get(String name) {
-    T obj = table.getItem(GetItemEnhancedRequest.builder()
-                                                .consistentRead(true)
-                                                .key(Key.builder()
-                                                        .partitionValue(name)
-                                                        .build())
-                                                .build());
-    if (obj == null) {
-      return null;
-    }
-    return fromDynamoDB(obj);
-  }
-
-  @Override
-  public VersionedWrapper<M> get(String name, String sortKey) {
-    T obj = table.getItem(GetItemEnhancedRequest.builder()
-                                                .consistentRead(true)
-                                                .key(Key.builder()
-                                                        .partitionValue(name)
-                                                        .sortValue(sortKey)
-                                                        .build())
-                                                .build());
-    if (obj == null) {
+    Map<String, AttributeValue> key = new HashMap<>();
+    key.put("uuid", AttributeValue.builder().s(name).build());
+    GetItemRequest request = GetItemRequest.builder()
+                                           .consistentRead(true)
+                                           .key(key)
+                                           .tableName(tableName)
+                                           .build();
+    Map<String, AttributeValue> obj = client.getItem(request).item();
+    if (obj == null || obj.isEmpty()) {
       return null;
     }
     return fromDynamoDB(obj);
   }
 
   public List<VersionedWrapper<M>> getAll(boolean includeDeleted) {
+    ScanRequest request = ScanRequest.builder().tableName(tableName).build();
 
-    ScanEnhancedRequest.Builder scanExpression = ScanEnhancedRequest.builder().consistentRead(true);
-    Expression.Builder builder = Expression.builder();
-    List<String> clauses = new ArrayList<>();
-    if (!includeDeleted) {
-      clauses.add("deleted = :delval");
-      builder.putExpressionValue(":delval", AttributeValue.builder().bool(false).build());
-    }
-    PageIterable<T> results;
-    if (!clauses.isEmpty()) {
-      results = table.scan(scanExpression.filterExpression(
-        builder.expression(AND.join(clauses)).build()).build());
-    } else {
-      results = table.scan();
-    }
+    ScanIterable results = client.scanPaginator(request);
     return results.items().stream().map(this::fromDynamoDB).collect(Collectors.toList());
   }
 
   @Override
   public VersionedWrapper<M> update(String name, VersionedWrapper<M> obj) {
-    return fromDynamoDB(table.updateItem(toDynamoDB(obj)));
+    Map<String, AttributeValue> item = toDynamoDB(obj);
+    Builder builder = PutItemRequest.builder()
+                                    .tableName(tableName);
+    if (versioned) {
+      String expression;
+      Long version = obj.getVersion();
+      if (version == null) {
+        item.put("version", AttributeValue.builder().n("1").build());
+        expression = "attribute_not_exists(version)";
+      } else {
+        String newVersion = Long.toString(version + 1);
+        item.put("version", AttributeValue.builder().n(newVersion).build());
+        expression = "version = :v";
+        Map<String, AttributeValue> expressionVals = new HashMap<>();
+        expressionVals.put(":v", AttributeValue.builder().n(version.toString()).build());
+        builder.expressionAttributeValues(expressionVals);
+      }
+      builder.conditionExpression(expression);
+    }
+
+    client.putItem(builder.item(item).build());
+    return get(name);
   }
 
   @Override
   public void updateAll(Map<String, VersionedWrapper<M>> transaction) {
-    Builder<T> builder = WriteBatch.builder(clazz).mappedTableResource(table);
-    transaction.values().stream().map(this::toDynamoDB).forEach(builder::addPutItem);
-    mapper.batchWriteItem(r -> r.addWriteBatch(builder.build()));
+
+    Map<String, List<WriteRequest>> items = new HashMap<>();
+    List<WriteRequest> writeRequests =
+        transaction.values()
+                   .stream()
+                   .map(x -> PutRequest.builder().item(toDynamoDB(x)).build())
+                   .map(x -> WriteRequest.builder().putRequest(x).build())
+                   .collect(Collectors.toList());
+    items.put(tableName, writeRequests);
+    BatchWriteItemRequest request = BatchWriteItemRequest.builder()
+                                                         .requestItems(items)
+                                                         .build();
+    client.batchWriteItem(request);
   }
 
   @Override
   public void remove(String name) {
-    table.deleteItem(Key.builder().partitionValue(name).build());
-  }
-
-  @Override
-  public void remove(String name, String sortKey) {
-    table.deleteItem(Key.builder().partitionValue(name).sortValue(sortKey).build());
+    Map<String, AttributeValue> key = new HashMap<>();
+    key.put("uuid", AttributeValue.builder().s(name).build());
+    DeleteItemRequest request = DeleteItemRequest.builder()
+                                                 .tableName(tableName)
+                                                 .key(key)
+                                                 .build();
+    client.deleteItem(request);
   }
 
   @Override

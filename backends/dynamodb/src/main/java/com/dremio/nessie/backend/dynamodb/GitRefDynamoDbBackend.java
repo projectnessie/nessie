@@ -16,40 +16,46 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
-import com.dremio.nessie.backend.dynamodb.model.GitRef;
 import com.dremio.nessie.model.BranchControllerReference;
 import com.dremio.nessie.model.ImmutableBranchControllerReference;
+import com.dremio.nessie.model.ImmutableBranchControllerReference.Builder;
 import com.dremio.nessie.model.VersionedWrapper;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import java.util.HashMap;
+import java.util.Map;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class GitRefDynamoDbBackend extends AbstractEntityDynamoDbBackend<GitRef,
-    BranchControllerReference> {
+public class GitRefDynamoDbBackend extends
+                                   AbstractEntityDynamoDbBackend<BranchControllerReference> {
 
 
-  public GitRefDynamoDbBackend(DynamoDbClient client,
-                               DynamoDbEnhancedClient mapper) {
-    super(client, mapper, GitRef.class, "NessieGitRefDatabase");
+  public GitRefDynamoDbBackend(DynamoDbClient client) {
+    super(client, "NessieGitRefDatabase", true);
   }
 
   @Override
-  protected GitRef toDynamoDB(VersionedWrapper<BranchControllerReference> from) {
-    return new GitRef(
-      from.getObj().getId(),
-      from.getObj().getUpdateTime(),
-      from.getObj().getRefId(),
-      from.getVersion()
-    );
+  protected Map<String, AttributeValue> toDynamoDB(
+      VersionedWrapper<BranchControllerReference> from) {
+    Map<String, AttributeValue> item = new HashMap<>();
+    String uuid = from.getObj().getId();
+    String refId = String.valueOf(from.getObj().getRefId());
+    String updateTime = String.valueOf(from.getObj().getUpdateTime());
+
+    item.put("uuid", AttributeValue.builder().s(uuid).build());
+    item.put("ref", AttributeValue.builder().s(refId).build());
+    item.put("updateTime", AttributeValue.builder().n(updateTime).build());
+    return item;
   }
 
   @Override
-  protected VersionedWrapper<BranchControllerReference> fromDynamoDB(GitRef from) {
-    return new VersionedWrapper<>(ImmutableBranchControllerReference.builder()
-                                                                    .updateTime(
-                                                                          from.getUpdateTime())
-                                                                    .refId(from.getName())
-                                                                    .id(from.getUuid())
-                                                                    .build(),
-                                  from.getVersion());
+  protected VersionedWrapper<BranchControllerReference> fromDynamoDB(
+      Map<String, AttributeValue> from) {
+    Builder builder = ImmutableBranchControllerReference.builder();
+    builder.refId(from.get("ref").s())
+           .id(from.get("uuid").s())
+           .updateTime(Long.parseLong(from.get("updateTime").n()));
+    Long version = Long.parseLong(from.get("version").n());
+    return new VersionedWrapper<>(builder.build(), version);
   }
+
 }

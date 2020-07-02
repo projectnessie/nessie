@@ -23,7 +23,7 @@ import com.dremio.nessie.model.BranchControllerReference;
 import com.dremio.nessie.model.User;
 import com.dremio.nessie.server.ServerConfiguration;
 import java.net.URI;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
@@ -34,16 +34,12 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 public class DynamoDbBackend implements Backend {
 
   private final DynamoDbClient client;
-  private final DynamoDbEnhancedClient mapper;
 
   /**
    * Create a Backend for dynamodb. This uses Dynamodbs object mapper to interact w/ the database.
    */
   public DynamoDbBackend(DynamoDbClient client) {
     this.client = client;
-    mapper = DynamoDbEnhancedClient.builder()
-      .dynamoDbClient(client)
-      .build();
   }
 
   public static DynamoDbBackend getInstance(String region) {
@@ -64,22 +60,24 @@ public class DynamoDbBackend implements Backend {
       clientBuilder = clientBuilder.region(Region.of(region));
     }
 
-    DynamoDbClient client = clientBuilder.build();
+    DynamoDbClient client = clientBuilder.httpClient(UrlConnectionHttpClient.builder().build())
+                                         .build();
 
     return new DynamoDbBackend(client);
   }
 
+  @Override
   public EntityBackend<User> userBackend() {
-    return new UserDynamoDbBackend(client, mapper);
+    return null;
   }
 
   public EntityBackend<BranchControllerObject> gitBackend() {
-    return new GitObjectDynamoDbBackend(client, mapper);
+    return new GitObjectDynamoDbBackend(client);
   }
 
   @Override
   public EntityBackend<BranchControllerReference> gitRefBackend() {
-    return new GitRefDynamoDbBackend(client, mapper);
+    return new GitRefDynamoDbBackend(client);
   }
 
   @Override
@@ -95,8 +93,8 @@ public class DynamoDbBackend implements Backend {
     @Override
     public Backend create(ServerConfiguration config) {
       return DynamoDbBackend
-        .getInstance(config.getDatabaseConfiguration().getDbProps().get("region"),
-          config.getDatabaseConfiguration().getDbProps().get("endpoint"));
+        .getInstance(config.getDatabaseConfiguration().getDbProps().getOrDefault("region", null),
+          config.getDatabaseConfiguration().getDbProps().getOrDefault("endpoint", null));
     }
   }
 
