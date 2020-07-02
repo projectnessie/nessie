@@ -20,13 +20,15 @@ Nessie also adds some features not found in other metadata stores including:
 Nessie is composed of several components:
 * **Server** - the Nessie metadata store. A standard REST api. This can be deployed as part
 of another java based application, as a standalone service or as a serverless application
-* **Client** - the Nessie client for use in Iceberg
+* **Client** - the Nessie client for use in Iceberg, Delta lake
 * **UI** - the React application. This can be run as a standalone SPA or as part of another application. Currently
 it can be served as a static site
 * **Distribution** - A full web application. This provides a full experience with the UI, REST api and openapi endpoints
 in a single package
+* **jgit** - the backend model that allows branching and commits in Nessie
 * **Backends** - modules for different database backends depending on how the service is running
 * **Delta Lake** - experimental Delta Lake `LogStore` using Nessie for atomic metadata updates
+* **Serverless** - AWS Lambda for Nessie w/ IAM support.
 
 ## Installation
 
@@ -106,16 +108,3 @@ and salted string. A JWT token is generated and is valid for 15 minutes by defau
 
 To create a new backend implement `com.dremio.nessie.auth.UserService` and add it to the classpath.
 
-## Usage
-
-* explain tags
-* explain notifications
-* more examples
-
-## TODO
-
-* finish ui
-* finish tags
-* do notifications
-* more testing
-* stress test
