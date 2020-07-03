@@ -16,6 +16,7 @@
 
 package com.dremio.nessie.jgit;
 
+import com.dremio.nessie.error.NessieConflictException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -63,7 +64,9 @@ public class NessieObjectInserter extends DfsInserter {
       IO.readFully(in, buf, 0, (int) len);
       return insert(type, buf, 0, (int) len);
     }
-    throw new IllegalStateException();
+    throw new NessieConflictException(null,
+                                      "unable to insert buf of type " + type + " with value "
+                                      + new String(buf));
   }
 
   @Override

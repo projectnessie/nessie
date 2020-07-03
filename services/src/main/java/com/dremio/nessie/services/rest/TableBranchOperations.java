@@ -16,9 +16,33 @@
 
 package com.dremio.nessie.services.rest;
 
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Metered;
+import com.codahale.metrics.annotation.Timed;
+import com.dremio.nessie.auth.User;
+import com.dremio.nessie.backend.BranchController;
+import com.dremio.nessie.error.ImmutableNessieError;
+import com.dremio.nessie.error.ImmutableNessieError.Builder;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieError;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.CommitMeta.Action;
+import com.dremio.nessie.model.ImmutableCommitMeta;
+import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.Table;
+import com.dremio.nessie.services.auth.Secured;
+import com.google.common.base.Throwables;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.security.Principal;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -42,6 +66,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 
 import org.slf4j.Logger;
@@ -150,7 +175,7 @@ public class TableBranchOperations {
     try {
       Branch branch = backend.getBranch(branchName);
       if (branch == null) {
-        return Response.status(404).entity("branch not found").build();
+        return exception(Response.Status.NOT_FOUND, "branch " + branchName + " not found", null);
       }
       List<String> tableList = backend.getTables(branch.getId(), namespace.equals("all")
           ? null : namespace);
@@ -187,7 +212,7 @@ public class TableBranchOperations {
     try {
       Branch branch = backend.getBranch(branchName);
       if (branch == null) {
-        return Response.status(404).entity("branch not found").build();
+        return exception(Response.Status.NOT_FOUND, "branch " + branchName + " not found", null);
       }
       return Response.ok(branch).tag(tagFromTable(branch)).build();
     } catch (IOException e) {
@@ -234,7 +259,9 @@ public class TableBranchOperations {
     try {
       Table table = backend.getTable(branch, tableName, metadata);
       if (table == null) {
-        return Response.status(404).entity("table not found on branch").build();
+        return exception(Response.Status.NOT_FOUND,
+                         "table " + tableName + " not found on branch " + branch,
+                         null);
       }
       return Response.ok(table).build();
     } catch (IOException e) {
@@ -271,7 +298,9 @@ public class TableBranchOperations {
                                    Branch branch) {
     try {
       if (backend.getBranch(branchName) != null) {
-        return Response.status(409).entity("branch " + branch + " already exist").build();
+        return exception(Response.Status.CONFLICT,
+                         "branch " + branchName + " already exists",
+                         null);
       }
       Branch newBranch = backend.create(branchName,
                                         branch.getId(),
@@ -320,12 +349,12 @@ public class TableBranchOperations {
                                   Table table) {
     try {
       if (backend.getBranch(branch) == null) {
-        return Response.status(404).entity("branch " + branch + " does not exist").build();
+        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
       }
       if (backend.getTable(branch, tableName, false) != null) {
-        return Response.status(404)
-                       .entity("table " + tableName + " already exists on " + branch)
-                       .build();
+        return exception(Response.Status.CONFLICT,
+                         "table " + tableName + " already exists on " + branch,
+                         null);
       }
     } catch (IOException e) {
       return exception(e);
@@ -342,7 +371,9 @@ public class TableBranchOperations {
                                 boolean post) {
     String ifMatch = version(headers);
     if (ifMatch == null) {
-      return Response.status(412, "Tag not up to date").build();
+      return exception(Response.Status.PRECONDITION_FAILED,
+                       "Tag not up to date on " + branch,
+                       null);
     }
     Principal principal = securityContext.getUserPrincipal();
     return update(tableName, branch, table, principal, ifMatch, reason, post);
@@ -376,11 +407,13 @@ public class TableBranchOperations {
                                @Context HttpHeaders headers) {
     try {
       if (backend.getBranch(branch) == null) {
-        return Response.status(404).entity("branch " + branch + " does not exist").build();
+        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
       }
       String ifMatch = version(headers);
       if (ifMatch == null) {
-        return Response.status(412, "Tag not up to date").build();
+        return exception(Response.Status.PRECONDITION_FAILED,
+                         "Tag not up to date on " + branch,
+                         null);
       }
       backend.deleteBranch(branch, ifMatch, meta(securityContext.getUserPrincipal(),
                                                  reason,
@@ -390,8 +423,8 @@ public class TableBranchOperations {
       return Response.ok().build();
     } catch (IOException e) {
       return exception(e);
-    } catch (IllegalStateException e) {
-      return Response.status(412, "Tag not up to date" + exceptionString(e)).build();
+    } catch (NessieConflictException e) {
+      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
     }
   }
 
@@ -425,17 +458,19 @@ public class TableBranchOperations {
                               @Context HttpHeaders headers) {
     try {
       if (backend.getBranch(branch) == null) {
-        return Response.status(404).entity("branch " + branch + " does not exist").build();
+        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
       }
       Table branchTable = backend.getTable(branch, table, false);
       if (branchTable == null) {
-        return Response.status(404)
-                       .entity("table " + table + " does not exists on " + branch)
-                       .build();
+        return exception(Response.Status.NOT_FOUND,
+                         "table " + table + " does not exists on " + branch,
+                         null);
       }
       String ifMatch = version(headers);
       if (ifMatch == null) {
-        return Response.status(412, "Tag not up to date").build();
+        return exception(Response.Status.PRECONDITION_FAILED,
+                         "Tag not up to date on " + branch,
+                         null);
       }
       ImmutableTable deletedTable = ImmutableTable.builder()
                                                   .from(branchTable)
@@ -450,8 +485,8 @@ public class TableBranchOperations {
       return Response.ok().build();
     } catch (IOException e) {
       return exception(e);
-    } catch (IllegalStateException e) {
-      return Response.status(412, "Tag not up to date" + exceptionString(e)).build();
+    } catch (NessieConflictException e) {
+      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
     }
   }
 
@@ -486,14 +521,16 @@ public class TableBranchOperations {
                              @QueryParam("namespace") String namespace) {
     try {
       if (mergeBranch == null) {
-        return Response.status(401).entity("branch to cherry pick from is null").build();
+        return exception(Response.Status.BAD_REQUEST, "branch to cherry pick from is null", null);
       }
       if (backend.getBranch(branch) == null) {
-        return Response.status(404).entity("branch " + branch + " does not exist").build();
+        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
       }
       String ifMatch = version(headers);
       if (ifMatch == null) {
-        return Response.status(412, "Tag not up to date").build();
+        return exception(Response.Status.PRECONDITION_FAILED,
+                         "Tag not up to date on " + branch,
+                         null);
       }
       String result = backend.promote(branch,
                                       mergeBranch,
@@ -509,8 +546,8 @@ public class TableBranchOperations {
       return Response.ok().tag(tagFromTable(result)).build();
     } catch (IOException e) {
       return exception(e);
-    } catch (IllegalStateException e) {
-      return Response.status(412, "Tag not up to date" + exceptionString(e)).build();
+    } catch (NessieConflictException e) {
+      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
     }
   }
 
@@ -545,14 +582,16 @@ public class TableBranchOperations {
                                 @DefaultValue("false") @QueryParam("force") boolean force) {
     try {
       if (mergeBranch == null) {
-        return Response.status(401).entity("branch to merge from is null").build();
+        return exception(Response.Status.BAD_REQUEST, "branch to merge from is null", null);
       }
       if (backend.getBranch(branch) == null) {
-        return Response.status(404).entity("branch " + branch + " does not exist").build();
+        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
       }
       String ifMatch = version(headers);
       if (ifMatch == null) {
-        return Response.status(412, "Tag not up to date").build();
+        return exception(Response.Status.PRECONDITION_FAILED,
+                         "Tag not up to date on " + branch,
+                         null);
       }
       String result = backend.promote(branch,
                                       mergeBranch,
@@ -568,8 +607,8 @@ public class TableBranchOperations {
       return Response.ok().tag(tagFromTable(result)).build();
     } catch (IOException e) {
       return exception(e);
-    } catch (IllegalStateException e) {
-      return Response.status(412, "Tag not up to date" + exceptionString(e)).build();
+    } catch (NessieConflictException e) {
+      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
     }
   }
 
@@ -602,25 +641,27 @@ public class TableBranchOperations {
                                   Table[] batchUpdate) {
     try {
       if (backend.getBranch(branch) == null) {
-        return Response.status(404).entity("branch " + branch + " does not exist").build();
+        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
       }
       String ifMatch = version(headers);
       if (ifMatch == null) {
-        return Response.status(412, "Tag not up to date").build();
+        return exception(Response.Status.PRECONDITION_FAILED,
+                         "Tag not up to date on " + branch,
+                         null);
       }
       String headVersion = backend.commit(branch,
                                           meta(securityContext.getUserPrincipal(),
-                                            reason,
-                                            batchUpdate.length,
-                                            branch,
-                                            Action.COMMIT),
+                                               reason,
+                                               batchUpdate.length,
+                                               branch,
+                                               Action.COMMIT),
                                           ifMatch,
                                           batchUpdate);
       return Response.ok().tag(tagFromTable(headVersion)).build();
     } catch (IOException e) {
       return exception(e);
-    } catch (IllegalStateException e) {
-      return Response.status(412, "Tag not up to date" + exceptionString(e)).build();
+    } catch (NessieConflictException e) {
+      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
     }
   }
 
@@ -653,12 +694,12 @@ public class TableBranchOperations {
                          Table update) {
     try {
       if (backend.getBranch(branch) == null) {
-        return Response.status(404).entity("branch " + branch + " does not exist").build();
+        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
       }
       if (backend.getTable(branch, table, false) == null) {
-        return Response.status(404)
-                       .entity("table " + table + " does not exists on " + branch)
-                       .build();
+        return exception(Response.Status.NOT_FOUND,
+                         "table " + table + " does not exists on " + branch,
+                         null);
       }
     } catch (IOException e) {
       return exception(e);
@@ -674,9 +715,9 @@ public class TableBranchOperations {
                           String reason,
                           boolean post) {
     if (!table.equals(branchTable.getId())) {
-      return Response.status(404)
-                     .entity("Can't update this table, table update is not correct")
-                     .build();
+      return exception(Response.Status.NOT_FOUND,
+                       "Can't update this table, table update is not correct",
+                       null);
     }
     try {
       String headVersion = backend.commit(branch,
@@ -693,8 +734,8 @@ public class TableBranchOperations {
       return Response.ok().tag(tagFromTable(headVersion)).build();
     } catch (IOException e) {
       return exception(e);
-    } catch (IllegalStateException e) {
-      return Response.status(412, "Tag not up to date" + exceptionString(e)).build();
+    } catch (NessieConflictException e) {
+      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
     }
   }
 
@@ -707,16 +748,37 @@ public class TableBranchOperations {
     }
   }
 
-  private static String exceptionString(Exception e) {
-    StringWriter sw = new StringWriter();
-    e.printStackTrace(new PrintWriter(sw));
-    return sw.toString();
+  private static Response exception(Response.Status status,
+                                    String message,
+                                    NessieConflictException e) {
+    Builder builder = ImmutableNessieError.builder()
+                                          .errorCode(status.getStatusCode())
+                                          .errorMessage(message)
+                                          .statusMessage(status.getReasonPhrase());
+    if (e != null) {
+      builder.conflicts(e.getConflictTables()).stackTrace(Throwables.getStackTraceAsString(e));
+    }
+    return Response.status(status)
+                   .entity(Entity.entity(builder.build(), MediaType.APPLICATION_JSON_TYPE))
+                   .build();
   }
 
   private static Response exception(Exception e) {
-    String exceptionAsString = exceptionString(e);
-    return Response.status(500)
-                   .entity(Entity.entity(exceptionAsString, MediaType.APPLICATION_JSON_TYPE))
+    if (e instanceof NessieConflictException) {
+      return exception(Response.Status.INTERNAL_SERVER_ERROR,
+                       e.getMessage(),
+                       (NessieConflictException) e);
+    }
+    Response.Status status = Status.INTERNAL_SERVER_ERROR;
+    String exceptionAsString = Throwables.getStackTraceAsString(e);
+    NessieError nessieError = ImmutableNessieError.builder()
+                                                  .errorCode(status.getStatusCode())
+                                                  .stackTrace(exceptionAsString)
+                                                  .errorMessage(e.getMessage())
+                                                  .statusMessage(status.getReasonPhrase())
+                                                  .build();
+    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                   .entity(Entity.entity(nessieError, MediaType.APPLICATION_JSON_TYPE))
                    .build();
   }
 

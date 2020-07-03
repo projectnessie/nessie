@@ -16,6 +16,17 @@
 
 package com.dremio.nessie.jgit;
 
+import com.dremio.nessie.backend.Backend;
+import com.dremio.nessie.backend.BranchController;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.ImmutableBranch;
+import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.Table;
+import com.dremio.nessie.model.TableMeta;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
@@ -78,7 +89,6 @@ import com.google.common.base.Joiner;
 public class JgitBranchController implements BranchController {
 
   private static final Joiner SLASH = Joiner.on("/");
-  private static final Joiner COMMA = Joiner.on(", ");
 
   private final Repository repository;
 
@@ -119,7 +129,7 @@ public class JgitBranchController implements BranchController {
       createBranch.setNewObjectId(masterTip);
       Result result = createBranch.update();
       if (!result.equals(Result.NEW)) {
-        throw new IllegalStateException(
+        throw new NessieConflictException(null,
           "result did not complete for create branch on " + branch + " with state " + result);
       }
       headVersion = masterTip.name();
@@ -329,14 +339,14 @@ public class JgitBranchController implements BranchController {
                            CommitMeta commitMeta) throws IOException {
     RefUpdate update = repository.updateRef(Constants.R_HEADS + branch);
     if (!ObjectId.isEqual(update.getRef().getObjectId(), ObjectId.fromString(version))) {
-      throw new IllegalStateException("can't delete branch, not HEAD");
+      throw new NessieConflictException(null, "can't delete branch, not HEAD");
     }
     update.setRefLogMessage(commitMeta.toString(), false);
     update.setForceUpdate(true);
     update.setExpectedOldObjectId(ObjectId.fromString(version));
     Result deleteResult = update.delete();  // todo concurrency & check
     if (!deleteResult.equals(Result.FORCED)) {
-      throw new IOException("delete failed " + deleteResult);
+      throw new NessieConflictException(ImmutableList.of(branch), "delete failed " + deleteResult);
     }
   }
 
@@ -386,7 +396,7 @@ public class JgitBranchController implements BranchController {
       commitId = null;
     }
     if (!ObjectId.isEqual(commitId, ObjectId.fromString(version))) {
-      throw new IllegalStateException("version commit doesn't equal current HEAD");
+      throw new NessieConflictException(null, "version commit doesn't equal current HEAD");
     }
     return commitId;
   }
@@ -401,16 +411,16 @@ public class JgitBranchController implements BranchController {
     ObjectId commitId;
     try {
       commitId = checkVersion(version, branch);
-    } catch (IllegalStateException e) {
-      Entry<ObjectId, String> pair = tryTwoWayMerge(branch,
-                                                    newTreeId,
-                                                    updateTime,
-                                                    commitMeta,
-                                                    inserter,
-                                                    version);
+    } catch (NessieConflictException e) {
+      Entry<ObjectId, List<String>> pair = tryTwoWayMerge(branch,
+                                                          newTreeId,
+                                                          updateTime,
+                                                          commitMeta,
+                                                          inserter,
+                                                          version);
       commitId = pair.getKey();
       if (commitId == null) {
-        throw new IllegalStateException("conflicted files: " + pair.getValue(), e);
+        throw new NessieConflictException(pair.getValue(), "conflicted files", e);
       }
     }
     inserter.flush();
@@ -434,7 +444,7 @@ public class JgitBranchController implements BranchController {
     return commitTree(newTreeId, branch, updateTime, commitMeta, version, inserter);
   }
 
-  private Map.Entry<ObjectId, String> tryTwoWayMerge(String branch,
+  private Map.Entry<ObjectId, List<String>> tryTwoWayMerge(String branch,
                                                      ObjectId newTreeId,
                                                      long updateTime,
                                                      CommitMeta commitMeta,
@@ -447,7 +457,7 @@ public class JgitBranchController implements BranchController {
     merger.setBase(ObjectId.fromString(version));
     boolean ok = merger.merge(treeId, newTreeId);
     if (!ok) {
-      return new SimpleImmutableEntry<>(null, COMMA.join(merger.conflictFiles()));
+      return new SimpleImmutableEntry<>(null, merger.conflictFiles());
     }
     ObjectId mergedTreeId = merger.getResultTreeId();
     String commit = commitTree(mergedTreeId,
@@ -469,7 +479,7 @@ public class JgitBranchController implements BranchController {
     }
     Result result = ref.update();
     if (!result.equals(Result.NEW) && !result.equals(Result.FAST_FORWARD)) {
-      throw new IllegalStateException(
+      throw new NessieConflictException(null,
         "Unable to complete commit and update Ref " + ref.getRef() + ", result was " + result);
     }
     return newCommitId.name();
@@ -526,7 +536,7 @@ public class JgitBranchController implements BranchController {
     }
 
     if (!cherryPick) {
-      throw new IllegalStateException("unable to perform merge without cherry-pick");
+      throw new NessieConflictException(null, "unable to perform merge without cherry-pick");
     }
 
     List<RevCommit> pickList = calculatePickList(upstreamCommit, headCommit);
@@ -560,8 +570,7 @@ public class JgitBranchController implements BranchController {
                         version,
                         repository.newObjectInserter());
     } else {
-      String files = COMMA.join(merger.conflictFiles());
-      throw new IOException("rebase failed, files in error: " + files);
+      throw new NessieConflictException(merger.conflictFiles(), "rebase failed");
     }
   }
 
@@ -598,12 +607,12 @@ public class JgitBranchController implements BranchController {
           case FORCED:
             break;
           default:
-            throw new IOException("Could not fast-forward");
+            throw new NessieConflictException(null, "Could not fast-forward");
         }
       }
       return newCommit;
     } catch (CheckoutConflictException e) {
-      throw new JGitInternalException(e.getMessage(), e);
+      throw new NessieConflictException(null, e.getMessage(), e);
     }
   }
 

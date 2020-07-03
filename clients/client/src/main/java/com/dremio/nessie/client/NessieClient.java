@@ -16,6 +16,15 @@
 
 package com.dremio.nessie.client;
 
+import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
+import com.dremio.nessie.client.auth.BasicAuth;
+import com.dremio.nessie.client.rest.NessieNotFoundException;
+import com.dremio.nessie.jwt.JwtUtils;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.NessieConfiguration;
+import com.dremio.nessie.model.Table;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import java.io.Closeable;
 import java.util.List;
 
@@ -108,7 +117,7 @@ public class NessieClient implements Closeable {
                               .get();
     try {
       RestUtils.checkResponse(response);
-    } catch (NotFoundException e) {
+    } catch (NessieNotFoundException e) {
       return null;
     }
     return response.readEntity(Table.class);
@@ -126,7 +135,7 @@ public class NessieClient implements Closeable {
                               .get();
     try {
       RestUtils.checkResponse(response);
-    } catch (NotFoundException e) {
+    } catch (NessieNotFoundException e) {
       return null;
     }
     String pair = extractHeaders(response.getHeaders());

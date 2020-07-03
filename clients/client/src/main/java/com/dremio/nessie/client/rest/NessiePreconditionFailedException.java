@@ -16,13 +16,12 @@
 
 package com.dremio.nessie.client.rest;
 
-import javax.ws.rs.ClientErrorException;
+import com.dremio.nessie.error.NessieError;
 import javax.ws.rs.core.Response;
 
-public class ExtendedClientErrorException extends ClientErrorException {
+public class NessiePreconditionFailedException extends NessieExtendedClientErrorException {
 
-  public ExtendedClientErrorException(Response response) {
-    super(response);
+  public NessiePreconditionFailedException(Response response, NessieError nessieError) {
+    super(response, nessieError);
   }
-
 }

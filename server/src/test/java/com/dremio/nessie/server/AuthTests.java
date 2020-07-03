@@ -26,11 +26,17 @@ import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.client.rest.NessieForbiddenException;
+import com.dremio.nessie.client.rest.NessieNotAuthorizedException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.Table;
 import com.google.common.collect.Lists;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("MissingJavadocMethod")
 public class AuthTests {
@@ -68,7 +74,7 @@ public class AuthTests {
     try {
       runnable.run();
       Assertions.fail();
-    } catch (ForbiddenException e) {
+    } catch (NessieForbiddenException e) {
       return;
     }
     Assertions.fail();
@@ -79,7 +85,7 @@ public class AuthTests {
     try {
       getCatalog("x", "y");
       Assertions.fail();
-    } catch (NotAuthorizedException e) {
+    } catch (NessieNotAuthorizedException e) {
       //what we expect
     } catch (Throwable t) {
       Assertions.fail();
