@@ -28,7 +28,14 @@ import com.dremio.nessie.model.ImmutableCommitMeta;
 import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.Table;
 import com.dremio.nessie.server.auth.Secured;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -72,6 +79,7 @@ import org.slf4j.LoggerFactory;
     scheme = "bearer",
     bearerFormat = "JWT"
 )
+@SuppressWarnings("LineLength")
 public class TableBranchOperations {
   //todo git like log
 
@@ -93,6 +101,16 @@ public class TableBranchOperations {
   @RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall")
   @Produces(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Fetch all branches endpoint",
+      tags = {"get", "branch"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(
+          description = "All known branches",
+          content = @Content(mediaType = "application/json",
+            schema = @Schema(implementation = Branch[].class))),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
   public Response tags() {
     try {
       return Response.ok(backend.getBranches().toArray(new Branch[0])).build();
@@ -112,8 +130,21 @@ public class TableBranchOperations {
   @Timed(name = "timed-readall-tables")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{branch}/tables")
-  public Response branch(@PathParam("branch") String branchName,
-                         @DefaultValue("all") @QueryParam("namespace") String namespace) {
+  @Operation(summary = "Fetch all tables on a branch endpoint",
+      tags = {"get", "table"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(
+          description = "all tables on branch",
+          content = @Content(mediaType = "application/json",
+            schema = @Schema(implementation = String[].class))),
+        @ApiResponse(responseCode = "404", description = "Branch not found"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response branch(@Parameter(description = "name of branch to fetch from", required = true)
+                           @PathParam("branch") String branchName,
+                         @Parameter(description = "filter for namespace")
+                           @DefaultValue("all") @QueryParam("namespace") String namespace) {
     try {
       Branch branch = backend.getBranch(branchName);
       if (branch == null) {
@@ -138,8 +169,19 @@ public class TableBranchOperations {
   @Timed(name = "timed-readall-branches")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{branch}")
-  public Response branchTables(@PathParam("branch") String branchName,
-                               @DefaultValue("all") @QueryParam("namespace") String namespace) {
+  @Operation(summary = "Fetch details of a branch endpoint",
+      tags = {"get", "branch"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(
+          description = "Branch details",
+          content = @Content(mediaType = "application/json",
+            schema = @Schema(implementation = Branch.class))),
+        @ApiResponse(responseCode = "404", description = "Branch not found"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response branchTables(@Parameter(description = "name of branch to fetch", required = true)
+                                 @PathParam("branch") String branchName) {
     try {
       Branch branch = backend.getBranch(branchName);
       if (branch == null) {
@@ -170,9 +212,23 @@ public class TableBranchOperations {
   @Timed(name = "timed-readall-table")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{branch}/{table}")
-  public Response branchTable(@PathParam("branch") String branch,
-                              @PathParam("table") String tableName,
-                              @DefaultValue("false") @QueryParam("metadata") boolean metadata) {
+  @Operation(summary = "Fetch details of a table endpoint",
+      tags = {"get", "table"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(
+          description = "Details of table on branch",
+          content = @Content(mediaType = "application/json",
+            schema = @Schema(implementation = Table.class))),
+        @ApiResponse(responseCode = "404", description = "Table not found on branch"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response branchTable(@Parameter(description = "name of branch to search on", required = true)
+                                @PathParam("branch") String branch,
+                              @Parameter(description = "table name to search for", required = true)
+                                @PathParam("table") String tableName,
+                              @Parameter(description = "fetch all metadata on table")
+                                @DefaultValue("false") @QueryParam("metadata") boolean metadata) {
     try {
       Table table = backend.getTable(branch, tableName, metadata);
       if (table == null) {
@@ -187,18 +243,30 @@ public class TableBranchOperations {
   /**
    * create a branch.
    */
+  @SuppressWarnings("LineLength")
   @POST
   @Metered
   @ExceptionMetered(name = "exception-readall-branch")
   @Secured
   @RolesAllowed({"admin"})
   @Timed(name = "timed-readall-branch")
-  @Produces(MediaType.APPLICATION_JSON)
+  @Consumes(MediaType.APPLICATION_JSON)
   @Path("{branch}")
-  public Response createBranch(@PathParam("branch") String branchName,
+  @Operation(summary = "create branch endpoint",
+      tags = {"post", "branch"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(responseCode = "409", description = "Branch already exists"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response createBranch(@Parameter(description = "name of branch to be created", required = true)
+                                 @PathParam("branch") String branchName,
                                @Context SecurityContext securityContext,
-                               @DefaultValue("unknown") @QueryParam("reason") String reason,
-                               Branch branch) {
+                               @Parameter(description = "reason for this action for audit purposes")
+                                 @DefaultValue("unknown") @QueryParam("reason") String reason,
+                               @RequestBody(description = "branch object to be created",
+                               content = @Content(schema = @Schema(implementation = Branch.class)))
+                                   Branch branch) {
     try {
       if (backend.getBranch(branchName) != null) {
         return Response.status(409).entity("branch " + branch + " already exist").build();
@@ -228,12 +296,26 @@ public class TableBranchOperations {
   @Timed(name = "timed-create-table")
   @Path("{branch}/{table}")
   @Consumes(MediaType.APPLICATION_JSON)
-  public Response createTable(@PathParam("branch") String branch,
-                              @PathParam("table") String tableName,
-                              @DefaultValue("unknown") @QueryParam("reason") String reason,
+  @Operation(summary = "create table on branch endpoint",
+      tags = {"post", "table"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(responseCode = "404", description = "Branch doesn't exists"),
+        @ApiResponse(responseCode = "400", description = "Table already exists"),
+        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response createTable(@Parameter(description = "branch on which table will be created", required = true)
+                                @PathParam("branch") String branch,
+                              @Parameter(description = "name of table to be created", required = true)
+                                @PathParam("table") String tableName,
+                              @Parameter(description = "reason for this action for audit purposes")
+                                @DefaultValue("unknown") @QueryParam("reason") String reason,
                               @Context SecurityContext securityContext,
                               @Context HttpHeaders headers,
-                              Table table) {
+                              @RequestBody(description = "table object to be created",
+                                content = @Content(schema = @Schema(implementation = Table.class)))
+                                  Table table) {
     try {
       if (backend.getBranch(branch) == null) {
         return Response.status(404).entity("branch " + branch + " does not exist").build();
@@ -274,9 +356,20 @@ public class TableBranchOperations {
   @RolesAllowed({"admin"})
   @Timed(name = "timed-delete-branch")
   @Path("{branch}")
-  public Response deleteBranch(@PathParam("branch") String branch,
-                               @DefaultValue("false") @QueryParam("purge") boolean purge,
-                               @DefaultValue("unknown") @QueryParam("reason") String reason,
+  @Operation(summary = "delete branch endpoint",
+      tags = {"delete", "branch"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(responseCode = "404", description = "Branch doesn't exists"),
+        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response deleteBranch(@Parameter(description = "branch to delete", required = true)
+                                 @PathParam("branch") String branch,
+                               @Parameter(description = "purge all data about branch")
+                                 @DefaultValue("false") @QueryParam("purge") boolean purge,
+                               @Parameter(description = "reason for this action for audit purposes")
+                                 @DefaultValue("unknown") @QueryParam("reason") String reason,
                                @Context SecurityContext securityContext,
                                @Context HttpHeaders headers) {
     try {
@@ -310,10 +403,22 @@ public class TableBranchOperations {
   @RolesAllowed({"admin"})
   @Timed(name = "timed-delete-table")
   @Path("{branch}/{table}")
-  public Response deleteTable(@PathParam("branch") String branch,
-                              @PathParam("table") String table,
-                              @DefaultValue("unknown") @QueryParam("reason") String reason,
-                              @DefaultValue("false") @QueryParam("purge") boolean purge,
+  @Operation(summary = "delete table on branch endpoint",
+      tags = {"delete", "table"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(responseCode = "404", description = "Branch/table doesn't exists"),
+        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response deleteTable(@Parameter(description = "branch on which to delete table", required = true)
+                                @PathParam("branch") String branch,
+                              @Parameter(description = "table to delete", required = true)
+                                @PathParam("table") String table,
+                              @Parameter(description = "reason for this action for audit purposes")
+                                @DefaultValue("unknown") @QueryParam("reason") String reason,
+                              @Parameter(description = "purge all data about branch")
+                                @DefaultValue("false") @QueryParam("purge") boolean purge,
                               @Context SecurityContext securityContext,
                               @Context HttpHeaders headers) {
     try {
@@ -358,12 +463,25 @@ public class TableBranchOperations {
   @RolesAllowed({"admin"})
   @Timed(name = "timed-cherry-pick")
   @Path("{branch}/cherry-pick")
-  public Response cpBranch(@PathParam("branch") String branch,
+  @Operation(summary = "cherry pick commits from mergeBranch to branch endpoint",
+      tags = {"put", "commit"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(responseCode = "401", description = "no merge branch supplied"),
+        @ApiResponse(responseCode = "404", description = "Branch doesn't exists"),
+        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response cpBranch(@Parameter(description = "branch on which to add merges", required = true)
+                             @PathParam("branch") String branch,
                            @Context SecurityContext securityContext,
                            @Context HttpHeaders headers,
-                           @DefaultValue("unknown") @QueryParam("reason") String reason,
-                           @QueryParam("promote") String mergeBranch,
-                           @QueryParam("namespace") String namespace) {
+                           @Parameter(description = "reason for this action for audit purposes")
+                             @DefaultValue("unknown") @QueryParam("reason") String reason,
+                           @Parameter(description = "name of branch to take commits from", required = true)
+                             @QueryParam("promote") String mergeBranch,
+                           @Parameter(description = "optional namespace, only tables on this namespace will be changed")
+                             @QueryParam("namespace") String namespace) {
     try {
       if (mergeBranch == null) {
         return Response.status(401).entity("branch to cherry pick from is null").build();
@@ -404,11 +522,24 @@ public class TableBranchOperations {
   @RolesAllowed({"admin"})
   @Timed(name = "timed-merge")
   @Path("{branch}/promote")
-  public Response promoteBranch(@PathParam("branch") String branch,
-                                @Context SecurityContext securityContext,
-                                @Context HttpHeaders headers,
-                                @DefaultValue("unknown") @QueryParam("reason") String reason,
-                                @QueryParam("promote") String mergeBranch,
+  @Operation(summary = "merge commits from mergeBranch to branch endpoint",
+      tags = {"put", "commit"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(responseCode = "401", description = "no merge branch supplied"),
+        @ApiResponse(responseCode = "404", description = "Branch doesn't exists"),
+        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response promoteBranch(@Parameter(description = "branch on which to add merges", required = true)
+                           @PathParam("branch") String branch,
+                           @Context SecurityContext securityContext,
+                           @Context HttpHeaders headers,
+                           @Parameter(description = "reason for this action for audit purposes")
+                           @DefaultValue("unknown") @QueryParam("reason") String reason,
+                           @Parameter(description = "name of branch to take commits from", required = true)
+                           @QueryParam("promote") String mergeBranch,
+                           @Parameter(description = "optional force, this will potentially delete history")
                                 @DefaultValue("false") @QueryParam("force") boolean force) {
     try {
       if (mergeBranch == null) {
@@ -450,11 +581,23 @@ public class TableBranchOperations {
   @RolesAllowed({"admin"})
   @Timed(name = "timed-commit")
   @Path("{branch}")
-  public Response updateBatch(@PathParam("branch") String branch,
+  @Operation(summary = "commit tables to branch endpoint",
+      tags = {"put", "commit"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(responseCode = "404", description = "Branch doesn't exists"),
+        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response updateBatch(@Parameter(description = "branch on which to add merges", required = true)
+                                @PathParam("branch") String branch,
                               @Context SecurityContext securityContext,
                               @Context HttpHeaders headers,
-                              @DefaultValue("unknown") @QueryParam("reason") String reason,
-                              Table[] batchUpdate) {
+                              @Parameter(description = "reason for this action for audit purposes")
+                                @DefaultValue("unknown") @QueryParam("reason") String reason,
+                              @RequestBody(description = "table objects to be created, updated or deleted",
+                                content = @Content(schema = @Schema(implementation = Table[].class)))
+                                  Table[] batchUpdate) {
     try {
       if (backend.getBranch(branch) == null) {
         return Response.status(404).entity("branch " + branch + " does not exist").build();
@@ -489,9 +632,20 @@ public class TableBranchOperations {
   @RolesAllowed({"admin"})
   @Timed(name = "timed-commit-table")
   @Path("{branch}/{table}")
-  public Response update(@PathParam("branch") String branch,
-                         @PathParam("table") String table,
-                         @DefaultValue("unknown") @QueryParam("reason") String reason,
+  @Operation(summary = "update via commit single table to branch endpoint",
+      tags = {"put", "commit"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(responseCode = "404", description = "Branch/table doesn't exists"),
+        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response update(@Parameter(description = "branch on which to add merges", required = true)
+                           @PathParam("branch") String branch,
+                         @Parameter(description = "table which will be changed", required = true)
+                           @PathParam("table") String table,
+                         @Parameter(description = "reason for this action for audit purposes")
+                           @DefaultValue("unknown") @QueryParam("reason") String reason,
                          @Context SecurityContext securityContext,
                          @Context HttpHeaders headers,
                          Table update) {
