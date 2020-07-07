@@ -34,3 +34,13 @@ mkdocs gh-deploy
 ```
 
 This assumes that the remote is named `dremio` and will push to the `gh-pages` branch. To use a different remote add `-r <remote-name>`.
+
+### Generate python API docs
+
+1. Enter into `python` directory and activate venv. 
+2. Run `make docs`.
+
+### Generate java API docs
+
+1. from root run `mvn javadoc:aggregate`
+2. `cp -R target/site/apidocs/* site/docs/javadoc`

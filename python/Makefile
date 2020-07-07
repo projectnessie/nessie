@@ -71,6 +71,7 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	sphinx-apidoc -o docs/ nessie_client
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
+	cp -R docs/_build/html ../site/docs/pydoc
 	$(BROWSER) docs/_build/html/index.html
 
 servedocs: docs ## compile the docs watching for changes
