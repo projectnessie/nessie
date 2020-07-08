@@ -2,7 +2,7 @@
 """Console script for nessie_client."""
 import os
 import sys
-from typing import Any
+from typing import Any, List
 
 import click
 import simplejson as json
@@ -102,18 +102,18 @@ def merge_branch(args: dict, from_branch: str, to_branch: str, force: bool, reas
 def list_tables(args: dict, branch: str, namespace: str) -> None:
     """List tables from BRANCH."""
     tables = args["nessie"].list_tables(branch, namespace)
-    click.echo(TableSchema().dumps(tables, many=True))
+    click.echo(tables)
 
 
 @cli.command()
 @click.argument("branch", nargs=1, required=True)
 @click.argument("table", nargs=-1, required=True)
 @click.pass_obj
-def show_table(args: dict, branch: str, *tables: str) -> None:
+def show_table(args: dict, branch: str, table: List[str]) -> None:
     """List tables from BRANCH."""
-    tables = args["nessie"].get_tables(branch, tables)
+    tables = args["nessie"].get_tables(branch, *table)
     if len(tables) == 1:
-        click.echo(TableSchema().dumps(tables))
+        click.echo(TableSchema().dumps(tables[0]))
     else:
         click.echo(TableSchema().dumps(tables, many=True))
 

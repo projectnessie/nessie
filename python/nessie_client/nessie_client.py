@@ -95,7 +95,8 @@ class NessieClient:
         :param branch: name of branch
         :return: Nessie Table
         """
-        return [TableSchema().load(get_table(self._token, self._base_url, branch, i, self._ssl_verify)) for i in tables]
+        fetched_tables = [get_table(self._token, self._base_url, branch, i, self._ssl_verify) for i in tables]
+        return [TableSchema().load(i) for i in fetched_tables]
 
     def create_table(self: "NessieClient", branch: str, table: Table, reason: str = None) -> None:
         """Create a Nessie table."""

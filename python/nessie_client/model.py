@@ -25,8 +25,9 @@ class Table:
     """Dataclass for Nessie Table."""
 
     id: str = desert.ib(fields.Str())
-    name: str = desert.ib(fields.Str())
+    tableName: str = desert.ib(fields.Str())
     metadataLocation: str = desert.ib(fields.Str())
+    metadata: str = attr.ib(default=None, metadata=desert.metadata(field=fields.Str(allow_none=True)))
     namespace: str = attr.ib(default=None, metadata=desert.metadata(field=fields.Str(allow_none=True)))
     isDeleted: bool = attr.ib(default=False, metadata=desert.metadata(field=fields.Bool()))
     updateTime: int = attr.ib(default=-9223372036854775808, metadata=desert.metadata(field=fields.Int()))

@@ -5,7 +5,3 @@ auth:
     timeout: 10
 endpoint: http://localhost:19120/api/v1
 verify: true
-odbc:
-    port: 31010
-flight:
-    port: 47470
