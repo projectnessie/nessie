@@ -71,11 +71,10 @@ public class ServerStatus {
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "List all configuration settings",
       tags = {"tables"},
-      security = @SecurityRequirement(
-        name = "nessie-auth",
-        scopes = "read:tables"),
+      security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
         @ApiResponse(
+          description = "Configuration settings",
           content = @Content(mediaType = "application/json",
             schema = @Schema(implementation = NessieConfiguration.class))),
         @ApiResponse(responseCode = "400", description = "Unknown Error")}

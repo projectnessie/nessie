@@ -59,6 +59,7 @@ public class Login {
       tags = {"login"},
       responses = {
         @ApiResponse(
+          description = "Auth response object",
           content = @Content(mediaType = "application/json",
             schema = @Schema(implementation = AuthResponse.class))),
         @ApiResponse(responseCode = "401", description = "Not authorized, wrong username/password")}

@@ -32,28 +32,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>com.google.code.maven-replacer-plugin</groupId>
-        <artifactId>replacer</artifactId>
-        <executions>
-          <execution>
-            <id>replace-endpoint</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>replace</goal>
-            </goals>
-            <configuration>
-              <file>${project.build.directory}/classes/swagger-ui/index.html</file>
-              <replacements>
-                <replacement>
-                  <token>"https://petstore.swagger.io/v2/swagger.json"</token>
-                  <value>'http://localhost:19120/api/v1/openapi.yaml'</value>
-                </replacement>
-              </replacements>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <executions>
           <execution>
