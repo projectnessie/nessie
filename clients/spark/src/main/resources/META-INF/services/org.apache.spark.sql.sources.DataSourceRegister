@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-org.apache.iceberg.spark.source.NessieIcebergSource
+com.dremio.nessie.iceberg.spark.NessieIcebergSource

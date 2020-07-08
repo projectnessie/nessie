@@ -19,7 +19,6 @@ package com.dremio.nessie.client;
 import com.dremio.nessie.client.rest.ConflictException;
 import com.dremio.nessie.client.rest.PreconditionFailedException;
 import com.dremio.nessie.json.ObjectMapperContextResolver;
-import com.dremio.nessie.model.Base;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import javax.ws.rs.BadRequestException;
@@ -34,6 +33,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 
 /**
  * common REST utils.
