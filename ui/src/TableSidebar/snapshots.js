@@ -28,9 +28,10 @@ function listToObj(l) {
 }
 
 export default function DisplaySnapshots(props) {
+  let i = 0
   const makeCard = (title, body) => {
     return (
-      <Card style={{width: '18rem'}}>
+      <Card style={{width: '18rem'}} key={i++}>
         <Card.Header>{title}</Card.Header>
         <Card.Body>{body}</Card.Body>
       </Card>
@@ -40,9 +41,8 @@ export default function DisplaySnapshots(props) {
 
 
   const snapshotIndex = props.snapshotIndex;
-  const table = props.table;
+  const table = props.table.metadata;
   const snapshots = listToObj(table.snapshots);
-  console.log(snapshots);
   const setSnapshotIndex = (x) => {
     props.setSnapshotIndex(x.target.value);
   }
@@ -71,8 +71,9 @@ export default function DisplaySnapshots(props) {
   )
   const icon = (c) => c ? <CheckIcon/> : <span/>
   const flatten = (a) => (a == null) ? "" : JSON.stringify(Object.values(a))
+  let j = 0;
   const makeRow = (row, color) => (
-    <tr>
+    <tr key={j++}>
       <td>{icon(color)}</td>
       <td>{makePath(row.path)}</td>
       <td>{row.fileFormat}</td>
@@ -85,7 +86,8 @@ export default function DisplaySnapshots(props) {
       <td>{flatten(row.nullValueCounts)}</td>
     </tr>
   );
-  const makeOption = (n) => (<option value={snapshots[n]}>{n}</option>)
+
+  const makeOption = (n) => (<option value={snapshots[n]} key={j++}>{n}</option>)
   return (<div>
     <Row className={"py-2"}>
       <Col xs={8}/>

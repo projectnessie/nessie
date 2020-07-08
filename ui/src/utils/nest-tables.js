@@ -15,22 +15,33 @@
  */
 import * as R from 'ramda';
 
-export function nestTables(tables) {
+export function nestTables(branch, tables) {
   let counter = 0;
-  let nestedTables = {'name':'root'};
+  let nestedTables = {'name':branch};
 
-  R.map((t) => {
-    t.parts = t.namespace.split('.');
-    t.id = (counter++).toString();
+  if (!tables.map) {
+    return nestedTables;
+  }
+  let splitTables = tables.map(x => {
+    let pieces = x.split('.');
+    const t = {'parts': pieces.slice(0, pieces.length-1),
+      'tableName': pieces[pieces.length-1],
+      'id': (counter++).toString()
+    };
+    t.namespace = t.parts.join('.');
     return t;
-  }, tables);
+  });
+
   R.map((t) => {
     let x = nestedTables;
     t.parts.forEach(n => {
       if (!x.hasOwnProperty("children")) {
         x['children'] = [];
       }
-      x.children.push({'name':n, 'id':(counter++).toString()});
+      const existingNamespace = x.children.filter(t => t.name === n);
+      if (existingNamespace.length === 0) {
+        x.children.push({'name': n, 'id': (counter++).toString()});
+      }
       x = x.children[x.children.length - 1];
     });
     if (!x.hasOwnProperty("children")) {
@@ -40,7 +51,7 @@ export function nestTables(tables) {
     // t['id'] = (counter++).toString();
     x.children.push(t);
     return t;
-  }, tables);
+  }, splitTables);
   nestedTables['id'] = (counter++).toString();
   return nestedTables;
 }

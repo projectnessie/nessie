@@ -91,6 +91,9 @@
         <configuration>
           <installDirectory>target</installDirectory>
           <nodeVersion>v12.16.2</nodeVersion>
+          <environmentVariables>
+            <CI>true</CI>
+          </environmentVariables>
         </configuration>
         <executions>
           <execution>

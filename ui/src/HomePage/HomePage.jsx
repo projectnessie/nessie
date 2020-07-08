@@ -13,75 +13,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react';
+import React, {useState} from 'react';
 
-import {userService, authenticationService} from '../services';
+import {authenticationService} from '../services';
 import RecursiveTreeView from "../TableSidebar/tree-view";
 import TableView from "../TableSidebar/table-view";
 import {Container, Row, Col} from "react-bootstrap";
 import {config} from "../config";
 import {nestTables} from "../utils";
 
-class HomePage extends React.Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      currentUser: authenticationService.currentUserValue,
-      users: null,
-      selected: null
-    };
-    this.handleClick = this.handleClick.bind(this);
+function handleClick(event, table, tables, currentUser, currentBranch, setSelected ) {
+  if (table < tables.length) {
+    fetchTable(tables[table], currentUser, currentBranch, setSelected);
   }
+}
 
-  componentDidMount() {
-    userService.getAll().then(users => this.setState({users}));
+function fetchTable(table, currentUser, currentBranch, setSelected) {
+  if (currentUser && currentBranch) {
     const requestOptions = {
       method: 'GET',
-      headers: {'Authorization': this.state.currentUser.token},
+      headers: {'Authorization': currentUser.token},
       tables: null,
       nestedTables: null
     };
 
-    fetch(`${config.apiUrl}/api/v1/tables`, requestOptions)
+    fetch(`${config.apiUrl}/objects/${currentBranch}/${table}?metadata=true`, requestOptions)
       .then(res => {
         return res.json();
       })
       .then((data) => {
-        this.setState({tables: data});
-        return nestTables(data);
-      })
-      .then((data) => {
-        this.setState({nestedTables: data})
+        setSelected(data);
       })
       .catch(console.log);
   }
-
-  handleClick(event, table) {
-    console.log(table);
-    if (table < this.state.tables.length) {
-      console.log(this.state.tables[table]);
-      this.setState({selected: this.state.tables[table]});
-    }
-  }
-
-  render() {
-    const {nestedTables, selected} = this.state;
-    return (
-      <div>
-        <Container fluid>
-          <Row>
-            <Col xs={2}>
-              <RecursiveTreeView tables={nestedTables} onClick={this.handleClick}/>
-            </Col>
-            <Col>
-                <TableView table={selected}/>
-            </Col>
-          </Row>
-        </Container>
-      </div>
-    );
-  }
 }
 
-export {HomePage};
+export default function HomePage(props) {
+  const currentBranch = props.currentBranch;
+  const currentUser = authenticationService.currentUserValue;
+  const tables = props.currentTables;
+
+  const [tableSelected, setSelected] = useState(null);
+  // this.fetchTables();
+  return (
+    <div>
+      <Container fluid>
+        <Row>
+          <Col xs={2}>
+            <RecursiveTreeView tables={nestTables(currentBranch, tables)} onClick={(e,table) => handleClick(e, table, tables, currentUser, currentBranch, setSelected)}/>
+          </Col>
+          <Col>
+            <TableView table={tableSelected}/>
+          </Col>
+        </Row>
+      </Container>
+    </div>
+  );
+}

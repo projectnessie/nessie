@@ -18,7 +18,7 @@ import React, {Component} from 'react';
 class TableList extends Component {
 
   componentDidMount() {
-    fetch('http://localhost:19120/api/v1/tables')
+    fetch('${config.apiUrl}/tables')
       .then(res => res.json())
       .then((data) => {
         this.setState({tables:data})
