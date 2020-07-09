@@ -23,6 +23,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 public class LocalDynamoDB implements AutoCloseable {
+
   private DynamoDBProxyServer server = null;
 
   /**
@@ -39,9 +40,9 @@ public class LocalDynamoDB implements AutoCloseable {
    */
   public DynamoDbClient client() {
     return DynamoDbClient.builder()
-      .endpointOverride(URI.create("http://localhost:8000"))
-      .region(Region.US_WEST_2)
-      .build();
+                         .endpointOverride(URI.create("http://localhost:8000"))
+                         .region(Region.US_WEST_2)
+                         .build();
   }
 
   @Override

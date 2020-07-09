@@ -18,17 +18,19 @@ package com.dremio.nessie.backend.dynamodb;
 
 import com.google.common.base.Joiner;
 import java.net.URI;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.BeanTableSchema;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughput;
 import software.amazon.awssdk.services.dynamodb.model.ResourceInUseException;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 /**
- * create all tables the Nessie Server needs.
- * For testing only. In prod use CloudFormation or equivalent
+ * create all tables the Nessie Server needs. For testing only. In prod use CloudFormation or
+ * equivalent
  */
 public class CreateTables {
 
@@ -43,15 +45,26 @@ public class CreateTables {
   /**
    * create a table in dynamo db for the given class name.
    */
-  public void create(String tableName) throws ClassNotFoundException {
-    Class<?> clazz = Class.forName("com.dremio.nessie.backend.dynamodb.model." + tableName);
-    DynamoDbEnhancedClient ec = DynamoDbEnhancedClient.builder()
-                                                      .dynamoDbClient(client())
-                                                      .build();
-    BeanTableSchema<?> schema = TableSchema.fromBean(clazz);
-    DynamoDbTable<?> table;
-    table = ec.table("Nessie" + tableName + "Database", schema);
-    table.createTable();
+  public void create(String tableName) {
+    String table = "Nessie" + tableName + "Database";
+    CreateTableRequest request =
+        CreateTableRequest.builder()
+                          .attributeDefinitions(AttributeDefinition.builder()
+                                                                   .attributeName("uuid")
+                                                                   .attributeType(
+                                                                     ScalarAttributeType.S)
+                                                                   .build())
+                          .keySchema(KeySchemaElement.builder()
+                                                     .attributeName("uuid")
+                                                     .keyType(KeyType.HASH)
+                                                     .build())
+                          .provisionedThroughput(ProvisionedThroughput.builder()
+                                                                      .readCapacityUnits(10L)
+                                                                      .writeCapacityUnits(10L)
+                                                                      .build())
+                          .tableName(table)
+                          .build();
+    client().createTable(request);
   }
 
   /**
@@ -72,15 +85,15 @@ public class CreateTables {
    * Create all tables needed for dynamodb to work as a backend.
    *
    * <p>
-   *   This should be used for only testing as the tables should be created w/
-   *   CloudFormation (or equivalent) for production.
+   * This should be used for only testing as the tables should be created w/ CloudFormation (or
+   * equivalent) for production.
    * </p>
    */
-  public static void main(String[] args) throws ClassNotFoundException {
+  public static void main(String[] args) {
     String region = "us-west-2";
     String endpoint = "http://localhost:8000";
     CreateTables tables = new CreateTables(region, endpoint);
-    for (String table : new String[] {"GitObject", "GitRef"}) {
+    for (String table : new String[]{"GitObject", "GitRef"}) {
       try {
         tables.create(table);
       } catch (ResourceInUseException e) {

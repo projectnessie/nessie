@@ -17,8 +17,6 @@
 package com.dremio.nessie.backend.dynamodb;
 
 import com.dremio.nessie.backend.Backend;
-import com.dremio.nessie.backend.dynamodb.model.GitObject;
-import com.dremio.nessie.backend.dynamodb.model.GitRef;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
 import com.dremio.nessie.model.ImmutableBranchControllerObject;
@@ -31,11 +29,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.BeanTableSchema;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughput;
+import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 /**
  * Dynamo db serializer test.
@@ -50,21 +51,27 @@ public class ITTestDynamo {
   @BeforeAll
   public static void start() throws Exception {
     SERVER.start();
-    DynamoDbEnhancedClient ec = DynamoDbEnhancedClient.builder()
-                                                      .dynamoDbClient(SERVER.client())
-                                                      .build();
-    BeanTableSchema<GitObject> schema = TableSchema.fromBean(
-        com.dremio.nessie.backend.dynamodb.model.GitObject.class);
-    DynamoDbTable<GitObject> table = ec.table(
-        "NessieGitObjectDatabase",
-        schema);
-    table.createTable();
-    BeanTableSchema<GitRef> refSchema = TableSchema.fromBean(
-        com.dremio.nessie.backend.dynamodb.model.GitRef.class);
-    DynamoDbTable<GitRef> refTable = ec.table(
-        "NessieGitRefDatabase",
-        refSchema);
-    refTable.createTable();
+    DynamoDbClient client = SERVER.client();
+    for (String t: new String[]{"NessieGitObjectDatabase", "NessieGitRefDatabase"}) {
+      CreateTableRequest request =
+          CreateTableRequest.builder()
+                            .attributeDefinitions(AttributeDefinition.builder()
+                                                                     .attributeName("uuid")
+                                                                     .attributeType(
+                                                                       ScalarAttributeType.S)
+                                                                     .build())
+                            .keySchema(KeySchemaElement.builder()
+                                                       .attributeName("uuid")
+                                                       .keyType(KeyType.HASH)
+                                                       .build())
+                            .provisionedThroughput(ProvisionedThroughput.builder()
+                                                                        .readCapacityUnits(10L)
+                                                                        .writeCapacityUnits(10L)
+                                                                        .build())
+                            .tableName(t)
+                            .build();
+      client.createTable(request);
+    }
   }
 
   @AfterAll
@@ -84,24 +91,23 @@ public class ITTestDynamo {
   }
 
   @Test
-  public void testCrud() throws IOException {
+  public void testCrud() {
     BranchControllerObject table = ImmutableBranchControllerObject.builder()
                                                                   .id("1")
                                                                   .data(new byte[]{1})
                                                                   .updateTime(0L)
                                                                   .type(0)
                                                                   .build();
-    backend.gitBackend().update("", new VersionedWrapper<>(table));
+    backend.gitBackend().update("1", new VersionedWrapper<>(table));
 
     Assertions.assertEquals(1, backend.gitBackend().getAll(true).size());
 
-    VersionedWrapper<BranchControllerObject> versionedGitObject =
-        backend.gitBackend().get("1");
+    VersionedWrapper<BranchControllerObject> versionedGitObject = backend.gitBackend().get("1");
     table = versionedGitObject.getObj();
     Assertions.assertEquals((byte) 1, table.getData()[0]);
 
     table = ImmutableBranchControllerObject.builder().from(table).data(new byte[]{1, 2}).build();
-    backend.gitBackend().update("", versionedGitObject.update(table));
+    backend.gitBackend().update("1", versionedGitObject.update(table));
 
     versionedGitObject = backend.gitBackend().get("1");
     table = versionedGitObject.getObj();
@@ -122,19 +128,17 @@ public class ITTestDynamo {
                                                                         .updateTime(0L)
                                                                         .refId("2")
                                                                         .build();
-    backend.gitRefBackend().update("", new VersionedWrapper<>(table));
+    backend.gitRefBackend().update("1", new VersionedWrapper<>(table));
 
-    VersionedWrapper<BranchControllerReference> versionGitRef1 = backend.gitRefBackend()
-                                                                        .get("1");
-    VersionedWrapper<BranchControllerReference> versionGitRef2 = backend.gitRefBackend()
-                                                                        .get("1");
+    VersionedWrapper<BranchControllerReference> versionGitRef1 = backend.gitRefBackend().get("1");
+    VersionedWrapper<BranchControllerReference> versionGitRef2 = backend.gitRefBackend().get("1");
 
     BranchControllerReference table1 = ImmutableBranchControllerReference.builder()
                                                                          .from(
                                                                            versionGitRef1.getObj())
                                                                          .refId("x")
                                                                          .build();
-    backend.gitRefBackend().update("", versionGitRef1.update(table1));
+    backend.gitRefBackend().update("1", versionGitRef1.update(table1));
 
     BranchControllerReference table2 = ImmutableBranchControllerReference.builder()
                                                                          .from(
@@ -152,7 +156,7 @@ public class ITTestDynamo {
                                                .from(versionGitRef2.getObj())
                                                .refId("xx")
                                                .build();
-    backend.gitRefBackend().update("", versionGitRef2.update(table2));
+    backend.gitRefBackend().update("1", versionGitRef2.update(table2));
 
     VersionedWrapper<BranchControllerReference> versionedGitRef = backend.gitRefBackend()
                                                                          .get("1");

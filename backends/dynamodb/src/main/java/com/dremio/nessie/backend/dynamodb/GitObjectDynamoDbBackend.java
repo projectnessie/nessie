@@ -16,46 +16,52 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
-import com.dremio.nessie.backend.dynamodb.model.GitObject;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.ImmutableBranchControllerObject;
+import com.dremio.nessie.model.ImmutableBranchControllerObject.Builder;
 import com.dremio.nessie.model.VersionedWrapper;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import java.util.HashMap;
+import java.util.Map;
+import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class GitObjectDynamoDbBackend extends AbstractEntityDynamoDbBackend<GitObject,
-    BranchControllerObject> {
+public class GitObjectDynamoDbBackend extends
+                                      AbstractEntityDynamoDbBackend<BranchControllerObject> {
 
 
-  public GitObjectDynamoDbBackend(DynamoDbClient client,
-                                  DynamoDbEnhancedClient mapper) {
-    super(client, mapper, GitObject.class, "NessieGitObjectDatabase");
+  public GitObjectDynamoDbBackend(DynamoDbClient client) {
+    super(client, "NessieGitObjectDatabase", false);
   }
 
   @Override
-  protected GitObject toDynamoDB(VersionedWrapper<BranchControllerObject> from) {
-    return new GitObject(
-      from.getObj().getId(),
-      from.getObj().getType(),
-      //Note: dynamo doesn't accept 0 length byte arrays so we put a dummy here.
-      //the git protocol means any 'real' object will have to be greater than 1 bytes so the
-      //only time a 0 byte array can happen is when creating an empty branch.
-      from.getObj().getData().length == 0 ? new byte[]{-1} : from.getObj().getData(),
-      from.getObj().getUpdateTime()
-    );
+  protected Map<String, AttributeValue> toDynamoDB(VersionedWrapper<BranchControllerObject> from) {
+    Map<String, AttributeValue> item = new HashMap<>();
+    String uuid = from.getObj().getId();
+    String type = String.valueOf(from.getObj().getType());
+    //Note: dynamo doesn't accept 0 length byte arrays so we put a dummy here.
+    //the git protocol means any 'real' object will have to be greater than 1 bytes so the
+    //only time a 0 byte array can happen is when creating an empty branch.
+    byte[] bytes = from.getObj().getData();
+    SdkBytes data = SdkBytes.fromByteArray(bytes.length == 0 ? new byte[]{-1} : bytes);
+    String updateTime = String.valueOf(from.getObj().getUpdateTime());
+
+    item.put("uuid", AttributeValue.builder().s(uuid).build());
+    item.put("type", AttributeValue.builder().n(type).build());
+    item.put("data", AttributeValue.builder().b(data).build());
+    item.put("updateTime", AttributeValue.builder().n(updateTime).build());
+    return item;
   }
 
   @Override
-  protected VersionedWrapper<BranchControllerObject> fromDynamoDB(GitObject from) {
-    return new VersionedWrapper<>(ImmutableBranchControllerObject.builder()
-                                                                 .data(
-                                                                       from.getData().length == 1
-                                                          && from.getData()[0] == ((byte) -1)
-                                                            ? new byte[0] : from.getData())
-                                                                 .id(from.getUuid())
-                                                                 .type(from.getType())
-                                                                 .updateTime(
-                                                                       from.getUpdateTime())
-                                                                 .build());
+  protected VersionedWrapper<BranchControllerObject> fromDynamoDB(
+      Map<String, AttributeValue> from) {
+    Builder builder = ImmutableBranchControllerObject.builder();
+    byte[] data = from.get("data").b().asByteArray();
+    builder.data(data.length == 1 && data[0] == ((byte) -1) ? new byte[0] : data)
+           .id(from.get("uuid").s())
+           .type(Integer.parseInt(from.get("type").n()))
+           .updateTime(Long.parseLong(from.get("updateTime").n()));
+    return new VersionedWrapper<>(builder.build());
   }
 }
