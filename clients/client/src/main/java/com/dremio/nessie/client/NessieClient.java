@@ -229,4 +229,11 @@ public class NessieClient implements Closeable {
     RestUtils.checkResponse(response);
   }
 
+  public static NessieClient basic(String path, String username, String password) {
+    return new NessieClient(AuthType.BASIC, path, username, password);
+  }
+
+  public static NessieClient aws(String path) {
+    return new NessieClient(AuthType.AWS, path, null, null);
+  }
 }
