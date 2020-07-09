@@ -29,17 +29,138 @@
   <name>Nessie - Iceberg Spark Source</name>
   <artifactId>nessie-iceberg-spark</artifactId>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <createDependencyReducedPom>false</createDependencyReducedPom>
+          <filters>
+            <!-- filter to address "Invalid signature file" issue - see https://stackoverflow.com/a/6743609/589215 -->
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>META-INF/*.SF</exclude>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+                <exclude>META-INF/LICENSE</exclude>
+                <exclude>META-INF/LICENSE.md</exclude>
+                <exclude>META-INF/LICENSE.txt</exclude>
+                <exclude>META-INF/NOTIC*</exclude>
+                <exclude>META-INF/DEPENDENCIES</exclude>
+              </excludes>
+            </filter>
+            <filter>
+              <artifact>org.apache.iceberg:iceberg-spark-runtime</artifact>
+              <excludes>
+                <exclude>META-INF/services/org.apache.spark.sql.sources.DataSourceRegister</exclude>
+              </excludes>
+            </filter>
+          </filters>
+          <transformers>
+            <transformer
+              implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+          </transformers>
+          <artifactSet>
+            <excludes>
+              <exclude>org.apache.iceberg:iceberg-api</exclude>
+              <exclude>org.apache.iceberg:iceberg-common</exclude>
+              <exclude>org.apache.iceberg:iceberg-core</exclude>
+              <exclude>com.google.guava:failureaccess</exclude>
+              <exclude>com.google.guava:listenablefuture</exclude>
+              <exclude>com.google.errorprone:error_prone_annotations</exclude>
+              <exclude>com.google.j2objc:j2objc-annotations</exclude>
+              <exclude>org.codehaus.mojo:animal-sniffer-annotations</exclude>
+              <exclude>com.github.stephenc.findbugs:findbugs-annotations</exclude>
+            </excludes>
+          </artifactSet>
+          <relocations>
+            <relocation>
+              <pattern>io.netty</pattern>
+              <shadedPattern>nessie.io.netty</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>com.google</pattern>
+              <shadedPattern>nessie.com.google</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>org.glassfish</pattern>
+              <shadedPattern>nessie.org.glassfish</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>org.jvnet.hk2</pattern>
+              <shadedPattern>nessie.org.jvnet.hk2</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>com.fasterxml.jackson</pattern>
+              <shadedPattern>nessie.com.fasterxml.jackson</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>javax.ws.rs.client</pattern>
+              <shadedPattern>nessie.javax.ws.rs.client</shadedPattern>
+            </relocation>
+            <!-- Entries to relocate netty native libraries  -->
+            <relocation>
+              <pattern>META-INF.native.libnetty_</pattern>
+              <shadedPattern>META-INF.native.libnessie_netty_</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>META-INF.native.netty_</pattern>
+              <shadedPattern>META-INF.native.nessie_netty_</shadedPattern>
+            </relocation>
+
+          </relocations>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
   <dependencies>
     <dependency>
       <groupId>com.dremio.nessie</groupId>
       <artifactId>nessie-iceberg</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.iceberg</groupId>
+          <artifactId>iceberg-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.iceberg</groupId>
+          <artifactId>iceberg-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.iceberg</groupId>
+          <artifactId>iceberg-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-common</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.iceberg</groupId>
       <artifactId>iceberg-spark-runtime</artifactId>
       <version>${iceberg.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.inject</groupId>
+      <artifactId>jersey-hk2</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
