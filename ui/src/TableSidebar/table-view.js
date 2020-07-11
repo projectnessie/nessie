@@ -26,15 +26,16 @@ import DisplayMetadata from "./metadata";
 
 
 function displaySchema(table) {
-  const schema = JSON.parse(table.schema);
+  const schema = JSON.parse(table.metadata.schema);
   const getCheck = (required) => {
     if (required) {
       return (<CheckIcon/>)
     }
     return (<span/>)
   };
+  let i = 0;
   const makeRow = (row) => (
-    <tr>
+    <tr key={i++}>
       <td>{row.id}</td>
       <td>{row.name}</td>
       <td>{row.type}</td>
@@ -58,25 +59,15 @@ function displaySchema(table) {
   )
 }
 
-
-function displayActive(active, table, snapshotIndex, setSnapshotIndex) {
-  if (active === 1) {
-    return displaySchema(table);
-  }
-  if (active === 2) {
-    return <DisplaySnapshots table={table} snapshotIndex={snapshotIndex} setSnapshotIndex={setSnapshotIndex}/>
-  }
-  return <DisplayMetadata table={table}/>
-}
-
 export default function TableView(props) {
   const [table, setTable] = useState(props.table);
   const [active, setActive] = useState(1);
   const [snapshotIndex, setSnapshotIndex] = useState(0);
   useEffect(() => setTable(props.table), [props]);
-  if (table == null) {
+  if (table == null || table.metadata == null) {
     return (<div/>)
   }
+
   return (
     <Container fluid className={"mainbar"}>
       <Navbar bg="light" expand="lg" className={"top-box"}>
@@ -85,7 +76,7 @@ export default function TableView(props) {
           {table.tableName}
         </Navbar.Text>
         <Navbar.Text>
-          Snapshots: {table.snapshots.length} Last Updated: {new Date(table.updateTime).toString()}
+          Snapshots: {table.metadata.snapshots.length} Last Updated: {new Date(table.updateTime).toString()}
         </Navbar.Text>
       </Navbar>
       <Nav fill variant="tabs" activeKey={active} onSelect={setActive} className={"middle-box"}>
@@ -100,7 +91,19 @@ export default function TableView(props) {
         </Nav.Item>
       </Nav>
       <div className={"bottom-box"}>
-        {displayActive(active, table, snapshotIndex, setSnapshotIndex)}
+        <div>
+          {/* eslint-disable-next-line eqeqeq */}
+          <div style={(active == 1) ? {display: 'inline'}: {display:'none'}}> {displaySchema(table)} </div>
+          {/* eslint-disable-next-line eqeqeq */}
+          <div style={(active == 2) ? {display: 'inline'}: {display:'none'}}>
+            <DisplaySnapshots table={table} snapshotIndex={snapshotIndex} setSnapshotIndex={setSnapshotIndex}/>
+          </div>
+          {/* eslint-disable-next-line eqeqeq */}
+          <div style={(active == 3) ? {display: 'inline'}: {display:'none'}}>
+            <DisplayMetadata table={table}/></div>
+          </div>
+
+
       </div>
     </Container>
 

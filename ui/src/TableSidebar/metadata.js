@@ -35,9 +35,9 @@ function totalSize(snapshots) {
   return formatBytes(added+deleted);
 }
 
-const makeCard = (title, body) => {
+const makeCard = (title, body, i) => {
   return (
-    <Card style={{width: '18rem'}}>
+    <Card style={{width: '18rem'}} key={i}>
       <Card.Header>{title}</Card.Header>
       <Card.Body>{body}</Card.Body>
     </Card>
@@ -45,8 +45,7 @@ const makeCard = (title, body) => {
 }
 
 export default function DisplayMetadata(props) {
-  console.log(props.table);
-  const table = props.table;
+  const table = props.table.metadata;
   const snapshot = table.snapshots[table.snapshots.length-1];
   const cards = {
     'Table Id': table.uuid,
@@ -57,9 +56,10 @@ export default function DisplayMetadata(props) {
     'Total Files': snapshot.summary['total-data-files'],
     'Total Size': totalSize(table.snapshots)
   }
+  let i = 0;
   return (<div>
     <CardGroup>
-      {Object.entries(cards).map(entry => makeCard(entry[0], entry[1]))}
+      {Object.entries(cards).map(entry => makeCard(entry[0], entry[1], i++))}
     </CardGroup>
   </div>)
 }

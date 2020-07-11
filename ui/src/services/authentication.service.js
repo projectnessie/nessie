@@ -30,13 +30,14 @@ export const authenticationService = {
 function login(username, password) {
   const data = new URLSearchParams();
   data.append('username', username);
-  data.append('password', password)
+  data.append('password', password);
+  data.append("grant_type", "password")
   const requestOptions = {
     method: 'POST',
     body: data
   };
 
-  return fetch(`${config.apiUrl}/api/v1/login`, requestOptions)
+  return fetch(`${config.apiUrl}/login`, requestOptions)
     .then(handleResponse)
     .then(user => {
       // store user details and jwt token in local storage to keep user logged in between page refreshes
