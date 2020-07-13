@@ -2,10 +2,10 @@
 """Console script for nessie_client."""
 import os
 import sys
-from typing import Any, List
+from typing import Any
+from typing import List
 
 import click
-import simplejson as json
 
 from . import __version__
 from .conf import build_config

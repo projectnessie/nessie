@@ -9,7 +9,6 @@ from click.testing import CliRunner
 from nessie_client import __version__
 from nessie_client import cli
 from nessie_client.model import BranchSchema
-from nessie_client.model import TableSchema
 
 
 def test_command_line_interface(requests_mock: requests_mock) -> None:

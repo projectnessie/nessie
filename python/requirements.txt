@@ -5,3 +5,5 @@ desert
 marshmallow
 requests
 simplejson
+requests-aws4auth
+botocore
