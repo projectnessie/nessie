@@ -122,7 +122,7 @@ public class AuthTests {
 
   private Table createTable(String name, String location) {
     return ImmutableTable.builder()
-                         .tableName(name)
+                         .name(name)
                          .namespace(location)
                          .metadataLocation("xxx")
                          .id(name)

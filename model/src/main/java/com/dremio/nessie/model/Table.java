@@ -34,25 +34,46 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableTable.class)
 public abstract class Table implements Base {
 
-  public abstract String getTableName();
+  /**
+   * Table Name.
+   */
+  public abstract String getName();
 
+  /**
+   * Optional Namespace.
+   */
   @Nullable
   public abstract String getNamespace();
 
+  /**
+   * Location on a filesystem (defined by source system) of the current table metadata.
+   */
   public abstract String getMetadataLocation();
 
+  /**
+   * Backend id of this table. Currently defined as full namespace.table.
+   */
   public abstract String getId();
 
+  /**
+   * Optional flag to denote deletion on the source system. May still be present in Nessie db.
+   */
   @Value.Default
   public boolean isDeleted() {
     return false;
   }
 
+  /**
+   * Milliseconds since epoch of the last time this table was updated.
+   */
   @Value.Default
   public long getUpdateTime() {
     return Long.MIN_VALUE;
   }
 
+  /**
+   * Source table metadata. A subset of metadata files required for rich UI.
+   */
   @Nullable
   public abstract TableMeta getMetadata();
 }

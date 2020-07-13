@@ -73,7 +73,7 @@ public class RestGitTest extends JerseyTest {
 
     Table table = ImmutableTable.builder()
                                 .id("xxx.test")
-                                .tableName("test")
+                                .name("test")
                                 .namespace("xxx")
                                 .metadataLocation("/the/directory/over/there")
                                 .build();
@@ -86,14 +86,14 @@ public class RestGitTest extends JerseyTest {
     for (int i = 0; i < 10; i++) {
       updates[i] = ImmutableTable.builder()
                                  .id("xxx.test" + i)
-                                 .tableName("test" + i)
+                                 .name("test" + i)
                                  .namespace("xxx")
                                  .metadataLocation("/the/directory/over/there/" + i)
                                  .build();
     }
     updates[10] = ImmutableTable.builder()
                                 .id("xxx.test")
-                                .tableName("test")
+                                .name("test")
                                 .namespace("xxx")
                                 .metadataLocation(
                                         "/the/directory/over/there/has/been/moved")
@@ -104,7 +104,7 @@ public class RestGitTest extends JerseyTest {
     Assertions.assertEquals(200, res.getStatus());
     table = ImmutableTable.builder()
                           .id("xxx.test")
-                          .tableName("test")
+                          .name("test")
                           .namespace("xxx")
                           .metadataLocation(
                                   "/the/directory/over/there/has/been/moved/again")
@@ -125,7 +125,7 @@ public class RestGitTest extends JerseyTest {
     for (int i = 0; i < 10; i++) {
       updates[i] = ImmutableTable.builder()
                                  .id("xxx.test" + i)
-                                 .tableName("test" + i)
+                                 .name("test" + i)
                                  .namespace("xxx")
                                  .metadataLocation("/the/directory/over/there/" + i)
                                  .build();
@@ -175,7 +175,7 @@ public class RestGitTest extends JerseyTest {
     Assertions.assertEquals(201, res.getStatus());
     Table table = ImmutableTable.builder()
                                 .id("xxx.test")
-                                .tableName("test")
+                                .name("test")
                                 .namespace("xxx")
                                 .metadataLocation("/the/directory/over/there")
                                 .build();
@@ -187,7 +187,7 @@ public class RestGitTest extends JerseyTest {
     Object eTagStart = get("objects/test3").get().getHeaders().getFirst("ETag");
     table = ImmutableTable.builder()
                           .id("xxx.test")
-                          .tableName("test")
+                          .name("test")
                           .namespace("xxx")
                           .metadataLocation("/the/directory/over/there/has/been/moved")
                           .build();
@@ -196,7 +196,7 @@ public class RestGitTest extends JerseyTest {
     Assertions.assertEquals(200, res.getStatus());
     table = ImmutableTable.builder()
                           .id("xxx.test")
-                          .tableName("test")
+                          .name("test")
                           .namespace("xxx")
                           .metadataLocation("/the/directory/over/there/has/been/moved/again")
                           .build();
