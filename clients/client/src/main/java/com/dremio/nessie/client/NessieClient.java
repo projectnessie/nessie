@@ -16,6 +16,15 @@
 
 package com.dremio.nessie.client;
 
+import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
+import com.dremio.nessie.client.auth.BasicAuth;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ImmutableBranch;
+import com.dremio.nessie.model.NessieConfiguration;
+import com.dremio.nessie.model.Table;
+import com.dremio.nessie.tracing.TracingUtil;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import java.io.Closeable;
 import java.util.List;
 
@@ -27,6 +36,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
 import com.dremio.nessie.client.auth.BasicAuth;
@@ -61,6 +72,7 @@ public class NessieClient implements Closeable {
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
    */
   public NessieClient(AuthType authType, String path, String username, String password) {
+    TracingUtil.initTracer("nessie-client");
     endpoint = path;
     client = new ClientWithHelpers(authType == AuthType.AWS);
     auth = (authType == AuthType.AWS) ? null : new BasicAuth(endpoint, username, password, client);
@@ -160,7 +172,7 @@ public class NessieClient implements Closeable {
    * @param branch The branch to commit on. Its id is the commit version to commit on top of
    * @param tables list of tables to be added, deleted or modified
    */
-  public void commit(Branch branch, Table... tables) {
+  public Branch commit(Branch branch, Table... tables) {
     Response response = client.get(endpoint,
                                    SLASH.join("objects", branch.getName()),
                                    MediaType.APPLICATION_JSON,
@@ -169,6 +181,8 @@ public class NessieClient implements Closeable {
                               .accept(MediaType.APPLICATION_JSON_TYPE)
                               .put(Entity.entity(tables, MediaType.APPLICATION_JSON_TYPE));
     RestUtils.checkResponse(response);
+    String id = response.getEntityTag().getValue().replace("\"", "");
+    return ImmutableBranch.copyOf(branch).withId(id);
   }
 
   /**

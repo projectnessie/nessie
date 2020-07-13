@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.model.Branch;
@@ -41,6 +43,11 @@ public class AuthTests {
 
   @BeforeAll
   public static void create() throws Exception {
+    try {
+      SharedMetricRegistries.setDefault("default", new MetricRegistry());
+    } catch (IllegalStateException t) {
+      //pass set in previous test
+    }
     server = new TestNessieServer();
     server.start(9993);
   }

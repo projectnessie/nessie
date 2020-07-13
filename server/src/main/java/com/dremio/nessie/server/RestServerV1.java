@@ -16,6 +16,16 @@
 
 package com.dremio.nessie.server;
 
+import com.codahale.metrics.SharedMetricRegistries;
+import com.codahale.metrics.jersey2.InstrumentedResourceMethodApplicationListener;
+import com.dremio.nessie.auth.Users;
+import com.dremio.nessie.json.ObjectMapperContextResolver;
+import com.dremio.nessie.server.rest.Login;
+import com.dremio.nessie.services.rest.ServerStatus;
+import com.dremio.nessie.services.rest.TableBranchOperations;
+import com.fasterxml.jackson.jaxrs.base.JsonMappingExceptionMapper;
+import com.fasterxml.jackson.jaxrs.base.JsonParseExceptionMapper;
+import io.opentracing.contrib.jaxrs2.server.ServerTracingDynamicFeature;
 import javax.ws.rs.ApplicationPath;
 
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -55,14 +65,15 @@ public class RestServerV1 extends ResourceConfig {
     super.packages("io.swagger.sample.resource", "io.swagger.v3.jaxrs2.integration.resources");
     super.register(binder);
     super.register(RolesAllowedDynamicFeature.class);
+    super.register(ServerTracingDynamicFeature.class);
     init();
   }
 
   private void init() {
 
     // FILTERS //
-    register(new InstrumentedResourceMethodApplicationListener(InstrumentationFilter.REGISTRY));
-    register(InstrumentedFilter.class);
+    register(
+        new InstrumentedResourceMethodApplicationListener(SharedMetricRegistries.getDefault()));
 
     // RESOURCES //
     register(ServerStatus.class);

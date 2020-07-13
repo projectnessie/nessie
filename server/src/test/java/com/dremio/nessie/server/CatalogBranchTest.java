@@ -18,6 +18,12 @@ package com.dremio.nessie.server;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.iceberg.NessieCatalog;
+import com.dremio.nessie.iceberg.NessieTableOperations;
 import java.io.File;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
@@ -57,6 +63,11 @@ public class CatalogBranchTest {
 
   @BeforeAll
   public static void create() throws Exception {
+    try {
+      SharedMetricRegistries.setDefault("default", new MetricRegistry());
+    } catch (IllegalStateException t) {
+      //pass set in previous test
+    }
     server = new TestNessieServer();
     server.start(9995);
     alleyLocalDir = java.nio.file.Files.createTempDirectory("test",

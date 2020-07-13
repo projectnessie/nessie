@@ -17,6 +17,7 @@
 package com.dremio.nessie.server;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.servlet.InstrumentedFilterContextListener;
 
 /**
@@ -25,11 +26,10 @@ import com.codahale.metrics.servlet.InstrumentedFilterContextListener;
  * <p>requires prometheus at the moment</p>
  */
 public class InstrumentationFilter extends InstrumentedFilterContextListener {
-  //todo make registry modular
-  public static final MetricRegistry REGISTRY = new MetricRegistry();
+  private final MetricRegistry registry = SharedMetricRegistries.getDefault();
 
   @Override
   protected MetricRegistry getMetricRegistry() {
-    return REGISTRY;
+    return registry;
   }
 }

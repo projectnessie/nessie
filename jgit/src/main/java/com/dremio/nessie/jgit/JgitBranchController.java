@@ -107,7 +107,7 @@ public class JgitBranchController implements BranchController {
                        String baseBranch,
                        CommitMeta commitMeta) throws IOException {
     String headVersion;
-    if (branch.equals("master") && baseBranch == null) {
+    if (branch.equals("master") && (baseBranch == null || baseBranch.equals(branch))) {
       TreeFormatter formatter = new TreeFormatter();
       long updateTime = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
       headVersion = commitTree(formatter, branch, updateTime, commitMeta, null);

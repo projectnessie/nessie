@@ -16,6 +16,25 @@
 
 package com.dremio.nessie;
 
+import ch.qos.logback.classic.LoggerContext;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
+import com.codahale.metrics.jvm.BufferPoolMetricSet;
+import com.codahale.metrics.jvm.ClassLoadingGaugeSet;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
+import com.codahale.metrics.logback.InstrumentedAppender;
+import com.codahale.metrics.servlet.InstrumentedFilter;
+import com.dremio.nessie.server.ConfigurationFactory;
+import com.dremio.nessie.server.InstrumentationFilter;
+import com.dremio.nessie.server.RestServerV1;
+import com.dremio.nessie.server.ServerConfiguration;
+import com.dremio.nessie.tracing.TracingUtil;
+import io.opentracing.contrib.jaxrs2.server.SpanFinishingFilter;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.dropwizard.DropwizardExports;
+import io.prometheus.client.exporter.MetricsServlet;
 import java.io.Closeable;
 import java.lang.management.ManagementFactory;
 import java.util.EnumSet;
@@ -56,6 +75,7 @@ import io.prometheus.client.dropwizard.DropwizardExports;
 import io.prometheus.client.exporter.MetricsServlet;
 
 public class NessieServer implements Closeable {
+
   private static final Logger logger = LoggerFactory.getLogger(NessieServer.class);
 
   private final Server server;
@@ -64,6 +84,7 @@ public class NessieServer implements Closeable {
 
   public NessieServer() {
     server = new Server();
+    SharedMetricRegistries.setDefault("default", new MetricRegistry());
   }
 
   /**
@@ -140,24 +161,30 @@ public class NessieServer implements Closeable {
     final LoggerContext factory = (LoggerContext) LoggerFactory.getILoggerFactory();
     final ch.qos.logback.classic.Logger root = factory.getLogger(Logger.ROOT_LOGGER_NAME);
 
-    final InstrumentedAppender metrics = new InstrumentedAppender(InstrumentationFilter.REGISTRY);
+    MetricRegistry registry = SharedMetricRegistries.getDefault();
+    final InstrumentedAppender metrics = new InstrumentedAppender(registry);
     metrics.setContext(root.getLoggerContext());
     metrics.start();
     root.addAppender(metrics);
-    CollectorRegistry.defaultRegistry
-      .register(new DropwizardExports(InstrumentationFilter.REGISTRY));
-    InstrumentationFilter.REGISTRY.registerAll(new GarbageCollectorMetricSet());
-    InstrumentationFilter.REGISTRY.registerAll(new MemoryUsageGaugeSet());
-    InstrumentationFilter.REGISTRY.registerAll(new ClassLoadingGaugeSet());
-    InstrumentationFilter.REGISTRY.registerAll(new ThreadStatesGaugeSet());
-    InstrumentationFilter.REGISTRY
-      .registerAll(new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()));
+    CollectorRegistry.defaultRegistry.register(new DropwizardExports(registry));
+    registry.registerAll(new GarbageCollectorMetricSet());
+    registry.registerAll(new MemoryUsageGaugeSet());
+    registry.registerAll(new ClassLoadingGaugeSet());
+    registry.registerAll(new ThreadStatesGaugeSet());
+    registry.registerAll(new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()));
 
     servletContextHandler.addServlet(metricsHolder, "/metrics");
     servletContextHandler.addEventListener(new InstrumentationFilter());
     servletContextHandler.addFilter(new FilterHolder(new InstrumentedFilter()), "/*",
-        EnumSet.of(DispatcherType.REQUEST, DispatcherType.ERROR));
+                                    EnumSet.of(DispatcherType.REQUEST, DispatcherType.ERROR));
+    servletContextHandler.addFilter(new FilterHolder(new SpanFinishingFilter()), "/*",
+                                    EnumSet.of(DispatcherType.REQUEST, DispatcherType.ERROR));
+    servletContextHandler.addFilter(new FilterHolder(new InstrumentedFilter()), "/*",
+                                    EnumSet.of(DispatcherType.REQUEST, DispatcherType.ERROR));
+
+    TracingUtil.initTracer("nessie");
   }
+
 
   /**
    * Main entry point.
