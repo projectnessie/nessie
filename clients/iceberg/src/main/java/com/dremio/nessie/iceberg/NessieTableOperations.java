@@ -87,7 +87,7 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
     } else {
       builder.namespace(
         tableIdentifier.hasNamespace() ? tableIdentifier.namespace().toString() : null)
-             .tableName(tableIdentifier.name())
+             .name(tableIdentifier.name())
              .id(tableIdentifier.toString());
     }
     return builder.metadataLocation(metadataLocation);

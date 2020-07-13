@@ -30,23 +30,41 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableBranch.class)
 public abstract class Branch implements Base {
 
+  /**
+   * Human readable branch name.
+  */
   public abstract String getName();
 
+  /**
+   * backend system id. Usually the 20-byte hash of the commit this branch points to.
+   */
   @Nullable
   public abstract String getId();
 
+  /**
+   * Time this branch was originally created. Milliseconds since epoch.
+   */
   @Value.Default
-  public long getCreateMillis() {
+  public long getCreateTime() {
     return Long.MIN_VALUE;
   }
 
-  public abstract OptionalLong getExpireMillis();
+  /**
+   * Optional time this branch is due to expire. Milliseconds since epoch.
+   */
+  public abstract OptionalLong getExpireTime();
 
+  /**
+   * Flag to denote the deletion of this branch. Has not been purged from backend.
+   */
   @Value.Default
   public boolean isDeleted() {
     return false;
   }
 
+  /**
+   * Milliseconds since epoch of the last time this branch was mutated.
+   */
   @Value.Default
   public long getUpdateTime() {
     return Long.MIN_VALUE;

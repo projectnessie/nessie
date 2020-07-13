@@ -175,7 +175,7 @@ public class ProtoUtil {
       return new SimpleImmutableEntry<>(ImmutableTable.builder()
                                                       .id(table.getPath())
                                                       .metadataLocation(table.getMetadataLocation())
-                                                      .tableName(name)
+                                                      .name(name)
                                                       .namespace(namespace)
                                                       .build(),
                                         table.getMetadata());

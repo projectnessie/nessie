@@ -155,7 +155,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
     }
     if (existingFromTable.isDeleted()) {
       throw new NoSuchTableException(String.format("table %s doesn't exists",
-                                                   existingFromTable.getTableName()));
+                                                   existingFromTable.getName()));
     }
     Table existingToTable = table(to);
     if (existingToTable != null && !existingToTable.isDeleted()) {
@@ -165,7 +165,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
     String namespace = to.hasNamespace() ? to.namespace().toString() : null;
     String id = (namespace != null) ? namespace + "." + name : name;
     Table updatedTable = ImmutableTable.builder().from(existingFromTable)
-                                       .tableName(name)
+                                       .name(name)
                                        .namespace(namespace)
                                        .id(id)
                                        .build();

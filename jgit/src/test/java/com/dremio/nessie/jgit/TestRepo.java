@@ -72,7 +72,7 @@ public class TestRepo {
     Table table = ImmutableTable.builder()
                                 .id("db.table")
                                 .namespace("db")
-                                .tableName("table")
+                                .name("table")
                                 .metadataLocation("")
                                 .build();
     String commit = controller.commit("master",
@@ -90,11 +90,11 @@ public class TestRepo {
     assertEquals(tables.get(0), newTable.getId());
     assertEquals(table.getId(), newTable.getId());
     assertEquals(table.getNamespace(), newTable.getNamespace());
-    assertEquals(table.getTableName(), newTable.getTableName());
+    assertEquals(table.getName(), newTable.getName());
     Table table1 = ImmutableTable.builder()
                                  .id("dbx.table")
                                  .namespace("dbx")
-                                 .tableName("table")
+                                 .name("table")
                                  .metadataLocation("")
                                  .build();
     controller.commit("master",
@@ -125,7 +125,7 @@ public class TestRepo {
     Table table = ImmutableTable.builder()
                                 .id("db.table")
                                 .namespace("db")
-                                .tableName("table")
+                                .name("table")
                                 .metadataLocation("")
                                 .build();
     String commit = controller.commit("test",
@@ -137,7 +137,7 @@ public class TestRepo {
     Table newTable = controller.getTable("test", "db.table", false);
     assertEquals(table.getId(), newTable.getId());
     assertEquals(table.getNamespace(), newTable.getNamespace());
-    assertEquals(table.getTableName(), newTable.getTableName());
+    assertEquals(table.getName(), newTable.getName());
     String finalCommit = commit;
     assertThrows(IllegalStateException.class,
         () -> controller.promote("master",
@@ -159,7 +159,7 @@ public class TestRepo {
     newTable = controller.getTable("master", "db.table", false);
     assertEquals(table.getId(), newTable.getId());
     assertEquals(table.getNamespace(), newTable.getNamespace());
-    assertEquals(table.getTableName(), newTable.getTableName());
+    assertEquals(table.getName(), newTable.getName());
     controller.deleteBranch("test", commit, commitMetaDelete("test"));
     controller.commit("master",
                       commitMeta("master", "", Action.COMMIT, 2),
@@ -179,7 +179,7 @@ public class TestRepo {
     Table table = ImmutableTable.builder()
                                 .id("db.table")
                                 .namespace("db")
-                                .tableName("table")
+                                .name("table")
                                 .metadataLocation("")
                                 .build();
     String commit = controller.commit("test",
@@ -189,7 +189,7 @@ public class TestRepo {
     Table table1 = ImmutableTable.builder()
                                  .id("dbx.table")
                                  .namespace("dbx")
-                                 .tableName("table")
+                                 .name("table")
                                  .metadataLocation("")
                                  .build();
     controller.commit("master",
@@ -240,7 +240,7 @@ public class TestRepo {
     Table table = ImmutableTable.builder()
                                 .id("db.table")
                                 .namespace("db")
-                                .tableName("table")
+                                .name("table")
                                 .metadataLocation("")
                                 .build();
     String commit = controller.commit("test",
@@ -250,7 +250,7 @@ public class TestRepo {
     Table table1 = ImmutableTable.builder()
                                  .id("dbx.table")
                                  .namespace("dbx")
-                                 .tableName("table")
+                                 .name("table")
                                  .metadataLocation("")
                                  .build();
     commit = controller.commit("master",
@@ -291,7 +291,7 @@ public class TestRepo {
     Table table = ImmutableTable.builder()
                                 .id("db.table")
                                 .namespace("db")
-                                .tableName("table")
+                                .name("table")
                                 .metadataLocation("")
                                 .metadata(tableMeta)
                                 .build();
@@ -317,7 +317,7 @@ public class TestRepo {
     Table table = ImmutableTable.builder()
                                 .id("db.table")
                                 .namespace("db")
-                                .tableName("table")
+                                .name("table")
                                 .metadataLocation("")
                                 .build();
     String commit = controller.commit("master",
@@ -332,7 +332,7 @@ public class TestRepo {
     Table table1 = ImmutableTable.builder()
                                  .id("dbx.table")
                                  .namespace("dbx")
-                                 .tableName("table")
+                                 .name("table")
                                  .metadataLocation("")
                                  .build();
     commit = controller.commit("master",
@@ -363,7 +363,7 @@ public class TestRepo {
     Table table = ImmutableTable.builder()
                                 .id("db.table")
                                 .namespace("db")
-                                .tableName("table")
+                                .name("table")
                                 .metadataLocation("")
                                 .build();
     String commit = controller.commit("master",
