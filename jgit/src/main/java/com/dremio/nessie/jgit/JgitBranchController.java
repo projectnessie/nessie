@@ -151,13 +151,7 @@ public class JgitBranchController implements BranchController {
       treeWalk.setFilter(PathFilter.create(directoryFor(table)));
       while (treeWalk.next()) {
         Map.Entry<Table, String> branchTablePair = getTable(treeWalk, repository);
-        Table branchTable = branchTablePair.getKey();
-        if (branchTablePair.getValue() != null && metadata) {
-          ObjectLoader ol = repository.open(ObjectId.fromString(branchTablePair.getValue()));
-          TableMeta tm = ProtoUtil.convertToModel(ol.getBytes());
-          branchTable = ImmutableTable.copyOf(branchTable).withMetadata(tm);
-        }
-        return branchTable;
+        return MetadataHandler.fetch(branchTablePair, metadata, repository);
       }
     }
     return null;
@@ -196,16 +190,9 @@ public class JgitBranchController implements BranchController {
     ObjectInserter inserter = repository.newObjectInserter();
     Map<String, Map<String, ObjectId>> commits = new HashMap<>();
     for (Table branchTable : tables) {
-      String id = null;
       ObjectId blobId = null;
       if (!branchTable.isDeleted()) {
-        //optionally store metadata. metadata is stored next to data in object database
-        //protobuf table object is given a reference to this object for deserialization
-        if (branchTable.getMetadata() != null) {
-          byte[] data = ProtoUtil.convertToProtoc(branchTable.getMetadata());
-          ObjectId metaId = inserter.insert(Constants.OBJ_BLOB, data);
-          id = metaId.getName();
-        }
+        String id = MetadataHandler.commit(branchTable, inserter);
         byte[] data = ProtoUtil.tableToProtoc(branchTable, id).toByteArray();
         blobId = inserter.insert(Constants.OBJ_BLOB, data);
       }
