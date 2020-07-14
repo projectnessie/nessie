@@ -134,6 +134,14 @@
     </dependency>
   </dependencies>
 
+  <repositories>
+    <repository>
+      <id>dynamodb-local</id>
+      <name>DynamoDB Local Release Repository</name>
+      <url>${dynamodb-local.repository.url}</url>
+    </repository>
+  </repositories>
+
   <profiles>
     <profile>
       <activation>
