@@ -29,6 +29,7 @@ import com.dremio.nessie.server.auth.NessieSecurityContext;
 import com.dremio.nessie.server.auth.UserServiceDbBackend;
 import java.util.List;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.core.SecurityContext;
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -50,7 +51,7 @@ public class NessieServerBinder extends AbstractBinder {
                              .getUserServiceClassName();
 
     bind(BasicKeyGenerator.class).to(KeyGenerator.class);
-    bindFactory(BackendFactory.class).to(Backend.class);
+    bindFactory(BackendFactory.class).to(Backend.class).in(Singleton.class);
 
     Class<?> usClazz;
     try {
