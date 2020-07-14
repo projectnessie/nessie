@@ -46,6 +46,10 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <argLine></argLine>
 
+    <!-- 3rd party repositories -->
+    <dynamodb-local.repository.url>https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release</dynamodb-local.repository.url>
+    <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
+
     <!-- Version properties -->
     <awssdk.version>2.13.3</awssdk.version>
     <bouncycastle.version>1.60</bouncycastle.version>
@@ -1001,12 +1005,4 @@ limitations under the License.
       </build>
     </profile>
   </profiles>
-  <repositories>
-    <repository>
-      <id>dynamodb-local-oregon</id>
-      <name>DynamoDB Local Release Repository</name>
-      <!--      <url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</url>-->
-      <url>https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release</url>
-    </repository>
-  </repositories>
 </project>
