@@ -61,7 +61,7 @@ public class NessieRepository extends DfsRepository {
    *
    * @param builder description of the repository.
    */
-  protected NessieRepository(DfsRepositoryBuilder builder) {
+  protected NessieRepository(DfsRepositoryBuilder<?, ?> builder) {
     super(builder);
     objectDb = new NessieObjDatabase(this, new DfsReaderOptions(), ((Builder) builder).backend);
     refDatabase = new NessieRefDatabase(this, ((Builder) builder).refBackend);
