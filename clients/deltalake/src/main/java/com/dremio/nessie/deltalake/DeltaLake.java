@@ -17,6 +17,7 @@
 package com.dremio.nessie.deltalake;
 
 import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.Table;
 import java.io.BufferedReader;
@@ -61,7 +62,9 @@ public class DeltaLake extends LogStoreWrapper {
     String path = config.get("nessie.url");
     String username = config.get("nessie.username");
     String password = config.get("nessie.password");
-    this.client = new NessieClient(path, username, password);
+    String authTypeStr = config.get("nessie.auth.type");
+    AuthType authType = AuthType.valueOf(authTypeStr);
+    this.client = new NessieClient(authType, path, username, password);
   }
 
   /**

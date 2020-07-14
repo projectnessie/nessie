@@ -21,7 +21,7 @@ import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.Table;
-import com.dremio.nessie.server.rest.TableBranchOperations;
+import com.dremio.nessie.services.rest.TableBranchOperations;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.Application;

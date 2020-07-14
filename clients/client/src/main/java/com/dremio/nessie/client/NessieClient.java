@@ -16,78 +16,56 @@
 
 package com.dremio.nessie.client;
 
-import com.dremio.nessie.auth.AuthResponse;
 import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
-import com.dremio.nessie.jwt.JwtUtils;
+import com.dremio.nessie.client.auth.BasicAuth;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.Table;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jwt;
-import java.util.Date;
+import java.io.Closeable;
+import java.util.List;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 /**
  * Client side of Nessie. Performs HTTP requests to Server
  */
-public class NessieClient implements AutoCloseable {
+public class NessieClient implements Closeable {
+
+  public enum AuthType {
+    AWS,
+    BASIC
+  }
+
+  static {
+    System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+  }
 
   private static final Joiner SLASH = Joiner.on("/");
 
   private final String endpoint;
-  private final String username;
-  private final String password;
   private final ClientWithHelpers client;
-  private String authHeader;
-  private Date expiryDate;
+  private final BasicAuth auth;
 
   /**
    * create new nessie client. All REST api endpoints are mapped here.
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
    */
-  public NessieClient(String path, String username, String password) {
+  public NessieClient(AuthType authType, String path, String username, String password) {
     endpoint = path;
-    this.password = password;
-    this.username = username;
-    client = new ClientWithHelpers();
-    login(username, password);
-  }
-
-  private void login(String username, String password) {
-    MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
-    formData.add("username", username);
-    formData.add("password", password);
-    formData.add("grant_type", "password");
-    Response response = client.get(endpoint, "login", MediaType.APPLICATION_FORM_URLENCODED, null)
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .post(Entity.form(formData));
-    RestUtils.checkResponse(response);
-    AuthResponse authToken = response.readEntity(AuthResponse.class);
-    try {
-      Jwt<Header, Claims> claims = JwtUtils.checkToken(authToken.getToken());
-      expiryDate = claims.getBody().getExpiration();
-    } catch (Exception e) {
-      expiryDate = new Date(Long.MAX_VALUE);
-    }
-    authHeader = response.getHeaderString(HttpHeaders.AUTHORIZATION);
+    client = new ClientWithHelpers(authType == AuthType.AWS);
+    auth = (authType == AuthType.AWS) ? null : new BasicAuth(endpoint, username, password, client);
   }
 
   private String checkKey() {
-    Date now = new Date();
-    if (now.after(expiryDate)) {
-      login(username, password);
-    }
-    return authHeader;
+    return auth == null ? null : auth.checkKey();
   }
 
   /**
@@ -98,6 +76,16 @@ public class NessieClient implements AutoCloseable {
                               .get();
     RestUtils.checkResponse(response);
     return response.readEntity(NessieConfiguration.class);
+  }
+
+  /**
+   * Fetch all known branches from the server.
+   */
+  public Iterable<Branch> getBranches() {
+    Response response = client.get(endpoint, "objects", MediaType.APPLICATION_JSON, checkKey())
+                              .get();
+    RestUtils.checkResponse(response);
+    return response.readEntity(new GenericType<List<Branch>>() {});
   }
 
   @Override
@@ -189,7 +177,7 @@ public class NessieClient implements AutoCloseable {
    *   filtered by namespace
    * </p>
    */
-  public String[] getAllTables(String branch, String namespace) {
+  public Iterable<String> getAllTables(String branch, String namespace) {
     Response response = client.get(endpoint,
                                    SLASH.join("objects", branch, "tables"),
                                    MediaType.APPLICATION_JSON,
@@ -199,7 +187,7 @@ public class NessieClient implements AutoCloseable {
                               .accept(MediaType.APPLICATION_JSON_TYPE)
                               .get();
     RestUtils.checkResponse(response);
-    return response.readEntity(String[].class);
+    return response.readEntity(new GenericType<List<String>>(){});
   }
 
   private static String extractHeaders(MultivaluedMap<String, Object> headers) {

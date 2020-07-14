@@ -24,10 +24,10 @@ import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.codahale.metrics.logback.InstrumentedAppender;
 import com.codahale.metrics.servlet.InstrumentedFilter;
+import com.dremio.nessie.server.ConfigurationFactory;
 import com.dremio.nessie.server.InstrumentationFilter;
 import com.dremio.nessie.server.RestServerV1;
 import com.dremio.nessie.server.ServerConfiguration;
-import com.dremio.nessie.server.ServerConfigurationImpl;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.dropwizard.DropwizardExports;
 import io.prometheus.client.exporter.MetricsServlet;
@@ -69,7 +69,7 @@ public class NessieServer implements Closeable {
     serverConnector =
       new ServerConnector(server, new HttpConnectionFactory(new HttpConfiguration()));
 
-    ServerConfiguration config = new ServerConfigurationImpl.ConfigurationFactory().provide();
+    ServerConfiguration config = new ConfigurationFactory().provide();
     serverConnector.setPort(config.getServiceConfiguration().getPort());
     server.addConnector(serverConnector);
 

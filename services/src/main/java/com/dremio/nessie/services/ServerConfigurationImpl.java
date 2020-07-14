@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.server;
+package com.dremio.nessie.services;
 
+import com.dremio.nessie.server.ServerConfiguration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import org.glassfish.hk2.api.Factory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,27 +83,6 @@ public class ServerConfigurationImpl implements ServerConfiguration {
   @Override
   public String getDefaultTag() {
     return defaultTag;
-  }
-
-  public static class ConfigurationFactory implements Factory<ServerConfiguration> {
-
-    private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-
-    @Override
-    public ServerConfiguration provide() {
-      try {
-        URL config = getClass().getClassLoader().getResource("config.yaml");
-        return mapper.readValue(config, ServerConfigurationImpl.class);
-      } catch (IOException | NullPointerException | IllegalArgumentException e) {
-        logger.error("Unable to read config, continuing with defaults", e);
-        return new ServerConfigurationImpl();
-      }
-    }
-
-    @Override
-    public void dispose(ServerConfiguration configuration) {
-
-    }
   }
 
   public static class ServerDatabaseConfigurationImpl implements ServerDatabaseConfiguration {
@@ -185,6 +160,7 @@ public class ServerConfigurationImpl implements ServerConfiguration {
     private final String userServiceClassName;
     private final boolean enableLoginEndpoint;
     private final boolean enableUsersEndpoint;
+    private final String authFilterClassName;
 
     /**
      * Constructor for Jackson.
@@ -195,14 +171,23 @@ public class ServerConfigurationImpl implements ServerConfiguration {
                                        @JsonProperty("enableLoginEndpoint")
                                          boolean enableLoginEndpoint,
                                        @JsonProperty("enableUsersEndpoint")
-                                         boolean enableUsersEndpoint) {
+                                         boolean enableUsersEndpoint,
+                                       @JsonProperty("authFilterClassName")
+                                       String authFilterClassName) {
       this.userServiceClassName = userServiceClassName;
       this.enableLoginEndpoint = enableLoginEndpoint;
       this.enableUsersEndpoint = enableUsersEndpoint;
+      this.authFilterClassName = authFilterClassName;
     }
 
+    /**
+     * construct new config object.
+     */
     public ServerAuthConfigurationImpl() {
-      this("com.dremio.nessie.server.auth.BasicUserService", true, true);
+      this("com.dremio.nessie.server.auth.BasicUserService",
+           true,
+           true,
+           "com.dremio.nessie.server.auth.NessieAuthFilter");
     }
 
     @Override
@@ -218,6 +203,11 @@ public class ServerConfigurationImpl implements ServerConfiguration {
     @Override
     public boolean getEnableUsersEndpoint() {
       return enableUsersEndpoint;
+    }
+
+    @Override
+    public String getAuthFilterClassName() {
+      return authFilterClassName;
     }
   }
 

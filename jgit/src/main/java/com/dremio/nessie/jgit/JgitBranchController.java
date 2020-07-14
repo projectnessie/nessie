@@ -40,6 +40,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -71,6 +73,7 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.util.sha1.SHA1;
 
+@ApplicationScoped
 public class JgitBranchController implements BranchController {
 
   private static final Joiner SLASH = Joiner.on("/");
@@ -82,6 +85,7 @@ public class JgitBranchController implements BranchController {
    * Construct a JgitBranchController. This uses jgit to fulfill the BranchController contract.
    * @param backend db backend to work off of
    */
+  @Inject
   public JgitBranchController(Backend backend) {
     DfsRepositoryDescription repoDesc = new DfsRepositoryDescription();
     Repository repository;

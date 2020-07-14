@@ -43,8 +43,12 @@ import javax.ws.rs.core.Response;
 @Path("login")
 public class Login {
 
-  @Inject
   private UserService userService;
+
+  @Inject
+  public Login(UserService userService) {
+    this.userService = userService;
+  }
 
   /**
    * POST operation for login. Follows the password type for Oauth2.

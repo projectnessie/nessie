@@ -31,11 +31,12 @@
     <module>server</module>
     <module>distribution</module>
     <module>backends</module>
-    <module>ui</module>
     <module>serverless</module>
     <module>utils</module>
     <module>clients</module>
     <module>jgit</module>
+    <module>ui</module>
+    <module>services</module>
   </modules>
 
   <properties>
@@ -62,7 +63,7 @@
     <jetty.version>9.4.26.v20200117</jetty.version>
     <jjwt.version>0.11.1</jjwt.version>
     <jgit.version>5.7.0.202003110725-r</jgit.version>
-    <junit.version>5.4.0</junit.version>
+    <junit.version>5.6.0</junit.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.12.2</protobuf.version>
     <prometheus.version>0.8.1</prometheus.version>
@@ -70,6 +71,7 @@
     <slf4j.version>1.7.16</slf4j.version>
     <spark.version>2.4.4</spark.version>
     <sqlite.version>1.0.392</sqlite.version>
+    <quarkus.version>1.5.2.Final</quarkus.version>
   </properties>
 
   <build>
@@ -223,6 +225,11 @@
               </goals>
             </execution>
           </executions>
+        </plugin>
+        <plugin>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-maven-plugin</artifactId>
+          <version>${quarkus.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -448,6 +455,7 @@ limitations under the License.
           </excludes>
           <mapping>
             <DataSourceRegister>SCRIPT_STYLE</DataSourceRegister>
+            <properties>SCRIPT_STYLE</properties>
             <java>SLASHSTAR_STYLE</java>
             <hql>DOUBLEDASHES_STYLE</hql>
             <jnk>DOUBLESLASH_STYLE</jnk>
@@ -909,21 +917,6 @@ limitations under the License.
         <type>dylib</type>
       </dependency>
       <dependency>
-        <groupId>com.amazonaws.serverless</groupId>
-        <artifactId>aws-serverless-java-container-jersey</artifactId>
-        <version>${serverless.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-engine</artifactId>
         <version>${junit.version}</version>
@@ -937,6 +930,13 @@ limitations under the License.
         <groupId>org.immutables</groupId>
         <artifactId>value</artifactId>
         <version>${immutables.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-bom</artifactId>
+        <version>${quarkus.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>

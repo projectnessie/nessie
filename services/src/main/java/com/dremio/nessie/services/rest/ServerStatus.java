@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.server.rest;
+package com.dremio.nessie.services.rest;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Metered;
@@ -23,7 +23,7 @@ import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.model.ImmutableNessieConfiguration;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.server.ServerConfiguration;
-import com.dremio.nessie.server.auth.Secured;
+import com.dremio.nessie.services.auth.Secured;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import javax.annotation.security.RolesAllowed;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -50,6 +51,7 @@ import org.slf4j.LoggerFactory;
     scheme = "bearer",
     bearerFormat = "JWT"
 )
+@ApplicationScoped
 public class ServerStatus {
 
   private static final Logger logger = LoggerFactory.getLogger(ServerStatus.class);

@@ -17,18 +17,19 @@
 package com.dremio.nessie.iceberg;
 
 import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.branch.BranchCatalog;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.Table;
 import com.google.common.base.Joiner;
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseMetastoreCatalog;
 import org.apache.iceberg.TableMetadata;
@@ -42,7 +43,7 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 /**
  * Nessie implementation of Iceberg Catalog.
  */
-public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog, Closeable {
+public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog, AutoCloseable {
 
   private static final Joiner SLASH = Joiner.on("/");
   private static final Joiner DOT = Joiner.on('.');
@@ -60,7 +61,9 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
     String path = config.get("nessie.url");
     String username = config.get("nessie.username");
     String password = config.get("nessie.password");
-    this.client = new NessieClient(path, username, password);
+    String authTypeStr = config.get("nessie.auth.type", "BASIC");
+    AuthType authType = AuthType.valueOf(authTypeStr);
+    this.client = new NessieClient(authType, path, username, password);
     warehouseLocation = config.get("fs.defaultFS") + "/" + ICEBERG_HADOOP_WAREHOUSE_BASE;
     branch = new AtomicReference<>(getOrCreate(config.get("nessie.view-branch",
                                                           client.getConfig().getDefaultBranch())));
@@ -75,7 +78,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
   }
 
   @Override
-  public void close() {
+  public void close() throws Exception {
     client.close();
   }
 
@@ -111,9 +114,11 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
 
   @Override
   public List<TableIdentifier> listTables(Namespace namespace) {
-    String[] tables = client.getAllTables(branch.get().getName(),
+    Iterable<String> tables = client.getAllTables(branch.get().getName(),
                                          namespace == null ? null : namespace.toString());
-    return Arrays.stream(tables).map(NessieCatalog::fromString).collect(Collectors.toList());
+    return StreamSupport.stream(tables.spliterator(), false)
+                        .map(NessieCatalog::fromString)
+                        .collect(Collectors.toList());
   }
 
   private static TableIdentifier fromString(String tableName) {
