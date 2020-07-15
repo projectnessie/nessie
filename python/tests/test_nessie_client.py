@@ -10,11 +10,19 @@ from nessie_client.error import NessieConflictException
 from nessie_client.model import Branch
 
 
+class Fake:
+    """Fake out auth object."""
+
+    def __init__(self: "Fake") -> None:
+        """Fake out auth object."""
+        self.headers = dict()
+
+
 def test_client_interface(requests_mock: requests_mock) -> None:
     """Test client object."""
     requests_mock.post("http://localhost:19120/api/v1/login", text=json.dumps({"token": "12345"}))
     client = init()
-    assert client._token == "12345"
+    assert client._token(Fake()).headers["Authorization"] == "Bearer 12345"
     requests_mock.get("http://localhost:19120/api/v1/objects", text=json.dumps([]))
     branches = client.list_branches()
     assert len(branches) == 0

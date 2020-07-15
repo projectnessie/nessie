@@ -7,6 +7,7 @@ from typing import Union
 
 import requests
 import simplejson as jsonlib
+from requests.auth import AuthBase
 from requests.exceptions import HTTPError
 
 from .error import NessieConflictException
@@ -18,23 +19,23 @@ from .error import NessieUnauthorizedException
 from .model import BranchSchema
 
 
-def _get_headers(token: str, version: str = None) -> dict:
-    headers = {"Authorization": "Bearer {}".format(token), "Content-Type": "application/json"}
+def _get_headers(version: str = None) -> dict:
+    headers = {"Content-Type": "application/json"}
     if version:
         headers["If-Match"] = '"{}"'.format(version)
     return headers
 
 
 def _get(
-    url: str, token: str, details: str = "", ssl_verify: bool = True, params: dict = None
+    url: str, token: AuthBase, details: str = "", ssl_verify: bool = True, params: dict = None
 ) -> Union[str, dict, list]:
-    r = requests.get(url, headers=_get_headers(token), verify=ssl_verify, params=params)
+    r = requests.get(url, headers=_get_headers(), verify=ssl_verify, params=params, auth=token)
     return _check_error(r, details)
 
 
 def _post(
     url: str,
-    token: str,
+    token: AuthBase,
     json: dict = None,
     details: str = "",
     ssl_verify: bool = True,
@@ -43,20 +44,20 @@ def _post(
 ) -> Union[str, dict, list]:
     if isinstance(json, str):
         json = jsonlib.loads(json)
-    r = requests.post(url, headers=_get_headers(token, version), verify=ssl_verify, json=json, params=params)
+    r = requests.post(url, headers=_get_headers(version), verify=ssl_verify, json=json, params=params, auth=token)
     return _check_error(r, details)
 
 
 def _delete(
-    url: str, token: str, details: str = "", ssl_verify: bool = True, params: dict = None, version: str = None
+    url: str, token: AuthBase, details: str = "", ssl_verify: bool = True, params: dict = None, version: str = None
 ) -> Union[str, dict, list]:
-    r = requests.delete(url, headers=_get_headers(token, version), verify=ssl_verify, params=params)
+    r = requests.delete(url, headers=_get_headers(version), verify=ssl_verify, params=params, auth=token)
     return _check_error(r, details)
 
 
 def _put(
     url: str,
-    token: str,
+    token: AuthBase,
     json: dict = None,
     details: str = "",
     ssl_verify: bool = True,
@@ -65,7 +66,7 @@ def _put(
 ) -> Union[str, dict, list]:
     if isinstance(json, str):
         json = jsonlib.loads(json)
-    r = requests.put(url, headers=_get_headers(token, version), verify=ssl_verify, json=json, params=params)
+    r = requests.put(url, headers=_get_headers(version), verify=ssl_verify, json=json, params=params, auth=token)
     return _check_error(r, details)
 
 
@@ -90,7 +91,7 @@ def _check_error(r: requests.models.Response, details: str = "") -> Union[str, d
     raise NessieException("unknown error", error)
 
 
-def all_branches(token: str, base_url: str, ssl_verify: bool = True) -> list:
+def all_branches(token: AuthBase, base_url: str, ssl_verify: bool = True) -> list:
     """Fetch all known branches.
 
     :param token: auth token from previous login attempt
@@ -101,7 +102,7 @@ def all_branches(token: str, base_url: str, ssl_verify: bool = True) -> list:
     return cast(list, _get(base_url + "/objects", token, ssl_verify=ssl_verify))
 
 
-def get_branch(token: str, base_url: str, branch: str, ssl_verify: bool = True) -> dict:
+def get_branch(token: AuthBase, base_url: str, branch: str, ssl_verify: bool = True) -> dict:
     """Fetch a branch.
 
     :param token: auth token from previous login attempt
@@ -114,7 +115,7 @@ def get_branch(token: str, base_url: str, branch: str, ssl_verify: bool = True) 
 
 
 def delete_branch(
-    token: str, base_url: str, branch: str, version: str, reason: str = None, ssl_verify: bool = True
+    token: AuthBase, base_url: str, branch: str, version: str, reason: str = None, ssl_verify: bool = True
 ) -> None:
     """Delete a branch.
 
@@ -135,7 +136,7 @@ def delete_branch(
 
 
 def merge_branch(
-    token: str,
+    token: AuthBase,
     base_url: str,
     to_branch: str,
     from_branch: str,
@@ -164,7 +165,7 @@ def merge_branch(
     )
 
 
-def list_tables(token: str, base_url: str, branch: str, namespace: str = None, ssl_verify: bool = True) -> list:
+def list_tables(token: AuthBase, base_url: str, branch: str, namespace: str = None, ssl_verify: bool = True) -> list:
     """Fetch a list of all tables from a known branch.
 
     :param token: auth token from previous login attempt
@@ -178,7 +179,7 @@ def list_tables(token: str, base_url: str, branch: str, namespace: str = None, s
     return cast(list, _get(base_url + "/objects/{}/tables".format(branch), token, ssl_verify=ssl_verify, params=params))
 
 
-def get_table(token: str, base_url: str, branch: str, table: str, ssl_verify: bool = True) -> dict:
+def get_table(token: AuthBase, base_url: str, branch: str, table: str, ssl_verify: bool = True) -> dict:
     """Fetch a table from a known branch.
 
     :param token: auth token from previous login attempt
@@ -192,7 +193,7 @@ def get_table(token: str, base_url: str, branch: str, table: str, ssl_verify: bo
 
 
 def create_branch(
-    token: str, base_url: str, branch: str, base_branch: str = None, reason: str = None, ssl_verify: bool = True
+    token: AuthBase, base_url: str, branch: str, base_branch: str = None, reason: str = None, ssl_verify: bool = True
 ) -> None:
     """Fetch all known branches.
 

@@ -3,5 +3,6 @@ auth:
     username: admin_user
     password: test123
     timeout: 10
+    region: us-west-2
 endpoint: http://localhost:19120/api/v1
 verify: true

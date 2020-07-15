@@ -15,9 +15,8 @@ def login(base_url: str, username: str, password: str, timeout: int = 10, verify
     """
     url = base_url + "/login"
 
-    r = requests.post(url, data={"username": username,
-            "password": password,
-            "grant_type": "password"},
-        timeout=timeout, verify=verify)
+    r = requests.post(
+        url, data={"username": username, "password": password, "grant_type": "password"}, timeout=timeout, verify=verify
+    )
     r.raise_for_status()
     return r.json()["token"]
