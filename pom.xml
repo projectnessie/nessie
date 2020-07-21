@@ -38,6 +38,7 @@
     <module>ui</module>
     <module>services</module>
     <module>versioned</module>
+    <module>perftest</module>
   </modules>
 
   <properties>
@@ -970,7 +971,7 @@ limitations under the License.
       </build>
     </profile>
     <profile>
-      <!-- 
+      <!--
            Do not activate errorprone while running with Eclipse/M2E as it causes incompatibilities
            with other annotation processors.
            See https://github.com/jbosstools/m2e-apt/issues/62 for details
