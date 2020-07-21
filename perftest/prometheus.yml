@@ -1,0 +1,16 @@
+scrape_configs:
+  - job_name: nessie
+    scrape_interval: 5s
+    static_configs:
+      - targets:
+          - perftest_nessie_1:19120
+          - perftest_nessie_2:19120
+          - perftest_nessie_3:19120
+          - perftest_nessie_4:19120
+          - perftest_nessie_5:19120
+          - perftest_nessie_6:19120
+  - job_name: cadvisor
+    scrape_interval: 5s
+    static_configs:
+      - targets:
+          - cadvisor:8080
