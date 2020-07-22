@@ -279,7 +279,7 @@ public class NessieTableTest {
     String manifestListLocation =
         table.currentSnapshot().manifestListLocation().replace("file:", "");
 
-    List<ManifestFile> manifests = table.currentSnapshot().manifests();
+    List<ManifestFile> manifests = table.currentSnapshot().allManifests();
 
     Assertions.assertTrue(catalog.dropTable(TABLE_IDENTIFIER));
     Assertions.assertFalse(catalog.tableExists(TABLE_IDENTIFIER));
@@ -293,8 +293,7 @@ public class NessieTableTest {
     Assertions.assertFalse(new File(
         ((HasTableOperations) table).operations()
                                   .current()
-                                  .file()
-                                  .location()
+                                  .metadataFileLocation()
                                   .replace("file:", ""))
                              .exists());
   }
