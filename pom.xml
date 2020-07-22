@@ -55,7 +55,7 @@
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
     <guava.version>28.1-jre</guava.version>
     <hadoop.version>3.2.0</hadoop.version>
-    <iceberg.version>0.8.0-incubating</iceberg.version>
+    <iceberg.version>0.9.0</iceberg.version>
     <immutables.version>2.8.2</immutables.version>
     <jackson.version>2.10.2</jackson.version>
     <javax.version>3.1.0</javax.version>
@@ -71,7 +71,7 @@
     <slf4j.version>1.7.16</slf4j.version>
     <spark.version>2.4.4</spark.version>
     <sqlite.version>1.0.392</sqlite.version>
-    <quarkus.version>1.5.2.Final</quarkus.version>
+    <quarkus.version>1.6.1.Final</quarkus.version>
   </properties>
 
   <build>
