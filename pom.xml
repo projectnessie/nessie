@@ -54,7 +54,7 @@
     <awssdk.version>2.13.3</awssdk.version>
     <bouncycastle.version>1.60</bouncycastle.version>
     <deltalake.version>0.5.0</deltalake.version>
-    <dropwizard.version>4.1.5</dropwizard.version>
+    <dropwizard-metrics.version>4.1.11</dropwizard-metrics.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
     <guava.version>28.1-jre</guava.version>
@@ -643,28 +643,10 @@ limitations under the License.
       </dependency>
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
-        <artifactId>metrics-servlet</artifactId>
-        <version>${dropwizard.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.dropwizard.metrics</groupId>
-        <artifactId>metrics-jvm</artifactId>
-        <version>${dropwizard.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.dropwizard.metrics</groupId>
-        <artifactId>metrics-logback</artifactId>
-        <version>${dropwizard.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.dropwizard.metrics</groupId>
-        <artifactId>metrics-jersey2</artifactId>
-        <version>${dropwizard.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.dropwizard.metrics</groupId>
-        <artifactId>metrics-core</artifactId>
-        <version>${dropwizard.version}</version>
+        <artifactId>metrics-bom</artifactId>
+        <version>${dropwizard-metrics.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>io.jsonwebtoken</groupId>
