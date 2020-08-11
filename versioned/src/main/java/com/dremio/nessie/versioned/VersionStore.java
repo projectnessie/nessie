@@ -21,60 +21,40 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * A storage interface that maintains multiple versions of the value type.
+ * A storage interface that maintains multiple versions of the VALUE type with each commit having an associated
+ * METADATA value.
  *
- * @param <VALUE> The value type the version store stores.
+ * @param <VALUE>    The type of data that will be associated with each key. Values must provide an associated
+ *                   Serializer.
+ * @param <METADATA> The type of data that will be associated with each commit. Metadata values must provide an
+ *                   associated Serializer.
  */
-public interface VersionStore<VALUE, COMMIT> {
+public interface VersionStore<VALUE, METADATA> {
 
   /**
-   * Provide the current hash for the given ref.
+   * Provide the current hash for the given NamedRef.
    *
-   * Throws if the ref does not exists.
+   * <p>Throws if the provided NamedRef does not exist.
+   *
    * @param ref The Branch or Tag to lookup.
-   * @return
+   * @return The current hash for that ref.
    */
-  Hash toHash(Ref ref);
+  Hash toHash(NamedRef ref);
 
   /**
    * Create a new commit to a branch.
+   *
+   * <p>Throws if branch does not exist.
+   *
+   * <p>Throws if operation failed due to any of the Operation preconditions expected.
+   *
    * @param branch The branch to commit to.
-   * @param expectedHash The current expected head of the branch.
+   * @param currentBranchHash The current expected head of the branch.
    * @param metadata The metadata associated with the commit.
    * @param operations The set of operations to apply.
    *
-   * Throws if branch does not exist.
-   * Throws if operation failed due to any of the Operation preconditions expected.
    */
-  void commit(BranchName branch, Optional<Hash> currentBranchHash, COMMIT commit, List<Operation<VALUE>> operations);
-
-  /**
-   * List the current branches that exist.
-   * @return
-   */
-  Stream<WithHash<BranchName>> getBranches();
-
-  /**
-   * Assign a branch to point to a particular hash. If the branch does not exist, it will be created.
-   *
-   * Throws if currentBranchHash is defined and does not match the current hash of the provided branch
-   * Throws if the targetHash provided does not exist, an exception will be thrown.
-   *
-   * @param branch            The branch we're assigning
-   * @param tagetHash              The hash that this branch should refer to.
-   * @param currentBranchHash The current hash the branch is pointing to.
-   */
-  void assignBranch(BranchName branch, Hash targetHash, Optional<Hash> currentBranchHash);
-
-  /**
-   * Delete the provided ref. Ref must be a tag or branch.
-   *
-   * Throws exception if the optional hash does not match the provided branch. Also throws exception if the provided ref is a hash as hashes are not deletable
-   *
-   * @param branch The branch to be deleted.
-   * @param hash An optional hash. If provided, this operation will only succeed if the branch is pointing at the provided
-   */
-  void delete(Ref ref, Optional<Hash> hash);
+  void commit(BranchName branch, Optional<Hash> currentBranchHash, METADATA metadata, List<Operation<VALUE>> operations);
 
   /**
    * Transplant a series of commits to a target branch. This is done as an atomic operation such that only the last of
@@ -87,33 +67,45 @@ public interface VersionStore<VALUE, COMMIT> {
   void transplant(BranchName branch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant);
 
   /**
-   * List the available tags.
-   * @return
+   * Assign the NamedRef to point to a particular hash. If the NamedRef does not exist, it will be created.
+   *
+   * <p>Throws if currentBranchHash is defined and does not match the current hash of the provided branch
+   *
+   * <p>Throws if the targetHash provided does not exist, an exception will be thrown.
+   *
+   * @param ref               The named ref we're assigning
+   * @param currentBranchHash The current hash the ref is pointing to.
+   * @param targetHash         The hash that this ref should refer to.
    */
-  Stream<WithHash<TagName>> getTags();
+  void assign(NamedRef ref, Optional<Hash> currentBranchHash, Hash targetHash);
 
   /**
-   * Assign a tag to the provided targetHash. If the tag does not exist, create it.
+   * Delete the provided NamedRef
    *
-   * Throws if the targetHash is not defined or the tag is not pointing at currentTagHash (if provided).
+   * <p>Throws exception if the optional hash does not match the provided ref.
    *
-   * @param tag The tag to assign and/or create.
-   * @param targetHash The hash to point the tag at.
-   * @param currentTagHash The current expected hash of the provided tag.
+   * @param ref The NamedRef to be deleted.
+   * @param hash An optional hash. If provided, this operation will only succeed if the branch is pointing at the provided
    */
-  void assignTag(TagName tag, Hash hash, Optional<Hash> currentTagHash);
+  void delete(NamedRef ref, Optional<Hash> hash);
+
+  /**
+   * List named refs.
+   * @return All refs and their associated hashes.
+   */
+  Stream<WithHash<NamedRef>> getNamedRefs();
 
   /**
    * Get a stream of all ancestor commits to a provided ref.
-   * @param ref
-   * @return
+   * @param ref the stream to get commits for.
+   * @return A stream of commits.
    */
-  Stream<WithHash<COMMIT>> getCommits(Ref ref);
+  Stream<WithHash<METADATA>> getCommits(Ref ref);
 
   /**
    * Get a stream of all available keys for the given ref.
-   * @param ref
-   * @return
+   * @param ref The ref to get keys for.
+   * @return The stream of keys available for this ref.
    */
   Stream<Key> getKeys(Ref ref);
 
@@ -125,16 +117,13 @@ public interface VersionStore<VALUE, COMMIT> {
    */
   VALUE getValue(Ref ref, Key key);
 
-
   /**
    * Get the values for a list of keys.
-   * @param The ref to use.
-   * @param An ordered list of keys to retrieve within the provided ref.
+   * @param ref The ref to use.
+   * @param key An ordered list of keys to retrieve within the provided ref.
    * @return A parallel list of values.
    */
   List<Optional<VALUE>> getValue(Ref ref, List<Key> key);
-
-  // TODO: deal with moves (how?)
 
   /**
    * Collect some garbage. Each time this is called, it collects some garbage and reports the progress of what has been collected
@@ -142,6 +131,14 @@ public interface VersionStore<VALUE, COMMIT> {
    */
   Collector collectGarbage();
 
+  /**
+   * A garbage collector that can be used to collect metadata.
+   */
   public interface Collector extends AutoCloseable, Iterator<CollectionProgress> {}
-  public interface CollectionProgress {}
+
+  /**
+   * The current progress of collection.
+   */
+  public interface CollectionProgress {
+  }
 }

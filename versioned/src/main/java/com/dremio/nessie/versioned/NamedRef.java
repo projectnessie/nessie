@@ -15,12 +15,19 @@
  */
 package com.dremio.nessie.versioned;
 
-import java.nio.ByteBuffer;
-
 /**
- * Used to serialize & deserialize the values in the store. Provided to an implementation of VersionStore on construction.
+ * A ref that has a name. Includes both branches and tags.
  */
-public interface ValueSerializer<V> {
-  ByteBuffer toBytes(V value);
-  V fromBytes(ByteBuffer bytes);
+public interface NamedRef extends Ref {
+
+  String getName();
+
+  default boolean isTag() {
+    return this instanceof TagName;
+  }
+
+  default boolean isBranch() {
+    return this instanceof BranchName;
+  }
+
 }

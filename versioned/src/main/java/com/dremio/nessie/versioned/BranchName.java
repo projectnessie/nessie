@@ -18,6 +18,5 @@ package com.dremio.nessie.versioned;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface BranchName extends Ref {
-  String getName();
+public interface BranchName extends NamedRef {
 }

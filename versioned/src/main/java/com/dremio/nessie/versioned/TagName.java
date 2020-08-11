@@ -21,6 +21,6 @@ import org.immutables.value.Value;
  * A pointer to a hash.
  */
 @Value.Immutable
-public interface TagName extends Ref {
+public interface TagName extends NamedRef {
   String getName();
 }

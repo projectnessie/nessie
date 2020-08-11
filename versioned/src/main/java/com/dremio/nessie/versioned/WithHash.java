@@ -18,16 +18,32 @@ package com.dremio.nessie.versioned;
 import org.immutables.value.Value;
 
 /**
- * A wrapper class that allows a value to be returned with an associated hash.
+ * A wrapper class that allows a value to be returned with an associated hash (a concrete ref).
  *
  * @param <T> The underlying value that will be returned.
  */
 @Value.Immutable
 public interface WithHash<T> {
 
+  /**
+   * Get the value of the hash associated with this commit.
+   * @return
+   */
   Hash getHash();
+
+  /**
+   * Get the value this object wraps.
+   * @return
+   */
   T getValue();
 
+  /**
+   * Build a WithHash object of type T.
+   * @param <T> The value type to hold
+   * @param hash The hash this value type is connected to.
+   * @param value The value held.
+   * @return A new WithHash object.
+   */
   public static <T> WithHash<T> of(Hash hash, T value) {
     return ImmutableWithHash.<T>builder().hash(hash).value(value).build();
   }

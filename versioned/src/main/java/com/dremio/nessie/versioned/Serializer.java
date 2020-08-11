@@ -15,11 +15,14 @@
  */
 package com.dremio.nessie.versioned;
 
-import org.immutables.value.Value;
+import java.nio.ByteBuffer;
 
 /**
- * A delete operation.
+ * Used to serialize & deserialize the values in the store. Provided to an implementation of VersionStore on construction.
  */
-@Value.Immutable
-public interface Delete<V> extends Operation<V> {
+public interface Serializer<V> {
+
+  ByteBuffer toBytes(V value);
+
+  V fromBytes(ByteBuffer bytes);
 }

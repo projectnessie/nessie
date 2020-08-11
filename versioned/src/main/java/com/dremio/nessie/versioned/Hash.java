@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned;
 
 import java.nio.ByteBuffer;
-
 import org.immutables.value.Value;
 
 /**
@@ -24,6 +23,8 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 public interface Hash extends Ref {
+
   ByteBuffer getHash();
+
   String toString();
 }

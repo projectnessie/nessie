@@ -16,11 +16,11 @@
 package com.dremio.nessie.versioned;
 
 import java.util.List;
-
 import org.immutables.value.Value;
 
 @Value.Immutable
 public interface Key extends Comparable<Key> {
+
   List<String> getElements();
 
   static ImmutableKey.Builder builder() {
@@ -35,11 +35,11 @@ public interface Key extends Comparable<Key> {
     List<String> a = this.getElements();
     List<String> b = o.getElements();
     int max = Math.min(a.size(), b.size());
-    for(int i = 0; i < max; i++) {
+    for (int i = 0; i < max; i++) {
       String as = a.get(i).toLowerCase();
       String bs = b.get(i).toLowerCase();
       int cmp = as.compareTo(bs);
-      if(cmp != 0) {
+      if (cmp != 0) {
         return cmp;
       }
     }
