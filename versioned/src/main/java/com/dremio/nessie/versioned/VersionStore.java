@@ -66,6 +66,23 @@ public interface VersionStore<VALUE, METADATA> {
    */
   void transplant(BranchName branch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant);
 
+
+  /**
+   * Merge items from an existing hash into the requested branch. The merge is a a rebase + fast-forward merge and is
+   * only completed if the rebase is conflict free.
+   *
+   * <p>Throws if any of the following are true:
+   * <ul>
+   * <li>the hash or the branch do not exists
+   * <li>the rebase has conflicts
+   * <li>the expected branch hash does not match the actual branch hash
+   * </ul>
+   * @param fromHash  The hash we are using to get additional commits
+   * @param toBranch The branch that we are merging into
+   * @param expectedBranchHash The hash on the toBranch that we expect to match (optional)
+   */
+  void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash);
+
   /**
    * Assign the NamedRef to point to a particular hash. If the NamedRef does not exist, it will be created.
    *
