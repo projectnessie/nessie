@@ -102,16 +102,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.8.1</version>
           <configuration>
-            <compilerArgs>
-              <arg>-XDcompilePolicy=simple</arg>
-              <arg>-Xplugin:ErrorProne</arg>
-            </compilerArgs>
             <annotationProcessorPaths>
-              <path>
-                <groupId>com.google.errorprone</groupId>
-                <artifactId>error_prone_core</artifactId>
-                <version>2.4.0</version>
-              </path>
               <path>
                 <groupId>org.immutables</groupId>
                 <artifactId>value</artifactId>
@@ -965,11 +956,48 @@ limitations under the License.
         </plugins>
       </build>
     </profile>
+    <profile>
+      <!-- 
+           Do not activate errorprone while running with Eclipse/M2E as it causes incompatibilities
+           with other annotation processors.
+           See https://github.com/jbosstools/m2e-apt/issues/62 for details
+      -->
+      <id>error-prone</id>
+      <activation>
+        <property>
+           <name>!m2e.version</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <compilerArgs combine.children="append">
+                <arg>-XDcompilePolicy=simple</arg>
+                <arg>-Xplugin:ErrorProne</arg>
+              </compilerArgs>
+              <annotationProcessorPaths combine.children="append">
+                <path>
+                  <groupId>com.google.errorprone</groupId>
+                  <artifactId>error_prone_core</artifactId>
+                  <version>2.4.0</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <!-- using github.com/google/error-prone-javac is required when running on JDK 8 -->
     <profile>
-      <id>jdk8</id>
+      <id>error-prone-jdk8</id>
       <activation>
         <jdk>1.8</jdk>
+        <property>
+           <name>!m2e.version</name>
+        </property>
       </activation>
       <build>
         <plugins>
