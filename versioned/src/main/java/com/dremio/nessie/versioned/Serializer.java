@@ -15,15 +15,15 @@
  */
 package com.dremio.nessie.versioned;
 
-import java.nio.ByteBuffer;
+import com.google.protobuf.ByteString;
 
 /**
  * Used to serialize & deserialize the values in the store. Provided to an implementation of VersionStore on construction.
  */
 public interface Serializer<V> {
 
-  ByteBuffer toBytes(V value);
+  ByteString toBytes(V value);
 
-  V fromBytes(ByteBuffer bytes);
+  V fromBytes(ByteString bytes);
 
 }

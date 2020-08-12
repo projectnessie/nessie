@@ -15,16 +15,34 @@
  */
 package com.dremio.nessie.versioned;
 
-import java.nio.ByteBuffer;
-import org.immutables.value.Value;
+import com.google.common.io.BaseEncoding;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.UnsafeByteOperations;
 
 /**
- * Describes a specific point in time/history. Similar to a Git Hash.
+ * Describes a specific point in time/history. Internally is a binary value but a string representation is available.
  */
-@Value.Immutable
-public interface Hash extends Ref {
+public final class Hash implements Ref {
 
-  ByteBuffer getHash();
+  private static final BaseEncoding ENCODING = BaseEncoding.base16().lowerCase();
 
-  String toString();
+  private final ByteString bytes;
+
+  private Hash(ByteString bytes) {
+    this.bytes = bytes;
+  }
+
+  public String asString() {
+    return ENCODING.encode(bytes.toByteArray());
+  }
+
+  public static Hash of(String hash) {
+    byte[] bytes = ENCODING.decode(hash);
+    return new Hash(UnsafeByteOperations.unsafeWrap(bytes));
+  }
+
+  @Override
+  public final String toString() {
+    return "Hash " + asString();
+  }
 }

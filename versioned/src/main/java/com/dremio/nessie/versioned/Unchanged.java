@@ -25,7 +25,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface Unchanged<V> extends Operation<V> {
 
-  default boolean isMatchHash() {
+  default boolean shouldMatchHash() {
     return true;
   }
 }

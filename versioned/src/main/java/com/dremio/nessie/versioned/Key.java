@@ -15,15 +15,28 @@
  */
 package com.dremio.nessie.versioned;
 
+import java.text.Collator;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface Key extends Comparable<Key> {
+public abstract class Key implements Comparable<Key> {
 
-  List<String> getElements();
+  private static ThreadLocal<Collator> COLLATOR = new ThreadLocal<Collator>() {
+    @Override
+    protected Collator initialValue() {
+      Collator c = Collator.getInstance(Locale.US);
+      c.setStrength(Collator.PRIMARY);
+      return c;
+    }
+  };
+
+  public abstract List<String> getElements();
 
   static ImmutableKey.Builder builder() {
+
     return ImmutableKey.builder();
   }
 
@@ -31,20 +44,33 @@ public interface Key extends Comparable<Key> {
    * Does a case insensitive comparison by key element.
    */
   @Override
-  default int compareTo(Key o) {
+  public final int compareTo(Key o) {
+    Collator collator = COLLATOR.get();
     List<String> a = this.getElements();
     List<String> b = o.getElements();
     int max = Math.min(a.size(), b.size());
     for (int i = 0; i < max; i++) {
-      String as = a.get(i).toLowerCase();
-      String bs = b.get(i).toLowerCase();
-      int cmp = as.compareTo(bs);
+      int cmp = collator.compare(a.get(i), b.get(i));
       if (cmp != 0) {
         return cmp;
       }
     }
 
     return a.size() - b.size();
+  }
+
+  @Override
+  public int hashCode() {
+    final Collator collator = COLLATOR.get();
+    return getElements().stream().map(s -> collator.getCollationKey(s)).collect(Collectors.toList()).hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof Key)) {
+      return false;
+    }
+    return compareTo((Key) obj) == 0;
   }
 
 }

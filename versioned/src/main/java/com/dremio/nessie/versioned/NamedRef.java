@@ -22,12 +22,4 @@ public interface NamedRef extends Ref {
 
   String getName();
 
-  default boolean isTag() {
-    return this instanceof TagName;
-  }
-
-  default boolean isBranch() {
-    return this instanceof BranchName;
-  }
-
 }

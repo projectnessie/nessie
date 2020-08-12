@@ -52,7 +52,7 @@ public interface StoreWorker<VALUE, COMMIT_METADATA> {
    *
    * <p>TODO: add some kind of mechanism for allowing Nessie to use BloomFilters with these keys.
    */
-  interface AssetKey extends Comparable<AssetKey> {
+  interface AssetKey {
 
     @Override
     boolean equals(Object other);

@@ -22,7 +22,7 @@ public interface Operation<V> {
    *
    * @return True if this operation should match the hash.
    */
-  boolean isMatchHash();
+  boolean shouldMatchHash();
 
   /**
    * The key for this operation.

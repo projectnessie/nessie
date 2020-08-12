@@ -58,27 +58,31 @@ public interface VersionStore<VALUE, METADATA> {
 
   /**
    * Transplant a series of commits to a target branch. This is done as an atomic operation such that only the last of
-   * the sequence is ever visible to concurrent readers/writers.
+   * the sequence is ever visible to concurrent readers/writers. The sequence to transplant must be contiguous, in order
+   * and share a common ancestor to the target branch.
    *
-   * @param branch               The branch
-   * @param currentBranchHash    The required current version of the branch (if provided)
-   * @param sequenceToTransplant The ordered list of hashes to transplant.
+   * @param targetBranch         The branch we're transplanting to
+   * @param currentBranchHash    The required current version of the branch to check before transplanting (if provided)
+   * @param sequenceToTransplant The sequence of hashes to transplant.
    */
-  void transplant(BranchName branch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant);
-
+  void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant);
 
   /**
-   * Merge items from an existing hash into the requested branch. The merge is a a rebase + fast-forward merge and is
-   * only completed if the rebase is conflict free.
+   * Merge items from an existing hash into the requested branch. The merge is always a rebase + fast-forward merge and
+   * is only completed if the rebase is conflict free. The set of commits added to the branch will be all of those until
+   * we arrive at a common ancestor. Depending on the underlying implementation, the number of commits allowed as part
+   * of this operation may be limited
    *
    * <p>Throws if any of the following are true:
+   *
    * <ul>
    * <li>the hash or the branch do not exists
    * <li>the rebase has conflicts
    * <li>the expected branch hash does not match the actual branch hash
    * </ul>
-   * @param fromHash  The hash we are using to get additional commits
-   * @param toBranch The branch that we are merging into
+   *
+   * @param fromHash           The hash we are using to get additional commits
+   * @param toBranch           The branch that we are merging into
    * @param expectedBranchHash The hash on the toBranch that we expect to match (optional)
    */
   void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash);
