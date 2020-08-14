@@ -16,12 +16,6 @@
 
 package com.dremio.nessie.jgit;
 
-import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.Base;
-import com.dremio.nessie.model.BranchControllerObject;
-import com.dremio.nessie.model.ImmutableBranchControllerObject;
-import com.dremio.nessie.model.VersionedWrapper;
-import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collection;
@@ -32,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.internal.storage.dfs.DfsObjDatabase;
 import org.eclipse.jgit.internal.storage.dfs.DfsOutputStream;
@@ -45,6 +40,12 @@ import org.eclipse.jgit.lib.AnyObjectId;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectInserter;
 import org.eclipse.jgit.lib.ObjectLoader.SmallObject;
+
+import com.dremio.nessie.backend.EntityBackend;
+import com.dremio.nessie.model.Base;
+import com.dremio.nessie.model.BranchControllerObject;
+import com.dremio.nessie.model.ImmutableBranchControllerObject;
+import com.dremio.nessie.model.VersionedWrapper;
 
 /**
  * Object databse for Nessie. This uses dynamodb to store git objects.

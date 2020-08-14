@@ -21,11 +21,6 @@ import static org.apache.iceberg.TableMetadataParser.getFileExtension;
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.NessieCatalog;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ImmutableTable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -34,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.hadoop.fs.Path;
@@ -57,6 +53,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.iceberg.NessieCatalog;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ImmutableTable;
 
 @SuppressWarnings("MissingJavadocMethod")
 public class NessieTableTest {

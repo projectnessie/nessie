@@ -16,8 +16,6 @@
 
 package com.dremio.nessie.client.auth;
 
-import com.dremio.nessie.json.ObjectMapperContextResolver;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -25,9 +23,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
+
 import org.apache.http.client.utils.URIBuilder;
+
+import com.dremio.nessie.json.ObjectMapperContextResolver;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.signer.Aws4Signer;

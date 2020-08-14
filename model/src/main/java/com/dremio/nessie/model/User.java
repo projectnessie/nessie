@@ -16,17 +16,16 @@
 
 package com.dremio.nessie.model;
 
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import java.util.Objects;
-import java.util.Set;
-import java.util.StringJoiner;
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
 
 /**
  * API representation of a User of Nessie.

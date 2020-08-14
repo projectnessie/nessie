@@ -16,6 +16,17 @@
 
 package com.dremio.nessie.server;
 
+import java.util.List;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import javax.ws.rs.core.SecurityContext;
+
+import org.glassfish.hk2.api.Factory;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.dremio.nessie.auth.UserService;
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.BranchController;
@@ -27,14 +38,6 @@ import com.dremio.nessie.model.VersionedWrapper;
 import com.dremio.nessie.server.auth.BasicKeyGenerator;
 import com.dremio.nessie.server.auth.NessieSecurityContext;
 import com.dremio.nessie.server.auth.UserServiceDbBackend;
-import java.util.List;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.core.SecurityContext;
-import org.glassfish.hk2.api.Factory;
-import org.glassfish.hk2.utilities.binding.AbstractBinder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Binder for jersey app.

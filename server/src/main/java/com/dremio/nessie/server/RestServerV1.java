@@ -16,6 +16,17 @@
 
 package com.dremio.nessie.server;
 
+import javax.ws.rs.ApplicationPath;
+
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
+import org.glassfish.jersey.CommonProperties;
+import org.glassfish.jersey.internal.util.PropertiesHelper;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.jersey2.InstrumentedResourceMethodApplicationListener;
 import com.codahale.metrics.servlet.InstrumentedFilter;
 import com.dremio.nessie.auth.Users;
@@ -25,15 +36,6 @@ import com.dremio.nessie.services.rest.ServerStatus;
 import com.dremio.nessie.services.rest.TableBranchOperations;
 import com.fasterxml.jackson.jaxrs.base.JsonMappingExceptionMapper;
 import com.fasterxml.jackson.jaxrs.base.JsonParseExceptionMapper;
-import javax.ws.rs.ApplicationPath;
-import org.glassfish.hk2.utilities.binding.AbstractBinder;
-import org.glassfish.jersey.CommonProperties;
-import org.glassfish.jersey.internal.util.PropertiesHelper;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.ServerProperties;
-import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Main entry point for Nessie REST service.

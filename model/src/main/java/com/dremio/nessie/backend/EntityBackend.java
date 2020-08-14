@@ -17,10 +17,10 @@
 package com.dremio.nessie.backend;
 
 
-import com.dremio.nessie.model.VersionedWrapper;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
+import com.dremio.nessie.model.VersionedWrapper;
 
 
 /**

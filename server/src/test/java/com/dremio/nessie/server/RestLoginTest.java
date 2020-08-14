@@ -16,24 +16,27 @@
 
 package com.dremio.nessie.server;
 
-import com.dremio.nessie.auth.Users;
-import com.dremio.nessie.json.ObjectMapperContextResolver;
-import com.dremio.nessie.model.ImmutableUser;
-import com.dremio.nessie.model.User;
-import com.dremio.nessie.server.auth.NessieAuthFilter;
-import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
+
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.glassfish.jersey.test.JerseyTest;
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.dremio.nessie.auth.Users;
+import com.dremio.nessie.json.ObjectMapperContextResolver;
+import com.dremio.nessie.model.ImmutableUser;
+import com.dremio.nessie.model.User;
+import com.dremio.nessie.server.auth.NessieAuthFilter;
+import com.google.common.collect.ImmutableSet;
 
 public class RestLoginTest extends JerseyTest {
 

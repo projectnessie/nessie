@@ -17,7 +17,6 @@
 package com.dremio.nessie.client.rest;
 
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 public class ConflictException extends ExtendedClientErrorException {
 

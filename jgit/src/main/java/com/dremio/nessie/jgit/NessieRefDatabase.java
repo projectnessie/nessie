@@ -16,10 +16,6 @@
 
 package com.dremio.nessie.jgit;
 
-import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.ImmutableBranchControllerReference;
-import com.dremio.nessie.model.VersionedWrapper;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -27,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import org.eclipse.jgit.internal.storage.dfs.DfsRefDatabase;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepository;
 import org.eclipse.jgit.lib.ObjectId;
@@ -34,6 +31,11 @@ import org.eclipse.jgit.lib.ObjectIdRef.Unpeeled;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Ref.Storage;
 import org.eclipse.jgit.util.RefList;
+
+import com.dremio.nessie.backend.EntityBackend;
+import com.dremio.nessie.model.BranchControllerReference;
+import com.dremio.nessie.model.ImmutableBranchControllerReference;
+import com.dremio.nessie.model.VersionedWrapper;
 
 public class NessieRefDatabase extends DfsRefDatabase {
 

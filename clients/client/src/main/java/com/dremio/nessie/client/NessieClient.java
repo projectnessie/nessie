@@ -16,15 +16,9 @@
 
 package com.dremio.nessie.client;
 
-import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
-import com.dremio.nessie.client.auth.BasicAuth;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.NessieConfiguration;
-import com.dremio.nessie.model.Table;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 import java.io.Closeable;
 import java.util.List;
+
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.EntityTag;
@@ -33,6 +27,14 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+
+import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
+import com.dremio.nessie.client.auth.BasicAuth;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.NessieConfiguration;
+import com.dremio.nessie.model.Table;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Client side of Nessie. Performs HTTP requests to Server

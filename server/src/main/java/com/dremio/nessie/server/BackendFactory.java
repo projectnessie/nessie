@@ -16,12 +16,15 @@
 
 package com.dremio.nessie.server;
 
-import com.dremio.nessie.backend.Backend;
 import java.lang.reflect.Constructor;
+
 import javax.inject.Inject;
+
 import org.glassfish.hk2.api.Factory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.dremio.nessie.backend.Backend;
 
 /**
  * Factory to generate backend based on server config.

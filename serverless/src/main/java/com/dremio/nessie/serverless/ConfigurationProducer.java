@@ -16,20 +16,16 @@
 
 package com.dremio.nessie.serverless;
 
+import java.util.HashMap;
+
+import javax.enterprise.context.Dependent;
+import javax.enterprise.inject.Produces;
+
 import com.dremio.nessie.server.ServerConfiguration;
 import com.dremio.nessie.services.ServerConfigurationImpl;
 import com.dremio.nessie.services.ServerConfigurationImpl.ServerAuthConfigurationImpl;
 import com.dremio.nessie.services.ServerConfigurationImpl.ServerDatabaseConfigurationImpl;
 import com.dremio.nessie.services.ServerConfigurationImpl.ServiceConfigurationImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import java.io.IOException;
-import java.net.URL;
-import java.util.HashMap;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.Produces;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Dependent
 public class ConfigurationProducer {

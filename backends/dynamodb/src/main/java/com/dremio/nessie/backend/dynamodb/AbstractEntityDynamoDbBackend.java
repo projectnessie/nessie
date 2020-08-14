@@ -16,12 +16,14 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
-import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.VersionedWrapper;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.dremio.nessie.backend.EntityBackend;
+import com.dremio.nessie.model.VersionedWrapper;
+
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;

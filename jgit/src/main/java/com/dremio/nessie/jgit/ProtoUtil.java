@@ -16,6 +16,16 @@
 
 package com.dremio.nessie.jgit;
 
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import com.dremio.nessie.jgit.GitStoreObjects.Counts;
 import com.dremio.nessie.jgit.GitStoreObjects.DataFile;
 import com.dremio.nessie.jgit.GitStoreObjects.Snapshot;
@@ -28,15 +38,6 @@ import com.dremio.nessie.model.Table;
 import com.dremio.nessie.model.TableMeta;
 import com.google.common.base.Joiner;
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class ProtoUtil {
 

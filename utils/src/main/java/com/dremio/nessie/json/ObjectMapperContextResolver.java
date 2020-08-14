@@ -18,9 +18,10 @@ package com.dremio.nessie.json;
 
 import static com.dremio.nessie.json.ObjectMapperBuilder.createObjectMapper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * custom resolver for ObjectMapper to enable optional settings on json <-> object conversion.

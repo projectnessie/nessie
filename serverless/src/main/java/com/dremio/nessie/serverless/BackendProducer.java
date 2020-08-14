@@ -16,11 +16,12 @@
 
 package com.dremio.nessie.serverless;
 
+import javax.enterprise.context.Dependent;
+import javax.enterprise.inject.Produces;
+
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.dynamodb.DynamoDbBackend;
 import com.dremio.nessie.server.ServerConfiguration;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.Produces;
 
 /**
  * Factory to generate backend based on server config.

@@ -16,15 +16,17 @@
 
 package com.dremio.nessie.jgit;
 
-import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.BranchControllerObject;
-import com.dremio.nessie.model.BranchControllerReference;
 import java.io.IOException;
+
 import org.eclipse.jgit.internal.storage.dfs.DfsObjDatabase;
 import org.eclipse.jgit.internal.storage.dfs.DfsReaderOptions;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepository;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryBuilder;
 import org.eclipse.jgit.lib.RefDatabase;
+
+import com.dremio.nessie.backend.EntityBackend;
+import com.dremio.nessie.model.BranchControllerObject;
+import com.dremio.nessie.model.BranchControllerReference;
 
 public class NessieRepository extends DfsRepository {
 

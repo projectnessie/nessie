@@ -16,20 +16,12 @@
 
 package com.dremio.nessie.iceberg;
 
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.DataFile;
-import com.dremio.nessie.model.ImmutableDataFile;
-import com.dremio.nessie.model.ImmutableSnapshot;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.ImmutableTable.Builder;
-import com.dremio.nessie.model.ImmutableTableMeta;
-import com.dremio.nessie.model.Table;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseMetastoreTableOperations;
 import org.apache.iceberg.SchemaParser;
@@ -41,6 +33,16 @@ import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.DataFile;
+import com.dremio.nessie.model.ImmutableDataFile;
+import com.dremio.nessie.model.ImmutableSnapshot;
+import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.ImmutableTable.Builder;
+import com.dremio.nessie.model.ImmutableTableMeta;
+import com.dremio.nessie.model.Table;
 
 /**
  * Nessie implementation of Iceberg TableOperations.

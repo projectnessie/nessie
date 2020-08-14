@@ -16,12 +16,14 @@
 
 package com.dremio.nessie.model;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.List;
-import java.util.Map;
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableTableMeta.class)

@@ -16,13 +16,15 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
+import java.net.URI;
+
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.EntityBackend;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
 import com.dremio.nessie.model.User;
 import com.dremio.nessie.server.ServerConfiguration;
-import java.net.URI;
+
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
