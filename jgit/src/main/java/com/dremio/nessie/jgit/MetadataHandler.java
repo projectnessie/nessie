@@ -16,12 +16,9 @@
 
 package com.dremio.nessie.jgit;
 
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.ImmutableTableMeta;
-import com.dremio.nessie.model.Table;
-import com.dremio.nessie.model.TableMeta;
 import java.io.IOException;
 import java.util.Map;
+
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectInserter;
@@ -29,6 +26,11 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.ImmutableTableMeta;
+import com.dremio.nessie.model.Table;
+import com.dremio.nessie.model.TableMeta;
 
 final class MetadataHandler {
 

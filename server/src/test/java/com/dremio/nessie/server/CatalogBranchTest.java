@@ -18,15 +18,11 @@ package com.dremio.nessie.server;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.NessieCatalog;
-import com.dremio.nessie.iceberg.NessieTableOperations;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.Schema;
@@ -43,6 +39,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.iceberg.NessieCatalog;
+import com.dremio.nessie.iceberg.NessieTableOperations;
 
 @SuppressWarnings("MissingJavadocMethod")
 public class CatalogBranchTest {

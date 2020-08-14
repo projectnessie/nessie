@@ -16,15 +16,17 @@
 
 package com.dremio.nessie.services;
 
-import com.dremio.nessie.server.ServerConfiguration;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.dremio.nessie.server.ServerConfiguration;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * server configuration based on yaml/json input.

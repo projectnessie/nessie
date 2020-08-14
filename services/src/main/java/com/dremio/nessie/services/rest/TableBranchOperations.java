@@ -16,35 +16,13 @@
 
 package com.dremio.nessie.services.rest;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Metered;
-import com.codahale.metrics.annotation.Timed;
-import com.dremio.nessie.auth.User;
-import com.dremio.nessie.backend.BranchController;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.CommitMeta.Action;
-import com.dremio.nessie.model.ImmutableCommitMeta;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.Table;
-import com.dremio.nessie.services.auth.Secured;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.Principal;
-import java.text.ParseException;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Set;
+
 import javax.annotation.security.RolesAllowed;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -65,8 +43,32 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Metered;
+import com.codahale.metrics.annotation.Timed;
+import com.dremio.nessie.auth.User;
+import com.dremio.nessie.backend.BranchController;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.CommitMeta.Action;
+import com.dremio.nessie.model.ImmutableCommitMeta;
+import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.Table;
+import com.dremio.nessie.services.auth.Secured;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 
 /**
  * REST endpoint for CRUD operations on tables.

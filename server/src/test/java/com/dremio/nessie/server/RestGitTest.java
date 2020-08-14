@@ -16,24 +16,26 @@
 
 package com.dremio.nessie.server;
 
-import com.dremio.nessie.json.ObjectMapperContextResolver;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.Table;
-import com.dremio.nessie.services.rest.TableBranchOperations;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import org.eclipse.jgit.lib.Constants;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+
+import com.dremio.nessie.json.ObjectMapperContextResolver;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ImmutableBranch;
+import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.Table;
+import com.dremio.nessie.services.rest.TableBranchOperations;
 
 public class RestGitTest extends JerseyTest {
 

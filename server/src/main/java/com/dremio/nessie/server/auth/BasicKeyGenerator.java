@@ -16,10 +16,12 @@
 
 package com.dremio.nessie.server.auth;
 
+import java.security.Key;
+
 import com.dremio.nessie.jwt.KeyGenerator;
+
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import java.security.Key;
 
 /**
  * key generator for testing purposes only.

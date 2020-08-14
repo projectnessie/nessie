@@ -16,20 +16,13 @@
 
 package com.dremio.nessie.iceberg;
 
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.branch.BranchCatalog;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.Table;
-import com.google.common.base.Joiner;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseMetastoreCatalog;
 import org.apache.iceberg.TableMetadata;
@@ -39,6 +32,15 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.iceberg.branch.BranchCatalog;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ImmutableBranch;
+import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.Table;
+import com.google.common.base.Joiner;
 
 /**
  * Nessie implementation of Iceberg Catalog.

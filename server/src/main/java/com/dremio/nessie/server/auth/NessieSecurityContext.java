@@ -16,10 +16,12 @@
 
 package com.dremio.nessie.server.auth;
 
-import com.dremio.nessie.auth.User;
 import java.security.Principal;
+
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.SecurityContext;
+
+import com.dremio.nessie.auth.User;
 
 /**
  * Security context specific to Nessie.

@@ -16,12 +16,14 @@
 
 package com.dremio.nessie.iceberg.spark;
 
-import com.dremio.nessie.iceberg.NessieCatalog;
-import com.google.common.base.Preconditions;
 import java.util.Optional;
+
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.spark.source.IcebergSource;
+
+import com.dremio.nessie.iceberg.NessieCatalog;
+import com.google.common.base.Preconditions;
 
 public class NessieIcebergSource extends IcebergSource {
 

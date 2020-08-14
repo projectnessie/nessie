@@ -16,12 +16,8 @@
 
 package com.dremio.nessie.client;
 
-import com.dremio.nessie.client.auth.AwsAuth;
-import com.dremio.nessie.client.rest.ConflictException;
-import com.dremio.nessie.client.rest.PreconditionFailedException;
-import com.dremio.nessie.json.ObjectMapperContextResolver;
-import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
@@ -34,7 +30,12 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.client.JerseyClientBuilder;
+
+import com.dremio.nessie.client.auth.AwsAuth;
+import com.dremio.nessie.client.rest.ConflictException;
+import com.dremio.nessie.client.rest.PreconditionFailedException;
+import com.dremio.nessie.json.ObjectMapperContextResolver;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * common REST utils.

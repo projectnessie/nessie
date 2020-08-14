@@ -16,6 +16,18 @@
 
 package com.dremio.nessie.server.auth;
 
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
+
+import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
+
 import com.dremio.nessie.auth.User;
 import com.dremio.nessie.auth.UserService;
 import com.dremio.nessie.auth.Users;
@@ -24,18 +36,9 @@ import com.dremio.nessie.jwt.KeyGenerator;
 import com.dremio.nessie.model.ImmutableUser;
 import com.dremio.nessie.model.VersionedWrapper;
 import com.google.common.base.Joiner;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import javax.inject.Inject;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
-import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 
 /**
  * Database backed User service.

@@ -16,8 +16,10 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
-import com.google.common.base.Joiner;
 import java.net.URI;
+
+import com.google.common.base.Joiner;
+
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;

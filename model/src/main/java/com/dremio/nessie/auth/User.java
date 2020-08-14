@@ -19,6 +19,7 @@ package com.dremio.nessie.auth;
 import java.security.Principal;
 import java.util.Objects;
 import java.util.StringJoiner;
+
 import javax.security.auth.Subject;
 
 /**

@@ -16,11 +16,12 @@
 
 package com.dremio.nessie.backend;
 
+import java.io.IOException;
+import java.util.List;
+
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Table;
-import java.io.IOException;
-import java.util.List;
 
 /**
  * Branching and merging controller. Used by the server to maintain a consistent view of the

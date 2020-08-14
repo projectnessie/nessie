@@ -16,10 +16,11 @@
 
 package com.dremio.nessie.model;
 
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Joiner;
-import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableCommitMeta.class)

@@ -16,12 +16,14 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.ImmutableBranchControllerObject;
 import com.dremio.nessie.model.ImmutableBranchControllerObject.Builder;
 import com.dremio.nessie.model.VersionedWrapper;
-import java.util.HashMap;
-import java.util.Map;
+
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;

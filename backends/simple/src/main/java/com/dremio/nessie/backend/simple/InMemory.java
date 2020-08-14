@@ -16,6 +16,11 @@
 
 package com.dremio.nessie.backend.simple;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.EntityBackend;
 import com.dremio.nessie.model.BranchControllerObject;
@@ -23,11 +28,6 @@ import com.dremio.nessie.model.BranchControllerReference;
 import com.dremio.nessie.model.User;
 import com.dremio.nessie.model.VersionedWrapper;
 import com.dremio.nessie.server.ServerConfiguration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * basic class to demonstrate the backend model. WARNING do not use in production.

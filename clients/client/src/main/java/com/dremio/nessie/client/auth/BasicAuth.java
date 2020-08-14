@@ -16,20 +16,23 @@
 
 package com.dremio.nessie.client.auth;
 
-import com.dremio.nessie.auth.AuthResponse;
-import com.dremio.nessie.client.RestUtils;
-import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
-import com.dremio.nessie.jwt.JwtUtils;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jwt;
 import java.util.Date;
+
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+
+import com.dremio.nessie.auth.AuthResponse;
+import com.dremio.nessie.client.RestUtils;
+import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
+import com.dremio.nessie.jwt.JwtUtils;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Header;
+import io.jsonwebtoken.Jwt;
 
 /**
  * Basic authentication module.

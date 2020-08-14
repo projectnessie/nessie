@@ -16,12 +16,15 @@
 
 package com.dremio.nessie.model;
 
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 /**
  * configuration object to tell a client how a server is configured.

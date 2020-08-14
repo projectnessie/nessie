@@ -16,9 +16,11 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
+import java.net.URI;
+
 import com.amazonaws.services.dynamodbv2.local.main.ServerRunner;
 import com.amazonaws.services.dynamodbv2.local.server.DynamoDBProxyServer;
-import java.net.URI;
+
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 

@@ -22,6 +22,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.util.List;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import com.dremio.nessie.backend.simple.InMemory;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.CommitMeta;
@@ -31,15 +40,8 @@ import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.ImmutableTableMeta;
 import com.dremio.nessie.model.Table;
 import com.dremio.nessie.model.TableMeta;
-import java.io.IOException;
-import java.util.List;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
-public class TestRepo {
+class TestRepo {
 
   private static InMemory backend;
   private static JgitBranchController controller;

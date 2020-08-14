@@ -16,6 +16,17 @@
 
 package com.dremio.nessie.server.auth;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
+
 import com.dremio.nessie.auth.User;
 import com.dremio.nessie.auth.UserService;
 import com.dremio.nessie.jwt.JwtUtils;
@@ -25,17 +36,9 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.inject.Inject;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
 
 /**
  * User service for testing only.

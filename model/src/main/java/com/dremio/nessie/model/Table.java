@@ -16,11 +16,14 @@
 
 package com.dremio.nessie.model;
 
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 /**
  * Abstract implementation of a Table in Nessie.

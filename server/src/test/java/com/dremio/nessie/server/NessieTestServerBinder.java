@@ -16,6 +16,20 @@
 
 package com.dremio.nessie.server;
 
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import javax.inject.Inject;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.core.SecurityContext;
+
+import org.glassfish.hk2.api.Factory;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
+
 import com.dremio.nessie.auth.User;
 import com.dremio.nessie.auth.UserService;
 import com.dremio.nessie.backend.Backend;
@@ -28,17 +42,6 @@ import com.dremio.nessie.server.auth.BasicKeyGenerator;
 import com.dremio.nessie.server.auth.NessieSecurityContext;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import javax.inject.Inject;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.core.SecurityContext;
-import org.glassfish.hk2.api.Factory;
-import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
 public class NessieTestServerBinder extends AbstractBinder {
 

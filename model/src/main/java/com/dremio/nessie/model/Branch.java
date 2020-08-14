@@ -16,12 +16,16 @@
 
 package com.dremio.nessie.model;
 
+import java.util.OptionalLong;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import java.util.OptionalLong;
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 /**
  * Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology.
