@@ -15,9 +15,9 @@
  */
 package com.dremio.nessie.versioned;
 
+import java.util.Arrays;
+
 import com.google.common.io.BaseEncoding;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.UnsafeByteOperations;
 
 /**
  * Describes a specific point in time/history. Internally is a binary value but a string representation is available.
@@ -26,19 +26,45 @@ public final class Hash implements Ref {
 
   private static final BaseEncoding ENCODING = BaseEncoding.base16().lowerCase();
 
-  private final ByteString bytes;
+  private final byte[] bytes;
 
-  private Hash(ByteString bytes) {
+  private Hash(byte[] bytes) {
     this.bytes = bytes;
   }
 
+  /**
+   * Generates a string representation of the hash suitable to be used with
+   * {@link #of(String)}.
+   *
+   * @return
+   */
   public String asString() {
-    return ENCODING.encode(bytes.toByteArray());
+    return ENCODING.encode(bytes);
   }
 
+  /**
+   * Creates a hash instance from its string representation.
+   *
+   * @param hash the string representation of the hash
+   * @return
+   */
   public static Hash of(String hash) {
     byte[] bytes = ENCODING.decode(hash);
-    return new Hash(UnsafeByteOperations.unsafeWrap(bytes));
+    return new Hash(bytes);
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(bytes);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof Hash)) {
+      return false;
+    }
+    Hash that = (Hash) obj;
+    return Arrays.equals(this.bytes, that.bytes);
   }
 
   @Override

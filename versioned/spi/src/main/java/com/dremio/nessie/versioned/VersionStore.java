@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import javax.annotation.Nonnull;
+
 /**
  * A storage interface that maintains multiple versions of the VALUE type with each commit having an associated
  * METADATA value.
@@ -34,27 +36,27 @@ public interface VersionStore<VALUE, METADATA> {
   /**
    * Provide the current hash for the given NamedRef.
    *
-   * <p>Throws if the provided NamedRef does not exist.
-   *
    * @param ref The Branch or Tag to lookup.
    * @return The current hash for that ref.
+   * @throws NullPointerException if {@code ref} is {@code null}.
+   * @throws ReferenceNotFoundException if the reference cannot be found
    */
-  Hash toHash(NamedRef ref);
+  @Nonnull
+  Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException;
 
   /**
    * Create a new commit to a branch.
-   *
-   * <p>Throws if branch does not exist.
-   *
-   * <p>Throws if operation failed due to any of the Operation preconditions expected.
    *
    * @param branch The branch to commit to.
    * @param currentBranchHash The current expected head of the branch.
    * @param metadata The metadata associated with the commit.
    * @param operations The set of operations to apply.
+   * @throws ReferenceConflictException if {@code currentBranchHash} doesn't match the stored hash for {@code branch}
+   * @throws ReferenceNotFoundException if {@code branch} is not present in the store
    *
    */
-  void commit(BranchName branch, Optional<Hash> currentBranchHash, METADATA metadata, List<Operation<VALUE>> operations);
+  void commit(BranchName branch, Optional<Hash> currentBranchHash, METADATA metadata, List<Operation<VALUE>> operations)
+      throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
    * Transplant a series of commits to a target branch. This is done as an atomic operation such that only the last of
@@ -64,8 +66,12 @@ public interface VersionStore<VALUE, METADATA> {
    * @param targetBranch         The branch we're transplanting to
    * @param currentBranchHash    The required current version of the branch to check before transplanting (if provided)
    * @param sequenceToTransplant The sequence of hashes to transplant.
+   * @throws ReferenceConflictException if {@code currentBranchHash} doesn't match the stored hash for {@code branch}
+   * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code sequenceToTransplant} is not present in the
+   *     store.
    */
-  void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant);
+  void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant)
+      throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
    * Merge items from an existing hash into the requested branch. The merge is always a rebase + fast-forward merge and
@@ -84,8 +90,11 @@ public interface VersionStore<VALUE, METADATA> {
    * @param fromHash           The hash we are using to get additional commits
    * @param toBranch           The branch that we are merging into
    * @param expectedBranchHash The hash on the toBranch that we expect to match (optional)
+   * @throws ReferenceConflictException if {@code expectedBranchHash} doesn't match the stored hash for {@code toBranch}
+   * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in the store.
    */
-  void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash);
+  void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
+      throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
    * Assign the NamedRef to point to a particular hash. If the NamedRef does not exist, it will be created.
@@ -97,8 +106,12 @@ public interface VersionStore<VALUE, METADATA> {
    * @param ref               The named ref we're assigning
    * @param currentBranchHash The current hash the ref is pointing to.
    * @param targetHash         The hash that this ref should refer to.
+   * @throws ReferenceNotFoundException if {@code targetHash} is not present in the store, or {@code currentBranchHash} is not empty
+   *     and {@code ref} is not present in the store
+   * @throws ReferenceConflictException if {@code currentBranchHash} doesn't match the stored hash for {@code ref}
    */
-  void assign(NamedRef ref, Optional<Hash> currentBranchHash, Hash targetHash);
+  void assign(NamedRef ref, Optional<Hash> currentBranchHash, Hash targetHash)
+      throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
    * Delete the provided NamedRef
@@ -107,8 +120,10 @@ public interface VersionStore<VALUE, METADATA> {
    *
    * @param ref The NamedRef to be deleted.
    * @param hash An optional hash. If provided, this operation will only succeed if the branch is pointing at the provided
+   * @throws ReferenceNotFoundException if {@code ref} is not present in the store
+   * @throws ReferenceConflictException if {@code hash} doesn't match the stored hash for {@code ref}
    */
-  void delete(NamedRef ref, Optional<Hash> hash);
+  void delete(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
    * List named refs.
@@ -120,31 +135,35 @@ public interface VersionStore<VALUE, METADATA> {
    * Get a stream of all ancestor commits to a provided ref.
    * @param ref the stream to get commits for.
    * @return A stream of commits.
+   * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Stream<WithHash<METADATA>> getCommits(Ref ref);
+  Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException;
 
   /**
    * Get a stream of all available keys for the given ref.
    * @param ref The ref to get keys for.
    * @return The stream of keys available for this ref.
+   * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Stream<Key> getKeys(Ref ref);
+  Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException;
 
   /**
    * Get the value for a provided ref.
    * @param ref Any ref type allowed
    * @param key The key for the specific value
-   * @return The value. Throws if ref or key within ref does not exist.
+   * @return The value.
+   * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  VALUE getValue(Ref ref, Key key);
+  VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException;
 
   /**
    * Get the values for a list of keys.
    * @param ref The ref to use.
    * @param key An ordered list of keys to retrieve within the provided ref.
    * @return A parallel list of values.
+   * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  List<Optional<VALUE>> getValue(Ref ref, List<Key> key);
+  List<Optional<VALUE>> getValue(Ref ref, List<Key> key) throws ReferenceNotFoundException;
 
   /**
    * Collect some garbage. Each time this is called, it collects some garbage and reports the progress of what has been collected
