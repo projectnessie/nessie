@@ -18,12 +18,12 @@ package com.dremio.nessie.backend.dynamodb;
 
 import java.io.IOException;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.model.BranchControllerObject;
@@ -45,16 +45,14 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
  * Dynamo db serializer test.
  */
 @SuppressWarnings("AbbreviationAsWordInName")
+@ExtendWith(LocalDynamoDB.class)
 public class ITTestDynamo {
 
-  private static final LocalDynamoDB SERVER = new LocalDynamoDB();
   private Backend backend;
 
   @SuppressWarnings("MissingJavadocMethod")
   @BeforeAll
-  public static void start() throws Exception {
-    SERVER.start();
-    DynamoDbClient client = SERVER.client();
+  public static void start(DynamoDbClient client) throws Exception {
     for (String t: new String[]{"NessieGitObjectDatabase", "NessieGitRefDatabase"}) {
       CreateTableRequest request =
           CreateTableRequest.builder()
@@ -77,14 +75,9 @@ public class ITTestDynamo {
     }
   }
 
-  @AfterAll
-  public static void stop() throws Exception {
-    SERVER.close();
-  }
-
   @BeforeEach
-  public void client() {
-    backend = new DynamoDbBackend(SERVER.client());
+  public void client(DynamoDbClient client) {
+    backend = new DynamoDbBackend(client);
   }
 
   @AfterEach

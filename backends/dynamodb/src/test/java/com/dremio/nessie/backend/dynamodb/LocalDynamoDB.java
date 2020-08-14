@@ -18,39 +18,71 @@ package com.dremio.nessie.backend.dynamodb;
 
 import java.net.URI;
 
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
+import org.junit.jupiter.api.extension.ExtensionContext.Store;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.support.TypeBasedParameterResolver;
+
 import com.amazonaws.services.dynamodbv2.local.main.ServerRunner;
 import com.amazonaws.services.dynamodbv2.local.server.DynamoDBProxyServer;
 
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-public class LocalDynamoDB implements AutoCloseable {
+public class LocalDynamoDB extends TypeBasedParameterResolver<DynamoDbClient> implements AfterAllCallback, BeforeAllCallback {
 
-  private DynamoDBProxyServer server = null;
+  private static final String DYNAMODB_CLIENT = "dynamodb-local-client";
 
-  /**
-   * start local dynamodb.
-   */
-  public void start() throws Exception {
-    final String[] localArgs = {"-inMemory"};
-    server = ServerRunner.createServerFromCommandLineArgs(localArgs);
-    server.start();
+  @Override
+  public void beforeAll(ExtensionContext context) throws Exception {
+    getStore(context).put(DYNAMODB_CLIENT, new Holder());
   }
 
-  /**
-   * client for talking to local dynamodb.
-   */
-  public DynamoDbClient client() {
-    return DynamoDbClient.builder()
-                         .endpointOverride(URI.create("http://localhost:8000"))
-                         .region(Region.US_WEST_2)
-                         .build();
+  private static class Holder {
+
+    private final DynamoDBProxyServer server;
+    private final DynamoDbClient client;
+
+    public Holder() throws Exception {
+      final String[] localArgs = {"-inMemory"};
+      server = ServerRunner.createServerFromCommandLineArgs(localArgs);
+      server.start();
+      client = DynamoDbClient.builder()
+          .endpointOverride(URI.create("http://localhost:8000"))
+          .region(Region.US_WEST_2)
+          .build();
+      client.listTables();
+    }
+
+    private void stop() throws Exception {
+      client.close();
+      server.stop();
+    }
+
   }
 
   @Override
-  public void close() throws Exception {
-    if (server != null) {
-      server.stop();
+  public void afterAll(ExtensionContext context) throws Exception {
+    Holder h = getHolder(context);
+    if (h != null) {
+      h.stop();
     }
   }
+
+  private Store getStore(ExtensionContext context) {
+    return context.getStore(Namespace.create(getClass(), context.getRoot()));
+  }
+
+  private Holder getHolder(ExtensionContext context) {
+    return (Holder) getStore(context).get(DYNAMODB_CLIENT);
+  }
+
+  @Override
+  public DynamoDbClient resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
+    return getHolder(extensionContext).client;
+  }
+
 }
