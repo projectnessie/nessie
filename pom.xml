@@ -37,6 +37,7 @@
     <module>jgit</module>
     <module>ui</module>
     <module>services</module>
+    <module>versioned</module>
   </modules>
 
   <properties>
