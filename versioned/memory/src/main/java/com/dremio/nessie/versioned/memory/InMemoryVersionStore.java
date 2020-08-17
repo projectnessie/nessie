@@ -1,0 +1,550 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.dremio.nessie.versioned.memory;
+
+import static com.dremio.nessie.versioned.memory.Commit.NO_ANCESTOR;
+import static com.google.common.base.Preconditions.checkState;
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dremio.nessie.versioned.BranchName;
+import com.dremio.nessie.versioned.Delete;
+import com.dremio.nessie.versioned.Hash;
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.NamedRef;
+import com.dremio.nessie.versioned.Operation;
+import com.dremio.nessie.versioned.Put;
+import com.dremio.nessie.versioned.Ref;
+import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
+import com.dremio.nessie.versioned.ReferenceConflictException;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.Serializer;
+import com.dremio.nessie.versioned.TagName;
+import com.dremio.nessie.versioned.Unchanged;
+import com.dremio.nessie.versioned.VersionStore;
+import com.dremio.nessie.versioned.VersionStoreException;
+import com.dremio.nessie.versioned.WithHash;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Streams;
+
+/**
+ * In-memory implementation of {@code VersionStore} interface.
+ *
+ * @param <ValueT> Value type
+ * @param <MetadataT> Commit metadata type
+ */
+public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<ValueT, MetadataT> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryVersionStore.class);
+
+  private final ConcurrentMap<Hash, Commit<ValueT, MetadataT>> commits = new ConcurrentHashMap<>();
+  private final ConcurrentMap<NamedRef, Hash> namedReferences = new ConcurrentHashMap<>();
+  private final Serializer<ValueT> valueSerializer;
+  private final Serializer<MetadataT> metadataSerializer;
+
+  public static final class Builder<ValueT, MetadataT> {
+    private Serializer<ValueT> valueSerializer = null;
+    private Serializer<MetadataT> metadataSerializer = null;
+
+    public Builder<ValueT, MetadataT> valueSerializer(Serializer<ValueT> serializer) {
+      this.valueSerializer = requireNonNull(serializer);
+      return this;
+    }
+
+    public Builder<ValueT, MetadataT> metadataSerializer(Serializer<MetadataT> serializer) {
+      this.metadataSerializer = requireNonNull(serializer);
+      return this;
+    }
+
+    /**
+     * Build a instance of the memory store.
+     * @return a memory store instance
+     */
+    public InMemoryVersionStore<ValueT, MetadataT> build() {
+      checkState(this.valueSerializer != null, "Value serializer hasn't been set");
+      checkState(this.metadataSerializer != null, "Metadata serializer hasn't been set");
+
+      return new InMemoryVersionStore<>(this);
+    }
+
+  }
+
+  private InMemoryVersionStore(Builder<ValueT, MetadataT> builder) {
+    this.valueSerializer = builder.valueSerializer;
+    this.metadataSerializer = builder.metadataSerializer;
+  }
+
+  /**
+   * Create a new in-memory store builder.
+   *
+   * @param <ValueT> the value type
+   * @param <MetadataT> the metadata type
+   * @return a builder for a in memory store
+   */
+  public static <ValueT, MetadataT> Builder<ValueT, MetadataT> builder() {
+    return new Builder<>();
+  }
+
+  @Override
+  public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
+    final Hash hash = namedReferences.get(requireNonNull(ref));
+    if (hash == null) {
+      throw ReferenceNotFoundException.forReference(ref);
+    }
+    return hash;
+  }
+
+  private Hash toHash(Ref ref) throws ReferenceNotFoundException {
+    if (ref instanceof NamedRef) {
+      return toHash((NamedRef) ref);
+    }
+
+    if (ref instanceof Hash) {
+      Hash hash = (Hash) ref;
+      if (hash != NO_ANCESTOR && !commits.containsKey(hash)) {
+        throw ReferenceNotFoundException.forReference(hash);
+      }
+      return hash;
+    }
+
+    throw new IllegalArgumentException(format("Unsupported reference type for ref %s", ref));
+  }
+
+  @Override
+  public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
+    requireNonNull(refOfUnknownType);
+    Optional<WithHash<Ref>> result = Stream.<Function<String, Ref>>of(TagName::of, BranchName::of, Hash::of)
+        .map(f -> {
+          try {
+            final Ref ref =  f.apply(refOfUnknownType);
+            return WithHash.of(toHash(ref), ref);
+          } catch (IllegalArgumentException | ReferenceNotFoundException e) {
+            // ignored malformed or nonexistent reference
+            return null;
+          }
+        })
+        .filter(Objects::nonNull)
+        .findFirst();
+    return result.orElseThrow(() -> ReferenceNotFoundException.forReference(refOfUnknownType));
+  }
+
+  @Override
+  public void commit(BranchName branch, Optional<Hash> referenceHash,
+      MetadataT metadata, List<Operation<ValueT>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
+    final Hash currentHash = namedReferences.get(branch);
+    if (currentHash == null) {
+      throw ReferenceNotFoundException.forReference(branch);
+    }
+
+    // Validate commit
+    try {
+      ifPresent(referenceHash, hash -> {
+        // Get the list of keys mentioned by operations
+        List<Key> keys = operations.stream().map(Operation::getKey).distinct().collect(Collectors.toList());
+
+        List<Optional<ValueT>> referenceValues = getValues(hash, keys);
+        List<Optional<ValueT>> currentValues = getValues(currentHash, keys);
+
+        if (!referenceValues.equals(currentValues)) {
+          throw ReferenceConflictException.forReference(branch, referenceHash, Optional.of(currentHash));
+        }
+      });
+    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+      throw e;
+    } catch (VersionStoreException e) {
+      throw new AssertionError(e);
+    }
+
+    // Storing
+    try {
+      compute(namedReferences, branch, (key, hash) -> {
+        final Commit<ValueT, MetadataT> commit = Commit.of(valueSerializer, metadataSerializer, currentHash, metadata, operations);
+        final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
+        if (!previousHash.equals(currentHash)) {
+          // Concurrent modification
+          throw ReferenceConflictException.forReference(branch, referenceHash, Optional.of(previousHash));
+        }
+
+        // Duplicates are very unlikely and also okay to ignore
+        final Hash commitHash = commit.getHash();
+        commits.putIfAbsent(commitHash, commit);
+        return commitHash;
+      });
+    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+      throw e;
+    } catch (VersionStoreException e) {
+      throw new AssertionError(e);
+    }
+  }
+
+  @Override
+  public void transplant(BranchName targetBranch, Optional<Hash> referenceHash,
+      List<Hash> sequenceToTransplant) throws ReferenceNotFoundException, ReferenceConflictException {
+    requireNonNull(targetBranch);
+    requireNonNull(sequenceToTransplant);
+
+    final Hash currentHash = namedReferences.get(targetBranch);
+    if (currentHash == null) {
+      throw ReferenceNotFoundException.forReference(targetBranch);
+    }
+
+    if (sequenceToTransplant.isEmpty()) {
+      return;
+    }
+
+    final Set<Key> keys = new HashSet<>();
+    final List<Commit<ValueT, MetadataT>> toStore = new ArrayList<>(sequenceToTransplant.size());
+
+    // check that all hashes exist in the store
+    Hash ancestor = null;
+    Hash newAncestor = currentHash;
+
+    for (Hash hash: sequenceToTransplant) {
+      final Commit<ValueT, MetadataT> commit = commits.get(hash);
+      if (commit == null) {
+        throw ReferenceNotFoundException.forReference(hash);
+      }
+
+      if (ancestor != null && !ancestor.equals(commit.getAncestor())) {
+        throw new IllegalArgumentException(format("Hash %s is not the ancestor for commit %s", ancestor, hash));
+      }
+
+      commit.getOperations().forEach(op -> keys.add(op.getKey()));
+
+      Commit<ValueT, MetadataT> newCommit = Commit.of(valueSerializer, metadataSerializer,
+          newAncestor, commit.getMetadata(), commit.getOperations());
+      toStore.add(newCommit);
+
+      ancestor = commit.getHash();
+      newAncestor = newCommit.getHash();
+    }
+
+    // Validate commit
+    try {
+      ifPresent(referenceHash, hash -> {
+        List<Key> keyList = new ArrayList<>(keys.size());
+        keyList.addAll(keys);
+
+        List<Optional<ValueT>> referenceValues = getValues(hash, keyList);
+        List<Optional<ValueT>> currentValues = getValues(currentHash, keyList);
+
+        if (!referenceValues.equals(currentValues)) {
+          throw ReferenceConflictException.forReference(targetBranch, referenceHash, Optional.of(currentHash));
+        }
+      });
+    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+      throw e;
+    } catch (VersionStoreException e) {
+      throw new AssertionError(e);
+    }
+
+    // Storing
+    try {
+      compute(namedReferences, targetBranch, (key, hash) -> {
+        final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
+        if (!previousHash.equals(currentHash)) {
+          // Concurrent modification
+          throw ReferenceConflictException.forReference(targetBranch, referenceHash, Optional.of(previousHash));
+        }
+
+        toStore.forEach(commit -> commits.putIfAbsent(commit.getHash(), commit));
+
+        final Commit<ValueT, MetadataT> lastCommit = Iterables.getLast(toStore);
+        return lastCommit.getHash();
+      });
+    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+      throw e;
+    } catch (VersionStoreException e) {
+      throw new AssertionError(e);
+    }
+  }
+
+  @Override
+  public void merge(Hash fromHash, BranchName toBranch,
+      Optional<Hash> expectedBranchHash) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void assign(NamedRef ref, Optional<Hash> expectedRefHash, Hash targetHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    requireNonNull(ref);
+    requireNonNull(targetHash);
+    final Hash currentHash = namedReferences.get(ref);
+    if (currentHash == null) {
+      throw ReferenceNotFoundException.forReference(ref);
+    }
+
+    try {
+      ifPresent(expectedRefHash, hash -> {
+        if (!hash.equals(currentHash)) {
+          throw ReferenceConflictException.forReference(ref, expectedRefHash, Optional.of(currentHash));
+        }
+      });
+    } catch (ReferenceConflictException e) {
+      throw e;
+    } catch (VersionStoreException e) {
+      throw new AssertionError(e);
+    }
+
+    // not locking as there's no support yet for garbage collecting dangling hashes
+    if (!commits.containsKey(targetHash)) {
+      throw ReferenceNotFoundException.forReference(targetHash);
+    }
+
+    doAssign(ref, currentHash, targetHash);
+  }
+
+  private void doAssign(NamedRef ref, Hash expectedHash, final Hash newHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    try {
+      compute(namedReferences, ref, (key, hash) -> {
+        final Hash previousHash = Optional.ofNullable(hash).orElse(expectedHash);
+        // Check if the previous and the new value matches
+        if (!expectedHash.equals(previousHash)) {
+          throw ReferenceConflictException.forReference(ref, Optional.of(expectedHash), Optional.of(previousHash));
+        }
+        return newHash;
+      });
+    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+      throw e;
+    } catch (VersionStoreException e) {
+      throw new AssertionError(e);
+    }
+  }
+
+  @Override
+  public void create(NamedRef ref, Optional<Hash> targetHash)
+      throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+    Preconditions.checkArgument(ref instanceof BranchName || targetHash.isPresent(), "Cannot create an unassigned tag reference");
+
+    try {
+      compute(namedReferences, ref, (key, currentHash) -> {
+        if (currentHash != null) {
+          throw ReferenceAlreadyExistsException.forReference(ref);
+        }
+
+        return targetHash.orElse(NO_ANCESTOR);
+      });
+    } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
+      throw e;
+    } catch (VersionStoreException e) {
+      throw new AssertionError(e);
+    }
+  }
+
+  @Override
+  public void delete(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException, ReferenceConflictException {
+    try {
+      compute(namedReferences, ref, (key, currentHash) -> {
+        if (currentHash == null) {
+          throw ReferenceNotFoundException.forReference(ref);
+        }
+
+        ifPresent(hash, h -> {
+          if (!h.equals(currentHash)) {
+            throw ReferenceConflictException.forReference(ref, hash, (Optional.of(currentHash)));
+          }
+        });
+
+        return null;
+      });
+    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+      throw e;
+    } catch (VersionStoreException e) {
+      throw new AssertionError(e);
+    }
+  }
+
+  @Override
+  public Stream<WithHash<NamedRef>> getNamedRefs() {
+    return namedReferences
+        .entrySet()
+        .stream()
+        .map(entry -> WithHash.of(entry.getValue(), entry.getKey()));
+  }
+
+  @Override
+  public Stream<WithHash<MetadataT>> getCommits(Ref ref) throws ReferenceNotFoundException {
+    final Hash hash = toHash(ref);
+
+    final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
+    return Streams.stream(iterator).map(wh -> WithHash.of(wh.getHash(), wh.getValue().getMetadata()));
+  }
+
+  @Override
+  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+    final Hash hash = toHash(ref);
+
+    final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
+    final Set<Key> deleted = new HashSet<>();
+    return Streams.stream(iterator)
+        // flatten the operations (in reverse order)
+        .flatMap(wh -> Lists.reverse(wh.getValue().getOperations()).stream())
+        // block deleted keys
+        .filter(operation -> {
+          Key key = operation.getKey();
+          if (operation instanceof Delete) {
+            deleted.add(key);
+          }
+          return !deleted.contains(key);
+        })
+        // extract the keys
+        .map(Operation::getKey)
+        // filter keys which have been seen already
+        .distinct();
+  }
+
+  @Override
+  public ValueT getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+    return getValues(ref, Collections.singletonList(key)).get(0).orElse(null);
+  }
+
+  @Override
+  public List<Optional<ValueT>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException {
+    final Hash hash = toHash(ref);
+
+    final int size = keys.size();
+    final List<Optional<ValueT>> results = new ArrayList<>(size);
+    results.addAll(Collections.nCopies(size, Optional.empty()));
+
+    final Set<Key> toFind = new HashSet<Key>();
+    toFind.addAll(keys);
+
+    final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
+    while (iterator.hasNext()) {
+      if (toFind.isEmpty()) {
+        // early exit if all keys have been found
+        break;
+      }
+
+      final Commit<ValueT, MetadataT> commit = iterator.next().getValue();
+      for (Operation<ValueT> operation: Lists.reverse(commit.getOperations())) {
+        final Key operationKey = operation.getKey();
+        // ignore keys of no interest
+        if (!toFind.contains(operationKey)) {
+          continue;
+        }
+
+        if (operation instanceof Put) {
+          final Put<ValueT> put = (Put<ValueT>) operation;
+          int index = keys.indexOf(operationKey);
+          results.set(index, Optional.of(put.getValue()));
+          toFind.remove(operationKey);
+        } else if (operation instanceof Delete) {
+          // No need to fill with Optional.empty() as the results were pre-filled
+          toFind.remove(operationKey);
+        } else if (operation instanceof Unchanged) {
+          continue;
+        } else {
+          throw new AssertionError("Unsupported operation type for " + operation);
+        }
+      }
+    }
+
+    return results;
+  }
+
+  @Override
+  public Collector collectGarbage() {
+    return InactiveCollector.of();
+  }
+
+  private Hash checkExpectedHash(NamedRef ref, Optional<Hash> expectedHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    final Hash currentHash = namedReferences.get(ref);
+    if (currentHash == null) {
+      throw ReferenceNotFoundException.forReference(ref);
+    }
+    if (!currentHash.equals(expectedHash.orElse(NO_ANCESTOR))) {
+      throw ReferenceConflictException.forReference(ref, expectedHash, Optional.of(currentHash));
+    }
+
+    return currentHash;
+  }
+
+  @SuppressWarnings("serial")
+  private static class VersionStoreExecutionError extends Error {
+    private VersionStoreExecutionError(VersionStoreException cause) {
+      super(cause);
+    }
+
+    @Override
+    public synchronized VersionStoreException getCause() {
+      return (VersionStoreException) super.getCause();
+    }
+  }
+
+  @FunctionalInterface
+  private interface ComputeFunction<K, V> {
+    V apply(K k, V v) throws VersionStoreException;
+  }
+
+  @FunctionalInterface
+  private interface IfPresentConsumer<V> {
+    void accept(V v) throws VersionStoreException;
+  }
+
+  private static <K, V> V compute(ConcurrentMap<K, V> map, K key, ComputeFunction<K, V> doCompute)
+      throws VersionStoreException {
+    try {
+      return map.compute(key, (k, v) -> {
+        try {
+          return doCompute.apply(k, v);
+        } catch (VersionStoreException e) {
+          throw new VersionStoreExecutionError(e);
+        }
+      });
+    } catch (VersionStoreExecutionError e) {
+      VersionStoreException cause = e.getCause();
+      throw cause;
+    }
+  }
+
+  private static <T> void ifPresent(Optional<T> optional, IfPresentConsumer<? super T> consumer)
+      throws VersionStoreException {
+    try {
+      optional.ifPresent(value -> {
+        try {
+          consumer.accept(value);
+        } catch (VersionStoreException e) {
+          throw new VersionStoreExecutionError(e);
+        }
+      });
+    } catch (VersionStoreExecutionError e) {
+      VersionStoreException cause = e.getCause();
+      throw cause;
+    }
+  }
+}

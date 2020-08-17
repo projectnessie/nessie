@@ -49,8 +49,9 @@ public interface VersionStore<VALUE, METADATA> {
    *
    * <p>If a branch or tag has the same name as the string form of a valid hash, the branch or tag name are returned.
    * @param refOfUnknownType A string that may be a branch, tag or hash.
-   * @return The concrete ref type with it's hash.
+   * @return The concrete ref type with its hash.
    * @throws ReferenceNotFoundException If the string doesn't map to a valid ref.
+   * @throws NullPointerException if {@code refOfUnknownType} is {@code null}.
    */
   WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException;
 
