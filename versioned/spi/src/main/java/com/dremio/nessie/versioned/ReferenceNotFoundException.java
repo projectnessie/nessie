@@ -56,8 +56,21 @@ public class ReferenceNotFoundException extends VersionStoreException {
     } else if (ref instanceof Hash) {
       message = format("Hash '%s' does not exist", ((Hash) ref).asString());
     } else {
-      message = format("Ref '%s' does not exist", ref);
+      return forReference(ref.toString());
     }
     return new ReferenceNotFoundException(message);
+  }
+
+  /**
+   * Create a {@code ReferenceNotFoundException} instance based on the provided reference.
+   *
+   * @param ref the reference string not found in the store
+   * @return a {@code ReferenceNotFoundException} instance
+   * @throws NullPointerException if {@code ref} is {@code null}.
+   */
+  @Nonnull
+  public static ReferenceNotFoundException forReference(@Nonnull String ref) {
+    requireNonNull(ref);
+    return new ReferenceNotFoundException(format("Ref '%s' does not exist", ref));
   }
 }

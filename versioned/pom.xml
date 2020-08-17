@@ -33,6 +33,7 @@
   <modules>
     <module>dynamodb</module>
     <module>jgit</module>
+    <module>memory</module>
     <module>spi</module>
     <module>tests</module>
   </modules>
