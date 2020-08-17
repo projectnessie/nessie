@@ -169,11 +169,11 @@ public interface VersionStore<VALUE, METADATA> {
   /**
    * Get the values for a list of keys.
    * @param ref The ref to use.
-   * @param key An ordered list of keys to retrieve within the provided ref.
+   * @param keys An ordered list of keys to retrieve within the provided ref.
    * @return A parallel list of values.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  List<Optional<VALUE>> getValue(Ref ref, List<Key> key) throws ReferenceNotFoundException;
+  List<Optional<VALUE>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException;
 
   /**
    * Collect some garbage. Each time this is called, it collects some garbage and reports the progress of what has been collected

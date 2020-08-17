@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -78,6 +79,8 @@ public final class Hash implements Ref {
    */
   public static Hash of(@Nonnull String hash) {
     requireNonNull(hash);
+    checkArgument(hash.length() % 2 == 0, "hash length needs to be a multiple of two, was %s", hash.length());
+
     final int maxSize = hash.length() / 2;
     try (final StringReader sr = new StringReader(hash);
         final InputStream is = ENCODING.decodingStream(sr)) {

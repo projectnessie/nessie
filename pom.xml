@@ -976,6 +976,11 @@ limitations under the License.
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-engine</artifactId>
         <version>${junit.version}</version>
       </dependency>
@@ -1011,6 +1016,11 @@ limitations under the License.
         <groupId>org.apache.jmeter</groupId>
         <artifactId>ApacheJMeter_java</artifactId>
         <version>${jmeter.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest</artifactId>
+        <version>2.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
