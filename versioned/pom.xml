@@ -30,6 +30,7 @@
   <artifactId>nessie-versioned</artifactId>
   <packaging>pom</packaging>
   <modules>
+    <module>memory</module>
     <module>spi</module>
     <module>dynamodb</module>
   </modules>

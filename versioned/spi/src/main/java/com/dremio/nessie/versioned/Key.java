@@ -45,10 +45,10 @@ public abstract class Key implements Comparable<Key> {
    * Does a case insensitive comparison by key element.
    */
   @Override
-  public final int compareTo(Key o) {
+  public final int compareTo(Key that) {
     Collator collator = COLLATOR.get();
     List<String> a = this.getElements();
-    List<String> b = o.getElements();
+    List<String> b = that.getElements();
     int max = Math.min(a.size(), b.size());
     for (int i = 0; i < max; i++) {
       int cmp = collator.compare(a.get(i), b.get(i));
@@ -68,10 +68,16 @@ public abstract class Key implements Comparable<Key> {
 
   @Override
   public boolean equals(Object obj) {
-    if (obj == null || !(obj instanceof Key)) {
+    if (!(obj instanceof Key)) {
       return false;
     }
-    return compareTo((Key) obj) == 0;
+
+    Key that = (Key) obj;
+    List<String> thisElements = this.getElements();
+    List<String> thatElements = that.getElements();
+
+    return thisElements.size() == thatElements.size()
+        && compareTo(that) == 0;
   }
 
 }
