@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2017-2019 Dremio Corporation
+ * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,6 +14,19 @@
  * limitations under the License.
  */
 package com.dremio.nessie.perftest;
+
+import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.function.Supplier;
+
+import org.apache.jmeter.config.Arguments;
+import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
+import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
+import org.apache.jmeter.samplers.SampleResult;
+import org.apache.jmeter.testelement.TestElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
@@ -26,17 +39,6 @@ import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
-import java.io.Serializable;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.function.Supplier;
-import org.apache.jmeter.config.Arguments;
-import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
-import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
-import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.testelement.TestElement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NessieSampler extends AbstractJavaSamplerClient implements Serializable {
 
@@ -50,6 +52,9 @@ public class NessieSampler extends AbstractJavaSamplerClient implements Serializ
   private static final String BASE_BRANCH_TAG = "base_branch";
   private static final String TABLE_TAG = "table";
 
+  /**
+   * parameters for a single jmeter test.
+   */
   public static Arguments getArguments(String method,
                                        String path,
                                        String branch,
@@ -127,20 +132,20 @@ public class NessieSampler extends AbstractJavaSamplerClient implements Serializ
     sampleResult.sampleStart();
     int retries = 0;
     try {
-      Branch cBranch = null;
+      Branch branch = null;
       while (retries < 10) {
         try {
-          cBranch = supplier.get();
+          branch = supplier.get();
           break;
         } catch (NessiePreconditionFailedException e) {
           commitId.remove();
         }
         retries++;
       }
-      if (cBranch != null) {
-        String cBranchStr = "ok";
-        fillSampler(sampleResult, cBranch.getId(), retries, true, cBranchStr, 200);
-        commitId.set(cBranch);
+      if (branch != null) {
+        String branchStr = "ok";
+        fillSampler(sampleResult, branch.getId(), retries, true, branchStr, 200);
+        commitId.set(branch);
       } else {
         throw new UnsupportedOperationException("failed with too many retries");
       }
@@ -170,14 +175,13 @@ public class NessieSampler extends AbstractJavaSamplerClient implements Serializ
       case COMMIT: {
         return handle(() -> {
           if (commitId.get() == null) {
-            Branch cBranch = nessieClient().getBranch(branch);
-            commitId.set(cBranch);
+            Branch branch = nessieClient().getBranch(this.branch);
+            commitId.set(branch);
           }
           return nessieClient().commit(commitId.get(), ImmutableTable.builder()
                                                                      .id("name.space." + table)
                                                                      .name(table)
-                                                                     .metadataLocation(
-                                                                       "path_on_disk_" + table)
+                                                                     .metadataLocation("path_on_disk_" + table)
                                                                      .build()
           );
         });
