@@ -16,25 +16,23 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
-import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.VersionedWrapper;
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.dremio.nessie.backend.EntityBackend;
 import com.dremio.nessie.model.VersionedWrapper;
 
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;

@@ -18,11 +18,6 @@ package com.dremio.nessie.server;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.NessieCatalog;
 import java.io.File;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
@@ -40,6 +35,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;

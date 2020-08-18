@@ -16,15 +16,6 @@
 
 package com.dremio.nessie.client;
 
-import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
-import com.dremio.nessie.client.auth.BasicAuth;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.NessieConfiguration;
-import com.dremio.nessie.model.Table;
-import com.dremio.nessie.tracing.TracingUtil;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 import java.io.Closeable;
 import java.util.List;
 
@@ -36,14 +27,14 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
 import com.dremio.nessie.client.auth.BasicAuth;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.Table;
+import com.dremio.nessie.tracing.TracingUtil;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 

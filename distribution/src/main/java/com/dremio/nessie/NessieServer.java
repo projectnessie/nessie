@@ -16,25 +16,6 @@
 
 package com.dremio.nessie;
 
-import ch.qos.logback.classic.LoggerContext;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
-import com.codahale.metrics.jvm.BufferPoolMetricSet;
-import com.codahale.metrics.jvm.ClassLoadingGaugeSet;
-import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
-import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
-import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
-import com.codahale.metrics.logback.InstrumentedAppender;
-import com.codahale.metrics.servlet.InstrumentedFilter;
-import com.dremio.nessie.server.ConfigurationFactory;
-import com.dremio.nessie.server.InstrumentationFilter;
-import com.dremio.nessie.server.RestServerV1;
-import com.dremio.nessie.server.ServerConfiguration;
-import com.dremio.nessie.tracing.TracingUtil;
-import io.opentracing.contrib.jaxrs2.server.SpanFinishingFilter;
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.dropwizard.DropwizardExports;
-import io.prometheus.client.exporter.MetricsServlet;
 import java.io.Closeable;
 import java.lang.management.ManagementFactory;
 import java.util.EnumSet;
@@ -57,6 +38,8 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.jvm.BufferPoolMetricSet;
 import com.codahale.metrics.jvm.ClassLoadingGaugeSet;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
@@ -68,8 +51,10 @@ import com.dremio.nessie.server.ConfigurationFactory;
 import com.dremio.nessie.server.InstrumentationFilter;
 import com.dremio.nessie.server.RestServerV1;
 import com.dremio.nessie.server.ServerConfiguration;
+import com.dremio.nessie.tracing.TracingUtil;
 
 import ch.qos.logback.classic.LoggerContext;
+import io.opentracing.contrib.jaxrs2.server.SpanFinishingFilter;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.dropwizard.DropwizardExports;
 import io.prometheus.client.exporter.MetricsServlet;

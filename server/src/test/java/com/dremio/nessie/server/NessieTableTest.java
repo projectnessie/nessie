@@ -21,13 +21,6 @@ import static org.apache.iceberg.TableMetadataParser.getFileExtension;
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.NessieCatalog;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ImmutableTable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -61,6 +54,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;

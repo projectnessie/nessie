@@ -16,14 +16,6 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
-import com.dremio.nessie.backend.Backend;
-import com.dremio.nessie.model.BranchControllerObject;
-import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.ImmutableBranchControllerObject;
-import com.dremio.nessie.model.ImmutableBranchControllerReference;
-import com.dremio.nessie.model.VersionedWrapper;
 import java.io.IOException;
 
 import org.junit.jupiter.api.AfterEach;
@@ -33,6 +25,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
@@ -81,6 +75,7 @@ public class ITTestDynamo {
                             .build();
       client.createTable(request);
     }
+    SharedMetricRegistries.setDefault("default", new MetricRegistry());
   }
 
   @BeforeEach
@@ -122,7 +117,6 @@ public class ITTestDynamo {
 
     Assertions.assertNull(backend.gitBackend().get("1"));
     Assertions.assertTrue(backend.gitBackend().getAll(true).isEmpty());
-
   }
 
   @Test

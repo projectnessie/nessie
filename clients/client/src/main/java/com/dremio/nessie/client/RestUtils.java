@@ -16,12 +16,6 @@
 
 package com.dremio.nessie.client;
 
-import com.dremio.nessie.client.auth.AwsAuth;
-import com.dremio.nessie.client.rest.ConflictException;
-import com.dremio.nessie.client.rest.PreconditionFailedException;
-import com.dremio.nessie.json.ObjectMapperContextResolver;
-import com.google.common.collect.ImmutableMap;
-import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
 import java.util.Map;
 
 import javax.ws.rs.BadRequestException;
@@ -42,6 +36,8 @@ import com.dremio.nessie.client.rest.ConflictException;
 import com.dremio.nessie.client.rest.PreconditionFailedException;
 import com.dremio.nessie.json.ObjectMapperContextResolver;
 import com.google.common.collect.ImmutableMap;
+
+import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
 
 /**
  * common REST utils.
