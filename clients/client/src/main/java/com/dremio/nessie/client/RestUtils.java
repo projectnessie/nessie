@@ -43,6 +43,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
+import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
+
 /**
  * common REST utils.
  */
@@ -113,6 +115,7 @@ public final class RestUtils {
 
     ClientWithHelpers(boolean isAws) {
       ClientBuilder builder = ClientBuilder.newBuilder()
+                                           .register(ClientTracingFeature.class)
                                            .register(ObjectMapperContextResolver.class);
       if (isAws) {
         builder.register(AwsAuth.class);

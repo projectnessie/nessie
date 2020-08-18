@@ -54,6 +54,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
@@ -82,6 +84,11 @@ public class NessieTableTest {
 
   @BeforeAll
   public static void create() throws Exception {
+    try {
+      SharedMetricRegistries.setDefault("default", new MetricRegistry());
+    } catch (IllegalStateException t) {
+      //pass already set in previous test
+    }
     server = new TestNessieServer();
     server.start(9994);
     alleyLocalDir = java.nio.file.Files.createTempDirectory("test",

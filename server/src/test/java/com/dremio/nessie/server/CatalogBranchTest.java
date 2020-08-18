@@ -40,6 +40,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
@@ -57,6 +59,11 @@ public class CatalogBranchTest {
 
   @BeforeAll
   public static void create() throws Exception {
+    try {
+      SharedMetricRegistries.setDefault("default", new MetricRegistry());
+    } catch (IllegalStateException t) {
+      //pass set in previous test
+    }
     server = new TestNessieServer();
     server.start(9995);
     alleyLocalDir = java.nio.file.Files.createTempDirectory("test",

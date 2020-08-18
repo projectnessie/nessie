@@ -64,6 +64,7 @@
     <immutables.version>2.8.2</immutables.version>
     <jackson.version>2.10.2</jackson.version>
     <javax.version>3.1.0</javax.version>
+    <jaeger.version>0.32.0</jaeger.version>
     <jersey.version>2.30</jersey.version>
     <jetty.version>9.4.26.v20200117</jetty.version>
     <jjwt.version>0.11.1</jjwt.version>
@@ -72,6 +73,7 @@
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.12.2</protobuf.version>
     <prometheus.version>0.8.1</prometheus.version>
+    <opentracing-jaxrs.version>1.0.0</opentracing-jaxrs.version>
     <serverless.version>1.5</serverless.version>
     <slf4j.version>1.7.16</slf4j.version>
     <spark.version>2.4.4</spark.version>
@@ -639,6 +641,16 @@ limitations under the License.
         <version>${dropwizard-metrics.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.opentracing.contrib</groupId>
+        <artifactId>opentracing-jaxrs2-discovery</artifactId>
+        <version>${opentracing-jaxrs.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.jaegertracing</groupId>
+        <artifactId>jaeger-client</artifactId>
+        <version>${jaeger.version}</version>
       </dependency>
       <dependency>
         <groupId>io.jsonwebtoken</groupId>

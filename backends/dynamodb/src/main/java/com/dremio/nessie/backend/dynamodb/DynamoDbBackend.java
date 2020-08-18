@@ -50,7 +50,8 @@ public class DynamoDbBackend implements Backend {
 
   /**
    * Create instance of the backend.
-   * @param region region to connect to (eg us-west-2)
+   *
+   * @param region   region to connect to (eg us-west-2)
    * @param endpoint endpoint (useful for localstack or other non AWS instances)
    */
   public static DynamoDbBackend getInstance(String region, String endpoint) {
