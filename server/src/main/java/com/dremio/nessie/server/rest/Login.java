@@ -16,18 +16,6 @@
 
 package com.dremio.nessie.server.rest;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Metered;
-import com.codahale.metrics.annotation.Timed;
-import com.dremio.nessie.auth.AuthResponse;
-import com.dremio.nessie.auth.ImmutableAuthResponse;
-import com.dremio.nessie.auth.UserService;
-import com.dremio.nessie.error.ImmutableNessieError;
-import com.google.common.base.Throwables;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -47,6 +35,8 @@ import com.codahale.metrics.annotation.Timed;
 import com.dremio.nessie.auth.AuthResponse;
 import com.dremio.nessie.auth.ImmutableAuthResponse;
 import com.dremio.nessie.auth.UserService;
+import com.dremio.nessie.error.ImmutableNessieError;
+import com.google.common.base.Throwables;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;

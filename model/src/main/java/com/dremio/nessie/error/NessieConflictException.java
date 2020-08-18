@@ -29,26 +29,22 @@ public class NessieConflictException extends RuntimeException {
   }
 
   public NessieConflictException(List<String> conflictTables) {
-    this.conflictTables = conflictTables == null ? Collections.emptyList()
-      : Collections.unmodifiableList(conflictTables);
+    this.conflictTables = tables(conflictTables);
   }
 
   public NessieConflictException(List<String> conflictTables, String message) {
     super(message);
-    this.conflictTables = conflictTables == null ? Collections.emptyList()
-      : Collections.unmodifiableList(conflictTables);
+    this.conflictTables = tables(conflictTables);
   }
 
   public NessieConflictException(List<String> conflictTables, String message, Throwable cause) {
     super(message, cause);
-    this.conflictTables = conflictTables == null ? Collections.emptyList()
-      : Collections.unmodifiableList(conflictTables);
+    this.conflictTables = tables(conflictTables);
   }
 
   public NessieConflictException(List<String> conflictTables, Throwable cause) {
     super(cause);
-    this.conflictTables = conflictTables == null ? Collections.emptyList()
-      : Collections.unmodifiableList(conflictTables);
+    this.conflictTables = tables(conflictTables);
   }
 
   public NessieConflictException(List<String> conflictTables,
@@ -57,11 +53,14 @@ public class NessieConflictException extends RuntimeException {
                                  boolean enableSuppression,
                                  boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
-    this.conflictTables = conflictTables == null ? Collections.emptyList()
-      : Collections.unmodifiableList(conflictTables);
+    this.conflictTables = tables(conflictTables);
   }
 
   public List<String> getConflictTables() {
     return conflictTables;
+  }
+
+  private static List<String> tables(List<String> conflictTables) {
+    return conflictTables == null ? Collections.emptyList() : Collections.unmodifiableList(conflictTables);
   }
 }

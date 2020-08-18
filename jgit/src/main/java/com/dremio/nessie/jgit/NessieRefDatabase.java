@@ -16,11 +16,6 @@
 
 package com.dremio.nessie.jgit;
 
-import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.error.NessieConflictException;
-import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.ImmutableBranchControllerReference;
-import com.dremio.nessie.model.VersionedWrapper;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -38,6 +33,7 @@ import org.eclipse.jgit.lib.Ref.Storage;
 import org.eclipse.jgit.util.RefList;
 
 import com.dremio.nessie.backend.EntityBackend;
+import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.BranchControllerReference;
 import com.dremio.nessie.model.ImmutableBranchControllerReference;
 import com.dremio.nessie.model.VersionedWrapper;

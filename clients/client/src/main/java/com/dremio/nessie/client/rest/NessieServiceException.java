@@ -17,7 +17,6 @@
 package com.dremio.nessie.client.rest;
 
 import com.dremio.nessie.error.NessieError;
-import javax.ws.rs.core.Response;
 
 public interface NessieServiceException {
   NessieError getNessieError();

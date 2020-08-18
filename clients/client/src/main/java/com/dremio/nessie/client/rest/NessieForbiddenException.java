@@ -16,8 +16,9 @@
 
 package com.dremio.nessie.client.rest;
 
-import com.dremio.nessie.error.NessieError;
 import javax.ws.rs.core.Response;
+
+import com.dremio.nessie.error.NessieError;
 
 public class NessieForbiddenException extends NessieExtendedClientErrorException {
 

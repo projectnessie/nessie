@@ -30,11 +30,6 @@ import com.dremio.nessie.model.User;
 import com.dremio.nessie.model.VersionedWrapper;
 import com.dremio.nessie.server.ServerConfiguration;
 import com.google.common.collect.ImmutableList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * basic class to demonstrate the backend model. WARNING do not use in production.

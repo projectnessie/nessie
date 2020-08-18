@@ -16,7 +16,6 @@
 
 package com.dremio.nessie.jgit;
 
-import com.dremio.nessie.error.NessieConflictException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -25,6 +24,8 @@ import org.eclipse.jgit.internal.storage.dfs.DfsObjDatabase;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.util.IO;
+
+import com.dremio.nessie.error.NessieConflictException;
 
 public class NessieObjectInserter extends DfsInserter {
 

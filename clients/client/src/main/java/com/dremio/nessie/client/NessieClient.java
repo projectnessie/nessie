@@ -16,19 +16,9 @@
 
 package com.dremio.nessie.client;
 
-import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
-import com.dremio.nessie.client.auth.BasicAuth;
-import com.dremio.nessie.client.rest.NessieNotFoundException;
-import com.dremio.nessie.jwt.JwtUtils;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.NessieConfiguration;
-import com.dremio.nessie.model.Table;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 import java.io.Closeable;
 import java.util.List;
 
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.GenericType;
@@ -39,6 +29,7 @@ import javax.ws.rs.core.Response;
 
 import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
 import com.dremio.nessie.client.auth.BasicAuth;
+import com.dremio.nessie.client.rest.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.Table;
@@ -67,6 +58,7 @@ public class NessieClient implements Closeable {
 
   /**
    * create new nessie client. All REST api endpoints are mapped here.
+   *
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
    */
   public NessieClient(AuthType authType, String path, String username, String password) {
@@ -96,7 +88,8 @@ public class NessieClient implements Closeable {
     Response response = client.get(endpoint, "objects", MediaType.APPLICATION_JSON, checkKey())
                               .get();
     RestUtils.checkResponse(response);
-    return response.readEntity(new GenericType<List<Branch>>() {});
+    return response.readEntity(new GenericType<List<Branch>>() {
+    });
   }
 
   @Override
@@ -162,10 +155,10 @@ public class NessieClient implements Closeable {
    * Commit a set of tables on a given branch.
    *
    * <p>
-   *   These could be updates, creates or deletes given the state of the backend and the
-   *   tables being commited. This could throw an exception if the version is incorrect. This
-   *   implies that the branch you are on is not up to date and there is a merge conflict.
+   * These could be updates, creates or deletes given the state of the backend and the tables being commited. This could throw an exception
+   * if the version is incorrect. This implies that the branch you are on is not up to date and there is a merge conflict.
    * </p>
+   *
    * @param branch The branch to commit on. Its id is the commit version to commit on top of
    * @param tables list of tables to be added, deleted or modified
    */
@@ -184,8 +177,7 @@ public class NessieClient implements Closeable {
    * Return a list of all table names for a branch.
    *
    * <p>
-   *   We do not return all table objects as its a costly operation. Only table names. Optionally
-   *   filtered by namespace
+   * We do not return all table objects as its a costly operation. Only table names. Optionally filtered by namespace
    * </p>
    */
   public Iterable<String> getAllTables(String branch, String namespace) {
@@ -198,7 +190,8 @@ public class NessieClient implements Closeable {
                               .accept(MediaType.APPLICATION_JSON_TYPE)
                               .get();
     RestUtils.checkResponse(response);
-    return response.readEntity(new GenericType<List<String>>(){});
+    return response.readEntity(new GenericType<List<String>>() {
+    });
   }
 
   private static String extractHeaders(MultivaluedMap<String, Object> headers) {

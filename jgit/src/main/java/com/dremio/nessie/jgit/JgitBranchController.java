@@ -16,17 +16,6 @@
 
 package com.dremio.nessie.jgit;
 
-import com.dremio.nessie.backend.Backend;
-import com.dremio.nessie.backend.BranchController;
-import com.dremio.nessie.error.NessieConflictException;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.Table;
-import com.dremio.nessie.model.TableMeta;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
@@ -49,7 +38,6 @@ import javax.inject.Inject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.JGitInternalException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.dircache.DirCacheBuilder;
 import org.eclipse.jgit.dircache.DirCacheEntry;
@@ -79,11 +67,13 @@ import org.eclipse.jgit.util.sha1.SHA1;
 
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.BranchController;
+import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.Table;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 
 @ApplicationScoped
 public class JgitBranchController implements BranchController {

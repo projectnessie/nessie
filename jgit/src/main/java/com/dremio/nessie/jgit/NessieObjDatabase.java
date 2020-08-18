@@ -42,7 +42,6 @@ import org.eclipse.jgit.lib.ObjectInserter;
 import org.eclipse.jgit.lib.ObjectLoader.SmallObject;
 
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.Base;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.ImmutableBranchControllerObject;
 import com.dremio.nessie.model.VersionedWrapper;

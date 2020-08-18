@@ -16,12 +16,16 @@
 
 package com.dremio.nessie.error;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import java.util.List;
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 @RegisterForReflection
 @Value.Immutable(prehash = true)

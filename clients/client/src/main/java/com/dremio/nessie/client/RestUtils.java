@@ -16,6 +16,17 @@
 
 package com.dremio.nessie.client;
 
+import java.util.Map;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import com.dremio.nessie.client.auth.AwsAuth;
 import com.dremio.nessie.client.rest.NessieBadRequestException;
 import com.dremio.nessie.client.rest.NessieConflictException;
@@ -30,26 +41,6 @@ import com.dremio.nessie.json.ObjectMapperBuilder;
 import com.dremio.nessie.json.ObjectMapperContextResolver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import java.util.Map;
-
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
-import com.dremio.nessie.client.auth.AwsAuth;
-import com.dremio.nessie.client.rest.ConflictException;
-import com.dremio.nessie.client.rest.PreconditionFailedException;
-import com.dremio.nessie.json.ObjectMapperContextResolver;
 import com.google.common.collect.ImmutableMap;
 
 /**

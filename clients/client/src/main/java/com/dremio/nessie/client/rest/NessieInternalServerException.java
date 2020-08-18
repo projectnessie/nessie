@@ -16,9 +16,10 @@
 
 package com.dremio.nessie.client.rest;
 
-import com.dremio.nessie.error.NessieError;
 import javax.ws.rs.ServerErrorException;
 import javax.ws.rs.core.Response;
+
+import com.dremio.nessie.error.NessieError;
 
 public class NessieInternalServerException extends ServerErrorException
     implements NessieServiceException {
