@@ -14,11 +14,24 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.model;
+package com.dremio.nessie.client.rest;
 
-/**
- * base interface for all model/api classes.
- */
-public interface Base {
+import javax.ws.rs.ServerErrorException;
+import javax.ws.rs.core.Response;
 
+import com.dremio.nessie.error.NessieError;
+
+public class NessieInternalServerException extends ServerErrorException
+    implements NessieServiceException {
+
+  private final NessieError nessieError;
+
+  public NessieInternalServerException(Response response, NessieError nessieError) {
+    super(response);
+    this.nessieError = nessieError;
+  }
+
+  public NessieError getNessieError() {
+    return nessieError;
+  }
 }

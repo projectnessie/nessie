@@ -18,9 +18,11 @@ package com.dremio.nessie.client.rest;
 
 import javax.ws.rs.core.Response;
 
-public class ConflictException extends ExtendedClientErrorException {
+import com.dremio.nessie.error.NessieError;
 
-  public ConflictException(Response response) {
-    super(response);
+public class NessieBadRequestException extends NessieExtendedClientErrorException {
+
+  public NessieBadRequestException(Response response, NessieError nessieError) {
+    super(response, nessieError);
   }
 }

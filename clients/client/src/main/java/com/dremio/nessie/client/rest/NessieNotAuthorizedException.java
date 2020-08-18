@@ -18,9 +18,11 @@ package com.dremio.nessie.client.rest;
 
 import javax.ws.rs.core.Response;
 
-public class PreconditionFailedException extends ExtendedClientErrorException {
+import com.dremio.nessie.error.NessieError;
 
-  public PreconditionFailedException(Response response) {
-    super(response);
+public class NessieNotAuthorizedException extends NessieExtendedClientErrorException {
+
+  public NessieNotAuthorizedException(Response response, NessieError nessieError) {
+    super(response, nessieError);
   }
 }

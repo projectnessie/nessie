@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.model;
+package com.dremio.nessie.client.rest;
 
-/**
- * base interface for all model/api classes.
- */
-public interface Base {
+import javax.ws.rs.core.Response;
 
+import com.dremio.nessie.error.NessieError;
+
+public class NessieNotFoundException extends NessieExtendedClientErrorException {
+
+  public NessieNotFoundException(Response response, NessieError nessieError) {
+    super(response, nessieError);
+  }
 }

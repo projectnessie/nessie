@@ -33,6 +33,7 @@ import org.eclipse.jgit.lib.Ref.Storage;
 import org.eclipse.jgit.util.RefList;
 
 import com.dremio.nessie.backend.EntityBackend;
+import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.BranchControllerReference;
 import com.dremio.nessie.model.ImmutableBranchControllerReference;
 import com.dremio.nessie.model.VersionedWrapper;
@@ -128,7 +129,7 @@ public class NessieRefDatabase extends DfsRefDatabase {
           backend.update(newGitRef.getObj().getId(), newGitRef));
     } catch (Exception e) {
       refresh();
-      throw new IllegalStateException(
+      throw new NessieConflictException(null,
         "Unable to complete commit and update Ref " + newGitRef.getObj().getId(), e);
     }
     return true;

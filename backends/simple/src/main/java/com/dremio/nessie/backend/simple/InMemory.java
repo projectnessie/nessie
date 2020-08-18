@@ -23,11 +23,13 @@ import java.util.stream.Collectors;
 
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.EntityBackend;
+import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
 import com.dremio.nessie.model.User;
 import com.dremio.nessie.model.VersionedWrapper;
 import com.dremio.nessie.server.ServerConfiguration;
+import com.google.common.collect.ImmutableList;
 
 /**
  * basic class to demonstrate the backend model. WARNING do not use in production.
@@ -90,7 +92,7 @@ public class InMemory implements Backend {
       }
 
       if (!current.getVersion().equals(table.getVersion())) {
-        throw new IllegalStateException("InMemory version incorrect");
+        throw new NessieConflictException(ImmutableList.of(name), "InMemory version incorrect");
       }
       objects.put(name, increment(table));
       return objects.get(name);

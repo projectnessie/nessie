@@ -23,9 +23,11 @@ import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Metered;
@@ -33,6 +35,8 @@ import com.codahale.metrics.annotation.Timed;
 import com.dremio.nessie.auth.AuthResponse;
 import com.dremio.nessie.auth.ImmutableAuthResponse;
 import com.dremio.nessie.auth.UserService;
+import com.dremio.nessie.error.ImmutableNessieError;
+import com.google.common.base.Throwables;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -75,15 +79,40 @@ public class Login {
                         @FormParam("grant_type") String grantType) {
     try {
       if (!grantType.equals("password")) {
-        return Response.status(401, "not authorized").build();
+        return unauthorized();
       }
       String token = userService.authorize(login, password);
       return Response.ok(ImmutableAuthResponse.builder().token(token).build())
         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build();
     } catch (NotAuthorizedException e) {
-      return Response.status(401, "not authorized").build();
+      return unauthorized();
     } catch (Throwable t) {
-      return Response.status(400, "something went wrong").build();
+      return exception(t);
     }
+  }
+
+  private Response exception(Throwable t) {
+    return Response.status(Status.INTERNAL_SERVER_ERROR)
+                   .entity(Entity.entity(
+                     ImmutableNessieError.builder()
+                                         .errorCode(Status.INTERNAL_SERVER_ERROR.getStatusCode())
+                                         .statusMessage(
+                                           Status.INTERNAL_SERVER_ERROR.getReasonPhrase())
+                                         .errorMessage(t.getMessage())
+                                         .stackTrace(Throwables.getStackTraceAsString(t))
+                                         .build(), MediaType.APPLICATION_JSON))
+                   .build();
+  }
+
+  private Response unauthorized() {
+    return Response.status(Status.UNAUTHORIZED)
+                   .entity(Entity.entity(
+                     ImmutableNessieError.builder()
+                                         .errorCode(Status.UNAUTHORIZED.getStatusCode())
+                                         .statusMessage(Status.UNAUTHORIZED.getReasonPhrase())
+                                         .errorMessage("not authorized")
+                                         .build(),
+                     MediaType.APPLICATION_JSON_TYPE))
+                   .build();
   }
 }

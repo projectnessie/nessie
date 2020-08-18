@@ -30,7 +30,6 @@ public abstract class BranchControllerReference implements Base {
 
   public abstract long getUpdateTime();
 
-  @Override
   public abstract String getId();
 
 }

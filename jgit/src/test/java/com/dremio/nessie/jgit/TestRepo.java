@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.backend.simple.InMemory;
+import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.CommitMeta.Action;
@@ -141,7 +142,7 @@ class TestRepo {
     assertEquals(table.getNamespace(), newTable.getNamespace());
     assertEquals(table.getName(), newTable.getName());
     String finalCommit = commit;
-    assertThrows(IllegalStateException.class,
+    assertThrows(NessieConflictException.class,
         () -> controller.promote("master",
                                  "test",
                                  finalCommit,
@@ -201,7 +202,7 @@ class TestRepo {
     assertEquals(1, controller.getTables("master", null).size());
     assertEquals(1, controller.getTables("test", null).size());
     String finalCommit = commit;
-    assertThrows(IllegalStateException.class, () -> controller.promote("master",
+    assertThrows(NessieConflictException.class, () -> controller.promote("master",
                                                                        "test",
                                                                        finalCommit,
                                                                        commitMeta("master",
@@ -326,7 +327,7 @@ class TestRepo {
                                       commitMeta("master", "", Action.COMMIT, 1),
                                       branch.getId(),
                                       table);
-    assertThrows(IllegalStateException.class,
+    assertThrows(NessieConflictException.class,
         () -> controller.commit("master",
                                 commitMeta("master", "", Action.COMMIT, 1),
                                 branch.getId(),
@@ -372,7 +373,7 @@ class TestRepo {
                                       commitMeta("master", "", Action.COMMIT, 1),
                                       branch.getId(),
                                       table);
-    assertThrows(IllegalStateException.class,
+    assertThrows(NessieConflictException.class,
         () -> controller2.commit("master",
                                  commitMeta("master", "", Action.COMMIT, 1),
                                  branch2.getId(),

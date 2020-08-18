@@ -18,10 +18,6 @@ package com.dremio.nessie.client;
 
 import java.util.Map;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
@@ -32,15 +28,27 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.dremio.nessie.client.auth.AwsAuth;
-import com.dremio.nessie.client.rest.ConflictException;
-import com.dremio.nessie.client.rest.PreconditionFailedException;
+import com.dremio.nessie.client.rest.NessieBadRequestException;
+import com.dremio.nessie.client.rest.NessieConflictException;
+import com.dremio.nessie.client.rest.NessieForbiddenException;
+import com.dremio.nessie.client.rest.NessieInternalServerException;
+import com.dremio.nessie.client.rest.NessieNotAuthorizedException;
+import com.dremio.nessie.client.rest.NessieNotFoundException;
+import com.dremio.nessie.client.rest.NessiePreconditionFailedException;
+import com.dremio.nessie.error.ImmutableNessieError;
+import com.dremio.nessie.error.NessieError;
+import com.dremio.nessie.json.ObjectMapperBuilder;
 import com.dremio.nessie.json.ObjectMapperContextResolver;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
 /**
  * common REST utils.
  */
 public final class RestUtils {
+
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperBuilder.createObjectMapper();
 
   private RestUtils() {
 
@@ -51,27 +59,49 @@ public final class RestUtils {
    */
   public static void checkResponse(Response response) {
     Status status = Status.fromStatusCode(response.getStatus());
-    switch (status) {
-
-      case OK:
-      case CREATED:
-        return;
-      case BAD_REQUEST:
-        throw new BadRequestException(response);
-      case UNAUTHORIZED:
-        throw new NotAuthorizedException(response);
-      case FORBIDDEN:
-        throw new ForbiddenException(response);
-      case NOT_FOUND:
-        throw new NotFoundException(response);
-      case CONFLICT:
-        throw new ConflictException(response);
-      case PRECONDITION_FAILED:
-        throw new PreconditionFailedException(response);
-      default:
-        throw new RuntimeException(
-          "Unknown exception " + response.getStatus() + " " + response.readEntity(String.class));
+    if (status == Status.OK || status == Status.CREATED) {
+      return;
     }
+    NessieError error = readException(status, response);
+    switch (status) {
+      case BAD_REQUEST:
+        throw new NessieBadRequestException(response, error);
+      case UNAUTHORIZED:
+        throw new NessieNotAuthorizedException(response, error);
+      case FORBIDDEN:
+        throw new NessieForbiddenException(response, error);
+      case NOT_FOUND:
+        throw new NessieNotFoundException(response, error);
+      case CONFLICT:
+        throw new NessieConflictException(response, error);
+      case PRECONDITION_FAILED:
+        throw new NessiePreconditionFailedException(response, error);
+      case INTERNAL_SERVER_ERROR:
+        throw new NessieInternalServerException(response, error);
+      default:
+        try {
+          String msg = OBJECT_MAPPER.writeValueAsString(error);
+          throw new RuntimeException(
+            "Unknown exception " + response.getStatus() + " with message " + msg);
+        } catch (JsonProcessingException e) {
+          throw new RuntimeException("Unknown exception " + response.getStatus(), e);
+        }
+    }
+  }
+
+  private static NessieError readException(Status status, Response response) {
+    String msg = response.readEntity(String.class);
+    NessieError error;
+    try {
+      error = OBJECT_MAPPER.readValue(msg, NessieError.class);
+    } catch (Exception ex) {
+      error = ImmutableNessieError.builder()
+                                  .errorCode(status.getStatusCode())
+                                  .errorMessage(msg)
+                                  .statusMessage(status.getReasonPhrase())
+                                  .build();
+    }
+    return error;
   }
 
   /**

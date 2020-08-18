@@ -32,7 +32,6 @@ public abstract class BranchControllerObject implements Base {
 
   public abstract long getUpdateTime();
 
-  @Override
   public abstract String getId();
 
 }

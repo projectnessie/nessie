@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.model;
+package com.dremio.nessie.error;
 
-import java.util.Set;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -27,41 +27,22 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
-/**
- * API representation of a User of Nessie.
- */
 @RegisterForReflection
-@Value.Immutable
-@JsonSerialize(as = ImmutableUser.class)
-@JsonDeserialize(as = ImmutableUser.class)
-public abstract class User implements Base {
+@Value.Immutable(prehash = true)
+@JsonSerialize(as = ImmutableNessieError.class)
+@JsonDeserialize(as = ImmutableNessieError.class)
+public abstract class NessieError {
 
-  @Value.Redacted
-  @Value.Default
-  public String getPassword() {
-    return "$EMPTY$";
-  }
+  public abstract int errorCode();
 
-  @Value.Default
-  public long getCreateMillis() {
-    return Long.MIN_VALUE;
-  }
-
-  @Value.Default
-  public boolean isActive() {
-    return true;
-  }
+  public abstract String errorMessage();
 
   @Nullable
-  public abstract String getEmail();
+  public abstract String stackTrace();
 
-  public abstract Set<String> getRoles();
+  @Nullable
+  public abstract String statusMessage();
 
-  public abstract String getId();
-
-  @Value.Default
-  public long getUpdateMillis() {
-    return Long.MIN_VALUE;
-  }
-
+  @Nullable
+  public abstract List<String> conflicts();
 }

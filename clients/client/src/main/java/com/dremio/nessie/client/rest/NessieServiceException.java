@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.model;
+package com.dremio.nessie.client.rest;
 
-/**
- * base interface for all model/api classes.
- */
-public interface Base {
+import com.dremio.nessie.error.NessieError;
 
+public interface NessieServiceException {
+  NessieError getNessieError();
 }
