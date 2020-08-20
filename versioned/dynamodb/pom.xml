@@ -35,8 +35,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <configuration>
-          <argLine>@{argLine} -Dsqlite4java.library.path=${basedir}/target/dependencies
-          </argLine>
           <systemPropertyVariables>
             <aws.accessKeyId>xxx</aws.accessKeyId>
             <aws.secretAccessKey>xxx</aws.secretAccessKey>

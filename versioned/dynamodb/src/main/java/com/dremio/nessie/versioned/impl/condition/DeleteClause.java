@@ -16,12 +16,14 @@
 package com.dremio.nessie.versioned.impl.condition;
 
 
+import org.immutables.value.Value.Immutable;
+
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
  * Remove items from a set.
  */
-@org.immutables.value.Value.Immutable
+@Immutable
 public abstract class DeleteClause implements UpdateClause {
 
   abstract ExpressionPath getPath();

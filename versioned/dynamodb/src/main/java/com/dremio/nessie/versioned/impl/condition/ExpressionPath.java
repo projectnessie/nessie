@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.impl.condition;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +23,7 @@ import org.immutables.value.Value;
 
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 @Value.Immutable
 public abstract class ExpressionPath implements Aliasable<ExpressionPath> {
@@ -201,7 +201,6 @@ public abstract class ExpressionPath implements Aliasable<ExpressionPath> {
 
   private static class Builder {
 
-    private boolean built = false;
     private final List<PathSegment.Builder> segments = new ArrayList<>();
 
     private Builder() {
@@ -227,11 +226,10 @@ public abstract class ExpressionPath implements Aliasable<ExpressionPath> {
 
     private ExpressionPath build(int builderOrdinal) {
       Preconditions.checkArgument(builderOrdinal == segments.size() - 1, "You can only call build on the final segment of your path.");
-      Preconditions.checkArgument(!built, "Builders can only be used once.");
       Preconditions.checkArgument(!segments.isEmpty(), "At least one segment must be defined.");
-      Collections.reverse(segments);
+      List<PathSegment.Builder> reversed = Lists.reverse(segments);
       PathSegment segment = null;
-      for (PathSegment.Builder seg : segments) {
+      for (PathSegment.Builder seg : reversed) {
         if (seg.name != null) {
           segment = ImmutableNameSegment.builder().child(Optional.ofNullable(segment)).name(seg.name).build();
         } else {
@@ -240,7 +238,6 @@ public abstract class ExpressionPath implements Aliasable<ExpressionPath> {
         }
       }
 
-      built = true;
       return ImmutableExpressionPath.builder().root((NameSegment) segment).build();
     }
   }

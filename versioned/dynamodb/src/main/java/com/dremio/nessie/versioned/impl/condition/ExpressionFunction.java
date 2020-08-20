@@ -65,33 +65,27 @@ public class ExpressionFunction implements Aliasable<ExpressionFunction> {
   private final FunctionName name;
   private final List<Value> arguments;
 
-
-  private ExpressionFunction(FunctionName name, Value... arguments) {
+  private ExpressionFunction(FunctionName name, ImmutableList<Value> arguments) {
     this.name = name;
     this.arguments = ImmutableList.copyOf(arguments);
     Preconditions.checkArgument(this.arguments.size() == name.argCount, "Unexpected argument count.");
   }
 
-  private ExpressionFunction(FunctionName name, List<Value> arguments) {
-    this.name = name;
-    this.arguments = ImmutableList.copyOf(arguments);
-  }
-
   public static ExpressionFunction appendToList(ExpressionPath initialList, AttributeValue valueToAppend) {
-    return new ExpressionFunction(FunctionName.LIST_APPEND, Value.of(initialList), Value.of(valueToAppend));
+    return new ExpressionFunction(FunctionName.LIST_APPEND, ImmutableList.of(Value.of(initialList), Value.of(valueToAppend)));
   }
 
   public static ExpressionFunction equals(ExpressionPath path, AttributeValue value) {
-    return new ExpressionFunction(FunctionName.EQUALS, Value.of(path), Value.of(value));
+    return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(Value.of(path), Value.of(value)));
   }
 
   public static ExpressionFunction ifNotExists(ExpressionPath path, AttributeValue value) {
-    return new ExpressionFunction(FunctionName.IF_NOT_EXISTS, Value.of(path), Value.of(value));
+    return new ExpressionFunction(FunctionName.IF_NOT_EXISTS, ImmutableList.of(Value.of(path), Value.of(value)));
   }
 
   @Override
   public ExpressionFunction alias(AliasCollector c) {
-    return new ExpressionFunction(name, arguments.stream().map(v -> v.alias(c)).collect(Collectors.toList()));
+    return new ExpressionFunction(name, arguments.stream().map(v -> v.alias(c)).collect(ImmutableList.toImmutableList()));
   }
 
   /**
