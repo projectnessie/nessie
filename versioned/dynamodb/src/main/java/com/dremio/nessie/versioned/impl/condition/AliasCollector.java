@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.impl.condition;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -30,12 +31,13 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  */
 public class AliasCollector {
 
-  private static final Pattern CLEAN_NAME = Pattern.compile("^[a-zA-Z0-9]+$");
+  private static final Pattern CLEAN_NAME = Pattern.compile("^[a-zA-Z][a-zA-Z0-9]*$");
 
   private int counter = 0;
-  private Map<String, AttributeValue> attributeValues = new HashMap<>();
-  private Map<String, String> attributeNames = new HashMap<>();
+  private final Map<String, AttributeValue> attributeValues = new HashMap<>();
+  private final Map<String, String> attributeNames = new HashMap<>();
 
+  @FunctionalInterface
   public interface Aliasable<T> {
     T alias(AliasCollector c);
   }
@@ -45,11 +47,11 @@ public class AliasCollector {
   }
 
   public Map<String, AttributeValue> getAttributesValues() {
-    return attributeValues;
+    return Collections.unmodifiableMap(attributeValues);
   }
 
   public Map<String, String> getAttributeNames() {
-    return attributeNames;
+    return Collections.unmodifiableMap(attributeNames);
   }
 
   /**

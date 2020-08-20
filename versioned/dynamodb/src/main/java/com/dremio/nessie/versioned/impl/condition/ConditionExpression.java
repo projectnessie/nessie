@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
+import com.google.common.collect.ImmutableList;
 
 @Value.Immutable
 public abstract class ConditionExpression implements Aliasable<ConditionExpression> {
@@ -34,11 +35,11 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
   @Override
   public ConditionExpression alias(AliasCollector c) {
     return ImmutableConditionExpression.builder()
-        .functions(getFunctions().stream().map(f -> f.alias(c)).collect(Collectors.toList()))
+        .functions(getFunctions().stream().map(f -> f.alias(c)).collect(ImmutableList.toImmutableList()))
         .build();
   }
 
-  public static ConditionExpression of(ExpressionFunction...functions) {
+  public static ConditionExpression of(ExpressionFunction... functions) {
     return ImmutableConditionExpression.builder().addFunctions(functions).build();
   }
 
