@@ -23,6 +23,7 @@ import org.immutables.value.Value;
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
 import com.dremio.nessie.versioned.impl.condition.UpdateClause.Type;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 
@@ -34,7 +35,7 @@ public abstract class UpdateExpression implements Aliasable<UpdateExpression> {
   @Override
   public UpdateExpression alias(AliasCollector c) {
     return ImmutableUpdateExpression.builder()
-        .clauses(getClauses().stream().map(f -> f.alias(c)).collect(Collectors.toList()))
+        .clauses(getClauses().stream().map(f -> f.alias(c)).collect(ImmutableList.toImmutableList()))
         .build();
   }
 

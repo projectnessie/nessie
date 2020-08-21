@@ -229,7 +229,7 @@
         <artifactId>maven-jar-plugin</artifactId>
         <executions>
           <execution>
-            <id>include-test-jar</id>
+            <id>default-testJar</id>
             <goals>
               <goal>test-jar</goal>
             </goals>

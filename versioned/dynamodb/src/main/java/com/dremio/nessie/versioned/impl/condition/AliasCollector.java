@@ -146,5 +146,5 @@ public class AliasCollector {
       "UNPROCESSED", "UNSIGNED", "UNTIL", "UPDATE", "UPPER", "URL", "USAGE", "USE", "USER", "USERS", "USING", "UUID",
       "VACUUM", "VALUE", "VALUED", "VALUES", "VARCHAR", "VARIABLE", "VARIANCE", "VARINT", "VARYING", "VIEW", "VIEWS",
       "VIRTUAL", "VOID", "WAIT", "WHEN", "WHENEVER", "WHERE", "WHILE", "WINDOW", "WITH", "WITHIN", "WITHOUT", "WORK",
-      "WRAPPED", "WRITE", "YEAR", "ZONE ");
+      "WRAPPED", "WRITE", "YEAR", "ZONE");
 }
