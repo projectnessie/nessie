@@ -43,8 +43,7 @@
   <properties>
     <!-- Build properties -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.release>8</maven.compiler.release>
     <argLine></argLine>
 
     <!-- 3rd party repositories -->
@@ -516,6 +515,19 @@ limitations under the License.
               </rules>
             </configuration>
           </execution>
+          <execution>
+            <id>enforce-java-version</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>11</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>
@@ -834,7 +846,7 @@ limitations under the License.
       <dependency>
         <groupId>org.scala-lang</groupId>
         <artifactId>scala-library</artifactId>
-        <version>2.11.6</version>
+        <version>2.11.12</version>
       </dependency>
       <dependency>
         <groupId>org.scalatest</groupId>
@@ -998,30 +1010,6 @@ limitations under the License.
                   <version>2.4.0</version>
                 </path>
               </annotationProcessorPaths>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <!-- using github.com/google/error-prone-javac is required when running on JDK 8 -->
-    <profile>
-      <id>error-prone-jdk8</id>
-      <activation>
-        <jdk>1.8</jdk>
-        <property>
-           <name>!m2e.version</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-              <fork>true</fork>
-              <compilerArgs combine.children="append">
-                <arg>-J-Xbootclasspath/p:${settings.localRepository}/com/google/errorprone/javac/${errorprone.javac.version}/javac-${errorprone.javac.version}.jar</arg>
-              </compilerArgs>
             </configuration>
           </plugin>
         </plugins>

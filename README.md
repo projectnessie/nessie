@@ -30,19 +30,23 @@ in a single package
 * **Delta Lake** - experimental Delta Lake `LogStore` using Nessie for atomic metadata updates
 * **Serverless** - AWS Lambda for Nessie w/ IAM support.
 
+## Requirements
+
+- JDK 11 or higher: JDK11 or higher is needed to build Nessie although artifacts are still compatible with Java 8
+
 ## Installation
 
 Clone this repository and run maven:
 ```bash
 git clone https://github.com/dremio/nessie
 cd nessie
-mvn clean install
+./mvnw clean install
 ```
 
 ## Distribution
 To run:
 1. configure port, backend, security etc in `distribution/src/main/resources/config.yaml`
-2. execute `mvn exec:exec -pl :nessie-distribution`
+2. execute `./mvnw exec:exec -pl :nessie-distribution`
 3. go to `http://localhost:19120`
 4. Default user (when using basic backend is admin_user:test123)
 
