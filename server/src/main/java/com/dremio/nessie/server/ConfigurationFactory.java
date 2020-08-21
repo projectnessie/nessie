@@ -26,16 +26,26 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.services.ServerConfigurationImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.io.Resources;
 
 public class ConfigurationFactory implements Factory<ServerConfiguration> {
+  private static final String CONFIG_FILENAME = "config.yaml";
+
   private static final Logger logger = LoggerFactory.getLogger(ConfigurationFactory.class);
 
   private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
   @Override
   public ServerConfiguration provide() {
+    final URL config;
     try {
-      URL config = getClass().getClassLoader().getResource("config.yaml");
+      config = Resources.getResource(CONFIG_FILENAME);
+    } catch (IllegalArgumentException e) {
+      logger.info("Unable to read config, continuing with defaults");
+      return new ServerConfigurationImpl();
+    }
+
+    try {
       return mapper.readValue(config, ServerConfigurationImpl.class);
     } catch (IOException | NullPointerException | IllegalArgumentException e) {
       logger.error("Unable to read config, continuing with defaults", e);

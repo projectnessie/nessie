@@ -50,6 +50,7 @@ public class NessieClient implements Closeable {
 
   static {
     System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+    TracingUtil.initTracer("nessie-client");
   }
 
   private static final Joiner SLASH = Joiner.on("/");
@@ -64,7 +65,6 @@ public class NessieClient implements Closeable {
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
    */
   public NessieClient(AuthType authType, String path, String username, String password) {
-    TracingUtil.initTracer("nessie-client");
     endpoint = path;
     client = new ClientWithHelpers(authType == AuthType.AWS);
     auth = (authType == AuthType.AWS) ? null : new BasicAuth(endpoint, username, password, client);
