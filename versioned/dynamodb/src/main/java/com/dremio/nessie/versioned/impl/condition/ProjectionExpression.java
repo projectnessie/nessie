@@ -42,7 +42,9 @@ public abstract class ProjectionExpression implements Aliasable<ProjectionExpres
 
   @Override
   public ProjectionExpression alias(AliasCollector c) {
-    return ImmutableProjectionExpression.builder().paths(getPaths().stream().map(p -> p.alias(c)).collect(ImmutableList.toImmutableList())).build();
+    return ImmutableProjectionExpression.builder()
+        .paths(getPaths().stream().map(p -> p.alias(c)).collect(ImmutableList.toImmutableList()))
+        .build();
   }
 
 }
