@@ -40,13 +40,23 @@ import org.apache.jorphan.collections.HashTree;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.client.rest.NessieExtendedClientErrorException;
 import com.dremio.nessie.model.ImmutableBranch;
 
+/**
+ * Run JMeter test to create a set of tables and commit to them.
+ */
 public class Create implements Runnable {
+
+  private final String path;
+
+  public Create(String path) {
+    this.path = path;
+  }
 
   public static void main(String[] args) throws IOException {
     initialize();
-    new Create().run();
+    new Create("http://localhost:19131/api/v1").run();
   }
 
   /**
@@ -58,12 +68,12 @@ public class Create implements Runnable {
     // Step 1: build nessie client
     try {
       new NessieClient(AuthType.BASIC,
-                       "http://localhost:19131/api/v1",
+                       path,
                        "admin_user",
                        "test123").createBranch(
           ImmutableBranch.builder().name("master").build());
-    } catch (Throwable t) {
-      //pass
+    } catch (NessieExtendedClientErrorException t) {
+      //pass - likely already created master
     }
 
     // Engine
@@ -78,7 +88,7 @@ public class Create implements Runnable {
     JavaSampler javaSampler = new JavaSampler();
     javaSampler.setClassname(NessieSampler.class.getCanonicalName());
     javaSampler.setArguments(NessieSampler.getArguments("2",
-                                                        "http://localhost:19131/api/v1",
+                                                        path,
                                                         "master",
                                                         "master",
                                                         "table-${table}"));
@@ -119,7 +129,7 @@ public class Create implements Runnable {
     threadGroupHashTree.add(javaSampler, responseAssertion);
 
     // Step 7: write results
-    ResultCollector summarizer = buildJMeterSummarizer("stresstest.csv");
+    ResultCollector summarizer = buildJMeterSummarizer("target/perf-test.csv");
 
     hashTree.add(testPlan, summarizer);
     threadGroupHashTree.add(javaSampler, counter);
