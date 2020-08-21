@@ -18,33 +18,34 @@ package com.dremio.nessie.perftest;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.testelement.TestElement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.rest.NessieExtendedClientErrorException;
 import com.dremio.nessie.client.rest.NessieInternalServerException;
 import com.dremio.nessie.client.rest.NessiePreconditionFailedException;
-import com.dremio.nessie.json.ObjectMapperBuilder;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 
+/**
+ * NessieSampler creates REST calls to the Nessie service.
+ *
+ * <p>
+ * This implements the interface required to create custom JMeter plugins in Java. It defines the arguments required to create a REST call
+ * to Nessie via the Nessie client. Result objects are populated based on the return value of the Nessie REST call.
+ * </p>
+ */
 public class NessieSampler extends AbstractJavaSamplerClient implements Serializable {
 
-  private static final Logger logger = LoggerFactory.getLogger(NessieSampler.class);
-
-  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperBuilder.createObjectMapper();
   private static final Joiner SLASH = Joiner.on("/");
   private static final String METHOD_TAG = "method";
   private static final String PATH_TAG = "path";
@@ -77,39 +78,47 @@ public class NessieSampler extends AbstractJavaSamplerClient implements Serializ
     MERGE
   }
 
-  private ThreadLocal<NessieClient> client = new ThreadLocal<>();
-  private String name;
-  private Method method;
-  private String path;
-  private String branch;
-  private String baseBranch;
-  private String table;
+  private AtomicReference<NessieClient> client = new AtomicReference<>();
   private ThreadLocal<Branch> commitId = new ThreadLocal<>();
 
-  private synchronized NessieClient nessieClient() {
+  /**
+   * Create a threadlocal nessie client. Multiple threads are run in the same JVM and they each get a client.
+   */
+  private synchronized NessieClient nessieClient(String path) {
+    //path will be the same for a thread so we don't have to cache per path/thread tuple.
     if (client.get() == null) {
       client.set(new NessieClient(AuthType.BASIC, path, "admin_user", "test123"));
     }
     return client.get();
   }
 
+  /**
+   * arguments and default values that JMeter test should set per sample.
+   */
   @Override
   public Arguments getDefaultParameters() {
     Arguments defaultParameters = new Arguments();
     defaultParameters.addArgument(METHOD_TAG, "test");
-    defaultParameters.addArgument(PATH_TAG, "http://localhost:19120/api/v1");
+    defaultParameters.addArgument(PATH_TAG, "testurl");
     defaultParameters.addArgument(BRANCH_TAG, "master");
     defaultParameters.addArgument(BASE_BRANCH_TAG, "master");
     defaultParameters.addArgument(TABLE_TAG, "table");
     return defaultParameters;
   }
 
+  /**
+   * construct a sample from the result of a call to Nessie API.
+   */
   private void fillSampler(NessieSampleResult sampleResult,
                            String commitId,
                            int retries,
                            boolean ok,
                            String message,
-                           int retCode) {
+                           int retCode,
+                           String branch,
+                           Method method,
+                           String path,
+                           String baseBranch) {
     sampleResult.sampleEnd();
     sampleResult.setBranch(branch);
     sampleResult.setMethod(method.toString());
@@ -127,7 +136,10 @@ public class NessieSampler extends AbstractJavaSamplerClient implements Serializ
     sampleResult.setSampleLabel(SLASH.join(branch, baseBranch, retries, commitId));
   }
 
-  private SampleResult handle(Supplier<Branch> supplier) {
+  /**
+   * delegate method which captures the result of a Nessie client call and returns a sample object.
+   */
+  private SampleResult handle(Supplier<Branch> supplier, Method method, String path, String baseBranch) {
     NessieSampleResult sampleResult = new NessieSampleResult();
     sampleResult.sampleStart();
     int retries = 0;
@@ -144,47 +156,58 @@ public class NessieSampler extends AbstractJavaSamplerClient implements Serializ
       }
       if (branch != null) {
         String branchStr = "ok";
-        fillSampler(sampleResult, branch.getId(), retries, true, branchStr, 200);
+        fillSampler(sampleResult, branch.getId(), retries, true, branchStr, 200, branch.getName(), method, path, baseBranch);
         commitId.set(branch);
       } else {
         throw new UnsupportedOperationException("failed with too many retries");
       }
     } catch (NessieExtendedClientErrorException | NessieInternalServerException e) {
       String errStr = e.getNessieError().statusMessage();
-      fillSampler(sampleResult, "", retries, false, errStr, e.getNessieError().errorCode());
+      fillSampler(sampleResult, "", retries, false, errStr, e.getNessieError().errorCode(), null, method, path, baseBranch);
     } catch (Throwable t) {
       //logger.error("Request was not successfully processed", t);
       String msg = t.getMessage() == null ? "" : t.getMessage();
-      fillSampler(sampleResult, "", retries, false, msg, 500);
+      fillSampler(sampleResult, "", retries, false, msg, 500, null, method, path, baseBranch);
     }
     return sampleResult;
   }
 
 
+  /**
+   * generate a rest call based on input parameters for a single Nessie perf test sample, then execute and generate a sample result.
+   */
   @Override
-  public SampleResult runTest(JavaSamplerContext javaSamplerContext) {
+  public SampleResult runTest(JavaSamplerContext context) {
+    Method method = Method.values()[context.getIntParameter(METHOD_TAG)];
+    String path = context.getParameter(PATH_TAG);
+    String branch = context.getParameter(BRANCH_TAG, "x");
+    String baseBranch = context.getParameter(BASE_BRANCH_TAG, "master");
+    String table = context.getParameter(TABLE_TAG, "y");
     switch (method) {
       case CREATE_BRANCH: {
-        return handle(() -> nessieClient().createBranch(ImmutableBranch.builder()
-                                                                       .name(branch)
-                                                                       .id(baseBranch)
-                                                                       .build()));
+        return handle(() -> nessieClient(path).createBranch(ImmutableBranch.builder().name(branch).id(baseBranch).build()),
+                      method,
+                      path,
+                      baseBranch);
       }
       case DELETE_BRANCH:
         break;
       case COMMIT: {
         return handle(() -> {
           if (commitId.get() == null) {
-            Branch branch = nessieClient().getBranch(this.branch);
-            commitId.set(branch);
+            Branch newBranch = nessieClient(path).getBranch(branch);
+            commitId.set(newBranch);
           }
-          return nessieClient().commit(commitId.get(), ImmutableTable.builder()
+          return nessieClient(path).commit(commitId.get(), ImmutableTable.builder()
                                                                      .id("name.space." + table)
                                                                      .name(table)
                                                                      .metadataLocation("path_on_disk_" + table)
                                                                      .build()
           );
-        });
+        },
+        method,
+        path,
+        baseBranch);
       }
       case MERGE:
         break;
@@ -196,12 +219,6 @@ public class NessieSampler extends AbstractJavaSamplerClient implements Serializ
 
   @Override
   public void setupTest(JavaSamplerContext context) {
-    method = Method.values()[context.getIntParameter(METHOD_TAG)];
-    path = context.getParameter(PATH_TAG);
-    branch = context.getParameter(BRANCH_TAG, "x");
-    baseBranch = context.getParameter(BASE_BRANCH_TAG, "master");
-    table = context.getParameter(TABLE_TAG, "y");
-    name = context.getParameter(TestElement.NAME);
   }
 }
 
