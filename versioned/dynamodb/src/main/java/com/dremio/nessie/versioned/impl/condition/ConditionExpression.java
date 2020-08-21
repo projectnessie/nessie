@@ -28,8 +28,12 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
 
   public abstract List<ExpressionFunction> getFunctions();
 
+  public static ConditionExpression initial() {
+    return ImmutableConditionExpression.builder().build();
+  }
+
   public String toConditionExpressionString() {
-    return getFunctions().stream().map(ExpressionFunction::asString).collect(Collectors.joining(", "));
+    return getFunctions().stream().map(ExpressionFunction::asString).collect(Collectors.joining(" AND "));
   }
 
   @Override
@@ -43,4 +47,10 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
     return ImmutableConditionExpression.builder().addFunctions(functions).build();
   }
 
+  public ConditionExpression and(ExpressionFunction function) {
+    return ImmutableConditionExpression.builder()
+        .addAllFunctions(getFunctions())
+        .addFunctions(function)
+        .build();
+  }
 }

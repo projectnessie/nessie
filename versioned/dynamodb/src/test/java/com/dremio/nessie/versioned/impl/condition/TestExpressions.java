@@ -154,7 +154,7 @@ class TestExpressions {
   void updateMultiClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
         AddClause.addToSetOrNumber(p0, av2),
-        AddClause.appendToList(p1, av1),
+        SetClause.appendToList(p1, av1),
         SetClause.equals(p0, av0),
         SetClause.ifNotExists(p1, p0, av1),
         RemoveClause.of(p0),
