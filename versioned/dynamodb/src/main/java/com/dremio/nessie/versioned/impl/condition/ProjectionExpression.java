@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.immutables.value.Value;
 
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
+import com.google.common.collect.ImmutableList;
 
 @Value.Immutable
 public abstract class ProjectionExpression implements Aliasable<ProjectionExpression> {
@@ -41,7 +42,7 @@ public abstract class ProjectionExpression implements Aliasable<ProjectionExpres
 
   @Override
   public ProjectionExpression alias(AliasCollector c) {
-    return ImmutableProjectionExpression.builder().paths(getPaths().stream().map(p -> p.alias(c)).collect(Collectors.toList())).build();
+    return ImmutableProjectionExpression.builder().paths(getPaths().stream().map(p -> p.alias(c)).collect(ImmutableList.toImmutableList())).build();
   }
 
 }
