@@ -42,6 +42,10 @@ public abstract class SetClause implements UpdateClause {
         ).build();
   }
 
+  public static SetClause appendToList(ExpressionPath path, AttributeValue value) {
+    return ImmutableSetClause.builder().path(path).value(Value.of(ExpressionFunction.appendToList(path, value))).build();
+  }
+
   @Override
   public SetClause alias(AliasCollector c) {
     return ImmutableSetClause.builder().path(getPath().alias(c)).value(getValue().alias(c)).build();

@@ -1,0 +1,55 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.dremio.nessie.versioned.impl;
+
+import org.immutables.value.Value;
+
+import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
+
+@Value.Immutable
+public interface PositionMutation {
+
+  static PositionMutation EMPTY_ZERO = PositionMutation.builder().newId(Id.EMPTY).oldId(Id.EMPTY).position(0).build();
+
+  int getPosition();
+
+  Id getOldId();
+
+  Id getNewId();
+
+  static ImmutablePositionMutation.Builder builder() {
+    return ImmutablePositionMutation.builder();
+  }
+
+  default boolean isDirty() {
+    return !getOldId().equals(getNewId());
+  }
+
+  default boolean isEmpty() {
+    return !isDirty() && getOldId().equals(Id.EMPTY);
+  }
+
+  public static PositionMutation of(int position, Id id) {
+    return ImmutablePositionMutation.builder().oldId(id).newId(id).position(position).build();
+  }
+
+  default UnsavedDelta toUnsavedDelta() {
+    UnsavedDelta delta = new UnsavedDelta(getPosition(), getOldId(), getNewId());
+    return delta;
+  }
+
+
+}

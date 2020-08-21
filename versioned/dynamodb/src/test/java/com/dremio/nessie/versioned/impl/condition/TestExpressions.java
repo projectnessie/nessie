@@ -92,7 +92,7 @@ class TestExpressions {
 
   @Test
   void listAppend() {
-    ExpressionFunction f = ExpressionFunction.appendToList(ExpressionPath.builder("p0").build(), av0);
+    ExpressionFunction f = ExpressionFunction.appendToList(ExpressionPath.builder("p0").build(), AttributeValue.builder().l(av0).build());
     Value v0 = Value.of(f);
     AliasCollector c = new AliasCollector();
     Value v0p = v0.alias(c);
@@ -117,7 +117,7 @@ class TestExpressions {
   void updateAddClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
         AddClause.addToSetOrNumber(p0, av2),
-        AddClause.appendToList(p1, av1)
+        SetClause.appendToList(p1, AttributeValue.builder().l(av1).build())
         ).build();
     AliasCollector c = new AliasCollector();
     UpdateExpression e0p = e0.alias(c);
@@ -154,7 +154,7 @@ class TestExpressions {
   void updateMultiClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
         AddClause.addToSetOrNumber(p0, av2),
-        AddClause.appendToList(p1, av1),
+        SetClause.appendToList(p1, av1),
         SetClause.equals(p0, av0),
         SetClause.ifNotExists(p1, p0, av1),
         RemoveClause.of(p0),

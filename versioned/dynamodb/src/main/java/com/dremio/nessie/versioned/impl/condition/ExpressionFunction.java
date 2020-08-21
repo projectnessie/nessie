@@ -32,11 +32,11 @@ public class ExpressionFunction implements Aliasable<ExpressionFunction> {
     EQUALS("="),
     // Not yet implemented below here.
     //  ATTRIBUTE_EXISTS("attribute_exists", 1),
-    //  ATTRIBUTE_NOT_EXISTS("attribute_not_exists", 1),
+    ATTRIBUTE_NOT_EXISTS("attribute_not_exists", 1),
+    SIZE("size", 1),
     //  ATTRIBUTE_TYPE("attribute_type", 1),
     //  BEGINS_WITH("begins_with", 2),
     //  CONTAINS("contains", 2),
-    //  SIZE("size", 1),
     //    GT(">"),
     //    LT("<"),
     //    LTE("<="),
@@ -71,13 +71,26 @@ public class ExpressionFunction implements Aliasable<ExpressionFunction> {
     Preconditions.checkArgument(this.arguments.size() == name.argCount, "Unexpected argument count.");
   }
 
+  public static ExpressionFunction size(ExpressionPath path) {
+    return new ExpressionFunction(FunctionName.SIZE, ImmutableList.of(Value.of(path)));
+  }
+
   public static ExpressionFunction appendToList(ExpressionPath initialList, AttributeValue valueToAppend) {
     return new ExpressionFunction(FunctionName.LIST_APPEND, ImmutableList.of(Value.of(initialList), Value.of(valueToAppend)));
+  }
+
+  public static ExpressionFunction attributeNotExists(ExpressionPath path) {
+    return new ExpressionFunction(FunctionName.ATTRIBUTE_NOT_EXISTS, ImmutableList.of(Value.of(path)));
   }
 
   public static ExpressionFunction equals(ExpressionPath path, AttributeValue value) {
     return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(Value.of(path), Value.of(value)));
   }
+
+  public static ExpressionFunction equals(ExpressionFunction func, AttributeValue value) {
+    return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(Value.of(func), Value.of(value)));
+  }
+
 
   public static ExpressionFunction ifNotExists(ExpressionPath path, AttributeValue value) {
     return new ExpressionFunction(FunctionName.IF_NOT_EXISTS, ImmutableList.of(Value.of(path), Value.of(value)));
