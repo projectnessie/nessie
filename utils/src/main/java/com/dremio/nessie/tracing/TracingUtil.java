@@ -61,8 +61,10 @@ public final class TracingUtil {
                                                      .withReporter(reporterConfig);
     try {
       GlobalTracer.register(config.getTracer());
-    } catch (RuntimeException t) {
-      logger.warn("Unable to register Jaeger Tracing", t);
+    } catch (IllegalStateException e) {
+      logger.debug("Another global tracer has been registered", e);
+    } catch (RuntimeException e) {
+      logger.warn("Unable to register Jaeger Tracing", e);
     }
   }
 

@@ -25,7 +25,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 public abstract class Key implements Comparable<Key> {
 
-  private static ThreadLocal<Collator> COLLATOR = new ThreadLocal<Collator>() {
+  private static final ThreadLocal<Collator> COLLATOR = new ThreadLocal<Collator>() {
     @Override
     protected Collator initialValue() {
       Collator c = Collator.getInstance(Locale.US);
