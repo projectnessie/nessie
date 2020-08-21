@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned;
 
+import org.immutables.value.Value;
+
 public interface Operation<V> {
   /**
    * Whether the commit expected hash should be reviewed to confirm the key for this operation hasn't changed since the
@@ -22,7 +24,10 @@ public interface Operation<V> {
    *
    * @return True if this operation should match the hash.
    */
-  boolean shouldMatchHash();
+  @Value.Default
+  default boolean shouldMatchHash() {
+    return true;
+  }
 
   /**
    * The key for this operation.

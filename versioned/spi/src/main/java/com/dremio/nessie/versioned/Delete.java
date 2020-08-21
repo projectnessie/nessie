@@ -22,4 +22,8 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 public interface Delete<V> extends Operation<V> {
+
+  static <V> Delete<V> of(Key key) {
+    return ImmutableDelete.<V>builder().key(key).build();
+  }
 }

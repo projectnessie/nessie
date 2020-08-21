@@ -13,18 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned;
+package com.dremio.nessie.versioned.impl;
 
-import org.immutables.value.Value;
-
-/**
- * A pointer to a hash.
- */
-@Value.Immutable
-public interface TagName extends NamedRef {
-  String getName();
-
-  static TagName of(String name) {
-    return ImmutableTagName.builder().name(name).build();
-  }
+interface HasId {
+  Id getId();
 }

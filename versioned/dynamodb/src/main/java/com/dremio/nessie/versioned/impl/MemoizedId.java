@@ -13,18 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned;
+package com.dremio.nessie.versioned.impl;
 
-import org.immutables.value.Value;
+abstract class MemoizedId implements HasId {
 
-/**
- * A pointer to a hash.
- */
-@Value.Immutable
-public interface TagName extends NamedRef {
-  String getName();
+  //unchanging but only generated once needed.
+  private Id id;
 
-  static TagName of(String name) {
-    return ImmutableTagName.builder().name(name).build();
+  MemoizedId() {
+    this.id = null;
+  }
+
+  MemoizedId(Id id) {
+    this.id = id;
+  }
+
+  abstract Id generateId();
+
+  @Override
+  public final Id getId() {
+    if (id == null) {
+      id = generateId();
+    }
+    return id;
+  }
+
+  void ensureConsistentId() {
+    if (id != null) {
+      assert id.equals(generateId());
+    }
   }
 }

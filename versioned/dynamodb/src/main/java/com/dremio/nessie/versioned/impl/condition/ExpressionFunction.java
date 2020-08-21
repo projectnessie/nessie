@@ -18,13 +18,12 @@ package com.dremio.nessie.versioned.impl.condition;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class ExpressionFunction implements Aliasable<ExpressionFunction> {
+public class ExpressionFunction implements Value {
 
   private static enum FunctionName {
     LIST_APPEND("list_append", 2),
@@ -32,11 +31,11 @@ public class ExpressionFunction implements Aliasable<ExpressionFunction> {
     EQUALS("="),
     // Not yet implemented below here.
     //  ATTRIBUTE_EXISTS("attribute_exists", 1),
-    //  ATTRIBUTE_NOT_EXISTS("attribute_not_exists", 1),
+    ATTRIBUTE_NOT_EXISTS("attribute_not_exists", 1),
+    SIZE("size", 1),
     //  ATTRIBUTE_TYPE("attribute_type", 1),
     //  BEGINS_WITH("begins_with", 2),
     //  CONTAINS("contains", 2),
-    //  SIZE("size", 1),
     //    GT(">"),
     //    LT("<"),
     //    LTE("<="),
@@ -71,16 +70,29 @@ public class ExpressionFunction implements Aliasable<ExpressionFunction> {
     Preconditions.checkArgument(this.arguments.size() == name.argCount, "Unexpected argument count.");
   }
 
+  public static ExpressionFunction size(ExpressionPath path) {
+    return new ExpressionFunction(FunctionName.SIZE, ImmutableList.of(path));
+  }
+
   public static ExpressionFunction appendToList(ExpressionPath initialList, AttributeValue valueToAppend) {
-    return new ExpressionFunction(FunctionName.LIST_APPEND, ImmutableList.of(Value.of(initialList), Value.of(valueToAppend)));
+    return new ExpressionFunction(FunctionName.LIST_APPEND, ImmutableList.of(initialList, Value.of(valueToAppend)));
+  }
+
+  public static ExpressionFunction attributeNotExists(ExpressionPath path) {
+    return new ExpressionFunction(FunctionName.ATTRIBUTE_NOT_EXISTS, ImmutableList.of(path));
   }
 
   public static ExpressionFunction equals(ExpressionPath path, AttributeValue value) {
-    return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(Value.of(path), Value.of(value)));
+    return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(path, Value.of(value)));
   }
 
+  public static ExpressionFunction equals(ExpressionFunction func, AttributeValue value) {
+    return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(func, Value.of(value)));
+  }
+
+
   public static ExpressionFunction ifNotExists(ExpressionPath path, AttributeValue value) {
-    return new ExpressionFunction(FunctionName.IF_NOT_EXISTS, ImmutableList.of(Value.of(path), Value.of(value)));
+    return new ExpressionFunction(FunctionName.IF_NOT_EXISTS, ImmutableList.of(path, Value.of(value)));
   }
 
   @Override
@@ -97,6 +109,16 @@ public class ExpressionFunction implements Aliasable<ExpressionFunction> {
       return String.format("%s %s %s", arguments.get(0).asString(), name.protocolName, arguments.get(1).asString());
     }
     return String.format("%s(%s)", name.protocolName, arguments.stream().map(v -> v.asString()).collect(Collectors.joining(", ")));
+  }
+
+  @Override
+  public Type getType() {
+    return Type.FUNCTION;
+  }
+
+  @Override
+  public ExpressionFunction getFunction() {
+    return this;
   }
 
 }

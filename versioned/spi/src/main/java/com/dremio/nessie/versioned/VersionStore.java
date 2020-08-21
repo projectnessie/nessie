@@ -114,6 +114,16 @@ public interface VersionStore<VALUE, METADATA> {
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
+   * Assign the NamedRef to point to a particular hash. If the NamedRef does not exist, it will be created.
+   *
+   * @param ref               The named ref we're assigning
+   * @param targetHash         The hash that this ref should refer to (optional). Otherwise will reference the beginning of time.
+   * @throws ReferenceNotFoundException if {@code targetHash} is not empty and not present in the store or the {@code ref} is not
+   *     present in the store.
+   */
+  void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceConflictException;
+
+  /**
    * Delete the provided NamedRef
    *
    * <p>Throws exception if the optional hash does not match the provided ref.
@@ -181,4 +191,5 @@ public interface VersionStore<VALUE, METADATA> {
    */
   public interface CollectionProgress {
   }
+
 }

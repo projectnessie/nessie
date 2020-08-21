@@ -29,4 +29,9 @@ public interface Put<V> extends Operation<V> {
    * @return
    */
   V getValue();
+
+
+  public static <V> Put<V> of(Key key, V value) {
+    return ImmutablePut.<V>builder().key(key).value(value).build();
+  }
 }

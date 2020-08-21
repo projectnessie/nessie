@@ -36,10 +36,11 @@ public abstract class SetClause implements UpdateClause {
    * @return The clause
    */
   public static SetClause ifNotExists(ExpressionPath setPath, ExpressionPath existenceCheckPath, AttributeValue valueToSet) {
-    return ImmutableSetClause.builder().path(setPath).value(
-        Value.of(
-            ExpressionFunction.ifNotExists(existenceCheckPath, valueToSet))
-        ).build();
+    return ImmutableSetClause.builder().path(setPath).value(ExpressionFunction.ifNotExists(existenceCheckPath, valueToSet)).build();
+  }
+
+  public static SetClause appendToList(ExpressionPath path, AttributeValue value) {
+    return ImmutableSetClause.builder().path(path).value(ExpressionFunction.appendToList(path, value)).build();
   }
 
   @Override
