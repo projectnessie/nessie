@@ -191,4 +191,5 @@ public interface VersionStore<VALUE, METADATA> {
    */
   public interface CollectionProgress {
   }
+
 }

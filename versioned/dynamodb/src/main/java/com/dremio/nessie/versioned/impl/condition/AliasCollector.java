@@ -24,6 +24,9 @@ import java.util.regex.Pattern;
 import com.google.common.collect.ImmutableSet;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 /**
  * A tool for canonicalizing an expression before sending to DynamoDb. Responsible for replacing path names and values
@@ -46,11 +49,11 @@ public class AliasCollector {
     return counter++;
   }
 
-  public Map<String, AttributeValue> getAttributesValues() {
+  Map<String, AttributeValue> getAttributesValues() {
     return Collections.unmodifiableMap(attributeValues);
   }
 
-  public Map<String, String> getAttributeNames() {
+  Map<String, String> getAttributeNames() {
     return Collections.unmodifiableMap(attributeNames);
   }
 
@@ -78,6 +81,54 @@ public class AliasCollector {
     String escaped = "#f" + counter++;
     attributeNames.put(escaped, unescaped);
     return escaped;
+  }
+
+  /**
+   * Apply these aliases to the attached builder.
+   * @param builder Builder to supplement
+   * @return The updated builder.
+   */
+  public PutItemRequest.Builder apply(PutItemRequest.Builder builder) {
+    if (!attributeValues.isEmpty()) {
+      builder.expressionAttributeValues(Collections.unmodifiableMap(attributeValues));
+    }
+
+    if (!attributeNames.isEmpty()) {
+      builder.expressionAttributeNames(Collections.unmodifiableMap(attributeNames));
+    }
+    return builder;
+  }
+
+  /**
+   * Apply these aliases to the attached builder.
+   * @param builder Builder to supplement
+   * @return The updated builder.
+   */
+  public UpdateItemRequest.Builder apply(UpdateItemRequest.Builder builder) {
+    if (!attributeValues.isEmpty()) {
+      builder.expressionAttributeValues(Collections.unmodifiableMap(attributeValues));
+    }
+
+    if (!attributeNames.isEmpty()) {
+      builder.expressionAttributeNames(Collections.unmodifiableMap(attributeNames));
+    }
+    return builder;
+  }
+
+  /**
+   * Apply these aliases to the attached builder.
+   * @param builder Builder to supplement
+   * @return The updated builder.
+   */
+  public DeleteItemRequest.Builder apply(DeleteItemRequest.Builder builder) {
+    if (!attributeValues.isEmpty()) {
+      builder.expressionAttributeValues(Collections.unmodifiableMap(attributeValues));
+    }
+
+    if (!attributeNames.isEmpty()) {
+      builder.expressionAttributeNames(Collections.unmodifiableMap(attributeNames));
+    }
+    return builder;
   }
 
   /**

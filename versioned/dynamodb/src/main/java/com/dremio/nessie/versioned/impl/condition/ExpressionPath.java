@@ -19,14 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.immutables.value.Value;
+import org.immutables.value.Value.Immutable;
 
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
-@Value.Immutable
-public abstract class ExpressionPath implements Aliasable<ExpressionPath> {
+@Immutable
+public abstract class ExpressionPath implements Value {
 
   public abstract NameSegment getRoot();
 
@@ -151,7 +151,7 @@ public abstract class ExpressionPath implements Aliasable<ExpressionPath> {
     return ImmutableExpressionPath.builder().root((NameSegment) getRoot().alias(c)).build();
   }
 
-  @Value.Immutable
+  @Immutable
   public abstract static class PositionSegment extends PathSegment {
     public abstract int getPosition();
 
@@ -172,7 +172,7 @@ public abstract class ExpressionPath implements Aliasable<ExpressionPath> {
     return Builder.toBuilder(this);
   }
 
-  @Value.Immutable
+  @Immutable
   public abstract static class NameSegment extends PathSegment {
     public abstract String getName();
 
@@ -240,6 +240,17 @@ public abstract class ExpressionPath implements Aliasable<ExpressionPath> {
 
       return ImmutableExpressionPath.builder().root((NameSegment) segment).build();
     }
+  }
+
+
+  @Override
+  public Type getType() {
+    return Type.PATH;
+  }
+
+  @Override
+  public ExpressionPath getPath() {
+    return this;
   }
 
 }

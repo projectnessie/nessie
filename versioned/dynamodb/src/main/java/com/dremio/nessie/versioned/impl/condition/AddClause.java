@@ -29,10 +29,6 @@ public abstract class AddClause implements UpdateClause {
 
   public abstract Value getValue();
 
-  public static AddClause appendToList(ExpressionPath path, AttributeValue value) {
-    return ImmutableAddClause.builder().path(path).value(Value.of(ExpressionFunction.appendToList(path, value))).build();
-  }
-
   public static AddClause addToSetOrNumber(ExpressionPath path, AttributeValue value) {
     return ImmutableAddClause.builder().path(path).value(Value.of(value)).build();
   }

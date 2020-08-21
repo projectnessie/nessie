@@ -32,6 +32,10 @@ public abstract class UpdateExpression implements Aliasable<UpdateExpression> {
 
   public abstract List<UpdateClause> getClauses();
 
+  public static UpdateExpression initial() {
+    return ImmutableUpdateExpression.builder().build();
+  }
+
   @Override
   public UpdateExpression alias(AliasCollector c) {
     return ImmutableUpdateExpression.builder()
@@ -68,4 +72,7 @@ public abstract class UpdateExpression implements Aliasable<UpdateExpression> {
     return ImmutableUpdateExpression.builder().addClauses(clauses).build();
   }
 
+  public UpdateExpression and(UpdateClause clause) {
+    return ImmutableUpdateExpression.builder().from(this).addClauses(clause).build();
+  }
 }
