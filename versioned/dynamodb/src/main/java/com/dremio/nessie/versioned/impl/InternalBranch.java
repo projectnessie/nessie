@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
-import com.dremio.nessie.versioned.impl.Store.ValueType;
+import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -205,7 +205,6 @@ class InternalBranch extends MemoizedId {
       @Override
       public Commit deserialize(Map<String, AttributeValue> map) {
         if(!map.containsKey(DELTAS)) {
-          System.out.println("[BRANCH]: " + map);
           return new Commit(Id.fromAttributeValue(map.get(ID)), Id.fromAttributeValue(map.get(COMMIT)), Id.fromAttributeValue(map.get(PARENT)));
         } else {
           List<UnsavedDelta> deltas = map.get(DELTAS)
@@ -354,7 +353,7 @@ class InternalBranch extends MemoizedId {
      * @return
      */
     @SuppressWarnings("unchecked")
-    CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, int attempts) {
+    CompletableFuture<InternalBranch> ensureAvailable(DynamoStore store, Executor executor, int attempts) {
       if(l1sToSave.isEmpty()) {
         saved = true;
         return CompletableFuture.completedFuture(initialBranch);
@@ -386,7 +385,7 @@ class InternalBranch extends MemoizedId {
      * @throws ReferenceNotFoundException
      * @throws ReferenceConflictException
      */
-    private static InternalBranch collapseIntentionLog(UpdateState initialState, Store store, InternalBranch branch, int attempts) throws ReferenceNotFoundException, ReferenceConflictException {
+    private static InternalBranch collapseIntentionLog(UpdateState initialState, DynamoStore store, InternalBranch branch, int attempts) throws ReferenceNotFoundException, ReferenceConflictException {
       try {
       for (int attempt = 0; attempt < attempts; attempt++) {
 

@@ -170,7 +170,7 @@ abstract class Id {
   }
 
   public Map<String, AttributeValue> toKeyMap() {
-    return ImmutableMap.of(Store.KEY_NAME, this.toAttributeValue());
+    return ImmutableMap.of(DynamoStore.KEY_NAME, this.toAttributeValue());
   }
 
   public static Id build(Consumer<Hasher> consumer) {

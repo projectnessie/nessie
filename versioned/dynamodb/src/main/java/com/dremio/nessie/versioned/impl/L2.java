@@ -23,6 +23,8 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class L2 extends MemoizedId {
 
+  private static final long HASH_SEED = -6352836103271505167L;
+
   static final int SIZE = 199;
   static L2 EMPTY = new L2(null, new IdMap(SIZE, L3.EMPTY_ID));
   static Id EMPTY_ID = EMPTY.getId();
@@ -55,6 +57,7 @@ class L2 extends MemoizedId {
   @Override
   Id generateId() {
     return Id.build(h -> {
+      h.putLong(HASH_SEED);
       map.forEach(id -> h.putBytes(id.getValue().asReadOnlyByteBuffer()));
     });
   }

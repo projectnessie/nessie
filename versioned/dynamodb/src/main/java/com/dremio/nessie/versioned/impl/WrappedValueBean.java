@@ -16,51 +16,71 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.util.Map;
+import java.util.function.BiFunction;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class WrappedValueBean extends MemoizedId {
+/**
+ * A base implementation of a opaque byte object stored in the VersionStore. Used for both for commit metadata and values.
+ *
+ * Generates an Id based on the hash of the data plus a unique hash seed per object type.
+ *
+ */
+abstract class WrappedValueBean extends MemoizedId {
 
+  private final int MAX_SIZE = 1024*256;
   private final ByteString value;
 
-  private WrappedValueBean(Id id, ByteString value) {
+  protected WrappedValueBean(Id id, ByteString value) {
     super(id);
     this.value = value;
+    Preconditions.checkArgument(value.size() < MAX_SIZE, "Values and commit metadata must be less than 256K once serialized.");
   }
 
   public ByteString getBytes() {
     return value;
   }
 
-  public static WrappedValueBean of(ByteString data) {
-    return new WrappedValueBean(null, data);
-  }
+  /**
+   * Return a consistent hash seed for this object type to avoid accidental object hash conflicts.
+   * @return A seed value that is consistent for this object type.
+   */
+  protected abstract long getSeed();
 
   @Override
   Id generateId() {
-    return Id.build(value);
+    return Id.build(h -> {
+      h.putLong(getSeed()).putBytes(value.asReadOnlyByteBuffer());
+    });
   }
 
-  public static final SimpleSchema<WrappedValueBean> SCHEMA = new SimpleSchema<WrappedValueBean>(WrappedValueBean.class) {
+  protected static class WrappedValueSchema<T extends WrappedValueBean> extends SimpleSchema<T> {
 
     private static final String ID = "id";
     private static final String VALUE = "value";
+    private final BiFunction<Id, ByteString, T> deserializer;
 
-    @Override
-    public WrappedValueBean deserialize(Map<String, AttributeValue> attributeMap) {
-      return new WrappedValueBean(Id.fromAttributeValue(attributeMap.get(ID)), ByteString.copyFrom(attributeMap.get(VALUE).b().asByteArray()));
+    protected WrappedValueSchema(Class<T> clazz, BiFunction<Id, ByteString, T> deserializer) {
+      super(clazz);
+      this.deserializer = deserializer;
     }
 
     @Override
-    public Map<String, AttributeValue> itemToMap(WrappedValueBean item, boolean ignoreNulls) {
+    public T deserialize(Map<String, AttributeValue> attributeMap) {
+      return deserializer.apply(Id.fromAttributeValue(attributeMap.get(ID)), ByteString.copyFrom(attributeMap.get(VALUE).b().asByteArray()));
+    }
+
+    @Override
+    public Map<String, AttributeValue> itemToMap(T item, boolean ignoreNulls) {
       return ImmutableMap.<String, AttributeValue>builder()
           .put(ID, item.getId().toAttributeValue())
-          .put(VALUE, AttributeValue.builder().b(SdkBytes.fromByteBuffer(item.value.asReadOnlyByteBuffer())).build())
+          .put(VALUE, AttributeValue.builder().b(SdkBytes.fromByteBuffer(item.getBytes().asReadOnlyByteBuffer())).build())
           .build();
     }
-  };
+  }
 }

@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collector;
 
-import com.dremio.nessie.versioned.impl.Store.ValueType;
+import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;

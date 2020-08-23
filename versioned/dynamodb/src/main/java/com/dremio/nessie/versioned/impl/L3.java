@@ -27,6 +27,8 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class L3 extends MemoizedId {
 
+  private static final long HASH_SEED = 4604180344422375655L;
+
   private final TreeMap<InternalKey, PositionMutation> map;
 
   static L3 EMPTY = new L3(new TreeMap<>());
@@ -91,6 +93,7 @@ class L3 extends MemoizedId {
   @Override
   Id generateId() {
     return Id.build(hasher -> {
+      hasher.putLong(HASH_SEED);
       map.forEach((key, delta) -> {
         if(delta.getNewId().isEmpty()) {
           return;
