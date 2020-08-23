@@ -73,17 +73,17 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
-class Store implements AutoCloseable {
+class DynamoStore implements AutoCloseable {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(Store.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
   public static enum ValueType {
     REF(REF_TABLE_NAME, InternalRef.class, InternalRef.SCHEMA),
     L1(OBJ_TABLE_NAME, L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA),
     L2(OBJ_TABLE_NAME, L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA),
     L3(OBJ_TABLE_NAME, L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA),
-    VALUE(OBJ_TABLE_NAME, WrappedValueBean.class, WrappedValueBean.SCHEMA),
-    COMMIT_METADATA(OBJ_TABLE_NAME, WrappedValueBean.class, WrappedValueBean.SCHEMA);
+    VALUE(OBJ_TABLE_NAME, InternalValue.class, InternalValue.SCHEMA),
+    COMMIT_METADATA(OBJ_TABLE_NAME, InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA);
 
     private final String table;
     private final Class<?> objectClass;
@@ -118,7 +118,7 @@ class Store implements AutoCloseable {
   private DynamoDbClient client;
   private DynamoDbAsyncClient async;
 
-  public Store() {
+  public DynamoStore() {
   }
 
   public void start() throws URISyntaxException {
@@ -152,7 +152,6 @@ class Store implements AutoCloseable {
   void load(LoadStep loadstep) {
 
     while (true) { // for each load step in the chain.
-      System.out.println("Start load step.");
       List<ListMultimap<String, LoadOp<?>>> stepPages = loadstep.paginateLoads(getPaginationSize);
 
       stepPages.forEach(l -> {
@@ -173,9 +172,7 @@ class Store implements AutoCloseable {
           List<Map<String, AttributeValue>> values = responses.get(table);
           int missingResponses = loadList.size() - values.size();
           Preconditions.checkArgument(missingResponses == 0, "[%s] object(s) missing in table read [%s]. \n\nObjects expected: %s\n\nObjects Received: %s", missingResponses, table, loadList, responses);
-          System.out.println("Loads for table: " + table + ", total of " + loadList.size());
           for(int i =0; i < values.size(); i++) {
-            System.out.println("[LOAD] " + loadList.get(i) + " loaded with " + values.get(i));
             loadList.get(i).loaded(values.get(i));
           }
         });
@@ -197,11 +194,6 @@ class Store implements AutoCloseable {
     } catch (ConditionalCheckFailedException ex) {
       return false;
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  <V> void put(ValueType type, V value) {
-    put(type, value, Optional.empty());
   }
 
   @SuppressWarnings("unchecked")
@@ -266,7 +258,6 @@ class Store implements AutoCloseable {
   @SuppressWarnings("unchecked")
   <V> V loadSingle(ValueType valueType, Id id) {
     GetItemResponse response = client.getItem(GetItemRequest.builder().tableName(valueType.getTableName()).key(ImmutableMap.of(KEY_NAME, id.toAttributeValue())).consistentRead(true).build());
-    System.out.println(response);
     return (V) valueType.schema.mapToItem(response.item());
   }
 
@@ -302,8 +293,6 @@ class Store implements AutoCloseable {
           .updateExpression(aliased.toUpdateExpressionString());
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
       UpdateItemRequest builtRequest = updateRequest.build();
-      System.out.println(client.getItem(GetItemRequest.builder().tableName(type.getTableName()).key(ImmutableMap.of(KEY_NAME, id.toAttributeValue())).build()));
-      System.out.println(builtRequest);
       UpdateItemResponse response = client.updateItem(builtRequest);
       return (Optional<V>) Optional.of(type.schema.mapToItem(response.attributes()));
     } catch (ResourceNotFoundException ex) {

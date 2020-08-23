@@ -17,7 +17,7 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.Map;
 
-import com.dremio.nessie.versioned.impl.Store.ValueType;
+import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 

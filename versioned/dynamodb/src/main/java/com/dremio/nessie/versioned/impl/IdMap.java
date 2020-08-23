@@ -18,15 +18,12 @@ package com.dremio.nessie.versioned.impl;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
@@ -34,8 +31,6 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  * of their original state so one can see what items changed over time.
  */
 class IdMap implements Iterable<Id> {
-
-  static final String POSITION_PREFIX = "f";
 
   private final PositionMutation[] deltas;
 
@@ -90,22 +85,20 @@ class IdMap implements Iterable<Id> {
   }
 
   AttributeValue toAttributeValue() {
-    Map<String, AttributeValue> values = new HashMap<>();
-    for(int i =0; i < deltas.length; i++) {
-      Id id = deltas[i].getNewId();
-      values.put(POSITION_PREFIX + i, id.toAttributeValue());
-    }
-    return AttributeValue.builder().m(values).build();
+    return AttributeValue.builder().l(Arrays.stream(deltas).map(p -> p.getNewId().toAttributeValue()).collect(Collectors.toList())).build();
   }
 
   public static IdMap fromAttributeValue(AttributeValue value, int size) {
     PositionMutation[] deltas = new PositionMutation[size];
-    Map<String, AttributeValue> items = value.m();
+    List<AttributeValue> items = value.l();
     Preconditions.checkArgument(items.size() == size, "Expected size %s but actual size was %s.", size, items.size());
 
-    for (int i =0; i < size; i++) {
-      deltas[i] = PositionMutation.of(i, Id.fromAttributeValue(Preconditions.checkNotNull(items.get(POSITION_PREFIX + i))));
+    int i = 0;
+    for (AttributeValue v : items) {
+      deltas[i] = PositionMutation.of(i, Id.fromAttributeValue(v));
+      i++;
     }
+
     return new IdMap(deltas);
   }
 

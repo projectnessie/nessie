@@ -32,7 +32,7 @@ class TestBasicImpl {
 
   @Test
   void first() throws Exception {
-    Store store = new Store();
+    DynamoStore store = new DynamoStore();
     store.start();
     VersionStore<String, String> impl = new VSImpl<>(WORKER, store);
     final BranchName branch = ImmutableBranchName.builder().name("main").build();

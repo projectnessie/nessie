@@ -54,7 +54,7 @@ import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
-import com.dremio.nessie.versioned.impl.Store.ValueType;
+import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -75,11 +75,11 @@ public class VSImpl<DATA, METADATA> implements VersionStore<DATA, METADATA> {
   private final Serializer<METADATA> metadataSerializer;
   private final StoreWorker<DATA,METADATA> storeWorker;
   private final ExecutorService executor;
-  private Store store;
+  private DynamoStore store;
   private final int commitRetryCount = 5;
   private final int p2commitRetry = 5;
 
-  public VSImpl(StoreWorker<DATA,METADATA> storeWorker, Store store) {
+  public VSImpl(StoreWorker<DATA,METADATA> storeWorker, DynamoStore store) {
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
@@ -89,7 +89,7 @@ public class VSImpl<DATA, METADATA> implements VersionStore<DATA, METADATA> {
 
   @Override
   public void commit(BranchName branchName, Optional<Hash> expectedHash, METADATA incomingCommit, List<Operation<DATA>> ops) throws ReferenceConflictException, ReferenceNotFoundException {
-    final WrappedValueBean metadata = WrappedValueBean.of(metadataSerializer.toBytes(incomingCommit));
+    final InternalCommitMetadata metadata = InternalCommitMetadata.of(metadataSerializer.toBytes(incomingCommit));
     final List<InternalKey> keys = ops.stream().map(op -> new InternalKey(op.getKey())).collect(Collectors.toList());
     int loop = 0;
     InternalRefId ref = InternalRefId.ofBranch(branchName.getName());
@@ -136,7 +136,7 @@ public class VSImpl<DATA, METADATA> implements VersionStore<DATA, METADATA> {
 
         boolean added = conditionPositions.add(pm.getPosition());
         assert added;
-        ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).name(IdMap.POSITION_PREFIX + pm.getPosition()).build();
+        ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(pm.getPosition()).build();
         update = update.and(SetClause.equals(p, pm.getNewId().toAttributeValue()));
         condition = condition.and(ExpressionFunction.equals(p, pm.getOldId().toAttributeValue()));
         deltas.add(pm.toUnsavedDelta());
@@ -146,7 +146,7 @@ public class VSImpl<DATA, METADATA> implements VersionStore<DATA, METADATA> {
         int position = oh.key.getL1Position();
         if (conditionPositions.add(position)) {
           // this doesn't already have a condition. Add one.
-          ExpressionPath p = ExpressionPath.builder(IdMap.POSITION_PREFIX + position).build();
+          ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(position).build();
           condition = condition.and(ExpressionFunction.equals(p, current.getCurrentL1().getId(position).toAttributeValue()));
         }
       }

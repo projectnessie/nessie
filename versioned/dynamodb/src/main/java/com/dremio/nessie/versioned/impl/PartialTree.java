@@ -26,8 +26,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.dremio.nessie.versioned.Serializer;
+import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
-import com.dremio.nessie.versioned.impl.Store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Streams;
 
@@ -115,8 +115,7 @@ class PartialTree<V> {
     return l1.get().getChanges();
   }
 
-
-  public Optional<LoadStep> getLoadStep1(boolean includeValues) {
+  private Optional<LoadStep> getLoadStep1(boolean includeValues) {
     if(l1 != null) { // if we loaded a branch, we were able to prepopulate the l1 information.
       return getLoadStep2(includeValues);
     }
@@ -130,7 +129,6 @@ class PartialTree<V> {
         .map(id -> {
           Id l2Id = l1.get().getId(id.getL1Position());
           return new LoadOp<L2>(ValueType.L2, l2Id, l -> {
-            System.out.println("Put l2: " + l.getId().toString());
             l2s.putIfAbsent(l2Id, new Pointer<L2>(l));
           });
         })
@@ -142,9 +140,6 @@ class PartialTree<V> {
   private Optional<LoadStep> getLoadStep3(boolean includeValues) {
     Collection<LoadOp<?>> loads = keys.stream().map(keyId -> {
       Id l2Id = l1.get().getId(keyId.getL1Position());
-      if(!l2s.containsKey(l2Id)) {
-        System.out.println("bleh");
-      }
       L2 l2 = l2s.get(l2Id).get();
       Id l3Id = l2.getId(keyId.getL2Position());
       return new LoadOp<L3>(ValueType.L3, l3Id, l -> l3s.putIfAbsent(l3Id, new Pointer<L3>(l)));
@@ -162,7 +157,7 @@ class PartialTree<V> {
           L2 l2 = l2s.get(l2Id).get();
           Id l3Id = l2.getId(key.getL2Position());
           L3 l3 = l3s.get(l3Id).get();
-          return new LoadOp<WrappedValueBean>(ValueType.VALUE, l3.getId(key), (wvb) -> {values.putIfAbsent(key, ValueHolder.of(serializer, wvb));});
+          return new LoadOp<InternalValue>(ValueType.VALUE, l3.getId(key), (wvb) -> {values.putIfAbsent(key, ValueHolder.of(serializer, wvb));});
     }).collect(Collectors.toList());
     return Optional.of(new LoadStep(loads, () -> Optional.empty()));
   }
