@@ -67,9 +67,9 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 
-public class VSImpl<DATA, METADATA> implements VersionStore<DATA, METADATA> {
+public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(VSImpl.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DynamoVersionStore.class);
 
   private final Serializer<DATA> serializer;
   private final Serializer<METADATA> metadataSerializer;
@@ -79,7 +79,7 @@ public class VSImpl<DATA, METADATA> implements VersionStore<DATA, METADATA> {
   private final int commitRetryCount = 5;
   private final int p2commitRetry = 5;
 
-  public VSImpl(StoreWorker<DATA,METADATA> storeWorker, DynamoStore store) {
+  public DynamoVersionStore(StoreWorker<DATA,METADATA> storeWorker, DynamoStore store) {
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
@@ -176,69 +176,80 @@ public class VSImpl<DATA, METADATA> implements VersionStore<DATA, METADATA> {
   }
 
   @Override
-  public Stream<WithHash<METADATA>> getCommits(Ref ref) {
-    InternalRefId id = InternalRefId.of(ref);
-    final L1 startingL1;
-    if (id.getType() == Type.HASH) {
-      // points to L1.
-      startingL1 = store.loadSingle(ValueType.L1, id.getId());
-    } else {
-      InternalRef iref = store.loadSingle(ValueType.REF, id.getId());
-      if(iref.getType() == Type.TAG) {
-        startingL1 = store.loadSingle(ValueType.L1, iref.getTag().getCommit());
+  public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
+    try {
+      InternalRefId id = InternalRefId.of(ref);
+      final L1 startingL1;
+      if (id.getType() == Type.HASH) {
+        // points to L1.
+        startingL1 = store.loadSingle(ValueType.L1, id.getId());
       } else {
-        startingL1 = ensureValidL1(iref.getBranch());
-      }
-    }
-
-    final Iterator<WithHash<METADATA>> iterator = new Iterator<WithHash<METADATA>>() {
-
-      private L1 currentL1;
-
-      @Override
-      public boolean hasNext() {
-        if(currentL1 == null) {
-          return true;
-        }
-        return !currentL1.getParentId().equals(L1.EMPTY_ID);
-      }
-
-      @Override
-      public WithHash<METADATA> next() {
-        if(currentL1 == null) {
-          currentL1 = startingL1;
+        InternalRef iref = store.loadSingle(ValueType.REF, id.getId());
+        if(iref.getType() == Type.TAG) {
+          startingL1 = store.loadSingle(ValueType.L1, iref.getTag().getCommit());
         } else {
-          currentL1 = store.loadSingle(ValueType.L1, currentL1.getParentId());
+          startingL1 = ensureValidL1(iref.getBranch());
+        }
+      }
+
+      final Iterator<WithHash<METADATA>> iterator = new Iterator<WithHash<METADATA>>() {
+
+        private L1 currentL1;
+
+        @Override
+        public boolean hasNext() {
+          if(currentL1 == null) {
+            return true;
+          }
+          return !currentL1.getParentId().equals(L1.EMPTY_ID);
         }
 
-        WrappedValueBean bean = store.loadSingle(ValueType.COMMIT_METADATA, currentL1.getMetadataId());
-        return WithHash.of(currentL1.getId().toHash(), metadataSerializer.fromBytes(bean.getBytes()));
-      }};
+        @Override
+        public WithHash<METADATA> next() {
+          if(currentL1 == null) {
+            currentL1 = startingL1;
+          } else {
+            currentL1 = store.loadSingle(ValueType.L1, currentL1.getParentId());
+          }
 
-    return StreamSupport.stream(Spliterators.spliterator(iterator, 10, 0), false);
+          WrappedValueBean bean = store.loadSingle(ValueType.COMMIT_METADATA, currentL1.getMetadataId());
+          return WithHash.of(currentL1.getId().toHash(), metadataSerializer.fromBytes(bean.getBytes()));
+        }};
+      return StreamSupport.stream(Spliterators.spliterator(iterator, 10, 0), false);
+    } catch (ResourceNotFoundException ex) {
+      throw new ReferenceNotFoundException("Unable to find request reference.", ex);
+    }
   }
 
   @Override
-  public void delete(NamedRef ref, Optional<Hash> hash) {
+  public void delete(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException, ReferenceConflictException {
     InternalRefId id = InternalRefId.of(ref);
-    if (id.getType() == Type.HASH) {
-      throw new IllegalArgumentException("You cannot delete individual commits, only branches and tags.");
-    }
 
     // load ref so we can figure out how to apply condition, and do first condition check.
-    InternalRef iref = store.loadSingle(ValueType.REF, id.getId());
+    final InternalRef iref;
+    try {
+      iref = store.loadSingle(ValueType.REF, id.getId());
+    } catch(ResourceNotFoundException ex) {
+      throw new ReferenceNotFoundException(String.format("Unable to find '%s'.", ref.getName()), ex);
+    }
     ConditionExpression c = ConditionExpression.of(iref.getType().typeVerification());
-    if(iref.getType() == Type.TAG) {
-      if(hash.isPresent()) {
+    if (iref.getType() == Type.TAG) {
+      if (hash.isPresent()) {
         c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(), Id.of(hash.get()).toAttributeValue()));
       }
-      store.delete(ValueType.REF, iref.getTag().getId(), Optional.of(c));
+
+      if (!store.delete(ValueType.REF, iref.getTag().getId(), Optional.of(c))) {
+        throw new ReferenceConflictException("Unable to complete tag. " + (hash.isPresent() ? "The tag does not point to the hash that was referenced." : "The tag was changed to a branch while the delete was occurring."));
+      }
     } else {
-      if(hash.isPresent()) {
+      if (hash.isPresent()) {
         c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toAttributeValue()));
         c = c.and(ExpressionFunction.equals(ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), AttributeValue.builder().n("1").build()));
       }
-      store.delete(ValueType.REF,  iref.getBranch().getId(), Optional.of(c));
+
+      if (!store.delete(ValueType.REF,  iref.getBranch().getId(), Optional.of(c))) {
+        throw new ReferenceConflictException("Unable to complete tag. " + (hash.isPresent() ? "The branch does not point to the hash that was referenced." : "The branch was changed to a tag while the delete was occurring."));
+      }
     }
 
   }
@@ -322,17 +333,16 @@ public class VSImpl<DATA, METADATA> implements VersionStore<DATA, METADATA> {
 
   @Override
   public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
-    return null;
-  }
-
-  @Override
-  public void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant)
-      throws ReferenceNotFoundException, ReferenceConflictException {
-  }
-
-  @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
-      throws ReferenceNotFoundException, ReferenceConflictException {
+    try {
+      InternalRef iref = store.loadSingle(ValueType.REF, InternalRefId.ofUnknownName(ref.getName()).getId());
+      if(iref.getType() == Type.BRANCH) {
+        return ensureValidL1(iref.getBranch()).getId().toHash();
+      } else {
+        return iref.getTag().getCommit().toHash();
+      }
+    } catch (ResourceNotFoundException ex) {
+      throw new ReferenceNotFoundException(String.format("Unable to find ref %s", ref.getName()), ex);
+    }
   }
 
   @Override
@@ -394,20 +404,40 @@ public class VSImpl<DATA, METADATA> implements VersionStore<DATA, METADATA> {
 
   @Override
   public void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    if (ref instanceof TagName) {
-      throw new UnsupportedOperationException("NYI");
-    }
-
     if (!targetHash.isPresent()) {
-      InternalBranch branch = new InternalBranch(ref.getName());
-      if(!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
-        throw new ReferenceConflictException("A branch or tag already exists with that name.");
+      if (ref instanceof TagName) {
+        InternalTag tag = new InternalTag(null, ref.getName(), L1.EMPTY_ID);
+        if(!store.putIfAbsent(ValueType.REF, InternalRef.of(tag))) {
+          throw new ReferenceConflictException("A branch or tag already exists with that name.");
+        }
+      } else {
+        InternalBranch branch = new InternalBranch(ref.getName());
+        if(!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
+          throw new ReferenceConflictException("A branch or tag already exists with that name.");
+        }
       }
       return;
     }
 
+    // with a hash.
+    final L1 l1;
+    try {
+      l1 = store.loadSingle(ValueType.L1, Id.of(targetHash.get()));
+    } catch (ResourceNotFoundException ex) {
+      throw new ReferenceNotFoundException("Unable to find target hash.", ex);
+    }
 
-
+    if (ref instanceof TagName) {
+      InternalTag tag = new InternalTag(null, ref.getName(), l1.getId());
+      if(!store.putIfAbsent(ValueType.REF, InternalRef.of(tag))) {
+        throw new ReferenceConflictException("A branch or tag already exists with that name.");
+      }
+    } else {
+      InternalBranch branch = new InternalBranch(ref.getName(), l1);
+      if(!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
+        throw new ReferenceConflictException("A branch or tag already exists with that name.");
+      }
+    }
   }
 
   @Override
@@ -423,6 +453,18 @@ public class VSImpl<DATA, METADATA> implements VersionStore<DATA, METADATA> {
   @Override
   public Collector collectGarbage() {
     throw new IllegalStateException("Not yet implemented.");
+  }
+
+  @Override
+  public void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    throw new UnsupportedOperationException("Not yet implemented.");
+  }
+
+  @Override
+  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    throw new UnsupportedOperationException("Not yet implemented.");
   }
 
 
