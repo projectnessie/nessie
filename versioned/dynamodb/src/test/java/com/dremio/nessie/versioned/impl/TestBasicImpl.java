@@ -18,10 +18,12 @@ import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.ImmutableBranchName;
 import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.ImmutablePut;
+import com.dremio.nessie.versioned.ImmutableTagName;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
+import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
 import com.google.common.collect.ImmutableList;
@@ -34,8 +36,10 @@ class TestBasicImpl {
   void first() throws Exception {
     DynamoStore store = new DynamoStore();
     store.start();
-    VersionStore<String, String> impl = new VSImpl<>(WORKER, store);
+    VersionStore<String, String> impl = new DynamoVersionStore<>(WORKER, store);
     final BranchName branch = ImmutableBranchName.builder().name("main").build();
+    final BranchName branch2 = ImmutableBranchName.builder().name("b2").build();
+    final TagName tag = ImmutableTagName.builder().name("t1").build();
     final Key p1 = ImmutableKey.builder().addElements("my.path").build();
     final String commit1 = "my commit 1";
     final String commit2 = "my commit 2";
@@ -64,6 +68,8 @@ class TestBasicImpl {
 
     assertEquals(v1, impl.getValue(branch, p1));
 
+    impl.create(tag, Optional.of(impl.toHash(branch)));
+
     impl.commit(branch, Optional.empty(), commit2, ImmutableList.of(
         ImmutablePut.<String>builder().key(
             p1
@@ -75,6 +81,7 @@ class TestBasicImpl {
         );
 
     assertEquals(v2, impl.getValue(branch, p1));
+    assertEquals(v1, impl.getValue(tag, p1));
 
     List<WithHash<String>> commits = impl.getCommits(branch).collect(Collectors.toList());
 
@@ -84,10 +91,16 @@ class TestBasicImpl {
     assertEquals(commit2, commits.get(0).getValue());
 
 
-    assertEquals(1, impl.getNamedRefs().count());
+    assertEquals(2, impl.getNamedRefs().count());
+
+    impl.create(branch2, Optional.of(commits.get(1).getHash()));
     impl.delete(branch, Optional.of(commits.get(0).getHash()));
 
-    assertEquals(0, impl.getNamedRefs().count());
+    assertEquals(2, impl.getNamedRefs().count());
+
+    assertEquals(v1, impl.getValue(branch2, p1));
+
+
   }
 
 
