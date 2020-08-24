@@ -35,4 +35,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - name: Build with Maven
-      run: mvn -B verify --file pom.xml
+      run: mvn -B verify --file pom.xml -Pcode-coverage
+    - uses: codecov/codecov-action@v1
+      with: token: ${{ secrets.CODECOV_TOKEN }}
