@@ -32,11 +32,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Streams;
 
 /**
- * Holds the portion of the commit tree structure that is necessary to manipulate the identified key(s). Holds the information for a Tag, Hash or Branch.
+ * Holds the portion of the commit tree structure that is necessary to manipulate the identified key(s).
+ * Holds the information for a Tag, Hash or Branch.
  *
- * If pointing to a branch, also provides mutability to allow updates and then commits of those updates.
+ * <p>If pointing to a branch, also provides mutability to allow updates and then commits of those updates.
  *
- * Supports a collated loading model that will minimize the number of LoadSteps required to populate the tree from the underlying storage.
+ * <p>Supports a collated loading model that will minimize the number of LoadSteps required to
+ * populate the tree from the underlying storage.
  *
  */
 class PartialTree<V> {
@@ -56,7 +58,8 @@ class PartialTree<V> {
   }
 
   private void checkMutable() {
-    Preconditions.checkArgument(ref.getType() == Type.BRANCH, "You can only mutate a partial tree that references a branch. This is type %s.", ref.getType());
+    Preconditions.checkArgument(ref.getType() == Type.BRANCH,
+        "You can only mutate a partial tree that references a branch. This is type %s.", ref.getType());
   }
 
   private PartialTree(Serializer<V> serializer, InternalRefId refId, List<InternalKey> keys) {
@@ -84,7 +87,7 @@ class PartialTree<V> {
       } else {
         throw new IllegalStateException("Unknown type of ref to be loaded from store.");
       }
-      });
+    });
     return new LoadStep(java.util.Collections.singleton(op), () -> getLoadStep1(includeValues));
   }
 
@@ -116,11 +119,13 @@ class PartialTree<V> {
   }
 
   private Optional<LoadStep> getLoadStep1(boolean includeValues) {
-    if(l1 != null) { // if we loaded a branch, we were able to prepopulate the l1 information.
+    if (l1 != null) { // if we loaded a branch, we were able to prepopulate the l1 information.
       return getLoadStep2(includeValues);
     }
 
-    LoadOp<L1> op = new LoadOp<L1>(ValueType.L1, rootId, l -> {l1 = new Pointer<L1>(l);});
+    LoadOp<L1> op = new LoadOp<L1>(ValueType.L1, rootId, l -> {
+      l1 = new Pointer<L1>(l);
+    });
     return Optional.of(new LoadStep(java.util.Collections.singleton(op), () -> getLoadStep2(includeValues)));
   }
 
@@ -148,7 +153,7 @@ class PartialTree<V> {
   }
 
   private Optional<LoadStep> getLoadStep4(boolean includeValues) {
-    if(!includeValues) {
+    if (!includeValues) {
       return Optional.empty();
     }
     Collection<LoadOp<?>> loads = keys.stream().map(
@@ -157,8 +162,11 @@ class PartialTree<V> {
           L2 l2 = l2s.get(l2Id).get();
           Id l3Id = l2.getId(key.getL2Position());
           L3 l3 = l3s.get(l3Id).get();
-          return new LoadOp<InternalValue>(ValueType.VALUE, l3.getId(key), (wvb) -> {values.putIfAbsent(key, ValueHolder.of(serializer, wvb));});
-    }).collect(Collectors.toList());
+          return new LoadOp<InternalValue>(ValueType.VALUE, l3.getId(key),
+              (wvb) -> {
+                values.putIfAbsent(key, ValueHolder.of(serializer, wvb));
+              });
+      }).collect(Collectors.toList());
     return Optional.of(new LoadStep(loads, () -> Optional.empty()));
   }
 
@@ -170,7 +178,7 @@ class PartialTree<V> {
 
   public Optional<V> getValueForKey(InternalKey key) {
     ValueHolder<V> vh = values.get(key);
-    if(vh == null ) {
+    if (vh == null) {
       return Optional.empty();
     }
 
@@ -187,7 +195,7 @@ class PartialTree<V> {
 
     // now we'll do the save.
     Id valueId;
-    if(value.isPresent()) {
+    if (value.isPresent()) {
       ValueHolder<V> holder = ValueHolder.of(serializer,  value.get());
       values.put(key, holder);
       valueId = holder.getId();

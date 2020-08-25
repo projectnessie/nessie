@@ -28,12 +28,12 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 /**
  * A base implementation of a opaque byte object stored in the VersionStore. Used for both for commit metadata and values.
  *
- * Generates an Id based on the hash of the data plus a unique hash seed per object type.
+ * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.
  *
  */
 abstract class WrappedValueBean extends MemoizedId {
 
-  private final int MAX_SIZE = 1024*256;
+  private static final int MAX_SIZE = 1024 * 256;
   private final ByteString value;
 
   protected WrappedValueBean(Id id, ByteString value) {
@@ -72,7 +72,8 @@ abstract class WrappedValueBean extends MemoizedId {
 
     @Override
     public T deserialize(Map<String, AttributeValue> attributeMap) {
-      return deserializer.apply(Id.fromAttributeValue(attributeMap.get(ID)), ByteString.copyFrom(attributeMap.get(VALUE).b().asByteArray()));
+      return deserializer.apply(Id.fromAttributeValue(attributeMap.get(ID)),
+          ByteString.copyFrom(attributeMap.get(VALUE).b().asByteArray()));
     }
 
     @Override

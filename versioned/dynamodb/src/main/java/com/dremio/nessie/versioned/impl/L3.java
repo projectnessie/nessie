@@ -50,7 +50,7 @@ class L3 extends MemoizedId {
 
   public Id getId(InternalKey key) {
     PositionDelta delta = map.get(key);
-    if(delta == null) {
+    if (delta == null) {
       return Id.EMPTY;
     }
     return delta.getNewId();
@@ -58,12 +58,12 @@ class L3 extends MemoizedId {
 
   /**
    * Get the key if it exists.
-   * @param id
+   * @param id The id of the key to retrieve
    * @return If the key exists, provide. Else, provide Optional.empty()
    */
   Optional<Id> getPossibleId(InternalKey key) {
     Id id = getId(key);
-    if(Id.EMPTY.equals(id)) {
+    if (Id.EMPTY.equals(id)) {
       return Optional.empty();
     }
     return Optional.of(id);
@@ -73,12 +73,12 @@ class L3 extends MemoizedId {
   L3 set(InternalKey key, Id valueId) {
     TreeMap<InternalKey, PositionDelta> newMap = (TreeMap<InternalKey, PositionDelta>) map.clone();
     PositionDelta newDelta = newMap.get(key);
-    if(newDelta == null) {
+    if (newDelta == null) {
       newDelta = PositionDelta.EMPTY_ZERO;
     }
 
     newDelta = ImmutablePositionDelta.builder().from(newDelta).newId(valueId).build();
-    if(!newDelta.isDirty()) {
+    if (!newDelta.isDirty()) {
       // this turned into a no-op delta, remove it entirely from the map.
       newMap.remove(key);
     } else {
@@ -95,7 +95,7 @@ class L3 extends MemoizedId {
     return Id.build(hasher -> {
       hasher.putLong(HASH_SEED);
       map.forEach((key, delta) -> {
-        if(delta.getNewId().isEmpty()) {
+        if (delta.getNewId().isEmpty()) {
           return;
         }
 
@@ -116,10 +116,12 @@ class L3 extends MemoizedId {
     @Override
     public L3 deserialize(Map<String, AttributeValue> attributeMap) {
       TreeMap<InternalKey, PositionDelta> tree = attributeMap.get(TREE).l().stream().map(av -> av.m()).collect(Collectors.toMap(
-              m -> InternalKey.fromAttributeValue(m.get(TREE_KEY)),
-              m -> PositionDelta.of(0, Id.fromAttributeValue(m.get(TREE_ID))),
-              (a,b) -> {throw new UnsupportedOperationException();},
-              TreeMap::new));
+          m -> InternalKey.fromAttributeValue(m.get(TREE_KEY)),
+          m -> PositionDelta.of(0, Id.fromAttributeValue(m.get(TREE_ID))),
+          (a,b) -> {
+            throw new UnsupportedOperationException();
+          },
+          TreeMap::new));
 
       return new L3(
           Id.fromAttributeValue(attributeMap.get(ID)),

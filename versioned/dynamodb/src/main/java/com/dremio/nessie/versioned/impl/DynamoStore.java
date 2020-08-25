@@ -131,7 +131,7 @@ class DynamoStore implements AutoCloseable {
     Arrays.stream(ValueType.values())
       .map(ValueType::getTableName)
       .collect(Collectors.toSet())
-      .forEach(table -> createIfMissing(table));
+        .forEach(table -> createIfMissing(table));
 
     // make sure we have an empty l1 (ignore result, doesn't matter)
     putIfAbsent(ValueType.L1, L1.EMPTY);
@@ -164,7 +164,7 @@ class DynamoStore implements AutoCloseable {
               .map(load -> ImmutableMap.of(KEY_NAME, load.getId().toAttributeValue()))
               .collect(Collectors.toList());
           return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
-          }));
+        }));
 
         BatchGetItemResponse response = client.batchGetItem(BatchGetItemRequest.builder().requestItems(loads).build());
         Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
@@ -174,15 +174,17 @@ class DynamoStore implements AutoCloseable {
           List<LoadOp<?>> loadList = l.get(table);
           List<Map<String, AttributeValue>> values = responses.get(table);
           int missingResponses = loadList.size() - values.size();
-          Preconditions.checkArgument(missingResponses == 0, "[%s] object(s) missing in table read [%s]. \n\nObjects expected: %s\n\nObjects Received: %s", missingResponses, table, loadList, responses);
-          for(int i =0; i < values.size(); i++) {
+          Preconditions.checkArgument(missingResponses == 0,
+              "[%s] object(s) missing in table read [%s]. \n\nObjects expected: %s\n\nObjects Received: %s",
+              missingResponses, table, loadList, responses);
+          for (int i = 0; i < values.size(); i++) {
             loadList.get(i).loaded(values.get(i));
           }
         });
       });
       Optional<LoadStep> next = loadstep.getNext();
 
-      if(!next.isPresent()) {
+      if (!next.isPresent()) {
         break;
       }
       loadstep = next.get();
@@ -209,16 +211,18 @@ class DynamoStore implements AutoCloseable {
     });
 
   }
+
   @SuppressWarnings("unchecked")
   <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
-    Preconditions.checkArgument(type.getObjectClass().equals(value.getClass()), "ValueType %s doesn't match expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
+    Preconditions.checkArgument(type.getObjectClass().equals(value.getClass()),
+        "ValueType %s doesn't match expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
     Map<String, AttributeValue> attributes = ((SimpleSchema<V>)type.schema).itemToMap(value, true);
 
     PutItemRequest.Builder builder = PutItemRequest.builder()
-      .tableName(type.getTableName())
-      .item(attributes);
+        .tableName(type.getTableName())
+        .item(attributes);
 
-    if(conditionUnAliased.isPresent()) {
+    if (conditionUnAliased.isPresent()) {
       AliasCollector c = new AliasCollector();
       ConditionExpression aliased = conditionUnAliased.get().alias(c);
       c.apply(builder).conditionExpression(aliased.toConditionExpressionString());
@@ -231,7 +235,7 @@ class DynamoStore implements AutoCloseable {
     DeleteItemRequest.Builder delete = DeleteItemRequest.builder()
         .key(id.toKeyMap())
         .tableName(type.getTableName());
-    if(condition.isPresent()) {
+    if (condition.isPresent()) {
       AliasCollector collector = new AliasCollector();
       ConditionExpression aliased = condition.get().alias(collector);
       collector.apply(delete);
@@ -241,7 +245,7 @@ class DynamoStore implements AutoCloseable {
     try {
       client.deleteItem(delete.build());
       return true;
-    } catch(ConditionalCheckFailedException ex) {
+    } catch (ConditionalCheckFailedException ex) {
       LOGGER.debug("Failure during conditional check.", ex);
       return false;
     }
@@ -249,9 +253,10 @@ class DynamoStore implements AutoCloseable {
 
   void save(List<SaveOp<?>> ops) {
     List<CompletableFuture<BatchWriteItemResponse>> saves =  new ArrayList<>();
-    for(int i = 0; i < ops.size(); i += paginationSize) {
+    for (int i = 0; i < ops.size(); i += paginationSize) {
 
-      ListMultimap<String, SaveOp<?>> mm = Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> l.getType().getTableName());
+      ListMultimap<String, SaveOp<?>> mm =
+          Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> l.getType().getTableName());
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save -> {
         System.out.println(save.getType().name() + ": " + save.getValue().getId().toHash().asString());
         return WriteRequest.builder().putRequest(PutRequest.builder().item(save.toAttributeValues()).build()).build();
@@ -277,7 +282,7 @@ class DynamoStore implements AutoCloseable {
         .key(ImmutableMap.of(KEY_NAME, id.toAttributeValue()))
         .consistentRead(true)
         .build());
-    if(!response.hasItem()) {
+    if (!response.hasItem()) {
       throw ResourceNotFoundException.builder().message("Unable to load item.").build();
     }
     return (V) valueType.schema.mapToItem(response.item());
@@ -285,25 +290,18 @@ class DynamoStore implements AutoCloseable {
 
   /**
    * Do a conditional update. If the condition succeeds, return the values in the object. If it fails, return a Optional.empty().
-   * @param request
-   * @return
-   * @throws ReferenceNotFoundException
-   */
-
-  /**
-   * Do a conditional update. If the condition succeeds, return the values in the object. If it fails, return a Optional.empty().
    *
    * @param <IN> The value type class that the UpdateExpression will be applied to.
    * @param <OUT> The value type class that the return expression is expected to be.
    * @param input The value type class that the UpdateExpression will be applied to.
-   * @param update
-   * @param condition
-   * @param output
-   * @return
-   * @throws ReferenceNotFoundException
+   * @param update The update expression to use.
+   * @param condition The optional condition to consider before applying the update.
+   * @return The complete value if the update was successful, otherwise Optional.empty()
+   * @throws ReferenceNotFoundException Thrown if the underlying id doesn't have an object.
    */
   @SuppressWarnings("unchecked")
-  <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition) throws ReferenceNotFoundException {
+  <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
+      throws ReferenceNotFoundException {
     try {
       AliasCollector collector = new AliasCollector();
       UpdateExpression aliased = update.alias(collector);
@@ -319,7 +317,7 @@ class DynamoStore implements AutoCloseable {
       return (Optional<V>) Optional.of(type.schema.mapToItem(response.attributes()));
     } catch (ResourceNotFoundException ex) {
       throw new ReferenceNotFoundException("Unable to find value.", ex);
-    } catch(ConditionalCheckFailedException checkFailed) {
+    } catch (ConditionalCheckFailedException checkFailed) {
       LOGGER.debug("Conditional check failed.", checkFailed);
       return Optional.empty();
     }
@@ -371,14 +369,15 @@ class DynamoStore implements AutoCloseable {
 
   private static final void verifyKeySchema(TableDescription description) {
     List<KeySchemaElement> elements = description.keySchema();
-    if(elements.size() == 1) {
+    if (elements.size() == 1) {
       KeySchemaElement key = elements.get(0);
-      if(key.attributeName().equals(KEY_NAME)) {
-        if(key.keyType() == KeyType.HASH) {
+      if (key.attributeName().equals(KEY_NAME)) {
+        if (key.keyType() == KeyType.HASH) {
           return;
         }
       }
-      throw new IllegalStateException(String.format("Invalid key schema for table: %s. Key schema should be a hash partitioned attribute with the name 'id'.", description.tableName()));
+      throw new IllegalStateException(String.format("Invalid key schema for table: %s. Key schema should be a hash partitioned "
+          + "attribute with the name 'id'.", description.tableName()));
     }
   }
 }

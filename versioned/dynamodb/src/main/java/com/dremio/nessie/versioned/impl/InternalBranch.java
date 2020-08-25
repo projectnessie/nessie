@@ -25,13 +25,14 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.impl.InternalRef.Type;
 import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
+import com.dremio.nessie.versioned.impl.InternalRef.Type;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -56,21 +57,32 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  * <p>This contains a commit log of non-finalized commits including deltas. These can be used to build up history of recent
  * commits just in case the L1's associated with each were not saved.
  *
- * <p>The initial structure of the commit log is:
- * <pre>[{id: <EMPTY_COMMIT_ID>, parent: <EMPTY_COMMIT_ID>}]</pre>
+ * <p>The initial structure of the commit log is:</p>
+ *
+ * <pre>[{id: &lt;EMPTY_COMMIT_ID&gt;, parent: &lt;EMPTY_COMMIT_ID&gt;}]</pre>
  *
  * <p>If a lot of commits come in at the same moment, the log may temporarily be represented like this:
  * <pre>
  * [
- *   {id: <l1Id>, parent: <parent_l1id>}
- *   {id: <randomid>, saved:false, deltas: [{position:<pos>, oldId: <oldL2Id>, newId: <newL2Id>},{position:<pos>, oldId: <oldL2Id>, newId: <newL2Id>}]}
- *   {id: <randomid>, saved:false, deltas: [{position:<pos>, oldId: <oldL2Id>, newId: <newL2Id>}]}
- *   {id: <randomid>, saved:false, deltas: [{position:<pos>, oldId: <oldL2Id>, newId: <newL2Id>},{position:<pos>, oldId: <oldL2Id>, newId: <newL2Id>}]}
- *   {id: <randomid>, saved:false, deltas: [{position:<pos>, oldId: <oldL2Id>, newId: <newL2Id>}]}
+ *   {id: &lt;l1Id&gt;, parent: &lt;parent_l1id&gt;}
+ *   {id: &lt;randomid&gt;, saved:false, deltas: [
+ *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;},
+ *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}
+ *       ]
+ *   }
+ *   {id: &lt;randomid&gt;, saved:false, deltas: [{position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}]}
+ *   {id: &lt;randomid&gt;, saved:false, deltas: [
+ *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;},
+ *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}
+ *       ]
+ *   }
+ *   {id: &lt;randomid&gt;, saved:false, deltas: [{position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}]}
  * ]
  * </pre>
- * <p>In the state shown above, several concurrent commmiters have written their branch commits to the branch but have yet to clean up. In those cases,
- * any one of the committers may clean up some or all of the non-finalized commits (including commits that potentially happened after their own).
+ *
+ * <p>In the state shown above, several concurrent commmiters have written their branch commits to the branch
+ * but have yet to clean up. In those cases, any one of the committers may clean up some or all of the
+ * non-finalized commits (including commits that potentially happened after their own).
  *
  * <p>Each time a commit happens, the committer will do the following:
  * <ol>
@@ -86,9 +98,10 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  * <p>The following things are always true about the commit log.
  * <ol>
  * <li>There must always be at least one finalized entry.
- * <li>There order of commits will always be <finalized>+<unsaved>* (one or more saved followed by zero or more unsaved commits).
+ * <li>There order of commits will always be &lt;finalized&gt;+&lt;unsaved&gt;*
+ * (one or more saved followed by zero or more unsaved commits).
  * <li>The ids for all saved commits will exist in the L1 table.
- * <ul>
+ * </ol>
  */
 class InternalBranch extends MemoizedId {
 
@@ -107,7 +120,7 @@ class InternalBranch extends MemoizedId {
 
   /**
    * Create an empty branch.
-   * @param name
+   * @param name name of the branch.
    */
   public InternalBranch(String name) {
     super(InternalRefId.ofBranch(name).getId());
@@ -119,8 +132,8 @@ class InternalBranch extends MemoizedId {
 
   /**
    * Create a new branch targeting an L1.
-   * @param name
-   * @param target
+   * @param name name of the branch
+   * @param target the L1 to target (should already be persisted)
    */
   public InternalBranch(String name, L1 target) {
     super(InternalRefId.ofBranch(name).getId());
@@ -206,8 +219,9 @@ class InternalBranch extends MemoizedId {
 
       @Override
       public Commit deserialize(Map<String, AttributeValue> map) {
-        if(!map.containsKey(DELTAS)) {
-          return new Commit(Id.fromAttributeValue(map.get(ID)), Id.fromAttributeValue(map.get(COMMIT)), Id.fromAttributeValue(map.get(PARENT)));
+        if (!map.containsKey(DELTAS)) {
+          return new Commit(Id.fromAttributeValue(map.get(ID)), Id.fromAttributeValue(map.get(COMMIT)),
+              Id.fromAttributeValue(map.get(PARENT)));
         } else {
           List<UnsavedDelta> deltas = map.get(DELTAS)
               .l()
@@ -227,8 +241,8 @@ class InternalBranch extends MemoizedId {
         ImmutableMap.Builder<String, AttributeValue> builder = ImmutableMap.builder();
         builder
           .put(ID, item.getId().toAttributeValue())
-          .put(COMMIT, item.commit.toAttributeValue());
-        if(item.saved) {
+            .put(COMMIT, item.commit.toAttributeValue());
+        if (item.saved) {
           builder.put(PARENT, item.parent.toAttributeValue());
         } else {
           AttributeValue deltas = AttributeValue.builder().l(
@@ -237,7 +251,7 @@ class InternalBranch extends MemoizedId {
                       UnsavedDelta.SCHEMA.itemToMap(d, true)
                       ).build()
                   ).collect(Collectors.toList()))
-          .build();
+              .build();
           builder.put(DELTAS, deltas);
         }
         return builder.build();
@@ -274,7 +288,7 @@ class InternalBranch extends MemoizedId {
 
     { // delete excess deletes.
       // delete all but last item.
-      for(int i =0; i < commits.size() - 1; i++) {
+      for (int i = 0; i < commits.size() - 1; i++) {
         deletes.add(new Delete(i, commits.get(i).id));
       }
     }
@@ -287,7 +301,7 @@ class InternalBranch extends MemoizedId {
     }
     // first we rewind the tree to the original state
     for (Commit c : Lists.reverse(unsavedCommits)) {
-      for(UnsavedDelta delta : c.deltas) {
+      for (UnsavedDelta delta : c.deltas) {
         tree = delta.reverse(tree);
       }
     }
@@ -299,7 +313,7 @@ class InternalBranch extends MemoizedId {
 
     Id parentId = lastSavedCommit.id;
     for (Commit c : unsavedCommits) {
-      for(UnsavedDelta delta : c.deltas) {
+      for (UnsavedDelta delta : c.deltas) {
         tree = delta.apply(tree);
       }
       L1 l1 = new L1(c.commit, parentId, tree);
@@ -331,7 +345,13 @@ class InternalBranch extends MemoizedId {
     private final Id finalL1RandomId;
     private final InternalBranch initialBranch;
 
-    private UpdateState(List<L1> l1sToSave, List<Delete> deletes, L1 finalL1, int finalL1position, Id finalL1RandomId, InternalBranch initialBranch) {
+    private UpdateState(
+        List<L1> l1sToSave,
+        List<Delete> deletes,
+        L1 finalL1,
+        int finalL1position,
+        Id finalL1RandomId,
+        InternalBranch initialBranch) {
       super();
       this.l1sToSave = Preconditions.checkNotNull(l1sToSave);
       this.deletes = Preconditions.checkNotNull(deletes);
@@ -339,7 +359,7 @@ class InternalBranch extends MemoizedId {
       this.finalL1position = Preconditions.checkNotNull(finalL1position);
       this.finalL1RandomId = Preconditions.checkNotNull(finalL1RandomId);
       this.initialBranch = Preconditions.checkNotNull(initialBranch);
-      if(finalL1position == 0 && !deletes.isEmpty()) {
+      if (finalL1position == 0 && !deletes.isEmpty()) {
         throw new IllegalStateException("We should never have deletes if the final position is zero.");
       }
     }
@@ -358,7 +378,7 @@ class InternalBranch extends MemoizedId {
      */
     @SuppressWarnings("unchecked")
     CompletableFuture<InternalBranch> ensureAvailable(DynamoStore store, Executor executor, int attempts, boolean waitOnCollapse) {
-      if(l1sToSave.isEmpty()) {
+      if (l1sToSave.isEmpty()) {
         saved = true;
         return CompletableFuture.completedFuture(initialBranch);
       }
@@ -375,7 +395,7 @@ class InternalBranch extends MemoizedId {
         }
       }, executor);
 
-      if(!waitOnCollapse) {
+      if (!waitOnCollapse) {
         return future;
       }
 
@@ -393,59 +413,64 @@ class InternalBranch extends MemoizedId {
     /**
      * Collapses the intention log within a branch, reattempting multiple times.
      *
-     * After completing an operation, we should attempt to collapse the intention log. There are two steps associated with this:
+     * <p>After completing an operation, we should attempt to collapse the intention log. There are two steps associated with this:
+     *
      * <ul>
      * <li>Save all the unsaved items in the intention log.
-     * <li>Removing all the unsaved items in the intention log except the last one, which will be converted to an id pointer of the previous commit.
+     * <li>Removing all the unsaved items in the intention log except the last one, which will be
+     * converted to an id pointer of the previous commit.
+     * </ul>
      *
      * @param branch The branch that potentially has items to collapse.
      * @param attempts Number of attempts to make before giving up on collapsing. (This is an optimistic locking scheme.)
      * @return The updated branch object after the intention log was collapsed.
-     * @throws ReferenceNotFoundException
-     * @throws ReferenceConflictException
+     * @throws ReferenceNotFoundException when branch does not exist.
+     * @throws ReferenceConflictException If attempts are depleted and operation cannot be applied due to heavy concurrency
      */
-    private static InternalBranch collapseIntentionLog(UpdateState initialState, DynamoStore store, InternalBranch branch, int attempts) throws ReferenceNotFoundException, ReferenceConflictException {
+    private static InternalBranch collapseIntentionLog(UpdateState initialState, DynamoStore store, InternalBranch branch, int attempts)
+        throws ReferenceNotFoundException, ReferenceConflictException {
       try {
-      for (int attempt = 0; attempt < attempts; attempt++) {
+        for (int attempt = 0; attempt < attempts; attempt++) {
 
-        // cleanup pending updates.
-        UpdateState updateState = attempts == 0 ? initialState : branch.getUpdateState();
+          // cleanup pending updates.
+          UpdateState updateState = attempts == 0 ? initialState : branch.getUpdateState();
 
-        // now we need to take the current list and turn it into a list of 1 item that is saved.
-        final ExpressionPath commits = ExpressionPath.builder("commits").build();
-        final ExpressionPath last = commits.toBuilder().position(updateState.finalL1position).build();
+          // now we need to take the current list and turn it into a list of 1 item that is saved.
+          final ExpressionPath commits = ExpressionPath.builder("commits").build();
+          final ExpressionPath last = commits.toBuilder().position(updateState.finalL1position).build();
 
-        UpdateExpression update = UpdateExpression.initial();
-        ConditionExpression condition = ConditionExpression.initial();
+          UpdateExpression update = UpdateExpression.initial();
+          ConditionExpression condition = ConditionExpression.initial();
 
-        for(Delete d : updateState.deletes) {
-          ExpressionPath path = commits.toBuilder().position(d.position).build();
-          condition = condition.and(ExpressionFunction.equals(path.toBuilder().name(ID).build(), d.id.toAttributeValue()));
-          update = update.and(RemoveClause.of(path));
+          for (Delete d : updateState.deletes) {
+            ExpressionPath path = commits.toBuilder().position(d.position).build();
+            condition = condition.and(ExpressionFunction.equals(path.toBuilder().name(ID).build(), d.id.toAttributeValue()));
+            update = update.and(RemoveClause.of(path));
+          }
+
+          condition = condition.and(ExpressionFunction.equals(last.toBuilder().name(ID).build(),
+              updateState.finalL1RandomId.toAttributeValue()));
+
+          // remove extra commits field for last commit.
+          update = update
+              .and(RemoveClause.of(last.toBuilder().name(Commit.DELTAS).build()))
+              .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toAttributeValue()))
+              .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toAttributeValue()));
+
+          Optional<InternalRef> updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition));
+          if (updated.isPresent()) {
+            LOGGER.debug("Completed collapse update on attempt {}.", attempt);
+            return updated.get().getBranch();
+          }
+
+          LOGGER.debug("Failed to collapse update on attempt {}.", attempt);
+          // something must have changed, reload the branch.
+          final InternalRef ref = store.loadSingle(ValueType.REF, branch.getId());
+          if (ref.getType() != Type.BRANCH) {
+            throw new ReferenceNotFoundException("Failure while collapsing log. Former branch is now a " + ref.getType());
+          }
+          branch = ref.getBranch();
         }
-
-        condition = condition.and(ExpressionFunction.equals(last.toBuilder().name(ID).build(), updateState.finalL1RandomId.toAttributeValue()));
-
-        // remove extra commits field for last commit.
-        update = update
-            .and(RemoveClause.of(last.toBuilder().name(Commit.DELTAS).build()))
-            .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toAttributeValue()))
-            .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toAttributeValue()));
-
-        Optional<InternalRef> updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition));
-        if (updated.isPresent()) {
-          LOGGER.debug("Completed collapse update on attempt {}.", attempt);
-          return updated.get().getBranch();
-        }
-
-        LOGGER.debug("Failed to collapse update on attempt {}.", attempt);
-        // something must have changed, reload the branch.
-        final InternalRef ref = store.loadSingle(ValueType.REF, branch.getId());
-        if(ref.getType() != Type.BRANCH) {
-          throw new ReferenceNotFoundException("Failure while collapsing log. Former branch is now a " + ref.getType());
-        }
-        branch = ref.getBranch();
-      }
 
       } catch (Exception ex) {
         ex.printStackTrace();
@@ -454,7 +479,8 @@ class InternalBranch extends MemoizedId {
     }
 
     public L1 getL1() {
-      Preconditions.checkArgument(saved, "You must call UpdateState.ensureAvailable() before attempting to retrieve the L1 state of this branch.");
+      Preconditions.checkArgument(saved,
+          "You must call UpdateState.ensureAvailable() before attempting to retrieve the L1 state of this branch.");
       return finalL1;
     }
   }
@@ -587,7 +613,8 @@ class InternalBranch extends MemoizedId {
           .put(ID, item.getId().toAttributeValue())
           .put(NAME, AttributeValue.builder().s(item.name).build())
           .put(METADATA, item.metadata.toAttributeValue())
-          .put(COMMITS, AttributeValue.builder().l(item.commits.stream().map(Commit::toAttributeValue).collect(Collectors.toList())).build())
+          .put(COMMITS, AttributeValue.builder().l(
+              item.commits.stream().map(Commit::toAttributeValue).collect(Collectors.toList())).build())
           .put(TREE, item.tree.toAttributeValue())
           .build();
     }

@@ -15,13 +15,14 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-public class Pointer<T extends HasId> {
+class Pointer<T extends HasId> {
   private T value;
   private boolean dirty = false;
 
-  public Pointer(){}
+  public Pointer(){
+  }
 
-  public Pointer(T value){
+  public Pointer(T value) {
     this.value = value;
   }
 

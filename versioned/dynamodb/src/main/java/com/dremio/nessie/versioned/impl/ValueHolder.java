@@ -32,14 +32,14 @@ class ValueHolder<V> {
   }
 
   public V getValue() {
-    if(value == null) {
+    if (value == null) {
       value = serializer.fromBytes(bean.getBytes());
     }
     return value;
   }
 
   public WrappedValueBean getPersistentValue() {
-    if(bean == null) {
+    if (bean == null) {
       bean = InternalValue.of(serializer.toBytes(value));
     }
     return bean;

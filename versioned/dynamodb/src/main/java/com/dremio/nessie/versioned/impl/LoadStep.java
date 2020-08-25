@@ -29,7 +29,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Streams;
 
-public class LoadStep {
+class LoadStep {
 
   private Collection<LoadOp<?>> ops;
   private Supplier<Optional<LoadStep>> next;
@@ -42,7 +42,10 @@ public class LoadStep {
   private static Collection<LoadOp<?>> consolidate(Collection<LoadOp<?>> ops) {
     // dynamodb doesn't let a single request ask for the same value multiple times. We need to collapse any loadops that do this.
     ListMultimap<LoadOpKey, LoadOp<?>> mm = Multimaps.index(ImmutableList.copyOf(ops), LoadOp::toKey);
-    List<LoadOp<?>> consolidated = mm.keySet().stream().map(key -> mm.get(key).stream().collect(LoadOp.toLoadOp())).collect(ImmutableList.toImmutableList());
+    List<LoadOp<?>> consolidated = mm.keySet()
+        .stream()
+        .map(key -> mm.get(key).stream().collect(LoadOp.toLoadOp()))
+        .collect(ImmutableList.toImmutableList());
     return consolidated;
   }
 
@@ -50,17 +53,17 @@ public class LoadStep {
     final LoadStep a = this;
     Collection<LoadOp<?>> newOps = Streams.concat(ops.stream(), b.ops.stream()).collect(Collectors.toList());
     return new LoadStep(newOps, () -> {
-      Optional<LoadStep> aNext = a.next.get();
-      Optional<LoadStep> bNext = b.next.get();
-      if(aNext.isPresent()) {
-        if(bNext.isPresent()) {
-          return Optional.of(aNext.get().combine(bNext.get()));
+      Optional<LoadStep> nextA = a.next.get();
+      Optional<LoadStep> nextB = b.next.get();
+      if (nextA.isPresent()) {
+        if (nextB.isPresent()) {
+          return Optional.of(nextA.get().combine(nextB.get()));
         }
 
-        return aNext;
+        return nextA;
       }
 
-      return bNext;
+      return nextB;
     });
   }
 
@@ -69,8 +72,9 @@ public class LoadStep {
     List<LoadOp<?>> ops = this.ops.stream().collect(Collectors.toList());
 
     List<ListMultimap<String, LoadOp<?>>> paginated = new ArrayList<>();
-    for(int i =0; i < ops.size(); i+=size) {
-      ListMultimap<String, LoadOp<?>> mm = Multimaps.index(ops.subList(i, Math.min(i + size, ops.size())), l -> l.getValueType().getTableName());
+    for (int i = 0; i < ops.size(); i += size) {
+      ListMultimap<String, LoadOp<?>> mm =
+          Multimaps.index(ops.subList(i, Math.min(i + size, ops.size())), l -> l.getValueType().getTableName());
       paginated.add(mm);
     }
     return paginated;

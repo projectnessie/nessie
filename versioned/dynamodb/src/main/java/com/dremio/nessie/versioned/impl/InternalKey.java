@@ -70,11 +70,14 @@ class InternalKey implements Comparable<InternalKey>, HasId {
   }
 
   public AttributeValue toAttributeValue() {
-    return AttributeValue.builder().l(getElements().stream().map(s -> AttributeValue.builder().s(s).build()).collect(Collectors.toList())).build();
+    return AttributeValue.builder().l(getElements().stream()
+        .map(s -> AttributeValue.builder().s(s).build()).collect(Collectors.toList())).build();
   }
 
   public static InternalKey fromAttributeValue(AttributeValue value) {
-    return new InternalKey(ImmutableKey.builder().addAllElements(value.l().stream().map(AttributeValue::s).collect(Collectors.toList())).build());
+    return new InternalKey(ImmutableKey.builder()
+        .addAllElements(value.l().stream().map(AttributeValue::s)
+        .collect(Collectors.toList())).build());
   }
 
   public List<String> getElements() {
@@ -83,10 +86,10 @@ class InternalKey implements Comparable<InternalKey>, HasId {
 
   @Override
   public boolean equals(Object obj) {
-    if(obj == null) {
+    if (obj == null) {
       return false;
     }
-    if( !(obj instanceof InternalKey) ) {
+    if (!(obj instanceof InternalKey)) {
       return false;
     }
     Key other = (Key) obj;

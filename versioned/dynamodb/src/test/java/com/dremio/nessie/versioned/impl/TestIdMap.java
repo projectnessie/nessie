@@ -77,11 +77,12 @@ public class TestIdMap {
     assertEquals(0, map.getChanges().size());
 
   }
+
   @Test
   void ensureRoundTrip() {
 
     IdMap map1 = new IdMap(15);
-    for (int i =0; i < map1.size(); i++) {
+    for (int i = 0; i < map1.size(); i++) {
       map1 = map1.setId(i, Id.generateRandom());
     }
 

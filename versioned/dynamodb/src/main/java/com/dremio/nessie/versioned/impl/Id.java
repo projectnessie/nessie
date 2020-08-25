@@ -40,11 +40,12 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 @Value.Immutable
 abstract class Id {
 
-  private static final ThreadLocal<Random> RANDOM = new ThreadLocal<Random>(){
+  private static final ThreadLocal<Random> RANDOM = new ThreadLocal<Random>() {
     @Override
     protected Random initialValue() {
       return new Random();
-    }};
+    }
+  };
 
   public static final Id EMPTY = ImmutableId.builder().value(ByteString.copyFrom(new byte[20])).build();
 
@@ -61,10 +62,17 @@ abstract class Id {
   }
 
   public static Id of(ByteString bytes) {
-    if(bytes.size() != LENGTH) {
+    if (bytes.size() != LENGTH) {
       throw new IllegalArgumentException();
     }
     return ImmutableId.builder().value(bytes).build();
+  }
+
+  public static Id of(Hash hash) {
+    ByteString bytes = hash.asBytes();
+    Preconditions.checkArgument(bytes.size() == LENGTH, "Invalid key for this version store. Expected a binary value of "
+        + "length %s but value was actually %s bytes long.", LENGTH, bytes.size());
+    return Id.of(bytes);
   }
 
   public static Id build(ByteBuffer bytes) {
@@ -72,16 +80,22 @@ abstract class Id {
       hasher.putBytes(bytes);
     });
   }
+
   public static Id build(String string) {
     return build(hasher -> {
       hasher.putString(string.toLowerCase(), StandardCharsets.UTF_8);
     });
   }
 
-  public static Id of(Hash hash) {
-    ByteString bytes = hash.asBytes();
-    Preconditions.checkArgument(bytes.size() == LENGTH, "Invalid key for this version store. Expected a binary value of length %s but value was actually %s bytes long.", LENGTH, bytes.size());
-    return Id.of(bytes);
+  public static Id build(ByteString bytes) {
+    return build(hasher -> hashByteString(bytes, hasher));
+  }
+
+  public static Id build(Consumer<Hasher> consumer) {
+    Hasher hasher = Hashing.sha256().newHasher();
+    consumer.accept(hasher);
+    byte[] outputBytes = hasher.hash().asBytes();
+    return ImmutableId.builder().value(UnsafeByteOperations.unsafeWrap(outputBytes, 0, 20)).build();
   }
 
   @Override
@@ -122,7 +136,7 @@ abstract class Id {
 
   private static void hashByteString(ByteString bytes, Hasher hasher) {
     try {
-      UnsafeByteOperations.unsafeWriteTo(bytes, new ByteOutput(){
+      UnsafeByteOperations.unsafeWriteTo(bytes, new ByteOutput() {
 
         @Override
         public void write(byte value) throws IOException {
@@ -135,19 +149,20 @@ abstract class Id {
         }
 
         @Override
-        public void writeLazy(byte[] value, int offset, int length) throws IOException {
-          write(value, offset, length);
-        }
-
-        @Override
         public void write(ByteBuffer value) throws IOException {
           hasher.putBytes(value);
         }
 
         @Override
+        public void writeLazy(byte[] value, int offset, int length) throws IOException {
+          write(value, offset, length);
+        }
+
+        @Override
         public void writeLazy(ByteBuffer value) throws IOException {
           write(value);
-        }});
+        }
+      });
     } catch (IOException e) {
       throw new RuntimeException(e); // can't happen.
     }
@@ -165,19 +180,8 @@ abstract class Id {
     return Hash.of(getValue());
   }
 
-  public static Id build(ByteString bytes) {
-    return build(hasher -> hashByteString(bytes, hasher));
-  }
-
   public Map<String, AttributeValue> toKeyMap() {
     return ImmutableMap.of(DynamoStore.KEY_NAME, this.toAttributeValue());
-  }
-
-  public static Id build(Consumer<Hasher> consumer) {
-    Hasher hasher = Hashing.sha256().newHasher();
-    consumer.accept(hasher);
-    byte[] outputBytes = hasher.hash().asBytes();
-    return ImmutableId.builder().value(UnsafeByteOperations.unsafeWrap(outputBytes, 0, 20)).build();
   }
 
   public static Id fromAttributeValue(AttributeValue value) {

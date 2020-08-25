@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
 
@@ -53,7 +54,7 @@ class IdMap implements Iterable<Id> {
   }
 
   private void check(int position) {
-    if(position >= deltas.length || position < 0) {
+    if (position >= deltas.length || position < 0) {
       throw new IndexOutOfBoundsException(String.format("Position must be [0..%d), was actually %d.", deltas.length, position));
     }
   }

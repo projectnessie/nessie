@@ -45,8 +45,9 @@ class InternalRef implements HasId {
     }
 
     public String identifier() {
-      if(this==HASH) {
-        throw new IllegalStateException("You should not try to retrieve the identifier for a hash type since they are not saveable as searchable refs.");
+      if (this == HASH) {
+        throw new IllegalStateException("You should not try to retrieve the identifier for a hash "
+            + "type since they are not saveable as searchable refs.");
       }
       return identifier;
     }
@@ -56,7 +57,7 @@ class InternalRef implements HasId {
     }
 
     public static Type getType(String identifier) {
-      if(identifier.equals("b")) {
+      if (identifier.equals("b")) {
         return BRANCH;
       } else if (identifier.equals("t")) {
         return TAG;
@@ -102,16 +103,16 @@ class InternalRef implements HasId {
   }
 
   public Id getId() {
-    switch(type) {
-    case BRANCH:
-      return branch.getId();
-    case HASH:
-      return Id.of(hash.getValue().asReadOnlyByteBuffer());
-    case TAG:
-      return tag.getCommit();
-    case UNKNOWN:
-    default:
-      throw new IllegalStateException();
+    switch (type) {
+      case BRANCH:
+        return branch.getId();
+      case HASH:
+        return Id.of(hash.getValue().asReadOnlyByteBuffer());
+      case TAG:
+        return tag.getCommit();
+      case UNKNOWN:
+      default:
+        throw new IllegalStateException();
     }
   }
 
@@ -133,11 +134,11 @@ class InternalRef implements HasId {
     public InternalRef deserialize(Map<String, AttributeValue> attributeMap) {
       Type type = Type.getType(attributeMap.get(TYPE).s());
       Map<String, AttributeValue> filtered = Maps.filterEntries(attributeMap, e -> !e.getKey().equals(TYPE));
-      switch(type) {
-      case BRANCH: return new InternalRef(type, InternalBranch.SCHEMA.mapToItem(filtered), null, null);
-      case TAG: return new InternalRef(type, null, InternalTag.SCHEMA.mapToItem(filtered), null);
-      default:
-        throw new UnsupportedOperationException();
+      switch (type) {
+        case BRANCH: return new InternalRef(type, InternalBranch.SCHEMA.mapToItem(filtered), null, null);
+        case TAG: return new InternalRef(type, null, InternalTag.SCHEMA.mapToItem(filtered), null);
+        default:
+          throw new UnsupportedOperationException();
       }
     }
 
@@ -146,15 +147,15 @@ class InternalRef implements HasId {
       Map<String, AttributeValue> map = new HashMap<>();
       map.put(TYPE, item.type.toAttributeValue());
 
-      switch(item.type) {
-      case BRANCH:
-        map.putAll(InternalBranch.SCHEMA.itemToMap(item.branch, ignoreNulls));
-        break;
-      case TAG:
-        map.putAll(InternalTag.SCHEMA.itemToMap(item.tag, ignoreNulls));
-        break;
-      default:
-        throw new UnsupportedOperationException();
+      switch (item.type) {
+        case BRANCH:
+          map.putAll(InternalBranch.SCHEMA.itemToMap(item.branch, ignoreNulls));
+          break;
+        case TAG:
+          map.putAll(InternalTag.SCHEMA.itemToMap(item.tag, ignoreNulls));
+          break;
+        default:
+          throw new UnsupportedOperationException();
       }
 
       return map;
