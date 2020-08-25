@@ -19,4 +19,8 @@ import org.immutables.value.Value;
 
 @Value.Immutable
 public interface BranchName extends NamedRef {
+
+  static BranchName of(String name) {
+    return ImmutableBranchName.builder().name(name).build();
+  }
 }

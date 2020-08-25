@@ -97,7 +97,7 @@ class TestExpressions {
     AliasCollector c = new AliasCollector();
     Value v0p = v0.alias(c);
     assertEquals("list_append(p0, :v0)", v0p.asString());
-    assertEquals(av0, c.getAttributesValues().get(":v0"));
+    assertEquals(av0, c.getAttributesValues().get(":v0").l().get(0));
   }
 
   @Test
@@ -116,25 +116,24 @@ class TestExpressions {
   @Test
   void updateAddClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
-        AddClause.addToSetOrNumber(p0, av2),
-        SetClause.appendToList(p1, AttributeValue.builder().l(av1).build())
+        AddClause.addToSetOrNumber(p0, av2)
         ).build();
     AliasCollector c = new AliasCollector();
     UpdateExpression e0p = e0.alias(c);
-    assertEquals(" ADD p0 :v0, p1 list_append(p1, :v1)", e0p.toUpdateExpressionString());
+    assertEquals(" ADD p0 :v0", e0p.toUpdateExpressionString());
     assertEquals(av2, c.getAttributesValues().get(":v0"));
-    assertEquals(av1, c.getAttributesValues().get(":v1"));
   }
 
   @Test
   void updateSetClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
         SetClause.equals(p0, av0),
-        SetClause.ifNotExists(p1, p0, av1)
+        SetClause.ifNotExists(p1, p0, av1),
+        SetClause.appendToList(p1, AttributeValue.builder().l(av1).build())
         ).build();
     AliasCollector c = new AliasCollector();
     UpdateExpression e0p = e0.alias(c);
-    assertEquals(" SET p0 = :v0, p1 = if_not_exists(p0, :v1)", e0p.toUpdateExpressionString());
+    assertEquals(" SET p0 = :v0, p1 = if_not_exists(p0, :v1), p1 = list_append(p1, :v2)", e0p.toUpdateExpressionString());
     assertEquals(av0, c.getAttributesValues().get(":v0"));
     assertEquals(av1, c.getAttributesValues().get(":v1"));
   }
@@ -154,9 +153,9 @@ class TestExpressions {
   void updateMultiClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
         AddClause.addToSetOrNumber(p0, av2),
-        SetClause.appendToList(p1, av1),
         SetClause.equals(p0, av0),
         SetClause.ifNotExists(p1, p0, av1),
+        SetClause.appendToList(p1, av1),
         RemoveClause.of(p0),
         RemoveClause.of(p2),
         DeleteClause.deleteFromSet(p0, set1),
@@ -165,8 +164,8 @@ class TestExpressions {
     AliasCollector c = new AliasCollector();
     UpdateExpression e0p = e0.alias(c);
     assertEquals(" "
-        + "ADD p0 :v0, p1 list_append(p1, :v1) "
-        + "SET p0 = :v2, p1 = if_not_exists(p0, :v3) "
+        + "ADD p0 :v0 "
+        + "SET p0 = :v1, p1 = if_not_exists(p0, :v2), p1 = list_append(p1, :v3) "
         + "REMOVE p0, p2[2] "
         + "DELETE p0 :v4, p1 :v5", e0p.toUpdateExpressionString());
   }
@@ -176,6 +175,6 @@ class TestExpressions {
   void conditionExpression() {
     AliasCollector c = new AliasCollector();
     ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(p0, av0), ExpressionFunction.equals(p1, av1)).alias(c);
-    assertEquals("p0 = :v0, p1 = :v1", ex.toConditionExpressionString());
+    assertEquals("p0 = :v0 AND p1 = :v1", ex.toConditionExpressionString());
   }
 }

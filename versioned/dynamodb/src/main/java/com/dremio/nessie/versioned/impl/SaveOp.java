@@ -21,7 +21,7 @@ import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class SaveOp<V> {
+class SaveOp<V extends HasId> {
   private final ValueType type;
   private final V value;
 

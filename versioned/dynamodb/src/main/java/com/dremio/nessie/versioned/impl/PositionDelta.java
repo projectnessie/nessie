@@ -19,34 +19,38 @@ import org.immutables.value.Value;
 
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 
+/**
+ * Describes the current and previous state of the value.
+ */
 @Value.Immutable
-public interface PositionMutation {
+abstract class PositionDelta {
 
-  static PositionMutation EMPTY_ZERO = PositionMutation.builder().newId(Id.EMPTY).oldId(Id.EMPTY).position(0).build();
+  static PositionDelta EMPTY_ZERO = PositionDelta.builder().newId(Id.EMPTY).oldId(Id.EMPTY).position(0).build();
 
-  int getPosition();
+  abstract int getPosition();
 
-  Id getOldId();
+  @Value.Auxiliary
+  abstract Id getOldId();
 
-  Id getNewId();
+  abstract Id getNewId();
 
-  static ImmutablePositionMutation.Builder builder() {
-    return ImmutablePositionMutation.builder();
+  static ImmutablePositionDelta.Builder builder() {
+    return ImmutablePositionDelta.builder();
   }
 
-  default boolean isDirty() {
+  boolean isDirty() {
     return !getOldId().equals(getNewId());
   }
 
-  default boolean isEmpty() {
+  final boolean isEmpty() {
     return !isDirty() && getOldId().equals(Id.EMPTY);
   }
 
-  public static PositionMutation of(int position, Id id) {
-    return ImmutablePositionMutation.builder().oldId(id).newId(id).position(position).build();
+  static PositionDelta of(int position, Id id) {
+    return ImmutablePositionDelta.builder().oldId(id).newId(id).position(position).build();
   }
 
-  default UnsavedDelta toUnsavedDelta() {
+  final UnsavedDelta toUnsavedDelta() {
     UnsavedDelta delta = new UnsavedDelta(getPosition(), getOldId(), getNewId());
     return delta;
   }

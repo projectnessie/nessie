@@ -78,13 +78,92 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   private DynamoStore store;
   private final int commitRetryCount = 5;
   private final int p2commitRetry = 5;
+  private final boolean waitOnCollapse;
 
-  public DynamoVersionStore(StoreWorker<DATA,METADATA> storeWorker, DynamoStore store) {
+  public DynamoVersionStore(StoreWorker<DATA,METADATA> storeWorker, DynamoStore store, boolean waitOnCollapse) {
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
     this.storeWorker = storeWorker;
     this.executor = Executors.newCachedThreadPool();
+    this.waitOnCollapse = waitOnCollapse;
+  }
+
+  @Override
+  public void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceConflictException {
+    if (!targetHash.isPresent()) {
+      if (ref instanceof TagName) {
+        throw new ReferenceNotFoundException("You must provide a target hash to create a tag.");
+      } else {
+        InternalBranch branch = new InternalBranch(ref.getName());
+        if(!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
+          throw new ReferenceConflictException("A branch or tag already exists with that name.");
+        }
+      }
+      return;
+    }
+
+    // with a hash.
+    final L1 l1;
+    try {
+      l1 = store.loadSingle(ValueType.L1, Id.of(targetHash.get()));
+    } catch (ResourceNotFoundException ex) {
+      throw new ReferenceNotFoundException("Unable to find target hash.", ex);
+    }
+
+    if (ref instanceof TagName) {
+      InternalTag tag = new InternalTag(null, ref.getName(), l1.getId());
+      if(!store.putIfAbsent(ValueType.REF, InternalRef.of(tag))) {
+        throw new ReferenceConflictException("A branch or tag already exists with that name.");
+      }
+    } else {
+      InternalBranch branch = new InternalBranch(ref.getName(), l1);
+      if(!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
+        throw new ReferenceConflictException("A branch or tag already exists with that name.");
+      }
+    }
+  }
+
+  @Override
+  public void delete(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException, ReferenceConflictException {
+    InternalRefId id = InternalRefId.of(ref);
+
+    // load ref so we can figure out how to apply condition, and do first condition check.
+    final InternalRef iref;
+    try {
+      iref = store.loadSingle(ValueType.REF, id.getId());
+    } catch(ResourceNotFoundException ex) {
+      throw new ReferenceNotFoundException(String.format("Unable to find '%s'.", ref.getName()), ex);
+    }
+
+    if(iref.getType() != id.getType()) {
+      String t1 = iref.getType() == Type.BRANCH ? "tag" : "branch";
+      String t2 = iref.getType() == Type.BRANCH ? "branch" : "tag";
+      throw new ReferenceConflictException(String.format("You attempted to delete a %s using a %s invocation.", t1, t2));
+    }
+
+    ConditionExpression c = ConditionExpression.of(id.getType().typeVerification());
+    if (iref.getType() == Type.TAG) {
+      if (hash.isPresent()) {
+        c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(), Id.of(hash.get()).toAttributeValue()));
+      }
+
+      if (!store.delete(ValueType.REF, iref.getTag().getId(), Optional.of(c))) {
+        String message = "Unable to delete tag. " + (hash.isPresent() ? "The tag does not point to the hash that was referenced." : "The tag was changed to a branch while the delete was occurring.");
+        throw new ReferenceConflictException(message);
+      }
+    } else {
+      if (hash.isPresent()) {
+        c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toAttributeValue()));
+        c = c.and(ExpressionFunction.equals(ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), AttributeValue.builder().n("1").build()));
+      }
+
+      if (!store.delete(ValueType.REF,  iref.getBranch().getId(), Optional.of(c))) {
+        String message = "Unable to delete branch. " + (hash.isPresent() ? "The branch does not point to the hash that was referenced." : "The branch was changed to a tag while the delete was occurring.");
+        throw new ReferenceConflictException(message);
+      }
+    }
+
   }
 
   @Override
@@ -118,10 +197,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
               Collections.singleton(new SaveOp<WrappedValueBean>(ValueType.COMMIT_METADATA, metadata)).stream()
           ).collect(Collectors.toList()));
 
-      // now do the branch conditional update.
-      final List<PositionMutation> mutations = current.getL1Mutations();
-
-      // positions that have a condition
+      // record positions that we're checking so we don't add the same positional check twice (for unchanged statements).
       final Set<Integer> conditionPositions = new HashSet<>();
 
       List<UnsavedDelta> deltas = new ArrayList<>();
@@ -129,11 +205,8 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       UpdateExpression update = UpdateExpression.initial();
       ConditionExpression condition = ConditionExpression.of(ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), InternalRef.Type.BRANCH.toAttributeValue()));
 
-      for(PositionMutation pm : mutations) {
-        if(!pm.isDirty()) {
-          continue;
-        }
-
+      // for all mutations that are dirty, create conditional and update expressions.
+      for(PositionDelta pm : current.getL1Mutations()) {
         boolean added = conditionPositions.add(pm.getPosition());
         assert added;
         ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(pm.getPosition()).build();
@@ -169,7 +242,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     // Now we'll try to collapse the intention log. Note that this is done post official commit so we need to return successfully even if this fails.
     try {
-      updatedBranch.getUpdateState().ensureAvailable(store, executor, p2commitRetry);
+      updatedBranch.getUpdateState().ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
     } catch (Exception ex) {
       LOGGER.info("Failure while collapsing intention log after commit.", ex);
     }
@@ -198,7 +271,13 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
         @Override
         public boolean hasNext() {
-          if(currentL1 == null) {
+
+          if (startingL1.getMetadataId().isEmpty()) {
+            // no point in working if the
+            return false;
+          }
+
+          if (currentL1 == null) {
             return true;
           }
           return !currentL1.getParentId().equals(L1.EMPTY_ID);
@@ -221,38 +300,6 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     }
   }
 
-  @Override
-  public void delete(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException, ReferenceConflictException {
-    InternalRefId id = InternalRefId.of(ref);
-
-    // load ref so we can figure out how to apply condition, and do first condition check.
-    final InternalRef iref;
-    try {
-      iref = store.loadSingle(ValueType.REF, id.getId());
-    } catch(ResourceNotFoundException ex) {
-      throw new ReferenceNotFoundException(String.format("Unable to find '%s'.", ref.getName()), ex);
-    }
-    ConditionExpression c = ConditionExpression.of(iref.getType().typeVerification());
-    if (iref.getType() == Type.TAG) {
-      if (hash.isPresent()) {
-        c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(), Id.of(hash.get()).toAttributeValue()));
-      }
-
-      if (!store.delete(ValueType.REF, iref.getTag().getId(), Optional.of(c))) {
-        throw new ReferenceConflictException("Unable to complete tag. " + (hash.isPresent() ? "The tag does not point to the hash that was referenced." : "The tag was changed to a branch while the delete was occurring."));
-      }
-    } else {
-      if (hash.isPresent()) {
-        c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toAttributeValue()));
-        c = c.and(ExpressionFunction.equals(ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), AttributeValue.builder().n("1").build()));
-      }
-
-      if (!store.delete(ValueType.REF,  iref.getBranch().getId(), Optional.of(c))) {
-        throw new ReferenceConflictException("Unable to complete tag. " + (hash.isPresent() ? "The branch does not point to the hash that was referenced." : "The branch was changed to a tag while the delete was occurring."));
-      }
-    }
-
-  }
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
@@ -275,7 +322,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
    */
   private L1 ensureValidL1(InternalBranch branch) {
     UpdateState updateState = branch.getUpdateState();
-    updateState.ensureAvailable(store, executor, p2commitRetry);
+    updateState.ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
     return updateState.getL1();
   }
 
@@ -401,44 +448,6 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   }
 
-
-  @Override
-  public void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    if (!targetHash.isPresent()) {
-      if (ref instanceof TagName) {
-        InternalTag tag = new InternalTag(null, ref.getName(), L1.EMPTY_ID);
-        if(!store.putIfAbsent(ValueType.REF, InternalRef.of(tag))) {
-          throw new ReferenceConflictException("A branch or tag already exists with that name.");
-        }
-      } else {
-        InternalBranch branch = new InternalBranch(ref.getName());
-        if(!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
-          throw new ReferenceConflictException("A branch or tag already exists with that name.");
-        }
-      }
-      return;
-    }
-
-    // with a hash.
-    final L1 l1;
-    try {
-      l1 = store.loadSingle(ValueType.L1, Id.of(targetHash.get()));
-    } catch (ResourceNotFoundException ex) {
-      throw new ReferenceNotFoundException("Unable to find target hash.", ex);
-    }
-
-    if (ref instanceof TagName) {
-      InternalTag tag = new InternalTag(null, ref.getName(), l1.getId());
-      if(!store.putIfAbsent(ValueType.REF, InternalRef.of(tag))) {
-        throw new ReferenceConflictException("A branch or tag already exists with that name.");
-      }
-    } else {
-      InternalBranch branch = new InternalBranch(ref.getName(), l1);
-      if(!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
-        throw new ReferenceConflictException("A branch or tag already exists with that name.");
-      }
-    }
-  }
 
   @Override
   public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {

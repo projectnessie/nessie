@@ -119,7 +119,7 @@ public interface VersionStore<VALUE, METADATA> {
    * @param ref               The named ref we're assigning
    * @param targetHash         The hash that this ref should refer to (optional). Otherwise will reference the beginning of time.
    * @throws ReferenceNotFoundException if {@code targetHash} is not empty and not present in the store or the {@code ref} is not
-   * present in the store.
+   *     present in the store.
    */
   void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceConflictException;
 

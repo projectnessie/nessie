@@ -29,7 +29,7 @@ class L3 extends MemoizedId {
 
   private static final long HASH_SEED = 4604180344422375655L;
 
-  private final TreeMap<InternalKey, PositionMutation> map;
+  private final TreeMap<InternalKey, PositionDelta> map;
 
   static L3 EMPTY = new L3(new TreeMap<>());
   static Id EMPTY_ID = EMPTY.getId();
@@ -38,18 +38,18 @@ class L3 extends MemoizedId {
     this.map = new TreeMap<>();
   }
 
-  private L3(TreeMap<InternalKey, PositionMutation> keys) {
+  private L3(TreeMap<InternalKey, PositionDelta> keys) {
     this(null, keys);
   }
 
-  private L3(Id id, TreeMap<InternalKey, PositionMutation> keys) {
+  private L3(Id id, TreeMap<InternalKey, PositionDelta> keys) {
     super(id);
     this.map = keys;
     ensureConsistentId();
   }
 
   public Id getId(InternalKey key) {
-    PositionMutation delta = map.get(key);
+    PositionDelta delta = map.get(key);
     if(delta == null) {
       return Id.EMPTY;
     }
@@ -71,13 +71,13 @@ class L3 extends MemoizedId {
 
   @SuppressWarnings("unchecked")
   L3 set(InternalKey key, Id valueId) {
-    TreeMap<InternalKey, PositionMutation> newMap = (TreeMap<InternalKey, PositionMutation>) map.clone();
-    PositionMutation newDelta = newMap.get(key);
+    TreeMap<InternalKey, PositionDelta> newMap = (TreeMap<InternalKey, PositionDelta>) map.clone();
+    PositionDelta newDelta = newMap.get(key);
     if(newDelta == null) {
-      newDelta = PositionMutation.EMPTY_ZERO;
+      newDelta = PositionDelta.EMPTY_ZERO;
     }
 
-    newDelta = ImmutablePositionMutation.builder().from(newDelta).newId(valueId).build();
+    newDelta = ImmutablePositionDelta.builder().from(newDelta).newId(valueId).build();
     if(!newDelta.isDirty()) {
       // this turned into a no-op delta, remove it entirely from the map.
       newMap.remove(key);
@@ -115,9 +115,9 @@ class L3 extends MemoizedId {
 
     @Override
     public L3 deserialize(Map<String, AttributeValue> attributeMap) {
-      TreeMap<InternalKey, PositionMutation> tree = attributeMap.get(TREE).l().stream().map(av -> av.m()).collect(Collectors.toMap(
+      TreeMap<InternalKey, PositionDelta> tree = attributeMap.get(TREE).l().stream().map(av -> av.m()).collect(Collectors.toMap(
               m -> InternalKey.fromAttributeValue(m.get(TREE_KEY)),
-              m -> PositionMutation.of(0, Id.fromAttributeValue(m.get(TREE_ID))),
+              m -> PositionDelta.of(0, Id.fromAttributeValue(m.get(TREE_ID))),
               (a,b) -> {throw new UnsupportedOperationException();},
               TreeMap::new));
 
@@ -131,7 +131,7 @@ class L3 extends MemoizedId {
     public Map<String, AttributeValue> itemToMap(L3 item, boolean ignoreNulls) {
       List<AttributeValue> values = item.map.entrySet().stream().map(e -> {
         InternalKey key = e.getKey();
-        PositionMutation pm = e.getValue();
+        PositionDelta pm = e.getValue();
         Map<String, AttributeValue> pmm = ImmutableMap.of(
             TREE_KEY, key.toAttributeValue(),
             TREE_ID, pm.getNewId().toAttributeValue());
