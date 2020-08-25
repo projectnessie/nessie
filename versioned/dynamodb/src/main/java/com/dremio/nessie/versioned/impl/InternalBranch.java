@@ -356,7 +356,7 @@ class InternalBranch extends MemoizedId {
       this.l1sToSave = Preconditions.checkNotNull(l1sToSave);
       this.deletes = Preconditions.checkNotNull(deletes);
       this.finalL1 = Preconditions.checkNotNull(finalL1);
-      this.finalL1position = Preconditions.checkNotNull(finalL1position);
+      this.finalL1position = finalL1position;
       this.finalL1RandomId = Preconditions.checkNotNull(finalL1RandomId);
       this.initialBranch = Preconditions.checkNotNull(initialBranch);
       if (finalL1position == 0 && !deletes.isEmpty()) {
