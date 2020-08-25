@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
+import com.dremio.nessie.versioned.impl.InternalKey.Position;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Streams;
@@ -48,8 +49,8 @@ class PartialTree<V> {
   private InternalRef ref;
   private Id rootId;
   private Pointer<L1> l1;
-  private Map<Id, Pointer<L2>> l2s = new HashMap<>();
-  private Map<Id, Pointer<L3>> l3s = new HashMap<>();
+  private Map<Integer, Pointer<L2>> l2s = new HashMap<>();
+  private Map<Position, Pointer<L3>> l3s = new HashMap<>();
   private Map<InternalKey, ValueHolder<V>> values = new HashMap<>();
   private List<InternalKey> keys = new ArrayList<>();
 
@@ -134,7 +135,7 @@ class PartialTree<V> {
         .map(id -> {
           Id l2Id = l1.get().getId(id.getL1Position());
           return new LoadOp<L2>(ValueType.L2, l2Id, l -> {
-            l2s.putIfAbsent(l2Id, new Pointer<L2>(l));
+            l2s.putIfAbsent(id.getL1Position(), new Pointer<L2>(l));
           });
         })
         .collect(Collectors.toList());
@@ -144,10 +145,9 @@ class PartialTree<V> {
 
   private Optional<LoadStep> getLoadStep3(boolean includeValues) {
     Collection<LoadOp<?>> loads = keys.stream().map(keyId -> {
-      Id l2Id = l1.get().getId(keyId.getL1Position());
-      L2 l2 = l2s.get(l2Id).get();
+      L2 l2 = l2s.get(keyId.getL1Position()).get();
       Id l3Id = l2.getId(keyId.getL2Position());
-      return new LoadOp<L3>(ValueType.L3, l3Id, l -> l3s.putIfAbsent(l3Id, new Pointer<L3>(l)));
+      return new LoadOp<L3>(ValueType.L3, l3Id, l -> l3s.putIfAbsent(keyId.getPosition(), new Pointer<L3>(l)));
     }).collect(Collectors.toList());
     return Optional.of(new LoadStep(loads, () -> getLoadStep4(includeValues)));
   }
@@ -158,10 +158,7 @@ class PartialTree<V> {
     }
     Collection<LoadOp<?>> loads = keys.stream().map(
         key -> {
-          Id l2Id = l1.get().getId(key.getL1Position());
-          L2 l2 = l2s.get(l2Id).get();
-          Id l3Id = l2.getId(key.getL2Position());
-          L3 l3 = l3s.get(l3Id).get();
+          L3 l3 = l3s.get(key.getPosition()).get();
           return new LoadOp<InternalValue>(ValueType.VALUE, l3.getId(key),
               (wvb) -> {
                 values.putIfAbsent(key, ValueHolder.of(serializer, wvb));
@@ -171,9 +168,7 @@ class PartialTree<V> {
   }
 
   public Optional<Id> getValueIdForKey(InternalKey key) {
-    Id l2Id = l1.get().getId(key.getL1Position());
-    Id l3Id = l2s.get(l2Id).get().getId(key.getL2Position());
-    return l3s.get(l3Id).get().getPossibleId(key);
+    return l3s.get(key.getPosition()).get().getPossibleId(key);
   }
 
   public Optional<V> getValueForKey(InternalKey key) {
@@ -188,10 +183,8 @@ class PartialTree<V> {
   public void setValueForKey(InternalKey key, Optional<V> value) {
     checkMutable();
     final Pointer<L1> l1 = this.l1;
-    final Id l2Id = l1.get().getId(key.getL1Position());
-    final Pointer<L2> l2 = l2s.get(l2Id);
-    final Id l3Id = l2.get().getId(key.getL2Position());
-    final Pointer<L3> l3 = l3s.get(l3Id);
+    final Pointer<L2> l2 = l2s.get(key.getL1Position());
+    final Pointer<L3> l3 = l3s.get(key.getPosition());
 
     // now we'll do the save.
     Id valueId;

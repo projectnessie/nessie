@@ -17,6 +17,7 @@ package com.dremio.nessie.versioned.impl;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -103,4 +104,50 @@ class InternalKey implements Comparable<InternalKey>, HasId {
     return hasher;
   }
 
+  @Override
+  public String toString() {
+    return delegate.toString() + String.format(" [%d:%d]", getL1Position(), getL2Position());
+  }
+
+  public Position getPosition() {
+    return new Position(getL1Position(), getL2Position());
+  }
+
+  public static class Position {
+
+    private final int l1;
+    private final int l2;
+
+    private Position(int position1, int position2) {
+      this.l1 = position1;
+      this.l2 = position2;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(l1, l2);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (!(obj instanceof Position)) {
+        return false;
+      }
+      Position other = (Position) obj;
+      return l1 == other.l1 && l2 == other.l2;
+    }
+
+    public int getL1() {
+      return l1;
+    }
+
+    public int getL2() {
+      return l2;
+    }
+
+
+  }
 }
