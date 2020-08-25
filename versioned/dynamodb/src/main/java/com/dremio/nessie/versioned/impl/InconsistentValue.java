@@ -27,7 +27,7 @@ public class InconsistentValue {
   private final Optional<Id> expected;
   private final Optional<Id> actual;
 
-  public InconsistentValue(Key key, Optional<Id> expected, Optional<Id> actual) {
+  InconsistentValue(Key key, Optional<Id> expected, Optional<Id> actual) {
     super();
     this.key = key;
     this.expected = expected;
@@ -48,5 +48,16 @@ public class InconsistentValue {
 
   }
 
+  public Key getKey() {
+    return key;
+  }
+
+  public Optional<Id> getExpected() {
+    return expected;
+  }
+
+  public Optional<Id> getActual() {
+    return actual;
+  }
 
 }

@@ -40,7 +40,7 @@ class InternalRefId implements HasId {
   }
 
   public static InternalRefId of(Ref ref) {
-    if(ref instanceof BranchName) {
+    if (ref instanceof BranchName) {
       return InternalRefId.ofBranch(((BranchName)ref).getName());
     } else if (ref instanceof TagName) {
       return InternalRefId.ofTag(((TagName)ref).getName());

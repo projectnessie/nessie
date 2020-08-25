@@ -18,7 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import com.google.protobuf.ByteString;
 
 /**
- * Holds a VersionStore binary value for interaction with the Store
+ * Holds a VersionStore binary value for interaction with the Store.
  */
 public class InternalValue extends WrappedValueBean {
 
@@ -35,5 +35,6 @@ public class InternalValue extends WrappedValueBean {
     return 2829568831168137780L; // an arbitrary but consistent seed to ensure no hash conflicts.
   }
 
-  public static final SimpleSchema<InternalValue> SCHEMA = new WrappedValueBean.WrappedValueSchema<>(InternalValue.class, InternalValue::new);
+  public static final SimpleSchema<InternalValue> SCHEMA =
+      new WrappedValueBean.WrappedValueSchema<>(InternalValue.class, InternalValue::new);
 }

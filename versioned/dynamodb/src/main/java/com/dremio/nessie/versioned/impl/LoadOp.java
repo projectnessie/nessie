@@ -51,7 +51,7 @@ class LoadOp<V extends HasId> {
     return type;
   }
 
-  public static Collector<LoadOp<?>, ?, LoadOp<?>> toLoadOp(){
+  public static Collector<LoadOp<?>, ?, LoadOp<?>> toLoadOp() {
     return COLLECTOR;
   }
 
@@ -72,7 +72,7 @@ class LoadOp<V extends HasId> {
     private List<Consumer<?>> consumers = new ArrayList<>();
 
     public OpCollectorState plus(OpCollectorState o) {
-      if(this.hasValues() && o.hasValues()) {
+      if (this.hasValues() && o.hasValues()) {
         Preconditions.checkArgument(this.valueType == o.valueType);
         Preconditions.checkArgument(this.id.equals(o.id));
       }
@@ -86,12 +86,8 @@ class LoadOp<V extends HasId> {
       return o2;
     }
 
-    public boolean hasValues() {
-      return !consumers.isEmpty();
-    }
-
     public void plus(LoadOp<?> o) {
-      if(consumers.isEmpty()) {
+      if (consumers.isEmpty()) {
         this.valueType = o.getValueType();
         this.id = o.getId();
       } else {
@@ -101,10 +97,14 @@ class LoadOp<V extends HasId> {
       consumers.add(o.consumer);
     }
 
+    public boolean hasValues() {
+      return !consumers.isEmpty();
+    }
+
     @SuppressWarnings("unchecked")
     public LoadOp<?> build() {
       return new LoadOp<HasId>(valueType, id, v -> {
-        for(Consumer<?> c : consumers) {
+        for (Consumer<?> c : consumers) {
           ((Consumer<Object>)c).accept(v);
         }
       });
@@ -124,6 +124,7 @@ class LoadOp<V extends HasId> {
   static class LoadOpKey {
     private final ValueType type;
     private final Id id;
+
     public LoadOpKey(ValueType type, Id id) {
       super();
       this.type = type;

@@ -83,34 +83,49 @@ public class AliasCollector {
     return escaped;
   }
 
+  /**
+   * Apply these aliases to the attached builder.
+   * @param builder Builder to supplement
+   * @return The updated builder.
+   */
   public PutItemRequest.Builder apply(PutItemRequest.Builder builder) {
-    if(!attributeValues.isEmpty()) {
+    if (!attributeValues.isEmpty()) {
       builder.expressionAttributeValues(Collections.unmodifiableMap(attributeValues));
     }
 
-    if(!attributeNames.isEmpty()) {
+    if (!attributeNames.isEmpty()) {
       builder.expressionAttributeNames(Collections.unmodifiableMap(attributeNames));
     }
     return builder;
   }
 
+  /**
+   * Apply these aliases to the attached builder.
+   * @param builder Builder to supplement
+   * @return The updated builder.
+   */
   public UpdateItemRequest.Builder apply(UpdateItemRequest.Builder builder) {
-    if(!attributeValues.isEmpty()) {
+    if (!attributeValues.isEmpty()) {
       builder.expressionAttributeValues(Collections.unmodifiableMap(attributeValues));
     }
 
-    if(!attributeNames.isEmpty()) {
+    if (!attributeNames.isEmpty()) {
       builder.expressionAttributeNames(Collections.unmodifiableMap(attributeNames));
     }
     return builder;
   }
 
+  /**
+   * Apply these aliases to the attached builder.
+   * @param builder Builder to supplement
+   * @return The updated builder.
+   */
   public DeleteItemRequest.Builder apply(DeleteItemRequest.Builder builder) {
-    if(!attributeValues.isEmpty()) {
+    if (!attributeValues.isEmpty()) {
       builder.expressionAttributeValues(Collections.unmodifiableMap(attributeValues));
     }
 
-    if(!attributeNames.isEmpty()) {
+    if (!attributeNames.isEmpty()) {
       builder.expressionAttributeNames(Collections.unmodifiableMap(attributeNames));
     }
     return builder;

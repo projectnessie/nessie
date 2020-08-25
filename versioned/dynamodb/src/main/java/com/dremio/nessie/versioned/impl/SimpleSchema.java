@@ -26,7 +26,8 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public abstract class SimpleSchema<T> /* implements TableSchema<T> */ {
 
-  //private final TableMetadata metadata = StaticTableMetadata.builder().addIndexPartitionKey(TableMetadata.primaryIndexName(), "id", AttributeValueType.B).build();
+  //private final TableMetadata metadata = StaticTableMetadata.builder()
+  //.addIndexPartitionKey(TableMetadata.primaryIndexName(), "id", AttributeValueType.B).build();
   //private final EnhancedType<T> type;
 
   public SimpleSchema(Class<T> clazz) {
@@ -39,6 +40,8 @@ public abstract class SimpleSchema<T> /* implements TableSchema<T> */ {
     return Maps.filterKeys(itemToMap(item, true), k -> include.contains(k));
   }
 
+  //@Override
+  public abstract Map<String, AttributeValue> itemToMap(T item, boolean ignoreNulls);
 
   //@Override
   public final T mapToItem(Map<String, AttributeValue> attributeMap) {
@@ -47,8 +50,6 @@ public abstract class SimpleSchema<T> /* implements TableSchema<T> */ {
 
   protected abstract T deserialize(Map<String, AttributeValue> attributeMap);
 
-  //@Override
-  public abstract Map<String, AttributeValue> itemToMap(T item, boolean ignoreNulls);
 
   // @Override
   public AttributeValue attributeValue(T item, String key) {
@@ -96,7 +97,7 @@ public abstract class SimpleSchema<T> /* implements TableSchema<T> */ {
     @Override
     public AttributeValue get(Object key) {
       AttributeValue value = delegate.get(key);
-      if(value == null) {
+      if (value == null) {
         throw new NullPointerException(String.format("Unable to find '%s' in: %s.", key, this));
       }
       return value;

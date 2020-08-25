@@ -50,11 +50,11 @@ import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
+import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
-import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -67,7 +67,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 
-public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA> {
+class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoVersionStore.class);
 
@@ -96,7 +96,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         throw new ReferenceNotFoundException("You must provide a target hash to create a tag.");
       } else {
         InternalBranch branch = new InternalBranch(ref.getName());
-        if(!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
+        if (!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
           throw new ReferenceConflictException("A branch or tag already exists with that name.");
         }
       }
@@ -113,12 +113,12 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     if (ref instanceof TagName) {
       InternalTag tag = new InternalTag(null, ref.getName(), l1.getId());
-      if(!store.putIfAbsent(ValueType.REF, InternalRef.of(tag))) {
+      if (!store.putIfAbsent(ValueType.REF, InternalRef.of(tag))) {
         throw new ReferenceConflictException("A branch or tag already exists with that name.");
       }
     } else {
       InternalBranch branch = new InternalBranch(ref.getName(), l1);
-      if(!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
+      if (!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
         throw new ReferenceConflictException("A branch or tag already exists with that name.");
       }
     }
@@ -132,11 +132,11 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     final InternalRef iref;
     try {
       iref = store.loadSingle(ValueType.REF, id.getId());
-    } catch(ResourceNotFoundException ex) {
+    } catch (ResourceNotFoundException ex) {
       throw new ReferenceNotFoundException(String.format("Unable to find '%s'.", ref.getName()), ex);
     }
 
-    if(iref.getType() != id.getType()) {
+    if (iref.getType() != id.getType()) {
       String t1 = iref.getType() == Type.BRANCH ? "tag" : "branch";
       String t2 = iref.getType() == Type.BRANCH ? "branch" : "tag";
       throw new ReferenceConflictException(String.format("You attempted to delete a %s using a %s invocation.", t1, t2));
@@ -149,17 +149,21 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
 
       if (!store.delete(ValueType.REF, iref.getTag().getId(), Optional.of(c))) {
-        String message = "Unable to delete tag. " + (hash.isPresent() ? "The tag does not point to the hash that was referenced." : "The tag was changed to a branch while the delete was occurring.");
+        String message = "Unable to delete tag. " + (hash.isPresent() ? "The tag does not point to the hash that was referenced."
+            : "The tag was changed to a branch while the delete was occurring.");
         throw new ReferenceConflictException(message);
       }
     } else {
       if (hash.isPresent()) {
-        c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toAttributeValue()));
-        c = c.and(ExpressionFunction.equals(ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), AttributeValue.builder().n("1").build()));
+        c = c.and(ExpressionFunction.equals(
+            ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toAttributeValue()));
+        c = c.and(ExpressionFunction.equals(
+            ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), AttributeValue.builder().n("1").build()));
       }
 
       if (!store.delete(ValueType.REF,  iref.getBranch().getId(), Optional.of(c))) {
-        String message = "Unable to delete branch. " + (hash.isPresent() ? "The branch does not point to the hash that was referenced." : "The branch was changed to a tag while the delete was occurring.");
+        String message = "Unable to delete branch. " + (hash.isPresent() ? "The branch does not point to the hash that was referenced."
+            : "The branch was changed to a tag while the delete was occurring.");
         throw new ReferenceConflictException(message);
       }
     }
@@ -167,7 +171,8 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public void commit(BranchName branchName, Optional<Hash> expectedHash, METADATA incomingCommit, List<Operation<DATA>> ops) throws ReferenceConflictException, ReferenceNotFoundException {
+  public void commit(BranchName branchName, Optional<Hash> expectedHash, METADATA incomingCommit, List<Operation<DATA>> ops)
+      throws ReferenceConflictException, ReferenceNotFoundException {
     final InternalCommitMetadata metadata = InternalCommitMetadata.of(metadataSerializer.toBytes(incomingCommit));
     final List<InternalKey> keys = ops.stream().map(op -> new InternalKey(op.getKey())).collect(Collectors.toList());
     int loop = 0;
@@ -176,13 +181,18 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     while (true) {
 
       final PartialTree<DATA> current = PartialTree.of(serializer, ref, keys);
-      final PartialTree<DATA> expected = expectedHash.isPresent() ? PartialTree.of(serializer, InternalRefId.ofHash(expectedHash.get()), keys) : current;
+      final PartialTree<DATA> expected = expectedHash.isPresent()
+          ? PartialTree.of(serializer, InternalRefId.ofHash(expectedHash.get()), keys) : current;
 
       // load both trees (excluding values)
       store.load(current.getLoadChain(this::ensureValidL1, false).combine(expected.getLoadChain(this::ensureValidL1, false)));
 
       List<OperationHolder> holders = ops.stream().map(o -> new OperationHolder(current, expected, o)).collect(Collectors.toList());
-      List<InconsistentValue> mismatches = holders.stream().map(o -> o.verify()).filter(Optional::isPresent).map(o -> o.get()).collect(Collectors.toList());
+      List<InconsistentValue> mismatches = holders.stream()
+          .map(o -> o.verify())
+          .filter(Optional::isPresent)
+          .map(o -> o.get())
+          .collect(Collectors.toList());
       if (!mismatches.isEmpty()) {
         throw new InconsistentValue.InconsistentValueException(mismatches);
       }
@@ -203,10 +213,11 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       List<UnsavedDelta> deltas = new ArrayList<>();
 
       UpdateExpression update = UpdateExpression.initial();
-      ConditionExpression condition = ConditionExpression.of(ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), InternalRef.Type.BRANCH.toAttributeValue()));
+      ConditionExpression condition = ConditionExpression.of(
+          ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), InternalRef.Type.BRANCH.toAttributeValue()));
 
       // for all mutations that are dirty, create conditional and update expressions.
-      for(PositionDelta pm : current.getL1Mutations()) {
+      for (PositionDelta pm : current.getL1Mutations()) {
         boolean added = conditionPositions.add(pm.getPosition());
         assert added;
         ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(pm.getPosition()).build();
@@ -215,7 +226,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         deltas.add(pm.toUnsavedDelta());
       }
 
-      for(OperationHolder oh : (Iterable<OperationHolder>) holders.stream().filter(OperationHolder::isUnchangedOperation)::iterator) {
+      for (OperationHolder oh : (Iterable<OperationHolder>) holders.stream().filter(OperationHolder::isUnchangedOperation)::iterator) {
         int position = oh.key.getL1Position();
         if (conditionPositions.add(position)) {
           // this doesn't already have a condition. Add one.
@@ -226,21 +237,25 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
       // Add the new commit
       Commit commitIntention = new Commit(Id.generateRandom(), metadata.getId(), deltas);
-      update = update.and(SetClause.appendToList(ExpressionPath.builder(InternalBranch.COMMITS).build(), AttributeValue.builder().l(commitIntention.toAttributeValue()).build()));
+      update = update.and(SetClause.appendToList(
+          ExpressionPath.builder(InternalBranch.COMMITS).build(),
+          AttributeValue.builder().l(commitIntention.toAttributeValue()).build()));
 
       Optional<InternalRef> updated = store.update(ValueType.REF, ref.getId(), update, Optional.of(condition));
-      if(!updated.isPresent()) {
-        if(loop++ < commitRetryCount) {
+      if (!updated.isPresent()) {
+        if (loop++ < commitRetryCount) {
           continue;
         }
-        throw new ReferenceConflictException(String.format("Unable to complete commit due to conflicting events. Retried %d times before failing.", commitRetryCount));
+        throw new ReferenceConflictException(
+            String.format("Unable to complete commit due to conflicting events. Retried %d times before failing.", commitRetryCount));
       }
 
       updatedBranch = updated.get().getBranch();
       break;
     }
 
-    // Now we'll try to collapse the intention log. Note that this is done post official commit so we need to return successfully even if this fails.
+    // Now we'll try to collapse the intention log. Note that this is done post official commit so we need to return
+    // successfully even if this fails.
     try {
       updatedBranch.getUpdateState().ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
     } catch (Exception ex) {
@@ -258,7 +273,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         startingL1 = store.loadSingle(ValueType.L1, id.getId());
       } else {
         InternalRef iref = store.loadSingle(ValueType.REF, id.getId());
-        if(iref.getType() == Type.TAG) {
+        if (iref.getType() == Type.TAG) {
           startingL1 = store.loadSingle(ValueType.L1, iref.getTag().getCommit());
         } else {
           startingL1 = ensureValidL1(iref.getBranch());
@@ -285,7 +300,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
         @Override
         public WithHash<METADATA> next() {
-          if(currentL1 == null) {
+          if (currentL1 == null) {
             currentL1 = startingL1;
           } else {
             currentL1 = store.loadSingle(ValueType.L1, currentL1.getParentId());
@@ -293,7 +308,9 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
           WrappedValueBean bean = store.loadSingle(ValueType.COMMIT_METADATA, currentL1.getMetadataId());
           return WithHash.of(currentL1.getId().toHash(), metadataSerializer.fromBytes(bean.getBytes()));
-        }};
+        }
+      };
+
       return StreamSupport.stream(Spliterators.spliterator(iterator, 10, 0), false);
     } catch (ResourceNotFoundException ex) {
       throw new ReferenceNotFoundException("Unable to find request reference.", ex);
@@ -305,7 +322,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   public Stream<WithHash<NamedRef>> getNamedRefs() {
     return store.getRefs()
         .map(ir -> {
-          if(ir.getType() == Type.TAG) {
+          if (ir.getType() == Type.TAG) {
             return WithHash.<NamedRef>of(ir.getTag().getCommit().toHash(), ImmutableTagName.builder().name(ir.getTag().getName()).build());
           }
 
@@ -327,62 +344,10 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public DATA getValue(Ref ref, Key key) {
-    InternalKey ikey = new InternalKey(key);
-    PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.singletonList(ikey));
-    store.load(tree.getLoadChain(this::ensureValidL1, true));
-    return tree.getValueForKey(ikey).orElse(null);
-  }
-
-  private class OperationHolder {
-    private final PartialTree<DATA> current;
-    private final PartialTree<DATA> expected;
-    private final Operation<DATA> operation;
-    private final InternalKey key;
-
-    public OperationHolder(PartialTree<DATA> current, PartialTree<DATA> expected, Operation<DATA> operation) {
-      this.current = Preconditions.checkNotNull(current);
-      this.expected = Preconditions.checkNotNull(expected);
-      this.operation = Preconditions.checkNotNull(operation);
-      this.key = new InternalKey(operation.getKey());
-    }
-
-    public Optional<InconsistentValue> verify() {
-      if(!operation.shouldMatchHash()) {
-        return Optional.empty();
-      }
-
-      Optional<Id> currentValueId = current.getValueIdForKey(key);
-      Optional<Id> expectedValueId = expected.getValueIdForKey(key);
-      if(!currentValueId.equals(expectedValueId)) {
-        return Optional.of(new InconsistentValue(operation.getKey(), expectedValueId, currentValueId));
-      }
-
-      return Optional.empty();
-    }
-
-    public void apply() {
-      if(operation instanceof Put) {
-        current.setValueForKey(key, Optional.of(((Put<DATA>) operation).getValue()));
-      } else if (operation instanceof Delete) {
-        current.setValueForKey(key, Optional.empty());
-      } else if (operation instanceof Unchanged) {
-        // no mutations required as the check was done on the current.
-      } else {
-        throw new IllegalStateException("Unknown operation type.");
-      }
-    }
-
-    public boolean isUnchangedOperation() {
-      return operation instanceof Unchanged;
-    }
-  }
-
-  @Override
   public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
     try {
       InternalRef iref = store.loadSingle(ValueType.REF, InternalRefId.ofUnknownName(ref.getName()).getId());
-      if(iref.getType() == Type.BRANCH) {
+      if (iref.getType() == Type.BRANCH) {
         return ensureValidL1(iref.getBranch()).getId().toHash();
       } else {
         return iref.getTag().getCommit().toHash();
@@ -422,27 +387,34 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     final InternalRef toSave;
 
-    if(isTag) {
-      if(currentTarget.isPresent()) {
-        condition = condition.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(), expectedId.toAttributeValue()));
+    if (isTag) {
+      if (currentTarget.isPresent()) {
+        condition = condition.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(),
+            expectedId.toAttributeValue()));
       }
       toSave = new InternalTag(refId, namedRef.getName(), newId).asRef();
     } else {
-      if(currentTarget.isPresent()) {
-        condition = condition.and(ExpressionFunction.equals(ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), expectedId.toAttributeValue()));
+      if (currentTarget.isPresent()) {
+        condition = condition.and(
+            ExpressionFunction.equals(
+                ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(),
+                expectedId.toAttributeValue()));
       }
       toSave = new InternalBranch(name, l1).asRef();
     }
 
     try {
       store.put(ValueType.REF, toSave, Optional.of(condition));
-    } catch(ResourceNotFoundException ex) {
+    } catch (ResourceNotFoundException ex) {
       throw new ReferenceNotFoundException("The current tag", ex);
-    } catch(ConditionalCheckFailedException ex) {
-      if(currentTarget.isPresent()) {
-        throw new ReferenceNotFoundException(String.format("Unable to assign ref %s. Either the reference has changed or you are trying to overwrite a %s with a %s.", name, unexpectedType, expectedType), ex);
+    } catch (ConditionalCheckFailedException ex) {
+      if (currentTarget.isPresent()) {
+        throw new ReferenceNotFoundException(
+            String.format("Unable to assign ref %s. Either the reference has changed or you are trying to overwrite a %s with a %s.",
+                name, unexpectedType, expectedType), ex);
       } else {
-        throw new ReferenceNotFoundException(String.format("Unable to assign ref %s. You cannot overwrite a %s with a %s.", name, unexpectedType, expectedType), ex);
+        throw new ReferenceNotFoundException(
+            String.format("Unable to assign ref %s. You cannot overwrite a %s with a %s.", name, unexpectedType, expectedType), ex);
       }
     }
 
@@ -452,6 +424,14 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   @Override
   public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
     throw new IllegalStateException("Not yet implemented.");
+  }
+
+  @Override
+  public DATA getValue(Ref ref, Key key) {
+    InternalKey ikey = new InternalKey(key);
+    PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.singletonList(ikey));
+    store.load(tree.getLoadChain(this::ensureValidL1, true));
+    return tree.getValueForKey(ikey).orElse(null);
   }
 
   @Override
@@ -476,6 +456,48 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     throw new UnsupportedOperationException("Not yet implemented.");
   }
 
+  private class OperationHolder {
+    private final PartialTree<DATA> current;
+    private final PartialTree<DATA> expected;
+    private final Operation<DATA> operation;
+    private final InternalKey key;
 
+    public OperationHolder(PartialTree<DATA> current, PartialTree<DATA> expected, Operation<DATA> operation) {
+      this.current = Preconditions.checkNotNull(current);
+      this.expected = Preconditions.checkNotNull(expected);
+      this.operation = Preconditions.checkNotNull(operation);
+      this.key = new InternalKey(operation.getKey());
+    }
+
+    public Optional<InconsistentValue> verify() {
+      if (!operation.shouldMatchHash()) {
+        return Optional.empty();
+      }
+
+      Optional<Id> currentValueId = current.getValueIdForKey(key);
+      Optional<Id> expectedValueId = expected.getValueIdForKey(key);
+      if (!currentValueId.equals(expectedValueId)) {
+        return Optional.of(new InconsistentValue(operation.getKey(), expectedValueId, currentValueId));
+      }
+
+      return Optional.empty();
+    }
+
+    public void apply() {
+      if (operation instanceof Put) {
+        current.setValueForKey(key, Optional.of(((Put<DATA>) operation).getValue()));
+      } else if (operation instanceof Delete) {
+        current.setValueForKey(key, Optional.empty());
+      } else if (operation instanceof Unchanged) {
+        // no mutations required as the check was done on the current.
+      } else {
+        throw new IllegalStateException("Unknown operation type.");
+      }
+    }
+
+    public boolean isUnchangedOperation() {
+      return operation instanceof Unchanged;
+    }
+  }
 
 }

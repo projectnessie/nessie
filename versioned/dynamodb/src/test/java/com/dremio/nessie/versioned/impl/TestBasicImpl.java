@@ -162,7 +162,8 @@ class TestBasicImpl {
     impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
     //attempt commit using first hash which has conflicting key change.
-    assertThrows(InconsistentValueException.class, () -> impl.commit(branch, Optional.of(originalHash), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+    assertThrows(InconsistentValueException.class, () -> impl.commit(branch, Optional.of(originalHash),
+        "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
   }
 
   @Test
@@ -171,7 +172,8 @@ class TestBasicImpl {
     impl.create(BranchName.of("b2"), Optional.empty());
     impl.create(TagName.of("t1"), Optional.of(L1.EMPTY_ID.toHash()));
     impl.create(TagName.of("t2"), Optional.of(L1.EMPTY_ID.toHash()));
-    assertEquals(ImmutableSet.of("b1", "b2", "t1", "t2"), impl.getNamedRefs().map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));
+    assertEquals(ImmutableSet.of("b1", "b2", "t1", "t2"), impl.getNamedRefs()
+        .map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));
   }
 
   @Test
@@ -215,7 +217,8 @@ class TestBasicImpl {
     impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
     //attempt commit using first hash which has conflicting key change.
-    assertThrows(InconsistentValueException.class, () -> impl.commit(branch, Optional.of(originalHash), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+    assertThrows(InconsistentValueException.class, () -> impl.commit(branch, Optional.of(originalHash),
+        "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
   }
 
   @Test
@@ -258,7 +261,7 @@ class TestBasicImpl {
         .value(v1)
         .build()
         )
-        );
+    );
 
     assertEquals(v1, impl.getValue(branch, p1));
 
@@ -272,7 +275,7 @@ class TestBasicImpl {
         .value(v2)
         .build()
         )
-        );
+    );
 
     assertEquals(v2, impl.getValue(branch, p1));
     assertEquals(v1, impl.getValue(tag, p1));
@@ -307,7 +310,7 @@ class TestBasicImpl {
 
   }
 
-  private static final StoreWorker<String, String> WORKER = new StoreWorker<String, String>(){
+  private static final StoreWorker<String, String> WORKER = new StoreWorker<String, String>() {
 
     @Override
     public Serializer<String> getValueSerializer() {
@@ -327,7 +330,8 @@ class TestBasicImpl {
     @Override
     public CompletableFuture<Void> deleteAsset(AssetKey key) {
       throw new UnsupportedOperationException();
-    }};
+    }
+  };
 
   private static final Serializer<String> STRING_SERIALIZER = new Serializer<String>() {
 
@@ -339,5 +343,6 @@ class TestBasicImpl {
     @Override
     public String fromBytes(ByteString bytes) {
       return bytes.toString(StandardCharsets.UTF_8);
-    }};
+    }
+  };
 }

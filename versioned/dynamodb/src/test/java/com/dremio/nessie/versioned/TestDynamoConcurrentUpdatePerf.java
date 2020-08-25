@@ -57,7 +57,7 @@ public class TestDynamoConcurrentUpdatePerf {
     itemValues.put("id", KEY);
     List<Runnable> threads = new ArrayList<>();
     CountDownLatch latch = new CountDownLatch(COUNT);
-    for(int i =0; i < COUNT; i++ ) {
+    for (int i = 0; i < COUNT; i++) {
       itemValues.put("f" + Integer.toString(i), AttributeValue.builder().n("0").build());
       threads.add(new Worker(client, latch, 0, i));
     }
@@ -71,7 +71,8 @@ public class TestDynamoConcurrentUpdatePerf {
     threads.forEach(t -> service.submit(t));
 
     latch.await();
-    System.out.println(String.format("Total Completed %d updates, %d failed. Took %dms.", UPDATES*COUNT, failures.get(), sw.elapsed(TimeUnit.MILLISECONDS)));
+    System.out.println(String.format("Total Completed %d updates, %d failed. Took %dms.",
+        UPDATES * COUNT, failures.get(), sw.elapsed(TimeUnit.MILLISECONDS)));
   }
 
   private class Worker implements Runnable {
@@ -93,7 +94,7 @@ public class TestDynamoConcurrentUpdatePerf {
     public void run() {
       Thread.currentThread().setName("worker " + attribute);
       Stopwatch sw = Stopwatch.createStarted();
-      for(int i =0; i < UPDATES; i++) {
+      for (int i = 0; i < UPDATES; i++) {
         try {
           UpdateItemRequest update = UpdateItemRequest.builder()
               .key(ImmutableMap.<String, AttributeValue>of("id", KEY))
@@ -104,17 +105,17 @@ public class TestDynamoConcurrentUpdatePerf {
                   .put(":new", AttributeValue.builder().n(Integer.toString(currentValue + 1)).build())
                   .put(":current", AttributeValue.builder().n(Integer.toString(currentValue)).build())
                   .build())
-              //.attributeUpdates(ImmutableMap.<String, AttributeValueUpdate>of(Integer.toString(attribute), AttributeValueUpdate.builder().action(AttributeAction.PUT).value(AttributeValue.builder().n(Integer.toString(currentValue + 1)).build()).build()))
               .build();
           client.updateItem(update).get();
           currentValue++;
-        } catch(Exception ex) {
+        } catch (Exception ex) {
           ex.printStackTrace();
           failCount++;
           failures.incrementAndGet();
         }
       }
-      System.out.println(String.format("Completed %d updates, %d failed. Took %dms.", UPDATES, failCount, sw.elapsed(TimeUnit.MILLISECONDS)));
+      System.out.println(String.format("Completed %d updates, %d failed. Took %dms.",
+          UPDATES, failCount, sw.elapsed(TimeUnit.MILLISECONDS)));
       latch.countDown();
     }
 

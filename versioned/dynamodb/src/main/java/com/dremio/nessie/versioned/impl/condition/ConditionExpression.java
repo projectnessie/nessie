@@ -47,6 +47,11 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
     return ImmutableConditionExpression.builder().addFunctions(functions).build();
   }
 
+  /**
+   * AND the existing condition with this newly provided condition.
+   * @param function The function to AND with.
+   * @return The new compound expression.
+   */
   public ConditionExpression and(ExpressionFunction function) {
     return ImmutableConditionExpression.builder()
         .addAllFunctions(getFunctions())

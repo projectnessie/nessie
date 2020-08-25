@@ -75,8 +75,8 @@ class L1 extends MemoizedId {
   Id generateId() {
     return Id.build(h -> {
       h.putLong(HASH_SEED)
-       .putBytes(metadataId.getValue().asReadOnlyByteBuffer())
-       .putBytes(parentId.getValue().asReadOnlyByteBuffer());
+        .putBytes(metadataId.getValue().asReadOnlyByteBuffer())
+          .putBytes(parentId.getValue().asReadOnlyByteBuffer());
       tree.forEach(id -> h.putBytes(id.getValue().asReadOnlyByteBuffer()));
     });
   }
