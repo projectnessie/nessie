@@ -110,7 +110,7 @@ class PartialTree<V> {
    *
    * @return
    */
-  public List<PositionMutation> getL1Mutations() {
+  public List<PositionDelta> getL1Mutations() {
     checkMutable();
     return l1.get().getChanges();
   }

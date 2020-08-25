@@ -85,7 +85,7 @@ class L1 extends MemoizedId {
     return tree;
   }
 
-  public List<PositionMutation> getChanges() {
+  public List<PositionDelta> getChanges() {
     return tree.getChanges();
   }
 

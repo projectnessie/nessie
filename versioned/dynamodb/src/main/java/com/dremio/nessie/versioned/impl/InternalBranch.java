@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ import com.dremio.nessie.versioned.impl.condition.RemoveClause;
 import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -331,15 +333,15 @@ class InternalBranch extends MemoizedId {
 
     private UpdateState(List<L1> l1sToSave, List<Delete> deletes, L1 finalL1, int finalL1position, Id finalL1RandomId, InternalBranch initialBranch) {
       super();
-      if(finalL1position == 0 && !deletes.isEmpty()) {
-        throw new IllegalStateException("We should never have deletes if the final position is zero.");
-      }
       this.l1sToSave = Preconditions.checkNotNull(l1sToSave);
       this.deletes = Preconditions.checkNotNull(deletes);
       this.finalL1 = Preconditions.checkNotNull(finalL1);
       this.finalL1position = Preconditions.checkNotNull(finalL1position);
       this.finalL1RandomId = Preconditions.checkNotNull(finalL1RandomId);
       this.initialBranch = Preconditions.checkNotNull(initialBranch);
+      if(finalL1position == 0 && !deletes.isEmpty()) {
+        throw new IllegalStateException("We should never have deletes if the final position is zero.");
+      }
     }
 
     /**
@@ -350,10 +352,12 @@ class InternalBranch extends MemoizedId {
      * @param store The store to save to.
      * @param executor The executor to do any necessary clean up of the commit log.
      * @param int attempts The number of times we'll attempt to clean up the commit log.
+     * @param waitOnCollapse Whether or not the operation should wait on the final operation of collapsing the commit log succesfully
+     *        before returning/failing. If false, the final collapse will be done in a separate thread.
      * @return
      */
     @SuppressWarnings("unchecked")
-    CompletableFuture<InternalBranch> ensureAvailable(DynamoStore store, Executor executor, int attempts) {
+    CompletableFuture<InternalBranch> ensureAvailable(DynamoStore store, Executor executor, int attempts, boolean waitOnCollapse) {
       if(l1sToSave.isEmpty()) {
         saved = true;
         return CompletableFuture.completedFuture(initialBranch);
@@ -362,13 +366,28 @@ class InternalBranch extends MemoizedId {
       List<SaveOp<L1>> l1Saves = l1sToSave.stream().map(l1 -> new SaveOp<L1>(ValueType.L1, l1)).collect(Collectors.toList());
       store.save((List<SaveOp<?>>) (Object) l1Saves);
       saved = true;
-      return CompletableFuture.supplyAsync(() -> {
+
+      CompletableFuture<InternalBranch> future = CompletableFuture.supplyAsync(() -> {
         try {
           return collapseIntentionLog(this, store, initialBranch, attempts);
         } catch (ReferenceNotFoundException | ReferenceConflictException e) {
           throw new CompletionException(e);
         }
       }, executor);
+
+      if(!waitOnCollapse) {
+        return future;
+      }
+
+      try {
+        future.get();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      } catch (ExecutionException e) {
+        Throwables.throwIfUnchecked(e.getCause());
+        throw new IllegalStateException(e.getCause());
+      }
+      return future;
     }
 
     /**

@@ -74,4 +74,7 @@ public abstract class Key implements Comparable<Key> {
     return compareTo((Key) obj) == 0;
   }
 
+  public static Key of(String...elements) {
+    return ImmutableKey.builder().addElements(elements).build();
+  }
 }

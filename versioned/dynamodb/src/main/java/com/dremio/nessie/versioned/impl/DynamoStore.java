@@ -37,6 +37,7 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
@@ -54,6 +55,7 @@ import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
@@ -113,7 +115,7 @@ class DynamoStore implements AutoCloseable {
   private static final String REF_TABLE_NAME = "names";
   private static final String OBJ_TABLE_NAME = "objects";
 
-  private final int getPaginationSize = 25;
+  private final int paginationSize = 100;
 
   private DynamoDbClient client;
   private DynamoDbAsyncClient async;
@@ -135,6 +137,7 @@ class DynamoStore implements AutoCloseable {
     putIfAbsent(ValueType.L1, L1.EMPTY);
     putIfAbsent(ValueType.L2, L2.EMPTY);
     putIfAbsent(ValueType.L3, L3.EMPTY);
+
   }
 
   public void close() {
@@ -144,15 +147,15 @@ class DynamoStore implements AutoCloseable {
   /**
    * Load the collection of loadsteps in order.
    *
-   * This Will fail if any load within any step. Consumers are informed as the
+   * <p>This Will fail if any load within any step. Consumers are informed as the
    * records are loaded so this load may leave inputs in a partial state.
    *
-   * @param loadstep
+   * @param loadstep The step to load
    */
   void load(LoadStep loadstep) {
 
     while (true) { // for each load step in the chain.
-      List<ListMultimap<String, LoadOp<?>>> stepPages = loadstep.paginateLoads(getPaginationSize);
+      List<ListMultimap<String, LoadOp<?>>> stepPages = loadstep.paginateLoads(paginationSize);
 
       stepPages.forEach(l -> {
         Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(table -> table, table -> {
@@ -196,6 +199,16 @@ class DynamoStore implements AutoCloseable {
     }
   }
 
+  void deleteTables() {
+    Arrays.stream(ValueType.values()).map(v -> v.getTableName()).collect(Collectors.toSet()).forEach(table -> {
+      try {
+        client.deleteTable(DeleteTableRequest.builder().tableName(table).build());
+      } catch (ResourceNotFoundException ex) {
+        // ignore.
+      }
+    });
+
+  }
   @SuppressWarnings("unchecked")
   <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
     Preconditions.checkArgument(type.getObjectClass().equals(value.getClass()), "ValueType %s doesn't match expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
@@ -236,10 +249,11 @@ class DynamoStore implements AutoCloseable {
 
   void save(List<SaveOp<?>> ops) {
     List<CompletableFuture<BatchWriteItemResponse>> saves =  new ArrayList<>();
-    for(int i = 0; i < ops.size(); i += getPaginationSize) {
+    for(int i = 0; i < ops.size(); i += paginationSize) {
 
-      ListMultimap<String, SaveOp<?>> mm = Multimaps.index(ops.subList(i, Math.min(i + getPaginationSize, ops.size())), l -> l.getType().getTableName());
+      ListMultimap<String, SaveOp<?>> mm = Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> l.getType().getTableName());
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save -> {
+        System.out.println(save.getType().name() + ": " + save.getValue().getId().toHash().asString());
         return WriteRequest.builder().putRequest(PutRequest.builder().item(save.toAttributeValues()).build()).build();
       });
       BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
@@ -251,13 +265,21 @@ class DynamoStore implements AutoCloseable {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
+      Throwables.throwIfUnchecked(e.getCause());
       throw new RuntimeException(e.getCause());
     }
   }
 
   @SuppressWarnings("unchecked")
   <V> V loadSingle(ValueType valueType, Id id) {
-    GetItemResponse response = client.getItem(GetItemRequest.builder().tableName(valueType.getTableName()).key(ImmutableMap.of(KEY_NAME, id.toAttributeValue())).consistentRead(true).build());
+    GetItemResponse response = client.getItem(GetItemRequest.builder()
+        .tableName(valueType.getTableName())
+        .key(ImmutableMap.of(KEY_NAME, id.toAttributeValue()))
+        .consistentRead(true)
+        .build());
+    if(!response.hasItem()) {
+      throw ResourceNotFoundException.builder().message("Unable to load item.").build();
+    }
     return (V) valueType.schema.mapToItem(response.item());
   }
 
@@ -316,8 +338,10 @@ class DynamoStore implements AutoCloseable {
   }
 
   Stream<InternalRef> getRefs() {
-    // TODO: pagination.
-    return client.scan(ScanRequest.builder().tableName(ValueType.REF.getTableName()).build()).items().stream().map(m -> ValueType.REF.<InternalRef>getSchema().mapToItem(m));
+    return client.scanPaginator(ScanRequest.builder().tableName(ValueType.REF.getTableName()).build())
+        .stream()
+        .flatMap(r -> r.items().stream())
+        .map(i -> ValueType.REF.<InternalRef>getSchema().mapToItem(i));
   }
 
   private final void createIfMissing(String name) {

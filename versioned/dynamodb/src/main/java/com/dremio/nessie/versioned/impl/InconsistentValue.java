@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.ReferenceConflictException;
 
 public class InconsistentValue {
 
@@ -33,7 +34,7 @@ public class InconsistentValue {
     this.actual = actual;
   }
 
-  public static class InconsistentValueException extends RuntimeException {
+  public static class InconsistentValueException extends ReferenceConflictException {
     private final List<InconsistentValue> inconsistentValues;
 
     public InconsistentValueException(List<InconsistentValue> inconsistentValues) {

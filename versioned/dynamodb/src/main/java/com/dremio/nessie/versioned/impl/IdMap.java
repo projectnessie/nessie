@@ -15,26 +15,24 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
+
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
- * Maintains a map of ids to positions. The map is immutable. Each operation, generates a new map. All maps keep track
+ * Maintains a map of positions to ids. The map is immutable. Each operation, generates a new map. All maps keep track
  * of their original state so one can see what items changed over time.
  */
 class IdMap implements Iterable<Id> {
 
-  private final PositionMutation[] deltas;
+  private final PositionDelta[] deltas;
 
-  private IdMap(PositionMutation[] deltas) {
+  private IdMap(PositionDelta[] deltas) {
     this.deltas = deltas;
   }
 
@@ -43,9 +41,9 @@ class IdMap implements Iterable<Id> {
   }
 
   IdMap(int size, Id fill) {
-    deltas = new PositionMutation[size];
+    deltas = new PositionDelta[size];
     for (int i = 0; i < size; i++) {
-      deltas[i] = PositionMutation.builder().oldId(fill).newId(fill).position(i).build();
+      deltas[i] = PositionDelta.builder().oldId(fill).newId(fill).position(i).build();
     }
   }
 
@@ -55,15 +53,22 @@ class IdMap implements Iterable<Id> {
   }
 
   private void check(int position) {
-    Preconditions.checkArgument(position < deltas.length);
-    Preconditions.checkArgument(position >= 0);
+    if(position >= deltas.length || position < 0) {
+      throw new IndexOutOfBoundsException(String.format("Position must be [0..%d), was actually %d.", deltas.length, position));
+    }
   }
 
+  /**
+   * Create a copy of this map that applies the given update.
+   * @param position The position to update.
+   * @param newId The new value to set.
+   * @return A copy of this map with the mutation applied.
+   */
   public IdMap setId(int position, Id newId) {
     check(position);
-    PositionMutation[] newDeltas = new PositionMutation[deltas.length];
+    PositionDelta[] newDeltas = new PositionDelta[deltas.length];
     System.arraycopy(deltas, 0, newDeltas, 0, deltas.length);
-    newDeltas[position] = ImmutablePositionMutation.builder().from(newDeltas[position]).newId(newId).build();
+    newDeltas[position] = PositionDelta.builder().from(newDeltas[position]).newId(newId).build();
     return new IdMap(newDeltas);
   }
 
@@ -73,59 +78,39 @@ class IdMap implements Iterable<Id> {
 
   @Override
   public Iterator<Id> iterator() {
-    return Arrays.stream(deltas).map(d -> d.getNewId()).iterator();
+    return Iterators.unmodifiableIterator(Arrays.stream(deltas).map(d -> d.getNewId()).iterator());
   }
 
   /**
    * Get any changes that have been applied to the tree.
-   * @return
+   * @return A list of positions that have been mutated from the base tree.
    */
-  List<PositionMutation> getChanges() {
-    return Arrays.stream(deltas).filter(PositionMutation::isDirty).collect(Collectors.toList());
+  List<PositionDelta> getChanges() {
+    return Arrays.stream(deltas).filter(PositionDelta::isDirty).collect(Collectors.toList());
   }
 
   AttributeValue toAttributeValue() {
     return AttributeValue.builder().l(Arrays.stream(deltas).map(p -> p.getNewId().toAttributeValue()).collect(Collectors.toList())).build();
   }
 
+  /**
+   * Deserialize a map from a given input value.
+   * @param value The value to deserialize.
+   * @param size The expected size of the map to be loaded.
+   * @return The deserialized map.
+   */
   public static IdMap fromAttributeValue(AttributeValue value, int size) {
-    PositionMutation[] deltas = new PositionMutation[size];
+    PositionDelta[] deltas = new PositionDelta[size];
     List<AttributeValue> items = value.l();
     Preconditions.checkArgument(items.size() == size, "Expected size %s but actual size was %s.", size, items.size());
 
     int i = 0;
     for (AttributeValue v : items) {
-      deltas[i] = PositionMutation.of(i, Id.fromAttributeValue(v));
+      deltas[i] = PositionDelta.of(i, Id.fromAttributeValue(v));
       i++;
     }
 
     return new IdMap(deltas);
-  }
-
-
-  void applyToFields(Object obj, List<Field> fields) {
-    assert size() == fields.size();
-    int i =0;
-    try {
-      for(Id id : this) {
-        fields.get(i).set(obj, id.getValue().toByteArray());
-        i++;
-      }
-    } catch (IllegalArgumentException | IllegalAccessException e) {
-      throw new IllegalStateException("Failure while generating bean translation.");
-    }
-  }
-
-  static IdMap of(Object obj, List<Field> fields) {
-    IdMap map = new IdMap(L1.SIZE);
-    try {
-      for(int i =0; i < L1.SIZE; i++) {
-        map.setId(i, Id.of((byte[]) fields.get(i).get(obj)));
-      }
-      return map;
-    } catch (IllegalArgumentException | IllegalAccessException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   @Override
@@ -148,20 +133,4 @@ class IdMap implements Iterable<Id> {
     return Arrays.equals(deltas, other.deltas);
   }
 
-  static ImmutableList<Field> getNumberedFields(Class<?> clazz, int size) {
-    Map<Integer, Field> mappedFields = Arrays.stream(clazz.getDeclaredFields())
-        .filter(f -> !Modifier.isStatic(f.getModifiers()))
-        .collect(
-        Collectors.toMap(f -> {
-          String name = f.getName();
-          return Integer.parseInt(name.substring(1, name.length()));
-        },
-     f -> f));
-    ImmutableList.Builder<Field> builder = ImmutableList.builder();
-    for (int i =0; i < size; i++) {
-      builder.add(Preconditions.checkNotNull(mappedFields.get(i)));
-    }
-
-    return builder.build();
-  }
 }

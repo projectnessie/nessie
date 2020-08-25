@@ -28,4 +28,8 @@ public interface Unchanged<V> extends Operation<V> {
   default boolean shouldMatchHash() {
     return true;
   }
+
+  static <V> Unchanged<V> of(Key key) {
+    return ImmutableUnchanged.<V>builder().key(key).build();
+  }
 }

@@ -23,4 +23,8 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface TagName extends NamedRef {
   String getName();
+
+  static TagName of(String name) {
+    return ImmutableTagName.builder().name(name).build();
+  }
 }
