@@ -45,3 +45,4 @@ node_modules/
 .factorypath
 .project
 .settings
+.checkstyle

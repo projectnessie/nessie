@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -190,7 +189,7 @@ class ITTestBasicImpl {
     impl.commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, v1), Put.of(k2, v2)));
     impl.commit(branch, Optional.empty(), c2, ImmutableList.of(Put.of(k1, v1p)));
     List<WithHash<String>> commits = impl.getCommits(branch).collect(Collectors.toList());
-    assertEquals(ImmutableList.of(c1, c2), commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
+    assertEquals(ImmutableList.of(c2, c1), commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
 
     // changed across commits
     assertEquals(v1, impl.getValue(commits.get(1).getHash(), k1));
@@ -228,9 +227,8 @@ class ITTestBasicImpl {
     assertEquals(0L, impl.getCommits(branch).count());
   }
 
-  @Disabled
   @Test
-  void first() throws Exception {
+  void completeFlow() throws Exception {
     DynamoStore store = new DynamoStore();
     store.start();
     VersionStore<String, String> impl = new DynamoVersionStore<>(WORKER, store, true);
