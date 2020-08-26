@@ -25,10 +25,8 @@ import java.util.stream.Stream;
 
 import javax.crypto.spec.SecretKeySpec;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.dremio.nessie.jwt.KeyGenerator;
+import com.google.common.base.Throwables;
 
 /**
  * Read key from Docker secret stored at /run/secrets/nessie_key.
@@ -37,9 +35,7 @@ import com.dremio.nessie.jwt.KeyGenerator;
  * </p>
  */
 public class SecretKeyGenerator implements KeyGenerator {
-
-  private static final Logger logger = LoggerFactory.getLogger(SecretKeyGenerator.class);
-
+  
   private static final Key KEY;
 
   static {
@@ -53,7 +49,7 @@ public class SecretKeyGenerator implements KeyGenerator {
       byte[] decodedKey = Base64.getDecoder().decode(keyStr);
       return new SecretKeySpec(decodedKey, 0, decodedKey.length, "HmacSHA512");
     } catch (Exception e) {
-      logger.error("Unable to find secret file", e);
+      Throwables.propagateIfPossible(e, RuntimeException.class);
       throw new RuntimeException("Unable to read " + keyPath, e);
     }
   }
