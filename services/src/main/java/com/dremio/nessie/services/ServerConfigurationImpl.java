@@ -163,6 +163,7 @@ public class ServerConfigurationImpl implements ServerConfiguration {
     private final boolean enableLoginEndpoint;
     private final boolean enableUsersEndpoint;
     private final String authFilterClassName;
+    private final String keyGeneratorClassName;
 
     /**
      * Constructor for Jackson.
@@ -175,11 +176,10 @@ public class ServerConfigurationImpl implements ServerConfiguration {
                                        @JsonProperty("enableUsersEndpoint")
                                          boolean enableUsersEndpoint,
                                        @JsonProperty("authFilterClassName")
-                                       String authFilterClassName) {
-      this.userServiceClassName = userServiceClassName;
-      this.enableLoginEndpoint = enableLoginEndpoint;
-      this.enableUsersEndpoint = enableUsersEndpoint;
-      this.authFilterClassName = authFilterClassName;
+                                         String authFilterClassName,
+                                       @JsonProperty("keyGeneratorClassName")
+                                         String keyGeneratorClassName) {
+      this(userServiceClassName, enableLoginEndpoint, enableUsersEndpoint, authFilterClassName, keyGeneratorClassName, false);
     }
 
     /**
@@ -189,7 +189,35 @@ public class ServerConfigurationImpl implements ServerConfiguration {
       this("com.dremio.nessie.server.auth.BasicUserService",
            true,
            true,
-           "com.dremio.nessie.server.auth.NessieAuthFilter");
+           "com.dremio.nessie.server.auth.NessieAuthFilter",
+           "com.dremio.nessie.server.auth.BasicKeyGenerator"
+      );
+    }
+
+    /**
+     * construct service config. Including any jvm or env args.
+     */
+    public ServerAuthConfigurationImpl(String userServiceClassName,
+                                       boolean enableLoginEndpoint,
+                                       boolean enableUsersEndpoint,
+                                       String authFilterClassName,
+                                       String keyGeneratorClassName,
+                                       boolean skip) {
+      if (skip) {
+        this.userServiceClassName = userServiceClassName;
+        this.enableLoginEndpoint = enableLoginEndpoint;
+        this.enableUsersEndpoint = enableUsersEndpoint;
+        this.authFilterClassName = authFilterClassName;
+        this.keyGeneratorClassName = keyGeneratorClassName;
+      } else {
+        ServerAuthConfigurationImpl service =
+            jvmArgsOverride(userServiceClassName, enableLoginEndpoint, enableUsersEndpoint, authFilterClassName, keyGeneratorClassName);
+        this.userServiceClassName = service.userServiceClassName;
+        this.enableLoginEndpoint = service.enableLoginEndpoint;
+        this.enableUsersEndpoint = service.enableUsersEndpoint;
+        this.authFilterClassName = service.authFilterClassName;
+        this.keyGeneratorClassName = service.keyGeneratorClassName;
+      }
     }
 
     @Override
@@ -210,6 +238,41 @@ public class ServerConfigurationImpl implements ServerConfiguration {
     @Override
     public String getAuthFilterClassName() {
       return authFilterClassName;
+    }
+
+    @Override
+    public String getKeyGeneratorClassName() {
+      return keyGeneratorClassName;
+    }
+
+    private static ServerAuthConfigurationImpl jvmArgsOverride(String userServiceClassName,
+                                                               boolean enableLoginEndpoint,
+                                                               boolean enableUsersEndpoint,
+                                                               String authFilterClassName,
+                                                               String keyGeneratorClassName) {
+
+      String userServiceClassNameVal = getProperty("nessie.auth.userServiceClassName",
+                                                   "NESSIE_AUTH_USER_SERVICE_CLASSNAME",
+                                                   String.valueOf(userServiceClassName));
+      String enableLoginEndpointVal = getProperty("nessie.auth.enableLoginEndpoint",
+                                                  "NESSIE_AUTH_ENABLE_LOGIN_ENDPOINT",
+                                                  String.valueOf(enableLoginEndpoint));
+      String enableUsersEndpointVal = getProperty("nessie.auth.enableUsersEndpoint",
+                                                  "NESSIE_AUTH_ENABLE_USERS_ENDPOINT",
+                                                  String.valueOf(enableUsersEndpoint));
+      String authFilterClassNameVal = getProperty("nessie.auth.authFilterClassName",
+                                                  "NESSIE_AUTH_AUTH_FILTER_CLASSNAME",
+                                                  String.valueOf(authFilterClassName));
+      String keyGeneratorClassNameVal = getProperty("nessie.auth.keyGeneratorClassName",
+                                                    "NESSIE_AUTH_KEY_GENERATOR_CLASSNAME",
+                                                    String.valueOf(keyGeneratorClassName));
+
+      return new ServerAuthConfigurationImpl(userServiceClassNameVal,
+                                             Boolean.parseBoolean(enableLoginEndpointVal),
+                                             Boolean.parseBoolean(enableUsersEndpointVal),
+                                             authFilterClassNameVal,
+                                             keyGeneratorClassNameVal,
+                                             true);
     }
   }
 

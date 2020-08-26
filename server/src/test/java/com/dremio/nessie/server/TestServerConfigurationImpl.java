@@ -160,6 +160,11 @@ public class TestServerConfigurationImpl implements ServerConfiguration {
     public String getAuthFilterClassName() {
       return "com.dremio.nessie.server.auth.NessieAuthFilter";
     }
+
+    @Override
+    public String getKeyGeneratorClassName() {
+      return "com.dremio.nessie.server.auth.BasicKeyGenerator";
+    }
   }
 
   public static class ServiceConfigurationImpl implements ServiceConfiguration {

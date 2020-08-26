@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.Key;
 import java.util.Base64;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -42,18 +43,19 @@ public class SecretKeyGenerator implements KeyGenerator {
   private static final Key KEY;
 
   static {
-    StringBuilder contentBuilder = new StringBuilder();
-    Key key = new BasicKeyGenerator().generateKey();
+    KEY = readKey();
+  }
+
+  private static Key readKey() {
     String keyPath = System.getenv().getOrDefault("NESSIE_JWT_KEY_FILE", "/run/secrets/nessie_key");
-    try (Stream<String> stream = Files.lines(Paths.get(keyPath), StandardCharsets.US_ASCII)) {
-      stream.forEach(contentBuilder::append);
-      String keyStr = contentBuilder.toString();
+    try (Stream<String> stream = Files.lines(Paths.get(keyPath), StandardCharsets.UTF_8)) {
+      String keyStr = stream.collect(Collectors.joining());
       byte[] decodedKey = Base64.getDecoder().decode(keyStr);
-      key = new SecretKeySpec(decodedKey, 0, decodedKey.length, "HmacSHA512");
+      return new SecretKeySpec(decodedKey, 0, decodedKey.length, "HmacSHA512");
     } catch (Exception e) {
-      logger.warn("Unable to find secret file, falling back to basic key generator", e);
+      logger.error("Unable to find secret file", e);
+      throw new RuntimeException("Unable to read " + keyPath, e);
     }
-    KEY = key;
   }
 
   @Override

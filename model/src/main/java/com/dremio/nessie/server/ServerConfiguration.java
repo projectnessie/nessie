@@ -53,6 +53,8 @@ public interface ServerConfiguration {
     boolean getEnableUsersEndpoint();
 
     String getAuthFilterClassName();
+
+    String getKeyGeneratorClassName();
   }
 
   /**

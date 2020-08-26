@@ -38,7 +38,7 @@ public class ConfigurationProducer {
   public ServerConfiguration configuration() {
     return new ServerConfigurationImpl(
       new ServerDatabaseConfigurationImpl("", new HashMap<>()),
-      new ServerAuthConfigurationImpl("", false, false, ""),
+      new ServerAuthConfigurationImpl("", false, false, "", ""),
       new ServiceConfigurationImpl(19120, false, false, false, true),
       "master"
     );
