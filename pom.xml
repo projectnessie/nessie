@@ -480,6 +480,7 @@ limitations under the License.
             <svg>XML_STYLE</svg>
             <mvnw>SCRIPT_STYLE</mvnw>
             <jsx>SLASHSTAR_STYLE</jsx>
+            <jmx>XML_STYLE</jmx>
           </mapping>
         </configuration>
         <executions>

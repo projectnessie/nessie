@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-version: '3'
+version: '3.8'
 services:
   grafana:
     image: grafana/grafana
@@ -68,8 +68,8 @@ services:
       - COLLECTOR_ZIPKIN_HTTP_PORT=9411
   nessie:
     image: nessie:latest
-    ports:
-      - 19120-19130:19120
+    expose:
+      - "19120"
     depends_on:
       - localstack
     environment:
@@ -79,6 +79,8 @@ services:
       - AWS_DEFAULT_REGION=us-west-2
       - AWS_ACCESS_KEY_ID=xxx
       - AWS_SECRET_ACCESS_KEY=xxx
+    secrets:
+      - nessie_key
   localstack:
     image: localstack/localstack
     ports:
@@ -96,3 +98,6 @@ services:
       - TEST_AWS_ACCOUNT_ID=384816939103
     volumes:
       - "/home/ryan/aws-data:/tmp/localstack"
+secrets:
+  nessie_key:
+    file: perftest-key.txt
