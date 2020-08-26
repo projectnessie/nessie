@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2017-2019 Dremio Corporation
+ * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,11 @@
  */
 package com.dremio.nessie.serverless;
 
+import com.dremio.nessie.error.NessieError;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.NessieConfiguration;
+import com.dremio.nessie.model.Table;
+import com.dremio.nessie.model.User;
 import com.google.common.base.Joiner;
 
 import io.quarkus.deployment.annotations.BuildStep;
@@ -26,15 +31,14 @@ public class NessieModelProcessor {
 
   @BuildStep
   ReflectiveClassBuildItem reflection() {
-    String packageName = "com.dremio.nessie.model";
-    String[] classNames = {"Branch", "Table", "User", "NessieConfiguration"};
-    String[] allClassNames = new String[5];
-    int i = 0;
-    for (String s : classNames) {
-      allClassNames[i++] = DOT.join(packageName, s);
-    }
-    allClassNames[i] = "com.dremio.nessie.error.NessieError";
-    return new ReflectiveClassBuildItem(true, true, true, allClassNames);
+    Class[] allClasss = new Class[]{
+      Table.class,
+      Branch.class,
+      User.class,
+      NessieConfiguration.class,
+      NessieError.class
+    };
+    return new ReflectiveClassBuildItem(true, true, true, allClasss);
   }
 
 
