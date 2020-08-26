@@ -78,5 +78,9 @@
       <groupId>io.opentracing.contrib</groupId>
       <artifactId>opentracing-jaxrs2-discovery</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.opentracing.contrib</groupId>
+      <artifactId>opentracing-jaxrs2</artifactId>
+    </dependency>
   </dependencies>
 </project>
