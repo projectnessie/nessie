@@ -107,7 +107,7 @@
     <dependency>
       <groupId>io.opentracing</groupId>
       <artifactId>opentracing-noop</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>DynamoDBLocal</artifactId>
