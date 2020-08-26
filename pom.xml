@@ -69,6 +69,7 @@
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jjwt.version>0.11.1</jjwt.version>
     <jgit.version>5.7.0.202003110725-r</jgit.version>
+    <jmeter.version>5.3</jmeter.version>
     <junit.version>5.6.2</junit.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.12.2</protobuf.version>
@@ -237,7 +238,7 @@
             </goals>
           </execution>
         </executions>
-      </plugin>    
+      </plugin>
       <plugin>
         <groupId>kr.motd.maven</groupId>
         <artifactId>os-maven-plugin</artifactId>
@@ -994,6 +995,22 @@ limitations under the License.
         <version>${quarkus.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.jmeter</groupId>
+        <artifactId>ApacheJMeter_core</artifactId>
+        <version>${jmeter.version}</version>
+        <exclusions>
+          <exclusion>
+            <artifactId>commons-logging</artifactId>
+            <groupId>commons-logging</groupId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.jmeter</groupId>
+        <artifactId>ApacheJMeter_java</artifactId>
+        <version>${jmeter.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

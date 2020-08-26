@@ -30,7 +30,7 @@
   <artifactId>nessie-perf-test</artifactId>
 
   <properties>
-    <jmeter.version>5.3</jmeter.version>
+
     <nessie.jmeter.users>10</nessie.jmeter.users>
     <nessie.jmeter.queries>100</nessie.jmeter.queries>
     <nessie.jmeter.path>http://localhost:19131/api/v1</nessie.jmeter.path>
@@ -54,19 +54,11 @@
     <dependency>
       <groupId>org.apache.jmeter</groupId>
       <artifactId>ApacheJMeter_core</artifactId>
-      <version>${jmeter.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>commons-logging</artifactId>
-          <groupId>commons-logging</groupId>
-        </exclusion>
-      </exclusions>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.jmeter</groupId>
       <artifactId>ApacheJMeter_java</artifactId>
-      <version>${jmeter.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
