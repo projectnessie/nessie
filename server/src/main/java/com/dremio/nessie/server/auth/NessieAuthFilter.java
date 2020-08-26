@@ -26,6 +26,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.dremio.nessie.auth.User;
 import com.dremio.nessie.auth.UserService;
 import com.dremio.nessie.services.auth.Secured;
@@ -37,7 +40,7 @@ import com.dremio.nessie.services.auth.Secured;
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class NessieAuthFilter implements ContainerRequestFilter {
-
+  private static final Logger logger = LoggerFactory.getLogger(NessieAuthFilter.class);
   private final UserService userService;
 
   @Inject
@@ -49,11 +52,10 @@ public class NessieAuthFilter implements ContainerRequestFilter {
   public void filter(ContainerRequestContext requestContext) {
     try {
       final String token = getTokenFromAuthHeaderOrQueryParameter(requestContext);
-
       User user = userService.validate(token);
-
       requestContext.setSecurityContext(new NessieSecurityContext(user, requestContext));
     } catch (NotAuthorizedException e) {
+      logger.error("unauthorized", e);
       requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).build());
     }
   }
