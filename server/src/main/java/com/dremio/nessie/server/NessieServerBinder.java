@@ -154,10 +154,8 @@ public class NessieServerBinder extends AbstractBinder {
       try {
         Class<?> clazz = Class.forName(configuration.getAuthenticationConfiguration().getKeyGeneratorClassName());
         return (KeyGenerator) clazz.getConstructor().newInstance();
-      } catch (ClassNotFoundException | NoSuchMethodException
-          | InvocationTargetException | InstantiationException
-          | IllegalAccessException e) {
-        return new BasicKeyGenerator();
+      } catch (ReflectiveOperationException e) {
+        throw new RuntimeException(e);
       }
 
     }

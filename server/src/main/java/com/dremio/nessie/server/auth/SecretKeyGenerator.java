@@ -49,7 +49,7 @@ public class SecretKeyGenerator implements KeyGenerator {
       byte[] decodedKey = Base64.getDecoder().decode(keyStr);
       return new SecretKeySpec(decodedKey, 0, decodedKey.length, "HmacSHA512");
     } catch (Exception e) {
-      Throwables.propagateIfPossible(e, RuntimeException.class);
+      Throwables.throwIfUnchecked(e);
       throw new RuntimeException("Unable to read " + keyPath, e);
     }
   }
