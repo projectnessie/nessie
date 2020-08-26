@@ -17,7 +17,6 @@ package com.dremio.nessie.perftest;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import org.apache.jmeter.config.Arguments;
@@ -61,7 +60,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     MERGE
   }
 
-  private static final AtomicReference<NessieClient> CLIENT = new AtomicReference<>();
+  private NessieClient client;
   private String path;
   private String branch;
   private String baseBranch;
@@ -71,16 +70,15 @@ public class NessieSampler extends AbstractJavaSamplerClient {
    * Create a threadlocal nessie client. Multiple threads are run in the same JVM and they each get a client.
    */
   private synchronized NessieClient nessieClient() {
-    //path will be the same for a thread so we don't have to cache per path/thread tuple.
-    if (CLIENT.get() == null) {
-      CLIENT.set(new NessieClient(AuthType.BASIC, path, "admin_user", "test123"));
+    if (client == null) {
+      client = new NessieClient(AuthType.BASIC, path, "admin_user", "test123");
       try {
-        CLIENT.get().createBranch(ImmutableBranch.builder().name("master").build());
+        client.createBranch(ImmutableBranch.builder().name("master").build());
       } catch (Exception t) {
         //pass - likely already created master
       }
     }
-    return CLIENT.get();
+    return client;
   }
 
   /**
