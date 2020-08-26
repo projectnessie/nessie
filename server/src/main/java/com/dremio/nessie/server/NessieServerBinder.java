@@ -16,7 +16,6 @@
 
 package com.dremio.nessie.server;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -36,7 +35,6 @@ import com.dremio.nessie.jgit.JgitBranchController;
 import com.dremio.nessie.jwt.KeyGenerator;
 import com.dremio.nessie.model.User;
 import com.dremio.nessie.model.VersionedWrapper;
-import com.dremio.nessie.server.auth.BasicKeyGenerator;
 import com.dremio.nessie.server.auth.NessieSecurityContext;
 import com.dremio.nessie.server.auth.UserServiceDbBackend;
 
