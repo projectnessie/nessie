@@ -31,7 +31,7 @@ public class NessieModelProcessor {
 
   @BuildStep
   ReflectiveClassBuildItem reflection() {
-    Class[] allClasss = new Class[]{
+    Class[] allClasss = {
       Table.class,
       Branch.class,
       User.class,
