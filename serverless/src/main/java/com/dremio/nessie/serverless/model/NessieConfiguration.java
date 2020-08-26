@@ -14,33 +14,14 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.model;
+package com.dremio.nessie.serverless.model;
 
-import javax.annotation.Nullable;
-
-import org.immutables.value.Value;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 /**
  * configuration object to tell a client how a server is configured.
  */
-@Value.Immutable
-@JsonSerialize(as = ImmutableNessieConfiguration.class)
-@JsonDeserialize(as = ImmutableNessieConfiguration.class)
-public abstract class NessieConfiguration {
-
-  @JsonIgnore
-  private static final String CURRENT_VERSION = "1.0";
-
-  @Nullable
-  public abstract String getDefaultBranch();
-
-  @Value.Default
-  public String getVersion() {
-    return CURRENT_VERSION;
-  }
+@RegisterForReflection(targets = com.dremio.nessie.model.NessieConfiguration.class)
+public class NessieConfiguration {
 
 }
