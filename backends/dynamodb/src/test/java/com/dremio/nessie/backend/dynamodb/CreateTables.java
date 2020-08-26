@@ -92,8 +92,8 @@ public class CreateTables {
    * </p>
    */
   public static void main(String[] args) {
-    String region = "us-west-2";
-    String endpoint = "http://localhost:8000";
+    String region = args[0];
+    String endpoint = args[1];
     CreateTables tables = new CreateTables(region, endpoint);
     for (String table : new String[]{"GitObject", "GitRef"}) {
       try {
