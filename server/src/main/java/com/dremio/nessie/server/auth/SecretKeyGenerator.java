@@ -35,7 +35,7 @@ import com.google.common.base.Throwables;
  * </p>
  */
 public class SecretKeyGenerator implements KeyGenerator {
-  
+
   private static final Key KEY;
 
   static {
