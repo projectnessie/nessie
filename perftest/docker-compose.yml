@@ -76,6 +76,7 @@ services:
       - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
       - NESSIE_DB_PROPS_REGION=us-west-2
       - NESSIE_DB_PROPS_ENDPOINT=http://localstack:4569
+      - NESSIE_AUTH_KEY_GENERATOR_CLASSNAME=com.dremio.nessie.server.auth.SecretKeyGenerator
       - AWS_DEFAULT_REGION=us-west-2
       - AWS_ACCESS_KEY_ID=xxx
       - AWS_SECRET_ACCESS_KEY=xxx
