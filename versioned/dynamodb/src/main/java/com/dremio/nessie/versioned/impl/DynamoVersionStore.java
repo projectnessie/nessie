@@ -94,12 +94,13 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
     if (!targetHash.isPresent()) {
       if (ref instanceof TagName) {
         throw new ReferenceNotFoundException("You must provide a target hash to create a tag.");
-      } else {
-        InternalBranch branch = new InternalBranch(ref.getName());
-        if (!store.putIfAbsent(ValueType.REF, branch)) {
-          throw new ReferenceConflictException("A branch or tag already exists with that name.");
-        }
       }
+
+      InternalBranch branch = new InternalBranch(ref.getName());
+      if (!store.putIfAbsent(ValueType.REF, branch)) {
+        throw new ReferenceConflictException("A branch or tag already exists with that name.");
+      }
+
       return;
     }
 
@@ -111,16 +112,9 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
       throw new ReferenceNotFoundException("Unable to find target hash.", ex);
     }
 
-    if (ref instanceof TagName) {
-      InternalTag tag = new InternalTag(null, ref.getName(), l1.getId());
-      if (!store.putIfAbsent(ValueType.REF, tag)) {
-        throw new ReferenceConflictException("A branch or tag already exists with that name.");
-      }
-    } else {
-      InternalBranch branch = new InternalBranch(ref.getName(), l1);
-      if (!store.putIfAbsent(ValueType.REF, branch)) {
-        throw new ReferenceConflictException("A branch or tag already exists with that name.");
-      }
+    InternalRef newRef = ref instanceof TagName ? new InternalTag(null, ref.getName(), l1.getId()) : new InternalBranch(ref.getName(), l1);
+    if (!store.putIfAbsent(ValueType.REF, newRef)) {
+      throw new ReferenceConflictException("A branch or tag already exists with that name.");
     }
   }
 
@@ -154,6 +148,9 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
         throw new ReferenceConflictException(message);
       }
     } else {
+
+      // set the condition that the commit log is in a clean state, with a single saved commit and that commit is pointing
+      // to the desired hash.
       if (hash.isPresent()) {
         c = c.and(ExpressionFunction.equals(
             ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toAttributeValue()));
@@ -189,9 +186,9 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
 
       List<OperationHolder> holders = ops.stream().map(o -> new OperationHolder(current, expected, o)).collect(Collectors.toList());
       List<InconsistentValue> mismatches = holders.stream()
-          .map(o -> o.verify())
+          .map(OperationHolder::verify)
           .filter(Optional::isPresent)
-          .map(o -> o.get())
+          .map(Optional::get)
           .collect(Collectors.toList());
       if (!mismatches.isEmpty()) {
         throw new InconsistentValue.InconsistentValueException(mismatches);
@@ -288,7 +285,8 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
         public boolean hasNext() {
 
           if (startingL1.getMetadataId().isEmpty()) {
-            // no point in working if the
+            // The only way for a metadata object to have the empty hash is if it is not actually defined.
+            // This means we have no more commits. Exit.
             return false;
           }
 

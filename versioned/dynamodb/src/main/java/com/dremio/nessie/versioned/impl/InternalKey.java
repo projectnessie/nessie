@@ -36,6 +36,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 class InternalKey implements Comparable<InternalKey>, HasId {
 
   private final Key delegate;
+  private final Supplier<Position> positionMemo = Suppliers.memoize(() -> new Position());
   private final Supplier<Id> idMemo = Suppliers.memoize(() -> Id.build(h -> addToHasher(this, h)));
 
   public InternalKey(Key delegate) {
@@ -58,16 +59,11 @@ class InternalKey implements Comparable<InternalKey>, HasId {
   }
 
   public int getL1Position() {
-    return Math.abs(Ints.fromByteArray(idMemo.get().getValue().substring(0, 4).toByteArray()) % L1.SIZE);
+    return getPosition().getL1();
   }
 
   public int getL2Position() {
-    return Math.abs(Ints.fromByteArray(idMemo.get().getValue().substring(4, 8).toByteArray()) % L2.SIZE);
-  }
-
-  @Override
-  public int hashCode() {
-    return addToHasher(this, Hashing.murmur3_32().newHasher()).hash().asInt();
+    return getPosition().getL2();
   }
 
   public AttributeValue toAttributeValue() {
@@ -83,6 +79,11 @@ class InternalKey implements Comparable<InternalKey>, HasId {
 
   public List<String> getElements() {
     return delegate.getElements();
+  }
+
+  @Override
+  public int hashCode() {
+    return addToHasher(this, Hashing.murmur3_32().newHasher()).hash().asInt();
   }
 
   @Override
@@ -106,21 +107,21 @@ class InternalKey implements Comparable<InternalKey>, HasId {
 
   @Override
   public String toString() {
-    return delegate.toString() + String.format(" [%d:%d]", getL1Position(), getL2Position());
+    return String.format("%s [%d:%d]", delegate, getL1Position(), getL2Position());
   }
 
   public Position getPosition() {
-    return new Position(getL1Position(), getL2Position());
+    return positionMemo.get();
   }
 
-  public static class Position {
+  public class Position {
 
     private final int l1;
     private final int l2;
 
-    private Position(int position1, int position2) {
-      this.l1 = position1;
-      this.l2 = position2;
+    private Position() {
+      this.l1 = Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(0, 4).toByteArray()), L1.SIZE);
+      this.l2 = Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(4, 8).toByteArray()), L2.SIZE);
     }
 
     @Override

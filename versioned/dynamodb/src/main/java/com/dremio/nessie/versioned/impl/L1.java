@@ -62,7 +62,7 @@ class L1 extends MemoizedId {
   }
 
   L1 set(int position, Id l2Id) {
-    return new L1(metadataId, parentId, tree.setId(position, l2Id), null);
+    return new L1(metadataId, parentId, tree.withId(position, l2Id), null);
   }
 
   @Override

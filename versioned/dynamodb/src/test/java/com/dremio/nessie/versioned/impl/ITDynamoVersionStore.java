@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -59,12 +60,14 @@ import com.google.protobuf.ByteString;
 @ExtendWith(LocalDynamoDB.class)
 class ITDynamoVersionStore {
 
+  private DynamoStoreConfig config;
+
   private DynamoStore store;
   private VersionStore<String, String> impl;
 
   @BeforeEach
   void setup() throws URISyntaxException {
-    store = new DynamoStore();
+    store = new DynamoStore(config);
     store.start();
     impl = new DynamoVersionStore<>(WORKER, store, true);
   }
@@ -73,6 +76,10 @@ class ITDynamoVersionStore {
   void deleteResources() {
     store.deleteTables();
     store.close();
+  }
+
+  ITDynamoVersionStore() throws URISyntaxException {
+    config = DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000")).build();
   }
 
   @Test
@@ -161,6 +168,7 @@ class ITDynamoVersionStore {
     //second commit.
     impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
+    // do an extra commit to make sure it has a different hash even though it has the same value.
     impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
     //attempt commit using first hash which has conflicting key change.
@@ -290,7 +298,7 @@ class ITDynamoVersionStore {
   @Disabled
   @Test
   void completeFlow() throws Exception {
-    DynamoStore store = new DynamoStore();
+    DynamoStore store = new DynamoStore(config);
     store.start();
     VersionStore<String, String> impl = new DynamoVersionStore<>(WORKER, store, true);
     final BranchName branch = ImmutableBranchName.builder().name("main").build();

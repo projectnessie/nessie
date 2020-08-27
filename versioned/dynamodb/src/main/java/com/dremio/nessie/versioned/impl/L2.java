@@ -47,7 +47,7 @@ class L2 extends MemoizedId {
   }
 
   L2 set(int position, Id l2Id) {
-    return new L2(map.setId(position, l2Id));
+    return new L2(map.withId(position, l2Id));
   }
 
   @Override

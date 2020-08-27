@@ -110,6 +110,8 @@ class InternalBranch extends MemoizedId implements InternalRef {
   static final String TREE = "tree";
   static final String COMMITS = "commits";
 
+  private static final List<Commit> SINGLE_EMPTY_COMMIT = ImmutableList.of(new Commit(L1.EMPTY.getId(), Id.EMPTY, L1.EMPTY.getId()));
+
   private static final Logger LOGGER = LoggerFactory.getLogger(InternalBranch.class);
 
   private final String name;
@@ -122,11 +124,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
    * @param name name of the branch.
    */
   public InternalBranch(String name) {
-    super(InternalRefId.ofBranch(name).getId());
-    this.name = name;
-    this.metadata = Id.EMPTY;
-    this.tree = L1.EMPTY.getMap();
-    this.commits = ImmutableList.of(new Commit(L1.EMPTY.getId(), Id.EMPTY, L1.EMPTY.getId()));
+    this(InternalRefId.ofBranch(name).getId(), name, L1.EMPTY.getMap(), Id.EMPTY, SINGLE_EMPTY_COMMIT);
   }
 
   /**
@@ -135,11 +133,8 @@ class InternalBranch extends MemoizedId implements InternalRef {
    * @param target the L1 to target (should already be persisted)
    */
   public InternalBranch(String name, L1 target) {
-    super(InternalRefId.ofBranch(name).getId());
-    this.name = name;
-    this.metadata = Id.EMPTY;
-    this.tree = target.getMap();
-    this.commits = ImmutableList.of(new Commit(target.getId(), target.getMetadataId(), target.getParentId()));
+    this(InternalRefId.ofBranch(name).getId(), name, target.getMap(), Id.EMPTY,
+        ImmutableList.of(new Commit(target.getId(), target.getMetadataId(), target.getParentId())));
   }
 
   private InternalBranch(Id id, String name, IdMap tree, Id metadata, List<Commit> commits) {
@@ -156,7 +151,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
     return name;
   }
 
-  public static class Commit {
+  public static final class Commit {
 
     static final String ID = "id";
     static final String COMMIT = "commit";
@@ -180,7 +175,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
     public Commit(Id unsavedId, Id commit, List<UnsavedDelta> deltas) {
       super();
       this.saved = false;
-      this.deltas = Preconditions.checkNotNull(deltas);
+      this.deltas = ImmutableList.copyOf(Preconditions.checkNotNull(deltas));
       this.commit = Preconditions.checkNotNull(commit);
       this.parent = null;
       this.id = Preconditions.checkNotNull(unsavedId);
@@ -210,18 +205,19 @@ class InternalBranch extends MemoizedId implements InternalRef {
         if (!map.containsKey(DELTAS)) {
           return new Commit(Id.fromAttributeValue(map.get(ID)), Id.fromAttributeValue(map.get(COMMIT)),
               Id.fromAttributeValue(map.get(PARENT)));
-        } else {
-          List<UnsavedDelta> deltas = map.get(DELTAS)
-              .l()
-              .stream()
-              .map(av -> UnsavedDelta.SCHEMA.mapToItem(av.m()))
-              .collect(Collectors.toList());
-          return new Commit(
-              Id.fromAttributeValue(map.get(ID)),
-              Id.fromAttributeValue(map.get(COMMIT)),
-              deltas
-              );
         }
+
+        List<UnsavedDelta> deltas = map.get(DELTAS)
+            .l()
+            .stream()
+            .map(av -> UnsavedDelta.SCHEMA.mapToItem(av.m()))
+            .collect(Collectors.toList());
+        return new Commit(
+            Id.fromAttributeValue(map.get(ID)),
+            Id.fromAttributeValue(map.get(COMMIT)),
+            deltas
+            );
+
       }
 
       @Override
@@ -324,7 +320,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
   }
 
 
-  static class UpdateState {
+  static final class UpdateState {
     private volatile boolean saved = false;
     private final List<L1> l1sToSave;
     private final List<Delete> deletes;
@@ -502,11 +498,11 @@ class InternalBranch extends MemoizedId implements InternalRef {
     }
 
     public IdMap apply(IdMap tree) {
-      return tree.setId(position, newId);
+      return tree.withId(position, newId);
     }
 
     public IdMap reverse(IdMap tree) {
-      return tree.setId(position,  oldId);
+      return tree.withId(position,  oldId);
     }
 
     static final SimpleSchema<UnsavedDelta> SCHEMA = new SimpleSchema<UnsavedDelta>(UnsavedDelta.class) {

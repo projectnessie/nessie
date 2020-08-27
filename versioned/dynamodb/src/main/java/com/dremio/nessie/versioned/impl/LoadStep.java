@@ -15,13 +15,13 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.impl.LoadOp.LoadOpKey;
 import com.google.common.collect.ImmutableList;
@@ -49,6 +49,10 @@ class LoadStep {
     return consolidated;
   }
 
+  Stream<LoadOp<?>> getOps() {
+    return ops.stream();
+  }
+
   public LoadStep combine(final LoadStep b) {
     final LoadStep a = this;
     Collection<LoadOp<?>> newOps = Streams.concat(ops.stream(), b.ops.stream()).collect(Collectors.toList());
@@ -65,19 +69,6 @@ class LoadStep {
 
       return nextB;
     });
-  }
-
-  public List<ListMultimap<String, LoadOp<?>>> paginateLoads(int size) {
-
-    List<LoadOp<?>> ops = this.ops.stream().collect(Collectors.toList());
-
-    List<ListMultimap<String, LoadOp<?>>> paginated = new ArrayList<>();
-    for (int i = 0; i < ops.size(); i += size) {
-      ListMultimap<String, LoadOp<?>> mm =
-          Multimaps.index(ops.subList(i, Math.min(i + size, ops.size())), l -> l.getValueType().getTableName());
-      paginated.add(mm);
-    }
-    return paginated;
   }
 
   public Optional<LoadStep> getNext() {

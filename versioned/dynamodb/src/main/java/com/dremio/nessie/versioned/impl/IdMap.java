@@ -54,9 +54,7 @@ class IdMap implements Iterable<Id> {
   }
 
   private void check(int position) {
-    if (position >= deltas.length || position < 0) {
-      throw new IndexOutOfBoundsException(String.format("Position must be [0..%d), was actually %d.", deltas.length, position));
-    }
+    Preconditions.checkPositionIndex(position, deltas.length);
   }
 
   /**
@@ -65,7 +63,7 @@ class IdMap implements Iterable<Id> {
    * @param newId The new value to set.
    * @return A copy of this map with the mutation applied.
    */
-  public IdMap setId(int position, Id newId) {
+  public IdMap withId(int position, Id newId) {
     check(position);
     PositionDelta[] newDeltas = new PositionDelta[deltas.length];
     System.arraycopy(deltas, 0, newDeltas, 0, deltas.length);
@@ -79,7 +77,7 @@ class IdMap implements Iterable<Id> {
 
   @Override
   public Iterator<Id> iterator() {
-    return Iterators.unmodifiableIterator(Arrays.stream(deltas).map(d -> d.getNewId()).iterator());
+    return Iterators.unmodifiableIterator(Arrays.stream(deltas).map(PositionDelta::getNewId).iterator());
   }
 
   /**
@@ -116,10 +114,7 @@ class IdMap implements Iterable<Id> {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + Arrays.hashCode(deltas);
-    return result;
+    return Arrays.hashCode(deltas);
   }
 
   @Override

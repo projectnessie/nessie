@@ -69,15 +69,15 @@ interface InternalRef extends HasId {
   Type getType();
 
   default InternalBranch getBranch() {
-    throw new IllegalArgumentException();
+    throw new IllegalArgumentException(String.format("%s cannot be treated as a branch.", this.getClass().getName()));
   }
 
   default InternalTag getTag() {
-    throw new IllegalArgumentException();
+    throw new IllegalArgumentException(String.format("%s cannot be treated as a tag.", this.getClass().getName()));
   }
 
   default Id getHash() {
-    throw new IllegalArgumentException();
+    throw new IllegalArgumentException(String.format("%s cannot be treated as a hash.", this.getClass().getName()));
   }
 
   Id getId();

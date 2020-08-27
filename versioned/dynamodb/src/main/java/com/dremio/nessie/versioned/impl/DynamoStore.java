@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,9 +44,10 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClientBuilder;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest;
@@ -81,28 +82,22 @@ class DynamoStore implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
   public static enum ValueType {
-    REF(REF_TABLE_NAME, InternalRef.class, InternalRef.SCHEMA),
-    L1(OBJ_TABLE_NAME, L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA),
-    L2(OBJ_TABLE_NAME, L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA),
-    L3(OBJ_TABLE_NAME, L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA),
-    VALUE(OBJ_TABLE_NAME, InternalValue.class, InternalValue.SCHEMA),
-    COMMIT_METADATA(OBJ_TABLE_NAME, InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA);
+    REF(InternalRef.class, InternalRef.SCHEMA),
+    L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA),
+    L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA),
+    L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA),
+    VALUE(InternalValue.class, InternalValue.SCHEMA),
+    COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA);
 
-    private final String table;
     private final Class<?> objectClass;
     private final SimpleSchema<?> schema;
-    ValueType(String table, Class<?> objectClass, SimpleSchema<?> schema) {
-      this.table = table;
+    ValueType(Class<?> objectClass, SimpleSchema<?> schema) {
       this.objectClass = objectClass;
       this.schema = schema;
     }
 
     public Class<?> getObjectClass() {
       return objectClass;
-    }
-
-    public String getTableName() {
-      return table;
     }
 
     @SuppressWarnings("unchecked")
@@ -113,31 +108,52 @@ class DynamoStore implements AutoCloseable {
 
   static final String KEY_NAME = "id";
 
-  private static final String REF_TABLE_NAME = "names";
-  private static final String OBJ_TABLE_NAME = "objects";
-
   private final int paginationSize = 100;
+  private final DynamoStoreConfig config;
 
   private DynamoDbClient client;
   private DynamoDbAsyncClient async;
+  private final ImmutableMap<ValueType, String> tableNames;
 
-  public DynamoStore() {
+  public DynamoStore(DynamoStoreConfig config) {
+    this.config = config;
+    this.tableNames = ImmutableMap.<ValueType, String>builder()
+        .put(ValueType.REF, config.getRefTableName())
+        .put(ValueType.L1, config.getTreeTableName())
+        .put(ValueType.L2, config.getTreeTableName())
+        .put(ValueType.L3, config.getTreeTableName())
+        .put(ValueType.VALUE, config.getValueTableName())
+        .put(ValueType.COMMIT_METADATA, config.getMetadataTableName())
+        .build();
   }
 
   public void start() throws URISyntaxException {
-    URI local = new URI("http://localhost:8000");
-    client = DynamoDbClient.builder().endpointOverride(local).region(Region.US_WEST_2).build();
-    async = DynamoDbAsyncClient.builder().endpointOverride(local).region(Region.US_WEST_2).build();
+    DynamoDbClientBuilder b1 = DynamoDbClient.builder();
+    DynamoDbAsyncClientBuilder b2 = DynamoDbAsyncClient.builder();
+    config.getEndpoint().ifPresent(ep -> {
+      b1.endpointOverride(ep);
+      b2.endpointOverride(ep);
+    });
 
-    Arrays.stream(ValueType.values())
-      .map(ValueType::getTableName)
-      .collect(Collectors.toSet())
-        .forEach(table -> createIfMissing(table));
+    config.getRegion().ifPresent(r -> {
+      b1.region(r);
+      b2.region(r);
+    });
 
-    // make sure we have an empty l1 (ignore result, doesn't matter)
-    putIfAbsent(ValueType.L1, L1.EMPTY);
-    putIfAbsent(ValueType.L2, L2.EMPTY);
-    putIfAbsent(ValueType.L3, L3.EMPTY);
+    client = b1.build();
+    async = b2.build();
+
+    if (config.initializeDatabase()) {
+      Arrays.stream(ValueType.values())
+        .map(tableNames::get)
+        .collect(Collectors.toSet())
+          .forEach(table -> createIfMissing(table));
+
+      // make sure we have an empty l1 (ignore result, doesn't matter)
+      putIfAbsent(ValueType.L1, L1.EMPTY);
+      putIfAbsent(ValueType.L2, L2.EMPTY);
+      putIfAbsent(ValueType.L3, L3.EMPTY);
+    }
 
   }
 
@@ -156,10 +172,10 @@ class DynamoStore implements AutoCloseable {
   void load(LoadStep loadstep) {
 
     while (true) { // for each load step in the chain.
-      List<ListMultimap<String, LoadOp<?>>> stepPages = loadstep.paginateLoads(paginationSize);
+      List<ListMultimap<String, LoadOp<?>>> stepPages = paginateLoads(loadstep, paginationSize);
 
       stepPages.forEach(l -> {
-        Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(table -> table, table -> {
+        Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
           List<LoadOp<?>> loadList = l.get(table);
           List<Map<String, AttributeValue>> keys = loadList.stream()
               .map(load -> ImmutableMap.of(KEY_NAME, load.getId().toAttributeValue()))
@@ -192,6 +208,19 @@ class DynamoStore implements AutoCloseable {
     }
   }
 
+  private List<ListMultimap<String, LoadOp<?>>> paginateLoads(LoadStep loadStep, int size) {
+
+    List<LoadOp<?>> ops = loadStep.getOps().collect(Collectors.toList());
+
+    List<ListMultimap<String, LoadOp<?>>> paginated = new ArrayList<>();
+    for (int i = 0; i < ops.size(); i += size) {
+      ListMultimap<String, LoadOp<?>> mm =
+          Multimaps.index(ops.subList(i, Math.min(i + size, ops.size())), l -> tableNames.get(l.getValueType()));
+      paginated.add(mm);
+    }
+    return paginated;
+  }
+
   <V> boolean putIfAbsent(ValueType type, V value) {
     ConditionExpression condition = ConditionExpression.of(ExpressionFunction.attributeNotExists(ExpressionPath.builder(KEY_NAME).build()));
     try {
@@ -202,9 +231,13 @@ class DynamoStore implements AutoCloseable {
     }
   }
 
+  String tableName(ValueType valueType) {
+    return tableNames.get(valueType);
+  }
+
   @VisibleForTesting
   void deleteTables() {
-    Arrays.stream(ValueType.values()).map(v -> v.getTableName()).collect(Collectors.toSet()).forEach(table -> {
+    Arrays.stream(ValueType.values()).map(v -> tableNames.get(v)).collect(Collectors.toSet()).forEach(table -> {
       try {
         client.deleteTable(DeleteTableRequest.builder().tableName(table).build());
       } catch (ResourceNotFoundException ex) {
@@ -221,7 +254,7 @@ class DynamoStore implements AutoCloseable {
     Map<String, AttributeValue> attributes = ((SimpleSchema<V>)type.schema).itemToMap(value, true);
 
     PutItemRequest.Builder builder = PutItemRequest.builder()
-        .tableName(type.getTableName())
+        .tableName(tableNames.get(type))
         .item(attributes);
 
     if (conditionUnAliased.isPresent()) {
@@ -236,7 +269,7 @@ class DynamoStore implements AutoCloseable {
   boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) {
     DeleteItemRequest.Builder delete = DeleteItemRequest.builder()
         .key(id.toKeyMap())
-        .tableName(type.getTableName());
+        .tableName(tableNames.get(type));
     if (condition.isPresent()) {
       AliasCollector collector = new AliasCollector();
       ConditionExpression aliased = condition.get().alias(collector);
@@ -258,7 +291,7 @@ class DynamoStore implements AutoCloseable {
     for (int i = 0; i < ops.size(); i += paginationSize) {
 
       ListMultimap<String, SaveOp<?>> mm =
-          Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> l.getType().getTableName());
+          Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save -> {
         return WriteRequest.builder().putRequest(PutRequest.builder().item(save.toAttributeValues()).build()).build();
       });
@@ -279,7 +312,7 @@ class DynamoStore implements AutoCloseable {
   @SuppressWarnings("unchecked")
   <V> V loadSingle(ValueType valueType, Id id) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
-        .tableName(valueType.getTableName())
+        .tableName(tableNames.get(valueType))
         .key(ImmutableMap.of(KEY_NAME, id.toAttributeValue()))
         .consistentRead(true)
         .build());
@@ -309,7 +342,7 @@ class DynamoStore implements AutoCloseable {
       Optional<ConditionExpression> aliasedCondition = condition.map(e -> e.alias(collector));
       UpdateItemRequest.Builder updateRequest = collector.apply(UpdateItemRequest.builder())
           .returnValues(ReturnValue.ALL_NEW)
-          .tableName(type.getTableName())
+          .tableName(tableNames.get(type))
           .key(ImmutableMap.of(KEY_NAME, id.toAttributeValue()))
           .updateExpression(aliased.toUpdateExpressionString());
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
@@ -337,7 +370,7 @@ class DynamoStore implements AutoCloseable {
   }
 
   Stream<InternalRef> getRefs() {
-    return client.scanPaginator(ScanRequest.builder().tableName(ValueType.REF.getTableName()).build())
+    return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(ValueType.REF)).build())
         .stream()
         .flatMap(r -> r.items().stream())
         .map(i -> ValueType.REF.<InternalRef>getSchema().mapToItem(i));
@@ -370,6 +403,7 @@ class DynamoStore implements AutoCloseable {
 
   private static final void verifyKeySchema(TableDescription description) {
     List<KeySchemaElement> elements = description.keySchema();
+
     if (elements.size() == 1) {
       KeySchemaElement key = elements.get(0);
       if (key.attributeName().equals(KEY_NAME)) {
@@ -377,8 +411,8 @@ class DynamoStore implements AutoCloseable {
           return;
         }
       }
-      throw new IllegalStateException(String.format("Invalid key schema for table: %s. Key schema should be a hash partitioned "
-          + "attribute with the name 'id'.", description.tableName()));
     }
+    throw new IllegalStateException(String.format("Invalid key schema for table: %s. Key schema should be a hash partitioned "
+        + "attribute with the name 'id'.", description.tableName()));
   }
 }

@@ -24,26 +24,24 @@ import com.google.common.collect.Maps;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public abstract class SimpleSchema<T> /* implements TableSchema<T> */ {
-
-  //private final TableMetadata metadata = StaticTableMetadata.builder()
-  //.addIndexPartitionKey(TableMetadata.primaryIndexName(), "id", AttributeValueType.B).build();
-  //private final EnhancedType<T> type;
+/**
+ * Abstract class for converting to/from an object to a Map&gt;String, AttributeValue&lt;.
+ *
+ * <p>Inspired by Dynamo's extended library and originally extended from it.
+ * @param <T> The value type to be serialized/deserialized.
+ */
+abstract class SimpleSchema<T> {
 
   public SimpleSchema(Class<T> clazz) {
-    //type = EnhancedType.of(clazz);
   }
 
-  //@Override
   public Map<String, AttributeValue> itemToMap(T item, Collection<String> attributes) {
     Set<String> include = ImmutableSet.copyOf(attributes);
     return Maps.filterKeys(itemToMap(item, true), k -> include.contains(k));
   }
 
-  //@Override
   public abstract Map<String, AttributeValue> itemToMap(T item, boolean ignoreNulls);
 
-  //@Override
   public final T mapToItem(Map<String, AttributeValue> attributeMap) {
     return deserialize(new NullAlertingMap(attributeMap));
   }
@@ -51,21 +49,13 @@ public abstract class SimpleSchema<T> /* implements TableSchema<T> */ {
   protected abstract T deserialize(Map<String, AttributeValue> attributeMap);
 
 
-  // @Override
   public AttributeValue attributeValue(T item, String key) {
     return itemToMap(item, true).get(key);
   }
 
-  //@Override
-  //public TableMetadata tableMetadata() {
-  //  return metadata;
-  //}
-
-  //@Override
-  //public EnhancedType<T> itemType() {
-  //  return type;
-  //}
-
+  /**
+   * A map which throws if a requested value is missing rather than returning null.
+   */
   private static class NullAlertingMap implements Map<String, AttributeValue> {
 
     private final Map<String, AttributeValue> delegate;

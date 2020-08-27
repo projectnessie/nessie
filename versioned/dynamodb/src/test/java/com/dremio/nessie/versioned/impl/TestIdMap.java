@@ -30,7 +30,7 @@ public class TestIdMap {
   @Test
   void ensureImmutable() {
     IdMap map1 = new IdMap(1);
-    IdMap map2 = map1.setId(0, id1);
+    IdMap map2 = map1.withId(0, id1);
     assertNotEquals(map1, map2);
     assertTrue(map1.getId(0).isEmpty());
     assertFalse(map2.getId(0).isEmpty());
@@ -54,7 +54,7 @@ public class TestIdMap {
   @Test
   void iter() {
     IdMap map1 = new IdMap(1);
-    map1 = map1.setId(0, id1);
+    map1 = map1.withId(0, id1);
     assertEquals(id1, map1.iterator().next());
   }
 
@@ -64,16 +64,16 @@ public class TestIdMap {
     assertEquals(0, map.getChanges().size());
 
     // noop operation.
-    map = map.setId(0, Id.EMPTY);
+    map = map.withId(0, Id.EMPTY);
     assertEquals(0, map.getChanges().size());
 
     // real operation.
-    map = map.setId(5, id1);
+    map = map.withId(5, id1);
     assertEquals(1, map.getChanges().size());
     assertEquals(5, map.getChanges().get(0).getPosition());
 
     // rollback operation and confirm no changes.
-    map = map.setId(5, Id.EMPTY);
+    map = map.withId(5, Id.EMPTY);
     assertEquals(0, map.getChanges().size());
 
   }
@@ -83,7 +83,7 @@ public class TestIdMap {
 
     IdMap map1 = new IdMap(15);
     for (int i = 0; i < map1.size(); i++) {
-      map1 = map1.setId(i, Id.generateRandom());
+      map1 = map1.withId(i, Id.generateRandom());
     }
 
     IdMap map2 = IdMap.fromAttributeValue(map1.toAttributeValue(), 15);
