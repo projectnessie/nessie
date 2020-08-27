@@ -18,6 +18,7 @@ package com.dremio.nessie.jgit;
 
 import java.io.IOException;
 
+import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.internal.storage.dfs.DfsObjDatabase;
 import org.eclipse.jgit.internal.storage.dfs.DfsReader;
 import org.eclipse.jgit.lib.AnyObjectId;
@@ -38,8 +39,12 @@ public class NessieObjReader extends DfsReader {
   }
 
   @Override
-  public boolean has(AnyObjectId objectId) throws IOException {
-    return db.get(objectId, -1) != null;
+  public boolean has(AnyObjectId objectId) {
+    try {
+      return db.get(objectId, -1) != null;
+    } catch (MissingObjectException | IllegalArgumentException e) {
+      return false;
+    }
   }
 
   @Override

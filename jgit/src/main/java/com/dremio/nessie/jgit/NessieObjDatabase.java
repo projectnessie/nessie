@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.internal.storage.dfs.DfsObjDatabase;
@@ -37,9 +36,12 @@ import org.eclipse.jgit.internal.storage.dfs.DfsRepository;
 import org.eclipse.jgit.internal.storage.dfs.ReadableChannel;
 import org.eclipse.jgit.internal.storage.pack.PackExt;
 import org.eclipse.jgit.lib.AnyObjectId;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectInserter;
 import org.eclipse.jgit.lib.ObjectLoader.SmallObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.backend.EntityBackend;
 import com.dremio.nessie.model.BranchControllerObject;
@@ -50,7 +52,7 @@ import com.dremio.nessie.model.VersionedWrapper;
  * Object databse for Nessie. This uses dynamodb to store git objects.
  */
 public class NessieObjDatabase extends DfsObjDatabase {
-
+  private static final Logger logger = LoggerFactory.getLogger(NessieObjDatabase.class);
   private final EntityBackend<BranchControllerObject> backend;
   private final Map<AnyObjectId,
       VersionedWrapper<BranchControllerObject>> objectCache = new HashMap<>();
@@ -161,11 +163,23 @@ public class NessieObjDatabase extends DfsObjDatabase {
   }
 
   private void putAll(Set<BranchControllerObject> transactionSet) {
-    backend.updateAll(transactionSet.stream().collect(
-        Collectors.toMap(
-          BranchControllerObject::getId,
-          VersionedWrapper::new
-        )));
+    Map<String, VersionedWrapper<BranchControllerObject>> updateMap = new HashMap<>();
+    Set<BranchControllerObject> updateMapDups = new HashSet<>();
+    for (BranchControllerObject b: transactionSet) {
+      if (updateMap.containsKey(b.getId())) {
+        logger.error("Duplicate Key in update: {} with types {} and {}",
+                     b.getId(),
+                     b.getType(),
+                     updateMap.get(b.getId()).getObj().getType());
+        updateMapDups.add(b);
+      } else {
+        updateMap.put(b.getId(), new VersionedWrapper<>(b));
+      }
+    }
+    backend.updateAll(updateMap);
+    if (!updateMapDups.isEmpty()) {
+      putAll(updateMapDups);
+    }
   }
 
   void flush() {
@@ -193,7 +207,13 @@ public class NessieObjDatabase extends DfsObjDatabase {
     }
     BranchControllerObject obj = get(objectId);
     if (obj == null) {
-      throw new MissingObjectException((ObjectId) objectId, typeHint);
+      String typeHintStr;
+      try {
+        typeHintStr = Constants.typeString(typeHint);
+      } catch (IllegalArgumentException e) {
+        typeHintStr = "ANY";
+      }
+      throw new MissingObjectException((ObjectId) objectId, typeHintStr);
     }
     return new SmallObject(obj.getType(), obj.getData());
   }
