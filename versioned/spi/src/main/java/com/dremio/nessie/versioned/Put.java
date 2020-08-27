@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned;
 
+import javax.annotation.Nonnull;
+
 import org.immutables.value.Value;
 
 /**
@@ -26,7 +28,20 @@ public interface Put<V> extends Operation<V> {
   /**
    * The value to store for this operation.
    *
-   * @return
+   * @return the value
    */
   V getValue();
+
+
+  /**
+   * Creates a put operation for the given key and value.
+   * @param <V> the store value type
+   * @param key the key impacted by the operation
+   * @param value the new value associated with the key
+   * @return a put operation for the key and value
+   */
+  @Nonnull
+  public static <V> Put<V> of(@Nonnull Key key, @Nonnull V value) {
+    return ImmutablePut.<V>builder().key(key).value(value).build();
+  }
 }
