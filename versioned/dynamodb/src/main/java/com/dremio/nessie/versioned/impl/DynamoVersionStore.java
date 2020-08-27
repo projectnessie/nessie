@@ -42,6 +42,7 @@ import com.dremio.nessie.versioned.NamedRef;
 import com.dremio.nessie.versioned.Operation;
 import com.dremio.nessie.versioned.Put;
 import com.dremio.nessie.versioned.Ref;
+import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.Serializer;
@@ -90,7 +91,7 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
   }
 
   @Override
-  public void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceConflictException {
+  public void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     if (!targetHash.isPresent()) {
       if (ref instanceof TagName) {
         throw new ReferenceNotFoundException("You must provide a target hash to create a tag.");
@@ -98,7 +99,7 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
 
       InternalBranch branch = new InternalBranch(ref.getName());
       if (!store.putIfAbsent(ValueType.REF, branch)) {
-        throw new ReferenceConflictException("A branch or tag already exists with that name.");
+        throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
       }
 
       return;
@@ -114,7 +115,7 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
 
     InternalRef newRef = ref instanceof TagName ? new InternalTag(null, ref.getName(), l1.getId()) : new InternalBranch(ref.getName(), l1);
     if (!store.putIfAbsent(ValueType.REF, newRef)) {
-      throw new ReferenceConflictException("A branch or tag already exists with that name.");
+      throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
     }
   }
 

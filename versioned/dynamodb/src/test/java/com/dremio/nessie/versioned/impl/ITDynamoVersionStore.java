@@ -44,6 +44,7 @@ import com.dremio.nessie.versioned.ImmutablePut;
 import com.dremio.nessie.versioned.ImmutableTagName;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.Put;
+import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.Serializer;
@@ -94,7 +95,7 @@ class ITDynamoVersionStore {
     assertEquals(L1.EMPTY_ID.toHash(), impl.toHash(tag));
 
     // avoid dupe
-    assertThrows(ReferenceConflictException.class, () -> impl.create(tag, Optional.of(L1.EMPTY_ID.toHash())));
+    assertThrows(ReferenceAlreadyExistsException.class, () -> impl.create(tag, Optional.of(L1.EMPTY_ID.toHash())));
 
     // delete without condition
     impl.delete(tag, Optional.empty());
@@ -131,8 +132,8 @@ class ITDynamoVersionStore {
     impl.create(branch, Optional.empty());
 
     // avoid dupe
-    assertThrows(ReferenceConflictException.class, () -> impl.create(branch, Optional.empty()));
-    assertThrows(ReferenceConflictException.class, () -> impl.create(branch, Optional.of(L1.EMPTY_ID.toHash())));
+    assertThrows(ReferenceAlreadyExistsException.class, () -> impl.create(branch, Optional.empty()));
+    assertThrows(ReferenceAlreadyExistsException.class, () -> impl.create(branch, Optional.of(L1.EMPTY_ID.toHash())));
 
     // check that wrong id is rejected for deletion (non-existing)
     assertThrows(ReferenceConflictException.class, () -> impl.delete(branch, Optional.of(Id.EMPTY.toHash())));
@@ -316,7 +317,7 @@ class ITDynamoVersionStore {
     try {
       impl.create(branch, Optional.empty());
       assertFalse(true, "Creating the a branch with the same name as an existing one should fail but didn't.");
-    } catch (ReferenceConflictException ex) {
+    } catch (ReferenceAlreadyExistsException ex) {
       // expected.
     }
 
