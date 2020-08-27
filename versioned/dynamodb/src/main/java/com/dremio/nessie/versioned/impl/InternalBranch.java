@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
-import com.dremio.nessie.versioned.impl.InternalRef.Type;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -103,7 +102,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  * <li>The ids for all saved commits will exist in the L1 table.
  * </ol>
  */
-class InternalBranch extends MemoizedId {
+class InternalBranch extends MemoizedId implements InternalRef {
 
   static final String ID = "id";
   static final String NAME = "name";
@@ -485,48 +484,6 @@ class InternalBranch extends MemoizedId {
     }
   }
 
-
-  public static class UpdateItem {
-    private final boolean unsaved;
-    private final int ordinal;
-    private final Id id;
-    private final L1 l1;
-
-    static UpdateItem unsaved(int ordinal, Id unsavedId, L1 l1) {
-      return new UpdateItem(false, unsavedId, l1, ordinal);
-    }
-
-    static UpdateItem saved(int ordinal, Id l1Id) {
-      return new UpdateItem(false, l1Id, null, ordinal);
-    }
-
-    private UpdateItem(boolean unsaved, Id id, L1 l1, int ordinal) {
-      super();
-      this.unsaved = unsaved;
-      this.id = id;
-      this.l1 = l1;
-      this.ordinal = ordinal;
-
-    }
-
-    public Id getId() {
-      return id;
-    }
-
-    public L1 getL1() {
-      Preconditions.checkArgument(unsaved);
-      return l1;
-    }
-
-    public int getOrdinal() {
-      return ordinal;
-    }
-
-    public boolean isUnsaved() {
-      return unsaved;
-    }
-  }
-
   public static class UnsavedDelta {
 
     private static final String POSITION = "position";
@@ -574,10 +531,6 @@ class InternalBranch extends MemoizedId {
     };
   }
 
-  public InternalRef asRef() {
-    return InternalRef.of(this);
-  }
-
   @Override
   Id generateId() {
     return Id.build(name);
@@ -609,5 +562,15 @@ class InternalBranch extends MemoizedId {
     }
 
   };
+
+  @Override
+  public Type getType() {
+    return Type.BRANCH;
+  }
+
+  @Override
+  public InternalBranch getBranch() {
+    return this;
+  }
 
 }

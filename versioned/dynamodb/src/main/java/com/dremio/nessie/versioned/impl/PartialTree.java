@@ -73,7 +73,7 @@ class PartialTree<V> {
   public LoadStep getLoadChain(Function<InternalBranch, L1> l1Converter, boolean includeValues) {
     if (refId.getType() == Type.HASH) {
       rootId = refId.getId();
-      ref = InternalRef.of(refId.getId());
+      ref = refId.getId();
       return getLoadStep1(includeValues).get();
     }
 

@@ -38,7 +38,7 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 @Value.Immutable
-abstract class Id {
+abstract class Id implements InternalRef {
 
   private static final ThreadLocal<Random> RANDOM = new ThreadLocal<Random>() {
     @Override
@@ -186,6 +186,21 @@ abstract class Id {
 
   public static Id fromAttributeValue(AttributeValue value) {
     return Id.of(ByteString.copyFrom(value.b().asByteBuffer()));
+  }
+
+  @Override
+  public Type getType() {
+    return Type.HASH;
+  }
+
+  @Override
+  public Id getHash() {
+    return this;
+  }
+
+  @Override
+  public Id getId() {
+    return this;
   }
 
 }

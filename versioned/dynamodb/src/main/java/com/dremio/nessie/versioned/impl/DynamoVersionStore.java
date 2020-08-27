@@ -96,7 +96,7 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
         throw new ReferenceNotFoundException("You must provide a target hash to create a tag.");
       } else {
         InternalBranch branch = new InternalBranch(ref.getName());
-        if (!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
+        if (!store.putIfAbsent(ValueType.REF, branch)) {
           throw new ReferenceConflictException("A branch or tag already exists with that name.");
         }
       }
@@ -113,12 +113,12 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
 
     if (ref instanceof TagName) {
       InternalTag tag = new InternalTag(null, ref.getName(), l1.getId());
-      if (!store.putIfAbsent(ValueType.REF, InternalRef.of(tag))) {
+      if (!store.putIfAbsent(ValueType.REF, tag)) {
         throw new ReferenceConflictException("A branch or tag already exists with that name.");
       }
     } else {
       InternalBranch branch = new InternalBranch(ref.getName(), l1);
-      if (!store.putIfAbsent(ValueType.REF, InternalRef.of(branch))) {
+      if (!store.putIfAbsent(ValueType.REF, branch)) {
         throw new ReferenceConflictException("A branch or tag already exists with that name.");
       }
     }
@@ -382,7 +382,7 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
     ConditionExpression condition = ConditionExpression.of(
         ExpressionFunction.equals(
             ExpressionPath.builder(InternalRef.TYPE).build(),
-            AttributeValue.builder().s(type.identifier()).build())
+            type.toAttributeValue())
         );
 
     final InternalRef toSave;
@@ -392,7 +392,7 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
         condition = condition.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(),
             expectedId.toAttributeValue()));
       }
-      toSave = new InternalTag(refId, namedRef.getName(), newId).asRef();
+      toSave = new InternalTag(refId, namedRef.getName(), newId);
     } else {
       if (currentTarget.isPresent()) {
         condition = condition.and(
@@ -400,7 +400,7 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
                 ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(),
                 expectedId.toAttributeValue()));
       }
-      toSave = new InternalBranch(name, l1).asRef();
+      toSave = new InternalBranch(name, l1);
     }
 
     try {

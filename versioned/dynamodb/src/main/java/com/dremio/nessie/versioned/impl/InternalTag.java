@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableMap;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class InternalTag extends MemoizedId {
+class InternalTag extends MemoizedId implements InternalRef {
 
   static final String ID = "id";
   static final String NAME = "name";
@@ -76,8 +76,14 @@ class InternalTag extends MemoizedId {
 
   };
 
-  public InternalRef asRef() {
-    return InternalRef.of(this);
+  @Override
+  public Type getType() {
+    return Type.TAG;
+  }
+
+  @Override
+  public InternalTag getTag() {
+    return this;
   }
 
 }
