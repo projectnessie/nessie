@@ -92,7 +92,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   @Override
   public VersionedWrapper<M> get(String name) {
     Span span = tracer.buildSpan("dynamo-get").start();
-    try (Scope scope = tracer.scopeManager().activate(span, true);
+    try (Scope scope = tracer.activateSpan(span);
          MetricsCloseable mc = getMetrics.start()) {
       Map<String, AttributeValue> key = new HashMap<>();
       key.put("uuid", AttributeValue.builder().s(name).build());
@@ -115,7 +115,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
 
   public List<VersionedWrapper<M>> getAll(boolean includeDeleted) {
     Span span = tracer.buildSpan("dynamo-get-all").start();
-    try (Scope scope = tracer.scopeManager().activate(span, true);
+    try (Scope scope = tracer.activateSpan(span);
          MetricsCloseable mc = getAllMetrics.start()) {
       ScanRequest request = ScanRequest.builder()
                                        .tableName(tableName)
@@ -136,7 +136,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   @Override
   public VersionedWrapper<M> update(String name, VersionedWrapper<M> obj) {
     Span span = tracer.buildSpan("dynamo-put").start();
-    try (Scope scope = tracer.scopeManager().activate(span, true);
+    try (Scope scope = tracer.activateSpan(span);
          MetricsCloseable mc = putMetrics.start()) {
       Map<String, AttributeValue> item = toDynamoDB(obj);
       Builder builder = PutItemRequest.builder()
@@ -171,7 +171,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   @Override
   public void updateAll(Map<String, VersionedWrapper<M>> transaction) {
     Span span = tracer.buildSpan("dynamo-put-all").start();
-    try (Scope scope = tracer.scopeManager().activate(span, true);
+    try (Scope scope = tracer.activateSpan(span);
          MetricsCloseable mc = putAllMetrics.start()) {
       Map<String, List<WriteRequest>> items = new HashMap<>();
       List<WriteRequest> writeRequests =
@@ -197,7 +197,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   @Override
   public void remove(String name) {
     Span span = tracer.buildSpan("dynamo-remove").start();
-    try (Scope scope = tracer.scopeManager().activate(span, true);
+    try (Scope scope = tracer.activateSpan(span);
          MetricsCloseable mc = deleteMetrics.start()) {
       Map<String, AttributeValue> key = new HashMap<>();
       key.put("uuid", AttributeValue.builder().s(name).build());
