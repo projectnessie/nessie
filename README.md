@@ -1,7 +1,7 @@
 # Nessie
 
-[![Build Status](https://github.com/dremio-hub/nessie/workflows/Java%20CI%20with%20Maven/badge.svg)](https://github.com/dremio-hub/nessie/actions)
-[![codecov](https://codecov.io/gh/dremio-hub/nessie/branch/master/graph/badge.svg?token=W9J9ZUYO1Y)](https://codecov.io/gh/dremio-hub/nessie)
+[![Build Status](https://github.com/projectnessie/nessie/workflows/Java%20CI%20with%20Maven/badge.svg)](https://github.com/projectnessie/nessie/actions)
+[![codecov](https://codecov.io/gh/projectnessie/nessie/branch/master/graph/badge.svg?token=W9J9ZUYO1Y)](https://codecov.io/gh/projectnessie/nessie)
 
 
 
