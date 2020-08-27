@@ -216,8 +216,8 @@ class DynamoStore implements AutoCloseable {
 
   @SuppressWarnings("unchecked")
   <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
-    Preconditions.checkArgument(type.getObjectClass().equals(value.getClass()),
-        "ValueType %s doesn't match expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
+    Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
+        "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
     Map<String, AttributeValue> attributes = ((SimpleSchema<V>)type.schema).itemToMap(value, true);
 
     PutItemRequest.Builder builder = PutItemRequest.builder()

@@ -20,23 +20,26 @@ import java.util.Map;
 
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class InternalRef implements HasId {
+/**
+ * Generic class for reading a reference.
+ */
+interface InternalRef extends HasId {
+
+  static final String TYPE = "type";
+
   public static enum Type {
     BRANCH("b"),
     TAG("t"),
     HASH(null),
     UNKNOWN(null);
 
-    private final String identifier;
     private final AttributeValue value;
 
     Type(String identifier) {
-      this.identifier = identifier;
       this.value = AttributeValue.builder().s(identifier).build();
     }
 
@@ -44,15 +47,11 @@ class InternalRef implements HasId {
       return ExpressionFunction.equals(ExpressionPath.builder(TYPE).build(), toAttributeValue());
     }
 
-    public String identifier() {
+    public AttributeValue toAttributeValue() {
       if (this == HASH) {
         throw new IllegalStateException("You should not try to retrieve the identifier for a hash "
             + "type since they are not saveable as searchable refs.");
       }
-      return identifier;
-    }
-
-    public AttributeValue toAttributeValue() {
       return value;
     }
 
@@ -67,66 +66,21 @@ class InternalRef implements HasId {
     }
   }
 
+  Type getType();
 
-  static final String TYPE = "type";
-
-  private final Type type;
-  private final InternalBranch branch;
-  private final InternalTag tag;
-  private final Id hash;
-
-  private InternalRef(Type type, InternalBranch branch, InternalTag tag, Id hash) {
-    super();
-    this.type = type;
-    this.branch = branch;
-    this.tag = tag;
-    this.hash = hash;
+  default InternalBranch getBranch() {
+    throw new IllegalArgumentException();
   }
 
-  public Type getType() {
-    return type;
+  default InternalTag getTag() {
+    throw new IllegalArgumentException();
   }
 
-  public InternalBranch getBranch() {
-    Preconditions.checkArgument(type == Type.BRANCH);
-    return branch;
+  default Id getHash() {
+    throw new IllegalArgumentException();
   }
 
-  public InternalTag getTag() {
-    Preconditions.checkArgument(type == Type.TAG);
-    return tag;
-  }
-
-  public Id getHash() {
-    Preconditions.checkArgument(type == Type.HASH);
-    return hash;
-  }
-
-  public Id getId() {
-    switch (type) {
-      case BRANCH:
-        return branch.getId();
-      case HASH:
-        return Id.of(hash.getValue().asReadOnlyByteBuffer());
-      case TAG:
-        return tag.getCommit();
-      case UNKNOWN:
-      default:
-        throw new IllegalStateException();
-    }
-  }
-
-  static InternalRef of(InternalBranch branch) {
-    return new InternalRef(Type.BRANCH, branch, null, null);
-  }
-
-  static InternalRef of(Id id) {
-    return new InternalRef(Type.HASH, null, null, id);
-  }
-
-  static InternalRef of(InternalTag tag) {
-    return new InternalRef(Type.TAG, null, tag, null);
-  }
+  Id getId();
 
   static final SimpleSchema<InternalRef> SCHEMA = new SimpleSchema<InternalRef>(InternalRef.class) {
 
@@ -135,8 +89,8 @@ class InternalRef implements HasId {
       Type type = Type.getType(attributeMap.get(TYPE).s());
       Map<String, AttributeValue> filtered = Maps.filterEntries(attributeMap, e -> !e.getKey().equals(TYPE));
       switch (type) {
-        case BRANCH: return new InternalRef(type, InternalBranch.SCHEMA.mapToItem(filtered), null, null);
-        case TAG: return new InternalRef(type, null, InternalTag.SCHEMA.mapToItem(filtered), null);
+        case BRANCH: return InternalBranch.SCHEMA.mapToItem(filtered);
+        case TAG: return InternalTag.SCHEMA.mapToItem(filtered);
         default:
           throw new UnsupportedOperationException();
       }
@@ -145,14 +99,14 @@ class InternalRef implements HasId {
     @Override
     public Map<String, AttributeValue> itemToMap(InternalRef item, boolean ignoreNulls) {
       Map<String, AttributeValue> map = new HashMap<>();
-      map.put(TYPE, item.type.toAttributeValue());
+      map.put(TYPE, item.getType().toAttributeValue());
 
-      switch (item.type) {
+      switch (item.getType()) {
         case BRANCH:
-          map.putAll(InternalBranch.SCHEMA.itemToMap(item.branch, ignoreNulls));
+          map.putAll(InternalBranch.SCHEMA.itemToMap(item.getBranch(), ignoreNulls));
           break;
         case TAG:
-          map.putAll(InternalTag.SCHEMA.itemToMap(item.tag, ignoreNulls));
+          map.putAll(InternalTag.SCHEMA.itemToMap(item.getTag(), ignoreNulls));
           break;
         default:
           throw new UnsupportedOperationException();

@@ -57,7 +57,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 
 @ExtendWith(LocalDynamoDB.class)
-class ITTestBasicImpl {
+class ITDynamoVersionStore {
 
   private DynamoStore store;
   private VersionStore<String, String> impl;
