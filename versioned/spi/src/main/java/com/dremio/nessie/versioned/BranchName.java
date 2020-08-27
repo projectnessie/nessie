@@ -15,8 +15,23 @@
  */
 package com.dremio.nessie.versioned;
 
+import javax.annotation.Nonnull;
+
 import org.immutables.value.Value;
 
+/**
+ * A named reference representing a branch.
+ */
 @Value.Immutable
 public interface BranchName extends NamedRef {
+
+  /**
+   * Create a new branch reference.
+   * @param name the branch name
+   * @return an instance of {@code BranchName} for the provided name
+   */
+  @Nonnull
+  static BranchName of(@Nonnull String name) {
+    return ImmutableBranchName.builder().name(name).build();
+  }
 }

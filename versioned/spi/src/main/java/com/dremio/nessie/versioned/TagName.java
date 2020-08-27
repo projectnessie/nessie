@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned;
 
+import javax.annotation.Nonnull;
+
 import org.immutables.value.Value;
 
 /**
@@ -22,5 +24,14 @@ import org.immutables.value.Value;
  */
 @Value.Immutable
 public interface TagName extends NamedRef {
-  String getName();
+
+  /**
+   * Create a new tag reference.
+   * @param name the tag name
+   * @return an instance of {@code TagName} for the provided name
+   */
+  @Nonnull
+  static TagName of(@Nonnull String name) {
+    return ImmutableTagName.builder().name(name).build();
+  }
 }

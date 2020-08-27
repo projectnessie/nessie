@@ -31,6 +31,11 @@ public class ReferenceNotFoundException extends VersionStoreException {
     super(message);
   }
 
+
+  public ReferenceNotFoundException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
   /**
    * Create a {@code ReferenceNotFoundException} instance with an accurate message
    * based on the provided reference.

@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned;
 
+import javax.annotation.Nonnull;
+
 import org.immutables.value.Value;
 
 /**
@@ -25,7 +27,19 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface Unchanged<V> extends Operation<V> {
 
+  @Override
   default boolean shouldMatchHash() {
     return true;
+  }
+
+  /**
+   * Creates a unchanged operation for the given key.
+   * @param <V> the store value type
+   * @param key the key impacted by the operation
+   * @return a unchanged operation for the key
+   */
+  @Nonnull
+  static <V> Unchanged<V> of(@Nonnull Key key) {
+    return ImmutableUnchanged.<V>builder().key(key).build();
   }
 }

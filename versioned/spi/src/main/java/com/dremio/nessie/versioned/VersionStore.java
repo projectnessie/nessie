@@ -45,17 +45,17 @@ public interface VersionStore<VALUE, METADATA> {
   Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException;
 
   /**
-   * Create a new commit to a branch.
+   * Create a new commit and add to a branch.
    *
    * @param branch The branch to commit to.
-   * @param currentBranchHash The current expected head of the branch.
+   * @param expectedHash The current head of the branch to validate before updating (optional).
    * @param metadata The metadata associated with the commit.
    * @param operations The set of operations to apply.
    * @throws ReferenceConflictException if {@code currentBranchHash} doesn't match the stored hash for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} is not present in the store
    *
    */
-  void commit(BranchName branch, Optional<Hash> currentBranchHash, METADATA metadata, List<Operation<VALUE>> operations)
+  void commit(BranchName branch, Optional<Hash> expectedHash, METADATA metadata, List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -64,13 +64,13 @@ public interface VersionStore<VALUE, METADATA> {
    * and share a common ancestor to the target branch.
    *
    * @param targetBranch         The branch we're transplanting to
-   * @param currentBranchHash    The required current version of the branch to check before transplanting (if provided)
+   * @param expectedHash         The current head of the branch to validate before updating (optional).
    * @param sequenceToTransplant The sequence of hashes to transplant.
    * @throws ReferenceConflictException if {@code currentBranchHash} doesn't match the stored hash for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code sequenceToTransplant} is not present in the
    *     store.
    */
-  void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant)
+  void transplant(BranchName targetBranch, Optional<Hash> expectedHash, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -87,13 +87,13 @@ public interface VersionStore<VALUE, METADATA> {
    * <li>the expected branch hash does not match the actual branch hash
    * </ul>
    *
-   * @param fromHash           The hash we are using to get additional commits
-   * @param toBranch           The branch that we are merging into
-   * @param expectedBranchHash The hash on the toBranch that we expect to match (optional)
+   * @param fromHash     The hash we are using to get additional commits
+   * @param toBranch     The branch that we are merging into
+   * @param expectedHash The current head of the branch to validate before updating (optional).
    * @throws ReferenceConflictException if {@code expectedBranchHash} doesn't match the stored hash for {@code toBranch}
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in the store.
    */
-  void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
+  void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -103,15 +103,25 @@ public interface VersionStore<VALUE, METADATA> {
    *
    * <p>Throws if the targetHash provided does not exist, an exception will be thrown.
    *
-   * @param ref               The named ref we're assigning
-   * @param currentBranchHash The current hash the ref is pointing to.
-   * @param targetHash         The hash that this ref should refer to.
+   * @param ref          The named ref we're assigning
+   * @param expectedHash The current head of the NamedRef to validate before updating (optional).
+   * @param targetHash   The hash that this ref should refer to.
    * @throws ReferenceNotFoundException if {@code targetHash} is not present in the store, or {@code currentBranchHash} is not empty
    *     and {@code ref} is not present in the store
    * @throws ReferenceConflictException if {@code currentBranchHash} doesn't match the stored hash for {@code ref}
    */
-  void assign(NamedRef ref, Optional<Hash> currentBranchHash, Hash targetHash)
+  void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException;
+
+  /**
+   * Assign the NamedRef to point to a particular hash. If the NamedRef does not exist, it will be created.
+   *
+   * @param ref        The named ref we're assigning
+   * @param targetHash The hash that this ref should refer to (optional). Otherwise will reference the beginning of time.
+   * @throws ReferenceNotFoundException if {@code targetHash} is not empty and not present in the store
+   * @throws ReferenceAlreadyExistsException if {@code ref} already exists
+   */
+  void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
 
   /**
    * Delete the provided NamedRef
