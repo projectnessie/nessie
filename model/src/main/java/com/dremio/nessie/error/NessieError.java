@@ -25,9 +25,7 @@ import org.immutables.value.Value;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
 
-@RegisterForReflection
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableNessieError.class)
 @JsonDeserialize(as = ImmutableNessieError.class)

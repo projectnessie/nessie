@@ -59,12 +59,6 @@
       <artifactId>value</artifactId>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-core</artifactId>
-      <!-- Declared optional as only used for annotations -->
-      <optional>true</optional>
-    </dependency>
   </dependencies>
 
 </project>

@@ -23,8 +23,6 @@ import org.immutables.value.Value;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
-
 /**
  * Abstract implementation of a Table in Nessie.
  *
@@ -33,7 +31,6 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
  *   The table metadata is optional and is currently only needed by the UI.
  * </p>
  */
-@RegisterForReflection
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableTable.class)
 @JsonDeserialize(as = ImmutableTable.class)

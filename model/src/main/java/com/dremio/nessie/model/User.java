@@ -25,12 +25,9 @@ import org.immutables.value.Value;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
-
 /**
  * API representation of a User of Nessie.
  */
-@RegisterForReflection
 @Value.Immutable
 @JsonSerialize(as = ImmutableUser.class)
 @JsonDeserialize(as = ImmutableUser.class)

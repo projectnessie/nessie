@@ -24,12 +24,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
-
 /**
  * configuration object to tell a client how a server is configured.
  */
-@RegisterForReflection
 @Value.Immutable
 @JsonSerialize(as = ImmutableNessieConfiguration.class)
 @JsonDeserialize(as = ImmutableNessieConfiguration.class)

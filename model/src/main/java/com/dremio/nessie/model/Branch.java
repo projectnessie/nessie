@@ -25,12 +25,9 @@ import org.immutables.value.Value;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
-
 /**
  * Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology.
  */
-@RegisterForReflection
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableBranch.class)
 @JsonDeserialize(as = ImmutableBranch.class)
