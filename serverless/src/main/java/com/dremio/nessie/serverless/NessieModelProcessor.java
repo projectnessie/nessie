@@ -20,14 +20,11 @@ import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.Table;
 import com.dremio.nessie.model.User;
-import com.google.common.base.Joiner;
 
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 
 public class NessieModelProcessor {
-
-  private static final Joiner DOT = Joiner.on(".");
 
   @BuildStep
   ReflectiveClassBuildItem reflection() {
