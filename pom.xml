@@ -68,7 +68,7 @@
     <jetty.version>9.4.26.v20200117</jetty.version>
     <jjwt.version>0.11.1</jjwt.version>
     <jgit.version>5.7.0.202003110725-r</jgit.version>
-    <junit.version>5.6.0</junit.version>
+    <junit.version>5.6.2</junit.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.12.2</protobuf.version>
     <prometheus.version>0.8.1</prometheus.version>
