@@ -25,6 +25,7 @@ authenticationConfiguration:
   authFilterClassName: com.dremio.nessie.server.auth.NessieAuthFilter
   enableLoginEndpoint: true
   enableUsersEndpoint: true
+  keyGeneratorClassName: com.dremio.nessie.server.auth.BasicKeyGenerator
 serviceConfiguration:
   port: 19120
   ui: true

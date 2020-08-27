@@ -37,7 +37,6 @@ import com.dremio.nessie.services.auth.Secured;
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class NessieAuthFilter implements ContainerRequestFilter {
-
   private final UserService userService;
 
   @Inject
@@ -49,9 +48,7 @@ public class NessieAuthFilter implements ContainerRequestFilter {
   public void filter(ContainerRequestContext requestContext) {
     try {
       final String token = getTokenFromAuthHeaderOrQueryParameter(requestContext);
-
       User user = userService.validate(token);
-
       requestContext.setSecurityContext(new NessieSecurityContext(user, requestContext));
     } catch (NotAuthorizedException e) {
       requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).build());

@@ -35,7 +35,6 @@ import com.dremio.nessie.jgit.JgitBranchController;
 import com.dremio.nessie.jwt.KeyGenerator;
 import com.dremio.nessie.model.User;
 import com.dremio.nessie.model.VersionedWrapper;
-import com.dremio.nessie.server.auth.BasicKeyGenerator;
 import com.dremio.nessie.server.auth.NessieSecurityContext;
 import com.dremio.nessie.server.auth.UserServiceDbBackend;
 
@@ -53,7 +52,7 @@ public class NessieServerBinder extends AbstractBinder {
                                                         .getAuthenticationConfiguration()
                                                         .getUserServiceClassName();
 
-    bind(BasicKeyGenerator.class).to(KeyGenerator.class);
+    bindFactory(KeyGeneratorFactory.class).to(KeyGenerator.class).in(Singleton.class);
     bindFactory(BackendFactory.class).to(Backend.class).in(Singleton.class);
 
     Class<?> usClazz;
@@ -135,6 +134,32 @@ public class NessieServerBinder extends AbstractBinder {
 
     @Override
     public void dispose(UserServiceDbBackend userServiceDbBackend) {
+
+    }
+  }
+
+  private static class KeyGeneratorFactory implements Factory<KeyGenerator> {
+
+    private final ServerConfiguration configuration;
+
+    @Inject
+    private KeyGeneratorFactory(ServerConfiguration configuration) {
+      this.configuration = configuration;
+    }
+
+    @Override
+    public KeyGenerator provide() {
+      try {
+        Class<?> clazz = Class.forName(configuration.getAuthenticationConfiguration().getKeyGeneratorClassName());
+        return (KeyGenerator) clazz.getConstructor().newInstance();
+      } catch (ReflectiveOperationException e) {
+        throw new RuntimeException(e);
+      }
+
+    }
+
+    @Override
+    public void dispose(KeyGenerator instance) {
 
     }
   }
