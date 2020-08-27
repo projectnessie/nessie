@@ -57,7 +57,7 @@
     <dropwizard-metrics.version>4.1.11</dropwizard-metrics.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
-    <guava.version>28.1-jre</guava.version>
+    <guava.version>29.0-jre</guava.version>
     <hadoop.version>3.2.0</hadoop.version>
     <iceberg.version>0.9.0</iceberg.version>
     <immutables.version>2.8.2</immutables.version>
