@@ -58,6 +58,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 
+import software.amazon.awssdk.regions.Region;
+
 @ExtendWith(LocalDynamoDB.class)
 class ITDynamoVersionStore {
 
@@ -80,7 +82,10 @@ class ITDynamoVersionStore {
   }
 
   ITDynamoVersionStore() throws URISyntaxException {
-    config = DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000")).build();
+    config = DynamoStoreConfig.builder()
+        .endpoint(new URI("http://localhost:8000"))
+        .region(Region.US_WEST_2)
+        .build();
   }
 
   @Test
