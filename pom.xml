@@ -167,7 +167,7 @@
           <artifactId>frontend-maven-plugin</artifactId>
           <version>1.10.0</version>
           <configuration>
-            <installDirectory>target</installDirectory>
+            <installDirectory>${project.build.directory}</installDirectory>
             <nodeVersion>v12.16.2</nodeVersion>
           </configuration>
         </plugin>
