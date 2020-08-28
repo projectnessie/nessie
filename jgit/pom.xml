@@ -54,6 +54,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.dremio.nessie</groupId>
       <artifactId>nessie-backends-simple</artifactId>
       <version>${project.version}</version>

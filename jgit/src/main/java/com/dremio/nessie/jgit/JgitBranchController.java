@@ -82,6 +82,10 @@ public class JgitBranchController implements BranchController {
 
   private final Repository repository;
 
+  public JgitBranchController(Repository repository) {
+    this.repository = repository;
+  }
+
   /**
    * Construct a JgitBranchController. This uses jgit to fulfill the BranchController contract.
    * @param backend db backend to work off of
