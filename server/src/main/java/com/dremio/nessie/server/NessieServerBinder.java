@@ -68,7 +68,7 @@ public class NessieServerBinder extends AbstractBinder {
     bindFactory(UserServiceDbBackendFactory.class).to(UserServiceDbBackend.class);
     bind(usClazz).to(UserService.class);
     bind(NessieSecurityContext.class).to(SecurityContext.class);
-    bindFactory(JGitContainerFactory.class).to(BranchController.class);
+    bindFactory(JGitContainerFactory.class).to(BranchController.class).in(Singleton.class);
   }
 
   public static class JGitContainerFactory implements Factory<BranchController> {
