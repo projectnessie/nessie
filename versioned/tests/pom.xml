@@ -20,20 +20,36 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>nessie</artifactId>
+    <artifactId>nessie-versioned</artifactId>
     <groupId>com.dremio.nessie</groupId>
     <version>1.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <name>Nessie - Versioned - Parent</name>
-  <artifactId>nessie-versioned</artifactId>
-  <packaging>pom</packaging>
-  <modules>
-    <module>dynamodb</module>
-    <module>jgit</module>
-    <module>spi</module>
-    <module>tests</module>
-  </modules>
-</project>
+  <name>Nessie - Versioned Store Integration Tests</name>
+  <artifactId>nessie-versioned-tests</artifactId>
 
+  <dependencies>
+    <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-versioned-spi</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+    </dependency>
+  </dependencies>
+</project>
