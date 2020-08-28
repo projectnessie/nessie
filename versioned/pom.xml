@@ -31,8 +31,9 @@
   <name>Nessie - Versioned - Parent</name>
 
   <modules>
-    <module>spi</module>
     <module>dynamodb</module>
     <module>jgit</module>
+    <module>spi</module>
+    <module>tests</module>
   </modules>
 </project>
