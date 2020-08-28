@@ -32,6 +32,7 @@
   <modules>
     <module>spi</module>
     <module>dynamodb</module>
+    <module>jgit</module>
   </modules>
 </project>
 
