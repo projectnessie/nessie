@@ -22,14 +22,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
+import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
+import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import com.dremio.nessie.backend.simple.InMemory;
 import com.dremio.nessie.error.NessieConflictException;
@@ -45,25 +52,65 @@ import com.dremio.nessie.model.TableMeta;
 class TestRepo {
 
   private static InMemory backend;
-  private static JgitBranchController controller;
+  private Repository repository;
+
+  @TempDir
+  File jgitDir;
+
+  enum RepoType {
+    NESSIE,
+    INMEMORY,
+    FILE
+  }
 
   @BeforeAll
   public static void init() {
     backend = new InMemory();
-    controller = new JgitBranchController(backend);
   }
 
-  @SuppressWarnings("MissingJavadocMethod")
-  @BeforeEach
-  public void create() throws IOException {
-    controller.create("master", null, commitMeta("master",
-                                                 "",
-                                                 Action.CREATE_BRANCH,
-                                                 1));
+  private JgitBranchController controller(RepoType repoType) throws IOException {
+    return controller(repoType, false);
   }
 
-  @Test
-  public void test() throws IOException {
+  private JgitBranchController controller(RepoType repoType, boolean reuse) throws IOException {
+    final JgitBranchController controller;
+    switch (repoType) {
+      case NESSIE:
+        controller = new JgitBranchController(backend);
+        break;
+      case INMEMORY:
+        try {
+          repository = reuse ? repository :
+            new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
+          controller = new JgitBranchController(repository);
+          break;
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      case FILE:
+        try {
+          repository = Git.init().setDirectory(jgitDir).call().getRepository();
+          controller = new JgitBranchController(repository);
+          break;
+        } catch (GitAPIException e) {
+          throw new RuntimeException(e);
+        }
+      default:
+        throw new RuntimeException("Can't reach here");
+    }
+    try {
+      controller.create("master", null, commitMeta("master", "", Action.CREATE_BRANCH, 1));
+    } catch (NessieConflictException e) {
+      //pass already has a master
+    }
+    return controller;
+  }
+
+
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  public void test(RepoType repoType) throws IOException {
+    JgitBranchController controller = controller(repoType);
     Branch branch = controller.getBranch("master");
     assertEquals("master", branch.getName());
     List<Branch> branches = controller.getBranches();
@@ -118,8 +165,10 @@ class TestRepo {
   }
 
   @SuppressWarnings("VariableDeclarationUsageDistance")
-  @Test
-  public void testMerge() throws IOException {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  public void testMerge(RepoType repoType) throws IOException {
+    JgitBranchController controller = controller(repoType);
     Branch branch = controller.create("test",
                                       "master",
                                       commitMeta("test", "", Action.CREATE_BRANCH, 1));
@@ -172,8 +221,10 @@ class TestRepo {
     assertEquals(1, branches.size());
   }
 
-  @Test
-  public void testForceMerge() throws IOException {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  public void testForceMerge(RepoType repoType) throws IOException {
+    JgitBranchController controller = controller(repoType);
     Branch branch = controller.create("test",
                                       "master",
                                       commitMeta("test", "", Action.CREATE_BRANCH, 1));
@@ -203,15 +254,15 @@ class TestRepo {
     assertEquals(1, controller.getTables("test", null).size());
     String finalCommit = commit;
     assertThrows(NessieConflictException.class, () -> controller.promote("master",
-                                                                       "test",
-                                                                       finalCommit,
-                                                                       commitMeta("master",
-                                                                                  "",
-                                                                                  Action.MERGE,
-                                                                                  1),
-                                                                       false,
-                                                                       false,
-                                                                       null));
+                                                                         "test",
+                                                                         finalCommit,
+                                                                         commitMeta("master",
+                                                                                    "",
+                                                                                    Action.MERGE,
+                                                                                    1),
+                                                                         false,
+                                                                         false,
+                                                                         null));
     commit = controller.getBranch("master").getId();
     commit = controller.promote("master",
                                 "test",
@@ -233,8 +284,10 @@ class TestRepo {
     assertTrue(tables.isEmpty());
   }
 
-  @Test
-  public void testCherryPick() throws IOException {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  public void testCherryPick(RepoType repoType) throws IOException {
+    JgitBranchController controller = controller(repoType);
     Branch branch = controller.create("test",
                                       "master",
                                       commitMeta("test", "", Action.CREATE_BRANCH, 1));
@@ -284,8 +337,10 @@ class TestRepo {
   }
 
   @SuppressWarnings("VariableDeclarationUsageDistance")
-  @Test
-  public void testMetadata() throws IOException {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  public void testMetadata(RepoType repoType) throws IOException {
+    JgitBranchController controller = controller(repoType);
     Branch branch = controller.getBranch("master");
     TableMeta tableMeta = ImmutableTableMeta.builder()
                                             .schema("x")
@@ -314,8 +369,10 @@ class TestRepo {
     assertTrue(tables.isEmpty());
   }
 
-  @Test
-  public void testConflict() throws IOException {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  public void testConflict(RepoType repoType) throws IOException {
+    JgitBranchController controller = controller(repoType);
     Branch branch = controller.getBranch("master");
     Table table = ImmutableTable.builder()
                                 .id("db.table")
@@ -358,9 +415,11 @@ class TestRepo {
     assertTrue(tables.isEmpty());
   }
 
-  @Test
-  public void testMultipleControllers() throws IOException {
-    JgitBranchController controller2 = new JgitBranchController(backend);
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  public void testMultipleControllers(RepoType repoType) throws IOException {
+    JgitBranchController controller = controller(repoType);
+    JgitBranchController controller2 = controller(repoType, true);
     Branch branch = controller.getBranch("master");
     Branch branch2 = controller2.getBranch("master");
     Table table = ImmutableTable.builder()
@@ -380,13 +439,13 @@ class TestRepo {
                                  ImmutableTable.copyOf(table).withMetadataLocation("xx")));
     commit = controller2.getBranch("master").getId();
     commit = controller2.commit("master",
-                       commitMeta("master", "", Action.COMMIT, 1),
-                       commit,
-                       ImmutableTable.copyOf(table).withMetadataLocation("xx"));
+                                commitMeta("master", "", Action.COMMIT, 1),
+                                commit,
+                                ImmutableTable.copyOf(table).withMetadataLocation("xx"));
     controller2.commit("master",
-                      commitMeta("master", "", Action.COMMIT, 2),
-                      commit,
-                      ImmutableTable.copyOf(table).withIsDeleted(true));
+                       commitMeta("master", "", Action.COMMIT, 2),
+                       commit,
+                       ImmutableTable.copyOf(table).withIsDeleted(true));
     controller.getBranch("master");
     List<String> tables = controller.getTables("master", null);
     assertTrue(tables.isEmpty());
@@ -395,11 +454,7 @@ class TestRepo {
   @SuppressWarnings("MissingJavadocMethod")
   @AfterEach
   public void empty() throws IOException {
-    assertEquals(1, controller.getBranches().size());
-    assertEquals("master", controller.getBranches().get(0).getName());
-    assertTrue(controller.getTables("master", null).isEmpty());
     backend.close();
-    controller.getBranch("master");
   }
 
   @AfterAll
