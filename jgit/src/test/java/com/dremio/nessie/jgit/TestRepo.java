@@ -52,6 +52,7 @@ import com.dremio.nessie.model.TableMeta;
 class TestRepo {
 
   private static InMemory backend;
+  private static TableTableConverter tableConverter = new TableTableConverter();
   private Repository repository;
 
   @TempDir
@@ -68,21 +69,21 @@ class TestRepo {
     backend = new InMemory();
   }
 
-  private JgitBranchController controller(RepoType repoType) throws IOException {
+  private JgitBranchControllerLegacy controller(RepoType repoType) throws IOException {
     return controller(repoType, false);
   }
 
-  private JgitBranchController controller(RepoType repoType, boolean reuse) throws IOException {
-    final JgitBranchController controller;
+  private JgitBranchControllerLegacy controller(RepoType repoType, boolean reuse) throws IOException {
+    final JgitBranchControllerLegacy controller;
     switch (repoType) {
       case NESSIE:
-        controller = new JgitBranchController(backend);
+        controller = new JgitBranchControllerLegacy(backend);
         break;
       case INMEMORY:
         try {
           repository = reuse ? repository :
             new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
-          controller = new JgitBranchController(repository);
+          controller = new JgitBranchControllerLegacy(repository);
           break;
         } catch (IOException e) {
           throw new RuntimeException(e);
@@ -90,7 +91,7 @@ class TestRepo {
       case FILE:
         try {
           repository = Git.init().setDirectory(jgitDir).call().getRepository();
-          controller = new JgitBranchController(repository);
+          controller = new JgitBranchControllerLegacy(repository);
           break;
         } catch (GitAPIException e) {
           throw new RuntimeException(e);
@@ -99,7 +100,7 @@ class TestRepo {
         throw new RuntimeException("Can't reach here");
     }
     try {
-      controller.create("master", null, commitMeta("master", "", Action.CREATE_BRANCH, 1));
+      controller.create("master", null, commitMeta("master", "", Action.CREATE_BRANCH, 1), tableConverter);
     } catch (NessieConflictException e) {
       //pass already has a master
     }
@@ -110,14 +111,14 @@ class TestRepo {
   @ParameterizedTest
   @EnumSource(RepoType.class)
   public void test(RepoType repoType) throws IOException {
-    JgitBranchController controller = controller(repoType);
+    JgitBranchControllerLegacy controller = controller(repoType);
     Branch branch = controller.getBranch("master");
     assertEquals("master", branch.getName());
     List<Branch> branches = controller.getBranches();
     assertEquals(1, branches.size());
     assertEquals(branch.getId(), branches.get(0).getId());
     assertEquals(branch.getName(), branches.get(0).getName());
-    List<String> tables = controller.getTables("master", null);
+    List<String> tables = controller.getTables("master", null, tableConverter);
     assertTrue(tables.isEmpty());
     Table table = ImmutableTable.builder()
                                 .id("db.table")
@@ -128,13 +129,14 @@ class TestRepo {
     String commit = controller.commit("master",
                                       commitMeta("master", "", Action.COMMIT, 1),
                                       branch.getId(),
+                                      tableConverter,
                                       table);
     assertNotEquals(branch.getId(), commit);
     branch = controller.getBranch("master");
     assertEquals(branch.getId(), commit);
-    tables = controller.getTables("master", null);
+    tables = controller.getTables("master", null, tableConverter);
     assertEquals(1, tables.size());
-    tables = controller.getTables("master", "db");
+    tables = controller.getTables("master", "db", tableConverter);
     assertEquals(1, tables.size());
     Table newTable = controller.getTable("master", "db.table", false);
     assertEquals(tables.get(0), newTable.getId());
@@ -150,17 +152,19 @@ class TestRepo {
     controller.commit("master",
                       commitMeta("master", "", Action.COMMIT, 1),
                       branch.getId(),
+                      tableConverter,
                       table1);
-    tables = controller.getTables("master", null);
+    tables = controller.getTables("master", null, tableConverter);
     assertEquals(2, tables.size());
-    tables = controller.getTables("master", "db");
+    tables = controller.getTables("master", "db", tableConverter);
     assertEquals(1, tables.size());
     controller.commit("master",
                       commitMeta("master", "", Action.COMMIT, 2),
                       commit,
+                      tableConverter,
                       ImmutableTable.copyOf(table1).withIsDeleted(true),
                       ImmutableTable.copyOf(table).withIsDeleted(true));
-    tables = controller.getTables("master", null);
+    tables = controller.getTables("master", null, tableConverter);
     assertTrue(tables.isEmpty());
   }
 
@@ -168,10 +172,10 @@ class TestRepo {
   @ParameterizedTest
   @EnumSource(RepoType.class)
   public void testMerge(RepoType repoType) throws IOException {
-    JgitBranchController controller = controller(repoType);
+    JgitBranchControllerLegacy controller = controller(repoType);
     Branch branch = controller.create("test",
                                       "master",
-                                      commitMeta("test", "", Action.CREATE_BRANCH, 1));
+                                      commitMeta("test", "", Action.CREATE_BRANCH, 1), tableConverter);
     List<Branch> branches = controller.getBranches();
     assertEquals(2, branches.size());
     Table table = ImmutableTable.builder()
@@ -183,9 +187,10 @@ class TestRepo {
     String commit = controller.commit("test",
                                       commitMeta("test", "", Action.COMMIT, 1),
                                       branch.getId(),
+                                      tableConverter,
                                       table);
-    assertTrue(controller.getTables("master", null).isEmpty());
-    assertEquals(1, controller.getTables("test", null).size());
+    assertTrue(controller.getTables("master", null, tableConverter).isEmpty());
+    assertEquals(1, controller.getTables("test", null, tableConverter).size());
     Table newTable = controller.getTable("test", "db.table", false);
     assertEquals(table.getId(), newTable.getId());
     assertEquals(table.getNamespace(), newTable.getNamespace());
@@ -198,7 +203,7 @@ class TestRepo {
                                  commitMeta("master", "", Action.MERGE, 1),
                                  false,
                                  false,
-                                 null));
+                                 null, tableConverter));
     commit = controller.getBranch("master").getId();
     commit = controller.promote("master",
                                 "test",
@@ -206,8 +211,8 @@ class TestRepo {
                                 commitMeta("master", "", Action.MERGE, 1),
                                 false,
                                 false,
-                                null);
-    assertEquals(1, controller.getTables("master", null).size());
+                                null, tableConverter);
+    assertEquals(1, controller.getTables("master", null, tableConverter).size());
     newTable = controller.getTable("master", "db.table", false);
     assertEquals(table.getId(), newTable.getId());
     assertEquals(table.getNamespace(), newTable.getNamespace());
@@ -216,6 +221,7 @@ class TestRepo {
     controller.commit("master",
                       commitMeta("master", "", Action.COMMIT, 2),
                       commit,
+                      tableConverter,
                       ImmutableTable.copyOf(table).withIsDeleted(true));
     branches = controller.getBranches();
     assertEquals(1, branches.size());
@@ -224,10 +230,10 @@ class TestRepo {
   @ParameterizedTest
   @EnumSource(RepoType.class)
   public void testForceMerge(RepoType repoType) throws IOException {
-    JgitBranchController controller = controller(repoType);
+    JgitBranchControllerLegacy controller = controller(repoType);
     Branch branch = controller.create("test",
                                       "master",
-                                      commitMeta("test", "", Action.CREATE_BRANCH, 1));
+                                      commitMeta("test", "", Action.CREATE_BRANCH, 1), tableConverter);
     List<Branch> branches = controller.getBranches();
     assertEquals(2, branches.size());
     Table table = ImmutableTable.builder()
@@ -239,6 +245,7 @@ class TestRepo {
     String commit = controller.commit("test",
                                       commitMeta("test", "", Action.COMMIT, 1),
                                       branch.getId(),
+                                      tableConverter,
                                       table);
     Table table1 = ImmutableTable.builder()
                                  .id("dbx.table")
@@ -249,9 +256,10 @@ class TestRepo {
     controller.commit("master",
                       commitMeta("master", "", Action.COMMIT, 1),
                       branch.getId(),
+                      tableConverter,
                       table1);
-    assertEquals(1, controller.getTables("master", null).size());
-    assertEquals(1, controller.getTables("test", null).size());
+    assertEquals(1, controller.getTables("master", null, tableConverter).size());
+    assertEquals(1, controller.getTables("test", null, tableConverter).size());
     String finalCommit = commit;
     assertThrows(NessieConflictException.class, () -> controller.promote("master",
                                                                          "test",
@@ -262,7 +270,7 @@ class TestRepo {
                                                                                     1),
                                                                          false,
                                                                          false,
-                                                                         null));
+                                                                         null, tableConverter));
     commit = controller.getBranch("master").getId();
     commit = controller.promote("master",
                                 "test",
@@ -270,27 +278,28 @@ class TestRepo {
                                 commitMeta("master", "", Action.MERGE, 1),
                                 true,
                                 false,
-                                null);
-    assertEquals(controller.getTables("master", null),
-                 controller.getTables("test", null));
+                                null, tableConverter);
+    assertEquals(controller.getTables("master", null, tableConverter),
+                 controller.getTables("test", null, tableConverter));
     controller.deleteBranch("test", commit, commitMetaDelete("test"));
     controller.commit("master",
                       commitMeta("master", "", Action.COMMIT, 2),
                       commit,
+                      tableConverter,
                       ImmutableTable.copyOf(table).withIsDeleted(true));
     branches = controller.getBranches();
     assertEquals(1, branches.size());
-    List<String> tables = controller.getTables("master", null);
+    List<String> tables = controller.getTables("master", null, tableConverter);
     assertTrue(tables.isEmpty());
   }
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
   public void testCherryPick(RepoType repoType) throws IOException {
-    JgitBranchController controller = controller(repoType);
+    JgitBranchControllerLegacy controller = controller(repoType);
     Branch branch = controller.create("test",
                                       "master",
-                                      commitMeta("test", "", Action.CREATE_BRANCH, 1));
+                                      commitMeta("test", "", Action.CREATE_BRANCH, 1), tableConverter);
     List<Branch> branches = controller.getBranches();
     assertEquals(2, branches.size());
     Table table = ImmutableTable.builder()
@@ -302,6 +311,7 @@ class TestRepo {
     String commit = controller.commit("test",
                                       commitMeta("test", "", Action.COMMIT, 1),
                                       branch.getId(),
+                                      tableConverter,
                                       table);
     Table table1 = ImmutableTable.builder()
                                  .id("dbx.table")
@@ -312,23 +322,25 @@ class TestRepo {
     commit = controller.commit("master",
                                commitMeta("master", "", Action.COMMIT, 1),
                                branch.getId(),
+                               tableConverter,
                                table1);
-    assertEquals(1, controller.getTables("master", null).size());
-    assertEquals(1, controller.getTables("test", null).size());
+    assertEquals(1, controller.getTables("master", null, tableConverter).size());
+    assertEquals(1, controller.getTables("test", null, tableConverter).size());
     commit = controller.promote("master",
                                 "test",
                                 commit,
                                 commitMeta("master", "", Action.MERGE, 1),
                                 false,
                                 true,
-                                null);
-    assertEquals(2, controller.getTables("master", null).size());
+                                null, tableConverter);
+    assertEquals(2, controller.getTables("master", null, tableConverter).size());
     controller.commit("master",
                       commitMeta("master", "", Action.COMMIT, 2),
                       commit,
+                      tableConverter,
                       ImmutableTable.copyOf(table1).withIsDeleted(true),
                       ImmutableTable.copyOf(table).withIsDeleted(true));
-    List<String> tables = controller.getTables("master", null);
+    List<String> tables = controller.getTables("master", null, tableConverter);
     assertTrue(tables.isEmpty());
     commit = controller.getBranch("test").getId();
     controller.deleteBranch("test", commit, commitMetaDelete("test"));
@@ -340,7 +352,7 @@ class TestRepo {
   @ParameterizedTest
   @EnumSource(RepoType.class)
   public void testMetadata(RepoType repoType) throws IOException {
-    JgitBranchController controller = controller(repoType);
+    JgitBranchControllerLegacy controller = controller(repoType);
     Branch branch = controller.getBranch("master");
     TableMeta tableMeta = ImmutableTableMeta.builder()
                                             .schema("x")
@@ -356,23 +368,25 @@ class TestRepo {
     String commit = controller.commit("master",
                                       commitMeta("master", "", Action.COMMIT, 1),
                                       branch.getId(),
+                                      tableConverter,
                                       table);
-    assertEquals(1, controller.getTables("master", null).size());
+    assertEquals(1, controller.getTables("master", null, tableConverter).size());
     table = controller.getTable("master", "db.table", true);
     assertNotNull(table.getMetadata());
     assertEquals(tableMeta, table.getMetadata());
     controller.commit("master",
                       commitMeta("master", "", Action.COMMIT, 1),
                       commit,
+                      tableConverter,
                       ImmutableTable.copyOf(table).withIsDeleted(true));
-    List<String> tables = controller.getTables("master", null);
+    List<String> tables = controller.getTables("master", null, tableConverter);
     assertTrue(tables.isEmpty());
   }
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
   public void testConflict(RepoType repoType) throws IOException {
-    JgitBranchController controller = controller(repoType);
+    JgitBranchControllerLegacy controller = controller(repoType);
     Branch branch = controller.getBranch("master");
     Table table = ImmutableTable.builder()
                                 .id("db.table")
@@ -383,11 +397,13 @@ class TestRepo {
     String commit = controller.commit("master",
                                       commitMeta("master", "", Action.COMMIT, 1),
                                       branch.getId(),
+                                      tableConverter,
                                       table);
     assertThrows(NessieConflictException.class,
         () -> controller.commit("master",
                                 commitMeta("master", "", Action.COMMIT, 1),
                                 branch.getId(),
+                                tableConverter,
                                 ImmutableTable.copyOf(table).withMetadataLocation("x")));
     Table table1 = ImmutableTable.builder()
                                  .id("dbx.table")
@@ -398,28 +414,31 @@ class TestRepo {
     commit = controller.commit("master",
                                commitMeta("master", "", Action.COMMIT, 1),
                                branch.getId(),
+                               tableConverter,
                                table1
     );
     controller.commit("master",
                       commitMeta("master", "", Action.COMMIT, 1),
                       commit,
+                      tableConverter,
                       ImmutableTable.copyOf(table).withMetadataLocation("x")
     );
-    assertEquals(2, controller.getTables("master", null).size());
+    assertEquals(2, controller.getTables("master", null, tableConverter).size());
     controller.commit("master",
                       commitMeta("master", "", Action.COMMIT, 2),
                       commit,
+                      tableConverter,
                       ImmutableTable.copyOf(table1).withIsDeleted(true),
                       ImmutableTable.copyOf(table).withIsDeleted(true));
-    List<String> tables = controller.getTables("master", null);
+    List<String> tables = controller.getTables("master", null, tableConverter);
     assertTrue(tables.isEmpty());
   }
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
   public void testMultipleControllers(RepoType repoType) throws IOException {
-    JgitBranchController controller = controller(repoType);
-    JgitBranchController controller2 = controller(repoType, true);
+    JgitBranchControllerLegacy controller = controller(repoType);
+    JgitBranchControllerLegacy controller2 = controller(repoType, true);
     Branch branch = controller.getBranch("master");
     Branch branch2 = controller2.getBranch("master");
     Table table = ImmutableTable.builder()
@@ -431,23 +450,27 @@ class TestRepo {
     String commit = controller.commit("master",
                                       commitMeta("master", "", Action.COMMIT, 1),
                                       branch.getId(),
+                                      tableConverter,
                                       table);
     assertThrows(NessieConflictException.class,
         () -> controller2.commit("master",
                                  commitMeta("master", "", Action.COMMIT, 1),
                                  branch2.getId(),
+                                 tableConverter,
                                  ImmutableTable.copyOf(table).withMetadataLocation("xx")));
     commit = controller2.getBranch("master").getId();
     commit = controller2.commit("master",
                                 commitMeta("master", "", Action.COMMIT, 1),
                                 commit,
+                                tableConverter,
                                 ImmutableTable.copyOf(table).withMetadataLocation("xx"));
     controller2.commit("master",
                        commitMeta("master", "", Action.COMMIT, 2),
                        commit,
+                       tableConverter,
                        ImmutableTable.copyOf(table).withIsDeleted(true));
     controller.getBranch("master");
-    List<String> tables = controller.getTables("master", null);
+    List<String> tables = controller.getTables("master", null, tableConverter);
     assertTrue(tables.isEmpty());
   }
 

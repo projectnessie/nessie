@@ -33,9 +33,8 @@ import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import com.dremio.nessie.auth.User;
 import com.dremio.nessie.auth.UserService;
 import com.dremio.nessie.backend.Backend;
-import com.dremio.nessie.backend.BranchController;
 import com.dremio.nessie.backend.simple.InMemory;
-import com.dremio.nessie.jgit.JgitBranchController;
+import com.dremio.nessie.jgit.JgitBranchControllerLegacy;
 import com.dremio.nessie.jwt.KeyGenerator;
 import com.dremio.nessie.model.ImmutableUser;
 import com.dremio.nessie.server.auth.BasicKeyGenerator;
@@ -58,10 +57,10 @@ public class NessieTestServerBinder extends AbstractBinder {
     bind(NessieSecurityContext.class).to(SecurityContext.class);
     bind(TestUserService.class).to(UserService.class);
     bind(BasicKeyGenerator.class).to(KeyGenerator.class);
-    bindFactory(JGitContainerFactory.class).to(BranchController.class);
+    bindFactory(JGitContainerFactory.class).to(JgitBranchControllerLegacy.class);
   }
 
-  public static class JGitContainerFactory implements Factory<BranchController> {
+  public static class JGitContainerFactory implements Factory<JgitBranchControllerLegacy> {
     private static boolean enabled = false;
 
     private final Backend backend;
@@ -72,13 +71,13 @@ public class NessieTestServerBinder extends AbstractBinder {
     }
 
     @Override
-    public BranchController provide() {
-      JgitBranchController jgc = new JgitBranchController(backend);
+    public JgitBranchControllerLegacy provide() {
+      JgitBranchControllerLegacy jgc = new JgitBranchControllerLegacy(backend);
       if (enabled) {
         return jgc;
       }
       try {
-        jgc.create("master", null, null);
+        jgc.create("master", null, null, null);
         enabled = true;
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -87,7 +86,7 @@ public class NessieTestServerBinder extends AbstractBinder {
     }
 
     @Override
-    public void dispose(BranchController instance) {
+    public void dispose(JgitBranchControllerLegacy instance) {
 
     }
   }
