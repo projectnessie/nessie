@@ -46,12 +46,12 @@ final class MetadataHandler {
    * <p>
    * The current handling of metadata is rather primitive and will be fixed in a later pass.
    * Currently we try to store metadata in a single blob if the blob size is under 350KB. The limit
-   * is set to just below the max size of a DynamoDb object (400KB). When a metadata object grows
-   * beyond that size we truncate it (resulting in data loss) to only the last snapshot. If that is
-   * still too large we drop metadata entirely.
+   * is set to just belodrop metadata entirely.
    * </p>
    *
-   * <p>
+   * <p>w the max size of a DynamoDb object (400KB). When a metadata object grows
+   *    * beyond that size we truncate it (resulting in data loss) to only the last snapshot. If that is
+   *    * still too large we
    * We are not overly concerned with the handling of metadata as it is only required for the UI and
    * typically it isn't used (though is expensive to read and write). This may change in the future
    * so we leave this simple handling as is for now.
@@ -83,6 +83,7 @@ final class MetadataHandler {
       }
       if (data != null) {
         ObjectId metaId = inserter.insert(Constants.OBJ_BLOB, data);
+        inserter.flush();
         id = metaId.getName();
       }
     }
@@ -106,7 +107,7 @@ final class MetadataHandler {
                      boolean metadata,
                      Repository repository) throws IOException {
     Table branchTable = branchTablePair.getKey();
-    if (branchTablePair.getValue() != null && metadata) {
+    if (branchTablePair.getValue() != null && !branchTablePair.getValue().isEmpty() && metadata) {
       ObjectLoader ol = repository.open(ObjectId.fromString(branchTablePair.getValue()));
       TableMeta tm = ProtoUtil.convertToModel(ol.getBytes());
       branchTable = ImmutableTable.copyOf(branchTable).withMetadata(tm);

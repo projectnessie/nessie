@@ -17,16 +17,17 @@ package com.dremio.nessie.versioned.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
+import com.dremio.nessie.backend.TableConverter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.Table;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
@@ -44,13 +45,19 @@ import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
 
-public class JGitVersionStore implements VersionStore<Table, CommitMeta> {
+/**
+ * VersionStore interface for JGit backend.
+ */
+public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, METADATA> {
 
-  private final JGitStore store;
-  private final Serializer<Table> serializer;
+  private final JGitStore<TABLE, METADATA> store;
+  private final Serializer<TABLE> serializer;
   private final Serializer<CommitMeta> metadataSerializer;
 
-  public JGitVersionStore(StoreWorker<Table, CommitMeta> storeWorker, JGitStore store) {
+  /**
+   * Construct a JGitVersionStore.
+   */
+  public JGitVersionStore(StoreWorker<TABLE, CommitMeta> storeWorker, JGitStore<TABLE, METADATA> store) {
     this.store = store;
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
@@ -63,22 +70,47 @@ public class JGitVersionStore implements VersionStore<Table, CommitMeta> {
   }
 
   @Override
-  public void commit(BranchName branch, Optional<Hash> expectedHash, CommitMeta metadata,
-                     List<Operation<Table>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
+  public void commit(BranchName branch, Optional<Hash> expectedHash, METADATA metadata,
+                     List<Operation<TABLE>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     store.getRef(branch.getName());
     try {
-      List<Table> tables = new ArrayList<>();
-      for (Operation<Table> o: operations) {
+      List<TABLE> tables = new ArrayList<>();
+      Map<TABLE, Operation<TABLE>> reverseMap = new HashMap<>();
+      for (Operation<TABLE> o: operations) {
         if (o instanceof Delete) {
-          Delete<Table> d = (Delete<Table>) o;
-          Table table = getValue(branch, d.getKey());
-          tables.add(ImmutableTable.copyOf(table).withIsDeleted(true));
+          Delete<TABLE> d = (Delete<TABLE>) o;
+          TABLE table = getValue(branch, d.getKey());
+          tables.add(table);
+          reverseMap.put(table, d);
         } else if (o instanceof Put) {
-          Put<Table> p = (Put<Table>) o;
+          Put<TABLE> p = (Put<TABLE>) o;
           tables.add(p.getValue());
+          reverseMap.put(p.getValue(), p);
         }
+        //todo assert unchanged
       }
-      store.commit(branch.getName(), expectedHash.map(Hash::asString).orElse(null), metadata, tables.toArray(new Table[0]));
+      TableConverter<TABLE> tableConverter = new TableConverter<TABLE>() {
+        @Override
+        public long getUpdateTime(TABLE table) {
+          return 0; //todo not really needed anymore
+        }
+
+        @Override
+        public boolean isDeleted(TABLE branchTable) {
+          return reverseMap.get(branchTable) instanceof Delete;
+        }
+
+        @Override
+        public String getId(TABLE branchTable) {
+          return null; //todo
+        }
+
+        @Override
+        public String getNamespace(TABLE branchTable) {
+          return null; //todo
+        }
+      };
+      store.commit(branch.getName(), expectedHash.map(Hash::asString).orElse(null), metadata, tableConverter, tables);
     } catch (NessieConflictException e) {
       throw new ReferenceConflictException(e.getMessage());
     } catch (IOException e) {
@@ -115,7 +147,28 @@ public class JGitVersionStore implements VersionStore<Table, CommitMeta> {
       //pass expected
     }
     try {
-      store.createRef(ref.getName(), targetHash.map(Hash::asString).orElse(null));
+      TableConverter<TABLE> tableConverter = new TableConverter<TABLE>() {
+        @Override
+        public long getUpdateTime(TABLE o) {
+          return 0; //todo not needed, remove
+        }
+
+        @Override
+        public boolean isDeleted(TABLE branchTable) {
+          return false; //assume will never be deleted
+        }
+
+        @Override
+        public String getId(TABLE branchTable) {
+          return null; //todo
+        }
+
+        @Override
+        public String getNamespace(TABLE branchTable) {
+          return null; //todo
+        }
+      };
+      store.createRef(ref.getName(), targetHash.map(Hash::asString).orElse(null), tableConverter);//todo tableConverter is null?
     } catch (IOException e) {
       throw new RuntimeException(String.format("Unknown error while creating %s", ref), e);
     }
@@ -143,7 +196,7 @@ public class JGitVersionStore implements VersionStore<Table, CommitMeta> {
   }
 
   @Override
-  public Stream<WithHash<CommitMeta>> getCommits(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
     return null; //todo
   }
 
@@ -153,7 +206,7 @@ public class JGitVersionStore implements VersionStore<Table, CommitMeta> {
   }
 
   @Override
-  public Table getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public TABLE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     if (ref instanceof BranchName) {
       return store.getValue(((BranchName) ref).getName(), key.toString());
     } else if (ref instanceof TagName) {
@@ -168,7 +221,7 @@ public class JGitVersionStore implements VersionStore<Table, CommitMeta> {
   }
 
   @Override
-  public List<Optional<Table>> getValue(Ref ref, List<Key> key) {
+  public List<Optional<TABLE>> getValue(Ref ref, List<Key> key) {
     throw new IllegalStateException("Not yet implemented.");
   }
 
