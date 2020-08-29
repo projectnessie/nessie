@@ -50,11 +50,14 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Metered;
 import com.codahale.metrics.annotation.Timed;
 import com.dremio.nessie.auth.User;
-import com.dremio.nessie.backend.BranchController;
+import com.dremio.nessie.backend.Backend;
+import com.dremio.nessie.backend.TableConverter;
 import com.dremio.nessie.error.ImmutableNessieError;
 import com.dremio.nessie.error.ImmutableNessieError.Builder;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieError;
+import com.dremio.nessie.jgit.JgitBranchControllerLegacy;
+import com.dremio.nessie.jgit.TableTableConverter;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.CommitMeta.Action;
@@ -90,11 +93,12 @@ public class TableBranchOperations {
   //todo git like log
 
   private static final Logger logger = LoggerFactory.getLogger(TableBranchOperations.class);
-  private final BranchController backend;
+  private final JgitBranchControllerLegacy backend;
+  private final TableConverter<Table> converter = new TableTableConverter();
 
   @Inject
-  public TableBranchOperations(BranchController backend) {
-    this.backend = backend;
+  public TableBranchOperations(Backend backend) {
+    this.backend = new JgitBranchControllerLegacy(backend);
   }
 
   /**
@@ -157,7 +161,7 @@ public class TableBranchOperations {
         return exception(Response.Status.NOT_FOUND, "branch " + branchName + " not found", null);
       }
       List<String> tableList = backend.getTables(branch.getId(), namespace.equals("all")
-          ? null : namespace);
+          ? null : namespace, converter);
       return Response.ok(tableList.toArray(new String[0])).build();
     } catch (IOException e) {
       return exception(e);
@@ -236,7 +240,7 @@ public class TableBranchOperations {
                               @Parameter(description = "fetch all metadata on table")
                                 @DefaultValue("false") @QueryParam("metadata") boolean metadata) {
     try {
-      Table table = backend.getTable(branch, tableName, metadata);
+      Table table = (Table) backend.getTable(branch, tableName, metadata);
       if (table == null) {
         return exception(Response.Status.NOT_FOUND,
                          "table " + tableName + " not found on branch " + branch,
@@ -287,7 +291,8 @@ public class TableBranchOperations {
                                              reason,
                                              1,
                                              branchName,
-                                             Action.CREATE_BRANCH));
+                                             Action.CREATE_BRANCH),
+                                        converter);
       return Response.created(null).tag(tagFromTable(newBranch)).build();
     } catch (IOException e) {
       return exception(e);
@@ -439,7 +444,7 @@ public class TableBranchOperations {
       if (backend.getBranch(branch) == null) {
         return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
       }
-      Table branchTable = backend.getTable(branch, table, false);
+      Table branchTable = (Table) backend.getTable(branch, table, false);
       if (branchTable == null) {
         return exception(Response.Status.NOT_FOUND,
                          "table " + table + " does not exists on " + branch,
@@ -460,7 +465,7 @@ public class TableBranchOperations {
                                   1,
                                   branch,
                                   Action.COMMIT
-      ), ifMatch, deletedTable);
+      ), ifMatch, converter, deletedTable);
       return Response.ok().build();
     } catch (IOException e) {
       return exception(e);
@@ -521,7 +526,8 @@ public class TableBranchOperations {
                                            Action.CHERRY_PICK),
                                       false,
                                       true,
-                                      namespace);
+                                      namespace,
+                                      converter);
       return Response.ok().tag(tagFromTable(result)).build();
     } catch (IOException e) {
       return exception(e);
@@ -582,7 +588,8 @@ public class TableBranchOperations {
                                            force ? Action.FORCE_MERGE : Action.MERGE),
                                       force,
                                       false,
-                                      null);
+                                      null,
+                                      converter);
       return Response.ok().tag(tagFromTable(result)).build();
     } catch (IOException e) {
       return exception(e);
@@ -635,6 +642,7 @@ public class TableBranchOperations {
                                                branch,
                                                Action.COMMIT),
                                           ifMatch,
+                                          converter,
                                           batchUpdate);
       return Response.ok().tag(tagFromTable(headVersion)).build();
     } catch (IOException e) {
@@ -706,6 +714,7 @@ public class TableBranchOperations {
                                                branch,
                                                Action.COMMIT),
                                           ifMatch,
+                                          converter,
                                           branchTable);
       if (post) {
         return Response.created(null).tag(tagFromTable(headVersion)).build(); //todo uri

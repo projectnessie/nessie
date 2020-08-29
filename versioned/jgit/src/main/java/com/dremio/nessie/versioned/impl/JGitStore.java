@@ -16,28 +16,37 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
+import org.eclipse.jgit.lib.CommitBuilder;
+import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Repository;
 
+import com.dremio.nessie.backend.TableConverter;
 import com.dremio.nessie.jgit.JgitBranchController;
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.Table;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.NamedRef;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.WithHash;
 
-public class JGitStore {
+/**
+ * Temporary object to bridge jgit branch controller to new version store interface.
+ */
+public class JGitStore<TABLE, METADATA> {
 
-  private final JgitBranchController controller;
+  private final JgitBranchController<TABLE, METADATA> controller;
 
-  public JGitStore() {
+  /**
+   * Construct a JGitStore.
+   */
+  public JGitStore(StoreWorker<TABLE, METADATA> storeWorker) {
     // todo add config for directory/repo type
     Repository repository = null;
     try {
@@ -45,9 +54,12 @@ public class JGitStore {
     } catch (IOException e) {
       //pass can't happen
     }
-    controller = new JgitBranchController(repository);
+    controller = new TempJGitBranchController<>(storeWorker, repository);
   }
 
+  /**
+   * get hash that ref is pointing to.
+   */
   public Hash getRef(String name) throws ReferenceNotFoundException {
     //todo add tags
     Branch branch;
@@ -62,10 +74,13 @@ public class JGitStore {
     return Hash.of(branch.getId());
   }
 
-  public void createRef(String name, String hash) throws IOException {
+  /**
+   * Create a ref.
+   */
+  public void createRef(String name, String hash, TableConverter<TABLE> tableConverter) throws IOException {
     //todo tags
     Optional<String> baseBranch = controller.getBranches().stream().filter(b -> b.getId().equals(hash)).findFirst().map(Branch::getName);
-    controller.create(name, baseBranch.orElse(null), null);
+    controller.create(name, baseBranch.orElse(null), null, tableConverter);
   }
 
   public void delete(String name, String hash) throws IOException {
@@ -77,12 +92,16 @@ public class JGitStore {
     return controller.getBranches().stream().map(b -> WithHash.of(Hash.of(b.getId()), BranchName.of(b.getName())));
   }
 
-  public void commit(String name, String hash, CommitMeta metadata, Table... operations) throws IOException {
-    controller.commit(name, metadata, hash, operations);
+  public void commit(String name, String hash, METADATA metadata, TableConverter<TABLE> tableConverter, List<TABLE> operations)
+      throws IOException {
+    controller.commit(name, metadata, hash, tableConverter, (TABLE[]) operations.toArray());
   }
 
-  public Table getValue(String branch, String tableName) throws ReferenceNotFoundException {
-    Table table;
+  /**
+   * Get the value of a table on a branch.
+   */
+  public TABLE getValue(String branch, String tableName) throws ReferenceNotFoundException {
+    TABLE table;
     try {
       table = controller.getTable(branch, tableName, false);
     } catch (IOException e) {
@@ -92,5 +111,29 @@ public class JGitStore {
       throw new ReferenceNotFoundException(String.format("reference for branch %s and table %s not found", branch, tableName));
     }
     return table;
+  }
+
+  private static class TempJGitBranchController<TABLE, METADATA> extends JgitBranchController<TABLE, METADATA> {
+
+    private final StoreWorker<TABLE, METADATA> storeWorker;
+
+    public TempJGitBranchController(StoreWorker<TABLE, METADATA> storeWorker, Repository repository) {
+      super(storeWorker, repository);
+      this.storeWorker = storeWorker;
+    }
+
+    @Override
+    protected CommitBuilder fromUser(METADATA commitMeta, long now) {
+      CommitBuilder commitBuilder = new CommitBuilder();
+      PersonIdent person = new PersonIdent("test", "me@example.com");
+      if (commitMeta != null) {
+        commitBuilder.setMessage(storeWorker.getMetadataSerializer().toBytes(commitMeta).toString());
+      } else {
+        commitBuilder.setMessage("none");
+      }
+      commitBuilder.setAuthor(person);
+      commitBuilder.setCommitter(person);
+      return commitBuilder;
+    }
   }
 }
