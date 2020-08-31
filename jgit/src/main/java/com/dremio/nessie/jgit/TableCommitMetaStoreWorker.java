@@ -79,16 +79,16 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Table, CommitMeta
 
   @Override
   public Serializer<CommitMeta> getMetadataSerializer() {
-    return null;
+    throw new UnsupportedOperationException("No serialization available for CommitMeta");
   }
 
   @Override
   public Stream<AssetKey> getAssetKeys(Table table) {
-    return null;
+    throw new UnsupportedOperationException("No serialization available for AssetKey");
   }
 
   @Override
   public CompletableFuture<Void> deleteAsset(AssetKey key) {
-    return null;
+    throw new UnsupportedOperationException("No serialization available for AssetKey");
   }
 }

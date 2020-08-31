@@ -59,7 +59,7 @@ class TestRepo {
   File jgitDir;
 
   enum RepoType {
-    NESSIE,
+    DYNAMO,
     INMEMORY,
     FILE
   }
@@ -76,7 +76,7 @@ class TestRepo {
   private JgitBranchControllerLegacy controller(RepoType repoType, boolean reuse) throws IOException {
     final JgitBranchControllerLegacy controller;
     switch (repoType) {
-      case NESSIE:
+      case DYNAMO:
         controller = new JgitBranchControllerLegacy(backend);
         break;
       case INMEMORY:
