@@ -16,15 +16,21 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.eclipse.jgit.errors.ConfigInvalidException;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
 import org.eclipse.jgit.lib.CommitBuilder;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.UserConfig;
+import org.eclipse.jgit.util.SystemReader;
 
 import com.dremio.nessie.backend.TableConverter;
 import com.dremio.nessie.jgit.JgitBranchController;
@@ -33,8 +39,10 @@ import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.NamedRef;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.WithHash;
+import com.google.protobuf.ByteString;
 
 /**
  * Temporary object to bridge jgit branch controller to new version store interface.
@@ -42,11 +50,13 @@ import com.dremio.nessie.versioned.WithHash;
 public class JGitStore<TABLE, METADATA> {
 
   private final JgitBranchController<TABLE, METADATA> controller;
+  private final StoreWorker<TABLE, METADATA> storeWorker;
 
   /**
    * Construct a JGitStore.
    */
   public JGitStore(StoreWorker<TABLE, METADATA> storeWorker) {
+    this.storeWorker = storeWorker;
     // todo add config for directory/repo type
     Repository repository = null;
     try {
@@ -109,12 +119,55 @@ public class JGitStore<TABLE, METADATA> {
     try {
       table = controller.getTable(branch, tableName, false);
     } catch (IOException e) {
-      table = null;
+      throw new ReferenceNotFoundException(String.format("reference for branch %s and table %s not found", branch, tableName), e);
     }
     if (table == null) {
       throw new ReferenceNotFoundException(String.format("reference for branch %s and table %s not found", branch, tableName));
     }
     return table;
+  }
+
+  /**
+   * assign name to targethash.
+   * @param name branch/tag name to assign
+   * @param expectedHash expected hash (for optimistic concurrency)
+   * @param targetHash the has to which this name should point to
+   */
+  public void updateRef(String name, String expectedHash, String targetHash) throws IOException {
+    //todo allow assign from arbitrary hash #53
+    String mergeBranch = getRefs().filter(r -> r.getHash().equals(Hash.of(targetHash)))
+                                  .findFirst()
+                                  .map(WithHash::getValue)
+                                  .map(NamedRef::getName)
+                                  .orElseThrow(() -> new UnsupportedOperationException("Cant assign to ref if it isn't a hash. See #53"));
+    TableConverter<TABLE> tableConverter = new TableConverter<TABLE>() {
+      @Override
+      public boolean isDeleted(TABLE branchTable) {
+        return false; //assume not deleted
+      }
+
+      @Override
+      public String getId(TABLE branchTable) {
+        throw new IllegalStateException(String.format("Should not need id for table: %s while creating a ref", branchTable));
+      }
+
+      @Override
+      public String getNamespace(TABLE branchTable) {
+        return null; //todo ignore namespace until #53 is addressed
+      }
+    };
+    controller.promote(name, mergeBranch, expectedHash, null, true, false, null, tableConverter);
+  }
+
+  /**
+   * get commits as an ordered list from name to start of history.
+   * @param name branch/hash name to start log from
+   */
+  public Stream<WithHash<METADATA>> getCommits(String name) throws IOException {
+    Serializer<METADATA> serializer = storeWorker.getMetadataSerializer();
+    return controller.log(name)
+                     .map(e -> WithHash.of(Hash.of(e.commitId()),
+                                           serializer.fromBytes(ByteString.copyFrom(e.message(), StandardCharsets.US_ASCII))));
   }
 
   private static class TempJGitBranchController<TABLE, METADATA> extends JgitBranchController<TABLE, METADATA> {
@@ -127,10 +180,19 @@ public class JGitStore<TABLE, METADATA> {
     }
 
     @Override
-    protected CommitBuilder fromUser(METADATA commitMeta, long now) {
+    protected CommitBuilder fromUser(METADATA commitMeta) {
       CommitBuilder commitBuilder = new CommitBuilder();
-      PersonIdent person = new PersonIdent("test", "me@example.com");
+      long updateTime = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
+      PersonIdent person;
+      try {
+        UserConfig config = SystemReader.getInstance().getUserConfig().get(UserConfig.KEY);
+        person = new PersonIdent(config.getAuthorName(), config.getAuthorEmail(), updateTime, 0);
+      } catch (IOException | ConfigInvalidException e) {
+        //todo email can't be null but we cant find it
+        person = new PersonIdent(System.getProperty("user.name"), "me@example.com");
+      }
       if (commitMeta != null) {
+        //todo better way to store commit metadata? Make an interface? or toString?
         commitBuilder.setMessage(storeWorker.getMetadataSerializer().toBytes(commitMeta).toString());
       } else {
         commitBuilder.setMessage("none");

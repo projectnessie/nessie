@@ -17,6 +17,7 @@
 package com.dremio.nessie.jgit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -25,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -38,6 +40,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import com.dremio.nessie.backend.LogMessage;
 import com.dremio.nessie.backend.simple.InMemory;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.Branch;
@@ -48,6 +51,7 @@ import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.ImmutableTableMeta;
 import com.dremio.nessie.model.Table;
 import com.dremio.nessie.model.TableMeta;
+import com.google.common.collect.Lists;
 
 class TestRepo {
 
@@ -432,6 +436,48 @@ class TestRepo {
                       ImmutableTable.copyOf(table).withIsDeleted(true));
     List<String> tables = controller.getTables("master", null, tableConverter);
     assertTrue(tables.isEmpty());
+  }
+
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  public void testLog(RepoType repoType) throws IOException {
+    JgitBranchControllerLegacy controller = controller(repoType);
+    Branch branch = controller.getBranch("master");
+    Table table = ImmutableTable.builder()
+                                .id("db.table")
+                                .namespace("db")
+                                .name("table")
+                                .metadataLocation("")
+                                .build();
+    String commit1 = controller.commit("master",
+                                      commitMeta("master", "", Action.COMMIT, 1),
+                                      branch.getId(),
+                                      tableConverter,
+                                      ImmutableTable.copyOf(table).withMetadataLocation("x"));
+    String commit2 = controller.commit("master",
+                                       commitMeta("master", "", Action.COMMIT, 1),
+                                       commit1,
+                                       tableConverter,
+                                       ImmutableTable.copyOf(table).withMetadataLocation("y"));
+    String commit3 = controller.commit("master",
+                                       commitMeta("master", "", Action.COMMIT, 1),
+                                       commit2,
+                                       tableConverter,
+                                       ImmutableTable.copyOf(table).withMetadataLocation("z"));
+    String commit4 = controller.commit("master",
+                                       commitMeta("master", "", Action.COMMIT, 1),
+                                       commit3,
+                                       tableConverter,
+                                       ImmutableTable.copyOf(table).withMetadataLocation("a"));
+    String commit5 = controller.commit("master",
+                                       commitMeta("master", "", Action.COMMIT, 1),
+                                       commit4,
+                                       tableConverter,
+                                       ImmutableTable.copyOf(table).withMetadataLocation("b"));
+    List<String> commits = Lists.newArrayList(commit5, commit4, commit3, commit2, commit1, branch.getId());
+    List<String> messageStream = controller.log("master").map(LogMessage::commitId).collect(Collectors.toList());
+    assertLinesMatch(commits, messageStream);
+
   }
 
   @ParameterizedTest

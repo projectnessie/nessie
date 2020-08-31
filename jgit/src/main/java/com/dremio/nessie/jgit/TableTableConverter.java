@@ -21,11 +21,6 @@ import com.dremio.nessie.model.Table;
 public class TableTableConverter implements TableConverter<Table> {
 
   @Override
-  public long getUpdateTime(Table table) {
-    return table.getUpdateTime();
-  }
-
-  @Override
   public boolean isDeleted(Table branchTable) {
     return branchTable.isDeleted();
   }
