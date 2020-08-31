@@ -112,7 +112,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       };
       store.commit(branch.getName(), expectedHash.map(Hash::asString).orElse(null), metadata, tableConverter, tables);
     } catch (NessieConflictException e) {
-      throw new ReferenceConflictException(e.getMessage());
+      throw ReferenceConflictException.forReference(branch, expectedHash, Optional.empty(), e);
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
@@ -180,7 +180,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     try {
       store.delete(ref.getName(), hash.map(Hash::asString).orElse(null));
     } catch (NessieConflictException e) {
-      throw new ReferenceConflictException(e.getMessage());
+      throw ReferenceConflictException.forReference(ref, hash, Optional.empty(), e);
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }

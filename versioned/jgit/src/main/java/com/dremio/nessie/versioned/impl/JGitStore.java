@@ -66,7 +66,7 @@ public class JGitStore<TABLE, METADATA> {
     try {
       branch = controller.getBranch(name);
     } catch (IOException e) {
-      branch = null;
+      throw new ReferenceNotFoundException(String.format("Unable to find reference for %s", name), e);
     }
     if (branch == null) {
       throw new ReferenceNotFoundException(String.format("Unable to find reference for %s", name));
@@ -79,11 +79,15 @@ public class JGitStore<TABLE, METADATA> {
    */
   public void createRef(String name, String hash, TableConverter<TABLE> tableConverter) throws IOException {
     //todo tags
+    //todo allow commit from arbitrary hash #53
     Optional<String> baseBranch = controller.getBranches().stream().filter(b -> b.getId().equals(hash)).findFirst().map(Branch::getName);
-    controller.create(name, baseBranch.orElse(null), null, tableConverter);
+    String baseBranchName = baseBranch.orElseThrow(() -> new IllegalStateException(
+        String.format("Unable to create a branch at hash %s as there are no other branches pointing to it.", hash)));
+    controller.create(name, baseBranchName, null, tableConverter);
   }
 
   public void delete(String name, String hash) throws IOException {
+    //todo allow delete with empty hash #53
     controller.deleteBranch(name, hash, null);
   }
 
