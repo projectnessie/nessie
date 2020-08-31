@@ -16,104 +16,70 @@
 package com.dremio.nessie.versioned.impl.condition;
 
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
-import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
- * A container class that will contain one of the possible value types in DynamoDB's expression language.
+ * A marker interface that is exposes a value type in DynamoDB's expression language.
  */
-public class Value implements Aliasable<Value> {
-  private final AttributeValue value;
-  private final ExpressionPath path;
-  private final ExpressionFunction func;
+public interface Value extends Aliasable<Value> {
 
-  private Value(AttributeValue value, ExpressionPath path, ExpressionFunction func) {
-    int i = 0;
-    if (value != null) {
-      i++;
-    }
-    if (path != null) {
-      i++;
-    }
-
-    if (func != null) {
-      i++;
-    }
-
-    Preconditions.checkArgument(i == 1, "Only one of value, path or function can be defined.");
-    this.value = value;
-    this.path = path;
-    this.func = func;
-  }
-
-  public static Value of(AttributeValue value) {
-    return new Value(value, null, null);
-  }
-
-  public static Value of(ExpressionPath path) {
-    return new Value(null, path, null);
-  }
-
-  public static Value of(ExpressionFunction func) {
-    return new Value(null, null, func);
+  static Value of(AttributeValue value) {
+    return new ValueOfAttributeValue(value);
   }
 
   @Override
-  public Value alias(AliasCollector c) {
-    switch (getType()) {
-      case VALUE: return new Value(null, ExpressionPath.builder(c.alias(value)).build(), null);
-      case PATH: return new Value(null, path.alias(c), null);
-      case FUNCTION: return new Value(null, null, func.alias(c));
-      default: throw new IllegalStateException();
-    }
-  }
+  Value alias(AliasCollector c);
 
   /**
    * Return the string representation of this string, if possible.
    * @return A DynamoDb expression fragment.
    */
-  public String asString() {
-    Preconditions.checkArgument(value == null, "Values must be aliased before conversion to string.");
-    if (path != null) {
-      return path.asString();
-    }
-
-    return func.asString();
-  }
+  String asString();
 
   /**
    * Return the value type of this value.
    * @return A value type.
    */
-  public Type getType() {
-    if (value != null) {
-      return Type.VALUE;
-    }
+  Type getType();
 
-    if (path != null) {
-      return Type.PATH;
-    }
-
-    return Type.FUNCTION;
+  default AttributeValue getValue() {
+    throw new IllegalArgumentException();
   }
 
-  public AttributeValue getValue() {
-    Preconditions.checkArgument(Type.VALUE == getType());
-    return value;
+  default ExpressionPath getPath() {
+    throw new IllegalArgumentException();
   }
 
-  public ExpressionPath getPath() {
-    Preconditions.checkArgument(Type.PATH == getType());
-    return path;
-  }
-
-  public ExpressionFunction getFunction() {
-    Preconditions.checkArgument(Type.FUNCTION == getType());
-    return func;
+  default ExpressionFunction getFunction() {
+    throw new IllegalArgumentException();
   }
 
   public static enum Type {
     VALUE, PATH, FUNCTION;
+  }
+
+  static class ValueOfAttributeValue implements Value {
+    private final AttributeValue value;
+
+    public ValueOfAttributeValue(AttributeValue value) {
+      this.value = value;
+    }
+
+    @Override
+    public Value alias(AliasCollector c) {
+      return ExpressionPath.builder(c.alias(value)).build();
+    }
+
+    @Override
+    public String asString() {
+      throw new IllegalArgumentException();
+    }
+
+    @Override
+    public Type getType() {
+      return Type.VALUE;
+    }
+
   }
 }
