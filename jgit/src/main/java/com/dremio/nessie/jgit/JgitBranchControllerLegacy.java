@@ -16,6 +16,9 @@
 
 package com.dremio.nessie.jgit;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -40,14 +43,15 @@ public class JgitBranchControllerLegacy extends JgitBranchController<Table, Comm
   }
 
   @Override
-  protected CommitBuilder fromUser(CommitMeta commitMeta, long now) {
+  protected CommitBuilder fromUser(CommitMeta commitMeta) {
+    long updateTime = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
     CommitBuilder commitBuilder = new CommitBuilder();
     PersonIdent person;
     if (commitMeta != null) {
       commitBuilder.setMessage(commitMeta.toMessage());
       person = new PersonIdent(commitMeta.commiter(),
                                commitMeta.email(),
-                               now,
+                               updateTime,
                                0);
     } else {
       person = new PersonIdent("test", "me@example.com");

@@ -18,6 +18,7 @@ package com.dremio.nessie.backend;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.model.Branch;
 
@@ -157,4 +158,13 @@ public interface BranchController<TABLE, METADATA> {
                  boolean cherryPick,
                  String namespace,
                  TableConverter<TABLE> converter) throws IOException;
+
+  /**
+   * Read the commit message and commit Id for the linear history of commits starting at the chosen branch.
+   *
+   * @param branch branch at which to start the history
+   * @return Stream of commit messages
+   * @throws IOException when commit lookup fails
+   */
+  Stream<LogMessage> log(String branch) throws IOException;
 }
