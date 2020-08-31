@@ -18,19 +18,17 @@ package com.dremio.nessie.jgit;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.LogCommand;
@@ -63,6 +61,8 @@ import org.eclipse.jgit.util.sha1.SHA1;
 
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.BranchController;
+import com.dremio.nessie.backend.ImmutableLogMessage;
+import com.dremio.nessie.backend.LogMessage;
 import com.dremio.nessie.backend.TableConverter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.Branch;
@@ -114,8 +114,7 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
     String headVersion;
     if (branch.equals("master") && (baseBranch == null || baseBranch.equals(branch))) {
       TreeFormatter formatter = new TreeFormatter();
-      long updateTime = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
-      headVersion = commitTree(formatter, branch, updateTime, commitMeta, null, tableConverter);
+      headVersion = commitTree(formatter, branch, commitMeta, null, tableConverter);
     } else {
       String base = baseBranch == null ? Constants.MASTER : baseBranch;
       Ref master = repository.findRef(Constants.R_HEADS + base);
@@ -318,12 +317,8 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
       }
       commits.clear();
     }
-    Optional<Long> updateTime = Arrays.stream(tables)
-                                      .map(tableConverter::getUpdateTime)
-                                      .max(Long::compareTo);
     return commitTree(treeFormatter,
                       branch,
-                      updateTime.orElse(Long.MIN_VALUE),
                       commitMeta,
                       version,
                       tableConverter);
@@ -334,7 +329,7 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
                            String version,
                            METADATA commitMeta) throws IOException {
     RefUpdate update = repository.updateRef(Constants.R_HEADS + branch);
-    if (!ObjectId.isEqual(update.getRef().getObjectId(), ObjectId.fromString(version))) {
+    if (version != null && !ObjectId.isEqual(update.getRef().getObjectId(), ObjectId.fromString(version))) {
       throw new NessieConflictException(null, "can't delete branch, not HEAD");
     }
     update.setRefLogMessage(commitMeta.toString(), false);
@@ -399,9 +394,23 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
     return commitId;
   }
 
+  @Override
+  public Stream<LogMessage> log(String branch) throws IOException {
+    ObjectId objectId = repository.resolve(branch);
+    if (objectId == null) {
+      throw new IllegalStateException();
+    }
+    RevWalk walk = new RevWalk(repository);
+    walk.markStart(repository.parseCommit(objectId));
+    return StreamSupport.stream(walk.spliterator(), false).map(JgitBranchController::toLogMessage);
+  }
+
+  private static LogMessage toLogMessage(RevCommit commit) {
+    return ImmutableLogMessage.builder().commitId(commit.name()).message(commit.getFullMessage()).build();
+  }
+
   private String commitTree(ObjectId newTreeId,
                             String branch,
-                            long updateTime,
                             METADATA commitMeta,
                             String version,
                             ObjectInserter inserter,
@@ -413,7 +422,6 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
     } catch (NessieConflictException e) {
       Entry<ObjectId, List<String>> pair = tryTwoWayMerge(branch,
                                                           newTreeId,
-                                                          updateTime,
                                                           commitMeta,
                                                           inserter,
                                                           version,
@@ -424,7 +432,7 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
       }
     }
     inserter.flush();
-    CommitBuilder commitBuilder = fromUser(commitMeta, updateTime);
+    CommitBuilder commitBuilder = fromUser(commitMeta);
     commitBuilder.setTreeId(newTreeId);
     if (commitId != null) {
       commitBuilder.addParentId(commitId);
@@ -436,18 +444,16 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
 
   private String commitTree(TreeFormatter treeFormatter,
                             String branch,
-                            long updateTime,
                             METADATA commitMeta,
                             String version,
                             TableConverter<TABLE> tableConverter) throws IOException {
     ObjectInserter inserter = repository.newObjectInserter();
     ObjectId newTreeId = inserter.insert(treeFormatter);
-    return commitTree(newTreeId, branch, updateTime, commitMeta, version, inserter, tableConverter);
+    return commitTree(newTreeId, branch, commitMeta, version, inserter, tableConverter);
   }
 
   private Entry<ObjectId, List<String>> tryTwoWayMerge(String branch,
                                                      ObjectId newTreeId,
-                                                     long updateTime,
                                                        METADATA commitMeta,
                                                      ObjectInserter inserter,
                                                      String version,
@@ -464,7 +470,6 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
     ObjectId mergedTreeId = merger.getResultTreeId();
     String commit = commitTree(mergedTreeId,
                                branch,
-                               updateTime,
                                commitMeta,
                                commitId.name(),
                                inserter,
@@ -488,7 +493,7 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
     return newCommitId.name();
   }
 
-  protected abstract CommitBuilder fromUser(METADATA commitMeta, long now);
+  protected abstract CommitBuilder fromUser(METADATA commitMeta);
 
   private static Branch fromRef(Ref ref) {
     if (ref == null) {
@@ -554,7 +559,6 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
       ObjectId newTree = merger.getResultTreeId();
       return commitTree(newTree,
                         head.getName(),
-                        Long.MAX_VALUE,
                         commitMeta,
                         version,
                         repository.newObjectInserter(),

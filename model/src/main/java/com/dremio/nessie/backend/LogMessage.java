@@ -15,18 +15,13 @@
  */
 package com.dremio.nessie.backend;
 
-/**
- * Temporary class while converting to ValueStore interface.
- *
- * <p>
- *   convert Table to values needed by legacy BranchController interface
- * </p>
- */
-public interface TableConverter<TABLE> {
+import org.immutables.value.Value;
 
-  boolean isDeleted(TABLE branchTable);
+@Value.Immutable
+public abstract class LogMessage {
 
-  String getId(TABLE branchTable);
+  public abstract String message();
 
-  String getNamespace(TABLE branchTable);
+  public abstract String commitId();
+
 }

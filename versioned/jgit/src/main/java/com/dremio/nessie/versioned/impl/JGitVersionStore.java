@@ -16,11 +16,17 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
@@ -39,9 +45,9 @@ import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.TagName;
+import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
 
@@ -51,16 +57,12 @@ import com.dremio.nessie.versioned.WithHash;
 public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, METADATA> {
 
   private final JGitStore<TABLE, METADATA> store;
-  private final Serializer<TABLE> serializer;
-  private final Serializer<CommitMeta> metadataSerializer;
 
   /**
    * Construct a JGitVersionStore.
    */
   public JGitVersionStore(StoreWorker<TABLE, CommitMeta> storeWorker, JGitStore<TABLE, METADATA> store) {
     this.store = store;
-    this.serializer = storeWorker.getValueSerializer();
-    this.metadataSerializer = storeWorker.getMetadataSerializer();
   }
 
   @Nonnull
@@ -73,41 +75,53 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   public void commit(BranchName branch, Optional<Hash> expectedHash, METADATA metadata,
                      List<Operation<TABLE>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     store.getRef(branch.getName());
+    boolean shouldMatch = operations.stream().anyMatch(Operation::shouldMatchHash);
+    if (shouldMatch && !expectedHash.isPresent()) {
+      throw new ReferenceConflictException("Expected hash is not present and at least one operation should match hash");
+    } else if (!shouldMatch) {
+      throw new UnsupportedOperationException("JGit must always have a matching hash"); //todo relax this in jgit?
+    }
     try {
       List<TABLE> tables = new ArrayList<>();
-      Map<TABLE, Operation<TABLE>> reverseMap = new HashMap<>();
+      Set<TABLE> deletes = new HashSet<>();
+      Map<TABLE, String> keys = new HashMap<>();
       for (Operation<TABLE> o: operations) {
         if (o instanceof Delete) {
           Delete<TABLE> d = (Delete<TABLE>) o;
           TABLE table = getValue(branch, d.getKey());
           tables.add(table);
-          reverseMap.put(table, d);
+          deletes.add(table);
+          keys.put(table, stringFromKey(d.getKey()));
         } else if (o instanceof Put) {
           Put<TABLE> p = (Put<TABLE>) o;
           tables.add(p.getValue());
-          reverseMap.put(p.getValue(), p);
+          keys.put(p.getValue(), stringFromKey(p.getKey()));
+        } else if (o instanceof Unchanged) {
+          Unchanged<TABLE> u = (Unchanged<TABLE>) o;
+          TABLE expectedTable = getValue(expectedHash.get(), u.getKey());
+          TABLE currentTable = getValue(branch, u.getKey());
+          if (!expectedTable.equals(currentTable)) {
+            throw new ReferenceConflictException(String.format("Unchanged operation is violated by key: %s", u.getKey()));
+          }
+        } else {
+          throw new UnsupportedOperationException("unknown operation");
         }
-        //todo assert unchanged
       }
       TableConverter<TABLE> tableConverter = new TableConverter<TABLE>() {
-        @Override
-        public long getUpdateTime(TABLE table) {
-          return 0; //todo not really needed anymore
-        }
 
         @Override
         public boolean isDeleted(TABLE branchTable) {
-          return reverseMap.get(branchTable) instanceof Delete;
+          return deletes.contains(branchTable);
         }
 
         @Override
         public String getId(TABLE branchTable) {
-          return null; //todo
+          return keys.get(branchTable);
         }
 
         @Override
         public String getNamespace(TABLE branchTable) {
-          return null; //todo
+          return null; //todo ignore namespace until #53 is addressed
         }
       };
       store.commit(branch.getName(), expectedHash.map(Hash::asString).orElse(null), metadata, tableConverter, tables);
@@ -132,7 +146,27 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   @Override
   public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    //todo
+    try {
+      Hash existingHash = toHash(ref);
+      if (expectedHash.isPresent() && !existingHash.equals(expectedHash.get())) {
+        throw new ReferenceConflictException(String.format("expected hash %s does not match current hash %s", expectedHash, existingHash));
+      }
+    } catch (ReferenceNotFoundException e) {
+      //ref doesn't exist so create it
+      if (expectedHash.isPresent()) {
+        throw new ReferenceNotFoundException(String.format("Ref %s does not exist and expected hash does", ref));
+      }
+      try {
+        create(ref, Optional.of(targetHash));
+      } catch (ReferenceAlreadyExistsException pass) {
+        //can't happen
+      }
+    }
+    try {
+      store.updateRef(ref.getName(), expectedHash.map(Hash::asString).orElse(null), targetHash.asString());
+    } catch (IOException e) {
+      throw new RuntimeException("Unknown error", e);
+    }
   }
 
   @Override
@@ -148,10 +182,6 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     }
     try {
       TableConverter<TABLE> tableConverter = new TableConverter<TABLE>() {
-        @Override
-        public long getUpdateTime(TABLE o) {
-          return 0; //todo not needed, remove
-        }
 
         @Override
         public boolean isDeleted(TABLE branchTable) {
@@ -160,15 +190,15 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
         @Override
         public String getId(TABLE branchTable) {
-          return null; //todo
+          throw new IllegalStateException(String.format("Should not need id for table: %s while creating a ref", branchTable));
         }
 
         @Override
         public String getNamespace(TABLE branchTable) {
-          return null; //todo
+          return null; //todo ignore namespace until #53 is addressed
         }
       };
-      store.createRef(ref.getName(), targetHash.map(Hash::asString).orElse(null), tableConverter);//todo tableConverter is null?
+      store.createRef(ref.getName(), targetHash.map(Hash::asString).orElse(null), tableConverter);
     } catch (IOException e) {
       throw new RuntimeException(String.format("Unknown error while creating %s", ref), e);
     }
@@ -197,7 +227,23 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    return null; //todo
+    if (ref instanceof BranchName) {
+      try {
+        return store.getCommits(((BranchName) ref).getName());
+      } catch (IllegalStateException e) {
+        throw new ReferenceNotFoundException(String.format("Ref %s not found", ref), e.getCause());
+      } catch (IOException e) {
+        throw new RuntimeException("Unknown error", e);
+      }
+    } else if (ref instanceof TagName) {
+      //todo tags
+      throw new UnsupportedOperationException("Not yet implemented.");
+    } else if (ref instanceof Hash) {
+      //todo key
+      throw new UnsupportedOperationException("Not yet implemented.");
+    } else {
+      throw new RuntimeException(String.format("unknown ref type: %s", ref));
+    }
   }
 
   @Override
@@ -208,7 +254,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   @Override
   public TABLE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     if (ref instanceof BranchName) {
-      return store.getValue(((BranchName) ref).getName(), key.toString());
+      return store.getValue(((BranchName) ref).getName(), stringFromKey(key));
     } else if (ref instanceof TagName) {
       //todo tags
       throw new UnsupportedOperationException("Not yet implemented.");
@@ -228,5 +274,18 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   @Override
   public Collector collectGarbage() {
     throw new IllegalStateException("Not yet implemented.");
+  }
+
+  /**
+   * URL Encode each portion of the key and join into '/' separated string.
+   */
+  private static String stringFromKey(Key key) {
+    return key.getElements().stream().map(k -> {
+      try {
+        return URLEncoder.encode(k, StandardCharsets.UTF_8.toString());
+      } catch (UnsupportedEncodingException e) {
+        throw new RuntimeException(String.format("Unable to encode key %s", key), e);
+      }
+    }).collect(Collectors.joining("/"));
   }
 }
