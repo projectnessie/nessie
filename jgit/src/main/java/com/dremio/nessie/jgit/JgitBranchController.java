@@ -112,7 +112,7 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
                        METADATA commitMeta,
                        TableConverter<TABLE> tableConverter) throws IOException {
     String headVersion;
-    if (branch.equals("master") && (baseBranch == null || baseBranch.equals(branch))) {
+    if (baseBranch == null || baseBranch.equals(branch)) {
       TreeFormatter formatter = new TreeFormatter();
       headVersion = commitTree(formatter, branch, commitMeta, null, tableConverter);
     } else {
@@ -332,10 +332,14 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
     if (version != null && !ObjectId.isEqual(update.getRef().getObjectId(), ObjectId.fromString(version))) {
       throw new NessieConflictException(null, "can't delete branch, not HEAD");
     }
-    update.setRefLogMessage(commitMeta.toString(), false);
+    if (commitMeta != null) {
+      update.setRefLogMessage(commitMeta.toString(), false);
+    }
     update.setForceUpdate(true);
-    update.setExpectedOldObjectId(ObjectId.fromString(version));
-    Result deleteResult = update.delete();  // todo concurrency & check
+    if (version != null) {
+      update.setExpectedOldObjectId(ObjectId.fromString(version));
+    }
+    Result deleteResult = update.delete();
     if (!deleteResult.equals(Result.FORCED)) {
       throw new NessieConflictException(ImmutableList.of(branch), "delete failed " + deleteResult);
     }

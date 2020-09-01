@@ -90,9 +90,14 @@ public class JGitStore<TABLE, METADATA> {
   public void createRef(String name, String hash, TableConverter<TABLE> tableConverter) throws IOException {
     //todo tags
     //todo allow commit from arbitrary hash #53
-    Optional<String> baseBranch = controller.getBranches().stream().filter(b -> b.getId().equals(hash)).findFirst().map(Branch::getName);
-    String baseBranchName = baseBranch.orElseThrow(() -> new IllegalStateException(
+    final String baseBranchName;
+    if (hash == null) {
+      baseBranchName = null;
+    } else {
+      Optional<String> baseBranch = controller.getBranches().stream().filter(b -> b.getId().equals(hash)).findFirst().map(Branch::getName);
+      baseBranchName = baseBranch.orElseThrow(() -> new IllegalStateException(
         String.format("Unable to create a branch at hash %s as there are no other branches pointing to it.", hash)));
+    }
     controller.create(name, baseBranchName, null, tableConverter);
   }
 
@@ -120,9 +125,6 @@ public class JGitStore<TABLE, METADATA> {
       table = controller.getTable(branch, tableName, false);
     } catch (IOException e) {
       throw new ReferenceNotFoundException(String.format("reference for branch %s and table %s not found", branch, tableName), e);
-    }
-    if (table == null) {
-      throw new ReferenceNotFoundException(String.format("reference for branch %s and table %s not found", branch, tableName));
     }
     return table;
   }
@@ -167,7 +169,7 @@ public class JGitStore<TABLE, METADATA> {
     Serializer<METADATA> serializer = storeWorker.getMetadataSerializer();
     return controller.log(name)
                      .map(e -> WithHash.of(Hash.of(e.commitId()),
-                                           serializer.fromBytes(ByteString.copyFrom(e.message(), StandardCharsets.US_ASCII))));
+                                           serializer.fromBytes(ByteString.copyFrom(e.message(), StandardCharsets.UTF_8))));
   }
 
   private static class TempJGitBranchController<TABLE, METADATA> extends JgitBranchController<TABLE, METADATA> {
@@ -193,7 +195,7 @@ public class JGitStore<TABLE, METADATA> {
       }
       if (commitMeta != null) {
         //todo better way to store commit metadata? Make an interface? or toString?
-        commitBuilder.setMessage(storeWorker.getMetadataSerializer().toBytes(commitMeta).toString());
+        commitBuilder.setMessage(storeWorker.getMetadataSerializer().toBytes(commitMeta).toStringUtf8());
       } else {
         commitBuilder.setMessage("none");
       }

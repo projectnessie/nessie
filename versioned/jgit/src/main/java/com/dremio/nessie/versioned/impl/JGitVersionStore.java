@@ -31,9 +31,10 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
+import org.eclipse.jgit.lib.ObjectId;
+
 import com.dremio.nessie.backend.TableConverter;
 import com.dremio.nessie.error.NessieConflictException;
-import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
@@ -55,13 +56,14 @@ import com.dremio.nessie.versioned.WithHash;
  * VersionStore interface for JGit backend.
  */
 public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, METADATA> {
+  public static final Hash EMPTY_HASH = Hash.of(ObjectId.zeroId().name());
 
   private final JGitStore<TABLE, METADATA> store;
 
   /**
    * Construct a JGitVersionStore.
    */
-  public JGitVersionStore(StoreWorker<TABLE, CommitMeta> storeWorker, JGitStore<TABLE, METADATA> store) {
+  public JGitVersionStore(StoreWorker<TABLE, METADATA> storeWorker, JGitStore<TABLE, METADATA> store) {
     this.store = store;
   }
 
@@ -206,7 +208,18 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException, ReferenceConflictException {
-    store.getRef(ref.getName());
+    Optional<NamedRef> existingRef;
+    try {
+      existingRef = store.getRefs().map(WithHash::getValue).filter(v -> ref.getName().equals(v.getName())).findFirst();
+    } catch (IOException e) {
+      throw new RuntimeException("unknown error", e);
+    }
+    if (!existingRef.isPresent()) {
+      throw ReferenceNotFoundException.forReference(ref);
+    }
+    if (!existingRef.get().getClass().equals(ref.getClass())) {
+      throw ReferenceConflictException.forReference(ref, hash, Optional.empty());
+    }
     try {
       store.delete(ref.getName(), hash.map(Hash::asString).orElse(null));
     } catch (NessieConflictException e) {
