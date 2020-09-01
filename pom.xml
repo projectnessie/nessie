@@ -55,7 +55,7 @@
     <awssdk.version>2.13.61</awssdk.version>
     <bouncycastle.version>1.60</bouncycastle.version>
     <deltalake.version>0.5.0</deltalake.version>
-    <dropwizard-metrics.version>4.1.11</dropwizard-metrics.version>
+    <dropwizard-metrics.version>4.1.12.1</dropwizard-metrics.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
     <guava.version>29.0-jre</guava.version>
