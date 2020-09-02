@@ -907,7 +907,7 @@ limitations under the License.
       <dependency>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest_2.11</artifactId>
-        <version>2.2.5</version>
+        <version>3.3.0-SNAP2</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
