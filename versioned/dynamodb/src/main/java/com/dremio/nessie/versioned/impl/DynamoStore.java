@@ -77,7 +77,7 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
-class DynamoStore implements AutoCloseable {
+public class DynamoStore implements AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
@@ -115,6 +115,9 @@ class DynamoStore implements AutoCloseable {
   private DynamoDbAsyncClient async;
   private final ImmutableMap<ValueType, String> tableNames;
 
+  /**
+   * create a DynamoStore.
+   */
   public DynamoStore(DynamoStoreConfig config) {
     this.config = config;
     this.tableNames = ImmutableMap.<ValueType, String>builder()
@@ -127,6 +130,9 @@ class DynamoStore implements AutoCloseable {
         .build();
   }
 
+  /**
+   * start the DynamoStore.
+   */
   public void start() throws URISyntaxException {
     DynamoDbClientBuilder b1 = DynamoDbClient.builder();
     DynamoDbAsyncClientBuilder b2 = DynamoDbAsyncClient.builder();
