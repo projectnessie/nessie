@@ -507,7 +507,6 @@ public abstract class JgitBranchController<TABLE, METADATA> implements BranchCon
                           .id(ref.getObjectId().name())
                           .name(ref.getName().replaceFirst(Constants.R_HEADS, ""))
                           .isDeleted(false)
-                          .updateTime(Long.MIN_VALUE)
                           .build();
   }
 

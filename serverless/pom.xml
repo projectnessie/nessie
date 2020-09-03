@@ -138,6 +138,11 @@
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>netty-nio-client</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-versioned-dynamodb</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <profiles>

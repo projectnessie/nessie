@@ -74,6 +74,16 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-versioned-dynamodb</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-versioned-jgit</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
     </dependency>

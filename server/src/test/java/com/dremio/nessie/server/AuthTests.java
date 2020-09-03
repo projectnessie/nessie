@@ -25,6 +25,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.client.rest.NessieConflictException;
 import com.dremio.nessie.client.rest.NessieForbiddenException;
 import com.dremio.nessie.client.rest.NessieNotAuthorizedException;
 import com.dremio.nessie.model.Branch;
@@ -54,6 +55,13 @@ public class AuthTests {
   public void getCatalog(String username, String password) {
     String path = "http://localhost:9993/api/v1";
     this.client = new NessieClient(AuthType.BASIC, path, username, password);
+    try {
+      client.createBranch(ImmutableBranch.builder().name("master").build());
+    } catch (NessieConflictException e) {
+      //pass table exists
+    } catch (NessieForbiddenException e) {
+      //pass user doesn't have permissions
+    }
   }
 
   @AfterAll
@@ -101,7 +109,8 @@ public class AuthTests {
     tryEndpointPass(() -> client.commit(branch, createTable("x", "x")));
     final Table table = client.getTable("master", "x", null);
     tryEndpointPass(() -> client.commit(branch, table));
-    Branch test = ImmutableBranch.builder().id("master").name("test").build();
+    Branch master = client.getBranch("master");
+    Branch test = ImmutableBranch.builder().id(master.getId()).name("test").build();
     tryEndpointPass(() -> client.createBranch(test));
     Branch test2 = client.getBranch("test");
     tryEndpointPass(() -> client.deleteBranch(test2));

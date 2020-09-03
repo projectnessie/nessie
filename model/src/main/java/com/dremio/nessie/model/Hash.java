@@ -20,37 +20,17 @@ import org.immutables.value.Value;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.base.Joiner;
 
+/**
+ * Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology.
+ */
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableCommitMeta.class)
-@JsonDeserialize(as = ImmutableCommitMeta.class)
-public abstract class CommitMeta {
+@JsonSerialize(as = ImmutableHash.class)
+@JsonDeserialize(as = ImmutableHash.class)
+public abstract class Hash implements Reference {
 
-  private static final Joiner SEMI = Joiner.on(";");
-
-  public String toMessage() {
-    return SEMI.join(comment(), action().toString(), ref(), Integer.toString(changes()));
+  public String id() {
+    return getName();
   }
 
-  public enum Action {
-    CREATE_BRANCH,
-    COMMIT,
-    DELETE_BRANCH,
-    MERGE,
-    FORCE_MERGE,
-    CHERRY_PICK
-  }
-
-  public abstract String commiter();
-
-  public abstract String email();
-
-  public abstract String comment();
-
-  public abstract Action action();
-
-  public abstract String ref();
-
-  public abstract int changes();
 }

@@ -16,97 +16,64 @@
 
 package com.dremio.nessie.server;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.SecurityContext;
 
 import org.glassfish.hk2.api.Factory;
+import org.glassfish.hk2.api.TypeLiteral;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
 import com.dremio.nessie.auth.User;
 import com.dremio.nessie.auth.UserService;
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.simple.InMemory;
-import com.dremio.nessie.jgit.JgitBranchControllerLegacy;
 import com.dremio.nessie.jwt.KeyGenerator;
+import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.ImmutableUser;
+import com.dremio.nessie.model.Table;
 import com.dremio.nessie.server.auth.BasicKeyGenerator;
 import com.dremio.nessie.server.auth.NessieSecurityContext;
+import com.dremio.nessie.services.NessieEngine;
+import com.dremio.nessie.services.TableCommitMetaStoreWorker;
+import com.dremio.nessie.services.TableCommitMetaStoreWorkerImpl;
+import com.dremio.nessie.versioned.VersionStore;
+import com.dremio.nessie.versioned.impl.JGitVersionStore;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 public class NessieTestServerBinder extends AbstractBinder {
 
-  public static final TestServerConfigurationImpl settings = new TestServerConfigurationImpl();
-
+  static final TestServerConfigurationImpl settings = new TestServerConfigurationImpl();
+  private static final Backend backend = new InMemory();
 
   public NessieTestServerBinder() {
   }
 
   @Override
   protected void configure() {
-    bindFactory(TestServerConfigurationFactory.class).to(ServerConfiguration.class);
-    bindFactory(BackendFactory.class).to(Backend.class);
+    bind(settings).to(ServerConfiguration.class);
+    bind(backend).to(Backend.class);
     bind(NessieSecurityContext.class).to(SecurityContext.class);
     bind(TestUserService.class).to(UserService.class);
     bind(BasicKeyGenerator.class).to(KeyGenerator.class);
-    bindFactory(JGitContainerFactory.class).to(JgitBranchControllerLegacy.class);
-  }
 
-  public static class JGitContainerFactory implements Factory<JgitBranchControllerLegacy> {
-    private static boolean enabled = false;
+    Type versionStore = new TypeLiteral<VersionStore<Table, CommitMeta>>(){}.getType();
 
-    private final Backend backend;
+    bind(TableCommitMetaStoreWorkerImpl.class).to(TableCommitMetaStoreWorker.class);
+    bind(NessieEngine.class).to(NessieEngine.class);
+    bind(TableCommitMetaJGitStore.class).to(TableCommitMetaJGitStore.class).in(Singleton.class);
+    bindFactory(JGitVersionStoreFactory.class).to(versionStore);
 
-    @Inject
-    private JGitContainerFactory(Backend backend) {
-      this.backend = backend;
-    }
 
-    @Override
-    public JgitBranchControllerLegacy provide() {
-      JgitBranchControllerLegacy jgc = new JgitBranchControllerLegacy(backend);
-      if (enabled) {
-        return jgc;
-      }
-      try {
-        jgc.create("master", null, null, null);
-        enabled = true;
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-      return jgc;
-    }
-
-    @Override
-    public void dispose(JgitBranchControllerLegacy instance) {
-
-    }
-  }
-
-  public static final class BackendFactory implements Factory<Backend> {
-    private static final Backend backend = new InMemory();
-
-    @Override
-    public Backend provide() {
-      return backend;
-    }
-
-    @Override
-    public void dispose(Backend instance) {
-      try {
-        backend.close();
-      } catch (Exception e) {
-        //pass
-      }
-    }
   }
 
   public static class TestUserService implements UserService {
@@ -164,18 +131,6 @@ public class NessieTestServerBinder extends AbstractBinder {
     }
   }
 
-  private static class TestServerConfigurationFactory implements Factory<ServerConfiguration> {
-
-    @Override
-    public ServerConfiguration provide() {
-      return settings;
-    }
-
-    @Override
-    public void dispose(ServerConfiguration serverConfiguration) {
-
-    }
-  }
 
   private static com.dremio.nessie.model.User getUser(boolean admin) {
     return ImmutableUser.builder()
@@ -193,6 +148,28 @@ public class NessieTestServerBinder extends AbstractBinder {
       return (com.dremio.nessie.model.User) method.invoke(user);
     } catch (Throwable t) {
       throw new RuntimeException(t);
+    }
+  }
+
+  private static class JGitVersionStoreFactory implements Factory<JGitVersionStore<Table, CommitMeta>> {
+
+    private final TableCommitMetaStoreWorker storeWorker;
+    private final TableCommitMetaJGitStore store;
+
+    @Inject
+    public JGitVersionStoreFactory(TableCommitMetaStoreWorker storeWorker, TableCommitMetaJGitStore store) {
+      this.storeWorker = storeWorker;
+      this.store = store;
+    }
+
+    @Override
+    public JGitVersionStore<Table, CommitMeta> provide() {
+      return new JGitVersionStore<>(storeWorker, store);
+    }
+
+    @Override
+    public void dispose(JGitVersionStore<Table, CommitMeta> instance) {
+
     }
   }
 }

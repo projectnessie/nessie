@@ -60,6 +60,7 @@ import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
 
 @SuppressWarnings("MissingJavadocMethod")
@@ -95,6 +96,10 @@ public class NessieTableTest {
                                                             PosixFilePermissions.asFileAttribute(
                                                               PosixFilePermissions.fromString(
                                                                 "rwxrwxrwx"))).toFile();
+    String path = "http://localhost:9994/api/v1";
+    String username = "test";
+    String password = "test123";
+    new NessieClient(AuthType.BASIC, path, username, password).createBranch(ImmutableBranch.builder().name("main").build());
   }
 
   @BeforeEach
@@ -110,7 +115,7 @@ public class NessieTableTest {
     hadoopConfig.set("nessie.url", path);
     hadoopConfig.set("nessie.username", username);
     hadoopConfig.set("nessie.password", password);
-    hadoopConfig.set("nessie.view-branch", "master");
+    hadoopConfig.set("nessie.view-branch", "main");
     catalog = new NessieCatalog(hadoopConfig);
     client = new NessieClient(AuthType.BASIC, path, username, password);
 
@@ -139,7 +144,7 @@ public class NessieTableTest {
   }
 
   private com.dremio.nessie.model.Table getTable(TableIdentifier tableIdentifier) {
-    return client.getTable("master",
+    return client.getTable("main",
                            tableIdentifier.name(),
                            tableIdentifier.namespace().toString());
   }
@@ -325,9 +330,9 @@ public class NessieTableTest {
   @Test
   public void testFailure() {
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
-    Branch branch = client.getBranch("master");
+    Branch branch = client.getBranch("main");
     com.dremio.nessie.model.Table table =
-        client.getTable("master", TABLE_NAME, DB_NAME);
+        client.getTable("main", TABLE_NAME, DB_NAME);
     client.commit(branch, ImmutableTable.builder().from(table)
                                         .metadataLocation("dummytable.metadata.json")
                                         .build());
