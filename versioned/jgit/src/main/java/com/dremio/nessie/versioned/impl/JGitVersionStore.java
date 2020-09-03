@@ -17,9 +17,11 @@ package com.dremio.nessie.versioned.impl;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,8 +30,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 
 import org.eclipse.jgit.lib.ObjectId;
 
@@ -63,6 +67,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   /**
    * Construct a JGitVersionStore.
    */
+  @Inject
   public JGitVersionStore(StoreWorker<TABLE, METADATA> storeWorker, JGitStore<TABLE, METADATA> store) {
     this.store = store;
   }
@@ -240,43 +245,51 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
+    final String hashName;
     if (ref instanceof BranchName) {
-      try {
-        return store.getCommits(((BranchName) ref).getName());
-      } catch (IllegalStateException e) {
-        throw new ReferenceNotFoundException(String.format("Ref %s not found", ref), e.getCause());
-      } catch (IOException e) {
-        throw new RuntimeException("Unknown error", e);
-      }
+      hashName = ((BranchName) ref).getName();
     } else if (ref instanceof TagName) {
       //todo tags
       throw new UnsupportedOperationException("Not yet implemented.");
     } else if (ref instanceof Hash) {
-      //todo key
-      throw new UnsupportedOperationException("Not yet implemented.");
+      hashName = ((Hash) ref).asString();
     } else {
       throw new RuntimeException(String.format("unknown ref type: %s", ref));
+    }
+    try {
+      return store.getCommits(hashName);
+    } catch (IllegalStateException e) {
+      throw new ReferenceNotFoundException(String.format("Ref %s not found", ref), e.getCause());
+    } catch (IOException e) {
+      throw new RuntimeException("Unknown error", e);
     }
   }
 
   @Override
   public Stream<Key> getKeys(Ref ref) {
-    throw new IllegalStateException("Not yet implemented.");
+    try {
+      return store.getKeys(ref instanceof NamedRef ? ((NamedRef) ref).getName() : ((Hash) ref).asString())
+                  .stream()
+                  .map(JGitVersionStore::keyFromUrlString);
+    } catch (IOException e) {
+      throw new RuntimeException("Unknown error", e);
+    }
   }
 
   @Override
   public TABLE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+    final String hashName;
     if (ref instanceof BranchName) {
-      return store.getValue(((BranchName) ref).getName(), stringFromKey(key));
+      hashName = ((BranchName) ref).getName();
     } else if (ref instanceof TagName) {
       //todo tags
       throw new UnsupportedOperationException("Not yet implemented.");
     } else if (ref instanceof Hash) {
-      //todo key
-      throw new UnsupportedOperationException("Not yet implemented.");
+      hashName = ((Hash) ref).asString();
     } else {
       throw new RuntimeException(String.format("unknown ref type: %s", ref));
     }
+    return store.getValue(hashName, stringFromKey(key));
   }
 
   @Override
@@ -290,7 +303,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   /**
-   * URL Encode each portion of the key and join into '/' separated string.
+   * URL Encode each portion of the url as separated by '/' and create a Key.
    */
   private static String stringFromKey(Key key) {
     return key.getElements().stream().map(k -> {
@@ -300,5 +313,20 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         throw new RuntimeException(String.format("Unable to encode key %s", key), e);
       }
     }).collect(Collectors.joining("/"));
+  }
+
+  /**
+   * URL decode each portion of the key and join into '/' separated string.
+   */
+  private static Key keyFromUrlString(String path) {
+    return Key.of(StreamSupport.stream(Arrays.spliterator(path.split("/")), false)
+                               .map(x -> {
+                                 try {
+                                   return URLDecoder.decode(x, StandardCharsets.UTF_8.toString());
+                                 } catch (UnsupportedEncodingException e) {
+                                   throw new RuntimeException(String.format("Unable to decode string %s", x), e);
+                                 }
+                               })
+                               .toArray(String[]::new));
   }
 }

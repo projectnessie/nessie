@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import javax.inject.Inject;
+
 import org.eclipse.jgit.errors.ConfigInvalidException;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
@@ -35,6 +37,7 @@ import org.eclipse.jgit.util.SystemReader;
 import com.dremio.nessie.backend.TableConverter;
 import com.dremio.nessie.jgit.JgitBranchController;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.Table;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.NamedRef;
@@ -55,6 +58,7 @@ public class JGitStore<TABLE, METADATA> {
   /**
    * Construct a JGitStore.
    */
+  @Inject
   public JGitStore(StoreWorker<TABLE, METADATA> storeWorker) {
     this.storeWorker = storeWorker;
     // todo add config for directory/repo type
@@ -170,6 +174,36 @@ public class JGitStore<TABLE, METADATA> {
     return controller.log(name)
                      .map(e -> WithHash.of(Hash.of(e.commitId()),
                                            serializer.fromBytes(ByteString.copyFrom(e.message(), StandardCharsets.UTF_8))));
+  }
+
+  /**
+   * return keys in a specific Branch/Tag or Hash.
+   * @param ref existing ref
+   * @return list of keys
+   * @throws IOException if there is a problem with the git store
+   */
+  public List<String> getKeys(String ref) throws IOException {
+    TableConverter<TABLE> converter = new TableConverter<TABLE>() {
+      @Override
+      public boolean isDeleted(TABLE branchTable) {
+        return false; //assume not deleted
+      }
+
+      @Override
+      public String getId(TABLE branchTable) {
+        //todo fix this in #53
+        if (branchTable instanceof Table) {
+          return ((Table) branchTable).getId();
+        }
+        throw new IllegalStateException(String.format("Should not need id for table: %s while creating a ref", branchTable));
+      }
+
+      @Override
+      public String getNamespace(TABLE branchTable) {
+        return null; //todo ingore namespace until #53 is addressed
+      }
+    };
+    return controller.getTables(ref, null, converter);
   }
 
   private static class TempJGitBranchController<TABLE, METADATA> extends JgitBranchController<TABLE, METADATA> {
