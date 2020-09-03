@@ -32,6 +32,7 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.exceptions.NotFoundException;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
@@ -73,8 +74,16 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
 
   private Branch getOrCreate(String branchName) {
     Branch branch = client.getBranch(branchName);
+    String baseBranchName = client.getConfig().getDefaultBranch();
+    final String baseBranchId;
+    if (baseBranchName != null) {
+      Branch baseBranch = client.getBranch(baseBranchName);
+      baseBranchId = baseBranch == null ? null : baseBranch.getId();
+    } else {
+      baseBranchId = null;
+    }
     if (branch == null) {
-      branch = client.createBranch(ImmutableBranch.builder().name(branchName).id("master").build());
+      branch = client.createBranch(ImmutableBranch.builder().name(branchName).id(baseBranchId).build());
     }
     return branch;
   }
@@ -193,7 +202,11 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
 
   @Override
   public void createBranch(String branchName, String parentName) {
-    client.createBranch(ImmutableBranch.builder().name(branchName).id(parentName).build());
+    Branch parent = client.getBranch(parentName);
+    if (parent == null) {
+      throw new NotFoundException(String.format("Branch %s not found", branchName));
+    }
+    client.createBranch(ImmutableBranch.builder().name(branchName).id(parent.getId()).build());
   }
 
   @Override
@@ -207,13 +220,13 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
   }
 
   @Override
-  public void promoteBranch(String from, boolean force) {
+  public void assignBranch(String from) {
     Branch existingFromTable = client.getBranch(from);
     if (existingFromTable == null) {
       throw new NoSuchTableException("branch %s doesn't exists", from);
     }
     try {
-      client.mergeBranch(existingFromTable, branch.get().getName(), force);
+      client.assignBranch(existingFromTable, branch.get().getName());
     } catch (Throwable t) {
       throw new CommitFailedException(t, "failed");
     }

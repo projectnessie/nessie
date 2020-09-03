@@ -13,19 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.services;
 
-package com.dremio.nessie.iceberg.branch;
+import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.Table;
+import com.dremio.nessie.versioned.VersionStore;
 
-/**
- * Catalog object for Branch...akin to iceberg Catalog interface
- */
-public interface BranchCatalog {
+public interface TableCommitMetaVersionStore extends VersionStore<Table, CommitMeta> {
 
-  void createBranch(String branchName, String parentName);
-
-  boolean dropBranch(String branchName);
-
-  void assignBranch(String from);
-
-  void refreshBranch();
 }

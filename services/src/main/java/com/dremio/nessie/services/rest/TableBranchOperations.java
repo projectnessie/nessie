@@ -16,10 +16,16 @@
 
 package com.dremio.nessie.services.rest;
 
-import java.io.IOException;
 import java.security.Principal;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.security.RolesAllowed;
 import javax.enterprise.context.ApplicationScoped;
@@ -40,6 +46,7 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 
@@ -50,22 +57,26 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Metered;
 import com.codahale.metrics.annotation.Timed;
 import com.dremio.nessie.auth.User;
-import com.dremio.nessie.backend.Backend;
-import com.dremio.nessie.backend.TableConverter;
 import com.dremio.nessie.error.ImmutableNessieError;
 import com.dremio.nessie.error.ImmutableNessieError.Builder;
-import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieError;
-import com.dremio.nessie.jgit.JgitBranchControllerLegacy;
-import com.dremio.nessie.jgit.TableTableConverter;
-import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.CommitMeta.Action;
 import com.dremio.nessie.model.ImmutableCommitMeta;
-import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.Reference;
+import com.dremio.nessie.model.ReferenceWithType;
 import com.dremio.nessie.model.Table;
+import com.dremio.nessie.services.NessieEngine;
 import com.dremio.nessie.services.auth.Secured;
+import com.dremio.nessie.versioned.Delete;
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.Put;
+import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
+import com.dremio.nessie.versioned.ReferenceConflictException;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.VersionStoreException;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -90,19 +101,18 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 )
 @SuppressWarnings("LineLength")
 public class TableBranchOperations {
-  //todo git like log
 
   private static final Logger logger = LoggerFactory.getLogger(TableBranchOperations.class);
-  private final JgitBranchControllerLegacy backend;
-  private final TableConverter<Table> converter = new TableTableConverter();
+
+  private final NessieEngine backend;
 
   @Inject
-  public TableBranchOperations(Backend backend) {
-    this.backend = new JgitBranchControllerLegacy(backend);
+  public TableBranchOperations(NessieEngine backend) {
+    this.backend = backend;
   }
 
   /**
-   * get all branches.
+   * get all refs.
    */
   @GET
   @Metered
@@ -111,26 +121,25 @@ public class TableBranchOperations {
   @RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Fetch all branches endpoint",
-      tags = {"get", "branch"},
+  @Operation(summary = "Fetch all refs endpoint",
+      tags = {"get", "ref"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
         @ApiResponse(
-          description = "All known branches",
+          description = "All known refs",
           content = @Content(mediaType = "application/json",
-            schema = @Schema(implementation = Branch[].class))),
+            schema = @Schema(implementation = Reference[].class))),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response tags() {
-    try {
-      return Response.ok(backend.getBranches().toArray(new Branch[0])).build();
-    } catch (IOException e) {
-      return exception(e);
-    }
+  public Response refs() {
+    return doAction(() -> {
+      Reference[] refs = backend.getAllReferences().toArray(new Reference[0]);
+      return Response.ok(refs).build();
+    });
   }
 
   /**
-   * get all tables in a branch.
+   * get all tables on a ref.
    */
   @GET
   @Metered
@@ -139,80 +148,71 @@ public class TableBranchOperations {
   @RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall-tables")
   @Produces(MediaType.APPLICATION_JSON)
-  @Path("{branch}/tables")
-  @Operation(summary = "Fetch all tables on a branch endpoint",
+  @Path("{ref}/tables")
+  @Operation(summary = "Fetch all tables on a ref endpoint",
       tags = {"get", "table"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
         @ApiResponse(
-          description = "all tables on branch",
+          description = "all tables on a ref",
           content = @Content(mediaType = "application/json",
             schema = @Schema(implementation = String[].class))),
-        @ApiResponse(responseCode = "404", description = "Branch not found"),
+        @ApiResponse(responseCode = "404", description = "Ref not found"),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response branch(@Parameter(description = "name of branch to fetch from", required = true)
-                           @PathParam("branch") String branchName,
+  public Response refTables(@Parameter(description = "name of ref to fetch from", required = true)
+                           @PathParam("ref") String refName,
                          @Parameter(description = "filter for namespace")
                            @DefaultValue("all") @QueryParam("namespace") String namespace) {
-    try {
-      Branch branch = backend.getBranch(branchName);
-      if (branch == null) {
-        return exception(Response.Status.NOT_FOUND, "branch " + branchName + " not found", null);
-      }
-      List<String> tableList = backend.getTables(branch.getId(), namespace.equals("all")
-          ? null : namespace, converter);
-      return Response.ok(tableList.toArray(new String[0])).build();
-    } catch (IOException e) {
-      return exception(e);
-    }
+    return doAction(() -> {
+      //todo filter by namespace once namespace is better defined
+      Stream<Key> tables = backend.getAllTables(refName);
+      String[] tableArray = tables.map(NessieEngine::urlStringFromKey)
+                                  .toArray(String[]::new);
+      return Response.ok(tableArray).build();
+    });
   }
 
   /**
-   * get branch details.
+   * get ref details.
    */
   @GET
   @Metered
-  @ExceptionMetered(name = "exception-readall-branches")
+  @ExceptionMetered(name = "exception-readall-refs")
   @Secured
   @RolesAllowed({"admin", "user"})
-  @Timed(name = "timed-readall-branches")
+  @Timed(name = "timed-readall-refs")
   @Produces(MediaType.APPLICATION_JSON)
-  @Path("{branch}")
-  @Operation(summary = "Fetch details of a branch endpoint",
-      tags = {"get", "branch"},
+  @Path("{ref}")
+  @Operation(summary = "Fetch details of a ref endpoint",
+      tags = {"get", "ref"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
         @ApiResponse(
-          description = "Branch details",
+          description = "Ref details",
           content = @Content(mediaType = "application/json",
-            schema = @Schema(implementation = Branch.class))),
-        @ApiResponse(responseCode = "404", description = "Branch not found"),
+            schema = @Schema(implementation = ReferenceWithType.class))),
+        @ApiResponse(responseCode = "404", description = "Ref not found"),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response branchTables(@Parameter(description = "name of branch to fetch", required = true)
-                                 @PathParam("branch") String branchName) {
-    try {
-      Branch branch = backend.getBranch(branchName);
-      if (branch == null) {
-        return exception(Response.Status.NOT_FOUND, "branch " + branchName + " not found", null);
-      }
-      return Response.ok(branch).tag(tagFromTable(branch)).build();
-    } catch (IOException e) {
-      return exception(e);
-    }
+  public Response ref(@Parameter(description = "name of ref to fetch", required = true)
+                                 @PathParam("ref") String refName) {
+    return doAction(() -> {
+      Reference ref = backend.getReference(refName);
+      return Response.ok(ReferenceWithType.of(ref)).tag(tagFromTable(ref)).build();
+    });
   }
 
   private static EntityTag tagFromTable(String obj) {
     return new EntityTag(obj);
   }
 
-  private static EntityTag tagFromTable(Branch obj) {
+  private static EntityTag tagFromTable(Reference obj) {
     return new EntityTag(obj.getId());
   }
 
   /**
-   * get a table in a specific branch.
+   * get a table in a specific ref.
    */
   @GET
   @Metered
@@ -221,87 +221,62 @@ public class TableBranchOperations {
   @RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall-table")
   @Produces(MediaType.APPLICATION_JSON)
-  @Path("{branch}/{table}")
+  @Path("{ref}/{table}")
   @Operation(summary = "Fetch details of a table endpoint",
       tags = {"get", "table"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
         @ApiResponse(
-          description = "Details of table on branch",
+          description = "Details of table on ref",
           content = @Content(mediaType = "application/json",
             schema = @Schema(implementation = Table.class))),
-        @ApiResponse(responseCode = "404", description = "Table not found on branch"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+        @ApiResponse(responseCode = "404", description = "Table not found on ref"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from ref")}
   )
-  public Response branchTable(@Parameter(description = "name of branch to search on", required = true)
-                                @PathParam("branch") String branch,
+  public Response refTable(@Parameter(description = "name of ref to search on", required = true)
+                                @PathParam("ref") String ref,
                               @Parameter(description = "table name to search for", required = true)
                                 @PathParam("table") String tableName,
                               @Parameter(description = "fetch all metadata on table")
                                 @DefaultValue("false") @QueryParam("metadata") boolean metadata) {
-    try {
-      Table table = (Table) backend.getTable(branch, tableName, metadata);
-      if (table == null) {
-        return exception(Response.Status.NOT_FOUND,
-                         "table " + tableName + " not found on branch " + branch,
-                         null);
-      }
-      return Response.ok(table).build();
-    } catch (IOException e) {
-      return exception(e);
-    }
+    return doAction(() -> {
+      //todo metadata ignored until that becomes a clearer pattern
+      Table table = backend.getTableOnReference(ref, tableName);
+      return table == null ? exception(Response.Status.NOT_FOUND, "ref not found", null) : Response.ok(table).build();
+    });
   }
 
   /**
-   * create a branch.
+   * create a ref.
    */
-  @SuppressWarnings("LineLength")
   @POST
   @Metered
-  @ExceptionMetered(name = "exception-readall-branch")
+  @ExceptionMetered(name = "exception-readall-ref")
   @Secured
   @RolesAllowed({"admin"})
-  @Timed(name = "timed-readall-branch")
+  @Timed(name = "timed-readall-ref")
   @Consumes(MediaType.APPLICATION_JSON)
-  @Path("{branch}")
-  @Operation(summary = "create branch endpoint",
-      tags = {"post", "branch"},
+  @Path("{ref}")
+  @Operation(summary = "create ref endpoint",
+      tags = {"post", "ref"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
-        @ApiResponse(responseCode = "409", description = "Branch already exists"),
+        @ApiResponse(responseCode = "409", description = "Ref already exists"),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response createBranch(@Parameter(description = "name of branch to be created", required = true)
-                                 @PathParam("branch") String branchName,
-                               @Context SecurityContext securityContext,
-                               @Parameter(description = "reason for this action for audit purposes")
-                                 @DefaultValue("unknown") @QueryParam("reason") String reason,
-                               @RequestBody(description = "branch object to be created",
-                               content = @Content(schema = @Schema(implementation = Branch.class)))
-                                   Branch branch) {
-    try {
-      if (backend.getBranch(branchName) != null) {
-        return exception(Response.Status.CONFLICT,
-                         "branch " + branchName + " already exists",
-                         null);
-      }
-      Branch newBranch = backend.create(branchName,
-                                        branch.getId(),
-                                        meta(securityContext.getUserPrincipal(),
-                                             reason,
-                                             1,
-                                             branchName,
-                                             Action.CREATE_BRANCH),
-                                        converter);
-      return Response.created(null).tag(tagFromTable(newBranch)).build();
-    } catch (IOException e) {
-      return exception(e);
-    }
-
+  public Response createRef(@Parameter(description = "name of ref to be created", required = true)
+                                 @PathParam("ref") String refName,
+                               @RequestBody(description = "ref object to be created",
+                               content = @Content(schema = @Schema(implementation = ReferenceWithType.class)))
+                                 ReferenceWithType ref) {
+    return doAction(() -> {
+      Reference newRef = backend.createRef(refName, ref.getReference().getId(), ref.getType());
+      return Response.created(null).tag(tagFromTable(newRef)).build();
+    });
   }
 
   /**
-   * create a table on a specific branch.
+   * create a table on a specific ref.
    */
   @POST
   @Metered
@@ -309,19 +284,19 @@ public class TableBranchOperations {
   @Secured
   @RolesAllowed({"admin"})
   @Timed(name = "timed-create-table")
-  @Path("{branch}/{table}")
+  @Path("{ref}/{table}")
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "create table on branch endpoint",
+  @Operation(summary = "create table on ref endpoint",
       tags = {"post", "table"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
-        @ApiResponse(responseCode = "404", description = "Branch doesn't exists"),
+        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
         @ApiResponse(responseCode = "400", description = "Table already exists"),
         @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response createTable(@Parameter(description = "branch on which table will be created", required = true)
-                                @PathParam("branch") String branch,
+  public Response createTable(@Parameter(description = "ref on which table will be created", required = true)
+                                @PathParam("ref") String ref,
                               @Parameter(description = "name of table to be created", required = true)
                                 @PathParam("table") String tableName,
                               @Parameter(description = "reason for this action for audit purposes")
@@ -331,85 +306,93 @@ public class TableBranchOperations {
                               @RequestBody(description = "table object to be created",
                                 content = @Content(schema = @Schema(implementation = Table.class)))
                                   Table table) {
-    try {
-      if (backend.getBranch(branch) == null) {
-        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
+
+    return doAction(() -> {
+      Table existing = backend.getTableOnReference(ref, tableName);
+      if (existing != null) {
+        return exception(Response.Status.CONFLICT, "table " + tableName + " already exists on " + ref, null);
       }
-      if (backend.getTable(branch, tableName, false) != null) {
-        return exception(Response.Status.CONFLICT,
-                         "table " + tableName + " already exists on " + branch,
-                         null);
-      }
-    } catch (IOException e) {
-      return exception(e);
-    }
-    return singleCommit(branch, tableName, securityContext, headers, table, reason, true);
+      return singleCommit(ref, tableName, securityContext, headers, table, reason, true);
+    });
   }
 
-  private Response singleCommit(String branch,
+  private Response singleCommit(String ref,
                                 String tableName,
                                 SecurityContext securityContext,
                                 HttpHeaders headers,
                                 Table table,
                                 String reason,
-                                boolean post) {
-    String ifMatch = version(headers);
-    if (ifMatch == null) {
-      return exception(Response.Status.PRECONDITION_FAILED,
-                       "Tag not up to date on " + branch,
-                       null);
-    }
+                                boolean post) throws ReferenceConflictException, ReferenceNotFoundException {
+    String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
     Principal principal = securityContext.getUserPrincipal();
-    return update(tableName, branch, table, principal, ifMatch, reason, post);
+    backend.commit(ref,
+                   hash,
+                   meta(principal, reason + ";" + table, 1, ref, Action.COMMIT),
+                   Collections.singletonList(Put.of(NessieEngine.keyFromUrlString(tableName), table)));
+    ResponseBuilder response = post ? Response.created(null) : Response.ok();
+    return response.build();
   }
 
   /**
-   * delete a branch.
+   * delete a ref.
    */
   @DELETE
   @Metered
-  @ExceptionMetered(name = "exception-delete-branch")
+  @ExceptionMetered(name = "exception-delete-ref")
   @Secured
   @RolesAllowed({"admin"})
-  @Timed(name = "timed-delete-branch")
-  @Path("{branch}")
-  @Operation(summary = "delete branch endpoint",
-      tags = {"delete", "branch"},
+  @Timed(name = "timed-delete-ref")
+  @Path("{ref}")
+  @Operation(summary = "delete ref endpoint",
+      tags = {"delete", "ref"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
-        @ApiResponse(responseCode = "404", description = "Branch doesn't exists"),
+        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
         @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response deleteBranch(@Parameter(description = "branch to delete", required = true)
-                                 @PathParam("branch") String branch,
-                               @Parameter(description = "purge all data about branch")
-                                 @DefaultValue("false") @QueryParam("purge") boolean purge,
-                               @Parameter(description = "reason for this action for audit purposes")
-                                 @DefaultValue("unknown") @QueryParam("reason") String reason,
-                               @Context SecurityContext securityContext,
+  public Response deleteRef(@Parameter(description = "ref to delete", required = true)
+                                 @PathParam("ref") String ref,
                                @Context HttpHeaders headers) {
-    try {
-      if (backend.getBranch(branch) == null) {
-        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
-      }
-      String ifMatch = version(headers);
-      if (ifMatch == null) {
-        return exception(Response.Status.PRECONDITION_FAILED,
-                         "Tag not up to date on " + branch,
-                         null);
-      }
-      backend.deleteBranch(branch, ifMatch, meta(securityContext.getUserPrincipal(),
-                                                 reason,
-                                                 1,
-                                                 branch,
-                                                 Action.DELETE_BRANCH));
+    return doAction(() -> {
+      String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
+      backend.deleteRef(ref, hash);
       return Response.ok().build();
-    } catch (IOException e) {
-      return exception(e);
-    } catch (NessieConflictException e) {
-      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
-    }
+    });
+  }
+
+  static class CommitMetaModel extends HashMap<String, CommitMeta> {
+    //because swagger is annoying
+  }
+
+  /**
+   * commit log for a ref.
+   */
+  @GET
+  @Metered
+  @ExceptionMetered(name = "exception-log-ref")
+  @Secured
+  @RolesAllowed({"admin"})
+  @Timed(name = "timed-log-ref")
+  @Path("{ref}/log")
+  @Operation(summary = "log ref endpoint",
+      tags = {"log", "ref"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(
+          description = "all commits on a ref",
+          content = @Content(mediaType = "application/json",
+            schema = @Schema(implementation = CommitMetaModel.class))),
+        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response commitLog(@Parameter(description = "ref to show log from", required = true)
+                            @PathParam("ref") String ref,
+                            @Context HttpHeaders headers) {
+    return doAction(() -> {
+      Map<String, CommitMeta> log = backend.log(ref);
+      return Response.ok(log).build();
+    });
   }
 
   /**
@@ -421,123 +404,71 @@ public class TableBranchOperations {
   @Secured
   @RolesAllowed({"admin"})
   @Timed(name = "timed-delete-table")
-  @Path("{branch}/{table}")
-  @Operation(summary = "delete table on branch endpoint",
+  @Path("{ref}/{table}")
+  @Operation(summary = "delete table on ref endpoint",
       tags = {"delete", "table"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
-        @ApiResponse(responseCode = "404", description = "Branch/table doesn't exists"),
+        @ApiResponse(responseCode = "404", description = "Ref/table doesn't exists"),
         @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response deleteTable(@Parameter(description = "branch on which to delete table", required = true)
-                                @PathParam("branch") String branch,
+  public Response deleteTable(@Parameter(description = "ref on which to delete table", required = true)
+                                @PathParam("ref") String ref,
                               @Parameter(description = "table to delete", required = true)
                                 @PathParam("table") String table,
                               @Parameter(description = "reason for this action for audit purposes")
                                 @DefaultValue("unknown") @QueryParam("reason") String reason,
-                              @Parameter(description = "purge all data about branch")
+                              @Parameter(description = "purge all data about ref")
                                 @DefaultValue("false") @QueryParam("purge") boolean purge,
                               @Context SecurityContext securityContext,
                               @Context HttpHeaders headers) {
-    try {
-      if (backend.getBranch(branch) == null) {
-        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
-      }
-      Table branchTable = (Table) backend.getTable(branch, table, false);
-      if (branchTable == null) {
-        return exception(Response.Status.NOT_FOUND,
-                         "table " + table + " does not exists on " + branch,
-                         null);
-      }
-      String ifMatch = version(headers);
-      if (ifMatch == null) {
-        return exception(Response.Status.PRECONDITION_FAILED,
-                         "Tag not up to date on " + branch,
-                         null);
-      }
-      ImmutableTable deletedTable = ImmutableTable.builder()
-                                                  .from(branchTable)
-                                                  .isDeleted(true)
-                                                  .build();
-      backend.commit(branch, meta(securityContext.getUserPrincipal(),
-                                  reason + ";" + table,
-                                  1,
-                                  branch,
-                                  Action.COMMIT
-      ), ifMatch, converter, deletedTable);
+    return doAction(() -> {
+      String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
+      CommitMeta meta = meta(securityContext.getUserPrincipal(), reason + ";" + table, 1, ref, Action.COMMIT);
+      backend.commit(ref, hash, meta, Lists.newArrayList(Delete.of(NessieEngine.keyFromUrlString(table))));
       return Response.ok().build();
-    } catch (IOException e) {
-      return exception(e);
-    } catch (NessieConflictException e) {
-      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
-    }
+    });
   }
 
   /**
-   * cherry pick mergeBranch onto branch.
+   * cherry pick mergeRef  onto ref.
    */
   @PUT
   @Metered
-  @ExceptionMetered(name = "exception-cherry-pick")
+  @ExceptionMetered(name = "exception-transplant")
   @Secured
   @RolesAllowed({"admin"})
-  @Timed(name = "timed-cherry-pick")
-  @Path("{branch}/cherry-pick")
-  @Operation(summary = "cherry pick commits from mergeBranch to branch endpoint",
+  @Timed(name = "timed-transplant")
+  @Path("{ref}/transplant")
+  @Operation(summary = "transplant commits from mergeRef to ref endpoint",
       tags = {"put", "commit"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
-        @ApiResponse(responseCode = "401", description = "no merge branch supplied"),
-        @ApiResponse(responseCode = "404", description = "Branch doesn't exists"),
+        @ApiResponse(responseCode = "401", description = "no merge ref supplied"),
+        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
         @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response cpBranch(@Parameter(description = "branch on which to add merges", required = true)
-                             @PathParam("branch") String branch,
+  public Response transplantRef(@Parameter(description = "ref on which to add merges", required = true)
+                             @PathParam("ref") String ref,
                            @Context SecurityContext securityContext,
                            @Context HttpHeaders headers,
                            @Parameter(description = "reason for this action for audit purposes")
-                             @DefaultValue("unknown") @QueryParam("reason") String reason,
-                           @Parameter(description = "name of branch to take commits from", required = true)
-                             @QueryParam("promote") String mergeBranch,
-                           @Parameter(description = "optional namespace, only tables on this namespace will be changed")
-                             @QueryParam("namespace") String namespace) {
-    try {
-      if (mergeBranch == null) {
-        return exception(Response.Status.BAD_REQUEST, "branch to cherry pick from is null", null);
-      }
-      if (backend.getBranch(branch) == null) {
-        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
-      }
-      String ifMatch = version(headers);
-      if (ifMatch == null) {
-        return exception(Response.Status.PRECONDITION_FAILED,
-                         "Tag not up to date on " + branch,
-                         null);
-      }
-      String result = backend.promote(branch,
-                                      mergeBranch,
-                                      ifMatch,
-                                      meta(securityContext.getUserPrincipal(),
-                                           reason + ";" + mergeBranch,
-                                           1,
-                                           branch,
-                                           Action.CHERRY_PICK),
-                                      false,
-                                      true,
-                                      namespace,
-                                      converter);
-      return Response.ok().tag(tagFromTable(result)).build();
-    } catch (IOException e) {
-      return exception(e);
-    } catch (NessieConflictException e) {
-      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
+                             @QueryParam("promote") String mergeHashes) {
+    if (mergeHashes == null || mergeHashes.isEmpty()) {
+      return exception(Response.Status.BAD_REQUEST, "ref to cherry pick from is null", null);
     }
+    return doAction(() -> {
+      String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
+      List<String> transplantHashes = Arrays.stream(mergeHashes.split(",")).collect(Collectors.toList());
+      backend.transplant(ref, hash, transplantHashes);
+      return Response.ok().build();
+    });
   }
 
   /**
-   * merge mergeBranch onto branch, optionally forced.
+   * merge mergeRef onto ref, optionally forced.
    */
   @PUT
   @Metered
@@ -545,115 +476,64 @@ public class TableBranchOperations {
   @Secured
   @RolesAllowed({"admin"})
   @Timed(name = "timed-merge")
-  @Path("{branch}/promote")
-  @Operation(summary = "merge commits from mergeBranch to branch endpoint",
+  @Path("{ref}/merge")
+  @Operation(summary = "merge commits from mergeRef to ref endpoint",
       tags = {"put", "commit"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
-        @ApiResponse(responseCode = "401", description = "no merge branch supplied"),
-        @ApiResponse(responseCode = "404", description = "Branch doesn't exists"),
+        @ApiResponse(responseCode = "401", description = "no merge ref supplied"),
+        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
         @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response promoteBranch(@Parameter(description = "branch on which to add merges", required = true)
-                           @PathParam("branch") String branch,
-                           @Context SecurityContext securityContext,
+  public Response mergeRef(@Parameter(description = "ref on which to add merges", required = true)
+                           @PathParam("ref") String ref,
                            @Context HttpHeaders headers,
-                           @Parameter(description = "reason for this action for audit purposes")
-                           @DefaultValue("unknown") @QueryParam("reason") String reason,
-                           @Parameter(description = "name of branch to take commits from", required = true)
-                           @QueryParam("promote") String mergeBranch,
-                           @Parameter(description = "optional force, this will potentially delete history")
-                                @DefaultValue("false") @QueryParam("force") boolean force) {
-    try {
-      if (mergeBranch == null) {
-        return exception(Response.Status.BAD_REQUEST, "branch to merge from is null", null);
-      }
-      if (backend.getBranch(branch) == null) {
-        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
-      }
-      String ifMatch = version(headers);
-      if (ifMatch == null) {
-        return exception(Response.Status.PRECONDITION_FAILED,
-                         "Tag not up to date on " + branch,
-                         null);
-      }
-      String result = backend.promote(branch,
-                                      mergeBranch,
-                                      ifMatch,
-                                      meta(securityContext.getUserPrincipal(),
-                                           reason + ";" + mergeBranch,
-                                           1,
-                                           branch,
-                                           force ? Action.FORCE_MERGE : Action.MERGE),
-                                      force,
-                                      false,
-                                      null,
-                                      converter);
-      return Response.ok().tag(tagFromTable(result)).build();
-    } catch (IOException e) {
-      return exception(e);
-    } catch (NessieConflictException e) {
-      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
+                           @Parameter(description = "hash to take commits from", required = true)
+                           @QueryParam("promote") String mergeHash) {
+    if (mergeHash == null) {
+      return exception(Response.Status.BAD_REQUEST, "hash to merge from is null", null);
     }
+    return doAction(() -> {
+      String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
+      backend.merge(ref, mergeHash, hash);
+      return Response.ok().build();
+    });
   }
 
   /**
-   * update a list of tables on a given branch.
+   * assign a Ref to a hash.
    */
   @PUT
   @Metered
-  @ExceptionMetered(name = "exception-commit")
+  @ExceptionMetered(name = "exception-assign")
   @Secured
   @RolesAllowed({"admin"})
-  @Timed(name = "timed-commit")
-  @Path("{branch}")
-  @Operation(summary = "commit tables to branch endpoint",
+  @Timed(name = "timed-assign")
+  @Path("{ref}")
+  @Operation(summary = "assign hash to ref endpoint",
       tags = {"put", "commit"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
-        @ApiResponse(responseCode = "404", description = "Branch doesn't exists"),
+        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
         @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response updateBatch(@Parameter(description = "branch on which to add merges", required = true)
-                                @PathParam("branch") String branch,
-                              @Context SecurityContext securityContext,
-                              @Context HttpHeaders headers,
-                              @Parameter(description = "reason for this action for audit purposes")
-                                @DefaultValue("unknown") @QueryParam("reason") String reason,
-                              @RequestBody(description = "table objects to be created, updated or deleted",
-                                content = @Content(schema = @Schema(implementation = Table[].class)))
-                                  Table[] batchUpdate) {
-    try {
-      if (backend.getBranch(branch) == null) {
-        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
-      }
-      String ifMatch = version(headers);
-      if (ifMatch == null) {
-        return exception(Response.Status.PRECONDITION_FAILED,
-                         "Tag not up to date on " + branch,
-                         null);
-      }
-      String headVersion = backend.commit(branch,
-                                          meta(securityContext.getUserPrincipal(),
-                                               reason,
-                                               batchUpdate.length,
-                                               branch,
-                                               Action.COMMIT),
-                                          ifMatch,
-                                          converter,
-                                          batchUpdate);
-      return Response.ok().tag(tagFromTable(headVersion)).build();
-    } catch (IOException e) {
-      return exception(e);
-    } catch (NessieConflictException e) {
-      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
-    }
+  public Response updateBatch(@Parameter(description = "ref on which to assign, may not yet exist", required = true)
+                                @PathParam("ref") String ref,
+                              @Parameter(description = "name of ref to take commits from", required = true)
+                              @QueryParam("target") String targetRef,
+                              @Context HttpHeaders headers
+                              ) {
+    return doAction(() -> {
+      String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
+      backend.assign(ref, hash, targetRef);
+      return Response.ok().build();
+    });
   }
 
   /**
-   * update a single table on a branch.
+   * update a single table on a ref.
    */
   @PUT
   @Metered
@@ -661,17 +541,17 @@ public class TableBranchOperations {
   @Secured
   @RolesAllowed({"admin"})
   @Timed(name = "timed-commit-table")
-  @Path("{branch}/{table}")
-  @Operation(summary = "update via commit single table to branch endpoint",
+  @Path("{ref}/{table}")
+  @Operation(summary = "update via commit single table to ref endpoint",
       tags = {"put", "commit"},
       security = @SecurityRequirement(name = "nessie-auth"),
       responses = {
-        @ApiResponse(responseCode = "404", description = "Branch/table doesn't exists"),
+        @ApiResponse(responseCode = "404", description = "Ref/table doesn't exists"),
         @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
         @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
-  public Response update(@Parameter(description = "branch on which to add merges", required = true)
-                           @PathParam("branch") String branch,
+  public Response update(@Parameter(description = "ref on which to add merges", required = true)
+                           @PathParam("ref") String ref,
                          @Parameter(description = "table which will be changed", required = true)
                            @PathParam("table") String table,
                          @Parameter(description = "reason for this action for audit purposes")
@@ -679,72 +559,67 @@ public class TableBranchOperations {
                          @Context SecurityContext securityContext,
                          @Context HttpHeaders headers,
                          Table update) {
-    try {
-      if (backend.getBranch(branch) == null) {
-        return exception(Response.Status.NOT_FOUND, "branch " + branch + " not found", null);
-      }
-      if (backend.getTable(branch, table, false) == null) {
-        return exception(Response.Status.NOT_FOUND,
-                         "table " + table + " does not exists on " + branch,
-                         null);
-      }
-    } catch (IOException e) {
-      return exception(e);
-    }
-    return singleCommit(branch, table, securityContext, headers, update, reason, false);
+    return doAction(() -> singleCommit(ref, table, securityContext, headers, update, reason, false));
   }
 
-  private Response update(String table,
-                          String branch,
-                          Table branchTable,
-                          Principal principal,
-                          String ifMatch,
-                          String reason,
-                          boolean post) {
-    if (!table.equals(branchTable.getId())) {
-      return exception(Response.Status.NOT_FOUND,
-                       "Can't update this table, table update is not correct",
-                       null);
-    }
-    try {
-      String headVersion = backend.commit(branch,
-                                          meta(principal,
-                                               reason + ";" + table,
-                                               1,
-                                               branch,
-                                               Action.COMMIT),
-                                          ifMatch,
-                                          converter,
-                                          branchTable);
-      if (post) {
-        return Response.created(null).tag(tagFromTable(headVersion)).build(); //todo uri
-      }
-      return Response.ok().tag(tagFromTable(headVersion)).build();
-    } catch (IOException e) {
-      return exception(e);
-    } catch (NessieConflictException e) {
-      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
-    }
+  /**
+   * update multiple tables on a ref.
+   */
+  @PUT
+  @Metered
+  @ExceptionMetered(name = "exception-commit-multi-table")
+  @Secured
+  @RolesAllowed({"admin"})
+  @Timed(name = "timed-commit-multi-table")
+  @Path("{ref}/multi")
+  @Operation(summary = "update via commit multiple tables to ref endpoint",
+      tags = {"put", "commit"},
+      security = @SecurityRequirement(name = "nessie-auth"),
+      responses = {
+        @ApiResponse(responseCode = "404", description = "Ref/table doesn't exists"),
+        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
+        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  )
+  public Response updateMulti(@Parameter(description = "ref on which to add merges", required = true)
+                         @PathParam("ref") String ref,
+                         @Parameter(description = "reason for this action for audit purposes")
+                         @DefaultValue("unknown") @QueryParam("reason") String reason,
+                         @Context SecurityContext securityContext,
+                         @Context HttpHeaders headers,
+                         Table[] update) {
+    return doAction(() -> {
+      String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
+      Principal principal = securityContext.getUserPrincipal();
+      List<com.dremio.nessie.versioned.Operation<Table>> ops = Arrays.stream(update).map(t -> {
+        Key key = NessieEngine.keyFromUrlString(t.getId());
+        return t.isDeleted() ? Delete.<Table>of(key) : Put.of(key, t);
+      }).collect(Collectors.toList());
+      backend.commit(ref,
+                     hash,
+                     meta(principal, reason, update.length, ref, Action.COMMIT),
+                     ops);
+      return Response.ok().build();
+    });
   }
 
-  private static String version(HttpHeaders headers) {
+  private static Optional<String> version(HttpHeaders headers) {
     try {
       String ifMatch = headers.getHeaderString(HttpHeaders.IF_MATCH);
-      return EntityTag.valueOf(ifMatch).getValue();
+      return Optional.of(EntityTag.valueOf(ifMatch).getValue());
     } catch (NullPointerException | NoSuchElementException e) {
-      return null;
+      return Optional.empty();
     }
   }
 
   private static Response exception(Response.Status status,
                                     String message,
-                                    NessieConflictException e) {
+                                    VersionStoreException e) {
     Builder builder = ImmutableNessieError.builder()
                                           .errorCode(status.getStatusCode())
                                           .errorMessage(message)
                                           .statusMessage(status.getReasonPhrase());
     if (e != null) {
-      builder.conflicts(e.getConflictTables()).stackTrace(Throwables.getStackTraceAsString(e));
+      builder.stackTrace(Throwables.getStackTraceAsString(e));
     }
     return Response.status(status)
                    .entity(Entity.entity(builder.build(), MediaType.APPLICATION_JSON_TYPE))
@@ -752,10 +627,10 @@ public class TableBranchOperations {
   }
 
   private static Response exception(Exception e) {
-    if (e instanceof NessieConflictException) {
+    if (e instanceof VersionStoreException) {
       return exception(Response.Status.INTERNAL_SERVER_ERROR,
                        e.getMessage(),
-                       (NessieConflictException) e);
+                       (VersionStoreException) e);
     }
     Response.Status status = Status.INTERNAL_SERVER_ERROR;
     String exceptionAsString = Throwables.getStackTraceAsString(e);
@@ -770,26 +645,26 @@ public class TableBranchOperations {
                    .build();
   }
 
-  private CommitMeta meta(Principal principal,
+  private static CommitMeta meta(Principal principal,
                           String comment,
                           int changes,
-                          String branch,
+                          String ref,
                           Action action) {
     return ImmutableCommitMeta.builder()
                               .email(email(principal))
                               .commiter(name(principal))
                               .comment(comment)
                               .changes(changes)
-                              .branch(branch)
+                              .ref(ref)
                               .action(action)
                               .build();
   }
 
-  private String name(Principal principal) {
+  private static String name(Principal principal) {
     return principal == null ? "" : principal.getName();
   }
 
-  private String email(Principal principal) {
+  private static String email(Principal principal) {
     try {
       User user = (User) principal;
       String email = user.email();
@@ -799,4 +674,24 @@ public class TableBranchOperations {
       return "";
     }
   }
+
+  private static Response doAction(StoreAction action) {
+    try {
+      return action.doAction();
+    } catch (ReferenceNotFoundException e) {
+      return exception(Response.Status.NOT_FOUND, "ref not found", e);
+    } catch (ReferenceConflictException e) {
+      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", e);
+    } catch (ReferenceAlreadyExistsException e) {
+      return exception(Response.Status.CONFLICT, "ref already exists", e);
+    } catch (Exception e) {
+      return exception(e);
+    }
+  }
+
+  private interface StoreAction {
+    Response doAction() throws ReferenceConflictException, ReferenceNotFoundException, ReferenceAlreadyExistsException;
+  }
+
+
 }

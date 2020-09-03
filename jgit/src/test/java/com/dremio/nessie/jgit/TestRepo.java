@@ -538,7 +538,7 @@ class TestRepo {
   private static CommitMeta commitMeta(String branch, String comment, Action action, int changes) {
     return ImmutableCommitMeta.builder()
                               .action(action)
-                              .branch(branch)
+                              .ref(branch)
                               .changes(changes)
                               .comment(comment)
                               .commiter("test")

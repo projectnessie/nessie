@@ -19,11 +19,11 @@ package com.dremio.nessie.server;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.eclipse.jgit.lib.Constants;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.test.JerseyTest;
@@ -34,6 +34,7 @@ import com.dremio.nessie.json.ObjectMapperContextResolver;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.ReferenceWithType;
 import com.dremio.nessie.model.Table;
 import com.dremio.nessie.services.rest.TableBranchOperations;
 
@@ -57,21 +58,27 @@ public class RestGitTest extends JerseyTest {
 
   @Test
   public void testBasic() {
+    ReferenceWithType<Branch> main = ReferenceWithType.of(ImmutableBranch.builder()
+                                                      .id(null)
+                                                      .name("main")
+                                                      .build());
+    Response res = get("objects/main").post(Entity.entity(main, MediaType.APPLICATION_JSON_TYPE));
+    Assertions.assertEquals(201, res.getStatus());
     Branch[] branches = get().get(Branch[].class);
     Assertions.assertEquals(1, branches.length);
-    Assertions.assertEquals(Constants.MASTER, branches[0].getName());
+    Assertions.assertEquals("main", branches[0].getName());
 
-    Branch master = get("objects/master").get(Branch.class);
-    Assertions.assertEquals(branches[0], master);
+    main = get("objects/main").get(new GenericType<ReferenceWithType<Branch>>(){});
+    Assertions.assertEquals(branches[0], main.getReference());
 
-    Branch test = ImmutableBranch.builder()
-                                 .id("master")
+    ReferenceWithType<Branch> test = ReferenceWithType.of(ImmutableBranch.builder()
+                                 .id(main.getReference().getId())
                                  .name("test")
-                                 .build();
-    Response res = get("objects/test").post(Entity.entity(test, MediaType.APPLICATION_JSON_TYPE));
+                                 .build());
+    res = get("objects/test").post(Entity.entity(test, MediaType.APPLICATION_JSON_TYPE));
     Assertions.assertEquals(201, res.getStatus());
-    Branch testReturn = get("objects/test").get(Branch.class);
-    Assertions.assertEquals("test", testReturn.getName());
+    ReferenceWithType<Branch> testReturn = get("objects/test").get(new GenericType<ReferenceWithType<Branch>>(){});
+    Assertions.assertEquals("test", testReturn.getReference().getName());
 
     Table table = ImmutableTable.builder()
                                 .id("xxx.test")
@@ -101,7 +108,7 @@ public class RestGitTest extends JerseyTest {
                                         "/the/directory/over/there/has/been/moved")
                                 .build();
     res = get("objects/test").get();
-    res = get("objects/test").header("If-Match", res.getHeaders().getFirst("ETag"))
+    res = get("objects/test/multi").header("If-Match", res.getHeaders().getFirst("ETag"))
                              .put(Entity.entity(updates, MediaType.APPLICATION_JSON_TYPE));
     Assertions.assertEquals(200, res.getStatus());
     table = ImmutableTable.builder()
@@ -123,6 +130,12 @@ public class RestGitTest extends JerseyTest {
 
   @Test
   public void testNewBranch() {
+    ReferenceWithType<Branch> main = ReferenceWithType.of(ImmutableBranch.builder()
+                                                                         .id(null)
+                                                                         .name("main")
+                                                                         .build());
+    Response res = get("objects/main").post(Entity.entity(main, MediaType.APPLICATION_JSON_TYPE));
+    Assertions.assertEquals(201, res.getStatus());
     Table[] updates = new Table[10];
     for (int i = 0; i < 10; i++) {
       updates[i] = ImmutableTable.builder()
@@ -132,14 +145,16 @@ public class RestGitTest extends JerseyTest {
                                  .metadataLocation("/the/directory/over/there/" + i)
                                  .build();
     }
-    Response res = get("objects/master").get();
-    res = get("objects/master").header("If-Match", res.getHeaders().getFirst("ETag"))
+    res = get("objects/main").get();
+    res = get("objects/main/multi").header("If-Match", res.getHeaders().getFirst("ETag"))
                                .put(Entity.entity(updates, MediaType.APPLICATION_JSON_TYPE));
     Assertions.assertEquals(200, res.getStatus());
-    Branch test = ImmutableBranch.builder()
-                                 .id("master")
+    res = get("objects/main").get();
+    String hash = res.readEntity(ReferenceWithType.class).getReference().getId();
+    ReferenceWithType<Branch> test = ReferenceWithType.of(ImmutableBranch.builder()
+                                 .id(hash)
                                  .name("test2")
-                                 .build();
+                                 .build());
     res = get("objects/test2").post(Entity.entity(test, MediaType.APPLICATION_JSON_TYPE));
     Assertions.assertEquals(201, res.getStatus());
 
@@ -169,10 +184,10 @@ public class RestGitTest extends JerseyTest {
   @SuppressWarnings("LocalVariableName")
   @Test
   public void testOptimisticLocking() {
-    Branch test = ImmutableBranch.builder()
-                                 .id("master")
+    ReferenceWithType<Branch> test = ReferenceWithType.of(ImmutableBranch.builder()
+                                 .id(null)
                                  .name("test3")
-                                 .build();
+                                 .build());
     Response res = get("objects/test3").post(Entity.entity(test, MediaType.APPLICATION_JSON_TYPE));
     Assertions.assertEquals(201, res.getStatus());
     Table table = ImmutableTable.builder()

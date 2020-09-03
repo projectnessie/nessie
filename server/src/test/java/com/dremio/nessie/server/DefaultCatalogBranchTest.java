@@ -62,7 +62,7 @@ public class DefaultCatalogBranchTest {
     } catch (IllegalStateException t) {
       //pass set in previous test
     }
-    NessieTestServerBinder.settings.setDefaultTag("master");
+    NessieTestServerBinder.settings.setDefaultTag("main");
     server = new TestNessieServer();
     server.start(9997);
     alleyLocalDir = java.nio.file.Files.createTempDirectory("test",
@@ -84,14 +84,14 @@ public class DefaultCatalogBranchTest {
     hadoopConfig.set("nessie.url", path);
     hadoopConfig.set("nessie.username", username);
     hadoopConfig.set("nessie.password", password);
-    hadoopConfig.set("nessie.view-branch", "master");
+    hadoopConfig.set("nessie.view-branch", "main");
     this.client = new NessieClient(AuthType.BASIC, path, username, password);
     catalog = new NessieCatalog(hadoopConfig);
   }
 
   @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
-  public void testBasicTag() {
+  public void testBasicBranch() {
     TableIdentifier foobar = TableIdentifier.of("foo", "bar");
     TableIdentifier foobaz = TableIdentifier.of("foo", "baz");
     createTable(foobar, 1); //table 1
@@ -101,25 +101,25 @@ public class DefaultCatalogBranchTest {
     NessieCatalog forwardCatalog = new NessieCatalog(hadoopConfig);
     forwardCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
     forwardCatalog.loadTable(foobar).updateSchema().addColumn("id1", Types.LongType.get()).commit();
-    Assertions.assertNotEquals(getTag(forwardCatalog, foobar),
-                           getTag(catalog, foobar));
-    Assertions.assertNotEquals(getTag(forwardCatalog, foobaz),
-                           getTag(catalog, foobaz));
+    Assertions.assertNotEquals(getBranch(forwardCatalog, foobar),
+                               getBranch(catalog, foobar));
+    Assertions.assertNotEquals(getBranch(forwardCatalog, foobaz),
+                               getBranch(catalog, foobaz));
 
     forwardCatalog.refreshBranch();
-    forwardCatalog.promoteBranch("master", false);
+    forwardCatalog.assignBranch("main");
 
-    Assertions.assertEquals(getTag(forwardCatalog, foobar),
-                            getTag(catalog, foobar));
-    Assertions.assertEquals(getTag(forwardCatalog, foobaz),
-                        getTag(catalog, foobaz));
+    Assertions.assertEquals(getBranch(forwardCatalog, foobar),
+                            getBranch(catalog, foobar));
+    Assertions.assertEquals(getBranch(forwardCatalog, foobaz),
+                            getBranch(catalog, foobaz));
 
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
     catalog.dropBranch("FORWARD");
   }
 
-  private static String getTag(NessieCatalog catalog, TableIdentifier tableIdentifier) {
+  private static String getBranch(NessieCatalog catalog, TableIdentifier tableIdentifier) {
     Table table = catalog.loadTable(tableIdentifier);
     BaseTable baseTable = (BaseTable) table;
     TableOperations ops = baseTable.operations();
@@ -159,7 +159,7 @@ public class DefaultCatalogBranchTest {
   }
 
   private void createBranch(String name) {
-    catalog.createBranch(name, "master");
+    catalog.createBranch(name, "main");
   }
 
 }

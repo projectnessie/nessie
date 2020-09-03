@@ -178,12 +178,13 @@ public class NessieSampler extends AbstractJavaSamplerClient {
             Branch branch = nessieClient().getBranch(this.branch);
             commitId.set(branch);
           }
-          return nessieClient().commit(commitId.get(), ImmutableTable.builder()
-                                                                     .id("name.space." + table)
-                                                                     .name(table)
-                                                                     .metadataLocation("path_on_disk_" + table)
-                                                                     .build()
+          nessieClient().commit(commitId.get(), ImmutableTable.builder()
+                                                               .id("name.space." + table)
+                                                               .name(table)
+                                                               .metadataLocation("path_on_disk_" + table)
+                                                               .build()
           );
+          return nessieClient().getBranch(branch);
         }, method);
       }
       case MERGE:

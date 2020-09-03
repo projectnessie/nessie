@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.services;
 
-package com.dremio.nessie.iceberg.branch;
+import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.Table;
+import com.dremio.nessie.versioned.StoreWorker;
 
 /**
- * Catalog object for Branch...akin to iceberg Catalog interface
+ * Temporary class to implement serialization of Table and commitMeta.
+ *
+ * <p>
+ *   Will be removed/moved when refactor to VersionStore is finished.
+ * </p>
  */
-public interface BranchCatalog {
+public interface TableCommitMetaStoreWorker extends StoreWorker<Table, CommitMeta> {
 
-  void createBranch(String branchName, String parentName);
-
-  boolean dropBranch(String branchName);
-
-  void assignBranch(String from);
-
-  void refreshBranch();
 }

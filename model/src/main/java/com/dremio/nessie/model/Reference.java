@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.model;
 
-package com.dremio.nessie.iceberg.branch;
+import javax.annotation.Nullable;
 
-/**
- * Catalog object for Branch...akin to iceberg Catalog interface
- */
-public interface BranchCatalog {
+public interface Reference extends Base {
+  /**
+   * Human readable branch name.
+   */
+  String getName();
 
-  void createBranch(String branchName, String parentName);
+  /**
+   * backend system id. Usually the 20-byte hash of the commit this branch points to.
+   */
+  @Nullable
+  String getId();
 
-  boolean dropBranch(String branchName);
-
-  void assignBranch(String from);
-
-  void refreshBranch();
 }
