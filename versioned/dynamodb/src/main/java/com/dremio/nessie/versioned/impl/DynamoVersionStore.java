@@ -68,7 +68,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 
-class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA> {
+public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoVersionStore.class);
 
@@ -81,6 +81,9 @@ class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA>
   private final int p2commitRetry = 5;
   private final boolean waitOnCollapse;
 
+  /**
+   * Construct a Dynamo VersionStore.
+   */
   public DynamoVersionStore(StoreWorker<DATA,METADATA> storeWorker, DynamoStore store, boolean waitOnCollapse) {
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
