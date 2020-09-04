@@ -20,14 +20,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -35,103 +33,112 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
+import org.eclipse.jgit.dircache.DirCache;
+import org.eclipse.jgit.dircache.DirCacheBuilder;
+import org.eclipse.jgit.dircache.DirCacheEntry;
+import org.eclipse.jgit.errors.ConfigInvalidException;
+import org.eclipse.jgit.errors.UnmergedPathException;
+import org.eclipse.jgit.lib.CommitBuilder;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectInserter;
+import org.eclipse.jgit.lib.ObjectLoader;
+import org.eclipse.jgit.lib.PersonIdent;
+import org.eclipse.jgit.lib.RefUpdate;
+import org.eclipse.jgit.lib.RefUpdate.Result;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.TreeFormatter;
+import org.eclipse.jgit.lib.UserConfig;
+import org.eclipse.jgit.merge.ThreeWayMerger;
+import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.treewalk.AbstractTreeIterator;
+import org.eclipse.jgit.treewalk.NameConflictTreeWalk;
+import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.treewalk.filter.PathFilter;
+import org.eclipse.jgit.util.SystemReader;
 
-import com.dremio.nessie.backend.TableConverter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.versioned.BranchName;
-import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.NamedRef;
 import com.dremio.nessie.versioned.Operation;
-import com.dremio.nessie.versioned.Put;
 import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
+import com.google.common.collect.ImmutableList;
+import com.google.protobuf.ByteString;
 
 /**
  * VersionStore interface for JGit backend.
  */
 public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, METADATA> {
-  public static final Hash EMPTY_HASH = Hash.of(ObjectId.zeroId().name());
+  private static final String SLASH = "/";
 
-  private final JGitStore<TABLE, METADATA> store;
+  private final Repository repository;
+  private final StoreWorker<TABLE, METADATA> storeWorker;
 
   /**
    * Construct a JGitVersionStore.
    */
   @Inject
-  public JGitVersionStore(StoreWorker<TABLE, METADATA> storeWorker, JGitStore<TABLE, METADATA> store) {
-    this.store = store;
+  public JGitVersionStore(Repository repository, StoreWorker<TABLE, METADATA> storeWorker) {
+    this.storeWorker = storeWorker;
+    this.repository = repository;
   }
 
   @Nonnull
   @Override
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
-    return store.getRef(ref.getName());
+    repository.getRefDatabase().refresh();
+    final org.eclipse.jgit.lib.Ref jgitRef;
+    try {
+      if (ref instanceof BranchName) {
+        jgitRef = repository.findRef(Constants.R_HEADS + ref.getName());
+      } else if (ref instanceof TagName) {
+        jgitRef = repository.findRef(Constants.R_TAGS + ref.getName());
+      } else {
+        throw new IllegalStateException(String.format("ref %s is not in allowed types", ref));
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Error talking to git repo", e);
+    }
+    if (jgitRef == null) {
+      throw new ReferenceNotFoundException(String.format("Ref %s was not found in the git database", ref));
+    }
+    return Hash.of(jgitRef.getObjectId().name());
   }
 
   @Override
   public void commit(BranchName branch, Optional<Hash> expectedHash, METADATA metadata,
                      List<Operation<TABLE>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
-    store.getRef(branch.getName());
-    boolean shouldMatch = operations.stream().anyMatch(Operation::shouldMatchHash);
-    if (shouldMatch && !expectedHash.isPresent()) {
-      throw new ReferenceConflictException("Expected hash is not present and at least one operation should match hash");
-    } else if (!shouldMatch) {
-      throw new UnsupportedOperationException("JGit must always have a matching hash"); //todo relax this in jgit?
-    }
+    toHash(branch);
     try {
-      List<TABLE> tables = new ArrayList<>();
-      Set<TABLE> deletes = new HashSet<>();
-      Map<TABLE, String> keys = new HashMap<>();
-      for (Operation<TABLE> o: operations) {
-        if (o instanceof Delete) {
-          Delete<TABLE> d = (Delete<TABLE>) o;
-          TABLE table = getValue(branch, d.getKey());
-          tables.add(table);
-          deletes.add(table);
-          keys.put(table, stringFromKey(d.getKey()));
-        } else if (o instanceof Put) {
-          Put<TABLE> p = (Put<TABLE>) o;
-          tables.add(p.getValue());
-          keys.put(p.getValue(), stringFromKey(p.getKey()));
-        } else if (o instanceof Unchanged) {
-          Unchanged<TABLE> u = (Unchanged<TABLE>) o;
-          TABLE expectedTable = getValue(expectedHash.get(), u.getKey());
-          TABLE currentTable = getValue(branch, u.getKey());
-          if (!expectedTable.equals(currentTable)) {
-            throw new ReferenceConflictException(String.format("Unchanged operation is violated by key: %s", u.getKey()));
-          }
-        } else {
-          throw new UnsupportedOperationException("unknown operation");
+      ObjectId commits = TreeBuilder.commitObjects(operations, repository, storeWorker.getValueSerializer());
+      ObjectId treeId = repository.resolve(expectedHash.map(Hash::asString).orElse(branch.getName()) + "^{tree}");
+      ObjectId newTree = TreeBuilder.merge(treeId, commits, repository);
+      try {
+        commitTree(branch, newTree, expectedHash, metadata);
+      } catch (NessieConflictException e) {
+        if (operations.stream().anyMatch(x -> x instanceof Unchanged)) {
+          throw e;
         }
+        ObjectId currentTreeId = repository.resolve(branch.getName() + "^{tree}");
+        ObjectId currentCommitId = repository.resolve(branch.getName() + "^{commit}");
+        Optional<ObjectId> mergedTree = tryTwoWayMerge(currentTreeId,
+                                                       newTree,
+                                                       repository.newObjectInserter(),
+                                                       expectedHash.map(Hash::asString).map(ObjectId::fromString).orElseThrow(() -> e));
+        commitTree(branch, mergedTree.orElseThrow(() -> e), Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of), metadata);
       }
-      TableConverter<TABLE> tableConverter = new TableConverter<TABLE>() {
-
-        @Override
-        public boolean isDeleted(TABLE branchTable) {
-          return deletes.contains(branchTable);
-        }
-
-        @Override
-        public String getId(TABLE branchTable) {
-          return keys.get(branchTable);
-        }
-
-        @Override
-        public String getNamespace(TABLE branchTable) {
-          return null; //todo ignore namespace until #53 is addressed
-        }
-      };
-      store.commit(branch.getName(), expectedHash.map(Hash::asString).orElse(null), metadata, tableConverter, tables);
     } catch (NessieConflictException e) {
       throw ReferenceConflictException.forReference(branch, expectedHash, Optional.empty(), e);
     } catch (IOException e) {
@@ -170,11 +177,12 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       }
     }
     try {
-      store.updateRef(ref.getName(), expectedHash.map(Hash::asString).orElse(null), targetHash.asString());
+      updateRef(ref, targetHash, expectedHash, true);
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
   }
+
 
   @Override
   public void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
@@ -182,30 +190,29 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       throw new ReferenceNotFoundException("You must provide a target hash to create a tag.");
     }
     try {
-      store.getRef(ref.getName());
+      toHash(ref);
       throw new ReferenceAlreadyExistsException(String.format("ref %s already exists", ref));
     } catch (ReferenceNotFoundException e) {
       //pass expected
     }
     try {
-      TableConverter<TABLE> tableConverter = new TableConverter<TABLE>() {
-
-        @Override
-        public boolean isDeleted(TABLE branchTable) {
-          return false; //assume will never be deleted
+      if (!targetHash.isPresent()) {
+        TreeFormatter formatter = new TreeFormatter();
+        ObjectInserter inserter = repository.newObjectInserter();
+        ObjectId newTreeId = inserter.insert(formatter);
+        inserter.flush();
+        commitTree((BranchName)ref, newTreeId, Optional.empty(), null);
+      } else {
+        ObjectId target = repository.resolve(targetHash.get().asString());
+        RefUpdate createBranch = repository.updateRef((ref instanceof TagName ? Constants.R_TAGS : Constants.R_HEADS) + ref.getName());
+        createBranch.setNewObjectId(target);
+        Result result = createBranch.update();
+        if (result.equals(Result.REJECTED_MISSING_OBJECT)) {
+          throw ReferenceNotFoundException.forReference(targetHash.get());
+        } else if (!result.equals(Result.NEW)) {
+          throw new NessieConflictException(String.format("result did not complete for create branch on %s with state %s", ref, result));
         }
-
-        @Override
-        public String getId(TABLE branchTable) {
-          throw new IllegalStateException(String.format("Should not need id for table: %s while creating a ref", branchTable));
-        }
-
-        @Override
-        public String getNamespace(TABLE branchTable) {
-          return null; //todo ignore namespace until #53 is addressed
-        }
-      };
-      store.createRef(ref.getName(), targetHash.map(Hash::asString).orElse(null), tableConverter);
+      }
     } catch (IOException e) {
       throw new RuntimeException(String.format("Unknown error while creating %s", ref), e);
     }
@@ -213,20 +220,21 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException, ReferenceConflictException {
-    Optional<NamedRef> existingRef;
+    toHash(ref);
     try {
-      existingRef = store.getRefs().map(WithHash::getValue).filter(v -> ref.getName().equals(v.getName())).findFirst();
-    } catch (IOException e) {
-      throw new RuntimeException("unknown error", e);
-    }
-    if (!existingRef.isPresent()) {
-      throw ReferenceNotFoundException.forReference(ref);
-    }
-    if (!existingRef.get().getClass().equals(ref.getClass())) {
-      throw ReferenceConflictException.forReference(ref, hash, Optional.empty());
-    }
-    try {
-      store.delete(ref.getName(), hash.map(Hash::asString).orElse(null));
+      RefUpdate update = repository.updateRef((ref instanceof TagName ? Constants.R_TAGS : Constants.R_HEADS) + ref.getName());
+      Optional<ObjectId> objectId = hash.map(Hash::asString).map(ObjectId::fromString);
+      if (objectId.isPresent() && !ObjectId.isEqual(update.getRef().getObjectId(), objectId.get())) {
+        throw new NessieConflictException(null, "can't delete branch, not HEAD");
+      }
+      update.setForceUpdate(true);
+      objectId.ifPresent(update::setExpectedOldObjectId);
+      Result deleteResult = update.delete();
+      if (deleteResult.equals(Result.REJECTED_MISSING_OBJECT)) {
+        throw ReferenceNotFoundException.forReference(hash.get());
+      } else if (!deleteResult.equals(Result.FORCED)) {
+        throw new NessieConflictException(ImmutableList.of(ref.getName()), "delete failed " + deleteResult);
+      }
     } catch (NessieConflictException e) {
       throw ReferenceConflictException.forReference(ref, hash, Optional.empty(), e);
     } catch (IOException e) {
@@ -237,7 +245,17 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
     try {
-      return store.getRefs();
+      Stream<WithHash<NamedRef>> branches = repository.getRefDatabase()
+                                                      .getRefsByPrefix(Constants.R_HEADS)
+                                                      .stream()
+                                                      .map(r -> WithHash.of(Hash.of(r.getObjectId().name()),
+                                                                            BranchName.of(r.getName().replace(Constants.R_HEADS, ""))));
+      Stream<WithHash<NamedRef>> tags = repository.getRefDatabase()
+                       .getRefsByPrefix(Constants.R_TAGS)
+                       .stream()
+                       .map(r -> WithHash.of(Hash.of(r.getObjectId().name()),
+                                             TagName.of(r.getName().replace(Constants.R_TAGS, ""))));
+      return Stream.concat(branches, tags);
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
@@ -245,21 +263,21 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    final String hashName;
-    if (ref instanceof BranchName) {
-      hashName = ((BranchName) ref).getName();
-    } else if (ref instanceof TagName) {
-      //todo tags
-      throw new UnsupportedOperationException("Not yet implemented.");
-    } else if (ref instanceof Hash) {
-      hashName = ((Hash) ref).asString();
-    } else {
-      throw new RuntimeException(String.format("unknown ref type: %s", ref));
-    }
+    final String hashName = refName(ref);
     try {
-      return store.getCommits(hashName);
-    } catch (IllegalStateException e) {
-      throw new ReferenceNotFoundException(String.format("Ref %s not found", ref), e.getCause());
+      ObjectId objectId = repository.resolve(hashName);
+      if (objectId == null) {
+        throw new ReferenceNotFoundException(String.format("Ref %s not found", ref));
+      }
+      RevWalk walk = new RevWalk(repository);
+      walk.markStart(repository.parseCommit(objectId));
+      Serializer<METADATA> serializer = storeWorker.getMetadataSerializer();
+      return StreamSupport.stream(walk.spliterator(), false)
+                          .map(r -> {
+                            Hash hash = Hash.of(r.name());
+                            METADATA metadata = serializer.fromBytes(ByteString.copyFrom(r.getFullMessage(), StandardCharsets.UTF_8));
+                            return WithHash.of(hash, metadata);
+                          });
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
@@ -268,9 +286,16 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   @Override
   public Stream<Key> getKeys(Ref ref) {
     try {
-      return store.getKeys(ref instanceof NamedRef ? ((NamedRef) ref).getName() : ((Hash) ref).asString())
-                  .stream()
-                  .map(JGitVersionStore::keyFromUrlString);
+      List<Key> tables = new ArrayList<>();
+      try (TreeWalk treeWalk = new TreeWalk(repository)) {
+        ObjectId treeId = repository.resolve(refName(ref) + "^{tree}");
+        treeWalk.addTree(treeId);
+        treeWalk.setRecursive(true);
+        while (treeWalk.next()) {
+          tables.add(keyFromUrlString(treeWalk.getPathString()));
+        }
+      }
+      return tables.stream();
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
@@ -278,18 +303,23 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
   @Override
   public TABLE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    final String hashName;
-    if (ref instanceof BranchName) {
-      hashName = ((BranchName) ref).getName();
-    } else if (ref instanceof TagName) {
-      //todo tags
-      throw new UnsupportedOperationException("Not yet implemented.");
-    } else if (ref instanceof Hash) {
-      hashName = ((Hash) ref).asString();
-    } else {
-      throw new RuntimeException(String.format("unknown ref type: %s", ref));
+    final String hashName = refName(ref);
+    String table = stringFromKey(key);
+    try {
+      try (TreeWalk treeWalk = new TreeWalk(repository)) {
+        ObjectId treeId = repository.resolve(hashName + "^{tree}");
+        treeWalk.addTree(treeId);
+        treeWalk.setRecursive(true);
+        treeWalk.setFilter(PathFilter.create(table));
+        while (treeWalk.next()) {
+          byte[] bytes = getTable(treeWalk, repository);
+          return storeWorker.getValueSerializer().fromBytes(ByteString.copyFrom(bytes));
+        }
+      }
+      return null;
+    } catch (IOException e) {
+      throw new ReferenceNotFoundException(String.format("reference for ref %s and key %s not found", ref, key), e);
     }
-    return store.getValue(hashName, stringFromKey(key));
   }
 
   @Override
@@ -302,24 +332,86 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     throw new IllegalStateException("Not yet implemented.");
   }
 
+  private void commitTree(BranchName branch, ObjectId newTree, Optional<Hash> expectedHash, METADATA metadata) throws IOException {
+    ObjectInserter inserter = repository.newObjectInserter();
+    CommitBuilder commitBuilder = fromUser(metadata);
+    commitBuilder.setTreeId(newTree);
+    ObjectId parentId = expectedHash.map(Hash::asString)
+                                    .map(ObjectId::fromString)
+                                    .orElse(repository.resolve(Constants.R_HEADS + branch.getName()));
+    if (parentId != null) {
+      commitBuilder.setParentId(parentId);
+    }
+    ObjectId newCommitId = inserter.insert(commitBuilder);
+    inserter.flush();
+    updateRef(branch, newCommitId, expectedHash, false);
+  }
+
+  private void updateRef(NamedRef ref, Hash targetHash, Optional<Hash> expectedHash, boolean force) throws IOException {
+    ObjectId target = repository.resolve(targetHash.asString());
+    updateRef(ref, target, expectedHash, force);
+  }
+
+  private void updateRef(NamedRef ref, ObjectId target, Optional<Hash> expectedHash, boolean force) throws IOException {
+    RefUpdate updateBranch = repository.updateRef((ref instanceof TagName ? Constants.R_TAGS : Constants.R_HEADS) + ref.getName());
+    updateBranch.setNewObjectId(target);
+    expectedHash.map(Hash::asString).map(ObjectId::fromString).ifPresent(updateBranch::setExpectedOldObjectId);
+    Result result = force ? updateBranch.forceUpdate() : updateBranch.update();
+    if (!result.equals(Result.NEW) && !result.equals(Result.FAST_FORWARD) && !result.equals(Result.FORCED)) {
+      throw new NessieConflictException(String.format("result did not complete for create branch on %s with state %s", ref, result));
+    }
+  }
+
+  private Optional<ObjectId> tryTwoWayMerge(ObjectId treeId, ObjectId newTreeId, ObjectInserter inserter, ObjectId version)
+      throws IOException {
+    inserter.flush();
+
+    Merger<TABLE> merger = new Merger<>(repository);
+    merger.setBase(version);
+    boolean ok = merger.merge(treeId, newTreeId);
+    return ok ? Optional.of(merger.getResultTreeId()) : Optional.empty();
+  }
+
+  private CommitBuilder fromUser(METADATA commitMeta) {
+    CommitBuilder commitBuilder = new CommitBuilder();
+    long updateTime = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
+    PersonIdent person;
+    try {
+      UserConfig config = SystemReader.getInstance().getUserConfig().get(UserConfig.KEY);
+      person = new PersonIdent(config.getAuthorName(), config.getAuthorEmail(), updateTime, 0);
+    } catch (IOException | ConfigInvalidException e) {
+      //todo email can't be null but we cant find it
+      person = new PersonIdent(System.getProperty("user.name"), "me@example.com");
+    }
+    if (commitMeta != null) {
+      //todo better way to store commit metadata? Make an interface? or toString?
+      commitBuilder.setMessage(storeWorker.getMetadataSerializer().toBytes(commitMeta).toStringUtf8());
+    } else {
+      commitBuilder.setMessage("none");
+    }
+    commitBuilder.setAuthor(person);
+    commitBuilder.setCommitter(person);
+    return commitBuilder;
+  }
+
   /**
    * URL Encode each portion of the url as separated by '/' and create a Key.
    */
-  private static String stringFromKey(Key key) {
+  static String stringFromKey(Key key) {
     return key.getElements().stream().map(k -> {
       try {
         return URLEncoder.encode(k, StandardCharsets.UTF_8.toString());
       } catch (UnsupportedEncodingException e) {
         throw new RuntimeException(String.format("Unable to encode key %s", key), e);
       }
-    }).collect(Collectors.joining("/"));
+    }).collect(Collectors.joining(SLASH));
   }
 
   /**
    * URL decode each portion of the key and join into '/' separated string.
    */
-  private static Key keyFromUrlString(String path) {
-    return Key.of(StreamSupport.stream(Arrays.spliterator(path.split("/")), false)
+  static Key keyFromUrlString(String path) {
+    return Key.of(StreamSupport.stream(Arrays.spliterator(path.split(SLASH)), false)
                                .map(x -> {
                                  try {
                                    return URLDecoder.decode(x, StandardCharsets.UTF_8.toString());
@@ -328,5 +420,142 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
                                  }
                                })
                                .toArray(String[]::new));
+  }
+
+
+  private static String refName(Ref ref) {
+    final String hashName;
+    if (ref instanceof BranchName) {
+      hashName = ((BranchName) ref).getName();
+    } else if (ref instanceof TagName) {
+      hashName = ((TagName) ref).getName();
+    } else if (ref instanceof Hash) {
+      hashName = ((Hash) ref).asString();
+    } else {
+      throw new IllegalStateException(String.format("unknown ref type: %s", ref));
+    }
+    return hashName;
+  }
+
+  private static byte[] getTable(TreeWalk treeWalk, Repository repository)
+      throws IOException {
+    return getTable(treeWalk, repository, 0);
+  }
+
+  private static byte[] getTable(TreeWalk treeWalk, Repository repository, int id)
+      throws IOException {
+    ObjectId objectId = treeWalk.getObjectId(id);
+    ObjectLoader loader = repository.open(objectId);
+    return loader.getBytes();
+  }
+
+  private static class Merger<TABLE> extends ThreeWayMerger {
+
+    private static final int T_BASE = 0;
+
+    private static final int T_OURS = 1;
+
+    private static final int T_THEIRS = 2;
+
+    private final NameConflictTreeWalk tw;
+
+    private final DirCache cache;
+
+    private DirCacheBuilder builder;
+
+    private ObjectId resultTree;
+
+    Merger(Repository local) {
+      super(local);
+      tw = new NameConflictTreeWalk(local, reader);
+      cache = DirCache.newInCore();
+    }
+
+    @Override
+    protected boolean mergeImpl() throws IOException {
+      tw.addTree(mergeBase());
+      tw.addTree(sourceTrees[0]);
+      tw.addTree(sourceTrees[1]);
+
+      boolean hasConflict = false;
+      builder = cache.builder();
+      while (tw.next()) {
+        final int modeO = tw.getRawMode(T_OURS);
+        final int modeT = tw.getRawMode(T_THEIRS);
+        if (modeO == modeT && tw.idEqual(T_OURS, T_THEIRS)) {
+          add(T_OURS, DirCacheEntry.STAGE_0);
+          continue;
+        }
+
+        final int modeB = tw.getRawMode(T_BASE);
+        if (modeB == modeO && tw.idEqual(T_BASE, T_OURS)) {
+          add(T_THEIRS, DirCacheEntry.STAGE_0);
+        } else if (modeB == modeT && tw.idEqual(T_BASE, T_THEIRS)) {
+          if (!ObjectId.isEqual(tw.getObjectId(T_BASE), ObjectId.zeroId())) {
+            add(T_OURS, DirCacheEntry.STAGE_0); // only add if object has changed. If it was null before and now ignore it.
+          }
+        } else {
+          if (nonTree(modeB)) {
+            add(T_BASE, DirCacheEntry.STAGE_1);
+            hasConflict = true;
+          }
+          if (nonTree(modeO)) {
+            add(T_OURS, DirCacheEntry.STAGE_2);
+            hasConflict = true;
+          }
+          if (nonTree(modeT)) {
+            add(T_THEIRS, DirCacheEntry.STAGE_3);
+            hasConflict = true;
+          }
+          if (tw.isSubtree()) {
+            tw.enterSubtree();
+          }
+        }
+      }
+      builder.finish();
+      builder = null;
+
+      if (hasConflict) {
+        return false;
+      }
+      try {
+        ObjectInserter odi = getObjectInserter();
+        resultTree = cache.writeTree(odi);
+        odi.flush();
+        return true;
+      } catch (UnmergedPathException upe) {
+        resultTree = null;
+        return false;
+      }
+    }
+
+    private static boolean nonTree(int mode) {
+      return mode != 0 && !FileMode.TREE.equals(mode);
+    }
+
+    private void add(int tree, int stage) throws IOException {
+      final AbstractTreeIterator i = getTree(tree);
+      if (i != null) {
+        if (FileMode.TREE.equals(tw.getRawMode(tree))) {
+          builder.addTree(tw.getRawPath(), stage, reader, tw.getObjectId(tree));
+        } else {
+          final DirCacheEntry e;
+
+          e = new DirCacheEntry(tw.getRawPath(), stage);
+          e.setObjectIdFromRaw(i.idBuffer(), i.idOffset());
+          e.setFileMode(tw.getFileMode(tree));
+          builder.add(e);
+        }
+      }
+    }
+
+    private AbstractTreeIterator getTree(int tree) {
+      return tw.getTree(tree, AbstractTreeIterator.class);
+    }
+
+    @Override
+    public ObjectId getResultTreeId() {
+      return resultTree;
+    }
   }
 }

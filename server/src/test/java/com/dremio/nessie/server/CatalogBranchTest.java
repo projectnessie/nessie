@@ -101,8 +101,7 @@ public class CatalogBranchTest {
     hadoopConfig.set("nessie.view-branch", "test");
     NessieCatalog newCatalog = new NessieCatalog(hadoopConfig);
     String initialMetadataLocation = getBranch(catalog, foobar);
-    Assertions
-      .assertEquals(initialMetadataLocation, getBranch(catalog, foobar));
+    Assertions.assertEquals(initialMetadataLocation, getBranch(catalog, foobar));
     Assertions.assertEquals(getBranch(newCatalog, foobaz), getBranch(catalog, foobaz));
     bar.updateSchema().addColumn("id1", Types.LongType.get()).commit();
 

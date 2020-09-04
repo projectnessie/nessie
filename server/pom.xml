@@ -45,11 +45,6 @@
     </dependency>
     <dependency>
       <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-jgit-store</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.dremio.nessie</groupId>
       <artifactId>nessie-services</artifactId>
       <version>${project.version}</version>
     </dependency>

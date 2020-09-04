@@ -52,8 +52,21 @@
     </dependency>
     <dependency>
       <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-jgit-store</artifactId>
+      <artifactId>nessie-versioned-jgit</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.annotation</groupId>
+      <artifactId>jakarta.annotation-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.enterprise</groupId>
+      <artifactId>cdi-api</artifactId>
+      <version>2.0</version>
     </dependency>
   </dependencies>
 </project>

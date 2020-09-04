@@ -22,10 +22,10 @@ import java.util.stream.Stream;
 
 import javax.enterprise.inject.Default;
 
-import com.dremio.nessie.jgit.ProtoUtil;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Table;
 import com.dremio.nessie.versioned.Serializer;
+import com.dremio.nessie.versioned.impl.experimental.ProtoUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
