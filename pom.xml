@@ -73,7 +73,7 @@
     <junit.version>5.6.2</junit.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.13.0</protobuf.version>
-    <prometheus.version>0.8.1</prometheus.version>
+    <prometheus.version>0.9.0</prometheus.version>
     <opentracing.version>0.33.0</opentracing.version>
     <opentracing-jaxrs.version>1.0.0</opentracing-jaxrs.version>
     <serverless.version>1.5</serverless.version>
