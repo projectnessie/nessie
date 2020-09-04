@@ -34,7 +34,6 @@
     <module>serverless</module>
     <module>utils</module>
     <module>clients</module>
-    <module>jgit</module>
     <module>ui</module>
     <module>services</module>
     <module>versioned</module>

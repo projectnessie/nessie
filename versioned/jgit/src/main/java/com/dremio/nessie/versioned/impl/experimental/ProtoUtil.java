@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.jgit;
+package com.dremio.nessie.versioned.impl.experimental;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.dremio.nessie.jgit.GitStoreObjects;
 import com.dremio.nessie.jgit.GitStoreObjects.Counts;
 import com.dremio.nessie.jgit.GitStoreObjects.DataFile;
 import com.dremio.nessie.jgit.GitStoreObjects.Snapshot;

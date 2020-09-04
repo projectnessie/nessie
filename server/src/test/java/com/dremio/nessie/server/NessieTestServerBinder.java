@@ -16,6 +16,7 @@
 
 package com.dremio.nessie.server;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -28,6 +29,9 @@ import javax.inject.Singleton;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.SecurityContext;
 
+import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
+import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
+import org.eclipse.jgit.lib.Repository;
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.api.TypeLiteral;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -70,8 +74,7 @@ public class NessieTestServerBinder extends AbstractBinder {
 
     bind(TableCommitMetaStoreWorkerImpl.class).to(TableCommitMetaStoreWorker.class);
     bind(NessieEngine.class).to(NessieEngine.class);
-    bind(TableCommitMetaJGitStore.class).to(TableCommitMetaJGitStore.class).in(Singleton.class);
-    bindFactory(JGitVersionStoreFactory.class).to(versionStore);
+    bindFactory(JGitVersionStoreFactory.class).to(versionStore).in(Singleton.class);
 
 
   }
@@ -154,17 +157,21 @@ public class NessieTestServerBinder extends AbstractBinder {
   private static class JGitVersionStoreFactory implements Factory<JGitVersionStore<Table, CommitMeta>> {
 
     private final TableCommitMetaStoreWorker storeWorker;
-    private final TableCommitMetaJGitStore store;
 
     @Inject
-    public JGitVersionStoreFactory(TableCommitMetaStoreWorker storeWorker, TableCommitMetaJGitStore store) {
+    public JGitVersionStoreFactory(TableCommitMetaStoreWorker storeWorker) {
       this.storeWorker = storeWorker;
-      this.store = store;
     }
 
     @Override
     public JGitVersionStore<Table, CommitMeta> provide() {
-      return new JGitVersionStore<>(storeWorker, store);
+      Repository repository = null;
+      try {
+        repository = new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
+      } catch (IOException e) {
+        //pass can't happen
+      }
+      return new JGitVersionStore<>(repository, storeWorker);
     }
 
     @Override

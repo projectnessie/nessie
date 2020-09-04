@@ -16,6 +16,7 @@
 
 package com.dremio.nessie.server;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.List;
 
@@ -23,6 +24,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.core.SecurityContext;
 
+import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
+import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
+import org.eclipse.jgit.lib.Repository;
 import org.glassfish.hk2.api.Factory;
 import org.glassfish.hk2.api.TypeLiteral;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -32,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.auth.UserService;
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.jgit.JgitBranchControllerLegacy;
 import com.dremio.nessie.jwt.KeyGenerator;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Table;
@@ -81,29 +84,7 @@ public class NessieServerBinder extends AbstractBinder {
 
     bind(TableCommitMetaStoreWorkerImpl.class).to(TableCommitMetaStoreWorker.class);
     bind(NessieEngine.class).to(NessieEngine.class);
-    bind(TableCommitMetaJGitStore.class).to(TableCommitMetaJGitStore.class).in(Singleton.class);
-    bindFactory(JGitVersionStoreFactory.class).to(versionStore);
-  }
-
-  public static class JGitContainerFactory implements Factory<JgitBranchControllerLegacy> {
-
-    private final Backend backend;
-
-    @Inject
-    private JGitContainerFactory(Backend backend) {
-      this.backend = backend;
-    }
-
-    @Override
-    public JgitBranchControllerLegacy provide() {
-      JgitBranchControllerLegacy jgc = new JgitBranchControllerLegacy(backend);
-      return jgc;
-    }
-
-    @Override
-    public void dispose(JgitBranchControllerLegacy instance) {
-
-    }
+    bindFactory(JGitVersionStoreFactory.class).to(versionStore).in(Singleton.class);
   }
 
   private static class UserServiceDbBackendFactory implements Factory<UserServiceDbBackend> {
@@ -181,17 +162,21 @@ public class NessieServerBinder extends AbstractBinder {
   private static class JGitVersionStoreFactory implements Factory<JGitVersionStore<Table, CommitMeta>> {
 
     private final TableCommitMetaStoreWorker storeWorker;
-    private final TableCommitMetaJGitStore store;
 
     @Inject
-    public JGitVersionStoreFactory(TableCommitMetaStoreWorker storeWorker, TableCommitMetaJGitStore store) {
+    public JGitVersionStoreFactory(TableCommitMetaStoreWorker storeWorker) {
       this.storeWorker = storeWorker;
-      this.store = store;
     }
 
     @Override
     public JGitVersionStore<Table, CommitMeta> provide() {
-      return new JGitVersionStore<>(storeWorker, store);
+      Repository repository = null;
+      try {
+        repository = new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
+      } catch (IOException e) {
+        //pass can't happen
+      }
+      return new JGitVersionStore<>(repository, storeWorker);
     }
 
     @Override
