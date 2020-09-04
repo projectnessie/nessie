@@ -18,10 +18,9 @@ package com.dremio.nessie.backend;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.Table;
 
 /**
  * Branching and merging controller. Used by the server to maintain a consistent view of the
@@ -33,7 +32,7 @@ import com.dremio.nessie.model.Table;
  *   as well as be able to promote/merge/force-merge/cherry-pick tables from branch to another.
  * </p>
  */
-public interface BranchController {
+public interface BranchController<TABLE, METADATA> {
 
   /**
    * Show all known branches.
@@ -51,7 +50,7 @@ public interface BranchController {
    * @param namespace optional namespace for namespaced databases
    * @return List of table ids
    */
-  List<String> getTables(String branch, String namespace) throws IOException;
+  List<String> getTables(String branch, String namespace, TableConverter<TABLE> converter) throws IOException;
 
   /**
    * Retrieve a single branch/ref based on name.
@@ -67,7 +66,7 @@ public interface BranchController {
    * @param tableName name/id of table to retrieve
    * @param metadata flag to include table metadata
    */
-  Table getTable(String branch, String tableName, boolean metadata) throws IOException;
+  TABLE getTable(String branch, String tableName, boolean metadata) throws IOException;
 
   /**
    * Create a branch. Optionally inherit from baseBranch.
@@ -81,7 +80,7 @@ public interface BranchController {
    * @param baseBranch branch to clone from. Optional
    * @param commitMeta metadata to log purpose of change and owner of change.
    */
-  Branch create(String branch, String baseBranch, CommitMeta commitMeta) throws IOException;
+  Branch create(String branch, String baseBranch, METADATA commitMeta, TableConverter<TABLE> converter) throws IOException;
 
   /**
    * Make changes to tables. This will update branch atomically to incorporate all changes.
@@ -104,9 +103,10 @@ public interface BranchController {
    * @throws IOException when the commit fails. The client should update branch locally and retry.
    */
   String commit(String branch,
-                CommitMeta commitMeta,
+                METADATA commitMeta,
                 String version,
-                Table... tables) throws IOException;
+                TableConverter<TABLE> converter,
+                TABLE... tables) throws IOException;
 
   /**
    * Delete a branch.
@@ -121,7 +121,7 @@ public interface BranchController {
    */
   void deleteBranch(String branch,
                     String version,
-                    CommitMeta commitMeta) throws IOException;
+                    METADATA commitMeta) throws IOException;
 
   /**
    * Promote commits on mergeBranch into branch.
@@ -153,8 +153,18 @@ public interface BranchController {
   String promote(String branch,
                  String mergeBranch,
                  String version,
-                 CommitMeta commitMeta,
+                 METADATA commitMeta,
                  boolean force,
                  boolean cherryPick,
-                 String namespace) throws IOException;
+                 String namespace,
+                 TableConverter<TABLE> converter) throws IOException;
+
+  /**
+   * Read the commit message and commit Id for the linear history of commits starting at the chosen branch.
+   *
+   * @param branch branch at which to start the history
+   * @return Stream of commit messages
+   * @throws IOException when commit lookup fails
+   */
+  Stream<LogMessage> log(String branch) throws IOException;
 }

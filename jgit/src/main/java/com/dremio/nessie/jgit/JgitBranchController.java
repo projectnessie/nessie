@@ -18,22 +18,17 @@ package com.dremio.nessie.jgit;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.LogCommand;
@@ -50,7 +45,6 @@ import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectInserter;
 import org.eclipse.jgit.lib.ObjectLoader;
-import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.RefUpdate;
 import org.eclipse.jgit.lib.RefUpdate.Result;
@@ -67,22 +61,28 @@ import org.eclipse.jgit.util.sha1.SHA1;
 
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.BranchController;
+import com.dremio.nessie.backend.ImmutableLogMessage;
+import com.dremio.nessie.backend.LogMessage;
+import com.dremio.nessie.backend.TableConverter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.Table;
+import com.dremio.nessie.versioned.Serializer;
+import com.dremio.nessie.versioned.StoreWorker;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.protobuf.ByteString;
 
-@ApplicationScoped
-public class JgitBranchController implements BranchController {
+public abstract class JgitBranchController<TABLE, METADATA> implements BranchController<TABLE, METADATA> {
 
   private static final Joiner SLASH = Joiner.on("/");
 
   private final Repository repository;
+  private final StoreWorker<TABLE, METADATA> storeWorker;
 
-  public JgitBranchController(Repository repository) {
+  public JgitBranchController(StoreWorker<TABLE, METADATA> storeWorker, Repository repository) {
+    this.storeWorker = storeWorker;
     this.repository = repository;
   }
 
@@ -90,8 +90,7 @@ public class JgitBranchController implements BranchController {
    * Construct a JgitBranchController. This uses jgit to fulfill the BranchController contract.
    * @param backend db backend to work off of
    */
-  @Inject
-  public JgitBranchController(Backend backend) {
+  public JgitBranchController(Function<Repository, StoreWorker<TABLE, METADATA>> storeWorker, Backend backend) {
     DfsRepositoryDescription repoDesc = new DfsRepositoryDescription();
     Repository repository;
     try {
@@ -104,17 +103,18 @@ public class JgitBranchController implements BranchController {
       repository = null;
     }
     this.repository = repository;
+    this.storeWorker = storeWorker.apply(repository);
   }
 
   @Override
   public Branch create(String branch,
                        String baseBranch,
-                       CommitMeta commitMeta) throws IOException {
+                       METADATA commitMeta,
+                       TableConverter<TABLE> tableConverter) throws IOException {
     String headVersion;
-    if (branch.equals("master") && (baseBranch == null || baseBranch.equals(branch))) {
+    if (baseBranch == null || baseBranch.equals(branch)) {
       TreeFormatter formatter = new TreeFormatter();
-      long updateTime = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
-      headVersion = commitTree(formatter, branch, updateTime, commitMeta, null);
+      headVersion = commitTree(formatter, branch, commitMeta, null, tableConverter);
     } else {
       String base = baseBranch == null ? Constants.MASTER : baseBranch;
       Ref master = repository.findRef(Constants.R_HEADS + base);
@@ -152,30 +152,30 @@ public class JgitBranchController implements BranchController {
   }
 
   @Override
-  public Table getTable(String branch, String table, boolean metadata) throws IOException {
+  public TABLE getTable(String branch, String table, boolean metadata) throws IOException {
     try (TreeWalk treeWalk = new TreeWalk(repository)) {
       ObjectId treeId = repository.resolve(branch + "^{tree}");
       treeWalk.addTree(treeId);
       treeWalk.setRecursive(true);
       treeWalk.setFilter(PathFilter.create(directoryFor(table)));
       while (treeWalk.next()) {
-        Map.Entry<Table, String> branchTablePair = getTable(treeWalk, repository);
-        return MetadataHandler.fetch(branchTablePair, metadata, repository);
+        byte[] bytes = getTable(treeWalk, repository);
+        return storeWorker.getValueSerializer().fromBytes(ByteString.copyFrom(bytes));
       }
     }
     return null;
   }
 
-  private static Map.Entry<Table, String> getTable(TreeWalk treeWalk, Repository repository)
+  private static byte[] getTable(TreeWalk treeWalk, Repository repository)
       throws IOException {
     return getTable(treeWalk, repository, 0);
   }
 
-  private static Map.Entry<Table, String> getTable(TreeWalk treeWalk, Repository repository, int id)
+  private static byte[] getTable(TreeWalk treeWalk, Repository repository, int id)
       throws IOException {
     ObjectId objectId = treeWalk.getObjectId(id);
     ObjectLoader loader = repository.open(objectId);
-    return ProtoUtil.tableFromBytes(loader.getBytes());
+    return loader.getBytes();
   }
 
   private static ObjectId idFor(String filename) {
@@ -185,27 +185,26 @@ public class JgitBranchController implements BranchController {
   }
 
   private static String directoryFor(String tableName) {
-    Map.Entry<String, String> pair = fileFolderFor(tableName);
+    Entry<String, String> pair = fileFolderFor(tableName);
     return SLASH.join(pair.getKey(), pair.getValue());
   }
 
-  private static Map.Entry<String, String> fileFolderFor(String tableName) {
+  private static Entry<String, String> fileFolderFor(String tableName) {
     ObjectId fileId = idFor(tableName);
     String object = fileId.name();
-    return new AbstractMap.SimpleImmutableEntry<>(object.substring(0, 2), object.substring(2));
+    return new SimpleImmutableEntry<>(object.substring(0, 2), object.substring(2));
   }
 
-  private Map<String, Map<String, ObjectId>> commitObjects(Table[] tables) throws IOException {
+  private Map<String, Map<String, ObjectId>> commitObjects(TABLE[] tables, TableConverter<TABLE> tableConverter) throws IOException {
     ObjectInserter inserter = repository.newObjectInserter();
     Map<String, Map<String, ObjectId>> commits = new HashMap<>();
-    for (Table branchTable : tables) {
+    for (TABLE branchTable : tables) {
       ObjectId blobId = null;
-      if (!branchTable.isDeleted()) {
-        String id = MetadataHandler.commit(branchTable, inserter);
-        byte[] data = ProtoUtil.tableToProtoc(branchTable, id).toByteArray();
+      if (!tableConverter.isDeleted(branchTable)) {
+        byte[] data = storeWorker.getValueSerializer().toBytes(branchTable).toByteArray();
         blobId = inserter.insert(Constants.OBJ_BLOB, data);
       }
-      Map.Entry<String, String> pair = fileFolderFor(branchTable.getId());
+      Entry<String, String> pair = fileFolderFor(tableConverter.getId(branchTable));
       String destinationFolder = pair.getKey();
       String destinationFilename = pair.getValue();
       if (!commits.containsKey(destinationFolder)) {
@@ -239,7 +238,7 @@ public class JgitBranchController implements BranchController {
       }
     }
     if (!filenames.isEmpty()) {
-      for (Map.Entry<String, ObjectId> entry : filenames.entrySet()) {
+      for (Entry<String, ObjectId> entry : filenames.entrySet()) {
         if (entry.getValue() != null) {
           inserted = true;
           subTreeFormatter.append(entry.getKey(), FileMode.REGULAR_FILE, entry.getValue());
@@ -259,7 +258,7 @@ public class JgitBranchController implements BranchController {
     ObjectInserter inserter = repository.newObjectInserter();
     TreeFormatter subTreeFormatter = new TreeFormatter();
     boolean added = false;
-    for (Map.Entry<String, ObjectId> entry : filenames.entrySet()) {
+    for (Entry<String, ObjectId> entry : filenames.entrySet()) {
       if (entry.getValue() == null) {
         continue;
       }
@@ -277,15 +276,16 @@ public class JgitBranchController implements BranchController {
 
   @Override
   public String commit(String branch,
-                       CommitMeta commitMeta,
+                       METADATA commitMeta,
                        String version,
-                       Table... tables) throws IOException {
+                       TableConverter<TABLE> tableConverter,
+                       TABLE... tables) throws IOException {
     ObjectId treeId = repository.resolve(version + "^{tree}");
     TreeWalk treeWalk = new TreeWalk(repository);
     treeWalk.addTree(treeId);
     treeWalk.setRecursive(false);
     TreeFormatter treeFormatter = new TreeFormatter();
-    Map<String, Map<String, ObjectId>> commits = commitObjects(tables);
+    Map<String, Map<String, ObjectId>> commits = commitObjects(tables, tableConverter);
 
     while (treeWalk.next()) {
       if (treeWalk.getObjectId(0).equals(ObjectId.zeroId())) {
@@ -317,46 +317,48 @@ public class JgitBranchController implements BranchController {
       }
       commits.clear();
     }
-    Optional<Long> updateTime = Arrays.stream(tables)
-                                      .map(Table::getUpdateTime)
-                                      .max(Long::compareTo);
     return commitTree(treeFormatter,
                       branch,
-                      updateTime.orElse(Long.MIN_VALUE),
                       commitMeta,
-                      version);
+                      version,
+                      tableConverter);
   }
 
   @Override
   public void deleteBranch(String branch,
                            String version,
-                           CommitMeta commitMeta) throws IOException {
+                           METADATA commitMeta) throws IOException {
     RefUpdate update = repository.updateRef(Constants.R_HEADS + branch);
-    if (!ObjectId.isEqual(update.getRef().getObjectId(), ObjectId.fromString(version))) {
+    if (version != null && !ObjectId.isEqual(update.getRef().getObjectId(), ObjectId.fromString(version))) {
       throw new NessieConflictException(null, "can't delete branch, not HEAD");
     }
-    update.setRefLogMessage(commitMeta.toString(), false);
+    if (commitMeta != null) {
+      update.setRefLogMessage(commitMeta.toString(), false);
+    }
     update.setForceUpdate(true);
-    update.setExpectedOldObjectId(ObjectId.fromString(version));
-    Result deleteResult = update.delete();  // todo concurrency & check
+    if (version != null) {
+      update.setExpectedOldObjectId(ObjectId.fromString(version));
+    }
+    Result deleteResult = update.delete();
     if (!deleteResult.equals(Result.FORCED)) {
       throw new NessieConflictException(ImmutableList.of(branch), "delete failed " + deleteResult);
     }
   }
 
   @Override
-  public List<String> getTables(String branch, String namespace) throws IOException {
+  public List<String> getTables(String branch, String namespace, TableConverter<TABLE> tableConverter) throws IOException {
     List<String> tables = new ArrayList<>();
     try (TreeWalk treeWalk = new TreeWalk(repository)) {
       ObjectId treeId = repository.resolve(branch + "^{tree}");
       treeWalk.addTree(treeId);
       treeWalk.setRecursive(true);
       while (treeWalk.next()) {
-        Map.Entry<Table, String> branchTable = getTable(treeWalk, repository);
-        if (namespace != null && !namespace.equals(branchTable.getKey().getNamespace())) {
+        byte[] bytes = getTable(treeWalk, repository);
+        TABLE branchTable = storeWorker.getValueSerializer().fromBytes(ByteString.copyFrom(bytes));
+        if (namespace != null && !namespace.equals(tableConverter.getNamespace(branchTable))) {
           continue;
         }
-        tables.add(branchTable.getKey().getId());
+        tables.add(tableConverter.getId(branchTable));
       }
     }
     return tables;
@@ -366,17 +368,18 @@ public class JgitBranchController implements BranchController {
   public String promote(String branch,
                         String mergeBranch,
                         String version,
-                        CommitMeta commitMeta,
+                        METADATA commitMeta,
                         boolean force,
                         boolean cherryPick,
-                        String namespace) throws IOException {
+                        String namespace,
+                        TableConverter<TABLE> tableConverter) throws IOException {
     ObjectId newCommitId = repository.resolve(mergeBranch + "^{commit}");
     RevCommit newCommit = RevCommit.parse(repository.getObjectDatabase()
                                                     .open(newCommitId)
                                                     .getBytes());
     Ref head = repository.findRef(branch);
     checkVersion(version, branch);
-    return rebase(head, newCommit, version, commitMeta, force, cherryPick, namespace);
+    return rebase(head, newCommit, version, commitMeta, force, cherryPick, namespace, tableConverter);
   }
 
   private ObjectId checkVersion(String version, String branch) {
@@ -395,12 +398,27 @@ public class JgitBranchController implements BranchController {
     return commitId;
   }
 
+  @Override
+  public Stream<LogMessage> log(String branch) throws IOException {
+    ObjectId objectId = repository.resolve(branch);
+    if (objectId == null) {
+      throw new IllegalStateException();
+    }
+    RevWalk walk = new RevWalk(repository);
+    walk.markStart(repository.parseCommit(objectId));
+    return StreamSupport.stream(walk.spliterator(), false).map(JgitBranchController::toLogMessage);
+  }
+
+  private static LogMessage toLogMessage(RevCommit commit) {
+    return ImmutableLogMessage.builder().commitId(commit.name()).message(commit.getFullMessage()).build();
+  }
+
   private String commitTree(ObjectId newTreeId,
                             String branch,
-                            long updateTime,
-                            CommitMeta commitMeta,
+                            METADATA commitMeta,
                             String version,
-                            ObjectInserter inserter) throws IOException {
+                            ObjectInserter inserter,
+                            TableConverter<TABLE> tableConverter) throws IOException {
 
     ObjectId commitId;
     try {
@@ -408,17 +426,17 @@ public class JgitBranchController implements BranchController {
     } catch (NessieConflictException e) {
       Entry<ObjectId, List<String>> pair = tryTwoWayMerge(branch,
                                                           newTreeId,
-                                                          updateTime,
                                                           commitMeta,
                                                           inserter,
-                                                          version);
+                                                          version,
+                                                          tableConverter);
       commitId = pair.getKey();
       if (commitId == null) {
         throw new NessieConflictException(pair.getValue(), "conflicted files", e);
       }
     }
     inserter.flush();
-    CommitBuilder commitBuilder = fromUser(commitMeta, updateTime);
+    CommitBuilder commitBuilder = fromUser(commitMeta);
     commitBuilder.setTreeId(newTreeId);
     if (commitId != null) {
       commitBuilder.addParentId(commitId);
@@ -430,24 +448,24 @@ public class JgitBranchController implements BranchController {
 
   private String commitTree(TreeFormatter treeFormatter,
                             String branch,
-                            long updateTime,
-                            CommitMeta commitMeta,
-                            String version) throws IOException {
+                            METADATA commitMeta,
+                            String version,
+                            TableConverter<TABLE> tableConverter) throws IOException {
     ObjectInserter inserter = repository.newObjectInserter();
     ObjectId newTreeId = inserter.insert(treeFormatter);
-    return commitTree(newTreeId, branch, updateTime, commitMeta, version, inserter);
+    return commitTree(newTreeId, branch, commitMeta, version, inserter, tableConverter);
   }
 
-  private Map.Entry<ObjectId, List<String>> tryTwoWayMerge(String branch,
+  private Entry<ObjectId, List<String>> tryTwoWayMerge(String branch,
                                                      ObjectId newTreeId,
-                                                     long updateTime,
-                                                     CommitMeta commitMeta,
+                                                       METADATA commitMeta,
                                                      ObjectInserter inserter,
-                                                     String version) throws IOException {
+                                                     String version,
+                                                       TableConverter<TABLE> tableConverter) throws IOException {
     inserter.flush();
     ObjectId commitId = repository.resolve(branch + "^{commit}");
     ObjectId treeId = repository.resolve(branch + "^{tree}");
-    Merger merger = new Merger(repository, null);
+    Merger<TABLE> merger = new Merger<>(repository, storeWorker.getValueSerializer(), tableConverter, null);
     merger.setBase(ObjectId.fromString(version));
     boolean ok = merger.merge(treeId, newTreeId);
     if (!ok) {
@@ -456,10 +474,10 @@ public class JgitBranchController implements BranchController {
     ObjectId mergedTreeId = merger.getResultTreeId();
     String commit = commitTree(mergedTreeId,
                                branch,
-                               updateTime,
                                commitMeta,
                                commitId.name(),
-                               inserter);
+                               inserter,
+                               tableConverter);
     return new SimpleImmutableEntry<>(ObjectId.fromString(commit), null);
   }
 
@@ -479,23 +497,7 @@ public class JgitBranchController implements BranchController {
     return newCommitId.name();
   }
 
-  private static CommitBuilder fromUser(CommitMeta commitMeta, long now) {
-    CommitBuilder commitBuilder = new CommitBuilder();
-    PersonIdent person;
-    if (commitMeta != null) {
-      commitBuilder.setMessage(commitMeta.toMessage());
-      person = new PersonIdent(commitMeta.commiter(),
-                               commitMeta.email(),
-                               now,
-                               0);
-    } else {
-      person = new PersonIdent("test", "me@example.com");
-      commitBuilder.setMessage("none");
-    }
-    commitBuilder.setAuthor(person);
-    commitBuilder.setCommitter(person);
-    return commitBuilder;
-  }
+  protected abstract CommitBuilder fromUser(METADATA commitMeta);
 
   private static Branch fromRef(Ref ref) {
     if (ref == null) {
@@ -512,10 +514,11 @@ public class JgitBranchController implements BranchController {
   private String rebase(Ref head,
                         RevCommit upstreamCommit,
                         String version,
-                        CommitMeta commitMeta,
+                        METADATA commitMeta,
                         boolean force,
                         boolean cherryPick,
-                        String namespace) throws IOException {
+                        String namespace,
+                        TableConverter<TABLE> tableConverter) throws IOException {
     RevWalk walk = new RevWalk(repository);
     ObjectId headId = head.getObjectId();
     String headName = head.getName();
@@ -536,7 +539,7 @@ public class JgitBranchController implements BranchController {
     List<RevCommit> pickList = calculatePickList(upstreamCommit, headCommit);
     for (RevCommit step : pickList) {
       //currently this will attempt to merge entire database.
-      version = cherryPickCommitFlattening(step, head, version, commitMeta, namespace);
+      version = cherryPickCommitFlattening(step, head, version, commitMeta, namespace, tableConverter);
     }
     return version;
   }
@@ -544,25 +547,26 @@ public class JgitBranchController implements BranchController {
   private String cherryPickCommitFlattening(RevCommit commitToPick,
                                             Ref head,
                                             String version,
-                                            CommitMeta commitMeta,
-                                            String namespace) throws IOException {
+                                            METADATA commitMeta,
+                                            String namespace,
+                                            TableConverter<TABLE> tableConverter) throws IOException {
     RevCommit newHead = tryFastForward(commitToPick, head);
     boolean lastStepWasForward = newHead != null;
     if (lastStepWasForward) {
       return updateRef(head.getName(), newHead.getId(), ObjectId.fromString(version));
     }
     RevWalk revWalk = new RevWalk(repository);
-    Merger merger = new Merger(repository, namespace);
+    Merger<TABLE> merger = new Merger<>(repository, storeWorker.getValueSerializer(), tableConverter, namespace);
     newHead = revWalk.parseCommit(head.getObjectId());
     boolean ok = merger.merge(commitToPick, newHead);
     if (ok) {
       ObjectId newTree = merger.getResultTreeId();
       return commitTree(newTree,
                         head.getName(),
-                        Long.MAX_VALUE,
                         commitMeta,
                         version,
-                        repository.newObjectInserter());
+                        repository.newObjectInserter(),
+                        tableConverter);
     } else {
       throw new NessieConflictException(merger.conflictFiles(), "rebase failed");
     }
@@ -651,7 +655,7 @@ public class JgitBranchController implements BranchController {
   }
 
 
-  private static class Merger extends ThreeWayMerger {
+  private static class Merger<TABLE> extends ThreeWayMerger {
 
     private static final int T_BASE = 0;
 
@@ -660,6 +664,8 @@ public class JgitBranchController implements BranchController {
     private static final int T_THEIRS = 2;
 
     private final NameConflictTreeWalk tw;
+    private final Serializer<TABLE> serializer;
+    private final TableConverter<TABLE> tableConverter;
     private final String namespace;
 
     private final DirCache cache;
@@ -670,9 +676,11 @@ public class JgitBranchController implements BranchController {
 
     private final List<String> conflictFiles = new ArrayList<>();
 
-    Merger(Repository local, String namespace) {
+    Merger(Repository local, Serializer<TABLE> serializer, TableConverter<TABLE> tableConverter, String namespace) {
       super(local);
       tw = new NameConflictTreeWalk(local, reader);
+      this.serializer = serializer;
+      this.tableConverter = tableConverter;
       this.namespace = namespace;
       cache = DirCache.newInCore();
     }
@@ -741,8 +749,9 @@ public class JgitBranchController implements BranchController {
 
     private void addConflict(int id) {
       try {
-        Entry<Table, String> entry = getTable(tw, db, id);
-        conflictFiles.add(entry.getKey().getId());
+        byte[] bytes = getTable(tw, db, id);
+        TABLE entry = serializer.fromBytes(ByteString.copyFrom(bytes));
+        conflictFiles.add(tableConverter.getId(entry));
       } catch (IOException e) {
         //pass
       }
@@ -758,7 +767,7 @@ public class JgitBranchController implements BranchController {
       }
       ObjectId objectId = tw.getObjectId(0);
       ObjectLoader loader = db.open(objectId);
-      Map.Entry<Table, String> branchTablePair = ProtoUtil.tableFromBytes(loader.getBytes());
+      Entry<Table, String> branchTablePair = ProtoUtil.tableFromBytes(loader.getBytes());
       Table branchTable = branchTablePair.getKey();
       return namespace.equals(branchTable.getNamespace());
     }

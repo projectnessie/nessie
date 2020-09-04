@@ -99,16 +99,16 @@ public interface VersionStore<VALUE, METADATA> {
   /**
    * Assign the NamedRef to point to a particular hash. If the NamedRef does not exist, it will be created.
    *
-   * <p>Throws if currentBranchHash is defined and does not match the current hash of the provided branch
+   * <p>Throws if expectedHash is defined and does not match the current hash of the provided branch
    *
    * <p>Throws if the targetHash provided does not exist, an exception will be thrown.
    *
    * @param ref          The named ref we're assigning
    * @param expectedHash The current head of the NamedRef to validate before updating (optional).
    * @param targetHash   The hash that this ref should refer to.
-   * @throws ReferenceNotFoundException if {@code targetHash} is not present in the store, or {@code currentBranchHash} is not empty
+   * @throws ReferenceNotFoundException if {@code targetHash} is not present in the store, or {@code expectedHash} is not empty
    *     and {@code ref} is not present in the store
-   * @throws ReferenceConflictException if {@code currentBranchHash} doesn't match the stored hash for {@code ref}
+   * @throws ReferenceConflictException if {@code expectedHash} doesn't match the stored hash for {@code ref}
    */
   void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException;

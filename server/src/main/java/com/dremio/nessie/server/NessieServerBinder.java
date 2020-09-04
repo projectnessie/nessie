@@ -29,9 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.auth.UserService;
 import com.dremio.nessie.backend.Backend;
-import com.dremio.nessie.backend.BranchController;
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.jgit.JgitBranchController;
+import com.dremio.nessie.jgit.JgitBranchControllerLegacy;
 import com.dremio.nessie.jwt.KeyGenerator;
 import com.dremio.nessie.model.User;
 import com.dremio.nessie.model.VersionedWrapper;
@@ -68,10 +67,10 @@ public class NessieServerBinder extends AbstractBinder {
     bindFactory(UserServiceDbBackendFactory.class).to(UserServiceDbBackend.class);
     bind(usClazz).to(UserService.class);
     bind(NessieSecurityContext.class).to(SecurityContext.class);
-    bindFactory(JGitContainerFactory.class).to(BranchController.class).in(Singleton.class);
+    bindFactory(JGitContainerFactory.class).to(JgitBranchControllerLegacy.class);
   }
 
-  public static class JGitContainerFactory implements Factory<BranchController> {
+  public static class JGitContainerFactory implements Factory<JgitBranchControllerLegacy> {
 
     private final Backend backend;
 
@@ -81,13 +80,13 @@ public class NessieServerBinder extends AbstractBinder {
     }
 
     @Override
-    public BranchController provide() {
-      JgitBranchController jgc = new JgitBranchController(backend);
+    public JgitBranchControllerLegacy provide() {
+      JgitBranchControllerLegacy jgc = new JgitBranchControllerLegacy(backend);
       return jgc;
     }
 
     @Override
-    public void dispose(BranchController instance) {
+    public void dispose(JgitBranchControllerLegacy instance) {
 
     }
   }
