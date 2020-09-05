@@ -16,9 +16,12 @@
 
 package com.dremio.nessie.server;
 
+import java.util.Map;
+
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -32,8 +35,10 @@ import org.junit.jupiter.api.Assertions;
 
 import com.dremio.nessie.json.ObjectMapperContextResolver;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.ImmutableTag;
 import com.dremio.nessie.model.ReferenceWithType;
 import com.dremio.nessie.model.Table;
 import com.dremio.nessie.services.rest.TableBranchOperations;
@@ -126,6 +131,29 @@ public class RestGitTest extends JerseyTest {
     Assertions.assertEquals(200, res.getStatus());
     res = get("objects/test/xxx.test").get();
     Assertions.assertEquals(table, res.readEntity(Table.class));
+
+    String branchId = get("objects/test").get().readEntity(ReferenceWithType.class).getReference().getId();
+    res = get("objects/tagtest").post(Entity.entity(ReferenceWithType.of(ImmutableTag.builder()
+                                                                .name("tagtest")
+                                                                .id(branchId)
+                                                                .build()),
+                                                    MediaType.APPLICATION_JSON_TYPE));
+    Assertions.assertEquals(201, res.getStatus());
+    res = get("objects/tagtest").get();
+    Assertions.assertEquals(branchId, res.readEntity(ReferenceWithType.class).getReference().getId());
+    res = get("objects/tagtest/multi").header("If-Match", new EntityTag(branchId))
+                                      .put(Entity.entity(updates, MediaType.APPLICATION_JSON_TYPE));
+    Assertions.assertEquals(404, res.getStatus());
+    res = get("objects/tagtest").delete();
+    Assertions.assertEquals(412, res.getStatus());
+    res = get("objects/tagtest").header("If-Match", new EntityTag(branchId)).delete();
+    Assertions.assertEquals(200, res.getStatus());
+
+    res = get("objects/test/log").get();
+    Assertions.assertEquals(200, res.getStatus());
+    Map<String, CommitMeta> logs = res.readEntity(new GenericType<Map<String, CommitMeta>>(){});
+    Assertions.assertEquals(4, logs.size());
+    Assertions.assertEquals(13, logs.values().stream().mapToInt(CommitMeta::changes).sum());
   }
 
   @Test
