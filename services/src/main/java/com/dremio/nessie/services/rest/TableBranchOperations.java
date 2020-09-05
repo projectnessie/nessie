@@ -606,7 +606,7 @@ public class TableBranchOperations {
     try {
       String ifMatch = headers.getHeaderString(HttpHeaders.IF_MATCH);
       return Optional.of(EntityTag.valueOf(ifMatch).getValue());
-    } catch (NullPointerException | NoSuchElementException e) {
+    } catch (NullPointerException | NoSuchElementException | IllegalArgumentException e) {
       return Optional.empty();
     }
   }
