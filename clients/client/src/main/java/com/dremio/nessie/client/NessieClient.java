@@ -31,8 +31,8 @@ import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
 import com.dremio.nessie.client.auth.BasicAuth;
 import com.dremio.nessie.client.rest.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.NessieConfiguration;
+import com.dremio.nessie.model.ReferenceWithType;
 import com.dremio.nessie.model.Table;
 import com.dremio.nessie.tracing.TracingUtil;
 import com.google.common.base.Joiner;
@@ -135,9 +135,9 @@ public class NessieClient implements Closeable {
       return null;
     }
     String pair = extractHeaders(response.getHeaders());
-    Branch branch = response.readEntity(Branch.class);
-    assert branch.getId().equals(pair.replaceAll("\"", ""));
-    return branch;
+    ReferenceWithType<Branch> branch = response.readEntity(new GenericType<ReferenceWithType<Branch>>(){});
+    assert branch.getReference().getId().equals(pair.replaceAll("\"", ""));
+    return branch.getReference();
   }
 
   /**
@@ -149,7 +149,7 @@ public class NessieClient implements Closeable {
                                    MediaType.APPLICATION_JSON,
                                    checkKey())
                               .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .post(Entity.entity(branch, MediaType.APPLICATION_JSON_TYPE));
+                              .post(Entity.entity(ReferenceWithType.of(branch), MediaType.APPLICATION_JSON_TYPE));
     RestUtils.checkResponse(response);
     return getBranch(branch.getName());
   }
@@ -165,17 +165,15 @@ public class NessieClient implements Closeable {
    * @param branch The branch to commit on. Its id is the commit version to commit on top of
    * @param tables list of tables to be added, deleted or modified
    */
-  public Branch commit(Branch branch, Table... tables) {
+  public void commit(Branch branch, Table... tables) {
     Response response = client.get(endpoint,
-                                   SLASH.join("objects", branch.getName()),
+                                   SLASH.join("objects", branch.getName(), "multi"),
                                    MediaType.APPLICATION_JSON,
                                    checkKey())
                               .header(HttpHeaders.IF_MATCH, new EntityTag(branch.getId()))
                               .accept(MediaType.APPLICATION_JSON_TYPE)
                               .put(Entity.entity(tables, MediaType.APPLICATION_JSON_TYPE));
     RestUtils.checkResponse(response);
-    String id = response.getEntityTag().getValue().replace("\"", "");
-    return ImmutableBranch.copyOf(branch).withId(id);
   }
 
   /**
@@ -206,18 +204,16 @@ public class NessieClient implements Closeable {
   /**
    * Merge all commits from updateBranch onto branch. Optionally forcing.
    */
-  public void mergeBranch(com.dremio.nessie.model.Branch branch,
-                          String updateBranch,
-                          boolean force) {
+  public void assignBranch(com.dremio.nessie.model.Branch branch,
+                           String updateBranchStr) {
     Table[] branchTable = new Table[0];
+    Branch updateBranch = getBranch(updateBranchStr);
     Response response = client.get(endpoint,
                                    SLASH.join("objects",
-                                              branch.getName(),
-                                              "promote"),
+                                              branch.getName()),
                                    MediaType.APPLICATION_JSON,
                                    checkKey(),
-                                   ImmutableMap.of("promote", updateBranch,
-                                                   "force", Boolean.toString(force)))
+                                   ImmutableMap.of("target", updateBranch.getId()))
                               .header(HttpHeaders.IF_MATCH, new EntityTag(branch.getId()))
                               .accept(MediaType.APPLICATION_JSON_TYPE)
                               .put(Entity.entity(branchTable, MediaType.APPLICATION_JSON_TYPE));

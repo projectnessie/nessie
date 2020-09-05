@@ -16,10 +16,6 @@
 
 package com.dremio.nessie.model;
 
-import java.util.OptionalLong;
-
-import javax.annotation.Nullable;
-
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -31,47 +27,19 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableBranch.class)
 @JsonDeserialize(as = ImmutableBranch.class)
-public abstract class Branch implements Base {
-
-  /**
-   * Human readable branch name.
-  */
-  public abstract String getName();
-
-  /**
-   * backend system id. Usually the 20-byte hash of the commit this branch points to.
-   */
-  @Nullable
-  public abstract String getId();
-
-  /**
-   * Time this branch was originally created. Milliseconds since epoch.
-   */
-  @Value.Default
-  public long getCreateTime() {
-    return Long.MIN_VALUE;
-  }
-
-  /**
-   * Optional time this branch is due to expire. Milliseconds since epoch.
-   */
-  public abstract OptionalLong getExpireTime();
+public abstract class Branch implements Reference {
 
   /**
    * Flag to denote the deletion of this branch. Has not been purged from backend.
+   *
+   * <p>
+   *   todo remove
+   * </p>
    */
+  @Deprecated
   @Value.Default
   public boolean isDeleted() {
     return false;
   }
-
-  /**
-   * Milliseconds since epoch of the last time this branch was mutated.
-   */
-  @Value.Default
-  public long getUpdateTime() {
-    return Long.MIN_VALUE;
-  }
-
 
 }

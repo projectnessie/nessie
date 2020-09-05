@@ -29,7 +29,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -85,14 +84,14 @@ public class CatalogBranchTest {
     hadoopConfig.set("nessie.url", path);
     hadoopConfig.set("nessie.username", username);
     hadoopConfig.set("nessie.password", password);
-    hadoopConfig.set("nessie.view-branch", "master");
+    hadoopConfig.set("nessie.view-branch", "main");
     this.client = new NessieClient(AuthType.BASIC, path, username, password);
     catalog = new NessieCatalog(hadoopConfig);
   }
 
   @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
-  public void testBasicTag() {
+  public void testBasicBranch() {
     TableIdentifier foobar = TableIdentifier.of("foo", "bar");
     TableIdentifier foobaz = TableIdentifier.of("foo", "baz");
     Table bar = createTable(foobar, 1); //table 1
@@ -101,39 +100,37 @@ public class CatalogBranchTest {
 
     hadoopConfig.set("nessie.view-branch", "test");
     NessieCatalog newCatalog = new NessieCatalog(hadoopConfig);
-    String initialMetadataLocation = getTag(catalog, foobar);
+    String initialMetadataLocation = getBranch(catalog, foobar);
     Assertions
-      .assertEquals(initialMetadataLocation, getTag(catalog, foobar));
-    Assertions.assertEquals(getTag(newCatalog, foobaz), getTag(catalog, foobaz));
+      .assertEquals(initialMetadataLocation, getBranch(catalog, foobar));
+    Assertions.assertEquals(getBranch(newCatalog, foobaz), getBranch(catalog, foobaz));
     bar.updateSchema().addColumn("id1", Types.LongType.get()).commit();
 
     // metadata location changed no longer matches
-    Assertions.assertNotEquals(getTag(catalog, foobar), getTag(newCatalog, foobar));
+    Assertions.assertNotEquals(getBranch(catalog, foobar), getBranch(newCatalog, foobar));
 
     // points to the previous metadata location
-    Assertions.assertEquals(initialMetadataLocation, getTag(newCatalog, foobar));
-    initialMetadataLocation = getTag(newCatalog, foobaz);
+    Assertions.assertEquals(initialMetadataLocation, getBranch(newCatalog, foobar));
+    initialMetadataLocation = getBranch(newCatalog, foobaz);
     newCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
 
     // metadata location changed no longer matches
-    Assertions.assertNotEquals(getTag(catalog, foobaz), getTag(newCatalog, foobaz));
+    Assertions.assertNotEquals(getBranch(catalog, foobaz), getBranch(newCatalog, foobaz));
 
     // points to the previous metadata location
-    Assertions.assertEquals(initialMetadataLocation, getTag(catalog, foobaz));
+    Assertions.assertEquals(initialMetadataLocation, getBranch(catalog, foobaz));
 
-    Assertions.assertThrows(CommitFailedException.class,
-        () -> newCatalog.promoteBranch("master", false));
-    newCatalog.promoteBranch("master", true);
-    Assertions.assertEquals(getTag(newCatalog, foobar),
-                        getTag(catalog, foobar));
-    Assertions.assertEquals(getTag(newCatalog, foobaz),
-                        getTag(catalog, foobaz));
+    newCatalog.assignBranch("main");
+    Assertions.assertEquals(getBranch(newCatalog, foobar),
+                            getBranch(catalog, foobar));
+    Assertions.assertEquals(getBranch(newCatalog, foobaz),
+                            getBranch(catalog, foobaz));
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
     catalog.dropBranch("test");
   }
 
-  private static String getTag(NessieCatalog catalog, TableIdentifier tableIdentifier) {
+  private static String getBranch(NessieCatalog catalog, TableIdentifier tableIdentifier) {
     Table table = catalog.loadTable(tableIdentifier);
     BaseTable baseTable = (BaseTable) table;
     TableOperations ops = baseTable.operations();
@@ -178,7 +175,7 @@ public class CatalogBranchTest {
   }
 
   private void createBranch(String name) {
-    catalog.createBranch(name, "master");
+    catalog.createBranch(name, "main");
   }
 
 }
