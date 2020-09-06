@@ -66,7 +66,7 @@ import com.dremio.nessie.model.ImmutableCommitMeta;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.ReferenceWithType;
 import com.dremio.nessie.model.Table;
-import com.dremio.nessie.services.NessieEngine;
+import com.dremio.nessie.services.VersionStoreAdapter;
 import com.dremio.nessie.services.auth.Secured;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Key;
@@ -104,10 +104,10 @@ public class TableBranchOperations {
 
   private static final Logger logger = LoggerFactory.getLogger(TableBranchOperations.class);
 
-  private final NessieEngine backend;
+  private final VersionStoreAdapter backend;
 
   @Inject
-  public TableBranchOperations(NessieEngine backend) {
+  public TableBranchOperations(VersionStoreAdapter backend) {
     this.backend = backend;
   }
 
@@ -167,7 +167,7 @@ public class TableBranchOperations {
     return doAction(() -> {
       //todo filter by namespace once namespace is better defined
       Stream<Key> tables = backend.getAllTables(refName);
-      String[] tableArray = tables.map(NessieEngine::urlStringFromKey)
+      String[] tableArray = tables.map(VersionStoreAdapter::urlStringFromKey)
                                   .toArray(String[]::new);
       return Response.ok(tableArray).build();
     });
@@ -328,7 +328,7 @@ public class TableBranchOperations {
     backend.commit(ref,
                    hash,
                    meta(principal, reason + ";" + table, 1, ref, Action.COMMIT),
-                   Collections.singletonList(Put.of(NessieEngine.keyFromUrlString(tableName), table)));
+                   Collections.singletonList(Put.of(VersionStoreAdapter.keyFromUrlString(tableName), table)));
     ResponseBuilder response = post ? Response.created(null) : Response.ok();
     return response.build();
   }
@@ -426,7 +426,7 @@ public class TableBranchOperations {
     return doAction(() -> {
       String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
       CommitMeta meta = meta(securityContext.getUserPrincipal(), reason + ";" + table, 1, ref, Action.COMMIT);
-      backend.commit(ref, hash, meta, Lists.newArrayList(Delete.of(NessieEngine.keyFromUrlString(table))));
+      backend.commit(ref, hash, meta, Lists.newArrayList(Delete.of(VersionStoreAdapter.keyFromUrlString(table))));
       return Response.ok().build();
     });
   }
@@ -591,7 +591,7 @@ public class TableBranchOperations {
       String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
       Principal principal = securityContext.getUserPrincipal();
       List<com.dremio.nessie.versioned.Operation<Table>> ops = Arrays.stream(update).map(t -> {
-        Key key = NessieEngine.keyFromUrlString(t.getId());
+        Key key = VersionStoreAdapter.keyFromUrlString(t.getId());
         return t.isDeleted() ? Delete.<Table>of(key) : Put.of(key, t);
       }).collect(Collectors.toList());
       backend.commit(ref,

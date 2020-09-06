@@ -43,9 +43,9 @@ import com.dremio.nessie.model.User;
 import com.dremio.nessie.model.VersionedWrapper;
 import com.dremio.nessie.server.auth.NessieSecurityContext;
 import com.dremio.nessie.server.auth.UserServiceDbBackend;
-import com.dremio.nessie.services.NessieEngine;
 import com.dremio.nessie.services.TableCommitMetaStoreWorker;
 import com.dremio.nessie.services.TableCommitMetaStoreWorkerImpl;
+import com.dremio.nessie.services.VersionStoreAdapter;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.impl.JGitVersionStore;
 
@@ -83,7 +83,7 @@ public class NessieServerBinder extends AbstractBinder {
     Type versionStore = new TypeLiteral<VersionStore<Table, CommitMeta>>(){}.getType();
 
     bind(TableCommitMetaStoreWorkerImpl.class).to(TableCommitMetaStoreWorker.class);
-    bind(NessieEngine.class).to(NessieEngine.class);
+    bind(VersionStoreAdapter.class).to(VersionStoreAdapter.class);
     bindFactory(JGitVersionStoreFactory.class).to(versionStore).in(Singleton.class);
   }
 
