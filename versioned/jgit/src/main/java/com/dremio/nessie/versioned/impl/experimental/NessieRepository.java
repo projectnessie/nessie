@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.jgit;
+package com.dremio.nessie.versioned.impl.experimental;
 
 import java.io.IOException;
 

@@ -58,6 +58,7 @@ public class NessieClient implements Closeable {
   private final String endpoint;
   private final ClientWithHelpers client;
   private final BasicAuth auth;
+  private final GenericType<ReferenceWithType<Branch>> branchWithReferenceType = new GenericType<ReferenceWithType<Branch>>(){};
 
   /**
    * create new nessie client. All REST api endpoints are mapped here.
@@ -135,7 +136,7 @@ public class NessieClient implements Closeable {
       return null;
     }
     String pair = extractHeaders(response.getHeaders());
-    ReferenceWithType<Branch> branch = response.readEntity(new GenericType<ReferenceWithType<Branch>>(){});
+    ReferenceWithType<Branch> branch = response.readEntity(branchWithReferenceType);
     assert branch.getReference().getId().equals(pair.replaceAll("\"", ""));
     return branch.getReference();
   }

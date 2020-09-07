@@ -22,10 +22,12 @@ import java.util.stream.Stream;
 
 import javax.enterprise.inject.Default;
 
-import com.dremio.nessie.jgit.ProtoUtil;
 import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.CommitMeta.Action;
+import com.dremio.nessie.model.ImmutableCommitMeta;
 import com.dremio.nessie.model.Table;
 import com.dremio.nessie.versioned.Serializer;
+import com.dremio.nessie.versioned.impl.experimental.ProtoUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
@@ -39,6 +41,7 @@ import com.google.protobuf.ByteString;
  */
 @Default
 public class TableCommitMetaStoreWorkerImpl implements TableCommitMetaStoreWorker {
+
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private final Serializer<Table> tableSerializer = serializer();
   private final Serializer<CommitMeta> metaSerializer = metadataSerializer();
@@ -76,7 +79,14 @@ public class TableCommitMetaStoreWorkerImpl implements TableCommitMetaStoreWorke
         try {
           return MAPPER.readValue(bytes.toByteArray(), CommitMeta.class);
         } catch (IOException e) {
-          throw new RuntimeException(String.format("Couldn't parse commit meta %s", bytes.toStringUtf8()), e);
+          return ImmutableCommitMeta.builder()
+                                    .action(Action.UNKNOWN)
+                                    .changes(0)
+                                    .comment("unknown")
+                                    .commiter("unknown")
+                                    .email("unknown")
+                                    .ref("unknown")
+                                    .build();
         }
       }
     };

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.jgit;
+package com.dremio.nessie.versioned.impl.experimental;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;

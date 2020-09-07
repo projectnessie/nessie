@@ -19,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
@@ -27,12 +29,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
+import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
+import com.dremio.nessie.backend.simple.InMemory;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
@@ -48,57 +57,109 @@ import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.TagName;
+import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
+import com.dremio.nessie.versioned.impl.experimental.NessieRepository;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 
 
 class TestJGitVersionStore {
-
+  private static final Hash EMPTY_HASH = Hash.of(ObjectId.zeroId().name());
   private VersionStore<String, String> impl;
+  private static InMemory backend;
   private final Random random = new Random();
 
-  @BeforeEach
-  void setup() {
-    JGitStore<String, String> store = new JGitStore<>(WORKER);
-    impl = new JGitVersionStore<>(WORKER, store);
+  @TempDir
+  File jgitDir;
+
+  enum RepoType {
+    DYNAMO,
+    INMEMORY,
+    FILE
   }
 
+  @BeforeAll
+  public static void init() {
+    backend = new InMemory();
+  }
+
+  @SuppressWarnings("MissingJavadocMethod")
   @AfterEach
-  void deleteResources() {
-
+  public void empty() throws IOException {
+    backend.close();
   }
 
 
-  @Disabled
-  @Test
-  void createAndDeleteTag() throws Exception {
+  private Repository repository(RepoType repoType) throws IOException {
+    final Repository repository;
+    switch (repoType) {
+      case DYNAMO:
+        DfsRepositoryDescription repoDesc = new DfsRepositoryDescription();
+        repository = new NessieRepository.Builder().setRepositoryDescription(repoDesc)
+                                                   .setBackend(backend.gitBackend())
+                                                   .setRefBackend(backend.gitRefBackend())
+                                                   .build();
+        break;
+      case INMEMORY:
+        try {
+          repository = new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
+          break;
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      case FILE:
+        try {
+          repository = Git.init().setDirectory(jgitDir).call().getRepository();
+          break;
+        } catch (GitAPIException e) {
+          throw new RuntimeException(e);
+        }
+      default:
+        throw new RuntimeException("Can't reach here");
+    }
+    return repository;
+  }
+
+  void setup(RepoType repoType) {
+    try {
+      impl = new JGitVersionStore<>(repository(repoType), WORKER);
+    } catch (IOException e) {
+      throw new RuntimeException("couldn't build repo", e);
+    }
+  }
+
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void createAndDeleteTag(RepoType repoType) throws Exception {
+    setup(repoType);
+    impl.create(BranchName.of("bar"), Optional.empty());
+    Optional<Hash> baseCommit = Optional.of(impl.toHash(BranchName.of("bar")));
     TagName tag = TagName.of("foo");
 
     // check that we can't assign an empty tag.
-    assertThrows(ReferenceNotFoundException.class, () -> impl.create(tag,  Optional.empty()));
+    assertThrows(ReferenceNotFoundException.class, () -> impl.create(tag, Optional.empty()));
 
     // create a tag using the default empty hash.
-    impl.create(tag, Optional.of(JGitVersionStore.EMPTY_HASH));
-    assertEquals(JGitVersionStore.EMPTY_HASH, impl.toHash(tag));
+    impl.create(tag, baseCommit);
+    assertEquals(baseCommit.get(), impl.toHash(tag));
 
     // avoid dupe
-    assertThrows(ReferenceAlreadyExistsException.class, () -> impl.create(tag, Optional.of(JGitVersionStore.EMPTY_HASH)));
+    assertThrows(ReferenceAlreadyExistsException.class, () -> impl.create(tag, baseCommit));
 
     // delete without condition
     impl.delete(tag, Optional.empty());
 
     // create a tag using the default empty hash.
-    impl.create(tag, Optional.of(JGitVersionStore.EMPTY_HASH));
+    impl.create(tag, baseCommit);
 
     // check that wrong id is rejected
-    assertThrows(ReferenceConflictException.class, () -> impl.delete(tag, Optional.of(JGitVersionStore.EMPTY_HASH)));
+    assertThrows(ReferenceConflictException.class, () -> impl.delete(tag, Optional.of(EMPTY_HASH)));
 
     // delete with correct id.
-    impl.delete(tag, Optional.of(JGitVersionStore.EMPTY_HASH));
-
+    impl.delete(tag, baseCommit);
 
     // avoid create to invalid l1.
     byte[] randomBytes = new byte[20];
@@ -110,8 +171,10 @@ class TestJGitVersionStore {
     assertThrows(ReferenceNotFoundException.class, () -> impl.delete(tag, Optional.empty()));
   }
 
-  @Test
-  void createAndDeleteBranch() throws Exception {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void createAndDeleteBranch(RepoType repoType) throws Exception {
+    setup(repoType);
     BranchName branch = BranchName.of("foo");
 
     // create a tag using the default empty hash.
@@ -125,66 +188,72 @@ class TestJGitVersionStore {
 
     // avoid dupe
     assertThrows(ReferenceAlreadyExistsException.class, () -> impl.create(branch, Optional.empty()));
-    assertThrows(ReferenceAlreadyExistsException.class, () -> impl.create(branch, Optional.of(JGitVersionStore.EMPTY_HASH)));
+    assertThrows(ReferenceAlreadyExistsException.class, () -> impl.create(branch, Optional.of(EMPTY_HASH)));
 
     // check that wrong id is rejected for deletion (non-existing)
-    assertThrows(ReferenceConflictException.class, () -> impl.delete(branch, Optional.of(JGitVersionStore.EMPTY_HASH)));
+    assertThrows(ReferenceConflictException.class, () -> impl.delete(branch, Optional.of(EMPTY_HASH)));
 
     // delete with correct id.
-    impl.delete(branch, Optional.of(impl.toHash(branch)));
+    impl.delete(branch, Optional.empty());
 
     // avoid create to invalid l1
     byte[] randomBytes = new byte[20];
     random.nextBytes(randomBytes);
     Hash randomHash = Hash.of(ObjectId.fromRaw(randomBytes).name());
-    //todo remove when jgit impl supports making branches from arbitrary hashes
-    //assertThrows(ReferenceNotFoundException.class, () -> impl.create(branch, Optional.of(randomHash)));
+    assertThrows(ReferenceNotFoundException.class, () -> impl.create(branch, Optional.of(randomHash)));
 
     // fail on delete of non-existent.
     assertThrows(ReferenceNotFoundException.class, () -> impl.delete(branch, Optional.empty()));
 
     impl.create(branch, Optional.empty());
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
     // check that wrong id is rejected for deletion (valid but not matching)
-    assertThrows(ReferenceConflictException.class, () -> impl.delete(branch, Optional.of(JGitVersionStore.EMPTY_HASH)));
+    assertThrows(ReferenceConflictException.class, () -> impl.delete(branch, Optional.of(EMPTY_HASH)));
 
     // can't use tag delete on branch.
-    assertThrows(ReferenceConflictException.class, () -> impl.delete(TagName.of("foo"), Optional.empty()));
+    assertThrows(ReferenceNotFoundException.class, () -> impl.delete(TagName.of("foo"), Optional.empty()));
   }
 
-  @Test
-  void conflictingCommit() throws Exception {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void conflictingCommit(RepoType repoType) throws Exception {
+    setup(repoType);
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     // first commit.
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
 
     //first hash.
     Hash originalHash = impl.getCommits(branch).findFirst().get().getHash();
 
     //second commit.
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
     // do an extra commit to make sure it has a different hash even though it has the same value.
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
     //attempt commit using first hash which has conflicting key change.
     assertThrows(ReferenceConflictException.class, () -> impl.commit(branch, Optional.of(originalHash),
                                                                      "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
   }
 
-  @Test
-  void checkRefs() throws Exception {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void checkRefs(RepoType repoType) throws Exception {
+    setup(repoType);
     impl.create(BranchName.of("b1"), Optional.empty());
+    Optional<Hash> baseCommit = Optional.of(impl.toHash(BranchName.of("b1")));
     impl.create(BranchName.of("b2"), Optional.empty());
-    //impl.create(TagName.of("t1"), Optional.of(JGitVersionStore.EMPTY_HASH));
-    //impl.create(TagName.of("t2"), Optional.of(JGitVersionStore.EMPTY_HASH)); todo fix when create from hashes and tags work
-    assertEquals(ImmutableSet.of("b1", "b2"/* todo, "t1", "t2"*/), impl.getNamedRefs()
+    impl.create(TagName.of("t1"), baseCommit);
+    impl.create(TagName.of("t2"), baseCommit);
+    assertEquals(ImmutableSet.of("b1", "b2", "t1", "t2"), impl.getNamedRefs()
                                                               .map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));
   }
 
-  @Test
-  void checkCommits() throws Exception {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void checkCommits(RepoType repoType) throws Exception {
+    setup(repoType);
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     String c1 = "c1";
@@ -194,116 +263,117 @@ class TestJGitVersionStore {
     String v1p = "goodbye world";
     Key k2 = Key.of("my", "friend");
     String v2 = "not here";
-    impl.commit(branch, Optional.of(impl.toHash(branch)), c1, ImmutableList.of(Put.of(k1, v1), Put.of(k2, v2)));
-    impl.commit(branch, Optional.of(impl.toHash(branch)), c2, ImmutableList.of(Put.of(k1, v1p)));
+    impl.commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, v1), Put.of(k2, v2)));
+    impl.commit(branch, Optional.empty(), c2, ImmutableList.of(Put.of(k1, v1p)));
     List<WithHash<String>> commits = impl.getCommits(branch).collect(Collectors.toList());
     assertEquals(ImmutableList.of(c2, c1, "none"), commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
 
     // changed across commits
-    //todo to fix in #53
-    //assertEquals(v1, impl.getValue(commits.get(1).getHash(), k1));
-    //assertEquals(v1p, impl.getValue(commits.get(0).getHash(), k1));
+    assertEquals(v1, impl.getValue(commits.get(1).getHash(), k1));
+    assertEquals(v1p, impl.getValue(commits.get(0).getHash(), k1));
 
     // not changed across commits
-    //assertEquals(v2, impl.getValue(commits.get(0).getHash(), k2));
-    //assertEquals(v2, impl.getValue(commits.get(1).getHash(), k2));
+    assertEquals(v2, impl.getValue(commits.get(0).getHash(), k2));
+    assertEquals(v2, impl.getValue(commits.get(1).getHash(), k2));
 
-    //assertEquals(2, impl.getCommits(commits.get(0).getHash()).count());
-
-    //TagName tag = TagName.of("tag1");
-    //impl.create(tag, Optional.of(commits.get(0).getHash()));
-    //assertEquals(2, impl.getCommits(tag).count());
+    assertEquals(3, impl.getCommits(commits.get(0).getHash()).count());
+    assertEquals(2, impl.getCommits(commits.get(1).getHash()).count());
+    TagName tag = TagName.of("tag1");
+    impl.create(tag, Optional.of(commits.get(0).getHash()));
+    assertEquals(3, impl.getCommits(tag).count());
   }
 
-  @Test
-  void assignments() throws Exception {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void assignments(RepoType repoType) throws Exception {
+    setup(repoType);
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
     impl.create(branch, Optional.empty());
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "c1", ImmutableList.of(Put.of(k1, "v1")));
+    impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, "v1")));
     Hash c1 = impl.toHash(branch);
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "c1", ImmutableList.of(Put.of(k1, "v2")));
+    impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, "v2")));
     Hash c2 = impl.toHash(branch);
     TagName t1 = TagName.of("t1");
     BranchName b2 = BranchName.of("b2");
 
     // ensure tag create assignment is correct.
-    //todo support tags
-    //impl.create(t1, Optional.of(c1));
-    //assertEquals("v1", impl.getValue(t1, k1));
+    impl.create(t1, Optional.of(c1));
+    assertEquals("v1", impl.getValue(t1, k1));
 
     // ensure branch create non-assignment works
     impl.create(b2, Optional.empty());
     assertEquals(null, impl.getValue(b2, k1));
 
     // ensure tag reassignment is correct.
-    //todo tags
-    //impl.assign(t1, Optional.of(c1), c2);
-    //assertEquals("v2", impl.getValue(t1, k1));
+    impl.assign(t1, Optional.of(c1), c2);
+    assertEquals("v2", impl.getValue(t1, k1));
 
     // ensure branch assignment (no current) is correct
-    //todo assing to hash
-    //impl.assign(b2, Optional.of(c1), c1);
-    //assertEquals("v1", impl.getValue(b2, k1));
+    impl.assign(b2, Optional.empty(), c1);
+    assertEquals("v1", impl.getValue(b2, k1));
 
     // ensure branch assignment (with current) is current
-    //todo fix
-    //impl.assign(b2, Optional.of(c1), c2);
-    //assertEquals("v2", impl.getValue(b2, k1));
+    impl.assign(b2, Optional.of(c1), c2);
+    assertEquals("v2", impl.getValue(b2, k1));
 
   }
 
-  @Test
-  void delete() throws Exception {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void delete(RepoType repoType) throws Exception {
+    setup(repoType);
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
     impl.create(branch, Optional.empty());
 
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "c1", ImmutableList.of(Put.of(k1, "v1")));
+    impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, "v1")));
     assertEquals("v1", impl.getValue(branch, k1));
 
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "c1", ImmutableList.of(Delete.of(k1)));
+    impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Delete.of(k1)));
     assertEquals(null, impl.getValue(branch, k1));
   }
 
-  @Test
-  void unchangedOperation() throws Exception {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void unchangedOperation(RepoType repoType) throws Exception {
+    setup(repoType);
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     // first commit.
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
 
     //first hash.
     Hash originalHash = impl.getCommits(branch).findFirst().get().getHash();
 
     //second commit.
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
-    impl.commit(branch, Optional.of(impl.toHash(branch)), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
     //attempt commit using first hash which has conflicting key change.
     assertThrows(ReferenceConflictException.class, () -> impl.commit(branch, Optional.of(originalHash),
                                                                      "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
 
     // attempt commit using first hash, put on on-conflicting key, unchanged on conflicting key.
-    //todo won't throw until arbitrary hash is sorted
-    //assertThrows(ReferenceConflictException.class,
-    //             () -> impl.commit(branch, Optional.of(originalHash), "metadata",
-    //                               ImmutableList.of(Put.of(Key.of("bar"), "mellow"), Unchanged.of(Key.of("hi")))));
+    assertThrows(ReferenceConflictException.class,
+        () -> impl.commit(branch, Optional.of(originalHash), "metadata",
+                          ImmutableList.of(Put.of(Key.of("bar"), "mellow"), Unchanged.of(Key.of("hi")))));
   }
 
-  @Test
-  void checkEmptyHistory() throws Exception {
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void checkEmptyHistory(RepoType repoType) throws Exception {
+    setup(repoType);
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     assertEquals(1L, impl.getCommits(branch).count());
   }
 
-  @Disabled
-  @Test
-  void completeFlow() throws Exception {
-    JGitStore<String, String> store = new JGitStore<>(WORKER);
-    VersionStore<String, String> impl = new JGitVersionStore<>(WORKER, store);
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void completeFlow(RepoType repoType) throws Exception {
+    VersionStore<String, String> impl = new JGitVersionStore<>(repository(repoType), WORKER);
     final BranchName branch = ImmutableBranchName.builder().name("main").build();
     final BranchName branch2 = ImmutableBranchName.builder().name("b2").build();
     final TagName tag = ImmutableTagName.builder().name("t1").build();
@@ -336,7 +406,6 @@ class TestJGitVersionStore {
                 Optional.empty(),
                 commit2,
                 ImmutableList.of(ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v2).build()));
-
 
     assertEquals(v2, impl.getValue(branch, p1));
     assertEquals(v1, impl.getValue(tag, p1));

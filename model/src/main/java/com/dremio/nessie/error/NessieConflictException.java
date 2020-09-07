@@ -28,6 +28,10 @@ public class NessieConflictException extends RuntimeException {
     this(Collections.emptyList());
   }
 
+  public NessieConflictException(String message) {
+    this(Collections.emptyList(), message);
+  }
+
   public NessieConflictException(List<String> conflictTables) {
     this.conflictTables = tables(conflictTables);
   }

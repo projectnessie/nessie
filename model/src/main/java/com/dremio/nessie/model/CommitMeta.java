@@ -39,7 +39,8 @@ public abstract class CommitMeta {
     DELETE_BRANCH,
     MERGE,
     FORCE_MERGE,
-    CHERRY_PICK
+    CHERRY_PICK,
+    UNKNOWN
   }
 
   public abstract String commiter();

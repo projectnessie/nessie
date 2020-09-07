@@ -55,13 +55,7 @@ public class AuthTests {
   public void getCatalog(String username, String password) {
     String path = "http://localhost:9993/api/v1";
     this.client = new NessieClient(AuthType.BASIC, path, username, password);
-    try {
-      client.createBranch(ImmutableBranch.builder().name("master").build());
-    } catch (NessieConflictException e) {
-      //pass table exists
-    } catch (NessieForbiddenException e) {
-      //pass user doesn't have permissions
-    }
+    client.createBranch(ImmutableBranch.builder().name("master").build());
   }
 
   @AfterAll
@@ -90,14 +84,7 @@ public class AuthTests {
 
   @Test
   public void testLogin() {
-    try {
-      getCatalog("x", "y");
-      Assertions.fail();
-    } catch (NessieNotAuthorizedException e) {
-      //what we expect
-    } catch (Throwable t) {
-      Assertions.fail();
-    }
+    Assertions.assertThrows(NessieNotAuthorizedException.class, () -> getCatalog("x", "y"));
   }
 
   @Test
@@ -121,10 +108,10 @@ public class AuthTests {
 
   @Test
   public void testUser() {
-    getCatalog("test", "test123");
+    Assertions.assertThrows(NessieConflictException.class, () -> getCatalog("test", "test123"));
     Branch branch = client.getBranch("master");
     tryEndpointPass(() -> client.commit(branch, createTable("x", "x")));
-    getCatalog("normal", "hello123");
+    Assertions.assertThrows(NessieForbiddenException.class, () -> getCatalog("normal", "hello123"));
     final Table table = client.getTable("master", "x", null);
     Iterable<String> tables = client.getAllTables("master", null);
     Assertions.assertEquals(1, Lists.newArrayList(tables).size());
@@ -135,7 +122,7 @@ public class AuthTests {
     Table newTable = client.getTable("master", table.getId(), null);
     Assertions.assertNotNull(newTable);
     Assertions.assertEquals(table, newTable);
-    getCatalog("test", "test123");
+    Assertions.assertThrows(NessieConflictException.class, () -> getCatalog("test", "test123"));
     tryEndpointPass(() -> client.commit(branch, ImmutableTable.copyOf(table).withIsDeleted(true)));
   }
 

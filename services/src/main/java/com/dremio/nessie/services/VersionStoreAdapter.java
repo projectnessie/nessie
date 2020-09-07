@@ -50,14 +50,19 @@ import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
 
+/**
+ * Adapter to help translate REST calls into version store calls.
+ *
+ * <p>This is used as a translation layer between the REST api and the version store.</p>
+ */
 @ApplicationScoped
-public class NessieEngine {
+public class VersionStoreAdapter {
   private static final String SLASH = "/";
 
   private final VersionStore<Table, CommitMeta> versionStore;
 
   @Inject
-  public NessieEngine(VersionStore<Table, CommitMeta> versionStore) {
+  public VersionStoreAdapter(VersionStore<Table, CommitMeta> versionStore) {
     this.versionStore = versionStore;
   }
 
@@ -65,7 +70,7 @@ public class NessieEngine {
    * Return all refs in the store and convert them to model References.
    */
   public List<Reference> getAllReferences() {
-    return versionStore.getNamedRefs().map(NessieEngine::makeRef).collect(Collectors.toList());
+    return versionStore.getNamedRefs().map(VersionStoreAdapter::makeRef).collect(Collectors.toList());
   }
 
   /**
