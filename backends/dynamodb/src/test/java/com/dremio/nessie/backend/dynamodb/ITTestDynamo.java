@@ -25,8 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
@@ -75,7 +73,6 @@ public class ITTestDynamo {
                             .build();
       client.createTable(request);
     }
-    SharedMetricRegistries.setDefault("default", new MetricRegistry());
   }
 
   @BeforeEach

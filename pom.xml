@@ -28,16 +28,13 @@
 
   <modules>
     <module>model</module>
-    <module>server</module>
-    <module>distribution</module>
     <module>backends</module>
-    <module>serverless</module>
     <module>utils</module>
     <module>clients</module>
     <module>ui</module>
-    <module>services</module>
     <module>versioned</module>
     <module>perftest</module>
+    <module>servers</module>
   </modules>
 
   <properties>
@@ -54,11 +51,12 @@
     <awssdk.version>2.14.14</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake.version>0.6.1</deltalake.version>
-    <dropwizard-metrics.version>4.1.12.1</dropwizard-metrics.version>
+    <microprofile-metrics.version>2.3</microprofile-metrics.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
     <guava.version>29.0-jre</guava.version>
     <hadoop.version>3.3.0</hadoop.version>
+    <hamcrest.version>1.3</hamcrest.version>
     <iceberg.version>0.9.1</iceberg.version>
     <immutables.version>2.8.8</immutables.version>
     <jackson.version>2.11.2</jackson.version>
@@ -73,8 +71,6 @@
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.13.0</protobuf.version>
     <prometheus.version>0.9.0</prometheus.version>
-    <opentracing.version>0.33.0</opentracing.version>
-    <opentracing-jaxrs.version>1.0.0</opentracing-jaxrs.version>
     <serverless.version>1.5</serverless.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <slf4j.version>1.7.30</slf4j.version>
@@ -669,57 +665,9 @@ limitations under the License.
         <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>io.dropwizard.metrics</groupId>
-        <artifactId>metrics-bom</artifactId>
-        <version>${dropwizard-metrics.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.opentracing.contrib</groupId>
-        <artifactId>opentracing-jaxrs2-discovery</artifactId>
-        <version>${opentracing-jaxrs.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.opentracing.contrib</groupId>
-        <artifactId>opentracing-jaxrs2</artifactId>
-        <version>${opentracing-jaxrs.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.opentracing</groupId>
-        <artifactId>opentracing-api</artifactId>
-        <version>${opentracing.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.opentracing</groupId>
-        <artifactId>opentracing-util</artifactId>
-        <version>${opentracing.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.opentracing</groupId>
-        <artifactId>opentracing-noop</artifactId>
-        <version>${opentracing.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.jaegertracing</groupId>
-        <artifactId>jaeger-client</artifactId>
-        <version>${jaeger.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.jaegertracing</groupId>
-        <artifactId>jaeger-core</artifactId>
-        <version>${jaeger.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.jaegertracing</groupId>
-        <artifactId>jaeger-thrift</artifactId>
-        <version>${jaeger.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-          </exclusion>
-        </exclusions>
+        <groupId>org.eclipse.microprofile.metrics</groupId>
+        <artifactId>microprofile-metrics-api</artifactId>
+        <version>${microprofile-metrics.version}</version>
       </dependency>
       <dependency>
         <groupId>io.jsonwebtoken</groupId>
@@ -735,11 +683,6 @@ limitations under the License.
         <groupId>io.jsonwebtoken</groupId>
         <artifactId>jjwt-jackson</artifactId>
         <version>${jjwt.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-jdk15on</artifactId>
-        <version>${bouncycastle.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
@@ -883,24 +826,6 @@ limitations under the License.
         <version>${javax.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-bom</artifactId>
-        <version>${jetty.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-annotations</artifactId>
-        <version>${jetty.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
         <groupId>org.scala-lang</groupId>
         <artifactId>scala-library</artifactId>
         <version>2.13.3</version>
@@ -934,16 +859,6 @@ limitations under the License.
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-access</artifactId>
         <version>${logback.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.prometheus</groupId>
-        <artifactId>simpleclient_dropwizard</artifactId>
-        <version>${prometheus.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.prometheus</groupId>
-        <artifactId>simpleclient_servlet</artifactId>
-        <version>${prometheus.version}</version>
       </dependency>
       <dependency>
         <groupId>com.almworks.sqlite4java</groupId>
@@ -1017,6 +932,12 @@ limitations under the License.
         <groupId>org.apache.jmeter</groupId>
         <artifactId>ApacheJMeter_java</artifactId>
         <version>${jmeter.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-all</artifactId>
+        <version>${hamcrest.version}</version>
+        <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
