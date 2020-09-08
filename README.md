@@ -113,5 +113,5 @@ Authentication and authorization is also pluggable. Currently there is a test on
 there is also a database backed service using json web tokens (JWT). The password is stored in the db as a bcrypt hashed 
 and salted string. A JWT token is generated and is valid for 15 minutes by default. 
 
-To create a new backend implement `com.dremio.nessie.auth.UserService` and add it to the classpath.
+To create a new backend implement `com.dremio.nessie.auth.LoginService` and add it to the classpath.
 

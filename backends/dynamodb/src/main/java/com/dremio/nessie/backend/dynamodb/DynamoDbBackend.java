@@ -22,8 +22,6 @@ import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.EntityBackend;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.User;
-import com.dremio.nessie.server.ServerConfiguration;
 
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -69,11 +67,6 @@ public class DynamoDbBackend implements Backend {
     return new DynamoDbBackend(client);
   }
 
-  @Override
-  public EntityBackend<User> userBackend() {
-    return null;
-  }
-
   public EntityBackend<BranchControllerObject> gitBackend() {
     return new GitObjectDynamoDbBackend(client);
   }
@@ -94,10 +87,8 @@ public class DynamoDbBackend implements Backend {
   public static class BackendFactory implements Backend.Factory {
 
     @Override
-    public Backend create(ServerConfiguration config) {
-      return DynamoDbBackend
-        .getInstance(config.getDatabaseConfiguration().getDbProps().getOrDefault("region", null),
-          config.getDatabaseConfiguration().getDbProps().getOrDefault("endpoint", null));
+    public Backend create(String region, String endpoint) {
+      return DynamoDbBackend.getInstance(region,endpoint);
     }
   }
 
