@@ -76,6 +76,7 @@
     <opentracing.version>0.33.0</opentracing.version>
     <opentracing-jaxrs.version>1.0.0</opentracing-jaxrs.version>
     <serverless.version>1.5</serverless.version>
+    <surefire.version>3.0.0-M5</surefire.version>
     <slf4j.version>1.7.30</slf4j.version>
     <spark.version>2.4.6</spark.version>
     <sqlite.version>1.0.392</sqlite.version>
@@ -133,7 +134,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.0.0-M5</version>
+          <version>${surefire.version}</version>
           <configuration>
             <argLine>@{argLine}</argLine>
           </configuration>
@@ -141,9 +142,10 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
-          <version>3.0.0-M4</version>
+          <version>${surefire.version}</version>
           <configuration>
             <argLine>@{argLine}</argLine>
+            <useModulePath>false</useModulePath>
           </configuration>
         </plugin>
         <plugin>
