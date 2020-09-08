@@ -34,8 +34,8 @@ import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.exceptions.NotFoundException;
 
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.client.NessieService;
+import com.dremio.nessie.client.NessieService.AuthType;
 import com.dremio.nessie.iceberg.branch.BranchCatalog;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ImmutableBranch;
@@ -51,7 +51,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
   private static final Joiner SLASH = Joiner.on("/");
   private static final Joiner DOT = Joiner.on('.');
   private static final String ICEBERG_HADOOP_WAREHOUSE_BASE = "iceberg/warehouse";
-  private final NessieClient client;
+  private final NessieService client;
   private final String warehouseLocation;
   private final Configuration config;
   private AtomicReference<Branch> branch;
@@ -66,7 +66,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
     String password = config.get("nessie.password");
     String authTypeStr = config.get("nessie.auth.type", "BASIC");
     AuthType authType = AuthType.valueOf(authTypeStr);
-    this.client = new NessieClient(authType, path, username, password);
+    this.client = new NessieService(authType, path, username, password);
     warehouseLocation = config.get("fs.defaultFS") + "/" + ICEBERG_HADOOP_WAREHOUSE_BASE;
     branch = new AtomicReference<>(getOrCreate(config.get("nessie.view-branch",
                                                           client.getConfig().getDefaultBranch())));

@@ -31,4 +31,5 @@ public abstract class AuthResponse {
 
   public abstract String getToken();
 
+  public abstract String expiryDate();
 }

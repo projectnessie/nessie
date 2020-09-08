@@ -16,43 +16,31 @@
 
 package com.dremio.nessie.client.auth;
 
-import java.util.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import com.dremio.nessie.auth.AuthResponse;
+import com.dremio.nessie.client.NessieSimpleClient;
 import com.dremio.nessie.client.RestUtils;
-import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
-import com.dremio.nessie.jwt.JwtUtils;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jwt;
 
 /**
  * Basic authentication module.
  */
-public class BasicAuth {
-  private final String endpoint;
+public class BasicAuth implements Auth {
+
   private final String username;
   private final String password;
-  private final ClientWithHelpers client;
+  private final NessieSimpleClient client;
   private String authHeader;
-  private Date expiryDate;
+  private Instant expiryDate;
 
   /**
    * create new basic auth module.
    */
-  public BasicAuth(String endpoint,
-                   String username,
-                   String password,
-                   ClientWithHelpers client) {
-    this.endpoint = endpoint;
+  public BasicAuth(String username, String password, NessieSimpleClient client) {
     this.username = username;
     this.password = password;
     this.client = client;
@@ -60,20 +48,13 @@ public class BasicAuth {
   }
 
   private void login(String username, String password) {
-    MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
-    formData.add("username", username);
-    formData.add("password", password);
-    formData.add("grant_type", "password");
-    Response response = client.get(endpoint, "login", MediaType.APPLICATION_FORM_URLENCODED, null)
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .post(Entity.form(formData));
+    Response response = client.login(username, password, "password");
     RestUtils.checkResponse(response);
     AuthResponse authToken = response.readEntity(AuthResponse.class);
     try {
-      Jwt<Header, Claims> claims = JwtUtils.checkToken(authToken.getToken());
-      expiryDate = claims.getBody().getExpiration();
+      expiryDate = Instant.ofEpochMilli(Long.parseLong(authToken.expiryDate()));
     } catch (Exception e) {
-      expiryDate = new Date(Long.MAX_VALUE);
+      expiryDate = Instant.now().plus(5, ChronoUnit.MINUTES);
     }
     authHeader = response.getHeaderString(HttpHeaders.AUTHORIZATION);
   }
@@ -82,8 +63,8 @@ public class BasicAuth {
    * return key or renew if expired.
    */
   public String checkKey() {
-    Date now = new Date();
-    if (now.after(expiryDate)) {
+    Instant now = Instant.now();
+    if (now.isAfter(expiryDate)) {
       login(username, password);
     }
     return authHeader;

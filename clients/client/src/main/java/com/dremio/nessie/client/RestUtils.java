@@ -16,18 +16,9 @@
 
 package com.dremio.nessie.client;
 
-import java.util.Map;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import com.dremio.nessie.client.auth.AwsAuth;
 import com.dremio.nessie.client.rest.NessieBadRequestException;
 import com.dremio.nessie.client.rest.NessieConflictException;
 import com.dremio.nessie.client.rest.NessieForbiddenException;
@@ -38,12 +29,10 @@ import com.dremio.nessie.client.rest.NessiePreconditionFailedException;
 import com.dremio.nessie.error.ImmutableNessieError;
 import com.dremio.nessie.error.NessieError;
 import com.dremio.nessie.json.ObjectMapperBuilder;
-import com.dremio.nessie.json.ObjectMapperContextResolver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 
-import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
+//import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
 
 /**
  * common REST utils.
@@ -106,49 +95,4 @@ public final class RestUtils {
     return error;
   }
 
-  /**
-   * Helper to interact with Jersey client.
-   */
-  public static class ClientWithHelpers {
-
-    private final Client client;
-
-    ClientWithHelpers(boolean isAws) {
-      ClientBuilder builder = ClientBuilder.newBuilder()
-                                           .register(ClientTracingFeature.class)
-                                           .register(ObjectMapperContextResolver.class);
-      if (isAws) {
-        builder.register(AwsAuth.class);
-      }
-      this.client = builder.build();
-    }
-
-    public void close() {
-      client.close();
-    }
-
-    public Invocation.Builder get(String endpoint, String path, String mediaType,
-                                  String authHeader) {
-      Map<String, String> params = ImmutableMap.of();
-      return get(endpoint, path, mediaType, authHeader, params);
-    }
-
-    /**
-     * build http request with given auth header, media type and query params.
-     */
-    public Invocation.Builder get(String endpoint, String path, String mediaType, String authHeader,
-                                  Map<String, String> queryParams) {
-      WebTarget webTarget = client.target(endpoint);
-      for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-        webTarget = webTarget.queryParam(entry.getKey(), entry.getValue());
-      }
-      Invocation.Builder builder = webTarget.path(path)
-                                            .request(mediaType)
-                                            .accept(MediaType.APPLICATION_JSON_TYPE);
-      if (authHeader != null) {
-        builder.header(HttpHeaders.AUTHORIZATION, authHeader);
-      }
-      return builder;
-    }
-  }
 }

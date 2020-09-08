@@ -26,9 +26,7 @@ import com.dremio.nessie.backend.EntityBackend;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.User;
 import com.dremio.nessie.model.VersionedWrapper;
-import com.dremio.nessie.server.ServerConfiguration;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -38,11 +36,6 @@ public class InMemory implements Backend {
 
   private final RefInMemory ref = new RefInMemory();
   private final ObjectInMemory object = new ObjectInMemory();
-
-  @Override
-  public EntityBackend<User> userBackend() {
-    throw new UnsupportedOperationException("cant use in memory backend with database");
-  }
 
   @Override
   public EntityBackend<BranchControllerObject> gitBackend() {
@@ -134,7 +127,7 @@ public class InMemory implements Backend {
   public static class BackendFactory implements Factory {
 
     @Override
-    public Backend create(ServerConfiguration config) {
+    public Backend create(String x, String y) {
       return new InMemory();
     }
   }
