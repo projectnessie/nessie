@@ -13,19 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.tests;
+package com.dremio.nessie.versioned;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.dremio.nessie.versioned.Serializer;
+import javax.annotation.Nonnull;
+
 import com.google.protobuf.ByteString;
 
+/**
+ * Serializer implementation for {@code String class}.
+ */
 public final class StringSerializer implements Serializer<String> {
   private static final Serializer<String> INSTANCE = new StringSerializer();
 
   private StringSerializer() {
   }
 
+  /**
+   * Get a instance of a string serializer.
+   * @return the instance
+   */
+  @Nonnull
   public static Serializer<String> getInstance() {
     return INSTANCE;
   }
