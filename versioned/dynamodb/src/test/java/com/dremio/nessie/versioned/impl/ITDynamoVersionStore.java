@@ -89,6 +89,14 @@ class ITDynamoVersionStore {
   }
 
   @Test
+  void ensureValidEmptyBranchState() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+    BranchName branch = BranchName.of("empty_branch");
+    impl.create(branch, Optional.empty());
+    Hash hash = impl.toHash(branch);
+    assertEquals(null, impl.getValue(hash, Key.of("arbitrary")));
+  }
+
+  @Test
   void createAndDeleteTag() throws Exception {
     TagName tag = TagName.of("foo");
 
