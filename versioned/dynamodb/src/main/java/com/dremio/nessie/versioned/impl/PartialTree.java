@@ -46,7 +46,9 @@ import com.google.common.collect.Streams;
  */
 class PartialTree<V> {
 
-  public static enum LoadType { NO_VALUES, SELECT_VALUES, ALL_KEYS_NO_VALUES}
+  public static enum LoadType {
+    NO_VALUES, SELECT_VALUES, ALL_KEYS_NO_VALUES;
+  }
 
   private final Serializer<V> serializer;
   private final InternalRefId refId;
