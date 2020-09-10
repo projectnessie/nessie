@@ -17,7 +17,10 @@
 package com.dremio.nessie.auth;
 
 /**
- * interface to define what a backend auth can/should be able to do.
+ * interface to define a LoginService.
+ * <p>
+ *   The service which generates a JWT from username and password when the /login rest endpoint is enabled.
+ * </p>
  */
 public interface LoginService {
 
