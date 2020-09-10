@@ -43,6 +43,7 @@ import io.restassured.response.Response;
 public class RestGitTest {
   private static final String token;
   private static final Header header;
+
   static {
     token = "Basic " + Base64.encode("admin_user:test123".getBytes());
     header = new Header("Authorization", token);
@@ -138,7 +139,8 @@ public class RestGitTest {
                                                                                        .build()))
            .post("/api/v1/objects/tagtest").then().statusCode(201);
 
-    given().when().header(header()).get("/api/v1/objects/tagtest").then().statusCode(200).body("reference.id", equalTo(etag.replace("\"","")));
+    given().when().header(header()).get("/api/v1/objects/tagtest").then().statusCode(200)
+           .body("reference.id", equalTo(etag.replace("\"","")));
 
     given().when().header(header()).header("If-Match", etag).body(updates).contentType(ContentType.JSON)
            .put("/api/v1/objects/tagtest/tables").then().statusCode(404);
@@ -187,17 +189,19 @@ public class RestGitTest {
                                  .name("test2")
                                  .build());
     given()
-      .when().header(header()).header("If-Match", etag).body(test).contentType(ContentType.JSON).post("/api/v1/objects/test2")
-      .then().statusCode(201);
+      .when().header(header()).header("If-Match", etag).body(test)
+      .contentType(ContentType.JSON).post("/api/v1/objects/test2").then().statusCode(201);
 
     for (int i = 0; i < 10; i++) {
       Table bt = updates[i];
-      Response res = given().when().header(header()).get("/api/v1/objects/test2/tables/" + bt.getId()).then().statusCode(200).extract().response();
+      Response res = given().when().header(header()).get("/api/v1/objects/test2/tables/" + bt.getId())
+                            .then().statusCode(200).extract().response();
       Assertions.assertEquals(bt, res.body().as(Table.class));
     }
 
     etag = given().when().header(header()).get("/api/v1/objects/test2").getHeader("ETag");
-    given().when().header(header()).header("If-Match", etag).delete("/api/v1/objects/test2/tables/" + updates[0].getId()).then().statusCode(200);
+    given().when().header(header()).header("If-Match", etag)
+           .delete("/api/v1/objects/test2/tables/" + updates[0].getId()).then().statusCode(200);
 
     given().when().header(header()).get("/api/v1/objects/test2/" + updates[0].getId()).then().statusCode(404);
 

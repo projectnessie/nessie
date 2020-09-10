@@ -13,15 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.backend;
+package com.dremio.nessie.model;
 
-import org.immutables.value.Value;
+public interface ServerConfig {
 
-@Value.Immutable
-public abstract class LogMessage {
-
-  public abstract String message();
-
-  public abstract String commitId();
+  String getDefaultBranch();
 
 }

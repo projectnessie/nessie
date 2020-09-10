@@ -39,6 +39,8 @@ import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.ReferenceWithType;
 import com.dremio.nessie.model.Table;
 
+import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
+
 public class NessieService implements Closeable {
 
   public enum AuthType {
@@ -61,7 +63,9 @@ public class NessieService implements Closeable {
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
    */
   public NessieService(AuthType authType, String path, String username, String password) {
-    client = new ResteasyClientBuilderImpl().register(ObjectMapperContextResolver.class).build();
+    client = new ResteasyClientBuilderImpl().register(ObjectMapperContextResolver.class)
+                                            .register(ClientTracingFeature.class)
+                                            .build();
     ResteasyWebTarget target = client.target(path);
     nessie = target.proxy(NessieSimpleClient.class);
     switch (authType) {
