@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.client.auth;
 
+/**
+ * Mechanism to send an empty Auth header. This is used when authorization is not enabled. Typically only during tests.
+ */
 public class NoAuth implements Auth {
 
   @Override

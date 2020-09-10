@@ -32,8 +32,6 @@ import com.dremio.nessie.json.ObjectMapperBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-//import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
-
 /**
  * common REST utils.
  */
