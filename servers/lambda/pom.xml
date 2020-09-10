@@ -105,13 +105,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-quarkus</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-      <classifier>tests</classifier>
-    </dependency>
-    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-amazon-lambda</artifactId>
     </dependency>
