@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.server.providers;
 
+import org.eclipse.jgit.internal.JGitText;
+
 import com.dremio.nessie.error.NessieError;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Hash;
@@ -35,7 +37,8 @@ public class NessieModelProcessor {
       Tag.class,
       Hash.class,
       NessieConfiguration.class,
-      NessieError.class
+      NessieError.class,
+      JGitText.class
     };
     return new ReflectiveClassBuildItem(true, true, true, allClasss);
   }

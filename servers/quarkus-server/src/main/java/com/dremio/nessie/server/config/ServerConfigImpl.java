@@ -15,21 +15,21 @@
  */
 package com.dremio.nessie.server.config;
 
-import com.dremio.nessie.services.ServerConfig;
+import com.dremio.nessie.model.ServerConfig;
 
 import io.quarkus.arc.config.ConfigProperties;
 
 @ConfigProperties(prefix = "nessie.server")
 public class ServerConfigImpl implements ServerConfig {
 
-  private String defaultTag = "main";
+  private String defaultBranch = "main";
 
   @Override
-  public String getDefaultTag() {
-    return defaultTag;
+  public String getDefaultBranch() {
+    return defaultBranch;
   }
 
-  public void setDefaultTag(String defaultTag) {
-    this.defaultTag = defaultTag;
+  public void setDefaultBranch(String defaultTag) {
+    this.defaultBranch = defaultTag;
   }
 }

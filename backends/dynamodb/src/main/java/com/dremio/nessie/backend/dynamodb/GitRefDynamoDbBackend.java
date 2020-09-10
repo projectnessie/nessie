@@ -27,6 +27,7 @@ import com.dremio.nessie.model.VersionedWrapper;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+@Deprecated
 public class GitRefDynamoDbBackend extends
                                    AbstractEntityDynamoDbBackend<BranchControllerReference> {
 
