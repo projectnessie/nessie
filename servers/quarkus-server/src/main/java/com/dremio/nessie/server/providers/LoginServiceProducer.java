@@ -28,6 +28,9 @@ public class LoginServiceProducer {
   @ConfigProperty(name = "nessie.service.login.type", defaultValue = "BASIC")
   String type;
 
+  /**
+   * produces a service to generate JWTs.
+   */
   @Produces
   public LoginService loginService() {
     if (type.equals("BASIC")) {
@@ -37,6 +40,5 @@ public class LoginServiceProducer {
     } else {
       throw new UnsupportedOperationException(String.format("Unknown login service type %s", type));
     }
-
   }
 }

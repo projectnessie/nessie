@@ -324,7 +324,7 @@ public class TableBranchOperations {
                               @Context HttpHeaders headers) throws ReferenceConflictException, ReferenceNotFoundException {
     String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
     CommitMeta meta = meta(securityContext.getUserPrincipal(), reason + ";" + table, 1, ref, Action.COMMIT);
-    backend.commit(ref, hash, meta, Lists.newArrayList(Delete.of(NessieEngine.keyFromUrlString(table))));
+    backend.commit(ref, hash, meta, Lists.newArrayList(Delete.of(VersionStoreAdapter.keyFromUrlString(table))));
     return Response.ok().build();
   }
 
@@ -499,7 +499,7 @@ public class TableBranchOperations {
                             @DefaultValue("all") @QueryParam("namespace") String namespace) throws ReferenceNotFoundException {
     //todo filter by namespace once namespace is better defined
     Stream<Key> tables = backend.getAllTables(refName);
-    String[] tableArray = tables.map(NessieEngine::urlStringFromKey)
+    String[] tableArray = tables.map(VersionStoreAdapter::urlStringFromKey)
                                 .toArray(String[]::new);
     return Response.ok(tableArray).build();
   }
@@ -530,7 +530,7 @@ public class TableBranchOperations {
     String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
     Principal principal = securityContext.getUserPrincipal();
     List<com.dremio.nessie.versioned.Operation<Table>> ops = Arrays.stream(update).map(t -> {
-      Key key = NessieEngine.keyFromUrlString(t.getId());
+      Key key = VersionStoreAdapter.keyFromUrlString(t.getId());
       return t.isDeleted() ? Delete.<Table>of(key) : Put.of(key, t);
     }).collect(Collectors.toList());
     backend.commit(ref,

@@ -188,7 +188,7 @@ public class NessieService implements Closeable {
                            String updateBranchStr) {
     //Table[] branchTable = new Table[0];
     Branch updateBranch = getBranch(updateBranchStr);
-    Response response = nessie.updateBatch(branch.getId(), updateBranch.getId(), branch.getId(), checkKey());
+    Response response = nessie.updateBatch(branch.getName(), updateBranch.getId(), branch.getId(), checkKey());
     RestUtils.checkResponse(response);
   }
 
