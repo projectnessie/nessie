@@ -110,7 +110,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
   static final String TREE = "tree";
   static final String COMMITS = "commits";
 
-  private static final List<Commit> SINGLE_EMPTY_COMMIT = ImmutableList.of(new Commit(L1.EMPTY.getId(), Id.EMPTY, L1.EMPTY.getId()));
+  private static final List<Commit> SINGLE_EMPTY_COMMIT = ImmutableList.of(new Commit(L1.EMPTY_ID, Id.EMPTY, Id.EMPTY));
 
   private static final Logger LOGGER = LoggerFactory.getLogger(InternalBranch.class);
 
