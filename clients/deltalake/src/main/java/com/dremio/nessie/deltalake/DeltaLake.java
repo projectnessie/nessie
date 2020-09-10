@@ -36,8 +36,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.SparkConf;
 
-import com.dremio.nessie.client.NessieService;
-import com.dremio.nessie.client.NessieService.AuthType;
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.model.ImmutableTable;
 import com.dremio.nessie.model.Table;
 
@@ -51,7 +51,7 @@ public class DeltaLake extends LogStoreWrapper {
   private final SparkConf sparkConf;
   private final Configuration configuration;
   private final String baseDirectory;
-  private final NessieService client;
+  private final NessieClient client;
 
   /**
    * Construct the Nessie Delta Lake Log store.
@@ -66,7 +66,7 @@ public class DeltaLake extends LogStoreWrapper {
     String password = config.get("nessie.password");
     String authTypeStr = config.get("nessie.auth.type");
     AuthType authType = AuthType.valueOf(authTypeStr);
-    this.client = new NessieService(authType, path, username, password);
+    this.client = new NessieClient(authType, path, username, password);
   }
 
   /**

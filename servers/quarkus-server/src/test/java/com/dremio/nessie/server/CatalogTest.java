@@ -34,8 +34,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.client.NessieService;
-import com.dremio.nessie.client.NessieService.AuthType;
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -47,7 +47,7 @@ public class CatalogTest {
 
   private static File alleyLocalDir;
   private NessieCatalog catalog;
-  private NessieService client;
+  private NessieClient client;
 
   @BeforeAll
   public static void create() throws Exception {
@@ -72,7 +72,7 @@ public class CatalogTest {
     hadoopConfig.set("nessie.password", password);
     hadoopConfig.set("nessie.view-branch", "master");
     hadoopConfig.set("nessie.auth.type", "NONE");
-    this.client = new NessieService(AuthType.NONE, path, username, password);
+    this.client = new NessieClient(AuthType.NONE, path, username, password);
     catalog = new NessieCatalog(hadoopConfig);
   }
 

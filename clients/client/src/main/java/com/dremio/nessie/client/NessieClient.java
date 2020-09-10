@@ -33,7 +33,6 @@ import com.dremio.nessie.client.auth.NoAuth;
 import com.dremio.nessie.client.rest.NessieNotFoundException;
 import com.dremio.nessie.json.ObjectMapperContextResolver;
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.ReferenceWithType;
@@ -41,7 +40,7 @@ import com.dremio.nessie.model.Table;
 
 import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
 
-public class NessieService implements Closeable {
+public class NessieClient implements Closeable {
 
   public enum AuthType {
     AWS,
@@ -62,7 +61,7 @@ public class NessieService implements Closeable {
    *
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
    */
-  public NessieService(AuthType authType, String path, String username, String password) {
+  public NessieClient(AuthType authType, String path, String username, String password) {
     client = new ResteasyClientBuilderImpl().register(ObjectMapperContextResolver.class)
                                             .register(ClientTracingFeature.class)
                                             .build();
@@ -204,16 +203,12 @@ public class NessieService implements Closeable {
     RestUtils.checkResponse(response);
   }
 
-  public static NessieService basic(String path, String username, String password) {
-    return new NessieService(AuthType.BASIC, path, username, password);
+  public static NessieClient basic(String path, String username, String password) {
+    return new NessieClient(AuthType.BASIC, path, username, password);
   }
 
-  public static NessieService aws(String path) {
-    return new NessieService(AuthType.AWS, path, null, null);
+  public static NessieClient aws(String path) {
+    return new NessieClient(AuthType.AWS, path, null, null);
   }
 
-  public static void main(String[] args) {
-    basic("http://localhost:19120/api/v1", "admin_user", "test123").createBranch(ImmutableBranch.builder().name("main").build());
-    System.out.println(basic("http://localhost:19120/api/v1", "admin_user", "test123").getBranches());
-  }
 }

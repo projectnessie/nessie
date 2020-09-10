@@ -38,8 +38,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.client.NessieService;
-import com.dremio.nessie.client.NessieService.AuthType;
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.iceberg.NessieTableOperations;
 import com.dremio.nessie.model.ImmutableBranch;
@@ -54,7 +54,7 @@ public class CatalogBranchTest {
   private static final Logger LOG = LoggerFactory.getLogger(CatalogBranchTest.class);
   private static File alleyLocalDir;
   private NessieCatalog catalog;
-  private NessieService client;
+  private NessieClient client;
   private Configuration hadoopConfig;
 
   @BeforeAll
@@ -80,7 +80,7 @@ public class CatalogBranchTest {
     hadoopConfig.set("nessie.password", password);
     hadoopConfig.set("nessie.view-branch", "main");
     hadoopConfig.set("nessie.auth.type", "NONE");
-    this.client = new NessieService(AuthType.NONE, path, username, password);
+    this.client = new NessieClient(AuthType.NONE, path, username, password);
     catalog = new NessieCatalog(hadoopConfig);
     try {
       client.createBranch(ImmutableBranch.builder().name("main").build());
