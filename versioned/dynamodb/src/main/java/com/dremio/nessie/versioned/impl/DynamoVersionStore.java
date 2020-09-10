@@ -56,6 +56,7 @@ import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
+import com.dremio.nessie.versioned.impl.PartialTree.LoadType;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -186,7 +187,8 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           ? PartialTree.of(serializer, InternalRefId.ofHash(expectedHash.get()), keys) : current;
 
       // load both trees (excluding values)
-      store.load(current.getLoadChain(this::ensureValidL1, false).combine(expected.getLoadChain(this::ensureValidL1, false)));
+      store.load(current.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
+          .combine(expected.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
 
       List<OperationHolder> holders = ops.stream().map(o -> new OperationHolder(current, expected, o)).collect(Collectors.toList());
       List<InconsistentValue> mismatches = holders.stream()
@@ -204,7 +206,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       // save all but l1 and branch.
       store.save(
           Streams.concat(
-              current.getMostSaveOps().stream(),
+              current.getMostSaveOps(),
               Collections.singleton(new SaveOp<WrappedValueBean>(ValueType.COMMIT_METADATA, metadata)).stream()
           ).collect(Collectors.toList()));
 
@@ -424,23 +426,28 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   }
 
-
   @Override
   public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
-    throw new IllegalStateException("Not yet implemented.");
+    // naive implementation.
+    PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.emptyList());
+    store.load(tree.getLoadChain(this::ensureValidL1, LoadType.ALL_KEYS_NO_VALUES));
+    return tree.getRetrievedKeys().map(InternalKey::toKey);
   }
 
   @Override
   public DATA getValue(Ref ref, Key key) {
     InternalKey ikey = new InternalKey(key);
     PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.singletonList(ikey));
-    store.load(tree.getLoadChain(this::ensureValidL1, true));
+    store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
     return tree.getValueForKey(ikey).orElse(null);
   }
 
   @Override
   public List<Optional<DATA>> getValue(Ref ref, List<Key> key) throws ReferenceNotFoundException {
-    throw new IllegalStateException("Not yet implemented.");
+    List<InternalKey> keys = key.stream().map(InternalKey::new).collect(Collectors.toList());
+    PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), keys);
+    store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
+    return keys.stream().map(tree::getValueForKey).collect(Collectors.toList());
   }
 
   @Override
