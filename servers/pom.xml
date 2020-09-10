@@ -26,15 +26,14 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>nessie-servers</artifactId>
-  <name>Nessie - Servers</name>
+  <artifactId>nessie-server-parent</artifactId>
+  <name>Nessie - Servers - Parent</name>
   <packaging>pom</packaging>
 
-
   <modules>
-<!--    <module>server</module>-->
-<!--    <module>serverless</module>-->
     <module>services</module>
     <module>quarkus-server</module>
+    <module>lambda</module>
   </modules>
+
 </project>

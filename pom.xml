@@ -435,6 +435,7 @@ limitations under the License.
             <exclude>**/*.k</exclude>
             <exclude>**/*.q</exclude>
             <exclude>**/*.dat</exclude>
+            <exclude>**/*.pem</exclude>
 
             <!-- by file name -->
             <exclude>**/Jenkinsfile</exclude>

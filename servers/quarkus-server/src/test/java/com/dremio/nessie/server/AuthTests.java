@@ -41,29 +41,20 @@ public class AuthTests {
   public void getCatalog(String branch) {
     String path = "http://localhost:19121/api/v1";
     this.client = new NessieService(AuthType.NONE, path, null, null);
-    client.createBranch(ImmutableBranch.builder().name("master").build());
+    if (branch != null) {
+      client.createBranch(ImmutableBranch.builder().name(branch).build());
+    }
   }
 
   public void tryEndpointPass(Runnable runnable) {
-    try {
-      runnable.run();
-    } catch (Throwable t) {
-      Assertions.fail();
-    }
+    Assertions.assertDoesNotThrow(runnable::run);
   }
 
   public void tryEndpointFail(Runnable runnable) {
-    try {
-      runnable.run();
-      Assertions.fail();
-    } catch (NessieForbiddenException e) {
-      return;
-    }
-    Assertions.fail();
+    Assertions.assertThrows(NessieForbiddenException.class, runnable::run);
   }
 
   @Test
-  @TestSecurity(user = "testUser", roles = {"admin", "user"})
   public void testLogin() {
     Assertions.assertThrows(NessieNotAuthorizedException.class, () -> getCatalog("x"));
   }
@@ -86,25 +77,26 @@ public class AuthTests {
     tryEndpointPass(() -> client.commit(branch, ImmutableTable.copyOf(table).withIsDeleted(true)));
     Table newTable = client.getTable("testx", table.getId(), null);
     Assertions.assertNull(newTable);
+    tryEndpointPass(() -> client.commit(branch, createTable("x", "x")));
   }
 
   @Test
-  @TestSecurity(user = "testUser", roles = {"admin", "user"})
+  @TestSecurity(user = "testUser", roles = {"user"})
   public void testUser() {
-    Branch branch = client.getBranch("master");
-    tryEndpointPass(() -> client.commit(branch, createTable("x", "x")));
+    getCatalog(null);
+    Branch branch = client.getBranch("testx");
     Assertions.assertThrows(NessieForbiddenException.class, () -> getCatalog("normalx"));
-    final Table table = client.getTable("master", "x", null);
-    Iterable<String> tables = client.getAllTables("master", null);
+    final Table table = client.getTable("testx", "x", null);
+    Iterable<String> tables = client.getAllTables("testx", null);
     Assertions.assertEquals(1, Lists.newArrayList(tables).size());
     tryEndpointFail(() -> client.commit(branch, createTable("y", "x")));
     tryEndpointFail(() -> client.commit(branch, table));
     tryEndpointFail(() -> client.createBranch(branch));
     tryEndpointFail(() -> client.deleteBranch(branch));
-    Table newTable = client.getTable("master", table.getId(), null);
+    Table newTable = client.getTable("testx", table.getId(), null);
     Assertions.assertNotNull(newTable);
     Assertions.assertEquals(table, newTable);
-    tryEndpointPass(() -> client.commit(branch, ImmutableTable.copyOf(table).withIsDeleted(true)));
+    tryEndpointFail(() -> client.commit(branch, ImmutableTable.copyOf(table).withIsDeleted(true)));
   }
 
   private Table createTable(String name, String location) {
