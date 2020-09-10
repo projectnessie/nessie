@@ -26,8 +26,8 @@ import org.apache.jmeter.samplers.SampleResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.client.NessieService;
-import com.dremio.nessie.client.NessieService.AuthType;
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.rest.NessieExtendedClientErrorException;
 import com.dremio.nessie.client.rest.NessieInternalServerException;
 import com.dremio.nessie.client.rest.NessiePreconditionFailedException;
@@ -60,7 +60,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     MERGE
   }
 
-  private NessieService client;
+  private NessieClient client;
   private String path;
   private String branch;
   private String baseBranch;
@@ -69,9 +69,9 @@ public class NessieSampler extends AbstractJavaSamplerClient {
   /**
    * Create a threadlocal nessie client. Multiple threads are run in the same JVM and they each get a client.
    */
-  private synchronized NessieService nessieClient() {
+  private synchronized NessieClient nessieClient() {
     if (client == null) {
-      client = new NessieService(AuthType.BASIC, path, "admin_user", "test123");
+      client = new NessieClient(AuthType.BASIC, path, "admin_user", "test123");
       try {
         client.createBranch(ImmutableBranch.builder().name("master").build());
       } catch (Exception t) {
