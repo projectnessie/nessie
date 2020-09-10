@@ -37,6 +37,7 @@
     <module>ui</module>
     <module>services</module>
     <module>versioned</module>
+    <module>hms</module>
     <module>perftest</module>
   </modules>
 

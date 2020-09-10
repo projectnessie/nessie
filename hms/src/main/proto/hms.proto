@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package nessie.hms;
+option java_package = "com.dremio.nessie.hms";
+option java_outer_classname = "HMSProto";
+option optimize_for = SPEED;
+option java_generate_equals_and_hash = true;
+
+message Item {
+  oneof hive_obj {
+    bytes catalog = 1;
+    bytes database = 2;
+    TableAndPartitions table = 3;
+  }
+}
+
+message TableAndPartitions {
+  bytes table = 1;
+  repeated bytes partitions = 2;
+}
+
+
+message CommitMetadata {
+  string commit_message = 1;
+  int64 time = 2;
+}
