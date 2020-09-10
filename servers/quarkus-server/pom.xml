@@ -21,11 +21,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.dremio.nessie</groupId>
-    <artifactId>nessie-servers</artifactId>
+    <artifactId>nessie-server-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>quarkus-server</artifactId>
-  <name>Nessie - Server with Quarkus</name>
+  <artifactId>nessie-quarkus</artifactId>
+  <name>Nessie - Quarkus</name>
 
   <dependencies>
     <dependency>
@@ -62,6 +62,10 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-core-deployment</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-elytron-security-properties-file</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -159,4 +163,42 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>native</id>
+      <properties>
+        <quarkus.package.type>native</quarkus.package.type>
+        <quarkus.container-image.build>true</quarkus.container-image.build>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+                <configuration>
+                  <systemPropertyVariables>
+                    <mp.jwt.verify.publickey.location>${project.build.directory}/test-classes/META-INF/resources/publicKey.pem</mp.jwt.verify.publickey.location>
+                    <quarkus.profile>test</quarkus.profile>
+                    <quarkus.log.level>debug</quarkus.log.level>
+                    <native.image.path>
+                      ${project.build.directory}/${project.build.finalName}-runner
+                    </native.image.path>
+                    <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                    <maven.home>${maven.home}</maven.home>
+                  </systemPropertyVariables>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
