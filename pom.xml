@@ -52,7 +52,6 @@
   <properties>
     <!-- Build properties -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.release>8</maven.compiler.release>
     <argLine></argLine>
 
     <!-- 3rd party repositories -->
@@ -471,6 +470,9 @@
                 <version>2.8.2</version>
               </path>
             </annotationProcessorPaths>
+            <compilerArgs>
+              <arg>-parameters</arg>
+            </compilerArgs>
           </configuration>
         </plugin>
         <plugin>
@@ -707,6 +709,7 @@ limitations under the License.
           <excludes>
             <!-- default excludes (minus some items) from https://github.com/mycila/license-maven-plugin/blob/61f65ac65bfc38246a15fb84083796c5e3afb053/license-maven-plugin/src/main/java/com/mycila/maven/plugin/license/Default.java -->
             <exclude>**/*~</exclude>
+            <exclude>**/000000_0</exclude>
             <exclude>**/#*#</exclude>
             <exclude>**/.#*</exclude>
             <exclude>**/%*%</exclude>
@@ -943,6 +946,18 @@ limitations under the License.
   </build>
 
   <profiles>
+    <profile>
+      <id>release8-when11</id>
+      <activation>
+        <property>
+          <name>!JDK8</name>
+        </property>
+      </activation>
+      <properties>
+        <maven.compiler.release>8</maven.compiler.release>
+      </properties>      
+      
+    </profile>
     <profile>
       <id>code-coverage</id>
       <build>

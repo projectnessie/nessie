@@ -11,9 +11,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 11
-      uses: actions/setup-java@v1
+      uses: AdoptOpenJDK/install-jdk@v1
       with:
-        java-version: 11
+        version: '11'
+    - name: Set up JDK 8
+      uses: AdoptOpenJDK/install-jdk@v1
+      with:
+        version: '8'
+        targets: 'JDK8_HOME'
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
@@ -31,7 +36,15 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - name: Build with Maven
-      run: mvn -B install --file pom.xml -Pcode-coverage
+      run: mvn -B install --file pom.xml -Pcode-coverage -DskipTests
+    - name: Run Hive2 tests with JDK8
+      run: mvn -B integration-test --file pom.xml -DJDK8 -pl ':nessie-hms-hive2'
+      env:
+        JAVA_HOME: ${{ env.JDK8_HOME }}
+    - name: Run Hive3 tests with JDK8
+      run: mvn -B integration-test --file pom.xml -DJDK8 -pl ':nessie-hms-hive3'
+      env:
+        JAVA_HOME: ${{ env.JDK8_HOME }}
     - name: Capture test results
       uses: actions/upload-artifact@v2
       with:
