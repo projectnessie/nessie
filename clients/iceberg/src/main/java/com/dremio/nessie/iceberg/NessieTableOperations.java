@@ -34,7 +34,7 @@ import org.apache.iceberg.io.FileIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.client.NessieService;
+import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.DataFile;
 import com.dremio.nessie.model.ImmutableDataFile;
@@ -52,7 +52,7 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
   private static final Logger logger = LoggerFactory.getLogger(NessieTableOperations.class);
 
   private final Configuration conf;
-  private final NessieService client;
+  private final NessieClient client;
   private final TableIdentifier tableIdentifier;
   private AtomicReference<Branch> branch;
   private Table table;
@@ -64,7 +64,7 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
   public NessieTableOperations(Configuration conf,
                                TableIdentifier table,
                                AtomicReference<Branch> branch,
-                               NessieService client) {
+                               NessieClient client) {
     this.conf = conf;
     this.tableIdentifier = table;
     this.branch = branch;

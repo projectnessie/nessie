@@ -19,8 +19,8 @@ package com.dremio.nessie.server;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.client.NessieService;
-import com.dremio.nessie.client.NessieService.AuthType;
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.rest.NessieForbiddenException;
 import com.dremio.nessie.client.rest.NessieNotAuthorizedException;
 import com.dremio.nessie.model.Branch;
@@ -36,11 +36,11 @@ import io.quarkus.test.security.TestSecurity;
 @QuarkusTest
 public class AuthTests {
 
-  private NessieService client;
+  private NessieClient client;
 
   public void getCatalog(String branch) {
     String path = "http://localhost:19121/api/v1";
-    this.client = new NessieService(AuthType.NONE, path, null, null);
+    this.client = new NessieClient(AuthType.NONE, path, null, null);
     if (branch != null) {
       client.createBranch(ImmutableBranch.builder().name(branch).build());
     }

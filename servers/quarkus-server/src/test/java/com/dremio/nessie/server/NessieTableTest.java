@@ -54,8 +54,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.client.NessieService;
-import com.dremio.nessie.client.NessieService.AuthType;
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ImmutableBranch;
@@ -79,7 +79,7 @@ public class NessieTableTest {
       optional(2, "data", Types.LongType.get())).fields());
 
   private NessieCatalog catalog;
-  private NessieService client;
+  private NessieClient client;
   private Path tableLocation;
   private org.apache.hadoop.conf.Configuration hadoopConfig;
 
@@ -108,7 +108,7 @@ public class NessieTableTest {
     hadoopConfig.set("nessie.view-branch", "main");
     hadoopConfig.set("nessie.auth.type", "NONE");
     catalog = new NessieCatalog(hadoopConfig);
-    client = new NessieService(AuthType.NONE, path, username, password);
+    client = new NessieClient(AuthType.NONE, path, username, password);
     try {
       client.createBranch(ImmutableBranch.builder().name("main").build());
     } catch (Exception e) {
