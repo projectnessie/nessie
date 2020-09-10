@@ -48,10 +48,9 @@ cd nessie
 
 ## Distribution
 To run:
-1. configure port, backend, security etc in `distribution/src/main/resources/config.yaml`
-2. execute `./mvnw exec:exec -pl :nessie-distribution`
+1. configuration in `servers/quarkus-server/src/main/resources/application.properties`
+2. execute `./mvnw quarkus:dev`
 3. go to `http://localhost:19120`
-4. Default user (when using basic backend is admin_user:test123)
 
 ## UI 
 To run the ui (from `ui` directory):
@@ -65,27 +64,26 @@ To deploy the ui (from `ui` directory):
 2. `npm build` will minify and collect the package for deployment in `build`
 3. the `build` directory can be deployed to any static hosting environment or run locally as `serve -s build`
 
+## Docker image
+
+When running `mvn clean install` a docker image will be created at `projectnessie/nessie` which can be started 
+with `docker run -p 19120:19120 projectnessie/nessie` and the relevant environment variables. Environment variables
+are specified as per https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#default-configsources  
+
 ## Server
 The server can be run from any jax-rs app by adding the following maven dependency:
 
 ```xml
 <dependency>
   <groupId>com.dremio.nessie</groupId>
-  <artifactId>nessie-server</artifactId>
+  <artifactId>nessie-services</artifactId>
   <version>1.0-SNAPSHOT</version>
 </dependency>
 ```
-And adding the following to your Server:
+The classes in `servers/services/src/main/java/com/dremio/nessie/services/rest` must be registered to 
+run in your app with VersionStore etc being injected at runtime.
 
-```java
-RestServerV1 restServer = new RestServerV1();
-final ServletHolder restHolder = new ServletHolder(new ServletContainer(restServer));
-restHolder.setInitOrder(2);
-servletContextHandler.addServlet(restHolder, "/api/v1/*");
-```
-
-You can also deploy to AWS lambda function by deploying the `nessie-serverless-1.0-SNAPSHOT.jar` as a lambda 
-function
+You can also deploy to AWS lambda function by following the steps in `servers/lambda/README.md`
 
 ## Clients
 
@@ -94,24 +92,3 @@ The client has to be available to Iceberg or Delta Lake in order to be used.
  * todo python example
  * todo java example
  
-## Database backends
-
-Any database can be used as the backend. Currently, DynamoDb is implemented and there is a simple in memory
-database for testing. To implement a new backend simply implement `com.dremio.nessie.backend.Backend` and ensure the 
-resulting class can be found on the classpath. Considerations for implementing a backend:
-
-* must be able to support transactions or optimistic updates. 
-* shouldn't be eventually consistent
-* should be scalable
-
-The Nessie service expects that if a create or update operation completes successfully then it should be atomic 
-and immediately available to all users.
-
-## Authentication service
-
-Authentication and authorization is also pluggable. Currently there is a test only auth service for testing purposes only
-there is also a database backed service using json web tokens (JWT). The password is stored in the db as a bcrypt hashed 
-and salted string. A JWT token is generated and is valid for 15 minutes by default. 
-
-To create a new backend implement `com.dremio.nessie.auth.LoginService` and add it to the classpath.
-
