@@ -21,20 +21,18 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie</artifactId>
+    <artifactId>nessie-clients</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-clients</artifactId>
+  <artifactId>nessie-hms-parent</artifactId>
   <packaging>pom</packaging>
 
-  <name>Nessie - Clients</name>
+  <name>Nessie - Hive Metastore Bridge Parent</name>
 
   <modules>
-    <module>client</module>
-    <module>hmsbridge</module>
-    <module>deltalake</module>
-    <module>iceberg</module>
-    <module>spark</module>
+    <module>core</module>
+    <module>hive2</module>
+    <module>hive3</module>
   </modules>
 </project>
