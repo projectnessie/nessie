@@ -51,7 +51,7 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
-    <awssdk.version>2.14.13</awssdk.version>
+    <awssdk.version>2.14.14</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake.version>0.6.1</deltalake.version>
     <dropwizard-metrics.version>4.1.12.1</dropwizard-metrics.version>
