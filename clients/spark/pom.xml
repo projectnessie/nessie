@@ -34,6 +34,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
+        <!-- this was not fully tested after switching to quarkus. shading may need adjustment -->
         <configuration>
           <createDependencyReducedPom>false</createDependencyReducedPom>
           <filters>
@@ -156,11 +157,6 @@
     <dependency>
       <groupId>org.apache.iceberg</groupId>
       <artifactId>iceberg-spark-runtime</artifactId>
-      <version>${iceberg.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.inject</groupId>
-      <artifactId>jersey-hk2</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>

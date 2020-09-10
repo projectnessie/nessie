@@ -53,6 +53,7 @@ import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 import software.amazon.awssdk.services.dynamodb.paginators.ScanIterable;
 
+@Deprecated
 abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
 
   private final DynamoDbClient client;

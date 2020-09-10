@@ -39,7 +39,8 @@ public class BackendProducer {
   String region;
   @ConfigProperty(name = "quarkus.dynamodb.endpoint-override")
   Optional<String> endpoint;
-
+  @ConfigProperty(name = "nessie.version.store.jgit.type", defaultValue = "INMEMORY")
+  String jgitType;
 
   /**
    * produce a backend based on config.
@@ -47,7 +48,9 @@ public class BackendProducer {
   @Singleton
   @Produces
   public Backend producer() {
-    System.out.println("OH YEAH " + type);
+    if (!jgitType.equals("DYNAMO")) {
+      return null;
+    }
     if (type.equals("INMEMORY")) {
       return new InMemory.BackendFactory().create(null, null);
     }

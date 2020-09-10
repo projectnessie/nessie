@@ -34,6 +34,31 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-versioned-jgit</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-versioned-dynamodb</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-backends-simple</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-backends-dynamodb</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-utils</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-resteasy</artifactId>
     </dependency>
@@ -77,6 +102,10 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-oidc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-openapi</artifactId>
     </dependency>
     <dependency>
@@ -92,19 +121,8 @@
       <artifactId>quarkus-amazon-dynamodb</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-versioned-dynamodb</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-backends-simple</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-backends-dynamodb</artifactId>
-      <version>${project.version}</version>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>apache-client</artifactId>
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
@@ -161,6 +179,39 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.1.2</version>
+        <executions>
+          <execution>
+            <id>unpack</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>com.dremio.nessie</groupId>
+                  <artifactId>nessie-ui</artifactId>
+                  <version>${project.version}</version>
+                  <type>jar</type>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}/classes/META-INF/resources</outputDirectory>
+                  <includes>**/*</includes>
+                  <excludes>META-INF/*</excludes>
+                </artifactItem>
+              </artifactItems>
+              <includes>**/*.java</includes>
+              <excludes>**/*.properties</excludes>
+              <outputDirectory>${project.build.directory}/wars</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>true</overWriteSnapshots>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -183,13 +234,14 @@
                   <goal>verify</goal>
                 </goals>
                 <configuration>
+                  <environmentVariables>
+                    <QUARKUS_LOG_LEVEL>DEBUG</QUARKUS_LOG_LEVEL>
+                    <MP_JWT_VERIFY_PUBLICKEY_LOCATION>${project.build.directory}/test-classes/META-INF/resources/publicKey.pem</MP_JWT_VERIFY_PUBLICKEY_LOCATION>
+                    <QUARKUS_SMALLRYE_JWT_ENABLED>true</QUARKUS_SMALLRYE_JWT_ENABLED>
+                    <NESSIE_VERSION_STORE_JGIT_TYPE>INMEMORY</NESSIE_VERSION_STORE_JGIT_TYPE>
+                  </environmentVariables>
                   <systemPropertyVariables>
-                    <mp.jwt.verify.publickey.location>${project.build.directory}/test-classes/META-INF/resources/publicKey.pem</mp.jwt.verify.publickey.location>
-                    <quarkus.profile>test</quarkus.profile>
-                    <quarkus.log.level>debug</quarkus.log.level>
-                    <native.image.path>
-                      ${project.build.directory}/${project.build.finalName}-runner
-                    </native.image.path>
+                    <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                     <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                     <maven.home>${maven.home}</maven.home>
                   </systemPropertyVariables>

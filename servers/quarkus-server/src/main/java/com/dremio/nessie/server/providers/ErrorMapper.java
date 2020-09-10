@@ -23,6 +23,9 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.dremio.nessie.error.ImmutableNessieError;
 import com.dremio.nessie.error.ImmutableNessieError.Builder;
 import com.dremio.nessie.error.NessieError;
@@ -36,6 +39,7 @@ import com.google.common.base.Throwables;
 
 @Provider
 public class ErrorMapper implements ExceptionMapper<Exception> {
+  private static final Logger logger = LoggerFactory.getLogger(ErrorMapper.class);
 
   @Override
   public Response toResponse(Exception exception) {
@@ -66,6 +70,7 @@ public class ErrorMapper implements ExceptionMapper<Exception> {
                                                   .errorMessage(exception.getMessage())
                                                   .statusMessage(status.getReasonPhrase())
                                                   .build();
+    logger.error(String.format("Request failed with status code %s", status.getStatusCode()), exception);
     return Response.status(status)
                    .entity(Entity.entity(nessieError, MediaType.APPLICATION_JSON_TYPE))
                    .build();
@@ -81,6 +86,7 @@ public class ErrorMapper implements ExceptionMapper<Exception> {
     if (e != null) {
       builder.stackTrace(Throwables.getStackTraceAsString(e));
     }
+    logger.error(String.format("Request failed with status code %s", status.getStatusCode()), e);
     return Response.status(status)
                    .entity(Entity.entity(builder.build(), MediaType.APPLICATION_JSON_TYPE))
                    .build();

@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.model.ImmutableNessieConfiguration;
 import com.dremio.nessie.model.NessieConfiguration;
-import com.dremio.nessie.services.ServerConfig;
+import com.dremio.nessie.model.ServerConfig;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
@@ -79,7 +79,7 @@ public class ServerStatus {
   )
   public NessieConfiguration getConfig() {
     return ImmutableNessieConfiguration.builder()
-                                       .defaultBranch(this.config.getDefaultTag()).build();
+                                       .defaultBranch(this.config.getDefaultBranch()).build();
   }
 
 

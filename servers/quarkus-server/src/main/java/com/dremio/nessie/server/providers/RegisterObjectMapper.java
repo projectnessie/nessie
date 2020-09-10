@@ -17,12 +17,8 @@ package com.dremio.nessie.server.providers;
 
 import javax.inject.Singleton;
 
+import com.dremio.nessie.json.ObjectMapperBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 import io.quarkus.jackson.ObjectMapperCustomizer;
 
@@ -31,10 +27,6 @@ public class RegisterObjectMapper implements ObjectMapperCustomizer {
 
   @Override
   public void customize(ObjectMapper mapper) {
-    mapper.registerModule(new Jdk8Module());
-    mapper.registerModule(new JavaTimeModule());
-    mapper.registerModule(new ParameterNamesModule());
-    mapper.registerModule(new GuavaModule());
-    mapper.enable(SerializationFeature.INDENT_OUTPUT);
+    ObjectMapperBuilder.features(mapper);
   }
 }

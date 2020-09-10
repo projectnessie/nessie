@@ -25,8 +25,6 @@ import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.util.IO;
 
-import com.dremio.nessie.error.NessieConflictException;
-
 public class NessieObjectInserter extends DfsInserter {
 
   private final NessieObjDatabase db;
@@ -65,9 +63,7 @@ public class NessieObjectInserter extends DfsInserter {
       IO.readFully(in, buf, 0, (int) len);
       return insert(type, buf, 0, (int) len);
     }
-    throw new NessieConflictException(null,
-                                      "unable to insert buf of type " + type + " with value "
-                                      + new String(buf));
+    throw new IOException(String.format("unable to insert buf of type %s with value %s", type, new String(buf)));
   }
 
   @Override

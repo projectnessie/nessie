@@ -58,7 +58,6 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.util.SystemReader;
 
-import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
@@ -74,7 +73,6 @@ import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
-import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 
 /**
@@ -127,7 +125,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       ObjectId newTree = TreeBuilder.merge(treeId, commits, repository);
       try {
         commitTree(branch, newTree, expectedHash, metadata);
-      } catch (NessieConflictException e) {
+      } catch (ReferenceConflictException e) {
         if (operations.stream().anyMatch(x -> x instanceof Unchanged)) {
           throw e;
         }
@@ -139,8 +137,6 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
                                                        expectedHash.map(Hash::asString).map(ObjectId::fromString).orElseThrow(() -> e));
         commitTree(branch, mergedTree.orElseThrow(() -> e), Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of), metadata);
       }
-    } catch (NessieConflictException e) {
-      throw ReferenceConflictException.forReference(branch, expectedHash, Optional.empty(), e);
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
@@ -210,10 +206,10 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         if (result.equals(Result.REJECTED_MISSING_OBJECT)) {
           throw ReferenceNotFoundException.forReference(targetHash.get());
         } else if (!result.equals(Result.NEW)) {
-          throw new NessieConflictException(String.format("result did not complete for create branch on %s with state %s", ref, result));
+          throw new IllegalStateException(String.format("result did not complete for create branch on %s with state %s", ref, result));
         }
       }
-    } catch (IOException e) {
+    } catch (IOException | ReferenceConflictException e) {
       throw new RuntimeException(String.format("Unknown error while creating %s", ref), e);
     }
   }
@@ -225,7 +221,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       RefUpdate update = repository.updateRef((ref instanceof TagName ? Constants.R_TAGS : Constants.R_HEADS) + ref.getName());
       Optional<ObjectId> objectId = hash.map(Hash::asString).map(ObjectId::fromString);
       if (objectId.isPresent() && !ObjectId.isEqual(update.getRef().getObjectId(), objectId.get())) {
-        throw new NessieConflictException(null, "can't delete branch, not HEAD");
+        throw ReferenceConflictException.forReference(ref, hash, Optional.empty());
       }
       update.setForceUpdate(true);
       objectId.ifPresent(update::setExpectedOldObjectId);
@@ -233,10 +229,8 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       if (deleteResult.equals(Result.REJECTED_MISSING_OBJECT)) {
         throw ReferenceNotFoundException.forReference(hash.get());
       } else if (!deleteResult.equals(Result.FORCED)) {
-        throw new NessieConflictException(ImmutableList.of(ref.getName()), "delete failed " + deleteResult);
+        throw ReferenceConflictException.forReference(ref, hash, Optional.empty());
       }
-    } catch (NessieConflictException e) {
-      throw ReferenceConflictException.forReference(ref, hash, Optional.empty(), e);
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
@@ -332,7 +326,8 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     throw new IllegalStateException("Not yet implemented.");
   }
 
-  private void commitTree(BranchName branch, ObjectId newTree, Optional<Hash> expectedHash, METADATA metadata) throws IOException {
+  private void commitTree(BranchName branch, ObjectId newTree, Optional<Hash> expectedHash, METADATA metadata)
+      throws IOException, ReferenceConflictException {
     ObjectInserter inserter = repository.newObjectInserter();
     CommitBuilder commitBuilder = fromUser(metadata);
     commitBuilder.setTreeId(newTree);
@@ -347,18 +342,20 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     updateRef(branch, newCommitId, expectedHash, false);
   }
 
-  private void updateRef(NamedRef ref, Hash targetHash, Optional<Hash> expectedHash, boolean force) throws IOException {
+  private void updateRef(NamedRef ref, Hash targetHash, Optional<Hash> expectedHash, boolean force)
+      throws IOException, ReferenceConflictException {
     ObjectId target = repository.resolve(targetHash.asString());
     updateRef(ref, target, expectedHash, force);
   }
 
-  private void updateRef(NamedRef ref, ObjectId target, Optional<Hash> expectedHash, boolean force) throws IOException {
+  private void updateRef(NamedRef ref, ObjectId target, Optional<Hash> expectedHash, boolean force)
+      throws IOException, ReferenceConflictException {
     RefUpdate updateBranch = repository.updateRef((ref instanceof TagName ? Constants.R_TAGS : Constants.R_HEADS) + ref.getName());
     updateBranch.setNewObjectId(target);
     expectedHash.map(Hash::asString).map(ObjectId::fromString).ifPresent(updateBranch::setExpectedOldObjectId);
     Result result = force ? updateBranch.forceUpdate() : updateBranch.update();
     if (!result.equals(Result.NEW) && !result.equals(Result.FAST_FORWARD) && !result.equals(Result.FORCED)) {
-      throw new NessieConflictException(String.format("result did not complete for create branch on %s with state %s", ref, result));
+      throw new ReferenceConflictException(String.format("result did not complete for create branch on %s with state %s", ref, result));
     }
   }
 

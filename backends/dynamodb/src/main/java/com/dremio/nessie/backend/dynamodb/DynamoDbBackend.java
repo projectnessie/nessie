@@ -31,6 +31,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 /**
  * Implements Backend for DynamoDB.
  */
+@Deprecated
 public class DynamoDbBackend implements Backend {
 
   private final DynamoDbClient client;

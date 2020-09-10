@@ -64,18 +64,7 @@
             <configuration>
               <resources>
                 <resource>
-                  <directory>${project.basedir}</directory>
-                  <excludes>
-                    <exclude>node_modules/**</exclude>
-                    <exclude>src/main/resources/**</exclude>
-                    <exclude>target/**</exclude>
-                    <exclude>public/**</exclude>
-                    <exclude>src/**</exclude>
-                    <exclude>package.json</exclude>
-                    <exclude>package-lock.json</exclude>
-                    <exclude>pom.xml</exclude>
-                    <exclude>.gitignore</exclude>
-                  </excludes>
+                  <directory>${project.basedir}/build</directory>
                   <filtering>false</filtering>
                 </resource>
               </resources>

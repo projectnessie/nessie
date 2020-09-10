@@ -28,6 +28,7 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+@Deprecated
 public class GitObjectDynamoDbBackend extends
                                       AbstractEntityDynamoDbBackend<BranchControllerObject> {
 
