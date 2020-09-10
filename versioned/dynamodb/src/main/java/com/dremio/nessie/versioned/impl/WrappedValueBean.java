@@ -16,6 +16,7 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 
 import com.google.common.base.Preconditions;
@@ -57,6 +58,24 @@ abstract class WrappedValueBean extends MemoizedId {
     return Id.build(h -> {
       h.putLong(getSeed()).putBytes(value.asReadOnlyByteBuffer());
     });
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(value, getSeed());
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof WrappedValueBean)) {
+      return false;
+    }
+    WrappedValueBean other = (WrappedValueBean) obj;
+    return Objects.equals(getSeed(),  other.getSeed())
+        && Objects.equals(value, other.value);
   }
 
   protected static class WrappedValueSchema<T extends WrappedValueBean> extends SimpleSchema<T> {

@@ -112,4 +112,18 @@ class L1 extends MemoizedId {
 
   };
 
+  /**
+   * return the number of positions that are non-empty.
+   * @return
+   */
+  int size() {
+    int count = 0;
+    for (int i = 0; i < SIZE; i++) {
+      if (!getId(i).equals(L2.EMPTY_ID)) {
+        count++;
+      }
+    }
+    return count;
+  }
+
 }

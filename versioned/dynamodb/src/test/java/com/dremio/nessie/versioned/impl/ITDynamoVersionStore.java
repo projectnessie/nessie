@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -22,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -54,6 +57,7 @@ import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
+import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.dremio.nessie.versioned.impl.InconsistentValue.InconsistentValueException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -87,6 +91,51 @@ class ITDynamoVersionStore {
         .endpoint(new URI("http://localhost:8000"))
         .region(Region.US_WEST_2)
         .build();
+  }
+
+  @Test
+  void checkDuplicateValueCommit() throws Exception {
+    BranchName branch = BranchName.of("dupe-values");
+    impl.create(branch, Optional.empty());
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"),
+        Put.of(Key.of("no"), "world"))
+    );
+
+    assertEquals("world", impl.getValue(branch, Key.of("hi")));
+    assertEquals("world", impl.getValue(branch, Key.of("no")));
+  }
+
+
+  @Test
+  void checkKeyList() throws Exception {
+    BranchName branch = BranchName.of("my-key-list");
+    impl.create(branch, Optional.empty());
+    assertEquals(0, store.<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"),
+        Put.of(Key.of("no"), "world"),
+        Put.of(Key.of("mad mad"), "world")));
+    assertEquals(0, store.<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
+    assertThat(impl.getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
+        containsInAnyOrder("hi", "no", "mad mad"));
+  }
+
+  @Test
+  void multiload() throws Exception {
+    BranchName branch = BranchName.of("my-key-list");
+    impl.create(branch, Optional.empty());
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world1"),
+        Put.of(Key.of("no"), "world2"),
+        Put.of(Key.of("mad mad"), "world3")));
+
+    assertEquals(
+        Arrays.asList("world1", "world2", "world3"),
+        impl.getValue(branch, Arrays.asList(Key.of("hi"), Key.of("no"), Key.of("mad mad")))
+          .stream()
+          .map(Optional::get)
+          .collect(Collectors.toList()));
   }
 
   @Test
