@@ -1,5 +1,21 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.dremio.nessie.hms;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +27,9 @@ import java.util.stream.Stream;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.api.Database;
+import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
 import org.apache.hadoop.hive.metastore.api.MetaException;
+import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.metastore.conf.MetastoreConf;
@@ -141,6 +159,16 @@ class NessieTransaction {
 
   }
 
+  public List<Table> getTables(String dbName, List<String> tableNames) {
+    List<Key> keys = tableNames.stream().map(t -> Key.of(dbName, t)).collect(Collectors.toList());
+    try {
+    return versionStore.getValue(hash, keys).stream().map(v -> v.map(i -> i.getTable()).orElse(null)).collect(Collectors.toList());
+    } catch (ReferenceNotFoundException ex) {
+      // shouldn't happen as we just grabbed the hash a moment ago...
+      throw new RuntimeException(ex);
+    }
+  }
+
   public void createDatabase(Database db) throws MetaException {
     setItem(Item.wrap(db), db.getName());
   }
@@ -160,6 +188,31 @@ class NessieTransaction {
     }
   }
 
+  public Stream<Key> getTables(String database) {
+    try {
+      return versionStore.getKeys(hash)
+        .filter(k -> k.getElements().size() != 1)
+        .filter(k -> k.getElements().get(0).equalsIgnoreCase(database));
+    } catch (ReferenceNotFoundException e) {
+      // shouldn't happen as we just grabbed the hash a moment ago...
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void addPartitions(List<Partition> p) throws MetaException, InvalidObjectException {
+    if(p.isEmpty()) {
+      return;
+    }
+    Optional<Item> tAndP = getItem(p.get(0).getDbName(), p.get(0).getTableName());
+    if (!tAndP.isPresent()) {
+      throw new InvalidObjectException();
+    }
+    List<Partition> partitions = new ArrayList<>();
+    partitions.addAll(tAndP.get().getPartitions());
+    partitions.addAll(p);
+    setItem(Item.wrap(tAndP.get().getTable(), partitions));
+  }
+
   public void createTable(Table table) throws MetaException {
     setItem(Item.wrap(table, Collections.emptyList()), table.getDbName(), table.getTableName());
   }
@@ -175,6 +228,14 @@ class NessieTransaction {
 
   public Handle handle() {
     return handle;
+  }
+
+  public Optional<TableAndPartition> getTableAndPartitions(String dbName, String tableName) {
+    return getItem(dbName, tableName).map(i -> new TableAndPartition(i.getTable(), i.getPartitions()));
+  }
+
+  public void save(TableAndPartition tandp) throws MetaException {
+    setItem(Item.wrap(tandp.table, tandp.partitions), tandp.table.getDbName(), tandp.table.getTableName());
   }
 
   private void setItem(Item item, String...keyElements) throws MetaException {
@@ -215,6 +276,24 @@ class NessieTransaction {
     return getItem(dbName, tableName).map(Item::getPartitions).orElse(null);
   }
 
+  public void removePartition(String dbName, String tableName, List<String> partitionValues) throws MetaException, NoSuchObjectException {
+    List<Partition> newPartitions = new ArrayList<>();
+    Optional<Item> opt = getItem(dbName, tableName);
+    if (!opt.isPresent()) {
+      throw new NoSuchObjectException();
+    }
+
+    for(Partition p : opt.get().getPartitions()) {
+      if(p.getValues().equals(partitionValues)) {
+        continue;
+      }
+      newPartitions.add(p);
+    }
+
+    setItem(Item.wrap(opt.get().getTable(), newPartitions));
+
+  }
+
   private Optional<Item> getItem(String... elements) {
     Key key = Key.of(elements);
     try {
@@ -253,4 +332,22 @@ class NessieTransaction {
 
   }
 
+  public static class TableAndPartition {
+    private final Table table;
+    private final List<Partition> partitions;
+
+    public TableAndPartition(Table table, List<Partition> partitions) {
+      super();
+      this.table = table;
+      this.partitions = partitions;
+    }
+
+    public Table getTable() {
+      return table;
+    }
+
+    public List<Partition> getPartitions() {
+      return partitions;
+    }
+  }
 }

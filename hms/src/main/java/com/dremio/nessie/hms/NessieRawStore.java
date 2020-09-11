@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.dremio.nessie.hms;
 
 import java.net.URI;
@@ -5,12 +20,16 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.TableType;
+import org.apache.hadoop.hive.metastore.Warehouse;
 import org.apache.hadoop.hive.metastore.api.Catalog;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -35,6 +54,7 @@ import org.apache.thrift.TException;
 
 import com.dremio.nessie.hms.HMSProto.CommitMetadata;
 import com.dremio.nessie.hms.NessieTransaction.Handle;
+import com.dremio.nessie.hms.NessieTransaction.TableAndPartition;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Operation;
@@ -270,43 +290,97 @@ public class NessieRawStore extends NotSupportedRawStore {
 
   @Override
   public boolean addPartition(Partition part) throws InvalidObjectException, MetaException {
-    return false;
+    return addPartitions(part.getCatName(), part.getDbName(), part.getTableName(), ImmutableList.of(part));
   }
 
   @Override
   public boolean addPartitions(String catName, String dbName, String tblName, List<Partition> parts)
       throws InvalidObjectException, MetaException {
-    return false;
+    try (Handle h = txo()) {
+      Optional<TableAndPartition> tAndP = tx().getTableAndPartitions(parts.get(0).getDbName(), parts.get(0).getTableName());
+      if (!tAndP.isPresent()) {
+        throw new InvalidObjectException();
+      }
+      List<Partition> partitions = new ArrayList<>();
+      partitions.addAll(tAndP.get().getPartitions());
+      partitions.addAll(parts);
+      tx().save(new TableAndPartition(tAndP.get().getTable(), partitions));
+      return true;
+    }
   }
 
   @Override
   public boolean addPartitions(String catName, String dbName, String tblName, PartitionSpecProxy partitionSpec,
       boolean ifNotExists) throws InvalidObjectException, MetaException {
-    return false;
+
+    // TODO: handle ifNotExists.
+    return addPartitions(
+        catName,
+        dbName,
+        tblName,
+        StreamSupport.stream(Spliterators.spliteratorUnknownSize(partitionSpec.getPartitionIterator(), 0), false).collect(Collectors.toList())
+        );
+  }
+
+
+  @Override
+  public Partition getPartition(String catName, String dbName, String tableName, List<String> partitionValues)
+      throws MetaException, NoSuchObjectException {
+    try (Handle h = txo()) {
+      return tx().getPartitions(dbName, tableName)
+          .stream()
+          .filter(p -> p.getValues().equals(partitionValues))
+          .findFirst()
+          .orElseThrow(() -> new NoSuchObjectException());
+    }
   }
 
   @Override
-  public Partition getPartition(String catName, String dbName, String tableName, List<String> part_vals)
+  public boolean doesPartitionExist(String catName, String dbName, String tableName, List<String> partitionValues)
       throws MetaException, NoSuchObjectException {
-    return null;
-  }
-
-  @Override
-  public boolean doesPartitionExist(String catName, String dbName, String tableName, List<String> part_vals)
-      throws MetaException, NoSuchObjectException {
-    return false;
+    try (Handle h = txo()) {
+      return tx().getPartitions(dbName, tableName)
+          .stream()
+          .filter(p -> p.getValues().equals(partitionValues))
+          .findFirst()
+          .isPresent();
+    }
   }
 
   @Override
   public boolean dropPartition(String catName, String dbName, String tableName, List<String> part_vals)
       throws MetaException, NoSuchObjectException, InvalidObjectException, InvalidInputException {
-    return false;
+    try (Handle h = txo()) {
+      Optional<TableAndPartition> tandp = tx().getTableAndPartitions(dbName, tableName);
+      if (!tandp.isPresent()) {
+        throw new NoSuchObjectException();
+      }
+      List<Partition> newPartitions = new ArrayList<>();
+      boolean found = false;
+      for (Partition p : tandp.get().getPartitions()) {
+        if(p.getValues().equals(part_vals)) {
+          found = true;
+          continue;
+        }
+        newPartitions.add(p);
+      }
+
+      if(!found) {
+        throw new InvalidObjectException();
+      }
+
+      tx().save(new TableAndPartition(tandp.get().getTable(), newPartitions));
+    }
+
+    return true;
   }
 
   @Override
   public List<Partition> getPartitions(String catName, String dbName, String tableName, int max)
       throws MetaException, NoSuchObjectException {
-    return null;
+    try (Handle h = txo()) {
+      return tx().getPartitions(dbName, tableName).stream().limit(max).collect(Collectors.toList());
+    }
   }
 
   @Override
@@ -327,49 +401,87 @@ public class NessieRawStore extends NotSupportedRawStore {
 
   @Override
   public List<String> getTables(String catName, String dbName, String pattern) throws MetaException {
-    return null;
+    try (Handle h = txo()) {
+      // TODO: support pattern.
+      return tx().getTables(dbName).map(k -> k.getElements().get(1)).collect(Collectors.toList());
+    }
   }
 
   @Override
   public List<String> getTables(String catName, String dbName, String pattern, TableType tableType)
       throws MetaException {
-    return null;
+    try (Handle h = txo()) {
+      // TODO: support tabletype and pattern.
+      return tx().getTables(dbName).map(k -> k.getElements().get(1)).collect(Collectors.toList());
+    }
   }
 
   @Override
-  public List<TableMeta> getTableMeta(String catName, String dbNames, String tableNames, List<String> tableTypes)
+  public List<TableMeta> getTableMeta(String catName, String dbName, String tableNames, List<String> tableTypes)
       throws MetaException {
-    return null;
+    try (Handle h = txo()) {
+      // TODO: support tabletype and pattern.
+      return tx().getTables(dbName).map(k -> {
+        TableMeta m = new TableMeta();
+        m.setCatName("hive");
+        m.setDbName(k.getElements().get(0));
+        m.setTableName(k.getElements().get(1));
+
+        // TODO:
+        //m.setTableType(..);
+        //m.setComments(..);
+
+        return m;
+      }).collect(Collectors.toList());
+    }
   }
 
   @Override
-  public List<Table> getTableObjectsByName(String catName, String dbname, List<String> tableNames)
+  public List<Table> getTableObjectsByName(String catName, String dbName, List<String> tableNames)
       throws MetaException, UnknownDBException {
-    return null;
+    try (Handle h = txo()) {
+      return tx().getTables(dbName, tableNames);
+    }
   }
 
   @Override
   public List<String> getAllTables(String catName, String dbName) throws MetaException {
-    return null;
+    try (Handle h = txo()) {
+      return tx().getTables(dbName).map(k -> k.getElements().get(1)).collect(Collectors.toList());
+    }
   }
 
   @Override
   public List<String> listTableNamesByFilter(String catName, String dbName, String filter, short max_tables)
       throws MetaException, UnknownDBException {
-    return null;
+
+    // TODO: filter
+    try (Handle h = txo()) {
+      // TODO: support tabletype and pattern.
+      return tx().getTables(dbName).map(k -> k.getElements().get(1)).limit(max_tables).collect(Collectors.toList());
+    }
   }
 
   @Override
   public List<String> listPartitionNames(String catName, String db_name, String tbl_name, short max_parts)
       throws MetaException {
-    return null;
+    try (Handle h = txo()) {
+      Table tbl = tx().getTable(db_name, tbl_name);
+      return tx().getPartitions(db_name, tbl_name).stream().map(p -> {
+        try {
+          return Warehouse.makePartName(tbl.getPartitionKeys(), p.getValues());
+        } catch (MetaException e) {
+          throw new RuntimeException(e);
+        }
+      }).collect(Collectors.toList());
+    }
   }
 
   @Override
   public PartitionValuesResponse listPartitionValues(String catName, String db_name, String tbl_name,
       List<FieldSchema> cols, boolean applyDistinct, String filter, boolean ascending, List<FieldSchema> order,
       long maxParts) throws MetaException {
-    return null;
+    throw new MetaException("Not yet supported.");
   }
 
   @Override

@@ -15,25 +15,32 @@
  */
 package com.dremio.nessie.hms;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+
 import com.dremio.nessie.hms.HMSProto.CommitMetadata;
 import com.dremio.nessie.versioned.Serializer;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
+import com.dremio.nessie.versioned.StoreWorker;
 
-public class CommitSerializer implements Serializer<CommitMetadata> {
+class HMSRawStoreWorker implements StoreWorker<Item, CommitMetadata> {
 
   @Override
-  public ByteString toBytes(CommitMetadata value) {
-    return value.toByteString();
+  public Serializer<Item> getValueSerializer() {
+    return new ItemSerializer();
   }
 
   @Override
-  public CommitMetadata fromBytes(ByteString bytes) {
-    try {
-      return CommitMetadata.parseFrom(bytes);
-    } catch (InvalidProtocolBufferException e) {
-      throw new RuntimeException(e);
-    }
+  public Serializer<CommitMetadata> getMetadataSerializer() {
+    return new CommitSerializer();
   }
 
+  @Override
+  public Stream<AssetKey> getAssetKeys(Item value) {
+    return Stream.of();
+  }
+
+  @Override
+  public CompletableFuture<Void> deleteAsset(AssetKey key) {
+    return CompletableFuture.completedFuture(null);
+  }
 }
