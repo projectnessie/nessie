@@ -228,18 +228,6 @@ public abstract class NotSupportedRawStore implements RawStore {
   }
 
   @Override
-  public Partition getPartitionWithAuth(String catName, String dbName, String tblName, List<String> partVals,
-      String user_name, List<String> group_names) throws MetaException, NoSuchObjectException, InvalidObjectException {
-    throw t();
-  }
-
-  @Override
-  public List<Partition> getPartitionsWithAuth(String catName, String dbName, String tblName, short maxParts,
-      String userName, List<String> groupNames) throws MetaException, NoSuchObjectException, InvalidObjectException {
-    throw t();
-  }
-
-  @Override
   public List<String> listPartitionNamesPs(String catName, String db_name, String tbl_name, List<String> part_vals,
       short max_parts) throws MetaException, NoSuchObjectException {
     throw t();
@@ -372,11 +360,6 @@ public abstract class NotSupportedRawStore implements RawStore {
   @Override
   public void setMetaStoreSchemaVersion(String version, String comment) throws MetaException {
     throw t();
-  }
-
-  @Override
-  public void dropPartitions(String catName, String dbName, String tblName, List<String> partNames)
-      throws MetaException, NoSuchObjectException {
   }
 
   @Override

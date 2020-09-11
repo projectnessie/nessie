@@ -25,15 +25,12 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.hadoop.hive.metastore.conf.MetastoreConf;
-
 import com.dremio.nessie.hms.HMSProto.CommitMetadata;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
@@ -65,9 +62,9 @@ class NessieTransaction {
   private final Runnable closeListener;
   private final Handle handle;
 
-  public NessieTransaction(Configuration conf, VersionStore<Item, CommitMetadata> store, Runnable closeListener) {
+  public NessieTransaction(String ref, VersionStore<Item, CommitMetadata> store, Runnable closeListener) {
     super();
-    final String name = conf.get(MetastoreConf.ConfVars.NESSIE_REF.getVarname(), "main");
+    final String name = ref;
     this.closeListener = closeListener;
     this.versionStore = store;
     this.handle = new Handle();
@@ -244,8 +241,8 @@ class NessieTransaction {
     operations.put(key, Put.of(key, item));
   }
 
-  public void deleteTable(String dbName, String tableName) {
-    deleteTable(dbName, tableName);
+  public void deleteTable(String dbName, String tableName) throws MetaException {
+    deleteItem(dbName, tableName);
   }
 
   public void deleteDatabase(String db) throws MetaException {

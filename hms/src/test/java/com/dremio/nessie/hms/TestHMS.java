@@ -19,7 +19,6 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import org.apache.curator.shaded.com.google.common.base.Throwables;
 import org.apache.hadoop.hive.metastore.HiveMetaStore;
 import org.apache.hadoop.hive.metastore.RuntimeStatsCleanerTask;
 import org.apache.hadoop.hive.metastore.conf.MetastoreConf.ConfVars;
@@ -36,6 +35,7 @@ import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.DynamoStore;
 import com.dremio.nessie.versioned.impl.DynamoStoreConfig;
 import com.dremio.nessie.versioned.impl.DynamoVersionStore;
+import com.google.common.base.Throwables;
 
 import software.amazon.awssdk.regions.Region;
 

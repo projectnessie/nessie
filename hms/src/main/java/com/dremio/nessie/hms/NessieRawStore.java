@@ -19,10 +19,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -39,6 +43,7 @@ import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PartitionValuesResponse;
+import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import org.apache.hadoop.hive.metastore.api.RuntimeStat;
 import org.apache.hadoop.hive.metastore.api.SQLCheckConstraint;
 import org.apache.hadoop.hive.metastore.api.SQLDefaultConstraint;
@@ -46,10 +51,14 @@ import org.apache.hadoop.hive.metastore.api.SQLForeignKey;
 import org.apache.hadoop.hive.metastore.api.SQLNotNullConstraint;
 import org.apache.hadoop.hive.metastore.api.SQLPrimaryKey;
 import org.apache.hadoop.hive.metastore.api.SQLUniqueConstraint;
+import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.metastore.api.TableMeta;
 import org.apache.hadoop.hive.metastore.api.UnknownDBException;
+import org.apache.hadoop.hive.metastore.conf.MetastoreConf;
+import org.apache.hadoop.hive.metastore.conf.MetastoreConf.ConfVars;
 import org.apache.hadoop.hive.metastore.partition.spec.PartitionSpecProxy;
+import org.apache.hadoop.hive.ql.optimizer.ppr.PartitionExpressionForMetastore;
 import org.apache.thrift.TException;
 
 import com.dremio.nessie.hms.HMSProto.CommitMetadata;
@@ -57,25 +66,36 @@ import com.dremio.nessie.hms.NessieTransaction.Handle;
 import com.dremio.nessie.hms.NessieTransaction.TableAndPartition;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Hash;
+import com.dremio.nessie.versioned.NamedRef;
 import com.dremio.nessie.versioned.Operation;
+import com.dremio.nessie.versioned.Ref;
+import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
+import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.VersionStore;
+import com.dremio.nessie.versioned.WithHash;
 import com.dremio.nessie.versioned.impl.DynamoStore;
 import com.dremio.nessie.versioned.impl.DynamoStoreConfig;
 import com.dremio.nessie.versioned.impl.DynamoVersionStore;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import software.amazon.awssdk.regions.Region;
 
 public class NessieRawStore extends NotSupportedRawStore {
+
+  private static final String NESSIE_DB = "$nessie";
 
   private Configuration conf;
   private VersionStore<Item, CommitMetadata> store;
 
   private BranchName branch;
   private Hash transactionHash;
+  private String ref = "main";
+
 
   private List<Operation> operations = new ArrayList<>();
 
@@ -133,7 +153,7 @@ public class NessieRawStore extends NotSupportedRawStore {
   @Override
   public boolean openTransaction() {
     if(transaction == null) {
-      transaction = new NessieTransaction(conf, store, this::clearTransaction);
+      transaction = new NessieTransaction(ref, store, this::clearTransaction);
       return true;
     }
 
@@ -153,7 +173,7 @@ public class NessieRawStore extends NotSupportedRawStore {
 
   private Handle txo() {
     if(transaction == null) {
-      transaction = new NessieTransaction(conf, store, this::clearTransaction);
+      transaction = new NessieTransaction(ref, store, this::clearTransaction);
       return transaction.handle();
     }
 
@@ -203,8 +223,19 @@ public class NessieRawStore extends NotSupportedRawStore {
     }
   }
 
+  private Database getNessieDb() {
+    Database db = new Database();
+    db.setCatalogName("hive");
+    db.setName(NESSIE_DB);
+    db.setDescription(ref);
+    return db;
+  }
+
   @Override
   public Database getDatabase(String catalogName, String name) throws NoSuchObjectException {
+    if (isNessie(name)) {
+      return getNessieDb();
+    }
     try (Handle h = txo()) {
       return orThrow(tx().getDatabase(name));
     }
@@ -229,9 +260,24 @@ public class NessieRawStore extends NotSupportedRawStore {
     return false;
   }
 
+  private boolean handleNessieDb(Database db) throws MetaException {
+    if(!db.isSetLocationUri()) {
+      throw new MetaException("You must provide a reference value for the Nessie reference database.");
+    }
+
+    // this ensures the ref is valid.
+    new NessieTransaction(db.getLocationUri(), store, this::clearTransaction);
+    this.ref = db.getLocationUri();
+    return true;
+  }
+
   @Override
   public boolean alterDatabase(String catalogName, String dbname, Database db)
       throws NoSuchObjectException, MetaException {
+    if(dbname.equalsIgnoreCase(NESSIE_DB)) {
+      return handleNessieDb(db);
+    }
+
     try (Handle h = txo()) {
       tx().alterDatabase(db);
     }
@@ -252,8 +298,38 @@ public class NessieRawStore extends NotSupportedRawStore {
     }
   }
 
+  private void createBranchOrTag(Table tbl) throws MetaException {
+    String tblName = tbl.getTableName();
+    String ref = tbl.getParameters().get("ref");
+    if(ref == null) {
+      throw new MetaException("Can't create branch with null ref.");
+    }
+    try {
+    WithHash<Ref> target = store.toRef(ref);
+    final NamedRef newRef;
+    if (tblName.startsWith("tag:")) {
+      newRef = TagName.of(tblName.substring(4));
+    } else if (ref.startsWith("branch:")) {
+      newRef = BranchName.of(tblName.substring(7));
+    } else {
+      // default is a branch.
+      newRef = BranchName.of(tblName);
+    }
+      store.create(newRef, Optional.of(target.getHash()));
+    } catch (ReferenceNotFoundException e) {
+      throw new MetaException("Cannot find the defined reference.");
+    } catch (ReferenceAlreadyExistsException e) {
+      throw new MetaException("Cannot create provided branch or tag, one with that name already exists.");
+    }
+  }
+
   @Override
   public void createTable(Table tbl) throws InvalidObjectException, MetaException {
+    if(isNessie(tbl.getDbName())) {
+      createBranchOrTag(tbl);
+      return;
+    }
+
     checkTableProperties(tbl);
     try (Handle h = txo()) {
       tx().createTable(tbl);
@@ -278,14 +354,47 @@ public class NessieRawStore extends NotSupportedRawStore {
   @Override
   public boolean dropTable(String catalogName, String dbName, String tableName)
       throws MetaException, NoSuchObjectException, InvalidObjectException, InvalidInputException {
-    return false;
+    try (Handle h = txo()) {
+      tx().deleteTable(dbName, tableName);
+      return true;
+    }
   }
 
   @Override
   public Table getTable(String catalogName, String dbName, String tableName) throws MetaException {
+    if (isNessie(dbName)) {
+      Hash hash;
+      try {
+        hash = store.toHash(BranchName.of(tableName));
+      } catch (ReferenceNotFoundException e) {
+        try {
+          hash = store.toHash(TagName.of(tableName));
+        } catch (ReferenceNotFoundException e1) {
+          throw new MetaException(String.format("Unknown hash or tag name [%s].", tableName));
+        }
+      }
+      Table t = new Table();
+      t.setCatName(catalogName);
+      t.setDbName(NESSIE_DB);
+      t.setTableName(tableName);
+      t.setOwner("$nessie");
+      t.setPartitionKeys(ImmutableList.of());
+      t.setSd(new StorageDescriptor());
+      t.getSd().setInputFormat("Nessie input format.");
+      t.setParameters(ImmutableMap.of("hash", hash.asString()));
+      t.setPrivileges(new PrincipalPrivilegeSet());
+      t.setRewriteEnabled(false);
+      t.setTableType(TableType.EXTERNAL_TABLE.name());
+      t.setTemporary(false);
+      return t;
+    }
     try (Handle h = txo()) {
       return tx().getTable(dbName, tableName);
     }
+  }
+
+  private boolean isNessie(String dbName) {
+    return dbName.equalsIgnoreCase(NESSIE_DB);
   }
 
   @Override
@@ -336,6 +445,18 @@ public class NessieRawStore extends NotSupportedRawStore {
   }
 
   @Override
+  public Partition getPartitionWithAuth(String catName, String dbName, String tblName, List<String> partVals,
+      String user_name, List<String> group_names) throws MetaException, NoSuchObjectException, InvalidObjectException {
+    return getPartition(catName, dbName, tblName, partVals);
+  }
+
+  @Override
+  public List<Partition> getPartitionsWithAuth(String catName, String dbName, String tblName, short maxParts,
+      String userName, List<String> groupNames) throws MetaException, NoSuchObjectException, InvalidObjectException {
+    return getPartitions(catName, dbName, tblName, maxParts);
+  }
+
+  @Override
   public boolean doesPartitionExist(String catName, String dbName, String tableName, List<String> partitionValues)
       throws MetaException, NoSuchObjectException {
     try (Handle h = txo()) {
@@ -376,6 +497,25 @@ public class NessieRawStore extends NotSupportedRawStore {
   }
 
   @Override
+  public void dropPartitions(String catName, String dbName, String tableName, List<String> partNames)
+      throws MetaException, NoSuchObjectException {
+    try (Handle h = txo()) {
+      TableAndPartition tandp = tx().getTableAndPartitions(dbName, tableName).orElseThrow(() -> new NoSuchObjectException());
+      List<Partition> newPartitions = new ArrayList<>();
+      Set<String> dropNames = new HashSet<>(partNames);
+      for (Partition p : tandp.getPartitions()) {
+        String partName = Warehouse.makePartName(tandp.getTable().getPartitionKeys(), p.getValues());
+        if(!dropNames.contains(partName)) {
+          newPartitions.add(p);
+        }
+      }
+
+      tx().save(new TableAndPartition(tandp.getTable(), newPartitions));
+    }
+  }
+
+
+  @Override
   public List<Partition> getPartitions(String catName, String dbName, String tableName, int max)
       throws MetaException, NoSuchObjectException {
     try (Handle h = txo()) {
@@ -401,6 +541,10 @@ public class NessieRawStore extends NotSupportedRawStore {
 
   @Override
   public List<String> getTables(String catName, String dbName, String pattern) throws MetaException {
+    if (isNessie(dbName)) {
+      return store.getNamedRefs().map(nr -> nr.getValue().getName()).collect(Collectors.toList());
+    }
+
     try (Handle h = txo()) {
       // TODO: support pattern.
       return tx().getTables(dbName).map(k -> k.getElements().get(1)).collect(Collectors.toList());
@@ -503,7 +647,25 @@ public class NessieRawStore extends NotSupportedRawStore {
   @Override
   public boolean getPartitionsByExpr(String catName, String dbName, String tblName, byte[] expr,
       String defaultPartitionName, short maxParts, List<Partition> result) throws TException {
-    return false;
+    String defaultPartName = MetastoreConf.getVar(getConf(), ConfVars.DEFAULTPARTITIONNAME);
+    PartitionExpressionForMetastore pems = new PartitionExpressionForMetastore();
+    try (Handle h = txo()) {
+      TableAndPartition tandp = tx().getTableAndPartitions(dbName, tblName).orElseThrow(() -> new NoSuchObjectException());
+      List<FieldSchema> partitionKeys = tandp.getTable().getPartitionKeys();
+      Map<String, Partition> partByName = tandp.getPartitions().stream().collect(Collectors.toMap(p -> {
+        try {
+          return Warehouse.makePartName(partitionKeys, p.getValues());
+        } catch (MetaException e) {
+          throw new RuntimeException(e);
+        }
+      }, Function.identity()));
+      List<String> partitionNames = new ArrayList<>(partByName.keySet());
+      boolean resultBool = pems.filterPartitionsByExpr(tandp.getTable().getPartitionKeys(), expr, defaultPartName, partitionNames);
+      for (String name : partitionNames) {
+        result.add(partByName.get(name));
+      }
+      return resultBool;
+    }
   }
 
   @Override
