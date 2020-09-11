@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 
 import com.dremio.nessie.backend.EntityBackend;
 import com.dremio.nessie.model.VersionedWrapper;
@@ -34,7 +33,6 @@ import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
-import io.smallrye.metrics.MetricRegistries;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
@@ -72,11 +70,11 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
 
   public AbstractEntityDynamoDbBackend(DynamoDbClient client,
                                        String tableName,
-                                       boolean versioned) {
+                                       boolean versioned,
+                                       MetricRegistry registry) {
     this.client = client;
     this.tableName = tableName;
     this.versioned = versioned;
-    MetricRegistry registry = MetricRegistries.get(Type.APPLICATION);
     deleteCounter = registry.counter("dynamo-delete-capacity");
     putCounter = registry.counter("dynamo-put-capacity");
     getCounter = registry.counter("dynamo-get-capacity");

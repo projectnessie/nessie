@@ -13,74 +13,77 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.client.rest;
 
-package com.dremio.nessie.client;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 
-import javax.ws.rs.core.Response;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientResponseContext;
+import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.Response.Status;
 
-import com.dremio.nessie.client.rest.NessieBadRequestException;
-import com.dremio.nessie.client.rest.NessieConflictException;
-import com.dremio.nessie.client.rest.NessieForbiddenException;
-import com.dremio.nessie.client.rest.NessieInternalServerException;
-import com.dremio.nessie.client.rest.NessieNotAuthorizedException;
-import com.dremio.nessie.client.rest.NessieNotFoundException;
-import com.dremio.nessie.client.rest.NessiePreconditionFailedException;
 import com.dremio.nessie.error.ImmutableNessieError;
 import com.dremio.nessie.error.NessieError;
 import com.dremio.nessie.json.ObjectMapperBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Throwables;
+import com.google.common.io.CharStreams;
 
-/**
- * common REST utils.
- */
-public final class RestUtils {
-
+public class ResponseCheckFilter implements ClientResponseFilter {
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperBuilder.createObjectMapper();
 
-  private RestUtils() {
-
+  @Override
+  public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
+    checkResponse(responseContext.getStatus(), responseContext);
   }
 
   /**
    * check that response had a valid return code. Throw exception if not.
    */
-  public static void checkResponse(Response response) {
-    Status status = Status.fromStatusCode(response.getStatus());
+  public static void checkResponse(int statusCode, ClientResponseContext response) {
+    Status status = Status.fromStatusCode(statusCode);
     if (status == Status.OK || status == Status.CREATED) {
       return;
     }
     NessieError error = readException(status, response);
     switch (status) {
       case BAD_REQUEST:
-        throw new NessieBadRequestException(response, error);
+        throw new NessieBadRequestException(error);
       case UNAUTHORIZED:
-        throw new NessieNotAuthorizedException(response, error);
+        throw new NessieNotAuthorizedException(error);
       case FORBIDDEN:
-        throw new NessieForbiddenException(response, error);
+        throw new NessieForbiddenException(error);
       case NOT_FOUND:
-        throw new NessieNotFoundException(response, error);
+        throw new NessieNotFoundException(error);
       case CONFLICT:
-        throw new NessieConflictException(response, error);
+        throw new NessieConflictException(error);
       case PRECONDITION_FAILED:
-        throw new NessiePreconditionFailedException(response, error);
+        throw new NessiePreconditionFailedException(error);
       case INTERNAL_SERVER_ERROR:
-        throw new NessieInternalServerException(response, error);
+        throw new NessieInternalServerException(error);
       default:
         try {
           String msg = OBJECT_MAPPER.writeValueAsString(error);
-          throw new RuntimeException(
-            "Unknown exception " + response.getStatus() + " with message " + msg);
+          throw new RuntimeException(String.format("Unknown exception %s with message %s", status, msg));
         } catch (JsonProcessingException e) {
-          throw new RuntimeException("Unknown exception " + response.getStatus(), e);
+          throw new RuntimeException(String.format("Unknown exception %s", status), e);
         }
     }
   }
 
-  private static NessieError readException(Status status, Response response) {
-    String msg = response.readEntity(String.class);
+  private static NessieError readException(Status status, ClientResponseContext response) {
+    InputStream inputStream = response.getEntityStream();
     NessieError error;
+    String msg;
+    try (Reader reader = new InputStreamReader(inputStream)) {
+      msg = CharStreams.toString(reader);
+    } catch (IOException exception) {
+      msg = Throwables.getStackTraceAsString(exception);
+    }
     try {
       error = OBJECT_MAPPER.readValue(msg, NessieError.class);
     } catch (Exception ex) {

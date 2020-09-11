@@ -15,13 +15,25 @@
  */
 package com.dremio.nessie.client.auth;
 
-/**
- * Mechanism to prevent sending Auth header. This is used when authorization is not enabled. Typically only during tests.
- */
-public class NoAuth implements Auth {
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
-  @Override
-  public String checkKey() {
-    return null;
-  }
+import com.dremio.nessie.auth.AuthResponse;
+
+/**
+ * Endpoint definition for login.
+ */
+public interface AuthEndpointDefinition {
+
+  @POST
+  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("login")
+  AuthResponse login(@FormParam("username") String login,
+                     @FormParam("password") String password,
+                     @FormParam("grant_type") String grantType);
 }

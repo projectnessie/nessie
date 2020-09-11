@@ -28,11 +28,9 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.error.ImmutableNessieError;
 import com.dremio.nessie.error.ImmutableNessieError.Builder;
-import com.dremio.nessie.error.NessieError;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.VersionStoreException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.Throwables;
@@ -43,42 +41,27 @@ public class ErrorMapper implements ExceptionMapper<Exception> {
 
   @Override
   public Response toResponse(Exception exception) {
-    Response.Status status = Status.INTERNAL_SERVER_ERROR;
     if (exception instanceof WebApplicationException) {
-      status = Status.fromStatusCode(((WebApplicationException) exception).getResponse().getStatus());
+      Response.Status status = Status.fromStatusCode(((WebApplicationException) exception).getResponse().getStatus());
+      return exception(status, exception.getMessage(), exception);
+    } else if (exception instanceof JsonParseException) {
+      return exception(Status.BAD_REQUEST, exception.getMessage(), exception);
+    } else if (exception instanceof JsonMappingException) {
+      return exception(Status.BAD_REQUEST, exception.getMessage(), exception);
+    } else if (exception instanceof ReferenceNotFoundException) {
+      return exception(Response.Status.NOT_FOUND, "ref not found", exception);
+    } else if (exception instanceof ReferenceConflictException) {
+      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", exception);
+    } else if (exception instanceof ReferenceAlreadyExistsException) {
+      return exception(Response.Status.CONFLICT, "ref already exists", exception);
+    } else {
+      return exception(Status.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
     }
-    if (exception instanceof JsonParseException) {
-      status = Status.BAD_REQUEST;
-    }
-    if (exception instanceof JsonMappingException) {
-      status = Status.BAD_REQUEST;
-    }
-    if (exception instanceof ReferenceNotFoundException) {
-      return exception(Response.Status.NOT_FOUND, "ref not found", (VersionStoreException) exception);
-    }
-    if (exception instanceof ReferenceConflictException) {
-      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", (VersionStoreException) exception);
-    }
-    if (exception instanceof ReferenceAlreadyExistsException) {
-      return exception(Response.Status.CONFLICT, "ref already exists", (VersionStoreException) exception);
-    }
-
-    String exceptionAsString = Throwables.getStackTraceAsString(exception);
-    NessieError nessieError = ImmutableNessieError.builder()
-                                                  .errorCode(status.getStatusCode())
-                                                  .stackTrace(exceptionAsString)
-                                                  .errorMessage(exception.getMessage())
-                                                  .statusMessage(status.getReasonPhrase())
-                                                  .build();
-    logger.error(String.format("Request failed with status code %s", status.getStatusCode()), exception);
-    return Response.status(status)
-                   .entity(Entity.entity(nessieError, MediaType.APPLICATION_JSON_TYPE))
-                   .build();
   }
 
   private static Response exception(Response.Status status,
                                     String message,
-                                    VersionStoreException e) {
+                                    Exception e) {
     Builder builder = ImmutableNessieError.builder()
                                           .errorCode(status.getStatusCode())
                                           .errorMessage(message)
@@ -86,7 +69,7 @@ public class ErrorMapper implements ExceptionMapper<Exception> {
     if (e != null) {
       builder.stackTrace(Throwables.getStackTraceAsString(e));
     }
-    logger.error(String.format("Request failed with status code %s", status.getStatusCode()), e);
+    logger.debug(String.format("Request failed with status code %s", status.getStatusCode()), e);
     return Response.status(status)
                    .entity(Entity.entity(builder.build(), MediaType.APPLICATION_JSON_TYPE))
                    .build();

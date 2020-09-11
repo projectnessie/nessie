@@ -38,11 +38,4 @@ public interface Backend extends AutoCloseable {
 
   EntityBackend<BranchControllerReference> gitRefBackend();
 
-  /**
-   * factory interface to create a backend. All backends must have a Factory called BackendFactory
-   */
-  interface Factory {
-
-    Backend create(String region, String endpoint);
-  }
 }

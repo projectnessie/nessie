@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.server.config;
+package com.dremio.nessie.server.config.converters;
 
-import com.dremio.nessie.model.ServerConfig;
+import org.eclipse.microprofile.config.spi.Converter;
 
-import io.quarkus.arc.config.ConfigProperties;
+public enum BackendType {
 
-@ConfigProperties(prefix = "nessie.server")
-public class ServerConfigImpl implements ServerConfig {
+  INMEMORY,
+  DYNAMO;
 
-  private String defaultBranch = "main";
+  public static class BackendTypeValueConverter implements Converter<BackendType> {
 
-  @Override
-  public String getDefaultBranch() {
-    return defaultBranch;
-  }
-
-  public void setDefaultBranch(String defaultTag) {
-    this.defaultBranch = defaultTag;
+    @Override
+    public BackendType convert(String value) {
+      return BackendType.valueOf(value);
+    }
   }
 }

@@ -32,13 +32,12 @@ import com.google.common.collect.Lists;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 
-@SuppressWarnings("MissingJavadocMethod")
 @QuarkusTest
-public class AuthTests {
+class TestAuth {
 
   private NessieClient client;
 
-  public void getCatalog(String branch) {
+  void getCatalog(String branch) {
     String path = "http://localhost:19121/api/v1";
     this.client = new NessieClient(AuthType.NONE, path, null, null);
     if (branch != null) {
@@ -46,22 +45,22 @@ public class AuthTests {
     }
   }
 
-  public void tryEndpointPass(Runnable runnable) {
+  void tryEndpointPass(Runnable runnable) {
     Assertions.assertDoesNotThrow(runnable::run);
   }
 
-  public void tryEndpointFail(Runnable runnable) {
+  void tryEndpointFail(Runnable runnable) {
     Assertions.assertThrows(NessieForbiddenException.class, runnable::run);
   }
 
   @Test
-  public void testLogin() {
+  void testLogin() {
     Assertions.assertThrows(NessieNotAuthorizedException.class, () -> getCatalog("x"));
   }
 
   @Test
   @TestSecurity(user = "admin_user", roles = {"admin", "user"})
-  public void testAdmin() {
+  void testAdmin() {
     getCatalog("testx");
     Branch branch = client.getBranch("testx");
     Iterable<String> tables = client.getAllTables("testx", null);
@@ -82,7 +81,7 @@ public class AuthTests {
 
   @Test
   @TestSecurity(user = "testUser", roles = {"user"})
-  public void testUser() {
+  void testUser() {
     getCatalog(null);
     Branch branch = client.getBranch("testx");
     Assertions.assertThrows(NessieForbiddenException.class, () -> getCatalog("normalx"));
@@ -97,6 +96,13 @@ public class AuthTests {
     Assertions.assertNotNull(newTable);
     Assertions.assertEquals(table, newTable);
     tryEndpointFail(() -> client.commit(branch, ImmutableTable.copyOf(table).withIsDeleted(true)));
+  }
+
+  @Test
+  @TestSecurity(authorizationEnabled = false)
+  void testUserCleanup() {
+    getCatalog(null);
+    client.deleteBranch(client.getBranch("testx"));
   }
 
   private Table createTable(String name, String location) {
