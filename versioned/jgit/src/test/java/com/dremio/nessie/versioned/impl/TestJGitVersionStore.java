@@ -189,7 +189,8 @@ class TestJGitVersionStore {
     testRefMatchesToRef(impl, expected, expected, expected.asString());
   }
 
-  private void testRefMatchesToRef(JGitVersionStore<String, String> impl, Ref ref, Hash hash, String name) throws ReferenceNotFoundException {
+  private void testRefMatchesToRef(JGitVersionStore<String, String> impl, Ref ref, Hash hash, String name)
+      throws ReferenceNotFoundException {
     WithHash<Ref> val = impl.toRef(name);
     assertEquals(ref, val.getValue());
     assertEquals(hash, val.getHash());
