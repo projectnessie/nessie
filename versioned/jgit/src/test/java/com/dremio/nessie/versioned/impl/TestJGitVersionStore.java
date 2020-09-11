@@ -174,11 +174,9 @@ class TestJGitVersionStore {
     assertThrows(ReferenceNotFoundException.class, () -> impl.delete(tag, Optional.empty()));
   }
 
-
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void unknownRef(RepoType repoType) throws Exception {
-    setup(repoType);
+  void unknownRef(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
     BranchName branch = BranchName.of("bar");
     impl.create(branch, Optional.empty());
     impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
@@ -186,12 +184,12 @@ class TestJGitVersionStore {
     Hash expected = impl.toHash(branch);
     impl.create(tag, Optional.of(expected));
 
-    testRefMatchesToRef(branch, expected, branch.getName());
-    testRefMatchesToRef(tag, expected, tag.getName());
-    testRefMatchesToRef(expected, expected, expected.asString());
+    testRefMatchesToRef(impl, branch, expected, branch.getName());
+    testRefMatchesToRef(impl, tag, expected, tag.getName());
+    testRefMatchesToRef(impl, expected, expected, expected.asString());
   }
 
-  private void testRefMatchesToRef(Ref ref, Hash hash, String name) throws ReferenceNotFoundException {
+  private void testRefMatchesToRef(JGitVersionStore<String, String> impl, Ref ref, Hash hash, String name) throws ReferenceNotFoundException {
     WithHash<Ref> val = impl.toRef(name);
     assertEquals(ref, val.getValue());
     assertEquals(hash, val.getHash());
