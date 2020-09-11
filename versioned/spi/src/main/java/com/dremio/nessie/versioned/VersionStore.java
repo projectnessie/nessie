@@ -45,6 +45,16 @@ public interface VersionStore<VALUE, METADATA> {
   Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException;
 
   /**
+   * Determine what kind of ref a string is and convert it into the appropriate type (along with the current associated hash).
+   *
+   * <p>If a branch or tag has the same name as the string form of a valid hash, the branch or tag name are returned.
+   * @param refOfUnknownType A string that may be a branch, tag or hash.
+   * @return The concrete ref type with it's hash.
+   * @throws ReferenceNotFoundException If the string doesn't map to a valid ref.
+   */
+  WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException;
+
+  /**
    * Create a new commit and add to a branch.
    *
    * @param branch The branch to commit to.
