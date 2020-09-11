@@ -106,13 +106,12 @@ class PartialTree<V> {
    * Gets value, l3 and l2 save ops. These ops are all non-conditional.
    * @return
    */
-  @SuppressWarnings("unchecked")
   public Stream<SaveOp<?>> getMostSaveOps() {
     checkMutable();
-    return (Stream<SaveOp<?>>) ((Object) Streams.concat(
+    return Streams.<SaveOp<?>>concat(
         l2s.values().stream().filter(Pointer::isDirty).map(l2p -> new SaveOp<L2>(ValueType.L2, l2p.get())),
         l3s.values().stream().filter(Pointer::isDirty).map(l3p -> new SaveOp<L3>(ValueType.L3, l3p.get())),
-        values.values().stream().map(v -> new SaveOp<WrappedValueBean>(ValueType.VALUE, v.getPersistentValue()))
+        values.values().stream().map(v -> new SaveOp<WrappedValueBean>(ValueType.VALUE, v.getPersistentValue())
         ).distinct());
   }
 
@@ -127,9 +126,9 @@ class PartialTree<V> {
   }
 
   private Optional<LoadStep> getLoadStep1(LoadType loadType) {
-    final Supplier<Optional<LoadStep>> loadFunc = () -> {
-      return loadType == LoadType.ALL_KEYS_NO_VALUES ? getLoadStep2All() : getLoadStep2(loadType == LoadType.SELECT_VALUES);
-    };
+    final Supplier<Optional<LoadStep>> loadFunc = () ->
+        loadType == LoadType.ALL_KEYS_NO_VALUES ? getLoadStep2All() : getLoadStep2(loadType == LoadType.SELECT_VALUES);
+
 
     if (l1 != null) { // if we loaded a branch, we were able to prepopulate the l1 information.
       return loadFunc.get();

@@ -207,7 +207,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       store.save(
           Streams.concat(
               current.getMostSaveOps(),
-              Collections.singleton(new SaveOp<WrappedValueBean>(ValueType.COMMIT_METADATA, metadata)).stream()
+              Stream.of(new SaveOp<WrappedValueBean>(ValueType.COMMIT_METADATA, metadata))
           ).collect(Collectors.toList()));
 
       // record positions that we're checking so we don't add the same positional check twice (for unchanged statements).

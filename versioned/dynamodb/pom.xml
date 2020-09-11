@@ -89,7 +89,7 @@
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest</artifactId>
       <scope>test</scope>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>DynamoDBLocal</artifactId>

@@ -114,12 +114,12 @@ class L1 extends MemoizedId {
 
   /**
    * return the number of positions that are non-empty.
-   * @return
+   * @return number of non-empty positions.
    */
   int size() {
     int count = 0;
-    for (int i = 0; i < SIZE; i++) {
-      if (!getId(i).equals(L2.EMPTY_ID)) {
+    for (Id id : tree) {
+      if (!id.equals(L2.EMPTY_ID)) {
         count++;
       }
     }
