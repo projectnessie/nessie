@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.security.RolesAllowed;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -107,7 +106,7 @@ public class TableBranchOperations {
    */
   @GET
   @Metered
-  @RolesAllowed({"admin", "user"})
+  //@RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Fetch all refs endpoint",
@@ -130,7 +129,7 @@ public class TableBranchOperations {
    */
   @GET
   @Metered
-  @RolesAllowed({"admin", "user"})
+  //@RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall-refs")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{ref}")
@@ -160,7 +159,7 @@ public class TableBranchOperations {
    */
   @GET
   @Metered
-  @RolesAllowed({"admin", "user"})
+  //@RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall-table")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{ref}/tables/{table}")
@@ -194,7 +193,7 @@ public class TableBranchOperations {
    */
   @POST
   @Metered
-  @RolesAllowed({"admin"})
+  //@RolesAllowed({"admin"})
   @Timed(name = "timed-readall-ref")
   @Consumes(MediaType.APPLICATION_JSON)
   @Path("{ref}")
@@ -219,7 +218,7 @@ public class TableBranchOperations {
    */
   @POST
   @Metered
-  @RolesAllowed({"admin"})
+  //@RolesAllowed({"admin"})
   @Timed(name = "timed-create-table")
   @Path("{ref}/tables/{table}")
   @Consumes(MediaType.APPLICATION_JSON)
@@ -273,7 +272,7 @@ public class TableBranchOperations {
    */
   @DELETE
   @Metered
-  @RolesAllowed({"admin"})
+  //@RolesAllowed({"admin"})
   @Timed(name = "timed-delete-ref")
   @Path("{ref}")
   @Operation(summary = "delete ref endpoint",
@@ -301,7 +300,7 @@ public class TableBranchOperations {
    */
   @DELETE
   @Metered
-  @RolesAllowed({"admin"})
+  //@RolesAllowed({"admin"})
   @Timed(name = "timed-delete-table")
   @Path("{ref}/tables/{table}")
   @Operation(summary = "delete table on ref endpoint",
@@ -334,7 +333,7 @@ public class TableBranchOperations {
    */
   @PUT
   @Metered
-  @RolesAllowed({"admin"})
+  //@RolesAllowed({"admin"})
   @Timed(name = "timed-assign")
   @Path("{ref}")
   @Operation(summary = "assign hash to ref endpoint",
@@ -361,7 +360,7 @@ public class TableBranchOperations {
    */
   @PUT
   @Metered
-  @RolesAllowed({"admin"})
+  //@RolesAllowed({"admin"})
   @Timed(name = "timed-commit-table")
   @Path("{ref}/tables/{table}")
   @Operation(summary = "update via commit single table to ref endpoint",
@@ -389,7 +388,7 @@ public class TableBranchOperations {
    */
   @GET
   @Metered
-  @RolesAllowed({"admin"})
+  //@RolesAllowed({"admin"})
   @Timed(name = "timed-log-ref")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{ref}/log")
@@ -416,7 +415,7 @@ public class TableBranchOperations {
    */
   @PUT
   @Metered
-  @RolesAllowed({"admin"})
+  //@RolesAllowed({"admin"})
   @Timed(name = "timed-transplant")
   @Path("{ref}/transplant")
   @Operation(summary = "transplant commits from mergeRef to ref endpoint",
@@ -448,7 +447,7 @@ public class TableBranchOperations {
    */
   @PUT
   @Metered
-  @RolesAllowed({"admin"})
+  //@RolesAllowed({"admin"})
   @Timed(name = "timed-merge")
   @Path("{ref}/merge")
   @Operation(summary = "merge commits from mergeRef to ref endpoint",
@@ -478,7 +477,7 @@ public class TableBranchOperations {
    */
   @GET
   @Metered
-  @RolesAllowed({"admin", "user"})
+  //@RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall-tables")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{ref}/tables")
@@ -509,7 +508,7 @@ public class TableBranchOperations {
    */
   @PUT
   @Metered
-  @RolesAllowed({"admin"})
+  //@RolesAllowed({"admin"})
   @Timed(name = "timed-commit-multi-table")
   @Path("{ref}/tables")
   @Operation(summary = "update via commit multiple tables to ref endpoint",

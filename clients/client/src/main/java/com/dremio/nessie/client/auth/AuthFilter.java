@@ -39,10 +39,6 @@ public class AuthFilter implements ClientRequestFilter {
       case NONE:
         auth = new NoAuth();
         break;
-      case BASIC:
-        AuthEndpointDefinition nessie = target.proxy(AuthEndpointDefinition.class);
-        auth = new BasicAuth(username, password, nessie);
-        break;
       default:
         throw new IllegalStateException(String.format("%s does not exist", authType));
     }

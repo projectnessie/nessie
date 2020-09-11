@@ -16,7 +16,6 @@
 
 package com.dremio.nessie.services.rest;
 
-import javax.annotation.security.RolesAllowed;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -64,7 +63,7 @@ public class ServerStatus {
 
   @GET
   @Metered
-  @RolesAllowed({"admin", "user"})
+  //@RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "List all configuration settings",

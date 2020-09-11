@@ -25,7 +25,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import com.dremio.nessie.model.ServerConfig;
 import com.dremio.nessie.server.config.converters.BackendType;
 import com.dremio.nessie.server.config.converters.JGitStoreType;
-import com.dremio.nessie.server.config.converters.LoginType;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 
 import io.quarkus.arc.config.ConfigProperties;
@@ -79,9 +78,6 @@ public class ApplicationConfig {
     @ConfigProperty(name = "default-branch", defaultValue = "main")
     @Override
     String getDefaultBranch();
-
-    @ConfigProperty(name = "login.type", defaultValue = "BASIC")
-    LoginType getLoginType();
   }
 
 

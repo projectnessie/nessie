@@ -17,6 +17,9 @@ package com.dremio.nessie.server.config.converters;
 
 import org.eclipse.microprofile.config.spi.Converter;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public enum VersionStoreType {
 
   DYNAMO,

@@ -17,6 +17,7 @@
 package com.dremio.nessie.server;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.client.NessieClient;
@@ -53,6 +54,7 @@ class TestAuth {
     Assertions.assertThrows(NessieForbiddenException.class, runnable::run);
   }
 
+  @Disabled
   @Test
   void testLogin() {
     Assertions.assertThrows(NessieNotAuthorizedException.class, () -> getCatalog("x"));
@@ -79,6 +81,7 @@ class TestAuth {
     tryEndpointPass(() -> client.commit(branch, createTable("x", "x")));
   }
 
+  @Disabled
   @Test
   @TestSecurity(user = "testUser", roles = {"user"})
   void testUser() {
