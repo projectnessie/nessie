@@ -57,6 +57,8 @@ import org.eclipse.jgit.treewalk.NameConflictTreeWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.util.SystemReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.versioned.BranchName;
@@ -81,10 +83,12 @@ import com.google.protobuf.ByteString;
  * VersionStore interface for JGit backend.
  */
 public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, METADATA> {
+  private static final Logger logger = LoggerFactory.getLogger(JGitVersionStore.class);
   private static final String SLASH = "/";
 
   private final Repository repository;
   private final StoreWorker<TABLE, METADATA> storeWorker;
+  private final ObjectId emptyObject;
 
   /**
    * Construct a JGitVersionStore.
@@ -93,6 +97,17 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   public JGitVersionStore(Repository repository, StoreWorker<TABLE, METADATA> storeWorker) {
     this.storeWorker = storeWorker;
     this.repository = repository;
+    ObjectId objectId;
+    try {
+      ObjectInserter oi = repository.newObjectInserter();
+      objectId = oi.insert(Constants.OBJ_BLOB, new byte[] {0});
+      oi.flush();
+    } catch (IOException e) {
+      objectId = null;
+      logger.warn("Unable to insert empty object which is used as a sentinel for deletes. "
+                  + "This is likely safe to ignore but could indicate a larger problem with the repository.", e);
+    }
+    emptyObject = objectId;
   }
 
   @Nonnull
@@ -122,7 +137,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
                      List<Operation<TABLE>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     toHash(branch);
     try {
-      ObjectId commits = TreeBuilder.commitObjects(operations, repository, storeWorker.getValueSerializer());
+      ObjectId commits = TreeBuilder.commitObjects(operations, repository, storeWorker.getValueSerializer(), emptyObject);
       ObjectId treeId = repository.resolve(expectedHash.map(Hash::asString).orElse(branch.getName()) + "^{tree}");
       ObjectId newTree = TreeBuilder.merge(treeId, commits, repository);
       try {
@@ -366,7 +381,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       throws IOException {
     inserter.flush();
 
-    Merger<TABLE> merger = new Merger<>(repository);
+    Merger merger = new Merger(repository);
     merger.setBase(version);
     boolean ok = merger.merge(treeId, newTreeId);
     return ok ? Optional.of(merger.getResultTreeId()) : Optional.empty();
@@ -449,7 +464,13 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     return loader.getBytes();
   }
 
-  private static class Merger<TABLE> extends ThreeWayMerger {
+  /**
+   * Simple merge of two potentially conflicting branches.
+   * <p>
+   *   If no file level conflicts exist the merge will succeed. Any file level merges will result in failure.
+   * </p>
+   */
+  private static class Merger extends ThreeWayMerger {
 
     private static final int T_BASE = 0;
 

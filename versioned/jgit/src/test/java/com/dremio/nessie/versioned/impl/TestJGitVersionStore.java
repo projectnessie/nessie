@@ -37,8 +37,13 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.converter.ArgumentConversionException;
+import org.junit.jupiter.params.converter.ArgumentConverter;
+import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import com.dremio.nessie.backend.simple.InMemory;
@@ -68,7 +73,7 @@ import com.google.protobuf.ByteString;
 
 class TestJGitVersionStore {
   private static final Hash EMPTY_HASH = Hash.of(ObjectId.zeroId().name());
-  private VersionStore<String, String> impl;
+  private static File jgitDirStatic;
   private static InMemory backend;
   private final Random random = new Random();
 
@@ -90,10 +95,10 @@ class TestJGitVersionStore {
   @AfterEach
   public void empty() throws IOException {
     backend.close();
+    jgitDirStatic = null; //need to copy dir to make it accessible statically...jgit doesn't support parameterised tests with beforeeach
   }
 
-
-  private Repository repository(RepoType repoType) throws IOException {
+  private static Repository repository(RepoType repoType) throws IOException {
     final Repository repository;
     switch (repoType) {
       case DYNAMO:
@@ -112,7 +117,7 @@ class TestJGitVersionStore {
         }
       case FILE:
         try {
-          repository = Git.init().setDirectory(jgitDir).call().getRepository();
+          repository = Git.init().setDirectory(jgitDirStatic).call().getRepository();
           break;
         } catch (GitAPIException e) {
           throw new RuntimeException(e);
@@ -123,18 +128,15 @@ class TestJGitVersionStore {
     return repository;
   }
 
-  void setup(RepoType repoType) {
-    try {
-      impl = new JGitVersionStore<>(repository(repoType), WORKER);
-    } catch (IOException e) {
-      throw new RuntimeException("couldn't build repo", e);
-    }
+  @BeforeEach
+  void copyTempDir() {
+    //need to copy dir to make it accessible statically...jgit doesn't support parameterised tests with beforeeach
+    jgitDirStatic = jgitDir;
   }
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void createAndDeleteTag(RepoType repoType) throws Exception {
-    setup(repoType);
+  void createAndDeleteTag(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
     impl.create(BranchName.of("bar"), Optional.empty());
     Optional<Hash> baseCommit = Optional.of(impl.toHash(BranchName.of("bar")));
     TagName tag = TagName.of("foo");
@@ -173,8 +175,7 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void createAndDeleteBranch(RepoType repoType) throws Exception {
-    setup(repoType);
+  void createAndDeleteBranch(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
     BranchName branch = BranchName.of("foo");
 
     // create a tag using the default empty hash.
@@ -216,8 +217,7 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void conflictingCommit(RepoType repoType) throws Exception {
-    setup(repoType);
+  void conflictingCommit(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     // first commit.
@@ -239,8 +239,7 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void checkRefs(RepoType repoType) throws Exception {
-    setup(repoType);
+  void checkRefs(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
     impl.create(BranchName.of("b1"), Optional.empty());
     Optional<Hash> baseCommit = Optional.of(impl.toHash(BranchName.of("b1")));
     impl.create(BranchName.of("b2"), Optional.empty());
@@ -252,8 +251,7 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void checkCommits(RepoType repoType) throws Exception {
-    setup(repoType);
+  void checkCommits(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     String c1 = "c1";
@@ -285,8 +283,7 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void assignments(RepoType repoType) throws Exception {
-    setup(repoType);
+  void assignments(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
     impl.create(branch, Optional.empty());
@@ -321,8 +318,7 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void delete(RepoType repoType) throws Exception {
-    setup(repoType);
+  void delete(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
     impl.create(branch, Optional.empty());
@@ -336,8 +332,7 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void unchangedOperation(RepoType repoType) throws Exception {
-    setup(repoType);
+  void unchangedOperation(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     // first commit.
@@ -363,8 +358,8 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void checkEmptyHistory(RepoType repoType) throws Exception {
-    setup(repoType);
+  void checkEmptyHistory(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     assertEquals(1L, impl.getCommits(branch).count());
@@ -470,5 +465,23 @@ class TestJGitVersionStore {
       return bytes.toString(StandardCharsets.UTF_8);
     }
   };
+
+  /**
+   * convert RepoType to VersionStore for each parameterised test.
+   */
+  private static class RepositoryConverter implements ArgumentConverter {
+
+    @Override
+    public Object convert(Object source, ParameterContext context) throws ArgumentConversionException {
+      if (source instanceof RepoType) {
+        try {
+          return new JGitVersionStore<>(repository((RepoType) source), WORKER);
+        } catch (IOException e) {
+          throw new RuntimeException("couldn't build repo", e);
+        }
+      }
+      throw new RuntimeException(String.format("couldn't convert input %s", source));
+    }
+  }
 }
 

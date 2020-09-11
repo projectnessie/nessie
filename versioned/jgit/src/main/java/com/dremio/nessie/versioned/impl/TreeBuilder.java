@@ -48,8 +48,10 @@ public class TreeBuilder {
    * @return objectId of new tree
    * @throws IOException error in speaking w/ git
    */
-  public static <TABLE> ObjectId commitObjects(List<Operation<TABLE>> ops, Repository repository, Serializer<TABLE> serializer)
-      throws IOException {
+  public static <TABLE> ObjectId commitObjects(List<Operation<TABLE>> ops,
+                                               Repository repository,
+                                               Serializer<TABLE> serializer,
+                                               ObjectId emptyObjectId) throws IOException {
     ObjectInserter inserter = repository.newObjectInserter();
 
     DirCache dc = DirCache.newInCore();
@@ -59,9 +61,14 @@ public class TreeBuilder {
       final ObjectId objectId;
       final FileMode fileMode;
       if (op instanceof Unchanged) {
-        continue; //todo handle unchanged
+        continue;
       } else if (op instanceof Delete) {
-        objectId = inserter.insert(Constants.OBJ_BLOB, new byte[]{0});
+        /*
+        using an empty object and a symlink as a sentinel value for deleted files.
+        This is required as we have to be able to tell the difference between 'deleted' and 'not changed in this commit' when merging
+        this tree with the tree on HEAD.
+         */
+        objectId = emptyObjectId;
         fileMode = FileMode.GITLINK;
       } else if (op instanceof Put) {
         byte[] data = serializer.toBytes(((Put<TABLE>) op).getValue()).toByteArray();
