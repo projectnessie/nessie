@@ -59,6 +59,8 @@ public class NessieClient implements Closeable {
   private final ClientWithHelpers client;
   private final BasicAuth auth;
   private final GenericType<ReferenceWithType<Branch>> branchWithReferenceType = new GenericType<ReferenceWithType<Branch>>(){};
+  private final GenericType<List<Branch>> branchListType = new GenericType<List<Branch>>(){};
+  private final GenericType<List<String>> stringListType = new GenericType<List<String>>(){};
 
   /**
    * create new nessie client. All REST api endpoints are mapped here.
@@ -92,8 +94,7 @@ public class NessieClient implements Closeable {
     Response response = client.get(endpoint, "objects", MediaType.APPLICATION_JSON, checkKey())
                               .get();
     RestUtils.checkResponse(response);
-    return response.readEntity(new GenericType<List<Branch>>() {
-    });
+    return response.readEntity(branchListType);
   }
 
   @Override
@@ -194,8 +195,7 @@ public class NessieClient implements Closeable {
                               .accept(MediaType.APPLICATION_JSON_TYPE)
                               .get();
     RestUtils.checkResponse(response);
-    return response.readEntity(new GenericType<List<String>>() {
-    });
+    return response.readEntity(stringListType);
   }
 
   private static String extractHeaders(MultivaluedMap<String, Object> headers) {

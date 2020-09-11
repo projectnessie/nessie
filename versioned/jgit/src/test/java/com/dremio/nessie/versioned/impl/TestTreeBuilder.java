@@ -23,7 +23,9 @@ import java.util.Set;
 
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
+import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectInserter;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.junit.jupiter.api.Assertions;
@@ -39,14 +41,18 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 
-public class TestTreeBuilder {
+class TestTreeBuilder {
 
 
   @Test
-  public void test() throws IOException {
+  void test() throws IOException {
     Repository repository;
+    ObjectId emptyObject;
     try {
       repository = new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
+      ObjectInserter oi = repository.newObjectInserter();
+      emptyObject = oi.insert(Constants.OBJ_BLOB, new byte[] {0});
+      oi.flush();
     } catch (IOException e) {
       throw new RuntimeException();
     }
@@ -66,14 +72,14 @@ public class TestTreeBuilder {
                                                                Put.of(Key.of("a", "i", "j.txt"), "foobar"),
                                                                Put.of(Key.of("a", "f.txt"), "foobar1"),
                                                                Put.of(Key.of("k", "l.txt"), "foobar")),
-                                              repository, serializer);
+                                              repository, serializer, emptyObject);
     ObjectId oid2 = TreeBuilder.commitObjects(ImmutableList.of(Put.of(Key.of("a", "g", "h.txt"), "foobar"),
                                                                Delete.of(Key.of("a", "b", "d.txt")),
                                                                Put.of(Key.of("a", "f.txt"), "foobar"),
                                                                Put.of(Key.of("a","b","p.txt"), "foobar"),
                                                                Put.of(Key.of("m", "n", "o.txt"), "foobar"),
                                                                Unchanged.of(Key.of("a","b","c.txt"))),
-                                              repository, serializer);
+                                              repository, serializer, emptyObject);
 
     ObjectId oid3 = TreeBuilder.merge(oid1, oid2, repository);
     TreeWalk tw = new TreeWalk(repository);
