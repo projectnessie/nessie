@@ -44,6 +44,7 @@ import com.dremio.nessie.versioned.ImmutablePut;
 import com.dremio.nessie.versioned.ImmutableTagName;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.Put;
+import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
@@ -384,6 +385,26 @@ class ITDynamoVersionStore {
     assertEquals(v1, impl.getValue(branch2, p1));
 
 
+  }
+
+  @Test
+  void unknownRef() throws Exception {
+    BranchName branch = BranchName.of("bar");
+    impl.create(branch, Optional.empty());
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    TagName tag = TagName.of("foo");
+    Hash expected = impl.toHash(branch);
+    impl.create(tag, Optional.of(expected));
+
+    testRefMatchesToRef(branch, expected, branch.getName());
+    testRefMatchesToRef(tag, expected, tag.getName());
+    testRefMatchesToRef(expected, expected, expected.asString());
+  }
+
+  private void testRefMatchesToRef(Ref ref, Hash hash, String name) throws ReferenceNotFoundException {
+    WithHash<Ref> val = impl.toRef(name);
+    assertEquals(ref, val.getValue());
+    assertEquals(hash, val.getHash());
   }
 
   private static final StoreWorker<String, String> WORKER = new StoreWorker<String, String>() {
