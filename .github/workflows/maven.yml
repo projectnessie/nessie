@@ -33,8 +33,20 @@ jobs:
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
+    - name: Get file checksum
+      run: sha256sum ./versioned/jgit/src/test/java/com/dremio/nessie/versioned/impl/TestJGitVersionStore.java
     - name: Build with Maven
       run: mvn -B verify --file pom.xml -Pcode-coverage
+    - name: Check file again
+      if: failure()
+      run: sha256sum ./versioned/jgit/src/test/java/com/dremio/nessie/versioned/impl/TestJGitVersionStore.java
+    - name: 'Tar files'
+      run: tar -cvf workspace.tar .
+    - uses: actions/upload-artifact@v2
+      if: failure()
+      with:
+        name: workspace
+        path: workspace.tar
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
