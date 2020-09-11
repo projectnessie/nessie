@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.server.config.converters;
 
-package com.dremio.nessie.client.rest;
+import org.eclipse.microprofile.config.spi.Converter;
 
-import com.dremio.nessie.error.NessieError;
+public enum JGitStoreType {
 
-public class NessieBadRequestException extends NessieExtendedClientErrorException {
+  DISK,
+  INMEMORY,
+  DYNAMO;
 
-  public NessieBadRequestException(NessieError nessieError) {
-    super(nessieError);
+  public static class BackendTypeValueConverter implements Converter<JGitStoreType> {
+
+    @Override
+    public JGitStoreType convert(String value) {
+      return JGitStoreType.valueOf(value);
+    }
   }
 }

@@ -123,10 +123,9 @@ public class InMemory implements Backend {
     }
   }
 
-  public static class BackendFactory implements Factory {
+  public static class BackendFactory {
 
-    @Override
-    public Backend create(String x, String y) {
+    public Backend create() {
       return new InMemory();
     }
   }

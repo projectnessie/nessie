@@ -50,7 +50,7 @@ import io.quarkus.test.security.TestSecurity;
  */
 @SuppressWarnings("MissingJavadocMethod")
 @QuarkusTest
-public class DefaultCatalogBranchTest {
+public class TestDefaultCatalogBranch {
   private static File alleyLocalDir;
   private NessieCatalog catalog;
   private NessieClient client;
@@ -129,6 +129,7 @@ public class DefaultCatalogBranchTest {
 
   @AfterEach
   public void closeCatalog() throws Exception {
+    client.deleteBranch(client.getBranch("main"));
     catalog.close();
     client.close();
     catalog = null;

@@ -17,14 +17,8 @@
 package com.dremio.nessie.client.auth;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 
 import com.dremio.nessie.auth.AuthResponse;
-import com.dremio.nessie.client.NessieSimpleClient;
-import com.dremio.nessie.client.RestUtils;
 
 /**
  * Basic authentication module.
@@ -33,14 +27,14 @@ public class BasicAuth implements Auth {
 
   private final String username;
   private final String password;
-  private final NessieSimpleClient client;
+  private final AuthEndpointDefinition client;
   private String authHeader;
   private Instant expiryDate;
 
   /**
    * create new basic auth module.
    */
-  public BasicAuth(String username, String password, NessieSimpleClient client) {
+  public BasicAuth(String username, String password, AuthEndpointDefinition client) {
     this.username = username;
     this.password = password;
     this.client = client;
@@ -48,15 +42,9 @@ public class BasicAuth implements Auth {
   }
 
   private void login(String username, String password) {
-    Response response = client.login(username, password, "password");
-    RestUtils.checkResponse(response);
-    AuthResponse authToken = response.readEntity(AuthResponse.class);
-    try {
-      expiryDate = Instant.ofEpochMilli(Long.parseLong(authToken.expiryDate()));
-    } catch (Exception e) {
-      expiryDate = Instant.now().plus(5, ChronoUnit.MINUTES);
-    }
-    authHeader = response.getHeaderString(HttpHeaders.AUTHORIZATION);
+    AuthResponse authToken = client.login(username, password, "password");
+    expiryDate = Instant.ofEpochMilli(Long.parseLong(authToken.expiryDate()));
+    authHeader = String.format("Bearer %s", authToken.getToken());
   }
 
   /**

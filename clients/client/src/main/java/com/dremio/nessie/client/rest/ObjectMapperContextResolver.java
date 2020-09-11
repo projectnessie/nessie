@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.json;
+package com.dremio.nessie.client.rest;
 
 import static com.dremio.nessie.json.ObjectMapperBuilder.createObjectMapper;
 

@@ -19,13 +19,21 @@ package com.dremio.nessie.server.providers;
 import java.util.Optional;
 
 import javax.enterprise.inject.Produces;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.dynamodb.DynamoDbBackend;
 import com.dremio.nessie.backend.simple.InMemory;
+import com.dremio.nessie.server.config.ApplicationConfig;
+import com.dremio.nessie.server.config.converters.BackendType;
+import com.dremio.nessie.server.config.converters.JGitStoreType;
+
+import io.smallrye.metrics.MetricRegistries;
 
 /**
  * Factory to generate backend based on server config.
@@ -33,14 +41,18 @@ import com.dremio.nessie.backend.simple.InMemory;
 @Singleton
 public class BackendProducer {
 
-  @ConfigProperty(name = "nessie.backends.type", defaultValue = "INMEMORY")
-  String type;
+  private final ApplicationConfig config;
+
+  @Inject
+  public BackendProducer(ApplicationConfig config) {
+    this.config = config;
+  }
+
   @ConfigProperty(name = "quarkus.dynamodb.aws.region")
   String region;
   @ConfigProperty(name = "quarkus.dynamodb.endpoint-override")
   Optional<String> endpoint;
-  @ConfigProperty(name = "nessie.version.store.jgit.type", defaultValue = "INMEMORY")
-  String jgitType;
+
 
   /**
    * produce a backend based on config.
@@ -48,13 +60,15 @@ public class BackendProducer {
   @Singleton
   @Produces
   public Backend producer() {
-    if (!jgitType.equals("DYNAMO")) {
+    MetricRegistry registry = MetricRegistries.get(Type.APPLICATION);
+
+    if (!config.getVersionStoreJGitConfig().getJgitStoreType().equals(JGitStoreType.DYNAMO)) {
       return null;
     }
-    if (type.equals("INMEMORY")) {
-      return new InMemory.BackendFactory().create(null, null);
+    if (config.getBackendsConfig().getBackendType().equals(BackendType.INMEMORY)) {
+      return new InMemory.BackendFactory().create();
     }
-    return new DynamoDbBackend.BackendFactory().create(region, endpoint.orElse(null));
+    return new DynamoDbBackend.BackendFactory().create(region, endpoint.orElse(null), registry);
   }
 
 }

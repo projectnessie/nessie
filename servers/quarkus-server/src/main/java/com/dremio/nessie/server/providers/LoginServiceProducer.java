@@ -16,29 +16,34 @@
 package com.dremio.nessie.server.providers;
 
 import javax.enterprise.inject.Produces;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import javax.inject.Inject;
 
 import com.dremio.nessie.auth.LoginService;
+import com.dremio.nessie.server.config.ApplicationConfig.ServerConfigImpl;
+import com.dremio.nessie.server.config.converters.LoginType;
 import com.dremio.nessie.services.auth.BasicUserService;
 import com.dremio.nessie.services.auth.NoopLoginService;
 
 public class LoginServiceProducer {
 
-  @ConfigProperty(name = "nessie.service.login.type", defaultValue = "BASIC")
-  String type;
+  private final ServerConfigImpl config;
+
+  @Inject
+  public LoginServiceProducer(ServerConfigImpl config) {
+    this.config = config;
+  }
 
   /**
    * produces a service to generate JWTs.
    */
   @Produces
   public LoginService loginService() {
-    if (type.equals("BASIC")) {
+    if (config.getLoginType().equals(LoginType.BASIC)) {
       return new BasicUserService();
-    } else if (type.equals("NOOP")) {
+    } else if (config.getLoginType().equals(LoginType.NOOP)) {
       return new NoopLoginService();
     } else {
-      throw new UnsupportedOperationException(String.format("Unknown login service type %s", type));
+      throw new UnsupportedOperationException(String.format("Unknown login service type %s", config.getLoginType()));
     }
   }
 }

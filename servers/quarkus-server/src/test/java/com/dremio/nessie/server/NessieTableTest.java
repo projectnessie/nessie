@@ -126,6 +126,7 @@ public class NessieTableTest {
     catalog.dropTable(TABLE_IDENTIFIER, false);
 
     catalog.close();
+    client.deleteBranch(client.getBranch("main"));
     client.close();
     catalog = null;
     client = null;

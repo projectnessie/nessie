@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.server.config.converters;
 
-package com.dremio.nessie.client.rest;
+import org.eclipse.microprofile.config.spi.Converter;
 
-import com.dremio.nessie.error.NessieError;
+public enum VersionStoreType {
 
-public class NessieBadRequestException extends NessieExtendedClientErrorException {
+  DYNAMO,
+  INMEMORY,
+  JGIT;
 
-  public NessieBadRequestException(NessieError nessieError) {
-    super(nessieError);
+  public static class LoginTypeValueConverter implements Converter<VersionStoreType> {
+
+    @Override
+    public VersionStoreType convert(String value) {
+      return VersionStoreType.valueOf(value);
+    }
   }
 }
