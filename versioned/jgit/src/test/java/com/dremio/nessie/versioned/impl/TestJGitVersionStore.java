@@ -51,7 +51,6 @@ import com.dremio.nessie.versioned.ImmutablePut;
 import com.dremio.nessie.versioned.ImmutableTagName;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.Put;
-import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
@@ -172,7 +171,6 @@ class TestJGitVersionStore {
     assertThrows(ReferenceNotFoundException.class, () -> impl.delete(tag, Optional.empty()));
   }
 
-
   @ParameterizedTest
   @EnumSource(RepoType.class)
   void unknownRef(RepoType repoType) throws Exception {
@@ -189,8 +187,8 @@ class TestJGitVersionStore {
     testRefMatchesToRef(expected, expected, expected.asString());
   }
 
-  private void testRefMatchesToRef(Ref ref, Hash hash, String name) throws ReferenceNotFoundException {
-    WithHash<Ref> val = impl.toRef(name);
+  private void testRefMatchesToRef(com.dremio.nessie.versioned.Ref ref, Hash hash, String name) throws ReferenceNotFoundException {
+    WithHash<com.dremio.nessie.versioned.Ref> val = impl.toRef(name);
     assertEquals(ref, val.getValue());
     assertEquals(hash, val.getHash());
   }
