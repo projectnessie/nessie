@@ -33,4 +33,11 @@ class TestVersionEquality {
     us.ensureAvailable(null, null, 1, true);
     assertEquals(L1.EMPTY_ID, us.getL1().getId());
   }
+
+  @Test
+  void correctSize() {
+    assertEquals(0, L1.EMPTY.size());
+    assertEquals(0, L2.EMPTY.size());
+    assertEquals(0, L3.EMPTY.size());
+  }
 }

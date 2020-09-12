@@ -36,8 +36,8 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 class InternalKey implements Comparable<InternalKey>, HasId {
 
   private final Key delegate;
-  private final Supplier<Position> positionMemo = Suppliers.memoize(() -> new Position());
   private final Supplier<Id> idMemo = Suppliers.memoize(() -> Id.build(h -> addToHasher(this, h)));
+  private final Supplier<Position> positionMemo = Suppliers.memoize(() -> new Position(idMemo));
 
   public InternalKey(Key delegate) {
     super();
@@ -81,6 +81,10 @@ class InternalKey implements Comparable<InternalKey>, HasId {
     return delegate.getElements();
   }
 
+  public Key toKey() {
+    return delegate;
+  }
+
   @Override
   public int hashCode() {
     return addToHasher(this, Hashing.murmur3_32().newHasher()).hash().asInt();
@@ -114,14 +118,19 @@ class InternalKey implements Comparable<InternalKey>, HasId {
     return positionMemo.get();
   }
 
-  public class Position {
+  public static class Position {
 
     private final int l1;
     private final int l2;
 
-    private Position() {
-      this.l1 = Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(0, 4).toByteArray()), L1.SIZE);
-      this.l2 = Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(4, 8).toByteArray()), L2.SIZE);
+    private Position(Supplier<Id> idMemo) {
+      this(Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(0, 4).toByteArray()), L1.SIZE),
+          Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(4, 8).toByteArray()), L2.SIZE));
+    }
+
+    public Position(int l1, int l2) {
+      this.l1 = l1;
+      this.l2 = l2;
     }
 
     @Override

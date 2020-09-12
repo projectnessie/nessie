@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -133,7 +132,7 @@ public class DynamoStore implements AutoCloseable {
   /**
    * start the DynamoStore.
    */
-  public void start() throws URISyntaxException {
+  public void start() {
     DynamoDbClientBuilder b1 = DynamoDbClient.builder();
     DynamoDbAsyncClientBuilder b2 = DynamoDbAsyncClient.builder();
     config.getEndpoint().ifPresent(ep -> {
@@ -193,6 +192,7 @@ public class DynamoStore implements AutoCloseable {
         Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
         Sets.SetView<String> missingElements = Sets.difference(loads.keySet(), responses.keySet());
         Preconditions.checkArgument(missingElements.isEmpty(), "Did not receive any objects for table(s) %s.", missingElements);
+
         responses.keySet().forEach(table -> {
           List<LoadOp<?>> loadList = l.get(table);
           List<Map<String, AttributeValue>> values = responses.get(table);
@@ -200,8 +200,12 @@ public class DynamoStore implements AutoCloseable {
           Preconditions.checkArgument(missingResponses == 0,
               "[%s] object(s) missing in table read [%s]. \n\nObjects expected: %s\n\nObjects Received: %s",
               missingResponses, table, loadList, responses);
+
+          // unfortunately, responses don't come in the order of the requests so we need to map between ids.
+          Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
           for (int i = 0; i < values.size(); i++) {
-            loadList.get(i).loaded(values.get(i));
+            Map<String, AttributeValue> item = values.get(i);
+            opMap.get(Id.fromAttributeValue(item.get(KEY_NAME))).loaded(item);
           }
         });
       });

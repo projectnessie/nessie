@@ -51,4 +51,9 @@ class Pointer<T extends HasId> {
   T get() {
     return value;
   }
+
+  @Override
+  public String toString() {
+    return (dirty ? "*d=" : "*=") + value.toString();
+  }
 }

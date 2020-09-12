@@ -16,6 +16,7 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.util.Map;
+import java.util.Objects;
 
 import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 
@@ -41,6 +42,29 @@ class SaveOp<V extends HasId> {
   public Map<String, AttributeValue> toAttributeValues() {
     SimpleSchema<V> schema = type.getSchema();
     return schema.itemToMap(value, true);
+  }
+
+  @Override
+  public String toString() {
+    return "SaveOp [type=" + type + ", id=" + value.getId() + "]";
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(type, value);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof SaveOp)) {
+      return false;
+    }
+    SaveOp<V> other = (SaveOp<V>) obj;
+    return type == other.type && Objects.equals(value, other.value);
   }
 
 }

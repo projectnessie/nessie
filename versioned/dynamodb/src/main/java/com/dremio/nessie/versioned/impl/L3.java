@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -142,4 +143,16 @@ class L3 extends MemoizedId {
     }
 
   };
+
+  Stream<InternalKey> getKeys() {
+    return map.keySet().stream();
+  }
+
+  /**
+   * return the number of keys defined.
+   * @return
+   */
+  int size() {
+    return map.size();
+  }
 }
