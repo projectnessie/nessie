@@ -1,11 +1,11 @@
-# Python Client
+# Python
 
-See [Installation](/pydoc/installation). Or simply use pip `pip install nessie_client`. 
+See [Installation](/pydocs/installation). Or simply use pip `pip install nessie_client`. 
 
 ## Configuration
 
 
-The Dremio Client is configured using the [confuse](https://github.com/beetbox/confuse) yaml based configuration
+The Nessie client is configured using the [confuse](https://github.com/beetbox/confuse) yaml based configuration
 library. This looks for a configuration file called `config.yaml` in:
 
 * macOS: `~/.config/nessie_client` and `~/Library/Application Support/nessie_client`

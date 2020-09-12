@@ -1,7 +1,11 @@
-# Command Line Interface
+# Nessie CLI
 
-The Dremio Client uses the [Click](https://click.palletsprojects.com) library to generate its command line interface.
-This is installed as `nessie_client` by `pip`.
+The Nessie CLI is an easy way to get started with Nessie. It supports multiple branch 
+and tag management capabilities. This is installed as `nessie_client` by `pip`.
+
+```
+pip install nessie_client
+```
 
 All of the REST API calls are exposed via the command line interface. To see a list of what is available run:
 
@@ -34,8 +38,11 @@ Commands:
 The config directory and a number of other settings can be configured from the command line and overwrite the default
 config locations.
 
-The output is currently in json format and is designed to be used effectively with `jq`. For example:
+The Nessie CLI returns data in json format and is designed to be used effectively with [`jq`](https://stedolan.github.io/jq/). For example:
 
 ``` bash
 $ nessie_client list-branches | jq .
 ```
+
+The Nessie CLI is built on the great python [Click](https://click.palletsprojects.com) library. 
+It requires Python 3.x(?).

@@ -1,4 +1,4 @@
-# Java Quickstart
+# Java Client Development
 
 There are currently three options for using Nessie from Java:
 
