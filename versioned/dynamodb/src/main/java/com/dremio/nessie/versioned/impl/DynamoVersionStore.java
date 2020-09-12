@@ -140,7 +140,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       Hash hash = Hash.of(refOfUnknownType);
       L1 l1 = store.loadSingle(ValueType.L1, Id.of(hash));
       return WithHash.of(l1.getId().toHash(), l1.getId().toHash());
-    } catch (Exception ex) {
+    } catch (RuntimeException ex) {
       // ignore.
     }
 
