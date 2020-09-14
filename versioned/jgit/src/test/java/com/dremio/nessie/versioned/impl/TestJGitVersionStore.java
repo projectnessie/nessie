@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -62,6 +61,7 @@ import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
+import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
@@ -69,7 +69,6 @@ import com.dremio.nessie.versioned.WithHash;
 import com.dremio.nessie.versioned.impl.experimental.NessieRepository;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.protobuf.ByteString;
 
 
 class TestJGitVersionStore {
@@ -457,12 +456,12 @@ class TestJGitVersionStore {
 
     @Override
     public Serializer<String> getValueSerializer() {
-      return STRING_SERIALIZER;
+      return StringSerializer.getInstance();
     }
 
     @Override
     public Serializer<String> getMetadataSerializer() {
-      return STRING_SERIALIZER;
+      return StringSerializer.getInstance();
     }
 
     @Override
@@ -473,19 +472,6 @@ class TestJGitVersionStore {
     @Override
     public CompletableFuture<Void> deleteAsset(AssetKey key) {
       throw new UnsupportedOperationException();
-    }
-  };
-
-  private static final Serializer<String> STRING_SERIALIZER = new Serializer<String>() {
-
-    @Override
-    public ByteString toBytes(String value) {
-      return ByteString.copyFrom(value.getBytes(StandardCharsets.UTF_8));
-    }
-
-    @Override
-    public String fromBytes(ByteString bytes) {
-      return bytes.toString(StandardCharsets.UTF_8);
     }
   };
 

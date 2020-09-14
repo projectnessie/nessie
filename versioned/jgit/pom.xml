@@ -68,6 +68,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-versioned-tests</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
