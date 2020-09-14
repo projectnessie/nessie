@@ -57,30 +57,37 @@ public interface VersionStore<VALUE, METADATA> {
   /**
    * Create a new commit and add to a branch.
    *
+   * <p>If {@code referenceHash} is not empty, for each key referenced by one of the operations, the current key's value
+   * is compared with the stored value for referenceHash's tree, and {@code ReferenceConflictException} is thrown if values are not
+   * matching.
+   *
    * @param branch The branch to commit to.
-   * @param expectedHash The current head of the branch to validate before updating (optional).
+   * @param referenceHash The hash to use as a reference for conflict detection. If not present, do not perform conflict detection
    * @param metadata The metadata associated with the commit.
    * @param operations The set of operations to apply.
-   * @throws ReferenceConflictException if {@code currentBranchHash} doesn't match the stored hash for {@code branch}
+   * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} is not present in the store
-   *
+   * @throws NullPointerException if one of the argument is {@code null}
    */
-  void commit(BranchName branch, Optional<Hash> expectedHash, METADATA metadata, List<Operation<VALUE>> operations)
+  void commit(@Nonnull BranchName branch, @Nonnull Optional<Hash> referenceHash,
+      @Nonnull METADATA metadata, @Nonnull List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
-   * Transplant a series of commits to a target branch. This is done as an atomic operation such that only the last of
+   * Transplant a series of commits to a target branch.
+   *
+   * <p>This is done as an atomic operation such that only the last of
    * the sequence is ever visible to concurrent readers/writers. The sequence to transplant must be contiguous, in order
-   * and share a common ancestor to the target branch.
+   * and share a common ancestor with the target branch.
    *
    * @param targetBranch         The branch we're transplanting to
-   * @param expectedHash         The current head of the branch to validate before updating (optional).
+   * @param referenceHash        The hash to use as a reference for conflict detection. If not present, do not perform conflict detection
    * @param sequenceToTransplant The sequence of hashes to transplant.
-   * @throws ReferenceConflictException if {@code currentBranchHash} doesn't match the stored hash for {@code branch}
+   * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code sequenceToTransplant} is not present in the
    *     store.
    */
-  void transplant(BranchName targetBranch, Optional<Hash> expectedHash, List<Hash> sequenceToTransplant)
+  void transplant(BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -107,18 +114,16 @@ public interface VersionStore<VALUE, METADATA> {
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
-   * Assign the NamedRef to point to a particular hash. If the NamedRef does not exist, it will be created.
+   * Assign the NamedRef to point to a particular hash.
    *
-   * <p>Throws if expectedHash is defined and does not match the current hash of the provided branch
+   * <p>{@code ref} should already exists. If {@code expectedHash} is not empty, its value is compared with the current stored
+   * value for {@code ref} and an exception is thrown if values do not match.
    *
-   * <p>Throws if the targetHash provided does not exist, an exception will be thrown.
-   *
-   * @param ref          The named ref we're assigning
-   * @param expectedHash The current head of the NamedRef to validate before updating (optional).
+   * @param ref          The named ref to be assigned
+   * @param expectedHash The current head of the NamedRef to validate before updating. If not present, force assignment.
    * @param targetHash   The hash that this ref should refer to.
-   * @throws ReferenceNotFoundException if {@code targetHash} is not present in the store, or {@code expectedHash} is not empty
-   *     and {@code ref} is not present in the store
-   * @throws ReferenceConflictException if {@code expectedHash} doesn't match the stored hash for {@code ref}
+   * @throws ReferenceNotFoundException if {@code ref} is not present in the store or if {@code targetHash} is not present in the store
+   * @throws ReferenceConflictException if {@code expectedHash} is not empty and its value doesn't match the stored hash for {@code ref}
    */
   void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException;
