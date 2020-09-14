@@ -468,7 +468,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public List<Optional<DATA>> getValue(Ref ref, List<Key> key) throws ReferenceNotFoundException {
+  public List<Optional<DATA>> getValues(Ref ref, List<Key> key) throws ReferenceNotFoundException {
     List<InternalKey> keys = key.stream().map(InternalKey::new).collect(Collectors.toList());
     PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), keys);
     store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));

@@ -365,7 +365,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   @Override
-  public List<Optional<TABLE>> getValue(Ref ref, List<Key> key) {
+  public List<Optional<TABLE>> getValues(Ref ref, List<Key> key) {
     throw new IllegalStateException("Not yet implemented.");
   }
 
