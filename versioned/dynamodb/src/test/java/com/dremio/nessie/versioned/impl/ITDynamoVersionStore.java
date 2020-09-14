@@ -132,7 +132,7 @@ class ITDynamoVersionStore {
 
     assertEquals(
         Arrays.asList("world1", "world2", "world3"),
-        impl.getValue(branch, Arrays.asList(Key.of("hi"), Key.of("no"), Key.of("mad mad")))
+        impl.getValues(branch, Arrays.asList(Key.of("hi"), Key.of("no"), Key.of("mad mad")))
           .stream()
           .map(Optional::get)
           .collect(Collectors.toList()));
