@@ -35,6 +35,13 @@ jobs:
           ${{ runner.os }}-node-
     - name: Build with Maven
       run: mvn -B verify --file pom.xml -Pcode-coverage
+    - name: Capture test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results
+        path: |
+          **/target/surefire-reports/*
+          **/target/failsafe-reports/*
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
