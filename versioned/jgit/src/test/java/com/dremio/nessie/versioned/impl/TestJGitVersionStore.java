@@ -56,6 +56,7 @@ import com.dremio.nessie.versioned.ImmutablePut;
 import com.dremio.nessie.versioned.ImmutableTagName;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.Put;
+import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
@@ -171,6 +172,28 @@ class TestJGitVersionStore {
 
     // fail on delete of non-existent.
     assertThrows(ReferenceNotFoundException.class, () -> impl.delete(tag, Optional.empty()));
+  }
+
+  @ParameterizedTest
+  @EnumSource(RepoType.class)
+  void unknownRef(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+    BranchName branch = BranchName.of("bar");
+    impl.create(branch, Optional.empty());
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    TagName tag = TagName.of("foo");
+    Hash expected = impl.toHash(branch);
+    impl.create(tag, Optional.of(expected));
+
+    testRefMatchesToRef(impl, branch, expected, branch.getName());
+    testRefMatchesToRef(impl, tag, expected, tag.getName());
+    testRefMatchesToRef(impl, expected, expected, expected.asString());
+  }
+
+  private void testRefMatchesToRef(JGitVersionStore<String, String> impl, Ref ref, Hash hash, String name)
+      throws ReferenceNotFoundException {
+    WithHash<Ref> val = impl.toRef(name);
+    assertEquals(ref, val.getValue());
+    assertEquals(hash, val.getHash());
   }
 
   @ParameterizedTest

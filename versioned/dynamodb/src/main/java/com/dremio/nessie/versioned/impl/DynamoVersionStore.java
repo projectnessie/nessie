@@ -124,6 +124,31 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
+  public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
+    try {
+      InternalRef ref = store.loadSingle(ValueType.REF, Id.build(refOfUnknownType));
+      if (ref.getType() == Type.TAG) {
+        return WithHash.of(ref.getTag().getCommit().toHash(), TagName.of(ref.getTag().getName()));
+      }
+
+      Id id = ensureValidL1(ref.getBranch()).getId();
+      return WithHash.of(id.toHash(), BranchName.of(ref.getBranch().getName()));
+    } catch (ResourceNotFoundException ex) {
+      // ignore. could be a hash.
+    }
+
+    try {
+      Hash hash = Hash.of(refOfUnknownType);
+      L1 l1 = store.loadSingle(ValueType.L1, Id.of(hash));
+      return WithHash.of(l1.getId().toHash(), l1.getId().toHash());
+    } catch (RuntimeException ex) {
+      // ignore.
+    }
+
+    throw new ReferenceNotFoundException(String.format("Unable to find the provided ref %s.", refOfUnknownType));
+  }
+
+  @Override
   public void delete(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException, ReferenceConflictException {
     InternalRefId id = InternalRefId.of(ref);
 

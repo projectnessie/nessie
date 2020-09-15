@@ -36,7 +36,10 @@ import javax.inject.Inject;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.dircache.DirCacheBuilder;
 import org.eclipse.jgit.dircache.DirCacheEntry;
+import org.eclipse.jgit.errors.AmbiguousObjectException;
 import org.eclipse.jgit.errors.ConfigInvalidException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.errors.UnmergedPathException;
 import org.eclipse.jgit.lib.CommitBuilder;
 import org.eclipse.jgit.lib.Constants;
@@ -130,6 +133,36 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       throw new ReferenceNotFoundException(String.format("Ref %s was not found in the git database", ref));
     }
     return Hash.of(jgitRef.getObjectId().name());
+  }
+
+  @Override
+  public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
+    try {
+      org.eclipse.jgit.lib.Ref jgitRef;
+
+      jgitRef = repository.findRef(Constants.R_HEADS + refOfUnknownType);
+
+      // branch first.
+      if (jgitRef != null) {
+        return WithHash.of(Hash.of(jgitRef.getObjectId().name()), BranchName.of(refOfUnknownType));
+      }
+
+      // then tag.
+      jgitRef = repository.findRef(Constants.R_TAGS + refOfUnknownType);
+      if (jgitRef != null) {
+        return WithHash.of(Hash.of(jgitRef.getObjectId().name()), TagName.of(refOfUnknownType));
+      }
+
+      // hash last.
+      try {
+        repository.resolve(refOfUnknownType + "^{tree}");
+        return WithHash.of(Hash.of(refOfUnknownType), Hash.of(refOfUnknownType));
+      } catch (AmbiguousObjectException | IncorrectObjectTypeException | RevisionSyntaxException e) {
+        throw new ReferenceNotFoundException(String.format("Unable to find the requested reference %s.", refOfUnknownType));
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Error talking to git repo", e);
+    }
   }
 
   @Override
