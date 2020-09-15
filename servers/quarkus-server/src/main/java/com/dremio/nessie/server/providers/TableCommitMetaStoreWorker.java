@@ -20,7 +20,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.dremio.nessie.model.CommitMeta;
@@ -36,14 +35,9 @@ import com.google.protobuf.ByteString;
 
 @Singleton
 public class TableCommitMetaStoreWorker implements StoreWorker<Table, CommitMeta> {
-  private final ObjectMapper mapper;
+  private static final ObjectMapper MAPPER = new ObjectMapper();
   private final Serializer<Table> tableSerializer = serializer();
   private final Serializer<CommitMeta> metaSerializer = metadataSerializer();
-
-  @Inject
-  public TableCommitMetaStoreWorker(ObjectMapper mapper) {
-    this.mapper = mapper;
-  }
 
   private Serializer<Table> serializer() {
     //todo not handling TableMetadata at all...probably need to combine it w/ AssetKey
@@ -67,7 +61,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Table, CommitMeta
       @Override
       public ByteString toBytes(CommitMeta value) {
         try {
-          return ByteString.copyFrom(mapper.writeValueAsBytes(value));
+          return ByteString.copyFrom(MAPPER.writeValueAsBytes(value));
         } catch (JsonProcessingException e) {
           throw new RuntimeException(String.format("Couldn't serialize commit meta %s", value), e);
         }
@@ -76,7 +70,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Table, CommitMeta
       @Override
       public CommitMeta fromBytes(ByteString bytes) {
         try {
-          return mapper.readValue(bytes.toByteArray(), CommitMeta.class);
+          return MAPPER.readValue(bytes.toByteArray(), CommitMeta.class);
         } catch (IOException e) {
           return ImmutableCommitMeta.builder()
                                     .action(Action.UNKNOWN)

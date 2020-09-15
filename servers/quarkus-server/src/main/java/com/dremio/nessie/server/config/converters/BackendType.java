@@ -15,8 +15,6 @@
  */
 package com.dremio.nessie.server.config.converters;
 
-import org.eclipse.microprofile.config.spi.Converter;
-
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection
@@ -25,11 +23,4 @@ public enum BackendType {
   INMEMORY,
   DYNAMO;
 
-  public static class BackendTypeValueConverter implements Converter<BackendType> {
-
-    @Override
-    public BackendType convert(String value) {
-      return BackendType.valueOf(value);
-    }
-  }
 }

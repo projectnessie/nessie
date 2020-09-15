@@ -44,7 +44,6 @@ import com.dremio.nessie.versioned.impl.DynamoStoreConfig;
 import com.dremio.nessie.versioned.impl.DynamoVersionStore;
 import com.dremio.nessie.versioned.impl.JGitVersionStore;
 import com.dremio.nessie.versioned.impl.experimental.NessieRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.regions.Region;
 
@@ -65,8 +64,8 @@ public class VersionStoreFactory {
 
 
   @Produces
-  public StoreWorker<Table, CommitMeta> worker(ObjectMapper mapper) {
-    return new TableCommitMetaStoreWorker(mapper);
+  public StoreWorker<Table, CommitMeta> worker() {
+    return new TableCommitMetaStoreWorker();
   }
 
   /**

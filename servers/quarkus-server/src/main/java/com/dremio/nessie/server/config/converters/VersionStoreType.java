@@ -15,8 +15,6 @@
  */
 package com.dremio.nessie.server.config.converters;
 
-import org.eclipse.microprofile.config.spi.Converter;
-
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection
@@ -26,11 +24,4 @@ public enum VersionStoreType {
   INMEMORY,
   JGIT;
 
-  public static class LoginTypeValueConverter implements Converter<VersionStoreType> {
-
-    @Override
-    public VersionStoreType convert(String value) {
-      return VersionStoreType.valueOf(value);
-    }
-  }
 }

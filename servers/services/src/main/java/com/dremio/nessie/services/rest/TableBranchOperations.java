@@ -51,6 +51,13 @@ import javax.ws.rs.core.SecurityContext;
 
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,27 +76,11 @@ import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.google.common.collect.Lists;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
-
 /**
  * REST endpoint for CRUD operations on branches/tables.
  */
 @ApplicationScoped
 @Path("objects")
-@SecurityScheme(
-    name = "nessie-auth",
-    type = SecuritySchemeType.HTTP,
-    scheme = "bearer",
-    bearerFormat = "JWT"
-)
 public class TableBranchOperations {
 
   private static final Logger logger = LoggerFactory.getLogger(TableBranchOperations.class);
@@ -109,15 +100,13 @@ public class TableBranchOperations {
   //@RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Fetch all refs endpoint",
-      tags = {"get", "ref"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(
-          description = "All known refs",
-          content = @Content(mediaType = "application/json",
-            schema = @Schema(implementation = ReferenceWithType[].class))),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "Fetch all refs endpoint")
+  @APIResponses({
+      @APIResponse(
+        description = "All known refs",
+        content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = ReferenceWithType[].class))),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response refs() {
     ReferenceWithType[] refs = backend.getAllReferences().stream().map(ReferenceWithType::of).toArray(ReferenceWithType[]::new);
@@ -133,19 +122,17 @@ public class TableBranchOperations {
   @Timed(name = "timed-readall-refs")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{ref}")
-  @Operation(summary = "Fetch details of a ref endpoint",
-      tags = {"get", "ref"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(
-          description = "Ref details",
-          content = @Content(mediaType = "application/json",
-            schema = @Schema(implementation = ReferenceWithType.class))),
-        @ApiResponse(responseCode = "404", description = "Ref not found"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "Fetch details of a ref endpoint")
+  @APIResponses({
+      @APIResponse(
+        description = "Ref details",
+        content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = ReferenceWithType.class))),
+      @APIResponse(responseCode = "404", description = "Ref not found"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response ref(@Parameter(description = "name of ref to fetch", required = true)
-                                 @PathParam("ref") String refName) throws ReferenceNotFoundException {
+                      @PathParam("ref") String refName) throws ReferenceNotFoundException {
     Reference ref = backend.getReference(refName);
     return Response.ok(ReferenceWithType.of(ref)).tag(tagFromTable(ref)).build();
   }
@@ -163,23 +150,21 @@ public class TableBranchOperations {
   @Timed(name = "timed-readall-table")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{ref}/tables/{table}")
-  @Operation(summary = "Fetch details of a table endpoint",
-      tags = {"get", "table"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(
-          description = "Details of table on ref",
-          content = @Content(mediaType = "application/json",
-            schema = @Schema(implementation = Table.class))),
-        @ApiResponse(responseCode = "404", description = "Table not found on ref"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from ref")}
+  @Operation(summary = "Fetch details of a table endpoint")
+  @APIResponses({
+      @APIResponse(
+        description = "Details of table on ref",
+        content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = Table.class))),
+      @APIResponse(responseCode = "404", description = "Table not found on ref"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from ref")}
   )
   public Response refTable(@Parameter(description = "name of ref to search on", required = true)
-                                @PathParam("ref") String ref,
-                              @Parameter(description = "table name to search for", required = true)
-                                @PathParam("table") String tableName,
-                              @Parameter(description = "fetch all metadata on table")
-                                @DefaultValue("false") @QueryParam("metadata") boolean metadata) throws ReferenceNotFoundException {
+                           @PathParam("ref") String ref,
+                           @Parameter(description = "table name to search for", required = true)
+                           @PathParam("table") String tableName,
+                           @Parameter(description = "fetch all metadata on table")
+                           @DefaultValue("false") @QueryParam("metadata") boolean metadata) throws ReferenceNotFoundException {
     //todo metadata ignored until that becomes a clearer pattern
     Table table = backend.getTableOnReference(ref, tableName);
     if (table == null) {
@@ -197,18 +182,16 @@ public class TableBranchOperations {
   @Timed(name = "timed-readall-ref")
   @Consumes(MediaType.APPLICATION_JSON)
   @Path("{ref}")
-  @Operation(summary = "create ref endpoint",
-      tags = {"post", "ref"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(responseCode = "409", description = "Ref already exists"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "create ref endpoint")
+  @APIResponses({
+      @APIResponse(responseCode = "409", description = "Ref already exists"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response createRef(@Parameter(description = "name of ref to be created", required = true)
-                                 @PathParam("ref") String refName,
-                               @RequestBody(description = "ref object to be created",
-                               content = @Content(schema = @Schema(implementation = ReferenceWithType.class)))
-                                 ReferenceWithType ref) throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
+                            @PathParam("ref") String refName,
+                            @RequestBody(description = "ref object to be created",
+                              content = @Content(schema = @Schema(implementation = ReferenceWithType.class)))
+                              ReferenceWithType ref) throws ReferenceAlreadyExistsException, ReferenceNotFoundException {
     Reference newRef = backend.createRef(refName, ref.getReference().getId(), ref.getType());
     return Response.created(null).tag(tagFromTable(newRef)).build();
   }
@@ -222,26 +205,24 @@ public class TableBranchOperations {
   @Timed(name = "timed-create-table")
   @Path("{ref}/tables/{table}")
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "create table on ref endpoint",
-      tags = {"post", "table"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
-        @ApiResponse(responseCode = "400", description = "Table already exists"),
-        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "create table on ref endpoint")
+  @APIResponses({
+      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+      @APIResponse(responseCode = "400", description = "Table already exists"),
+      @APIResponse(responseCode = "412", description = "update conflict, tag out of date"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response createTable(@Parameter(description = "ref on which table will be created", required = true)
-                                @PathParam("ref") String ref,
+                              @PathParam("ref") String ref,
                               @Parameter(description = "name of table to be created", required = true)
-                                @PathParam("table") String tableName,
+                              @PathParam("table") String tableName,
                               @Parameter(description = "reason for this action for audit purposes")
-                                @DefaultValue("unknown") @QueryParam("reason") String reason,
+                              @DefaultValue("unknown") @QueryParam("reason") String reason,
                               @Context SecurityContext securityContext,
                               @Context HttpHeaders headers,
                               @RequestBody(description = "table object to be created",
                                 content = @Content(schema = @Schema(implementation = Table.class)))
-                                  Table table)
+                                Table table)
       throws ReferenceNotFoundException, ReferenceConflictException, ReferenceAlreadyExistsException {
     Table existing = backend.getTableOnReference(ref, tableName);
     if (existing != null) {
@@ -275,24 +256,18 @@ public class TableBranchOperations {
   //@RolesAllowed({"admin"})
   @Timed(name = "timed-delete-ref")
   @Path("{ref}")
-  @Operation(summary = "delete ref endpoint",
-      tags = {"delete", "ref"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
-        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "delete ref endpoint")
+  @APIResponses({
+      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+      @APIResponse(responseCode = "412", description = "update conflict, tag out of date"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response deleteRef(@Parameter(description = "ref to delete", required = true)
-                                 @PathParam("ref") String ref,
-                               @Context HttpHeaders headers) throws ReferenceConflictException, ReferenceNotFoundException {
+                            @PathParam("ref") String ref,
+                            @Context HttpHeaders headers) throws ReferenceConflictException, ReferenceNotFoundException {
     String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
     backend.deleteRef(ref, hash);
     return Response.ok().build();
-  }
-
-  static class CommitMetaModel extends HashMap<String, CommitMeta> {
-    //because swagger is annoying
   }
 
   /**
@@ -303,22 +278,20 @@ public class TableBranchOperations {
   //@RolesAllowed({"admin"})
   @Timed(name = "timed-delete-table")
   @Path("{ref}/tables/{table}")
-  @Operation(summary = "delete table on ref endpoint",
-      tags = {"delete", "table"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(responseCode = "404", description = "Ref/table doesn't exists"),
-        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "delete table on ref endpoint")
+  @APIResponses({
+      @APIResponse(responseCode = "404", description = "Ref/table doesn't exists"),
+      @APIResponse(responseCode = "412", description = "update conflict, tag out of date"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response deleteTable(@Parameter(description = "ref on which to delete table", required = true)
-                                @PathParam("ref") String ref,
+                              @PathParam("ref") String ref,
                               @Parameter(description = "table to delete", required = true)
-                                @PathParam("table") String table,
+                              @PathParam("table") String table,
                               @Parameter(description = "reason for this action for audit purposes")
-                                @DefaultValue("unknown") @QueryParam("reason") String reason,
+                              @DefaultValue("unknown") @QueryParam("reason") String reason,
                               @Parameter(description = "purge all data about ref")
-                                @DefaultValue("false") @QueryParam("purge") boolean purge,
+                              @DefaultValue("false") @QueryParam("purge") boolean purge,
                               @Context SecurityContext securityContext,
                               @Context HttpHeaders headers) throws ReferenceConflictException, ReferenceNotFoundException {
     String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
@@ -336,20 +309,18 @@ public class TableBranchOperations {
   //@RolesAllowed({"admin"})
   @Timed(name = "timed-assign")
   @Path("{ref}")
-  @Operation(summary = "assign hash to ref endpoint",
-      tags = {"put", "commit"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
-        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "assign hash to ref endpoint")
+  @APIResponses({
+      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+      @APIResponse(responseCode = "412", description = "update conflict, tag out of date"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response updateBatch(@Parameter(description = "ref on which to assign, may not yet exist", required = true)
-                                @PathParam("ref") String ref,
+                              @PathParam("ref") String ref,
                               @Parameter(description = "name of ref to take commits from", required = true)
                               @QueryParam("target") String targetRef,
                               @Context HttpHeaders headers
-                              ) throws ReferenceConflictException, ReferenceNotFoundException {
+  ) throws ReferenceConflictException, ReferenceNotFoundException {
     String hash = version(headers).orElseThrow(() -> new ReferenceConflictException("ETag header not supplied"));
     backend.assign(ref, hash, targetRef);
     return Response.ok().build();
@@ -363,24 +334,26 @@ public class TableBranchOperations {
   //@RolesAllowed({"admin"})
   @Timed(name = "timed-commit-table")
   @Path("{ref}/tables/{table}")
-  @Operation(summary = "update via commit single table to ref endpoint",
-      tags = {"put", "commit"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(responseCode = "404", description = "Ref/table doesn't exists"),
-        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "update via commit single table to ref endpoint")
+  @APIResponses({
+      @APIResponse(responseCode = "404", description = "Ref/table doesn't exists"),
+      @APIResponse(responseCode = "412", description = "update conflict, tag out of date"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response update(@Parameter(description = "ref on which to add merges", required = true)
-                           @PathParam("ref") String ref,
+                         @PathParam("ref") String ref,
                          @Parameter(description = "table which will be changed", required = true)
-                           @PathParam("table") String table,
+                         @PathParam("table") String table,
                          @Parameter(description = "reason for this action for audit purposes")
-                           @DefaultValue("unknown") @QueryParam("reason") String reason,
+                         @DefaultValue("unknown") @QueryParam("reason") String reason,
                          @Context SecurityContext securityContext,
                          @Context HttpHeaders headers,
                          Table update) throws ReferenceConflictException, ReferenceNotFoundException {
     return singleCommit(ref, table, securityContext, headers, update, reason, false);
+  }
+
+  static class CommitMetaModel extends HashMap<String, CommitMeta> {
+    //because swagger is annoying
   }
 
   /**
@@ -392,16 +365,14 @@ public class TableBranchOperations {
   @Timed(name = "timed-log-ref")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{ref}/log")
-  @Operation(summary = "log ref endpoint",
-      tags = {"log", "ref"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(
-          description = "all commits on a ref",
-          content = @Content(mediaType = "application/json",
-            schema = @Schema(implementation = CommitMetaModel.class))),
-        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "log ref endpoint")
+  @APIResponses({
+      @APIResponse(
+        description = "all commits on a ref",
+        content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = CommitMetaModel.class))),
+      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response commitLog(@Parameter(description = "ref to show log from", required = true)
                             @PathParam("ref") String ref,
@@ -418,14 +389,12 @@ public class TableBranchOperations {
   //@RolesAllowed({"admin"})
   @Timed(name = "timed-transplant")
   @Path("{ref}/transplant")
-  @Operation(summary = "transplant commits from mergeRef to ref endpoint",
-      tags = {"put", "commit"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(responseCode = "401", description = "no merge ref supplied"),
-        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
-        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "transplant commits from mergeRef to ref endpoint")
+  @APIResponses({
+      @APIResponse(responseCode = "401", description = "no merge ref supplied"),
+      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+      @APIResponse(responseCode = "412", description = "update conflict, tag out of date"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response transplantRef(@Parameter(description = "ref on which to add merges", required = true)
                                 @PathParam("ref") String ref,
@@ -450,14 +419,12 @@ public class TableBranchOperations {
   //@RolesAllowed({"admin"})
   @Timed(name = "timed-merge")
   @Path("{ref}/merge")
-  @Operation(summary = "merge commits from mergeRef to ref endpoint",
-      tags = {"put", "commit"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(responseCode = "401", description = "no merge ref supplied"),
-        @ApiResponse(responseCode = "404", description = "Ref doesn't exists"),
-        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "merge commits from mergeRef to ref endpoint")
+  @APIResponses({
+      @APIResponse(responseCode = "401", description = "no merge ref supplied"),
+      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+      @APIResponse(responseCode = "412", description = "update conflict, tag out of date"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response mergeRef(@Parameter(description = "ref on which to add merges", required = true)
                            @PathParam("ref") String ref,
@@ -481,16 +448,14 @@ public class TableBranchOperations {
   @Timed(name = "timed-readall-tables")
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{ref}/tables")
-  @Operation(summary = "Fetch all tables on a ref endpoint",
-      tags = {"get", "table"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(
-          description = "all tables on a ref",
-          content = @Content(mediaType = "application/json",
-            schema = @Schema(implementation = String[].class))),
-        @ApiResponse(responseCode = "404", description = "Ref not found"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "Fetch all tables on a ref endpoint")
+  @APIResponses({
+      @APIResponse(
+        description = "all tables on a ref",
+        content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = String[].class))),
+      @APIResponse(responseCode = "404", description = "Ref not found"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response refTables(@Parameter(description = "name of ref to fetch from", required = true)
                             @PathParam("ref") String refName,
@@ -511,13 +476,11 @@ public class TableBranchOperations {
   //@RolesAllowed({"admin"})
   @Timed(name = "timed-commit-multi-table")
   @Path("{ref}/tables")
-  @Operation(summary = "update via commit multiple tables to ref endpoint",
-      tags = {"put", "commit"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(responseCode = "404", description = "Ref/table doesn't exists"),
-        @ApiResponse(responseCode = "412", description = "update conflict, tag out of date"),
-        @ApiResponse(responseCode = "500", description = "Could not fetch data from backend")}
+  @Operation(summary = "update via commit multiple tables to ref endpoint")
+  @APIResponses({
+      @APIResponse(responseCode = "404", description = "Ref/table doesn't exists"),
+      @APIResponse(responseCode = "412", description = "update conflict, tag out of date"),
+      @APIResponse(responseCode = "500", description = "Could not fetch data from backend")}
   )
   public Response updateMulti(@Parameter(description = "ref on which to add merges", required = true)
                               @PathParam("ref") String ref,

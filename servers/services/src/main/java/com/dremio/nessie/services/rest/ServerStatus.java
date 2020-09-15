@@ -25,6 +25,11 @@ import javax.ws.rs.core.MediaType;
 
 import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,24 +37,17 @@ import com.dremio.nessie.model.ImmutableNessieConfiguration;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.ServerConfig;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
 
 /**
  * REST endpoint to retrieve server settings.
  */
 @Path("config")
-@SecurityScheme(
-    name = "nessie-auth",
-    type = SecuritySchemeType.HTTP,
-    scheme = "bearer",
-    bearerFormat = "JWT"
-)
+//@SecurityScheme(
+//    name = "nessie-auth",
+//    type = SecuritySchemeType.HTTP,
+//    scheme = "bearer",
+//    bearerFormat = "JWT"
+//)
 @ApplicationScoped
 public class ServerStatus {
 
@@ -66,15 +64,14 @@ public class ServerStatus {
   //@RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall")
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "List all configuration settings",
-      tags = {"tables"},
-      security = @SecurityRequirement(name = "nessie-auth"),
-      responses = {
-        @ApiResponse(
+  @Operation(summary = "List all configuration settings")
+
+  @APIResponses({
+        @APIResponse(
           description = "Configuration settings",
           content = @Content(mediaType = "application/json",
             schema = @Schema(implementation = NessieConfiguration.class))),
-        @ApiResponse(responseCode = "400", description = "Unknown Error")}
+        @APIResponse(responseCode = "400", description = "Unknown Error")}
   )
   public NessieConfiguration getConfig() {
     return ImmutableNessieConfiguration.builder()
