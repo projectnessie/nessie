@@ -162,10 +162,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   @Override
   public void commit(BranchName branch, Optional<Hash> referenceHash,
       MetadataT metadata, List<Operation<ValueT>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
-    final Hash currentHash = namedReferences.get(branch);
-    if (currentHash == null) {
-      throw ReferenceNotFoundException.forReference(branch);
-    }
+    final Hash currentHash = toHash(branch);
 
     // Validate commit
     try {
@@ -214,10 +211,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     requireNonNull(targetBranch);
     requireNonNull(sequenceToTransplant);
 
-    final Hash currentHash = namedReferences.get(targetBranch);
-    if (currentHash == null) {
-      throw ReferenceNotFoundException.forReference(targetBranch);
-    }
+    final Hash currentHash = toHash(targetBranch);
 
     if (sequenceToTransplant.isEmpty()) {
       return;
@@ -301,10 +295,8 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
       throws ReferenceNotFoundException, ReferenceConflictException {
     requireNonNull(ref);
     requireNonNull(targetHash);
-    final Hash currentHash = namedReferences.get(ref);
-    if (currentHash == null) {
-      throw ReferenceNotFoundException.forReference(ref);
-    }
+
+    final Hash currentHash = toHash(ref);
 
     try {
       ifPresent(expectedRefHash, hash -> {
@@ -479,19 +471,6 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   @Override
   public Collector collectGarbage() {
     return InactiveCollector.of();
-  }
-
-  private Hash checkExpectedHash(NamedRef ref, Optional<Hash> expectedHash)
-      throws ReferenceNotFoundException, ReferenceConflictException {
-    final Hash currentHash = namedReferences.get(ref);
-    if (currentHash == null) {
-      throw ReferenceNotFoundException.forReference(ref);
-    }
-    if (!currentHash.equals(expectedHash.orElse(NO_ANCESTOR))) {
-      throw ReferenceConflictException.forReference(ref, expectedHash, Optional.of(currentHash));
-    }
-
-    return currentHash;
   }
 
   @SuppressWarnings("serial")
