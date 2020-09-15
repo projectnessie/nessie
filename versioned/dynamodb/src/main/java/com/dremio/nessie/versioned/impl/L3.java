@@ -128,14 +128,16 @@ class L3 extends MemoizedId {
 
     @Override
     public Map<String, AttributeValue> itemToMap(L3 item, boolean ignoreNulls) {
-      List<AttributeValue> values = item.map.entrySet().stream().map(e -> {
-        InternalKey key = e.getKey();
-        PositionDelta pm = e.getValue();
-        Map<String, AttributeValue> pmm = ImmutableMap.of(
-            TREE_KEY, key.toAttributeValue(),
-            TREE_ID, pm.getNewId().toAttributeValue());
-        return AttributeValue.builder().m(pmm).build();
-      }).collect(Collectors.toList());
+      List<AttributeValue> values = item.map.entrySet().stream()
+          .filter(e -> !e.getValue().getNewId().isEmpty())
+          .map(e -> {
+            InternalKey key = e.getKey();
+            PositionDelta pm = e.getValue();
+            Map<String, AttributeValue> pmm = ImmutableMap.of(
+                TREE_KEY, key.toAttributeValue(),
+                TREE_ID, pm.getNewId().toAttributeValue());
+            return AttributeValue.builder().m(pmm).build();
+          }).collect(Collectors.toList());
       return ImmutableMap.<String, AttributeValue>builder()
           .put(TREE, AttributeValue.builder().l(values).build())
           .put(ID, item.getId().toAttributeValue())

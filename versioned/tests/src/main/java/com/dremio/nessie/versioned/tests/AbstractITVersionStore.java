@@ -570,7 +570,7 @@ public abstract class AbstractITVersionStore {
   }
 
   @Test
-  void transplant() throws VersionStoreException {
+  protected void transplant() throws VersionStoreException {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
 
