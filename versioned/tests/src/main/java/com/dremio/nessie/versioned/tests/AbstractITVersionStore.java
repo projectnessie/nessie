@@ -99,7 +99,6 @@ public abstract class AbstractITVersionStore {
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(branch));
     assertThat(store().getNamedRefs().count(), is(2L)); // bar + baz
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(hash)));
-
   }
 
   /*
@@ -685,7 +684,28 @@ public abstract class AbstractITVersionStore {
       assertThrows(IllegalArgumentException.class,
           () -> store().transplant(newBranch, Optional.empty(), Arrays.asList(secondCommit, firstCommit, thirdCommit)));
     }
+  }
 
+  @Test
+  void toRef() throws VersionStoreException {
+    final BranchName branch = BranchName.of("main");
+    store().create(branch, Optional.empty());
+    final Hash initialCommit = store().toHash(branch);
+
+    final Hash firstCommit = addCommit(branch, "First Commit");
+    final Hash secondCommit = addCommit(branch, "Second Commit");
+    final Hash thirdCommit = addCommit(branch, "Third Commit");
+
+    store().create(BranchName.of(thirdCommit.asString()), Optional.of(firstCommit));
+    store().create(TagName.of(secondCommit.asString()), Optional.of(firstCommit));
+
+    assertThat(store().toRef(firstCommit.asString()), is(WithHash.of(firstCommit, firstCommit)));
+    assertThat(store().toRef(secondCommit.asString()), is(WithHash.of(firstCommit, TagName.of(secondCommit.asString()))));
+    assertThat(store().toRef(thirdCommit.asString()), is(WithHash.of(firstCommit, BranchName.of(thirdCommit.asString()))));
+    // Is it correct to allow a reference with the sentinel reference?
+    //assertThat(store().toRef(initialCommit.asString()), is(WithHash.of(initialCommit, initialCommit)));
+    assertThrows(ReferenceNotFoundException.class, () -> store().toRef("unknown-ref"));
+    assertThrows(ReferenceNotFoundException.class, () -> store().toRef("1234567890abcdef"));
   }
 
   @SuppressWarnings("unchecked")
