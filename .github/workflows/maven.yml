@@ -34,11 +34,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - name: Build with Maven
-      run: mvn -B verify --file pom.xml -Pcode-coverage
+      run: mvn -B verify --file pom.xml -Pcode-coverage -Dmaven.test.failure.ignore=true
     - name: Capture test results
       uses: actions/upload-artifact@v2
       with:
-        if: failure()
         name: test-results
         path: |
           **/target/surefire-reports/*
