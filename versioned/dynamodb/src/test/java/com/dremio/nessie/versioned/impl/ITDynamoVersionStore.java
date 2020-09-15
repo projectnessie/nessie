@@ -126,7 +126,7 @@ class ITDynamoVersionStore {
     TagName tag = TagName.of("foo");
 
     // check that we can't assign an empty tag.
-    assertThrows(ReferenceNotFoundException.class, () -> fixture.create(tag,  Optional.empty()));
+    assertThrows(IllegalArgumentException.class, () -> fixture.create(tag,  Optional.empty()));
 
     // create a tag using the default empty hash.
     fixture.create(tag, Optional.of(L1.EMPTY_ID.toHash()));

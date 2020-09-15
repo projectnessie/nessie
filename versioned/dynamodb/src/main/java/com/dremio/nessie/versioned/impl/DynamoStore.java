@@ -81,7 +81,7 @@ public class DynamoStore implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
   public static enum ValueType {
-    REF(InternalRef.class, InternalRef.SCHEMA),
+    REF(InternalRef.class, InternalRef.SCHEMA, false),
     L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA),
     L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA),
     L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA),
@@ -90,9 +90,16 @@ public class DynamoStore implements AutoCloseable {
 
     private final Class<?> objectClass;
     private final SimpleSchema<?> schema;
+    private final boolean immutable;
+
     ValueType(Class<?> objectClass, SimpleSchema<?> schema) {
+      this(objectClass, schema, true);
+    }
+
+    ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable) {
       this.objectClass = objectClass;
       this.schema = schema;
+      this.immutable = immutable;
     }
 
     public Class<?> getObjectClass() {
@@ -102,6 +109,10 @@ public class DynamoStore implements AutoCloseable {
     @SuppressWarnings("unchecked")
     public <T> SimpleSchema<T> getSchema() {
       return (SimpleSchema<T>) schema;
+    }
+
+    public boolean isImmutable() {
+      return immutable;
     }
   }
 
@@ -162,6 +173,7 @@ public class DynamoStore implements AutoCloseable {
 
   }
 
+  @Override
   public void close() {
     client.close();
   }
@@ -174,12 +186,12 @@ public class DynamoStore implements AutoCloseable {
    *
    * @param loadstep The step to load
    */
-  void load(LoadStep loadstep) {
+  void load(LoadStep loadstep) throws ReferenceNotFoundException {
 
     while (true) { // for each load step in the chain.
       List<ListMultimap<String, LoadOp<?>>> stepPages = paginateLoads(loadstep, paginationSize);
 
-      stepPages.forEach(l -> {
+      for (ListMultimap<String, LoadOp<?>> l : stepPages) {
         Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
           List<LoadOp<?>> loadList = l.get(table);
           List<Map<String, AttributeValue>> keys = loadList.stream()
@@ -193,13 +205,20 @@ public class DynamoStore implements AutoCloseable {
         Sets.SetView<String> missingElements = Sets.difference(loads.keySet(), responses.keySet());
         Preconditions.checkArgument(missingElements.isEmpty(), "Did not receive any objects for table(s) %s.", missingElements);
 
-        responses.keySet().forEach(table -> {
+        for (String table : responses.keySet()) {
           List<LoadOp<?>> loadList = l.get(table);
           List<Map<String, AttributeValue>> values = responses.get(table);
           int missingResponses = loadList.size() - values.size();
-          Preconditions.checkArgument(missingResponses == 0,
-              "[%s] object(s) missing in table read [%s]. \n\nObjects expected: %s\n\nObjects Received: %s",
-              missingResponses, table, loadList, responses);
+          if (missingResponses != 0) {
+            ValueType loadType = loadList.get(0).getValueType();
+            if (loadType == ValueType.REF || loadType == ValueType.L1) {
+              throw new ReferenceNotFoundException("Unable to find requested ref.");
+            }
+
+            throw new DynamoGeneralReadFailure(
+                String.format("[%d] object(s) missing in table read [%s]. \n\nObjects expected: %s\n\nObjects Received: %s",
+                missingResponses, table, loadList, responses));
+          }
 
           // unfortunately, responses don't come in the order of the requests so we need to map between ids.
           Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
@@ -207,8 +226,8 @@ public class DynamoStore implements AutoCloseable {
             Map<String, AttributeValue> item = values.get(i);
             opMap.get(Id.fromAttributeValue(item.get(KEY_NAME))).loaded(item);
           }
-        });
-      });
+        }
+      }
       Optional<LoadStep> next = loadstep.getNext();
 
       if (!next.isPresent()) {

@@ -25,6 +25,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 import com.dremio.nessie.versioned.Hash;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hasher;
@@ -66,8 +67,11 @@ final class Id implements InternalRef {
     return new Id(bytes);
   }
 
-  public static Id of(Hash hash) {
+  public static Id of(Hash hash) throws ReferenceNotFoundException {
     ByteString bytes = hash.asBytes();
+    if (bytes.size() != LENGTH) {
+      throw ReferenceNotFoundException.forReference(hash);
+    }
     return Id.of(bytes);
   }
 

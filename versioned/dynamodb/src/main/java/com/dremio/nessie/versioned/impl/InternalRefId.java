@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Ref;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
 
@@ -39,7 +40,7 @@ class InternalRefId implements HasId {
     this.id = id;
   }
 
-  public static InternalRefId of(Ref ref) {
+  public static InternalRefId of(Ref ref) throws ReferenceNotFoundException {
     if (ref instanceof BranchName) {
       return InternalRefId.ofBranch(((BranchName)ref).getName());
     } else if (ref instanceof TagName) {
@@ -63,7 +64,7 @@ class InternalRefId implements HasId {
     return new InternalRefId(name, Type.BRANCH);
   }
 
-  public static InternalRefId ofHash(Hash hash) {
+  public static InternalRefId ofHash(Hash hash) throws ReferenceNotFoundException {
     return new InternalRefId(Id.of(hash), Type.HASH);
   }
 
