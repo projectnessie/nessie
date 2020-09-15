@@ -19,7 +19,6 @@ package com.dremio.nessie.server;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
-import java.util.Arrays;
 import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
@@ -58,7 +57,6 @@ public class RestGitTest {
 
     Response res = given().when().get("/api/v1/objects").then().statusCode(200).extract().response();
     ReferenceWithType<Branch>[] branches = res.body().as(ReferenceWithType[].class);
-    System.out.println("FUCK! " + Arrays.toString(branches));
     Assertions.assertEquals(1, branches.length);
     Assertions.assertEquals("mainx", branches[0].getReference().getName());
 
