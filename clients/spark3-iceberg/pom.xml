@@ -198,6 +198,18 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-quarkus</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
