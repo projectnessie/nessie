@@ -44,8 +44,6 @@ import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.iceberg.NessieCatalog;
-import com.dremio.nessie.iceberg.NessieTableOperations;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Reference;
 

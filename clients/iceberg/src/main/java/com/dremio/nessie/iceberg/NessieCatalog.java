@@ -65,12 +65,21 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
   private final String warehouseLocation;
   private final Configuration config;
   private final UpdateableReference reference;
+  private final String name;
 
   /**
    * create a catalog from a hadoop configuration.
    */
   public NessieCatalog(Configuration config) {
+    this("nessie", config);
+  }
+
+  /**
+   * Create a catalog with a known name from a hadoop configuration.
+   */
+  public NessieCatalog(String name, Configuration config) {
     this.config = config;
+    this.name = name;
     String path = config.get(CONF_NESSIE_URL);
     String username = config.get(CONF_NESSIE_USERNAME);
     String password = config.get(CONF_NESSIE_PASSWORD);
@@ -104,7 +113,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
 
   @Override
   protected String name() {
-    return "nessie";
+    return name;
   }
 
   private static ContentsKey toKey(TableIdentifier tableIdentifier) {

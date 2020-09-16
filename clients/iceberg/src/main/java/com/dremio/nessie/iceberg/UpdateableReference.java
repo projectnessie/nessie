@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.iceberg;
 
-import org.apache.curator.shaded.com.google.common.base.Preconditions;
 import org.apache.iceberg.exceptions.NotFoundException;
 
 import com.dremio.nessie.api.TreeApi;
@@ -61,7 +60,9 @@ class UpdateableReference {
   }
 
   public Branch getAsBranch() {
-    Preconditions.checkArgument(isBranch());
+    if (!isBranch()) {
+      throw new IllegalArgumentException("Reference is not a branch");
+    }
     return (Branch) reference;
   }
 
