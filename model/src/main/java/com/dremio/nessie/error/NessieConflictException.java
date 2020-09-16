@@ -13,26 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.error;
 
-package com.dremio.nessie.model;
+public class NessieConflictException extends Exception {
 
-import org.immutables.value.Value;
+  public NessieConflictException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+  public NessieConflictException(String message) {
+    super(message);
+  }
 
-/**
- * Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology.
- */
-@Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableHash.class)
-@JsonDeserialize(as = ImmutableHash.class)
-@JsonTypeName("HASH")
-public abstract class Hash implements Reference {
-
-  public String id() {
-    return getName();
+  public NessieConflictException(Throwable cause) {
+    super(cause);
   }
 
 }

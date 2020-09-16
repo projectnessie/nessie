@@ -29,7 +29,7 @@ import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.ReferenceWithType;
-import com.dremio.nessie.model.Table;
+import com.dremio.nessie.model.Contents;
 
 import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
 
@@ -87,7 +87,7 @@ public class NessieClient implements Closeable {
   /**
    * Get a single table specific to a given branch.
    */
-  public Table getTable(String branch, String name, String namespace) {
+  public Contents getTable(String branch, String name, String namespace) {
     String table = (namespace == null) ? name : (namespace + "." + name);
     try {
       return nessie.refTable(branch, table, false);
@@ -127,7 +127,7 @@ public class NessieClient implements Closeable {
    * @param branch The branch to commit on. Its id is the commit version to commit on top of
    * @param tables list of tables to be added, deleted or modified
    */
-  public void commit(Branch branch, Table... tables) {
+  public void commit(Branch branch, Contents... tables) {
     nessie.updateMulti(branch.getName(), null, branch.getId(), tables);
   }
 

@@ -36,7 +36,8 @@ import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableHash;
 import com.dremio.nessie.model.ImmutableTag;
 import com.dremio.nessie.model.Reference;
-import com.dremio.nessie.model.Table;
+import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.NessieObjectKey;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
@@ -59,10 +60,10 @@ import com.dremio.nessie.versioned.WithHash;
 public class VersionStoreAdapter {
   private static final String SLASH = "/";
 
-  private final VersionStore<Table, CommitMeta> versionStore;
+  private final VersionStore<Contents, CommitMeta> versionStore;
 
   @Inject
-  public VersionStoreAdapter(VersionStore<Table, CommitMeta> versionStore) {
+  public VersionStoreAdapter(VersionStore<Contents, CommitMeta> versionStore) {
     this.versionStore = versionStore;
   }
 
@@ -125,7 +126,7 @@ public class VersionStoreAdapter {
    * @return table object for refName or null if not found
    * @throws ReferenceNotFoundException if refName is not in version store
    */
-  public Table getTableOnReference(String refName, String table) throws ReferenceNotFoundException {
+  public Contents getTableOnReference(String refName, NessieObjectKey table) throws ReferenceNotFoundException {
     Hash ref = getHash(refName).orElseThrow(() -> new ReferenceNotFoundException(String.format("Ref for %s not found", refName)));
     return versionStore.getValue(ref, keyFromUrlString(table));
   }
@@ -185,7 +186,7 @@ public class VersionStoreAdapter {
    * @throws ReferenceNotFoundException if branch is not an existing branch
    * @throws ReferenceConflictException if expectedHash is not up to date
    */
-  public void commit(String branch, String expectedHash, CommitMeta meta, List<Operation<Table>> ops)
+  public void commit(String branch, String expectedHash, CommitMeta meta, List<Operation<Contents>> ops)
       throws ReferenceNotFoundException, ReferenceConflictException {
     versionStore.commit(BranchName.of(branch), Optional.ofNullable(expectedHash).map(Hash::of), meta, ops);
   }

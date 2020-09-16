@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.model;
 
-import javax.annotation.Nullable;
+package com.dremio.nessie.model;
 
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
@@ -25,29 +24,34 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+/**
+ * Abstract implementation of contents within Nessie.
+ */
 @Schema(
     type = SchemaType.OBJECT,
-    title = "Reference",
-    oneOf = { Branch.class, Tag.class, Hash.class },
+    title = "Contents",
+    oneOf = { IcebergTable.class, DeltaLakeTable.class, SqlView.class, HiveTable.class, HiveDatabase.class },
     discriminatorMapping = {
-        @DiscriminatorMapping(value = "TAG", schema = Tag.class),
-        @DiscriminatorMapping(value = "BRANCH", schema = Branch.class),
-        @DiscriminatorMapping(value = "HASH", schema = Hash.class)
+        @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class),
+        @DiscriminatorMapping(value = "DELTA_LAKE_TABLE", schema = DeltaLakeTable.class),
+        @DiscriminatorMapping(value = "VIEW", schema = SqlView.class),
+        @DiscriminatorMapping(value = "HIVE_TABLE", schema = HiveTable.class),
+        @DiscriminatorMapping(value = "HIVE_DATABASE", schema = HiveDatabase.class)
     },
     discriminatorProperty = "type"
   )
-@JsonSubTypes({@Type(Branch.class), @Type(Tag.class), @Type(Hash.class)})
+@JsonSubTypes({
+    @Type(IcebergTable.class),
+    @Type(DeltaLakeTable.class),
+    @Type(SqlView.class),
+    @Type(HiveTable.class),
+    @Type(HiveDatabase.class)
+  })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-public interface Reference extends Base {
-  /**
-   * Human readable reference name.
-   */
-  String getName();
+public interface Contents {
 
-  /**
-   * backend system id. Usually the 20-byte hash of the commit this reference points to.
-   */
-  @Nullable
-  String getId();
+  static enum Type {
+    ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
+  }
 
 }

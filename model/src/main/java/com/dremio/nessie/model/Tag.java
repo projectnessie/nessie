@@ -18,6 +18,7 @@ package com.dremio.nessie.model;
 
 import org.immutables.value.Value;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -27,6 +28,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableTag.class)
 @JsonDeserialize(as = ImmutableTag.class)
+@JsonTypeName("TAG")
 public abstract class Tag implements Reference {
 
 }

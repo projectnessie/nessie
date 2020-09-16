@@ -23,7 +23,7 @@ import java.util.Map;
 import com.dremio.nessie.jgit.GitStoreObjects;
 import com.dremio.nessie.jgit.GitStoreObjects.Table.Builder;
 import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.Table;
+import com.dremio.nessie.model.Contents;
 import com.google.common.base.Joiner;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -32,13 +32,13 @@ public class ProtoUtil {
   private static final Joiner DOT = Joiner.on('.');
 
   /**
-   * turn a {@link com.dremio.nessie.model.Table} into a protobuf object.
+   * turn a {@link com.dremio.nessie.model.Contents} into a protobuf object.
    *
    * @param table Table to persist
    * @param id optional ObjectId of the metadata
    * @return protobuf container
    */
-  public static GitStoreObjects.Table tableToProtoc(Table table, String id) {
+  public static GitStoreObjects.Table tableToProtoc(Contents table, String id) {
     Builder builder = GitStoreObjects.Table.newBuilder()
                                            .setPath(table.getId())
                                            .setMetadataLocation(table.getMetadataLocation());
@@ -54,7 +54,7 @@ public class ProtoUtil {
    * @param data raw bytes
    * @return Table object and optionally the reference to the metadata object
    */
-  public static Map.Entry<Table, String> tableFromBytes(byte[] data) {
+  public static Map.Entry<Contents, String> tableFromBytes(byte[] data) {
     try {
       GitStoreObjects.Table table = GitStoreObjects.Table.parseFrom(data);
       String[] names = table.getPath().split("\\.");

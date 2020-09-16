@@ -18,6 +18,7 @@ package com.dremio.nessie.model;
 
 import org.immutables.value.Value;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -27,19 +28,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableBranch.class)
 @JsonDeserialize(as = ImmutableBranch.class)
+@JsonTypeName("BRANCH")
 public abstract class Branch implements Reference {
-
-  /**
-   * Flag to denote the deletion of this branch. Has not been purged from backend.
-   *
-   * <p>
-   *   todo remove
-   * </p>
-   */
-  @Deprecated
-  @Value.Default
-  public boolean isDeleted() {
-    return false;
-  }
-
 }

@@ -20,38 +20,17 @@ import org.immutables.value.Value;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.base.Joiner;
 
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableCommitMeta.class)
 @JsonDeserialize(as = ImmutableCommitMeta.class)
-public abstract class CommitMeta {
+public interface CommitMeta {
 
-  private static final Joiner SEMI = Joiner.on(";");
+  String getHash();
 
-  public String toMessage() {
-    return SEMI.join(comment(), action().toString(), ref(), Integer.toString(changes()));
-  }
+  String getCommiter();
 
-  public enum Action {
-    CREATE_BRANCH,
-    COMMIT,
-    DELETE_BRANCH,
-    MERGE,
-    FORCE_MERGE,
-    CHERRY_PICK,
-    UNKNOWN
-  }
+  String getEmail();
 
-  public abstract String commiter();
-
-  public abstract String email();
-
-  public abstract String comment();
-
-  public abstract Action action();
-
-  public abstract String ref();
-
-  public abstract int changes();
+  String getMessage();
 }

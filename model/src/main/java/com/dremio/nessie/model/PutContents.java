@@ -13,35 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.model;
 
-import java.util.List;
-
-import javax.annotation.Nullable;
-
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+@Schema(
+    type = SchemaType.OBJECT,
+    title = "PutContents"
+  )
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableTableMeta.class)
-@JsonDeserialize(as = ImmutableTableMeta.class)
-public abstract class TableMeta {
+@JsonSerialize(as = ImmutablePutContents.class)
+@JsonDeserialize(as = ImmutablePutContents.class)
+public interface PutContents {
 
-  @Value.Default
-  @Nullable
-  public String getSourceId() {
-    return null;
-  }
+  Branch getBranch();
 
-  public abstract List<Snapshot> getSnapshots();
-
-  @Value.Default
-  @Nullable
-  public String getSchema() {
-    return null;
-  }
-
+  Contents getContents();
 }

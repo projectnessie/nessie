@@ -77,6 +77,7 @@
     <spark.version>2.4.7</spark.version>
     <sqlite.version>1.0.392</sqlite.version>
     <quarkus.version>1.8.0.Final</quarkus.version>
+    <openapi.version>1.1.2</openapi.version>
   </properties>
 
   <build>
@@ -787,6 +788,11 @@ limitations under the License.
         <artifactId>scalatest_2.11</artifactId>
         <version>3.3.0-SNAP2</version>
       </dependency>
+      <dependency>
+        <groupId>org.eclipse.microprofile.openapi</groupId>
+        <artifactId>microprofile-openapi-api</artifactId>
+        <version>${openapi.version}</version>
+      </dependency>      
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>jcl-over-slf4j</artifactId>
