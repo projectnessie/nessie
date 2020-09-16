@@ -74,7 +74,7 @@ class ITIcebergSpark {
   @BeforeAll
   static void create() throws IOException {
     alleyLocalDir = Files.createTempDirectory("test",
-                                              PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxrwx"))).toFile();
+      PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------"))).toFile();
     url = "http://localhost:19121/api/v1";
     String branch = "main";
     String authType = "NONE";

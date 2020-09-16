@@ -100,10 +100,13 @@ public class NessieClient implements Closeable {
    * Get a branch for a given name.
    */
   public Branch getBranch(String branchName) {
+    if (branchName == null) {
+      return null;
+    }
     try {
       ReferenceWithType<Branch> branch = nessie.ref(branchName);
       return branch.getReference();
-    } catch (NessieNotFoundException | NullPointerException e) {
+    } catch (NessieNotFoundException e) {
       return null;
     }
   }
