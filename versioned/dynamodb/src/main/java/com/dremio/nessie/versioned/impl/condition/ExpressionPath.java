@@ -84,9 +84,9 @@ public abstract class ExpressionPath implements Value {
       private final int builderOrdinal;
       private final String name;
       private final Integer position;
-      private final ExpressionPath.Builder builder;
+      private final ExpressionPath.InternalBuilder builder;
 
-      private Builder(int builderOrdinal, String path, Integer position, ExpressionPath.Builder builder) {
+      private Builder(int builderOrdinal, String path, Integer position, ExpressionPath.InternalBuilder builder) {
         super();
         Preconditions.checkArgument((position == null && path != null) || (position != null && path == null),
             "Only one of position or path can be non-null.");
@@ -169,7 +169,7 @@ public abstract class ExpressionPath implements Value {
   }
 
   public PathSegment.Builder toBuilder() {
-    return Builder.toBuilder(this);
+    return InternalBuilder.toBuilder(this);
   }
 
   @Immutable
@@ -193,24 +193,24 @@ public abstract class ExpressionPath implements Value {
    * @return The builder
    */
   public static PathSegment.Builder builder(String initialPathName) {
-    Builder b = new Builder();
+    InternalBuilder b = new InternalBuilder();
     PathSegment.Builder seg0 = new PathSegment.Builder(0, initialPathName, null, b);
     b.segments.add(seg0);
     return seg0;
   }
 
-  private static class Builder {
+  private static class InternalBuilder {
 
     private final List<PathSegment.Builder> segments = new ArrayList<>();
 
-    private Builder() {
+    private InternalBuilder() {
     }
 
     private static PathSegment.Builder toBuilder(ExpressionPath path) {
       PathSegment seg = path.getRoot();
 
       int i = 0;
-      Builder b = new Builder();
+      InternalBuilder b = new InternalBuilder();
       while (seg != null) {
         b.segments.add(new PathSegment.Builder(
             i,
