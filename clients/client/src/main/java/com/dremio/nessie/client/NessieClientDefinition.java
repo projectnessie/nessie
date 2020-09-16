@@ -60,9 +60,9 @@ public interface NessieClientDefinition {
   @Consumes(MediaType.APPLICATION_JSON)
   @Path("objects/{ref}/tables/{table}")
   Table refTable(@PathParam("ref") String ref,
-                    @PathParam("table") String table,
-                    @QueryParam("metadata") boolean metadata
-                    );
+                 @PathParam("table") String table,
+                 @QueryParam("metadata") boolean metadata
+  );
 
   /**
    * create a ref.
@@ -71,8 +71,8 @@ public interface NessieClientDefinition {
   @Consumes(MediaType.APPLICATION_JSON)
   @Path("objects/{ref}")
   void createRef(@PathParam("ref") String refName,
-                     @HeaderParam("If-Match") String hash,
-                     ReferenceWithType ref);
+                 @HeaderParam("If-Match") String hash,
+                 ReferenceWithType ref);
 
   /**
    * create a table on a specific ref.
@@ -105,7 +105,7 @@ public interface NessieClientDefinition {
                        @PathParam("table") String table,
                        @QueryParam("reason") String reason,
                        @HeaderParam("If-Match") String hash
-                       );
+  );
 
   /**
    * assign a Ref to a hash.
@@ -114,9 +114,9 @@ public interface NessieClientDefinition {
   @Path("objects/{ref}")
   @Consumes(MediaType.APPLICATION_JSON)
   void updateBatch(@PathParam("ref") String ref,
-                       @QueryParam("target") String targetRef,
-                       @HeaderParam("If-Match") String hash
-                       );
+                   @QueryParam("target") String targetRef,
+                   @HeaderParam("If-Match") String hash
+  );
 
   /**
    * update a single table on a ref.
@@ -147,7 +147,7 @@ public interface NessieClientDefinition {
   Response transplantRef(@PathParam("ref") String ref,
                          @QueryParam("promote") String mergeHashes,
                          @HeaderParam("If-Match") String hash
-                         );
+  );
 
   /**
    * merge mergeRef onto ref, optionally forced.
@@ -158,7 +158,7 @@ public interface NessieClientDefinition {
   Response mergeRef(@PathParam("ref") String ref,
                     @QueryParam("promote") String mergeHash,
                     @HeaderParam("If-Match") String hash
-                    );
+  );
 
   /**
    * get all tables on a ref.
@@ -176,13 +176,13 @@ public interface NessieClientDefinition {
   @Path("objects/{ref}/tables")
   @Consumes(MediaType.APPLICATION_JSON)
   void updateMulti(@PathParam("ref") String ref,
-                       @QueryParam("reason") String reason,
-                       @HeaderParam("If-Match") String hash,
-                       Table[] update);
+                   @QueryParam("reason") String reason,
+                   @HeaderParam("If-Match") String hash,
+                   Table[] update);
 
   @GET
   @Path("config")
   @Consumes(MediaType.APPLICATION_JSON)
   NessieConfiguration getConfig();
-  
+
 }
