@@ -13,29 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.model;
 
+import java.util.List;
+
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-/**
- * Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology.
- */
+@Schema(
+    type = SchemaType.OBJECT,
+    title = "Transplant"
+  )
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableBranch.class)
-@JsonDeserialize(as = ImmutableBranch.class)
-@JsonTypeName("BRANCH")
-public interface Branch extends Reference {
+@JsonSerialize(as = ImmutableTransplant.class)
+@JsonDeserialize(as = ImmutableTransplant.class)
+public interface Transplant {
 
-  static ImmutableBranch.Builder builder() {
-    return ImmutableBranch.builder();
-  }
+  List<String> getHashesToTransplant();
 
-  static Branch of(String name, String hash) {
-    return builder().name(name).hash(hash).build();
-  }
+  Branch getBranch();
 }

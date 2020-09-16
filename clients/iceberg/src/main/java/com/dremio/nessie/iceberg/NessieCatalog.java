@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.iceberg;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseMetastoreCatalog;
@@ -32,29 +31,35 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
-import org.apache.iceberg.exceptions.NotFoundException;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.branch.BranchCatalog;
-import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.iceberg.branch.GitCatalog;
+import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.Table;
+import com.dremio.nessie.model.ImmutableDelete;
+import com.dremio.nessie.model.ImmutableMultiContents;
+import com.dremio.nessie.model.ImmutablePut;
+import com.dremio.nessie.model.ImmutableReferenceUpdate;
+import com.dremio.nessie.model.ImmutableTag;
+import com.dremio.nessie.model.MultiContents;
+import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ObjectsResponse;
+import com.dremio.nessie.model.Reference;
 import com.google.common.base.Joiner;
 
 /**
  * Nessie implementation of Iceberg Catalog.
  */
-public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog, AutoCloseable {
+public class NessieCatalog extends BaseMetastoreCatalog implements GitCatalog, AutoCloseable {
 
   private static final Joiner SLASH = Joiner.on("/");
-  private static final Joiner DOT = Joiner.on('.');
   private static final String ICEBERG_HADOOP_WAREHOUSE_BASE = "iceberg/warehouse";
   private final NessieClient client;
   private final String warehouseLocation;
   private final Configuration config;
-  private AtomicReference<Branch> branch;
+  private final UpdateableReference reference;
 
   /**
    * create a catalog from a hadoop configuration.
@@ -67,51 +72,50 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
     String authTypeStr = config.get("nessie.auth.type", "BASIC");
     AuthType authType = AuthType.valueOf(authTypeStr);
     this.client = new NessieClient(authType, path, username, password);
+
     warehouseLocation = config.get("fs.defaultFS") + "/" + ICEBERG_HADOOP_WAREHOUSE_BASE;
-    branch = new AtomicReference<>(getOrCreate(config.get("nessie.view-branch",
-                                                          client.getConfig().getDefaultBranch())));
+
+    final String requestedRef = config.get("nessie.ref");
+    Reference r = requestedRef == null ? client.getTreeApi().getDefaultBranch() : client.getTreeApi().getReferenceByName(requestedRef);
+    this.reference = new UpdateableReference(r, client.getTreeApi());
   }
 
-  private Branch getOrCreate(String branchName) {
-    Branch branch = client.getBranch(branchName);
-    String baseBranchName = client.getConfig().getDefaultBranch();
-    final String baseBranchId;
-    if (baseBranchName != null) {
-      Branch baseBranch = client.getBranch(baseBranchName);
-      baseBranchId = baseBranch == null ? null : baseBranch.getId();
-    } else {
-      baseBranchId = null;
-    }
-    if (branch == null) {
-      branch = client.createBranch(ImmutableBranch.builder().name(branchName).id(baseBranchId).build());
-    }
-    return branch;
-  }
 
   @Override
   public void close() throws Exception {
     client.close();
   }
 
-  //@Override
+  @Override
   protected String name() {
-    return "alley";
+    return "nessie";
   }
 
-  private Table table(TableIdentifier tableIdentifier) {
-    Table table = client.getTable(branch.get().getName(),
-                                  tableIdentifier.name(),
-                                  tableIdentifier.hasNamespace()
-                                    ? tableIdentifier.namespace().toString() : null);
-    return table;
+  private static NessieObjectKey toKey(TableIdentifier tableIdentifier) {
+    List<String> identifiers = new ArrayList<>();
+    if (tableIdentifier.hasNamespace()) {
+      identifiers.addAll(Arrays.asList(tableIdentifier.namespace().levels()));
+    }
+    identifiers.add(tableIdentifier.name());
+
+    NessieObjectKey key = new NessieObjectKey(identifiers);
+    return key;
+  }
+
+  private IcebergTable table(TableIdentifier tableIdentifier) {
+    Contents table = client.getContentsApi().getObjectForReference(reference.getHash(), toKey(tableIdentifier));
+    if (table instanceof IcebergTable) {
+      return (IcebergTable) table;
+    }
+
+    return null;
   }
 
   @Override
   protected TableOperations newTableOps(TableIdentifier tableIdentifier) {
-
     return new NessieTableOperations(config,
-                                     tableIdentifier,
-                                     branch,
+                                     toKey(tableIdentifier),
+                                     reference,
                                      client);
   }
 
@@ -125,26 +129,40 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
 
   @Override
   public List<TableIdentifier> listTables(Namespace namespace) {
-    Iterable<String> tables = client.getAllTables(branch.get().getName(),
-                                         namespace == null ? null : namespace.toString());
-    return StreamSupport.stream(tables.spliterator(), false)
-                        .map(NessieCatalog::fromString)
-                        .collect(Collectors.toList());
+    return client.getTreeApi()
+        .getObjects(reference.getHash())
+        .getEntries()
+        .stream()
+        .filter(namespacePredicate(namespace))
+        .map(NessieCatalog::toIdentifier)
+        .collect(Collectors.toList());
   }
 
-  private static TableIdentifier fromString(String tableName) {
-    String[] names = tableName.split("\\.");
-    String namespace = null;
-    if (names.length > 1) {
-      namespace = DOT.join(Arrays.copyOf(names, names.length - 1));
-    }
-    String name = names[names.length - 1];
-    return TableIdentifier.of(namespace, name);
+  private static Predicate<ObjectsResponse.Entry> namespacePredicate(Namespace ns) {
+    // TODO: filter to just iceberg tables.
+    final List<String> namespace = Arrays.asList(ns.levels());
+    Predicate<ObjectsResponse.Entry> predicate = e -> {
+      List<String> names = e.getName().getElements();
+
+      if (names.size() <= namespace.size()) {
+        return false;
+      }
+
+      return namespace.equals(names.subList(0, namespace.size()));
+    };
+    return predicate;
+  }
+
+  private static TableIdentifier toIdentifier(ObjectsResponse.Entry entry) {
+    List<String> elements = entry.getName().getElements();
+    return TableIdentifier.of(elements.toArray(new String[elements.size()]));
   }
 
   @Override
   public boolean dropTable(TableIdentifier identifier, boolean purge) {
-    Table existingTable = table(identifier);
+    reference.checkMutable();
+
+    IcebergTable existingTable = table(identifier);
     if (existingTable == null) {
       return false;
     }
@@ -156,86 +174,73 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
       lastMetadata = null;
     }
 
-    client.commit(branch.get(), ImmutableTable.copyOf(existingTable).withIsDeleted(true));
+
+
+    client.getContentsApi().deleteObject(toKey(identifier), "no message", reference.getAsBranch());
     if (purge && lastMetadata != null) {
       BaseMetastoreCatalog.dropTableData(ops.io(), lastMetadata);
     }
     return true;
   }
 
+
+
   @Override
   public void renameTable(TableIdentifier from, TableIdentifier to) {
-    Table existingFromTable = table(from);
+    reference.checkMutable();
+
+    IcebergTable existingFromTable = table(from);
     if (existingFromTable == null) {
       throw new NoSuchTableException(String.format("table %s doesn't exists", from.name()));
     }
-    if (existingFromTable.isDeleted()) {
-      throw new NoSuchTableException(String.format("table %s doesn't exists",
-                                                   existingFromTable.getName()));
-    }
-    Table existingToTable = table(to);
-    if (existingToTable != null && !existingToTable.isDeleted()) {
+    IcebergTable existingToTable = table(to);
+    if (existingToTable != null) {
       throw new AlreadyExistsException("table {} already exists", to.name());
     }
-    String name = to.name();
-    String namespace = to.hasNamespace() ? to.namespace().toString() : null;
-    String id = (namespace != null) ? namespace + "." + name : name;
-    Table updatedTable = ImmutableTable.builder().from(existingFromTable)
-                                       .name(name)
-                                       .namespace(namespace)
-                                       .id(id)
-                                       .build();
-    List<Table> tables = new ArrayList<>();
-    if (existingToTable != null) {
-      Table deletedTable = ImmutableTable.copyOf(existingToTable).withIsDeleted(true);
-      tables.add(deletedTable);
-    }
-    Table deletedTable = ImmutableTable.copyOf(existingFromTable).withIsDeleted(true);
-    tables.add(updatedTable);
-    tables.add(deletedTable);
+
+    MultiContents c = ImmutableMultiContents.builder()
+        .branch(reference.getAsBranch())
+        .addOperations(ImmutablePut.builder().key(toKey(to)).build())
+        .addOperations(ImmutableDelete.builder().key(toKey(from)).build())
+        .build();
+
     try {
-      client.commit(branch.get(), tables.toArray(new Table[0]));
+      client.getContentsApi().commitMultipleOperations("iceberg rename table", c);
     } catch (Exception e) {
       throw new CommitFailedException(e, "failed");
     }
   }
 
   @Override
-  public void createBranch(String branchName, String parentName) {
-    Branch parent = client.getBranch(parentName);
-    if (parent == null) {
-      throw new NotFoundException(String.format("Branch %s not found", branchName));
-    }
-    client.createBranch(ImmutableBranch.builder().name(branchName).id(parent.getId()).build());
+  public void createBranch(String branchName, Optional<String> hash) {
+    client.getTreeApi().createNewReference(ImmutableBranch.builder().name(branchName).hash(hash.orElse(null)).build());
   }
 
   @Override
-  public boolean dropBranch(String branchName) {
-    Branch currentBranch = client.getBranch(branchName);
-    if (currentBranch == null) {
-      return false;
-    }
-    client.deleteBranch(currentBranch);
+  public boolean deleteBranch(String branchName, String hash) {
+    client.getTreeApi().deleteReference(ImmutableBranch.builder().name(branchName).hash(hash).build());
     return true;
   }
 
   @Override
-  public void assignBranch(String from) {
-    Branch existingFromTable = client.getBranch(from);
-    if (existingFromTable == null) {
-      throw new NoSuchTableException("branch %s doesn't exists", from);
-    }
-    try {
-      client.assignBranch(existingFromTable, branch.get().getName());
-    } catch (Throwable t) {
-      throw new CommitFailedException(t, "failed");
-    }
-    refreshBranch();
+  public void assignReference(String from, String currentHash, String targetHash) {
+    client.getTreeApi().assignReference(from, ImmutableReferenceUpdate.builder().expectedId(currentHash).updateId(targetHash).build());
+    refresh();
   }
 
-  public void refreshBranch() {
-    Branch newBranch = client.getBranch(branch.get().getName());
-    branch.set(newBranch);
+  public void refresh() {
+    reference.refresh();
   }
+
+  @Override
+  public void createTag(String tagName, String hash) {
+    client.getTreeApi().createNewReference(ImmutableTag.builder().name(tagName).hash(hash).build());
+  }
+
+  @Override
+  public void deleteTag(String tagName, String hash) {
+    client.getTreeApi().deleteReference(ImmutableTag.builder().name(tagName).hash(hash).build());
+  }
+
 
 }

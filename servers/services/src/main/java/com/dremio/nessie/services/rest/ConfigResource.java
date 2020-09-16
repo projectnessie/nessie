@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.nessie.api.ConfigApi;
 import com.dremio.nessie.model.ImmutableNessieConfiguration;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.ServerConfig;
@@ -42,26 +43,19 @@ import com.dremio.nessie.model.ServerConfig;
  * REST endpoint to retrieve server settings.
  */
 @Path("config")
-//@SecurityScheme(
-//    name = "nessie-auth",
-//    type = SecuritySchemeType.HTTP,
-//    scheme = "bearer",
-//    bearerFormat = "JWT"
-//)
 @RequestScoped
-public class ServerStatus {
+public class ConfigResource implements ConfigApi {
 
-  private static final Logger logger = LoggerFactory.getLogger(ServerStatus.class);
+  private static final Logger logger = LoggerFactory.getLogger(ConfigResource.class);
   private final ServerConfig config;
 
   @Inject
-  public ServerStatus(ServerConfig config) {
+  public ConfigResource(ServerConfig config) {
     this.config = config;
   }
 
   @GET
   @Metered
-  //@RolesAllowed({"admin", "user"})
   @Timed(name = "timed-readall")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "List all configuration settings")

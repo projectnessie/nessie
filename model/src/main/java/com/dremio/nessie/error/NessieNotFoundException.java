@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.error;
 
-package com.dremio.nessie.iceberg.branch;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 
-/**
- * Catalog object for Branch...akin to iceberg Catalog interface
- */
-public interface BranchCatalog {
+public class NessieNotFoundException extends WebApplicationException {
 
-  void createBranch(String branchName, String parentName);
+  public NessieNotFoundException(String message, Throwable cause) {
+    super(message, cause, Response.Status.NOT_FOUND);
+  }
 
-  boolean dropBranch(String branchName);
+  public NessieNotFoundException(String message) {
+    super(message, Response.Status.NOT_FOUND);
+  }
 
-  void assignBranch(String from);
+  public NessieNotFoundException(Throwable cause) {
+    super(cause, Response.Status.NOT_FOUND);
+  }
 
-  void refreshBranch();
+
 }

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.model;
 
 import org.immutables.value.Value;
@@ -22,20 +21,11 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-/**
- * Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology.
- */
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableBranch.class)
-@JsonDeserialize(as = ImmutableBranch.class)
-@JsonTypeName("BRANCH")
-public interface Branch extends Reference {
+@JsonSerialize(as = ImmutableDeltaLakeTable.class)
+@JsonDeserialize(as = ImmutableDeltaLakeTable.class)
+@JsonTypeName("DELTALAKE_TABLE")
+public interface DeltaLakeTable extends Contents {
 
-  static ImmutableBranch.Builder builder() {
-    return ImmutableBranch.builder();
-  }
-
-  static Branch of(String name, String hash) {
-    return builder().name(name).hash(hash).build();
-  }
+  String getMetadataLocation();
 }

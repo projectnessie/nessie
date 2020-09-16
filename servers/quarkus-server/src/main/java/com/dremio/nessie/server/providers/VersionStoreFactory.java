@@ -34,7 +34,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.Table;
+import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.server.config.ApplicationConfig;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.versioned.StoreWorker;
@@ -44,6 +44,7 @@ import com.dremio.nessie.versioned.impl.DynamoStoreConfig;
 import com.dremio.nessie.versioned.impl.DynamoVersionStore;
 import com.dremio.nessie.versioned.impl.JGitVersionStore;
 import com.dremio.nessie.versioned.impl.experimental.NessieRepository;
+import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 
 import software.amazon.awssdk.regions.Region;
 
@@ -64,7 +65,7 @@ public class VersionStoreFactory {
 
 
   @Produces
-  public StoreWorker<Table, CommitMeta> worker() {
+  public StoreWorker<Contents, CommitMeta> worker() {
     return new TableCommitMetaStoreWorker();
   }
 
@@ -73,14 +74,17 @@ public class VersionStoreFactory {
    */
   @Produces
   @Singleton
-  public VersionStore<Table, CommitMeta> configuration(TableCommitMetaStoreWorker storeWorker, Repository repository) {
+  public VersionStore<Contents, CommitMeta> configuration(TableCommitMetaStoreWorker storeWorker, Repository repository) {
     switch (config.getVersionStoreConfig().getVersionStoreType()) {
       case DYNAMO:
         return new DynamoVersionStore<>(storeWorker, dyanamo(), false);
       case JGIT:
         return new JGitVersionStore<>(repository, storeWorker);
       case INMEMORY:
-        throw new UnsupportedOperationException("Merge Inmemory PR first");
+        return InMemoryVersionStore.<Contents, CommitMeta>builder()
+            .metadataSerializer(storeWorker.getMetadataSerializer())
+            .valueSerializer(storeWorker.getValueSerializer())
+            .build();
       default:
         throw new RuntimeException(String.format("unknown jgit repo type %s", config.getVersionStoreConfig().getVersionStoreType()));
     }

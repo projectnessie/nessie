@@ -67,7 +67,31 @@
     <dependency>
       <groupId>org.eclipse.microprofile.openapi</groupId>
       <artifactId>microprofile-openapi-api</artifactId>
-      <version>1.1.2</version>
     </dependency>
   </dependencies>
+
+  <build>
+  <plugins>
+    <plugin>
+      <groupId>io.openapitools.swagger</groupId>
+      <artifactId>swagger-maven-plugin</artifactId>
+      <configuration>
+        <resourcePackages>
+          <resourcePackage>com.dremio.nessie.api</resourcePackage>
+        </resourcePackages>
+        <outputDirectory>${basedir}/target/</outputDirectory>
+        <outputFilename>swagger</outputFilename>
+        <outputFormats>JSON,YAML</outputFormats>
+        <prettyPrint>true</prettyPrint>
+      </configuration>
+      <executions>
+        <execution>
+          <goals>
+            <goal>generate</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
+</plugins>
+  </build>
 </project>

@@ -91,7 +91,7 @@ public class ApplicationConfig {
   @ConfigProperties(prefix = "nessie.version.store")
   public interface VersionStoreConfig {
 
-    @ConfigProperty(name = "type", defaultValue = "JGIT")
+    @ConfigProperty(name = "type", defaultValue = "INMEMORY")
     VersionStoreType getVersionStoreType();
   }
 

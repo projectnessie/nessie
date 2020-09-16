@@ -16,18 +16,9 @@
 
 package com.dremio.nessie.iceberg;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseMetastoreTableOperations;
-import org.apache.iceberg.SchemaParser;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.TableMetadata;
-import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
@@ -35,14 +26,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.DataFile;
-import com.dremio.nessie.model.ImmutableDataFile;
-import com.dremio.nessie.model.ImmutableSnapshot;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.ImmutableTable.Builder;
-import com.dremio.nessie.model.ImmutableTableMeta;
-import com.dremio.nessie.model.Table;
+import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.IcebergTable;
+import com.dremio.nessie.model.ImmutableIcebergTable;
+import com.dremio.nessie.model.ImmutablePutContents;
+import com.dremio.nessie.model.NessieObjectKey;
 
 /**
  * Nessie implementation of Iceberg TableOperations.
@@ -53,113 +42,65 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
 
   private final Configuration conf;
   private final NessieClient client;
-  private final TableIdentifier tableIdentifier;
-  private AtomicReference<Branch> branch;
-  private Table table;
+  private final NessieObjectKey key;
+  private UpdateableReference reference;
+  private IcebergTable table;
   private HadoopFileIO fileIO;
 
   /**
    * Create a nessie table operations given a table identifier.
    */
-  public NessieTableOperations(Configuration conf,
-                               TableIdentifier table,
-                               AtomicReference<Branch> branch,
-                               NessieClient client) {
+  public NessieTableOperations(
+      Configuration conf,
+      NessieObjectKey key,
+      UpdateableReference reference,
+      NessieClient client) {
     this.conf = conf;
-    this.tableIdentifier = table;
-    this.branch = branch;
+    this.key = key;
+    this.reference = reference;
     this.client = client;
   }
 
   @Override
   protected void doRefresh() {
-    Branch newBranch = client.getBranch(branch.get().getName());
-    branch.set(newBranch);
-    String metadataLocation = Optional.ofNullable(table(true))
-                                      .map(Table::getMetadataLocation)
-                                      .orElse(null);
-    refreshFromMetadataLocation(metadataLocation, 2);
-  }
+    // break reference with parent (to avoid cross-over refresh)
+    // TODO, confirm this is correct behavior.
+    reference = reference.clone();
 
-  private ImmutableTable.Builder modifiedTable(String metadataLocation) {
-    Table table = table(false);
-    Builder builder = ImmutableTable.builder();
-    if (table != null) {
-      builder.from(table);
-    } else {
-      builder.namespace(
-        tableIdentifier.hasNamespace() ? tableIdentifier.namespace().toString() : null)
-             .name(tableIdentifier.name())
-             .id(tableIdentifier.toString());
+    if (reference.refresh()) {
+      boolean failed = false;
+      try {
+        Contents c = client.getContentsApi().getObjectForReference(reference.getHash(), key);
+        if (!(c instanceof IcebergTable)) {
+          failed = true;
+        }
+        this.table = (IcebergTable) c;
+        refreshFromMetadataLocation(table.getMetadataLocation(), 2);
+      } catch (NessieNotFoundException ex) {
+        failed = true;
+      }
+
+      if (failed) {
+        table = null;
+        fileIO = null;
+      }
     }
-    return builder.metadataLocation(metadataLocation);
   }
 
   @Override
   protected void doCommit(TableMetadata base, TableMetadata metadata) {
+    reference.checkMutable();
+
     String newMetadataLocation = writeNewMetadata(metadata, currentVersion() + 1);
 
     try {
-      ImmutableTable.Builder modifiedTable = modifiedTable(newMetadataLocation);
-      transformSnapshot(metadata, modifiedTable);
-      client.commit(branch.get(), modifiedTable.build());
+      IcebergTable table = ImmutableIcebergTable.builder().metadataLocation(newMetadataLocation).build();
+      client.getContentsApi().setContents(key, "iceberg commit",
+          ImmutablePutContents.builder().branch(reference.getAsBranch()).contents(table).build());
     } catch (Throwable e) {
       io().deleteFile(newMetadataLocation);
       throw new CommitFailedException(e, "failed");
     }
-  }
-
-  private void transformSnapshot(TableMetadata metadata,
-                                 ImmutableTable.Builder modifiedTable) {
-    if (metadata == null) {
-      return;
-    }
-    ImmutableTableMeta.Builder builder = ImmutableTableMeta.builder()
-                                                           .sourceId(metadata.uuid())
-                                                           .schema(SchemaParser.toJson(
-                                                             metadata.schema()));
-    Snapshot currentSnapshot = metadata.currentSnapshot();
-    if (currentSnapshot != null) {
-      builder.addSnapshots(ImmutableSnapshot.builder()
-                                            .snapshotId(currentSnapshot.snapshotId())
-                                            .parentId(currentSnapshot.parentId())
-                                            .timestampMillis(currentSnapshot.timestampMillis())
-                                            .operation(currentSnapshot.operation())
-                                            .summary(currentSnapshot.summary())
-                                            .addedFiles(transformDataFiles(
-                                              currentSnapshot.addedFiles()))
-                                            .deletedFiles(transformDataFiles(
-                                              currentSnapshot.deletedFiles()))
-                                            .manifestLocation(
-                                              currentSnapshot.manifestListLocation())
-                                            .build());
-    }
-    modifiedTable.metadata(builder.build());
-  }
-
-  private List<DataFile> transformDataFiles(Iterable<org.apache.iceberg.DataFile> deletedFiles) {
-    return StreamSupport.stream(deletedFiles.spliterator(), false)
-                        .map(id -> ImmutableDataFile.builder()
-                                                    .path(id.path().toString())
-                                                    .fileFormat(id.format().name())
-                                                    .recordCount(id.recordCount())
-                                                    .fileSizeInBytes(id.fileSizeInBytes())
-                                                    .columnSizes(id.columnSizes())
-                                                    .valueCounts(id.valueCounts())
-                                                    .nullValueCounts(id.nullValueCounts())
-                                                    .build()
-                        )
-                        .collect(Collectors.toList());
-  }
-
-  private Table table(boolean refresh) {
-    if (table == null || refresh) {
-      table = client.getTable(branch.get().getName(),
-                              tableIdentifier.name(),
-                              tableIdentifier.hasNamespace() ? tableIdentifier.namespace()
-                                                                              .toString() : null);
-    }
-    return table;
   }
 
   @Override

@@ -16,42 +16,32 @@
 
 package com.dremio.nessie.model;
 
+import javax.annotation.Nullable;
+
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.base.Joiner;
 
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableCommitMeta.class)
 @JsonDeserialize(as = ImmutableCommitMeta.class)
 public abstract class CommitMeta {
 
-  private static final Joiner SEMI = Joiner.on(";");
+  @Nullable
+  public abstract String getHash();
 
-  public String toMessage() {
-    return SEMI.join(comment(), action().toString(), ref(), Integer.toString(changes()));
+  public abstract String getCommiter();
+
+  @Nullable
+  public abstract String getEmail();
+
+  public abstract String getMessage();
+
+  @Nullable
+  public abstract Long getCommitTime();
+
+  public ImmutableCommitMeta.Builder toBuilder() {
+    return ImmutableCommitMeta.builder().from(this);
   }
-
-  public enum Action {
-    CREATE_BRANCH,
-    COMMIT,
-    DELETE_BRANCH,
-    MERGE,
-    FORCE_MERGE,
-    CHERRY_PICK,
-    UNKNOWN
-  }
-
-  public abstract String commiter();
-
-  public abstract String email();
-
-  public abstract String comment();
-
-  public abstract Action action();
-
-  public abstract String ref();
-
-  public abstract int changes();
 }

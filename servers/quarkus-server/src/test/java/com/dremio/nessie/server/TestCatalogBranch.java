@@ -38,6 +38,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.nessie.api.ContentsApi;
+import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
@@ -55,6 +57,8 @@ public class TestCatalogBranch {
   private static File alleyLocalDir;
   private NessieCatalog catalog;
   private NessieClient client;
+  private TreeApi tree;
+  private ContentsApi contents;
   private Configuration hadoopConfig;
 
   @BeforeAll
@@ -81,9 +85,11 @@ public class TestCatalogBranch {
     hadoopConfig.set("nessie.view-branch", "main");
     hadoopConfig.set("nessie.auth.type", "NONE");
     this.client = new NessieClient(AuthType.NONE, path, username, password);
+    tree = client.getTreeApi();
+    contents = client.getContentsApi();
     catalog = new NessieCatalog(hadoopConfig);
     try {
-      client.createBranch(ImmutableBranch.builder().name("main").build());
+      tree.createNewReference(ImmutableBranch.builder().name("main").build());
     } catch (Exception e) {
       //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
     }

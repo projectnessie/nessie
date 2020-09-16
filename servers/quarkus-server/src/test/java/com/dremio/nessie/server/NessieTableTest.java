@@ -59,12 +59,9 @@ import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 
-@SuppressWarnings("MissingJavadocMethod")
 @QuarkusTest
 public class NessieTableTest {
 
@@ -110,7 +107,7 @@ public class NessieTableTest {
     catalog = new NessieCatalog(hadoopConfig);
     client = new NessieClient(AuthType.NONE, path, username, password);
     try {
-      client.createBranch(ImmutableBranch.builder().name("main").build());
+      client.getTreeApi().createNewReference(ImmutableBranch.builder().name("main").build());
     } catch (Exception e) {
       //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
     }
@@ -122,11 +119,11 @@ public class NessieTableTest {
   public void closeCatalog() throws Exception {
     // drop the table data
     tableLocation.getFileSystem(hadoopConfig).delete(tableLocation, true);
-    catalog.refreshBranch();
+    catalog.refresh();
     catalog.dropTable(TABLE_IDENTIFIER, false);
 
     catalog.close();
-    client.deleteBranch(client.getBranch("main"));
+    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName("main"));
     client.close();
     catalog = null;
     client = null;
@@ -137,8 +134,8 @@ public class NessieTableTest {
     alleyLocalDir.delete();
   }
 
-  private com.dremio.nessie.model.Table getTable(TableIdentifier tableIdentifier) {
-    return client.getTable("main",
+  private com.dremio.nessie.model.IcebergTable getTable(TableIdentifier tableIdentifier) {
+    return client.getContentsApi().getObjectForReference("main",
                            tableIdentifier.name(),
                            tableIdentifier.namespace().toString());
   }

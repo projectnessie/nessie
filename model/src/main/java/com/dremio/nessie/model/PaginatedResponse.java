@@ -13,25 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.model;
 
-import org.immutables.value.Value;
+public interface PaginatedResponse {
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+  boolean hasMore();
 
-/**
- * Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology.
- */
-@Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableTag.class)
-@JsonDeserialize(as = ImmutableTag.class)
-@JsonTypeName("TAG")
-public interface Tag extends Reference {
-
-  static ImmutableTag.Builder builder() {
-    return ImmutableTag.builder();
-  }
+  String getToken();
 }

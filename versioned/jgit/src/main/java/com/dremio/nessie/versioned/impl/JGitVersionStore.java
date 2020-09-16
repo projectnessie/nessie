@@ -39,7 +39,6 @@ import org.eclipse.jgit.dircache.DirCacheEntry;
 import org.eclipse.jgit.errors.AmbiguousObjectException;
 import org.eclipse.jgit.errors.ConfigInvalidException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
-import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.errors.UnmergedPathException;
 import org.eclipse.jgit.lib.CommitBuilder;
 import org.eclipse.jgit.lib.Constants;
@@ -155,7 +154,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       try {
         repository.resolve(refOfUnknownType + "^{tree}");
         return WithHash.of(Hash.of(refOfUnknownType), Hash.of(refOfUnknownType));
-      } catch (AmbiguousObjectException | IncorrectObjectTypeException | RevisionSyntaxException e) {
+      } catch (IllegalArgumentException | AmbiguousObjectException | IncorrectObjectTypeException e) {
         throw new ReferenceNotFoundException(String.format("Unable to find the requested reference %s.", refOfUnknownType));
       }
     } catch (IOException e) {

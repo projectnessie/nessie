@@ -55,6 +55,7 @@ public class ErrorMapper implements ExceptionMapper<Exception> {
     } else if (exception instanceof ReferenceAlreadyExistsException) {
       return exception(Response.Status.CONFLICT, "ref already exists", exception);
     } else {
+      exception.printStackTrace();
       return exception(Status.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
     }
   }
