@@ -38,6 +38,8 @@
     <module>deltalake</module>
     <module>deltalake-spark2</module>
     <module>deltalake-spark3</module>
+    <module>nessie-spark2</module>
+    <module>nessie-spark3</module>
     <module>tests</module>
   </modules>
 </project>
