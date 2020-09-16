@@ -204,19 +204,20 @@
     </dependency>
     <dependency>
       <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-client</artifactId>
+      <artifactId>nessie-quarkus</artifactId>
       <version>${project.version}</version>
-      <classifier>tests</classifier>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-test-maven</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-quarkus</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
+      <artifactId>quarkus-junit5</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

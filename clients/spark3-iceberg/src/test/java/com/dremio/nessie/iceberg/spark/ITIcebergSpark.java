@@ -49,9 +49,11 @@ import org.junit.jupiter.api.Test;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
-import com.dremio.nessie.utils.RunMojo;
 import com.google.common.collect.ImmutableList;
 
+import io.quarkus.test.junit.QuarkusTest;
+
+@QuarkusTest
 class ITIcebergSpark {
 
   private static final Object ANY = new Object();
@@ -60,7 +62,6 @@ class ITIcebergSpark {
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of(DB_NAME, TABLE_NAME);
   private static final Schema schema = new Schema(Types.StructType.of(required(1, "foe1", Types.StringType.get()),
                                                                       required(2, "foe2", Types.StringType.get())).fields());
-  private static RunMojo base;
   private static SparkSession spark;
   private static NessieCatalog catalog;
   private static File alleyLocalDir;
@@ -71,11 +72,9 @@ class ITIcebergSpark {
 
   @BeforeAll
   static void create() throws IOException {
-    base = new RunMojo();
-    base.start();
     alleyLocalDir = Files.createTempDirectory("test",
                                               PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxrwx"))).toFile();
-    url = "http://localhost:19120/api/v1";
+    url = "http://localhost:19121/api/v1";
     String branch = "main";
     String authType = "NONE";
     String defaultFs = alleyLocalDir.toURI().toString();
@@ -111,10 +110,6 @@ class ITIcebergSpark {
     if (spark != null) {
       spark.stop();
       spark = null;
-    }
-    if (base != null) {
-      base.stop();
-      base = null;
     }
   }
 

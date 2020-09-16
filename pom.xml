@@ -559,11 +559,6 @@ limitations under the License.
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>io.delta</groupId>
-        <artifactId>delta-core_2.11</artifactId>
-        <version>${deltalake.version}</version>
-      </dependency>
-      <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
         <version>${protobuf.version}</version>
@@ -853,11 +848,6 @@ limitations under the License.
         <artifactId>hamcrest-all</artifactId>
         <version>${hamcrest.version}</version>
         <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-test-maven</artifactId>
-        <version>${quarkus.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>

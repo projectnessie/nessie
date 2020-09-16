@@ -198,10 +198,14 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit5</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.dremio.nessie</groupId>
       <artifactId>nessie-quarkus</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
+      <scope>test</scope>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -213,16 +217,6 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-client</artifactId>
-      <version>${project.version}</version>
-      <classifier>tests</classifier>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-test-maven</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
