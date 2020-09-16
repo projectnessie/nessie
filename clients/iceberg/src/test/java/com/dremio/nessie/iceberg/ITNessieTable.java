@@ -102,8 +102,8 @@ class ITNessieTable extends BaseTestIceberg {
 
   @Test
   public void testCreate() throws NessieNotFoundException {
-    // Table should be created in alley
-    // Table should be renamed in alley
+    // Table should be created in iceberg
+    // Table should be renamed in iceberg
     String tableName = TABLE_IDENTIFIER.name();
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
     // add a column

@@ -16,6 +16,8 @@
 
 package com.dremio.nessie.iceberg;
 
+import java.lang.reflect.Method;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseMetastoreTableOperations;
 import org.apache.iceberg.TableMetadata;
@@ -88,7 +90,11 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
 
     try {
       IcebergTable table = ImmutableIcebergTable.builder().metadataLocation(newMetadataLocation).build();
-      client.getContentsApi().setContents(key, reference.getAsBranch().getName(), reference.getHash(), "iceberg commit", table);
+      client.getContentsApi().setContents(key,
+                                          reference.getAsBranch().getName(),
+                                          reference.getHash(),
+                                          String.format("iceberg commit%s", applicationId()),
+                                          table);
     } catch (NessieNotFoundException | NessieConflictException ex) {
       io().deleteFile(newMetadataLocation);
       throw new CommitFailedException(ex, "failed");
@@ -105,6 +111,29 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
     }
 
     return fileIO;
+  }
+
+  /**
+   * try and get a Spark application id if one exists.
+   *
+   * <p>
+   *   We haven't figured out a general way to pass commit messasges through to the Nessie committer yet.
+   *   This is hacky but gets the job done until we can have a more complete commit/audit log.
+   * </p>
+   */
+  private static String applicationId() {
+    try {
+      Class sparkEnvClazz = Class.forName("org.apache.spark.SparkEnv");
+      Method sparkEnvMethod = sparkEnvClazz.getMethod("get");
+      Object sparkEnv = sparkEnvMethod.invoke(null);
+      Class sparkConfClazz = Class.forName("org.apache.spark.SparkConf");
+      Method sparkConfMethod = sparkEnvClazz.getMethod("conf");
+      Object sparkConf = sparkConfMethod.invoke(sparkEnv);
+      return " ; spark.app.id= " + sparkConfClazz.getMethod("getAppId").invoke(sparkConf);
+    } catch (Exception e) {
+      return "";
+    }
+
   }
 
 }
