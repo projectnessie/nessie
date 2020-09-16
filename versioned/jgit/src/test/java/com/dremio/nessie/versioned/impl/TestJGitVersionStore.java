@@ -142,7 +142,7 @@ class TestJGitVersionStore {
     TagName tag = TagName.of("foo");
 
     // check that we can't assign an empty tag.
-    assertThrows(ReferenceNotFoundException.class, () -> impl.create(tag, Optional.empty()));
+    assertThrows(IllegalArgumentException.class, () -> impl.create(tag, Optional.empty()));
 
     // create a tag using the default empty hash.
     impl.create(tag, baseCommit);

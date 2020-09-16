@@ -66,7 +66,7 @@ public abstract class AbstractITVersionStore {
    * - check the branch can be deleted
    */
   @Test
-  void createAndDeleteBranch() throws Exception {
+  public void createAndDeleteBranch() throws Exception {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
     final Hash hash = store().toHash(branch);
@@ -114,7 +114,7 @@ public abstract class AbstractITVersionStore {
    * - check the branch can be deleted
    */
   @Test
-  void createAndDeleteTag() throws Exception {
+  public void createAndDeleteTag() throws Exception {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
 
@@ -160,7 +160,7 @@ public abstract class AbstractITVersionStore {
    * - Check that the commit can be deleted
    */
   @Test
-  void commitToBranch() throws Exception {
+  public void commitToBranch() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
     store().create(branch, Optional.empty());
@@ -195,7 +195,7 @@ public abstract class AbstractITVersionStore {
    * - Check values for each commit hash
    */
   @Test
-  void commitSomeOperations() throws Exception {
+  public void commitSomeOperations() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
     store().create(branch, Optional.empty());
@@ -291,7 +291,7 @@ public abstract class AbstractITVersionStore {
    * - Check values for each commit hash
    */
   @Test
-  void commitNonConflictingOperations() throws Exception {
+  public void commitNonConflictingOperations() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
     store().create(branch, Optional.empty());
@@ -377,7 +377,7 @@ public abstract class AbstractITVersionStore {
    * - Check that branch state hasn't changed
    */
   @Test
-  void commitConflictingOperations() throws Exception {
+  public void commitConflictingOperations() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
     store().create(branch, Optional.empty());
@@ -423,7 +423,7 @@ public abstract class AbstractITVersionStore {
    * - Check that branch state hasn't changed
    */
   @Test
-  void forceCommitConflictingOperations() throws Exception {
+  public void forceCommitConflictingOperations() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
     store().create(branch, Optional.empty());
@@ -476,7 +476,7 @@ public abstract class AbstractITVersionStore {
    *  - Check that store allows storing the same value under different keys
    */
   @Test
-  void commitDuplicateValues() throws Exception {
+  public void commitDuplicateValues() throws Exception {
     BranchName branch = BranchName.of("dupe-values");
     store().create(branch, Optional.empty());
     store().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
@@ -493,7 +493,7 @@ public abstract class AbstractITVersionStore {
    * - Check that store throws RNFE if branch doesn't exist
    */
   @Test
-  void commitWithInvalidBranch() {
+  public void commitWithInvalidBranch() {
     final BranchName branch = BranchName.of("unknown");
 
     assertThrows(ReferenceNotFoundException.class,
@@ -505,7 +505,7 @@ public abstract class AbstractITVersionStore {
    * - Check that store throws RNFE if reference hash doesn't exist
    */
   @Test
-  void commitWithInvalidReference() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+  public void commitWithInvalidReference() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
 
@@ -514,7 +514,7 @@ public abstract class AbstractITVersionStore {
   }
 
   @Test
-  void getValueForEmptyBranch() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+  public void getValueForEmptyBranch() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     BranchName branch = BranchName.of("empty-branch");
     store().create(branch, Optional.empty());
     final Hash hash = store().toHash(branch);
@@ -523,7 +523,7 @@ public abstract class AbstractITVersionStore {
   }
 
   @Test
-  void assign() throws VersionStoreException {
+  public void assign() throws VersionStoreException {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
     final Hash initialHash = store().toHash(branch);

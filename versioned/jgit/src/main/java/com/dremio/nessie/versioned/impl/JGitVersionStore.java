@@ -231,7 +231,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   @Override
   public void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     if (!targetHash.isPresent() && ref instanceof TagName) {
-      throw new ReferenceNotFoundException("You must provide a target hash to create a tag.");
+      throw new IllegalArgumentException("You must provide a target hash to create a tag.");
     }
     try {
       toHash(ref);
