@@ -16,15 +16,17 @@
     limitations under the License.
 
 -->
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>com.dremio.nessie</groupId>
     <artifactId>nessie-server-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
+
   <artifactId>nessie-quarkus</artifactId>
+
   <name>Nessie - Quarkus</name>
 
   <dependencies>
@@ -161,6 +163,7 @@
       </exclusions>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
