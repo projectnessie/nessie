@@ -36,6 +36,8 @@
     <module>iceberg-spark2</module>
     <module>iceberg-spark3</module>
     <module>deltalake</module>
+    <module>deltalake-spark2</module>
+    <module>deltalake-spark3</module>
     <module>tests</module>
   </modules>
 </project>
