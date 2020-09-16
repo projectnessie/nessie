@@ -1,0 +1,33 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.dremio.nessie.iceberg.spark;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.catalog.Catalog;
+import org.apache.iceberg.spark.SparkCatalog;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.util.CaseInsensitiveStringMap;
+
+import com.dremio.nessie.iceberg.NessieCatalog;
+
+public class NessieSparkCatalog extends SparkCatalog {
+
+  @Override
+  protected Catalog buildIcebergCatalog(String name, CaseInsensitiveStringMap options) {
+    Configuration conf = SparkSession.active().sparkContext().hadoopConfiguration();
+    return new NessieCatalog(name, conf);
+  }
+}

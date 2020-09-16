@@ -103,7 +103,7 @@ public class NessieClient implements Closeable {
     try {
       ReferenceWithType<Branch> branch = nessie.ref(branchName);
       return branch.getReference();
-    } catch (NessieNotFoundException e) {
+    } catch (NessieNotFoundException | NullPointerException e) {
       return null;
     }
   }

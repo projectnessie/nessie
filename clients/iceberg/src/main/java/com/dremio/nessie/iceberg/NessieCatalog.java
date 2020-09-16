@@ -54,13 +54,22 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
   private final NessieClient client;
   private final String warehouseLocation;
   private final Configuration config;
+  private final String name;
   private AtomicReference<Branch> branch;
 
   /**
    * create a catalog from a hadoop configuration.
    */
   public NessieCatalog(Configuration config) {
+    this("nessie", config);
+  }
+
+  /**
+   * Create a catalog with a known name from a hadoop configuration.
+   */
+  public NessieCatalog(String name, Configuration config) {
     this.config = config;
+    this.name = name;
     String path = config.get("nessie.url");
     String username = config.get("nessie.username");
     String password = config.get("nessie.password");
@@ -93,9 +102,9 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
     client.close();
   }
 
-  //@Override
+  @Override
   protected String name() {
-    return "alley";
+    return name;
   }
 
   private Table table(TableIdentifier tableIdentifier) {
@@ -204,7 +213,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
   public void createBranch(String branchName, String parentName) {
     Branch parent = client.getBranch(parentName);
     if (parent == null) {
-      throw new NotFoundException(String.format("Branch %s not found", branchName));
+      throw new NotFoundException(String.format("Branch %s not found", parentName));
     }
     client.createBranch(ImmutableBranch.builder().name(branchName).id(parent.getId()).build());
   }

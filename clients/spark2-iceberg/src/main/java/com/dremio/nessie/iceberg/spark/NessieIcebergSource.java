@@ -18,19 +18,28 @@ package com.dremio.nessie.iceberg.spark;
 
 import java.util.Optional;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.spark.source.IcebergSource;
+import org.apache.spark.sql.sources.v2.DataSourceOptions;
 
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.google.common.base.Preconditions;
 
+/**
+ * Get a table from an Iceberg Nessie Catalog.
+ */
 public class NessieIcebergSource extends IcebergSource {
 
 
   @Override
-  protected Table findTable(org.apache.spark.sql.sources.v2.DataSourceOptions options,
-                            org.apache.hadoop.conf.Configuration conf) {
+  public String shortName() {
+    return "nessie-iceberg";
+  }
+
+  @Override
+  protected Table findTable(DataSourceOptions options, Configuration conf) {
     NessieCatalog catalog = new NessieCatalog(conf);
     Optional<String> path = options.get("path");
     Preconditions.checkArgument(path.isPresent(), "Cannot open table: path is not set");

@@ -26,15 +26,14 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <name>Nessie - Iceberg Spark Source</name>
-  <artifactId>nessie-iceberg-spark</artifactId>
+  <name>Nessie - Iceberg - Spark2</name>
+  <artifactId>nessie-iceberg-spark2</artifactId>
 
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <!-- this was not fully tested after switching to quarkus. shading may need adjustment -->
         <configuration>
           <createDependencyReducedPom>false</createDependencyReducedPom>
           <filters>
@@ -74,6 +73,8 @@
               <exclude>com.google.j2objc:j2objc-annotations</exclude>
               <exclude>org.codehaus.mojo:animal-sniffer-annotations</exclude>
               <exclude>com.github.stephenc.findbugs:findbugs-annotations</exclude>
+              <exclude>org.slf4j:jcl-over-slf4j</exclude>
+              <exclude>org.jboss.slf4j:slf4j-jboss-logging</exclude>
             </excludes>
           </artifactSet>
           <relocations>
@@ -82,16 +83,12 @@
               <shadedPattern>nessie.io.netty</shadedPattern>
             </relocation>
             <relocation>
+              <pattern>org.apache.thrift</pattern>
+              <shadedPattern>nessie.org.apache.thrift</shadedPattern>
+            </relocation>
+            <relocation>
               <pattern>com.google</pattern>
               <shadedPattern>nessie.com.google</shadedPattern>
-            </relocation>
-            <relocation>
-              <pattern>org.glassfish</pattern>
-              <shadedPattern>nessie.org.glassfish</shadedPattern>
-            </relocation>
-            <relocation>
-              <pattern>org.jvnet.hk2</pattern>
-              <shadedPattern>nessie.org.jvnet.hk2</shadedPattern>
             </relocation>
             <relocation>
               <pattern>com.fasterxml.jackson</pattern>
@@ -110,7 +107,6 @@
               <pattern>META-INF.native.netty_</pattern>
               <shadedPattern>META-INF.native.nessie_netty_</shadedPattern>
             </relocation>
-
           </relocations>
         </configuration>
         <executions>
@@ -119,6 +115,26 @@
             <goals>
               <goal>shade</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <environmentVariables>
+              </environmentVariables>
+              <systemPropertyVariables>
+                <org.jboss.logging.provider>slf4j</org.jboss.logging.provider>
+                <maven.home>${maven.home}</maven.home>
+              </systemPropertyVariables>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -150,36 +166,61 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.iceberg</groupId>
       <artifactId>iceberg-spark-runtime</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sql_2.11</artifactId>
-      <scope>provided</scope>
+      <artifactId>spark-sql_2.12</artifactId>
+      <version>${spark2.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>org.glassfish.jersey.core</groupId>
-          <artifactId>jersey-common</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.glassfish.jersey.core</groupId>
-          <artifactId>jersey-server</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.glassfish.jersey.containers</groupId>
-          <artifactId>jersey-container-servlet</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.glassfish.jersey.containers</groupId>
-          <artifactId>jersey-container-servlet-core</artifactId>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
         </exclusion>
       </exclusions>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-core_2.12</artifactId>
+      <version>${spark2.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+      </exclusions>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dremio.nessie</groupId>
+      <artifactId>nessie-client</artifactId>
+      <version>${project.version}</version>
+      <classifier>tests</classifier>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-test-maven</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>log4j-over-slf4j</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
