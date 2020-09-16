@@ -27,11 +27,13 @@ class UpdateableReference {
 
   private Reference reference;
   private final TreeApi client;
+  private final String requestedHash;
 
-  public UpdateableReference(Reference reference, TreeApi client) {
+  public UpdateableReference(Reference reference, TreeApi client, String requestedHash) {
     super();
     this.reference = reference;
     this.client = client;
+    this.requestedHash = requestedHash;
   }
 
   public boolean refresh() {
@@ -52,11 +54,11 @@ class UpdateableReference {
   }
 
   public UpdateableReference clone() {
-    return new UpdateableReference(reference, client);
+    return new UpdateableReference(reference, client, requestedHash);
   }
 
   public String getHash() {
-    return reference.getHash();
+    return requestedHash == null ? reference.getHash() : requestedHash;
   }
 
   public Branch getAsBranch() {

@@ -59,6 +59,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
   public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
   public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
   public static final String CONF_NESSIE_REF = "nessie.ref";
+  public static final String CONF_NESSIE_HASH = "nessie.hash";
 
   private static final Joiner SLASH = Joiner.on("/");
   private static final String ICEBERG_HADOOP_WAREHOUSE_BASE = "iceberg/warehouse";
