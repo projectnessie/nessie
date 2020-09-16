@@ -27,7 +27,6 @@
   <modules>
     <module>model</module>
     <module>backends</module>
-    <module>utils</module>
     <module>clients</module>
     <module>ui</module>
     <module>versioned</module>

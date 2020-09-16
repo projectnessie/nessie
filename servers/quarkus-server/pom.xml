@@ -76,11 +76,6 @@
     </dependency>
     <dependency>
       <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-utils</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.dremio.nessie</groupId>
       <artifactId>nessie-ui</artifactId>
       <version>${project.version}</version>
     </dependency>
