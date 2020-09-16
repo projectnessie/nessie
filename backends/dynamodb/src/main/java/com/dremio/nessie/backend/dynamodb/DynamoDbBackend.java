@@ -18,12 +18,12 @@ package com.dremio.nessie.backend.dynamodb;
 
 import java.net.URI;
 
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.EntityBackend;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.User;
-import com.dremio.nessie.server.ServerConfiguration;
 
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -33,19 +33,18 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 /**
  * Implements Backend for DynamoDB.
  */
+@Deprecated
 public class DynamoDbBackend implements Backend {
 
   private final DynamoDbClient client;
+  private final MetricRegistry registry;
 
   /**
    * Create a Backend for dynamodb. This uses Dynamodbs object mapper to interact w/ the database.
    */
-  public DynamoDbBackend(DynamoDbClient client) {
+  public DynamoDbBackend(DynamoDbClient client, MetricRegistry registry) {
     this.client = client;
-  }
-
-  public static DynamoDbBackend getInstance(String region) {
-    return getInstance(region, null);
+    this.registry = registry;
   }
 
   /**
@@ -54,7 +53,7 @@ public class DynamoDbBackend implements Backend {
    * @param region   region to connect to (eg us-west-2)
    * @param endpoint endpoint (useful for localstack or other non AWS instances)
    */
-  public static DynamoDbBackend getInstance(String region, String endpoint) {
+  public static DynamoDbBackend getInstance(String region, String endpoint, MetricRegistry registry) {
     DynamoDbClientBuilder clientBuilder = DynamoDbClient.builder();
     if (endpoint != null) {
       clientBuilder = clientBuilder.endpointOverride(URI.create(endpoint));
@@ -66,21 +65,16 @@ public class DynamoDbBackend implements Backend {
     DynamoDbClient client = clientBuilder.httpClient(UrlConnectionHttpClient.builder().build())
                                          .build();
 
-    return new DynamoDbBackend(client);
-  }
-
-  @Override
-  public EntityBackend<User> userBackend() {
-    return null;
+    return new DynamoDbBackend(client, registry);
   }
 
   public EntityBackend<BranchControllerObject> gitBackend() {
-    return new GitObjectDynamoDbBackend(client);
+    return new GitObjectDynamoDbBackend(client, registry);
   }
 
   @Override
   public EntityBackend<BranchControllerReference> gitRefBackend() {
-    return new GitRefDynamoDbBackend(client);
+    return new GitRefDynamoDbBackend(client, registry);
   }
 
   @Override
@@ -91,13 +85,10 @@ public class DynamoDbBackend implements Backend {
   /**
    * Factory for DynamoDB Backend.
    */
-  public static class BackendFactory implements Backend.Factory {
+  public static class BackendFactory {
 
-    @Override
-    public Backend create(ServerConfiguration config) {
-      return DynamoDbBackend
-        .getInstance(config.getDatabaseConfiguration().getDbProps().getOrDefault("region", null),
-          config.getDatabaseConfiguration().getDbProps().getOrDefault("endpoint", null));
+    public Backend create(String region, String endpoint, MetricRegistry metricRegistry) {
+      return DynamoDbBackend.getInstance(region, endpoint, metricRegistry);
     }
   }
 

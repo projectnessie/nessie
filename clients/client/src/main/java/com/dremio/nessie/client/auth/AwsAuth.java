@@ -29,7 +29,7 @@ import javax.ws.rs.client.ClientRequestFilter;
 
 import org.apache.http.client.utils.URIBuilder;
 
-import com.dremio.nessie.json.ObjectMapperContextResolver;
+import com.dremio.nessie.json.ObjectMapperBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -42,7 +42,7 @@ import software.amazon.awssdk.regions.Region;
 
 public class AwsAuth implements ClientRequestFilter {
 
-  private final ObjectMapper objectMapper = new ObjectMapperContextResolver().getContext(null);
+  private final ObjectMapper objectMapper = ObjectMapperBuilder.createObjectMapper();
   private final Aws4Signer signer;
   private final AwsCredentialsProvider awsCredentialsProvider;
   private final Region region = Region.US_WEST_2;

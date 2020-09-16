@@ -18,6 +18,7 @@ package com.dremio.nessie.backend.dynamodb;
 
 import java.io.IOException;
 
+import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,8 +26,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
@@ -34,6 +33,7 @@ import com.dremio.nessie.model.ImmutableBranchControllerObject;
 import com.dremio.nessie.model.ImmutableBranchControllerReference;
 import com.dremio.nessie.model.VersionedWrapper;
 
+import io.smallrye.metrics.MetricRegistries;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
@@ -75,12 +75,11 @@ public class ITTestDynamo {
                             .build();
       client.createTable(request);
     }
-    SharedMetricRegistries.setDefault("default", new MetricRegistry());
   }
 
   @BeforeEach
   public void client(DynamoDbClient client) {
-    backend = new DynamoDbBackend(client);
+    backend = new DynamoDbBackend(client, MetricRegistries.get(Type.APPLICATION));
   }
 
   @AfterEach

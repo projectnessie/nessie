@@ -19,8 +19,6 @@ package com.dremio.nessie.backend;
 
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.User;
-import com.dremio.nessie.server.ServerConfiguration;
 
 /**
  * Backend for all interactions between database and the Nessie Server.
@@ -36,17 +34,8 @@ import com.dremio.nessie.server.ServerConfiguration;
  */
 public interface Backend extends AutoCloseable {
 
-  EntityBackend<User> userBackend();
-
   EntityBackend<BranchControllerObject> gitBackend();
 
   EntityBackend<BranchControllerReference> gitRefBackend();
 
-  /**
-   * factory interface to create a backend. All backends must have a Factory called BackendFactory
-   */
-  interface Factory {
-
-    Backend create(ServerConfiguration config);
-  }
 }

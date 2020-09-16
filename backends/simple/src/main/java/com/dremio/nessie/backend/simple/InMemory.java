@@ -23,26 +23,18 @@ import java.util.stream.Collectors;
 
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.User;
 import com.dremio.nessie.model.VersionedWrapper;
-import com.dremio.nessie.server.ServerConfiguration;
-import com.google.common.collect.ImmutableList;
 
 /**
  * basic class to demonstrate the backend model. WARNING do not use in production.
  */
+@Deprecated
 public class InMemory implements Backend {
 
   private final RefInMemory ref = new RefInMemory();
   private final ObjectInMemory object = new ObjectInMemory();
-
-  @Override
-  public EntityBackend<User> userBackend() {
-    throw new UnsupportedOperationException("cant use in memory backend with database");
-  }
 
   @Override
   public EntityBackend<BranchControllerObject> gitBackend() {
@@ -92,7 +84,7 @@ public class InMemory implements Backend {
       }
 
       if (!current.getVersion().equals(table.getVersion())) {
-        throw new NessieConflictException(ImmutableList.of(name), "InMemory version incorrect");
+        throw new RuntimeException("InMemory version incorrect");
       }
       objects.put(name, increment(table));
       return objects.get(name);
@@ -131,10 +123,9 @@ public class InMemory implements Backend {
     }
   }
 
-  public static class BackendFactory implements Factory {
+  public static class BackendFactory {
 
-    @Override
-    public Backend create(ServerConfiguration config) {
+    public Backend create() {
       return new InMemory();
     }
   }

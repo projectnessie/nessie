@@ -19,6 +19,8 @@ package com.dremio.nessie.backend.dynamodb;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
 import com.dremio.nessie.model.BranchControllerReference;
 import com.dremio.nessie.model.ImmutableBranchControllerReference;
 import com.dremio.nessie.model.ImmutableBranchControllerReference.Builder;
@@ -27,12 +29,13 @@ import com.dremio.nessie.model.VersionedWrapper;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+@Deprecated
 public class GitRefDynamoDbBackend extends
                                    AbstractEntityDynamoDbBackend<BranchControllerReference> {
 
 
-  public GitRefDynamoDbBackend(DynamoDbClient client) {
-    super(client, "NessieGitRefDatabase", true);
+  public GitRefDynamoDbBackend(DynamoDbClient client, MetricRegistry registry) {
+    super(client, "NessieGitRefDatabase", true, registry);
   }
 
   @Override

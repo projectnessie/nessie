@@ -16,13 +16,11 @@
 
 package com.dremio.nessie.client.rest;
 
-import javax.ws.rs.core.Response;
-
 import com.dremio.nessie.error.NessieError;
 
 public class NessieNotFoundException extends NessieExtendedClientErrorException {
 
-  public NessieNotFoundException(Response response, NessieError nessieError) {
-    super(response, nessieError);
+  public NessieNotFoundException(NessieError nessieError) {
+    super(nessieError);
   }
 }

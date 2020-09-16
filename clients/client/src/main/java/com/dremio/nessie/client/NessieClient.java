@@ -13,54 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.client;
 
 import java.io.Closeable;
-import java.util.List;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import org.jboss.resteasy.client.jaxrs.ResteasyClient;
+import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 
-import com.dremio.nessie.client.RestUtils.ClientWithHelpers;
-import com.dremio.nessie.client.auth.BasicAuth;
+import com.dremio.nessie.client.auth.AuthFilter;
 import com.dremio.nessie.client.rest.NessieNotFoundException;
+import com.dremio.nessie.client.rest.ObjectMapperContextResolver;
+import com.dremio.nessie.client.rest.ResponseCheckFilter;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.NessieConfiguration;
+import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.ReferenceWithType;
 import com.dremio.nessie.model.Table;
-import com.dremio.nessie.tracing.TracingUtil;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
 
-/**
- * Client side of Nessie. Performs HTTP requests to Server
- */
+import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
+
 public class NessieClient implements Closeable {
 
   public enum AuthType {
     AWS,
-    BASIC
+    BASIC,
+    NONE
   }
 
   static {
     System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-    TracingUtil.initTracer("nessie-client");
   }
 
-  private static final Joiner SLASH = Joiner.on("/");
-
-  private final String endpoint;
-  private final ClientWithHelpers client;
-  private final BasicAuth auth;
-  private final GenericType<ReferenceWithType<Branch>> branchWithReferenceType = new GenericType<ReferenceWithType<Branch>>(){};
-  private final GenericType<List<Branch>> branchListType = new GenericType<List<Branch>>(){};
-  private final GenericType<List<String>> stringListType = new GenericType<List<String>>(){};
+  private final ResteasyClient client;
+  private final NessieClientDefinition nessie;
 
   /**
    * create new nessie client. All REST api endpoints are mapped here.
@@ -68,33 +54,29 @@ public class NessieClient implements Closeable {
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
    */
   public NessieClient(AuthType authType, String path, String username, String password) {
-    endpoint = path;
-    client = new ClientWithHelpers(authType == AuthType.AWS);
-    auth = (authType == AuthType.AWS) ? null : new BasicAuth(endpoint, username, password, client);
-  }
 
-  private String checkKey() {
-    return auth == null ? null : auth.checkKey();
+    client = new ResteasyClientBuilderImpl().register(ObjectMapperContextResolver.class)
+                                            .register(ClientTracingFeature.class)
+                                            .register(ResponseCheckFilter.class)
+                                            .build();
+    ResteasyWebTarget target = client.target(path);
+    AuthFilter authFilter = new AuthFilter(authType, username, password, target);
+    client.register(authFilter);
+    nessie = target.proxy(NessieClientDefinition.class);
   }
 
   /**
    * Fetch configuration from the server.
    */
   public NessieConfiguration getConfig() {
-    Response response = client.get(endpoint, "config", MediaType.APPLICATION_JSON, checkKey())
-                              .get();
-    RestUtils.checkResponse(response);
-    return response.readEntity(NessieConfiguration.class);
+    return nessie.getConfig();
   }
 
   /**
    * Fetch all known branches from the server.
    */
-  public Iterable<Branch> getBranches() {
-    Response response = client.get(endpoint, "objects", MediaType.APPLICATION_JSON, checkKey())
-                              .get();
-    RestUtils.checkResponse(response);
-    return response.readEntity(branchListType);
+  public Iterable<ReferenceWithType<Reference>> getBranches() {
+    return nessie.refs();
   }
 
   @Override
@@ -107,52 +89,30 @@ public class NessieClient implements Closeable {
    */
   public Table getTable(String branch, String name, String namespace) {
     String table = (namespace == null) ? name : (namespace + "." + name);
-    Response response = client.get(endpoint,
-                                   SLASH.join("objects", branch, table),
-                                   MediaType.APPLICATION_JSON,
-                                   checkKey())
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .get();
     try {
-      RestUtils.checkResponse(response);
+      return nessie.refTable(branch, table, false);
     } catch (NessieNotFoundException e) {
       return null;
     }
-    return response.readEntity(Table.class);
   }
 
   /**
    * Get a branch for a given name.
    */
   public Branch getBranch(String branchName) {
-    Response response = client.get(endpoint,
-                                   SLASH.join("objects", branchName),
-                                   MediaType.APPLICATION_JSON,
-                                   checkKey())
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .get();
     try {
-      RestUtils.checkResponse(response);
+      ReferenceWithType<Branch> branch = nessie.ref(branchName);
+      return branch.getReference();
     } catch (NessieNotFoundException e) {
       return null;
     }
-    String pair = extractHeaders(response.getHeaders());
-    ReferenceWithType<Branch> branch = response.readEntity(branchWithReferenceType);
-    assert branch.getReference().getId().equals(pair.replaceAll("\"", ""));
-    return branch.getReference();
   }
 
   /**
    * Create a new branch. Branch name is the branch name and id is the branch to copy from.
    */
   public Branch createBranch(Branch branch) {
-    Response response = client.get(endpoint,
-                                   SLASH.join("objects", branch.getName()),
-                                   MediaType.APPLICATION_JSON,
-                                   checkKey())
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .post(Entity.entity(ReferenceWithType.of(branch), MediaType.APPLICATION_JSON_TYPE));
-    RestUtils.checkResponse(response);
+    nessie.createRef(branch.getName(), branch.getId(), ReferenceWithType.of(branch));
     return getBranch(branch.getName());
   }
 
@@ -168,14 +128,7 @@ public class NessieClient implements Closeable {
    * @param tables list of tables to be added, deleted or modified
    */
   public void commit(Branch branch, Table... tables) {
-    Response response = client.get(endpoint,
-                                   SLASH.join("objects", branch.getName(), "multi"),
-                                   MediaType.APPLICATION_JSON,
-                                   checkKey())
-                              .header(HttpHeaders.IF_MATCH, new EntityTag(branch.getId()))
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .put(Entity.entity(tables, MediaType.APPLICATION_JSON_TYPE));
-    RestUtils.checkResponse(response);
+    nessie.updateMulti(branch.getName(), null, branch.getId(), tables);
   }
 
   /**
@@ -186,53 +139,23 @@ public class NessieClient implements Closeable {
    * </p>
    */
   public Iterable<String> getAllTables(String branch, String namespace) {
-    Response response = client.get(endpoint,
-                                   SLASH.join("objects", branch, "tables"),
-                                   MediaType.APPLICATION_JSON,
-                                   checkKey(),
-                                   ImmutableMap.of("namespace",
-                                                   namespace == null ? "all" : namespace))
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .get();
-    RestUtils.checkResponse(response);
-    return response.readEntity(stringListType);
-  }
-
-  private static String extractHeaders(MultivaluedMap<String, Object> headers) {
-    return (String) headers.getFirst(HttpHeaders.ETAG);
+    return nessie.refTables(branch, namespace);
   }
 
   /**
-   * Merge all commits from updateBranch onto branch. Optionally forcing.
+   * Merge all commits from updateBranch onto branch.
    */
   public void assignBranch(com.dremio.nessie.model.Branch branch,
                            String updateBranchStr) {
-    Table[] branchTable = new Table[0];
     Branch updateBranch = getBranch(updateBranchStr);
-    Response response = client.get(endpoint,
-                                   SLASH.join("objects",
-                                              branch.getName()),
-                                   MediaType.APPLICATION_JSON,
-                                   checkKey(),
-                                   ImmutableMap.of("target", updateBranch.getId()))
-                              .header(HttpHeaders.IF_MATCH, new EntityTag(branch.getId()))
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .put(Entity.entity(branchTable, MediaType.APPLICATION_JSON_TYPE));
-    RestUtils.checkResponse(response);
+    nessie.updateBatch(branch.getName(), updateBranch.getId(), branch.getId());
   }
 
   /**
    * Delete a branch. Note this is potentially damaging if the branch is not fully merged.
    */
   public void deleteBranch(Branch branch) {
-    Response response = client.get(endpoint,
-                                   SLASH.join("objects", branch.getName()),
-                                   MediaType.APPLICATION_JSON,
-                                   checkKey())
-                              .header(HttpHeaders.IF_MATCH, new EntityTag(branch.getId()))
-                              .accept(MediaType.APPLICATION_JSON_TYPE)
-                              .delete();
-    RestUtils.checkResponse(response);
+    nessie.deleteRef(branch.getName(), branch.getId());
   }
 
   public static NessieClient basic(String path, String username, String password) {
@@ -242,4 +165,5 @@ public class NessieClient implements Closeable {
   public static NessieClient aws(String path) {
     return new NessieClient(AuthType.AWS, path, null, null);
   }
+
 }

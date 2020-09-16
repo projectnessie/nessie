@@ -34,11 +34,19 @@ public final class ObjectMapperBuilder {
    */
   public static ObjectMapper createObjectMapper() {
     ObjectMapper mapper = new ObjectMapper();
+    return features(mapper);
+  }
+
+  /**
+   * enable specific features.
+   */
+  public static ObjectMapper features(ObjectMapper mapper) {
     mapper.registerModule(new Jdk8Module());
     mapper.registerModule(new JavaTimeModule());
     mapper.registerModule(new ParameterNamesModule());
     mapper.registerModule(new GuavaModule());
     mapper.enable(SerializationFeature.INDENT_OUTPUT);
+    mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     return mapper;
   }
 }

@@ -16,13 +16,11 @@
 
 package com.dremio.nessie.client.rest;
 
-import javax.ws.rs.core.Response;
-
 import com.dremio.nessie.error.NessieError;
 
 public class NessieNotAuthorizedException extends NessieExtendedClientErrorException {
 
-  public NessieNotAuthorizedException(Response response, NessieError nessieError) {
-    super(response, nessieError);
+  public NessieNotAuthorizedException(NessieError nessieError) {
+    super(nessieError);
   }
 }
