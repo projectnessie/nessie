@@ -262,7 +262,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   private static Optional<Hash> toHash(String hash, boolean required) throws NessieConflictException {
-    if (hash == null) {
+    if (hash == null || hash.isEmpty()) {
       if (required) {
         throw new NessieConflictException("Must provide expected hash value for operation.");
       }
