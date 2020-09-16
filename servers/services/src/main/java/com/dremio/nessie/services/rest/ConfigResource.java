@@ -17,10 +17,13 @@
 package com.dremio.nessie.services.rest;
 
 import javax.enterprise.context.RequestScoped;
+import javax.enterprise.inject.Default;
 import javax.inject.Inject;
+import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.MediaType;
 
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -44,6 +47,8 @@ import com.dremio.nessie.services.config.ServerConfig;
  */
 @Path("config")
 @RequestScoped
+@Default
+@ConstrainedTo(RuntimeType.SERVER)
 public class ConfigResource implements ConfigApi {
 
   private static final Logger logger = LoggerFactory.getLogger(ConfigResource.class);

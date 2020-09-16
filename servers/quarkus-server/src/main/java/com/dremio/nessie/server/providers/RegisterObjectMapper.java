@@ -17,8 +17,8 @@ package com.dremio.nessie.server.providers;
 
 import javax.inject.Singleton;
 
-import com.dremio.nessie.json.ObjectMapperBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import io.quarkus.jackson.ObjectMapperCustomizer;
 
@@ -27,6 +27,7 @@ public class RegisterObjectMapper implements ObjectMapperCustomizer {
 
   @Override
   public void customize(ObjectMapper mapper) {
-    ObjectMapperBuilder.features(mapper);
+    mapper.enable(SerializationFeature.INDENT_OUTPUT);
+    mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
   }
 }

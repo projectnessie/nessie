@@ -21,6 +21,7 @@ import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.Hash;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.model.Tag;
+import com.dremio.nessie.services.config.ServerConfig;
 
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
@@ -35,7 +36,8 @@ public class NessieModelProcessor {
       Tag.class,
       Hash.class,
       NessieConfiguration.class,
-      NessieError.class
+      NessieError.class,
+      ServerConfig.class
     };
     return new ReflectiveClassBuildItem(true, true, true, allClasss);
   }

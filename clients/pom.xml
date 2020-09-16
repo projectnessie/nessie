@@ -32,8 +32,13 @@
 
   <modules>
     <module>client</module>
-    <module>deltalake</module>
+<!--    <module>deltalake</module>-->
+    <module>deltalake-spark2</module>
+<!--    <module>deltalake-spark3</module>-->
     <module>iceberg</module>
-    <module>spark</module>
+    <module>spark2-iceberg</module>
+    <module>spark3-iceberg</module>
+<!--    <module>nessie-spark2</module>-->
+<!--    <module>nessie-spark3</module>-->
   </modules>
 </project>
