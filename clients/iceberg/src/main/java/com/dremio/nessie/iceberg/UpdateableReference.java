@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.iceberg;
 
-import org.apache.curator.shaded.com.google.common.base.Preconditions;
 import org.apache.iceberg.exceptions.NotFoundException;
 
 import com.dremio.nessie.api.TreeApi;
@@ -28,11 +27,13 @@ class UpdateableReference {
 
   private Reference reference;
   private final TreeApi client;
+  private final String requestedHash;
 
-  public UpdateableReference(Reference reference, TreeApi client) {
+  public UpdateableReference(Reference reference, TreeApi client, String requestedHash) {
     super();
     this.reference = reference;
     this.client = client;
+    this.requestedHash = requestedHash;
   }
 
   public boolean refresh() {
@@ -53,15 +54,17 @@ class UpdateableReference {
   }
 
   public UpdateableReference clone() {
-    return new UpdateableReference(reference, client);
+    return new UpdateableReference(reference, client, requestedHash);
   }
 
   public String getHash() {
-    return reference.getHash();
+    return requestedHash == null ? reference.getHash() : requestedHash;
   }
 
   public Branch getAsBranch() {
-    Preconditions.checkArgument(isBranch());
+    if (!isBranch()) {
+      throw new IllegalArgumentException("Reference is not a branch");
+    }
     return (Branch) reference;
   }
 
@@ -69,5 +72,9 @@ class UpdateableReference {
     if (!isBranch()) {
       throw new IllegalArgumentException("You can only mutate tables when using a branch.");
     }
+  }
+
+  public String getName() {
+    return reference.getName();
   }
 }
