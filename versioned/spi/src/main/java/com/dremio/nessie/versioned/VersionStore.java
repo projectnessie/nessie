@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * A storage interface that maintains multiple versions of the VALUE type with each commit having an associated
@@ -31,6 +32,7 @@ import javax.annotation.Nonnull;
  * @param <METADATA> The type of data that will be associated with each commit. Metadata values must provide an
  *                   associated Serializer.
  */
+@ThreadSafe
 public interface VersionStore<VALUE, METADATA> {
 
   /**
