@@ -51,7 +51,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 public interface Contents {
 
   static enum Type {
-    ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
+    UNKNOWN, ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
   }
 
 }

@@ -48,6 +48,6 @@ public interface Reference extends Base {
    * backend system id. Usually the 20-byte hash of the commit this reference points to.
    */
   @Nullable
-  String getId();
+  String getHash();
 
 }

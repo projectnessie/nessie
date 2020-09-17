@@ -28,7 +28,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -41,12 +40,13 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.Merge;
+import com.dremio.nessie.model.ObjectsResponse;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.ReferenceUpdate;
 import com.dremio.nessie.model.Transplant;
 
 @Path("/")
-public interface RefOperationsApi {
+public interface TreeApi {
 
   public static final String EXPECTED = "expected";
 
@@ -54,7 +54,7 @@ public interface RefOperationsApi {
    * Get all references.
    */
   @GET
-  @Path("refs")
+  @Path("trees")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get all references")
   @APIResponses({@APIResponse(responseCode = "200", description = "Fetch all references.")})
@@ -65,7 +65,7 @@ public interface RefOperationsApi {
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Path("ref/{ref}")
+  @Path("tree/{ref}")
   @Operation(summary = "Fetch details of a reference")
   @APIResponses({
       @APIResponse(responseCode = "404", description = "Ref not found")
@@ -79,37 +79,37 @@ public interface RefOperationsApi {
    */
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
-  @Path("ref")
+  @Path("tree")
   @Operation(summary = "Create Reference")
   @APIResponses({@APIResponse(responseCode = "409", description = "Reference already exists")}
   )
-  Response createNewReference(@RequestBody(description = "Reference to create") Reference reference)
-      throws NessieAlreadyExistsException, NessieNotFoundException;
+  void createNewReference(@RequestBody(description = "Reference to create") Reference reference)
+      throws NessieAlreadyExistsException, NessieNotFoundException, NessieConflictException;
 
   /**
    * Delete a reference.
    */
   @DELETE
-  @Path("ref")
+  @Path("tree")
   @Operation(summary = "Delete ref endpoint")
   @APIResponses({
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "update conflict"),
     })
-  public Response deleteReference(
+  void deleteReference(
       @RequestBody(description = "Reference to create") Reference reference) throws NessieConflictException, NessieNotFoundException;
 
   /**
    * Assign a Reference to a hash.
    */
   @PUT
-  @Path("ref/${ref}")
+  @Path("tree/${ref}")
   @Operation(summary = "Set a reference to a specific hash")
   @APIResponses({
       @APIResponse(responseCode = "404", description = "Reference doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")
     })
-  public Response assignReference(
+  void assignReference(
       @NotNull @Parameter(description = "Ref on which to assign, may not yet exist") @PathParam("ref") String ref,
       @RequestBody(description = "Expected and new reference") ReferenceUpdate reference)
           throws NessieNotFoundException, NessieConflictException;
@@ -120,26 +120,26 @@ public interface RefOperationsApi {
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Path("ref/{ref}/log")
+  @Path("tree/{ref}/log")
   @Operation(summary = "Get commit log for a reference")
   @APIResponses({
       @APIResponse(description = "all commits on a ref"),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists")})
-  public LogResponse getCommitLog(@NotNull @Parameter(description = "ref to show log from") @PathParam("ref") String ref)
+  LogResponse getCommitLog(@NotNull @Parameter(description = "ref to show log from") @PathParam("ref") String ref)
           throws NessieNotFoundException;
 
   /**
    * cherry pick a set of commits into a branch.
    */
   @PUT
-  @Path("ref/transplant")
+  @Path("tree/transplant")
   @Operation(summary = "transplant commits from mergeRef to ref endpoint")
   @APIResponses({
       @APIResponse(responseCode = "401", description = "no merge ref supplied"),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "update conflict")}
   )
-  public Response transplantCommitsIntoBranch(
+  void transplantCommitsIntoBranch(
       @Parameter(description = "commit message") @QueryParam("message") String message,
       @RequestBody(description = "Branch and hashes to transplant") Transplant transplant)
           throws NessieNotFoundException, NessieConflictException;
@@ -148,16 +148,33 @@ public interface RefOperationsApi {
    * merge mergeRef onto ref, optionally forced.
    */
   @PUT
-  @Path("ref/merge")
+  @Path("tree/merge")
   @Operation(summary = "merge commits from mergeRef to ref endpoint")
   @APIResponses({
       @APIResponse(responseCode = "401", description = "no merge ref supplied"),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "update conflict")}
   )
-  public Response mergeRefIntoBranch(
+  void mergeRefIntoBranch(
       @NotNull @Parameter(description = "branch on which to add commits") @PathParam("ref") String branchName,
       @NotNull @RequestBody(description = "Merge operation") Merge merge)
           throws NessieNotFoundException, NessieConflictException;
+
+
+  /**
+   * get all objects for a ref.
+   */
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("tree/{ref}/all")
+  @Operation(summary = "Fetch all objects for a reference")
+  @APIResponses({
+      @APIResponse(description = "all objects for a reference"),
+      @APIResponse(responseCode = "404", description = "Ref not found")}
+  )
+  public ObjectsResponse getObjects(
+      @NotNull @Parameter(description = "name of ref to fetch from") @PathParam("ref") String refName)
+          throws NessieNotFoundException;
+
 
 }

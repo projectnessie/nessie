@@ -24,13 +24,19 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableCommitMeta.class)
 @JsonDeserialize(as = ImmutableCommitMeta.class)
-public interface CommitMeta {
+public abstract class CommitMeta {
 
-  String getHash();
+  public abstract String getHash();
 
-  String getCommiter();
+  public abstract String getCommiter();
 
-  String getEmail();
+  public abstract String getEmail();
 
-  String getMessage();
+  public abstract String getMessage();
+
+  public abstract long getCommitTime();
+
+  public ImmutableCommitMeta.Builder toBuilder() {
+    return ImmutableCommitMeta.builder().from(this);
+  }
 }

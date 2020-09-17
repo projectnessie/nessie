@@ -15,7 +15,9 @@
  */
 package com.dremio.nessie.error;
 
-public class NessieNotFoundException extends Exception {
+import javax.ws.rs.WebApplicationException;
+
+public class NessieNotFoundException extends WebApplicationException {
 
   public NessieNotFoundException(String message, Throwable cause) {
     super(message, cause);
@@ -28,5 +30,6 @@ public class NessieNotFoundException extends Exception {
   public NessieNotFoundException(Throwable cause) {
     super(cause);
   }
+
 
 }

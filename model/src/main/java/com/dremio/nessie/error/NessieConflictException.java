@@ -15,7 +15,9 @@
  */
 package com.dremio.nessie.error;
 
-public class NessieConflictException extends Exception {
+import javax.ws.rs.WebApplicationException;
+
+public class NessieConflictException extends WebApplicationException {
 
   public NessieConflictException(String message, Throwable cause) {
     super(message, cause);

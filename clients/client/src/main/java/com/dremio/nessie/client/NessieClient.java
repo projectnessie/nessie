@@ -112,7 +112,7 @@ public class NessieClient implements Closeable {
    * Create a new branch. Branch name is the branch name and id is the branch to copy from.
    */
   public Branch createBranch(Branch branch) {
-    nessie.createRef(branch.getName(), branch.getId(), ReferenceWithType.of(branch));
+    nessie.createRef(branch.getName(), branch.getHash(), ReferenceWithType.of(branch));
     return getBranch(branch.getName());
   }
 
@@ -128,7 +128,7 @@ public class NessieClient implements Closeable {
    * @param tables list of tables to be added, deleted or modified
    */
   public void commit(Branch branch, Contents... tables) {
-    nessie.updateMulti(branch.getName(), null, branch.getId(), tables);
+    nessie.updateMulti(branch.getName(), null, branch.getHash(), tables);
   }
 
   /**
@@ -148,14 +148,14 @@ public class NessieClient implements Closeable {
   public void assignBranch(com.dremio.nessie.model.Branch branch,
                            String updateBranchStr) {
     Branch updateBranch = getBranch(updateBranchStr);
-    nessie.updateBatch(branch.getName(), updateBranch.getId(), branch.getId());
+    nessie.updateBatch(branch.getName(), updateBranch.getHash(), branch.getHash());
   }
 
   /**
    * Delete a branch. Note this is potentially damaging if the branch is not fully merged.
    */
   public void deleteBranch(Branch branch) {
-    nessie.deleteRef(branch.getName(), branch.getId());
+    nessie.deleteRef(branch.getName(), branch.getHash());
   }
 
   public static NessieClient basic(String path, String username, String password) {

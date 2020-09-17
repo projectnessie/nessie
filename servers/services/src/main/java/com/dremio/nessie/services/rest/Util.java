@@ -46,11 +46,11 @@ final class Util {
 
   static CommitMeta meta(
       Principal principal,
-      String message,
-      String ref) {
+      String message) {
     return ImmutableCommitMeta.builder()
                               .commiter(name(principal))
                               .message(message)
+                              .commitTime(System.currentTimeMillis())
                               .build();
   }
 

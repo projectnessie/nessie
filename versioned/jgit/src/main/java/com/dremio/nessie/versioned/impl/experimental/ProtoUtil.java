@@ -40,7 +40,7 @@ public class ProtoUtil {
    */
   public static GitStoreObjects.Table tableToProtoc(Contents table, String id) {
     Builder builder = GitStoreObjects.Table.newBuilder()
-                                           .setPath(table.getId())
+                                           .setPath(table.getHash())
                                            .setMetadataLocation(table.getMetadataLocation());
     if (id != null) {
       builder.setMetadata(id);

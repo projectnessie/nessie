@@ -29,6 +29,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(as = ImmutableTag.class)
 @JsonDeserialize(as = ImmutableTag.class)
 @JsonTypeName("TAG")
-public abstract class Tag implements Reference {
+public interface Tag extends Reference {
 
+  static ImmutableTag.Builder builder() {
+    return ImmutableTag.builder();
+  }
 }

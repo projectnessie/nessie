@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableMerge.class)
 public interface Merge {
 
-  Reference getFrom();
+  String getFromHash();
 
   Branch getTo();
 

@@ -15,7 +15,9 @@
  */
 package com.dremio.nessie.error;
 
-public class NessieAlreadyExistsException extends Exception {
+import javax.ws.rs.WebApplicationException;
+
+public class NessieAlreadyExistsException extends WebApplicationException {
 
   public NessieAlreadyExistsException(String message, Throwable cause) {
     super(message, cause);

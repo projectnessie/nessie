@@ -12,12 +12,20 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableObjectsResponse.class)
 public interface ObjectsResponse extends PaginatedResponse {
 
+  static ImmutableObjectsResponse.Builder builder() {
+    return ImmutableObjectsResponse.builder();
+  }
+
   List<Entry> getEntries();
 
   @Value.Immutable(prehash = true)
   @JsonSerialize(as = ImmutableEntry.class)
   @JsonDeserialize(as = ImmutableEntry.class)
   interface Entry {
+
+    static ImmutableEntry.Builder builder() {
+      return ImmutableEntry.builder();
+    }
 
     Contents.Type getType();
 

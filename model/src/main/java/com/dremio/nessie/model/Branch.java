@@ -29,5 +29,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(as = ImmutableBranch.class)
 @JsonDeserialize(as = ImmutableBranch.class)
 @JsonTypeName("BRANCH")
-public abstract class Branch implements Reference {
+public interface Branch extends Reference {
+
+  static ImmutableBranch.Builder builder() {
+    return ImmutableBranch.builder();
+  }
 }
