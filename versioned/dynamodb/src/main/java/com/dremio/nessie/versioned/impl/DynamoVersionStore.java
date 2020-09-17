@@ -98,7 +98,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   public void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     if (!targetHash.isPresent()) {
       if (ref instanceof TagName) {
-        throw new ReferenceNotFoundException("You must provide a target hash to create a tag.");
+        throw new IllegalArgumentException("You must provide a target hash to create a tag.");
       }
 
       InternalBranch branch = new InternalBranch(ref.getName());
@@ -393,8 +393,14 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     final Id refId = InternalRefId.of(namedRef).getId();
     // you can't assign to an empty branch.
     Preconditions.checkArgument(!refId.isEmpty(), "Invalid target hash.");
-    final Id newId = Id.of(targetHash.asBytes());
-    final Id expectedId = currentTarget.map(Id::of).orElse(null);
+    final Id newId = Id.of(targetHash);
+
+    final Id expectedId;
+    if (currentTarget.isPresent()) {
+      expectedId = Id.of(currentTarget.get());
+    } else {
+      expectedId = null;
+    }
 
     final L1 l1;
     try {
@@ -438,7 +444,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       throw new ReferenceNotFoundException("The current tag", ex);
     } catch (ConditionalCheckFailedException ex) {
       if (currentTarget.isPresent()) {
-        throw new ReferenceNotFoundException(
+        throw new ReferenceConflictException(
             String.format("Unable to assign ref %s. The reference has changed, doesn't "
                 + "exist or you are trying to overwrite a %s with a %s.",
                 name, unexpectedType, expectedType), ex);
@@ -460,7 +466,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public DATA getValue(Ref ref, Key key) {
+  public DATA getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     InternalKey ikey = new InternalKey(key);
     PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.singletonList(ikey));
     store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
@@ -468,7 +474,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public List<Optional<DATA>> getValue(Ref ref, List<Key> key) throws ReferenceNotFoundException {
+  public List<Optional<DATA>> getValues(Ref ref, List<Key> key) throws ReferenceNotFoundException {
     List<InternalKey> keys = key.stream().map(InternalKey::new).collect(Collectors.toList());
     PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), keys);
     store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));

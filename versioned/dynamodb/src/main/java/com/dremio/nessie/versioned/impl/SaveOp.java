@@ -51,6 +51,10 @@ class SaveOp<V extends HasId> {
 
   @Override
   public int hashCode() {
+    if (type.isImmutable()) {
+      return Objects.hash(type, value.getId());
+    }
+
     return Objects.hash(type, value);
   }
 
@@ -60,10 +64,18 @@ class SaveOp<V extends HasId> {
     if (this == obj) {
       return true;
     }
+
     if (!(obj instanceof SaveOp)) {
       return false;
     }
+
     SaveOp<V> other = (SaveOp<V>) obj;
+    if (type.isImmutable()) {
+      // if the items are immutable, their id is sufficient to determine equality.
+      return type == other.type && Objects.equals(value.getId(), other.value.getId());
+    }
+
+    // otherwise, use the actual values for equality.
     return type == other.type && Objects.equals(value, other.value);
   }
 

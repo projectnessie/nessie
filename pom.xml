@@ -54,7 +54,7 @@
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
     <guava.version>29.0-jre</guava.version>
     <hadoop.version>3.3.0</hadoop.version>
-    <hamcrest.version>1.3</hamcrest.version>
+    <hamcrest.version>2.2</hamcrest.version>
     <iceberg.version>0.9.1</iceberg.version>
     <immutables.version>2.8.8</immutables.version>
     <jackson.version>2.11.2</jackson.version>
@@ -406,9 +406,8 @@
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
-        <artifactId>hamcrest-all</artifactId>
+        <artifactId>hamcrest</artifactId>
         <version>${hamcrest.version}</version>
-        <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
