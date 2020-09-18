@@ -15,9 +15,17 @@
  */
 package com.dremio.nessie.model;
 
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value.Default;
+
 public interface PaginatedResponse {
 
-  boolean hasMore();
+  @Default
+  default boolean hasMore() {
+    return false;
+  }
 
+  @Nullable
   String getToken();
 }

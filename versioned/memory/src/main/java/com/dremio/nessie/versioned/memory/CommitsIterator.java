@@ -39,7 +39,7 @@ final class CommitsIterator<ValueT, MetadataT> implements Iterator<WithHash<Comm
       return true;
     }
 
-    if (ancestor == Commit.NO_ANCESTOR) {
+    if (ancestor.equals(Commit.NO_ANCESTOR)) {
       return false;
     }
 
