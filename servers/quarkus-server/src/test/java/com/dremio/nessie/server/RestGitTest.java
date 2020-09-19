@@ -62,12 +62,14 @@ public class RestGitTest {
   public void testBasic() {
     Branch mainx = ImmutableBranch.builder().name("mainx").build();
 
+    int preSize = rest().get("/api/v1/trees").then().statusCode(200).extract().as(Reference[].class).length;
+
     rest().get("/api/v1/tree/mainx").then().statusCode(404);
     rest().body(mainx).post("/api/v1/tree")
       .then().statusCode(204);
 
     Reference[] references = rest().get("/api/v1/trees").then().statusCode(200).extract().as(Reference[].class);
-    Assertions.assertEquals(2, references.length);
+    Assertions.assertEquals(preSize + 1, references.length);
 
     Reference reference = rest().get("/api/v1/tree/mainx").then()
                  .statusCode(200)
