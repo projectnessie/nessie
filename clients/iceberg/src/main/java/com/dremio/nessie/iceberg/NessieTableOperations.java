@@ -29,10 +29,10 @@ import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.rest.NessieNotFoundClientException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableIcebergTable;
 import com.dremio.nessie.model.ImmutablePutContents;
-import com.dremio.nessie.model.ContentsKey;
 
 /**
  * Nessie implementation of Iceberg TableOperations.

@@ -39,9 +39,9 @@ import com.dremio.nessie.error.NessieAlreadyExistsException;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.Merge;
-import com.dremio.nessie.model.ObjectsResponse;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.ReferenceUpdate;
 import com.dremio.nessie.model.Transplant;
@@ -191,7 +191,7 @@ public interface TreeApi {
       @APIResponse(responseCode = "200", description = "Returned successfully."),
       @APIResponse(responseCode = "404", description = "Ref not found")}
   )
-  public ObjectsResponse getObjects(
+  public EntriesResponse getEntries(
       @NotNull @Parameter(description = "name of ref to fetch from") @PathParam("ref") String refName)
           throws NessieNotFoundException;
 

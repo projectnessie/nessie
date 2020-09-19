@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableIcebergTable;
@@ -37,7 +38,6 @@ import com.dremio.nessie.model.ImmutablePutContents;
 import com.dremio.nessie.model.ImmutableTag;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.MultiContents;
-import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.Operation.Put;
 import com.dremio.nessie.model.PutContents;
 import com.dremio.nessie.model.Reference;

@@ -23,12 +23,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableObjectsResponse.class)
-@JsonDeserialize(as = ImmutableObjectsResponse.class)
-public interface ObjectsResponse extends PaginatedResponse {
+@JsonSerialize(as = ImmutableEntriesResponse.class)
+@JsonDeserialize(as = ImmutableEntriesResponse.class)
+public interface EntriesResponse extends PaginatedResponse {
 
-  static ImmutableObjectsResponse.Builder builder() {
-    return ImmutableObjectsResponse.builder();
+  static ImmutableEntriesResponse.Builder builder() {
+    return ImmutableEntriesResponse.builder();
   }
 
   List<Entry> getEntries();

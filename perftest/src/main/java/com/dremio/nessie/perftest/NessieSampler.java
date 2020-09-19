@@ -32,9 +32,9 @@ import com.dremio.nessie.client.rest.NessieExtendedClientErrorException;
 import com.dremio.nessie.client.rest.NessieInternalServerException;
 import com.dremio.nessie.client.rest.NessiePreconditionFailedException;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.PutContents;
 import com.google.common.base.Joiner;
 

@@ -37,6 +37,8 @@ import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.rest.NessieNotFoundClientException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableDelete;
@@ -45,8 +47,6 @@ import com.dremio.nessie.model.ImmutablePut;
 import com.dremio.nessie.model.ImmutableReferenceUpdate;
 import com.dremio.nessie.model.ImmutableTag;
 import com.dremio.nessie.model.MultiContents;
-import com.dremio.nessie.model.ContentsKey;
-import com.dremio.nessie.model.ObjectsResponse;
 import com.dremio.nessie.model.Reference;
 import com.google.common.base.Joiner;
 
@@ -148,7 +148,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
   @Override
   public List<TableIdentifier> listTables(Namespace namespace) {
     return client.getTreeApi()
-        .getObjects(reference.getHash())
+        .getEntries(reference.getHash())
         .getEntries()
         .stream()
         .filter(namespacePredicate(namespace))
@@ -156,14 +156,14 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
         .collect(Collectors.toList());
   }
 
-  private static Predicate<ObjectsResponse.Entry> namespacePredicate(Namespace ns) {
+  private static Predicate<EntriesResponse.Entry> namespacePredicate(Namespace ns) {
     // TODO: filter to just iceberg tables.
     if (ns == null) {
       return e -> true;
     }
 
     final List<String> namespace = Arrays.asList(ns.levels());
-    Predicate<ObjectsResponse.Entry> predicate = e -> {
+    Predicate<EntriesResponse.Entry> predicate = e -> {
       List<String> names = e.getName().getElements();
 
       if (names.size() <= namespace.size()) {
@@ -175,7 +175,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
     return predicate;
   }
 
-  private static TableIdentifier toIdentifier(ObjectsResponse.Entry entry) {
+  private static TableIdentifier toIdentifier(EntriesResponse.Entry entry) {
     List<String> elements = entry.getName().getElements();
     return TableIdentifier.of(elements.toArray(new String[elements.size()]));
   }

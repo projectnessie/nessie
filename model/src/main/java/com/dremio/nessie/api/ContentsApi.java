@@ -37,8 +37,8 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Contents;
-import com.dremio.nessie.model.MultiContents;
 import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.MultiContents;
 import com.dremio.nessie.model.PutContents;
 
 @Consumes(value = MediaType.APPLICATION_JSON)

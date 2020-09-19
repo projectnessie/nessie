@@ -58,9 +58,9 @@ import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.PutContents;
 
 import io.quarkus.test.junit.QuarkusTest;

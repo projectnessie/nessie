@@ -40,10 +40,10 @@ import org.apache.spark.SparkConf;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.DeltaLakeTable;
 import com.dremio.nessie.model.ImmutableDeltaLakeTable;
 import com.dremio.nessie.model.ImmutablePutContents;
-import com.dremio.nessie.model.ContentsKey;
 
 /**
  * How do we integrate this like we integrate iceberg.

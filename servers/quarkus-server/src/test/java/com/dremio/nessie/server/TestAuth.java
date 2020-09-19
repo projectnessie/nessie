@@ -32,11 +32,11 @@ import com.dremio.nessie.client.rest.NessieForbiddenException;
 import com.dremio.nessie.client.rest.NessieNotAuthorizedException;
 import com.dremio.nessie.client.rest.NessieNotFoundClientException;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.EntriesResponse.Entry;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableIcebergTable;
-import com.dremio.nessie.model.ContentsKey;
-import com.dremio.nessie.model.ObjectsResponse.Entry;
 import com.dremio.nessie.model.PutContents;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -78,7 +78,7 @@ class TestAuth {
   void testAdmin() {
     getCatalog("testx");
     Branch branch = (Branch) tree.getReferenceByName("testx");
-    List<Entry> tables = tree.getObjects("testx").getEntries();
+    List<Entry> tables = tree.getEntries("testx").getEntries();
     Assertions.assertTrue(tables.isEmpty());
     ContentsKey key = ContentsKey.of("x","x");
     tryEndpointPass(() -> contents.setContents(key, "foo", PutContents.of(branch, IcebergTable.of("foo"))));
