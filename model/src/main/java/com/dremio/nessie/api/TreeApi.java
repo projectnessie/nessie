@@ -41,6 +41,7 @@ import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.Merge;
+import com.dremio.nessie.model.MultiContents;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Transplant;
 
@@ -64,7 +65,7 @@ public interface TreeApi {
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Path("default")
+  @Path("tree")
   @Operation(summary = "Get default branch for commits and reads")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Found and default bracnh."),
@@ -115,7 +116,7 @@ public interface TreeApi {
       @APIResponse(responseCode = "404", description = "One or more references don't exist"),
       @APIResponse(responseCode = "412", description = "Update conflict")
     })
-  void assignReference(
+  void assignTag(
       @NotNull @Parameter(description = "Tag name to reassign") @PathParam("tagName") String tagName,
       @NotNull @Parameter(description = "Expected old hash of tag") @PathParam("oldHash") String oldHash,
       @NotNull @Parameter(description = "New hash to assign to") @PathParam("newHash") String newHash)
@@ -184,8 +185,6 @@ public interface TreeApi {
       @NotNull @Parameter(description = "Expected hash of tag") @PathParam("hash") String hash
       ) throws NessieConflictException, NessieNotFoundException;
 
-
-
   /**
    * commit log for a ref.
    */
@@ -217,7 +216,7 @@ public interface TreeApi {
           throws NessieNotFoundException, NessieConflictException;
 
   /**
-   * merge mergeRef onto ref, optionally forced.
+   * merge mergeRef onto ref.
    */
   @PUT
   @Path("merge")
@@ -247,5 +246,32 @@ public interface TreeApi {
       @NotNull @Parameter(description = "name of ref to fetch from") @PathParam("ref") String refName)
           throws NessieNotFoundException;
 
+  @PUT
+  @Path("multi/{hash}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(summary = "commit multiple on default branch")
+  @APIResponses({
+      @APIResponse(responseCode = "204", description = "Updated successfully."),
+      @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
+      @APIResponse(responseCode = "412", description = "Update conflict")})
+  public void commitMultipleOperations(
+      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
+      @Parameter(description = "Commit message") @QueryParam("message") String message,
+      @NotNull @RequestBody(description = "Operations") MultiContents operations)
+      throws NessieNotFoundException, NessieConflictException;
 
+  @PUT
+  @Path("multi/{branch}/{hash}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(summary = "commit multiple")
+  @APIResponses({
+      @APIResponse(responseCode = "204", description = "Updated successfully."),
+      @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
+      @APIResponse(responseCode = "412", description = "Update conflict")})
+  public void commitMultipleOperations(
+      @Parameter(description = "Branch to change, defaults to default branch.") @PathParam("branch") String branch,
+      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
+      @Parameter(description = "Commit message") @QueryParam("message") String message,
+      @NotNull @RequestBody(description = "Operations") MultiContents operations)
+      throws NessieNotFoundException, NessieConflictException;
 }

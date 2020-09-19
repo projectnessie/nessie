@@ -31,6 +31,7 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.Contents.Type;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.EntriesResponse;
@@ -40,20 +41,23 @@ import com.dremio.nessie.model.ImmutableLogResponse;
 import com.dremio.nessie.model.ImmutableTag;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.Merge;
+import com.dremio.nessie.model.MultiContents;
+import com.dremio.nessie.model.Operation;
 import com.dremio.nessie.model.Reference;
-import com.dremio.nessie.model.ReferenceUpdate;
-import com.dremio.nessie.model.Tag;
 import com.dremio.nessie.model.Transplant;
 import com.dremio.nessie.services.config.ServerConfig;
 import com.dremio.nessie.versioned.BranchName;
+import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.NamedRef;
+import com.dremio.nessie.versioned.Put;
 import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.TagName;
+import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.WithHash;
 import com.google.common.collect.ImmutableList;
 
@@ -96,81 +100,46 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Metered
-  @Timed(name = "timed-tree-create")
-  @Override
-  public void createNewReference(Reference reference)
-      throws NessieNotFoundException, NessieConflictException {
-    try {
-      if (reference instanceof Branch) {
-        store.create(BranchName.of(reference.getName()), toHash(reference, false));
-      } else if (reference instanceof Tag) {
-        store.create(TagName.of(reference.getName()), toHash(reference, true));
-      } else {
-        throw new IllegalArgumentException("Can only create a new reference for branch and tag types.");
-      }
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(reference.getName(), e);
-    } catch (ReferenceAlreadyExistsException e) {
-      throw new NessieConflictException(String.format("A reference of name [%s] already exists.", reference.getName()), e);
-    }
-  }
-
-  private static Optional<Hash> toHash(Reference reference, boolean required) throws NessieConflictException {
-    return toHash(reference.getHash(), required);
-  }
-
-  private static Optional<Hash> toHash(String hash, boolean required) throws NessieConflictException {
-    if (hash == null) {
-      if (required) {
-        throw new NessieConflictException("Must provide expected hash value for operation.");
-      }
-      return Optional.empty();
-    }
-    return Optional.of(Hash.of(hash));
+  @Timed(name = "timed-tree-tag")
+  public void createNewTag(String tagName, String hash) throws NessieNotFoundException, NessieConflictException {
+    createNewReference(TagName.of(tagName), hash);
   }
 
   @Metered
-  @Timed(name = "timed-tree-delete")
+  @Timed(name = "timed-assign-tag")
   @Override
-  public void deleteReference(Reference reference) throws NessieConflictException, NessieNotFoundException {
-    try {
-      if (reference instanceof Branch) {
-        store.delete(BranchName.of(reference.getName()), toHash(reference, true));
-      } else if (reference instanceof Tag) {
-        store.delete(TagName.of(reference.getName()), toHash(reference, true));
-      } else {
-        throw new IllegalArgumentException("Can only delete branch and tag types.");
-      }
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(reference.getName(), e);
-    } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(
-          String.format("The hash provided %s does not match the current status of the reference %s.",
-              reference.getHash(), reference.getName()), e);
-    }
+  public void assignTag(String tagName, String oldHash, String newHash)
+      throws NessieNotFoundException, NessieConflictException {
+    assignReference(TagName.of(tagName), oldHash, newHash);
   }
 
   @Metered
-  @Timed(name = "timed-tree-assign")
+  @Timed(name = "timed-delete-tag")
   @Override
-  public void assignReference(String ref, ReferenceUpdate reference)
+  public void deleteTag(String tagName, String hash) throws NessieConflictException, NessieNotFoundException {
+    deleteReference(TagName.of(tagName), hash);
+  }
+
+  @Metered
+  @Timed(name = "timed-create-branch")
+  @Override
+  public void createNewBranch(String branchName, String hash) throws NessieNotFoundException, NessieConflictException {
+    createNewReference(BranchName.of(branchName), hash);
+  }
+
+  @Metered
+  @Timed(name = "timed-assign-branch")
+  @Override
+  public void assignBranch(String branchName, String oldHash, String newHash)
       throws NessieNotFoundException, NessieConflictException {
-    try {
-      WithHash<Ref> resolved = store.toRef(ref);
-      Ref resolvedRef = resolved.getValue();
-      if (resolvedRef instanceof NamedRef) {
-        store.assign((NamedRef) resolvedRef, toHash(reference.getExpectedId(), true), toHash(reference.getUpdateId(), false)
-            .orElseThrow(() -> new NessieConflictException("Must provide target hash value for operation.")));
-      } else {
-        throw new IllegalArgumentException("Can only assign branch and tag types.");
-      }
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(ref, e);
-    } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(
-          String.format("The hash provided %s does not match the current status of the reference %s.",
-              reference.getExpectedId(), ref), e);
-    }
+    assignReference(BranchName.of(branchName), oldHash, newHash);
+  }
+
+  @Metered
+  @Timed(name = "timed-delete-branch")
+  @Override
+  public void deleteBranch(String branchName, String hash) throws NessieConflictException, NessieNotFoundException {
+    deleteReference(BranchName.of(branchName), hash);
   }
 
   @Metered
@@ -235,6 +204,96 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
+  @Override
+  public void commitMultipleOperations(String hash, String message, MultiContents operations)
+      throws NessieNotFoundException, NessieConflictException {
+    commitMultipleOperations(config.getDefaultBranch(), hash, message, operations);
+  }
+
+  @Metered
+  @Timed(name = "timed-contents-multi")
+  @Override
+  public void commitMultipleOperations(String branch, String hash, String message, MultiContents operations)
+      throws NessieNotFoundException, NessieConflictException {
+    List<com.dremio.nessie.versioned.Operation<Contents>> ops = operations.getOperations()
+        .stream()
+        .map(TreeResource::toOp)
+        .collect(ImmutableList.toImmutableList());
+    doOps(branch, hash, message, ops);
+  }
+
+  void doOps(String branch,
+      String hash, String message, List<com.dremio.nessie.versioned.Operation<Contents>> operations)
+      throws NessieConflictException, NessieNotFoundException {
+    try {
+      store.commit(
+          BranchName.of(branch),
+          Optional.of(Hash.of(hash)),
+          ContentsResource.meta(principal, message),
+          operations);
+    } catch (ReferenceConflictException e) {
+      throw new NessieConflictException("Failed to commit data. Provided hash does not match current value.", e);
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieConflictException("Failed to commit data. Provided ref was not found.", e);
+    }
+  }
+
+  private void createNewReference(NamedRef reference, String hash) throws NessieNotFoundException, NessieConflictException {
+    try {
+      store.create(reference, toHash(hash, false));
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieNotFoundException(reference.getName(), e);
+    } catch (ReferenceAlreadyExistsException e) {
+      throw new NessieConflictException(String.format("A reference of name [%s] already exists.", reference.getName()), e);
+    }
+  }
+
+  private static Optional<Hash> toHash(Reference reference, boolean required) throws NessieConflictException {
+    return toHash(reference.getHash(), required);
+  }
+
+  private static Optional<Hash> toHash(String hash, boolean required) throws NessieConflictException {
+    if (hash == null) {
+      if (required) {
+        throw new NessieConflictException("Must provide expected hash value for operation.");
+      }
+      return Optional.empty();
+    }
+    return Optional.of(Hash.of(hash));
+  }
+
+  private void deleteReference(NamedRef name, String hash) throws NessieConflictException, NessieNotFoundException {
+    try {
+      store.delete(name, toHash(hash, true));
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieNotFoundException(String.format("Unable to find reference [%s] to delete.", name.getName()), e);
+    } catch (ReferenceConflictException e) {
+      throw new NessieConflictException(
+          String.format("The hash provided %s does not match the current status of the reference %s.",
+              hash, name.getName()), e);
+    }
+  }
+
+  private void assignReference(NamedRef ref, String oldHash, String newHash)
+      throws NessieNotFoundException, NessieConflictException {
+    try {
+      WithHash<Ref> resolved = store.toRef(ref.getName());
+      Ref resolvedRef = resolved.getValue();
+      if (resolvedRef instanceof NamedRef) {
+        store.assign((NamedRef) resolvedRef, toHash(oldHash, true), toHash(oldHash, true)
+            .orElseThrow(() -> new NessieConflictException("Must provide target hash value for operation.")));
+      } else {
+        throw new IllegalArgumentException("Can only assign branch and tag types.");
+      }
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieNotFoundException("Unable to find a ref or hash provided.", e);
+    } catch (ReferenceConflictException e) {
+      throw new NessieConflictException(
+          String.format("The hash provided %s does not match the current status of the reference %s.",
+              oldHash, ref), e);
+    }
+  }
+
   private static ContentsKey fromKey(Key key) {
     return new ContentsKey(key.getElements());
   }
@@ -258,4 +317,16 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
+  private static com.dremio.nessie.versioned.Operation<Contents> toOp(Operation o) {
+    Key key = Key.of(o.getKey().getElements().toArray(new String[0]));
+    if (o instanceof Operation.Delete) {
+      return Delete.of(key);
+    } else if (o instanceof Operation.Put) {
+      return Put.of(key, ((Operation.Put)o).getContents());
+    } else if (o instanceof Operation.Unchanged) {
+      return Unchanged.of(key);
+    } else {
+      throw new IllegalStateException("Unknown operation " + o);
+    }
+  }
 }

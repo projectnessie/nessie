@@ -31,7 +31,6 @@ import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableIcebergTable;
-import com.dremio.nessie.model.ImmutablePutContents;
 
 /**
  * Nessie implementation of Iceberg TableOperations.
@@ -70,7 +69,7 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
     reference.refresh();
     String metadataLocation = null;
     try {
-      Contents c = client.getContentsApi().getContents(reference.getHash(), key);
+      Contents c = client.getContentsApi().getContents(key, reference.getHash());
       this.table = c.unwrap(IcebergTable.class)
           .orElseThrow(() -> new IllegalStateException("Nessie points to a non-Iceberg object for that path."));
       metadataLocation = table.getMetadataLocation();
@@ -88,8 +87,7 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
 
     try {
       IcebergTable table = ImmutableIcebergTable.builder().metadataLocation(newMetadataLocation).build();
-      client.getContentsApi().setContents(key, "iceberg commit",
-          ImmutablePutContents.builder().branch(reference.getAsBranch()).contents(table).build());
+      client.getContentsApi().setContents(key, "iceberg commit", reference.getAsBranch().getName(), reference.getHash(), table);
     } catch (Throwable e) {
       io().deleteFile(newMetadataLocation);
       throw new CommitFailedException(e, "failed");

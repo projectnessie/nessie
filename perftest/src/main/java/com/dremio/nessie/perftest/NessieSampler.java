@@ -32,8 +32,6 @@ import com.dremio.nessie.client.rest.NessieServiceException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
-import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.PutContents;
 import com.google.common.base.Joiner;
 
 /**
@@ -73,7 +71,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     if (client == null) {
       client = new NessieClient(AuthType.BASIC, path, "admin_user", "test123");
       try {
-        client.getTreeApi().createNewReference(ImmutableBranch.builder().name("master").build());
+        client.getTreeApi().createNewBranch("master", null);
       } catch (Exception t) {
         //pass - likely already created master
       }
@@ -166,10 +164,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     switch (method) {
       case CREATE_BRANCH: {
         return handle(() -> {
-          nessieClient().getTreeApi().createNewReference(ImmutableBranch.builder()
-                                                                       .name(branch)
-                                                                       .hash(baseBranch)
-                                                                       .build());
+          nessieClient().getTreeApi().createNewBranch(branch, baseBranch);
           return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
         }, method);
       }
@@ -182,8 +177,9 @@ public class NessieSampler extends AbstractJavaSamplerClient {
             commitId.set(branch);
           }
 
-          nessieClient().getContentsApi().setContents(ContentsKey.of("name.space." + table), "",
-              PutContents.of(commitId.get(), IcebergTable.of("path_on_disk_" + table)));
+          nessieClient().getContentsApi().setContents(ContentsKey.of("name.space." + table),
+              commitId.get().getName(), commitId.get().getHash(),
+              "", IcebergTable.of("path_on_disk_" + table));
 
           //TODO: this test shouldn't be doing a get branch operation since that isn't required to complete a commit.
           return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);

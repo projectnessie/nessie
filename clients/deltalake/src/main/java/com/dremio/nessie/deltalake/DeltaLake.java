@@ -43,7 +43,6 @@ import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.DeltaLakeTable;
 import com.dremio.nessie.model.ImmutableDeltaLakeTable;
-import com.dremio.nessie.model.ImmutablePutContents;
 
 /**
  * How do we integrate this like we integrate iceberg.
@@ -117,8 +116,7 @@ public class DeltaLake extends LogStoreWrapper {
           //todo namespace
           Branch reference = client.getTreeApi().getDefaultBranch();
           DeltaLakeTable table = ImmutableDeltaLakeTable.builder().metadataLocation(path.toString()).build();
-          client.getContentsApi().setContents(extractTableName(path), "overwrite table",
-              ImmutablePutContents.builder().branch(reference).contents(table).build());
+          client.getContentsApi().setContents(extractTableName(path), reference.getName(), reference.getHash(), "overwrite table", table);
         } catch (RuntimeException e) {
           // pass
         }

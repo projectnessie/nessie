@@ -20,7 +20,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -37,7 +36,6 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
-import com.dremio.nessie.model.MultiContents;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("contents")
@@ -55,15 +53,47 @@ public interface ContentsApi {
       @APIResponse(responseCode = "404", description = "Table not found on ref")
     })
   Contents getContents(
-      @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
+      @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
       @Parameter(description = "Name of ref to read from. Default branch if not provided.") @PathParam("ref") String ref
       ) throws NessieNotFoundException;
+
+  /**
+   * Get the properties of an object.
+   */
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("{key}")
+  @Operation(summary = "Fetch details of a table endpoint for default branch")
+  @APIResponses({
+      @APIResponse(responseCode = "200", description = "Information for table"),
+      @APIResponse(responseCode = "404", description = "Table not found on ref")
+    })
+  Contents getContents(@Parameter(description = "object name to search for") @PathParam("key") ContentsKey key)
+      throws NessieNotFoundException;
+
+  /**
+   * create/update a table on default branch.
+   */
+  @POST
+  @Path("{key}/{hash}")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(summary = "update contents for path")
+  @APIResponses({
+      @APIResponse(responseCode = "204", description = "Contents updated successfully."),
+      @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
+      @APIResponse(responseCode = "412", description = "Update conflict")})
+  public void setContents(
+      @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
+      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
+      @Parameter(description = "Commit message") @QueryParam("message") String message,
+      @NotNull @RequestBody(description = "Contents to be upserted") Contents contents)
+      throws NessieNotFoundException, NessieConflictException;
 
   /**
    * create/update a table on a specific ref.
    */
   @POST
-  @Path("{key}/{hash}/{branch}")
+  @Path("{key}/{branch}/{hash}")
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(summary = "update contents for path")
   @APIResponses({
@@ -74,14 +104,17 @@ public interface ContentsApi {
       @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
       @Parameter(description = "Branch to change, defaults to default branch.") @PathParam("branch") String branch,
       @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
+      @Parameter(description = "Commit message") @QueryParam("message") String message,
       @NotNull @RequestBody(description = "Contents to be upserted") Contents contents)
       throws NessieNotFoundException, NessieConflictException;
 
+
+
   /**
-   * Delete a single object.
+   * Delete a single object on default branch.
    */
   @DELETE
-  @Path("{key}/{hash}/{branch}")
+  @Path("{key}/{hash}")
   @Operation(summary = "delete object on ref endpoint")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Deleted successfully."),
@@ -90,25 +123,29 @@ public interface ContentsApi {
       }
   )
   public void deleteContents(
-      @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
-      @Parameter(description = "Branch to delete from, defaults to default branch.") @PathParam("branch") String branch,
-      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash
+      @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
+      @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
+      @Parameter(description = "Commit message") @QueryParam("message") String message
       ) throws NessieNotFoundException, NessieConflictException;
 
-
-  @PUT
-  @Path("multi/{hash}/{branch}")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "create table on ref endpoint")
+  /**
+   * Delete a single object.
+   */
+  @DELETE
+  @Path("{key}/{branch}/{hash}")
+  @Operation(summary = "delete object on ref endpoint")
   @APIResponses({
-      @APIResponse(responseCode = "204", description = "Updated successfully."),
+      @APIResponse(responseCode = "204", description = "Deleted successfully."),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
-      @APIResponse(responseCode = "412", description = "Update conflict")})
-  public void commitMultipleOperations(
-      @Parameter(description = "Branch to change, defaults to default branch.") @PathParam("branch") String branch,
-      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
-      @Parameter(description = "Commit message") @QueryParam("message") String message,
-      @NotNull @RequestBody(description = "Operations") MultiContents operations)
-      throws NessieNotFoundException, NessieConflictException;
+      @APIResponse(responseCode = "412", description = "Update conflict"),
+      }
+  )
+  public void deleteContents(
+      @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
+      @Parameter(description = "Branch to delete from, defaults to default branch.") @PathParam("branch") String branch,
+      @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
+      @Parameter(description = "Commit message") @QueryParam("message") String message
+      ) throws NessieNotFoundException, NessieConflictException;
+
 
 }

@@ -71,7 +71,7 @@ class TestCatalogBranch extends BaseTestIceberg {
     // points to the previous metadata location
     Assertions.assertEquals(initialMetadataLocation, getBranch(catalog, foobaz));
 
-    newCatalog.assignReference("main", client.getTreeApi().getReferenceByName("main").getHash(), newCatalog.getHash());
+    newCatalog.getTreeApi().assignBranch("main", tree.getReferenceByName("main").getHash(), newCatalog.getHash());
     Assertions.assertEquals(getBranch(newCatalog, foobar),
                             getBranch(catalog, foobar));
     Assertions.assertEquals(getBranch(newCatalog, foobaz),
@@ -79,7 +79,7 @@ class TestCatalogBranch extends BaseTestIceberg {
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
     newCatalog.refresh();
-    catalog.deleteBranch("test", newCatalog.getHash());
+    catalog.getTreeApi().deleteBranch("test", newCatalog.getHash());
   }
 
 }

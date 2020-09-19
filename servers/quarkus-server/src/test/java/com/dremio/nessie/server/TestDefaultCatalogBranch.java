@@ -16,8 +16,6 @@
 
 package com.dremio.nessie.server;
 
-import java.util.Optional;
-
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.Assertions;
@@ -50,7 +48,7 @@ class TestDefaultCatalogBranch extends BaseTestIceberg {
     createTable(foobaz, 1); //table 2
 
     catalog.refresh();
-    catalog.createBranch("FORWARD", Optional.of(catalog.getHash()));
+    tree.createNewBranch("FORWARD", catalog.getHash());
     hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "FORWARD");
     NessieCatalog forwardCatalog = new NessieCatalog(hadoopConfig);
     forwardCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
@@ -61,7 +59,7 @@ class TestDefaultCatalogBranch extends BaseTestIceberg {
                                getBranch(catalog, foobaz));
 
     forwardCatalog.refresh();
-    forwardCatalog.assignReference("main", catalog.getHashForRef("main"), forwardCatalog.getHash());
+    tree.assignBranch("main", tree.getReferenceByName("main").getHash(), forwardCatalog.getHash());
 
     Assertions.assertEquals(getBranch(forwardCatalog, foobar),
                             getBranch(catalog, foobar));
@@ -70,7 +68,7 @@ class TestDefaultCatalogBranch extends BaseTestIceberg {
 
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
-    catalog.deleteBranch("FORWARD", catalog.getHashForRef("FORWARD"));
+    tree.deleteBranch("FORWARD", tree.getReferenceByName("FORWARD").getHash());
   }
 
 }

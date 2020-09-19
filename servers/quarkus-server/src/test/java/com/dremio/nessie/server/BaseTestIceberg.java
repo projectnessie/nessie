@@ -21,8 +21,6 @@ import java.io.File;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.Schema;
@@ -47,7 +45,7 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.iceberg.NessieTableOperations;
-import com.dremio.nessie.model.ImmutableBranch;
+import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Reference;
 
 abstract class BaseTestIceberg {
@@ -77,9 +75,13 @@ abstract class BaseTestIceberg {
 
   private void resetData() throws NessieConflictException, NessieNotFoundException {
     for (Reference r : tree.getAllReferences()) {
-      tree.deleteReference(r);
+      if(r instanceof Branch) {
+        tree.deleteBranch(r.getName(), r.getHash());
+      } else {
+        tree.deleteTag(r.getName(), r.getHash());
+      }
     }
-    client.getTreeApi().createNewReference(ImmutableBranch.builder().name("main").build());
+    tree.createNewBranch("main", null);
   }
 
   @BeforeEach
@@ -94,7 +96,7 @@ abstract class BaseTestIceberg {
     resetData();
 
     try {
-      tree.createNewReference(ImmutableBranch.builder().name(branch).build());
+      tree.createNewBranch(branch, null);
     } catch (Exception e) {
       //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
     }
@@ -136,12 +138,11 @@ abstract class BaseTestIceberg {
   }
 
   void createBranch(String name, String hash) throws NessieNotFoundException, NessieConflictException {
-    catalog.createBranch(name, Optional.ofNullable(hash));
+    tree.createNewBranch(name, hash);
   }
 
   @AfterEach
   public void afterEach() throws Exception {
-    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName("main"));
     catalog.close();
     client.close();
     catalog = null;

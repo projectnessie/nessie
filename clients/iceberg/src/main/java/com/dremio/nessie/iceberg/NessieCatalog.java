@@ -18,7 +18,6 @@ package com.dremio.nessie.iceberg;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -32,6 +31,7 @@ import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
 
+import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.error.NessieConflictException;
@@ -40,12 +40,9 @@ import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.IcebergTable;
-import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableDelete;
 import com.dremio.nessie.model.ImmutableMultiContents;
 import com.dremio.nessie.model.ImmutablePut;
-import com.dremio.nessie.model.ImmutableReferenceUpdate;
-import com.dremio.nessie.model.ImmutableTag;
 import com.dremio.nessie.model.MultiContents;
 import com.dremio.nessie.model.Reference;
 import com.google.common.base.Joiner;
@@ -123,7 +120,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
 
   private IcebergTable table(TableIdentifier tableIdentifier) {
     try {
-      Contents table = client.getContentsApi().getContents(reference.getHash(), toKey(tableIdentifier));
+      Contents table = client.getContentsApi().getContents(toKey(tableIdentifier), reference.getHash());
       if (table instanceof IcebergTable) {
         return (IcebergTable) table;
       }
@@ -206,7 +203,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
     }
 
     try {
-      client.getContentsApi().deleteContents(toKey(identifier), "no message", reference.getAsBranch());
+      client.getContentsApi().deleteContents(toKey(identifier), reference.getAsBranch().getName(), reference.getHash(), "no message");
     } catch (NessieNotFoundException e) {
       throw new RuntimeException("Failed to drop table as ref is no longer valid.", e);
     } catch (NessieConflictException e) {
@@ -238,13 +235,12 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
     }
 
     MultiContents c = ImmutableMultiContents.builder()
-        .branch(reference.getAsBranch())
         .addOperations(ImmutablePut.builder().key(toKey(to)).contents(existingFromTable).build())
         .addOperations(ImmutableDelete.builder().key(toKey(from)).build())
         .build();
 
     try {
-      client.getContentsApi().commitMultipleOperations("iceberg rename table", c);
+      client.getTreeApi().commitMultipleOperations(reference.getAsBranch().getName(), reference.getHash(), "iceberg rename table", c);
       // TODO: fix this so we don't depend on it in tests.
       refresh();
     } catch (Exception e) {
@@ -252,34 +248,12 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
     }
   }
 
-  public void createBranch(String branchName, Optional<String> hash) throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().createNewReference(ImmutableBranch.builder().name(branchName).hash(hash.orElse(null)).build());
-  }
-
-  public boolean deleteBranch(String branchName, String hash) throws NessieConflictException, NessieNotFoundException {
-    client.getTreeApi().deleteReference(ImmutableBranch.builder().name(branchName).hash(hash).build());
-    return true;
-  }
-
-  public void assignReference(String from, String currentHash, String targetHash) throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().assignReference(from, ImmutableReferenceUpdate.builder().expectedId(currentHash).updateId(targetHash).build());
-    refresh();
+  public TreeApi getTreeApi() {
+    return client.getTreeApi();
   }
 
   public void refresh() {
     reference.refresh();
-  }
-
-  public String getHashForRef(String ref) throws NessieNotFoundException {
-    return client.getTreeApi().getReferenceByName(ref).getHash();
-  }
-
-  public void createTag(String tagName, String hash) throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().createNewReference(ImmutableTag.builder().name(tagName).hash(hash).build());
-  }
-
-  public void deleteTag(String tagName, String hash) throws NessieConflictException, NessieNotFoundException {
-    client.getTreeApi().deleteReference(ImmutableTag.builder().name(tagName).hash(hash).build());
   }
 
   public String getHash() {

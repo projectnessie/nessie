@@ -56,8 +56,6 @@ import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
-import com.dremio.nessie.model.PutContents;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 
@@ -101,7 +99,7 @@ class NessieTableTest extends BaseTestIceberg {
 
   private com.dremio.nessie.model.IcebergTable getTable(ContentsKey key) throws NessieNotFoundException {
     return client.getContentsApi()
-        .getContents(BRANCH, key)
+        .getContents(key, BRANCH)
         .unwrap(IcebergTable.class).get();
   }
 
@@ -295,9 +293,9 @@ class NessieTableTest extends BaseTestIceberg {
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
     Branch branch = (Branch) client.getTreeApi().getReferenceByName(BRANCH);
 
-    IcebergTable table = client.getContentsApi().getContents(BRANCH, KEY).unwrap(IcebergTable.class).get();
+    IcebergTable table = client.getContentsApi().getContents(KEY, BRANCH).unwrap(IcebergTable.class).get();
 
-    client.getContentsApi().setContents(KEY, "random", PutContents.of(branch, IcebergTable.of("dummytable.metadata.json")));
+    client.getContentsApi().setContents(KEY, branch.getName(), branch.getHash(), "", IcebergTable.of("dummytable.metadata.json"));
 
     Assertions.assertThrows(CommitFailedException.class,
         () -> icebergTable.updateSchema().addColumn("data", Types.LongType.get()).commit());

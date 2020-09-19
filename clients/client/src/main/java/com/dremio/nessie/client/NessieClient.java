@@ -79,8 +79,8 @@ public class NessieClient implements Closeable {
     return (T) Proxy.newProxyInstance(delegate.getClass().getClassLoader(), new Class[]{iface}, new ExceptionRewriter(delegate));
   }
 
-  /**
-   * This will rewrite exceptions so they are correctly thrown by the api classes
+  /*
+   This will rewrite exceptions so they are correctly thrown by the api classes.
    * (since the filter will cause them to be wrapped in ResposneProcessingException)
    */
   private static class ExceptionRewriter implements InvocationHandler {
@@ -97,11 +97,11 @@ public class NessieClient implements Closeable {
         return method.invoke(delegate, args);
       } catch (InvocationTargetException ex) {
         Throwable targetException = ex.getTargetException();
-        if(targetException instanceof ResponseProcessingException) {
-          if(targetException.getCause() instanceof NessieNotFoundException) {
+        if (targetException instanceof ResponseProcessingException) {
+          if (targetException.getCause() instanceof NessieNotFoundException) {
             throw (NessieNotFoundException) targetException.getCause();
           }
-          if(targetException.getCause() instanceof NessieConflictException) {
+          if (targetException.getCause() instanceof NessieConflictException) {
             throw (NessieConflictException) targetException.getCause();
           }
         }
@@ -114,7 +114,7 @@ public class NessieClient implements Closeable {
         throw ex;
       }
     }
-}
+  }
 
 
   public TreeApi getTreeApi() {

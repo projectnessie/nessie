@@ -40,7 +40,7 @@ import com.dremio.nessie.model.EntriesResponse.Entry;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableIcebergTable;
-import com.dremio.nessie.model.PutContents;
+import com.dremio.nessie.model.Reference;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
@@ -58,7 +58,7 @@ class TestAuth {
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {
-      tree.createNewReference(ImmutableBranch.builder().name(branch).build());
+      tree.createNewBranch(branch, null);
     }
   }
 
@@ -88,17 +88,17 @@ class TestAuth {
     List<Entry> tables = tree.getEntries("testx").getEntries();
     Assertions.assertTrue(tables.isEmpty());
     ContentsKey key = ContentsKey.of("x","x");
-    tryEndpointPass(() -> contents.setContents(key, "foo", PutContents.of(branch, IcebergTable.of("foo"))));
-    final IcebergTable table = contents.getContents("testx", key).unwrap(IcebergTable.class).get();
+    tryEndpointPass(() -> contents.setContents(key, branch.getName(), branch.getHash(), "empty message", IcebergTable.of("foo")));
+    final IcebergTable table = contents.getContents(key, "testx").unwrap(IcebergTable.class).get();
 
     Branch master = (Branch) tree.getReferenceByName("testx");
     Branch test = ImmutableBranch.builder().hash(master.getHash()).name("testy").build();
-    tryEndpointPass(() -> tree.createNewReference(test));
+    tryEndpointPass(() -> tree.createNewBranch(test.getName(), test.getHash()));
     Branch test2 = (Branch) tree.getReferenceByName("testy");
-    tryEndpointPass(() -> tree.deleteReference(test2));
-    tryEndpointPass(() -> contents.deleteContents(key, "", master));
-    assertThrows(NessieNotFoundException.class, () -> contents.getContents("testx", key));
-    tryEndpointPass(() -> contents.setContents(key, "foo", PutContents.of(branch, IcebergTable.of("bar"))));
+    tryEndpointPass(() -> tree.deleteBranch(test2.getName(), test2.getHash()));
+    tryEndpointPass(() -> contents.deleteContents(key, master.getName(), master.getHash(), ""));
+    assertThrows(NessieNotFoundException.class, () -> contents.getContents(key, "testx"));
+    tryEndpointPass(() -> contents.setContents(key, branch.getName(), branch.getHash(), "", IcebergTable.of("bar")));
   }
 
 
@@ -106,7 +106,8 @@ class TestAuth {
   @TestSecurity(authorizationEnabled = false)
   void testUserCleanup() throws NessieNotFoundException, NessieConflictException {
     getCatalog(null);
-    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName("testx"));
+    Reference r = client.getTreeApi().getReferenceByName("testx");
+    client.getTreeApi().deleteBranch(r.getName(), r.getHash());
   }
 
   private IcebergTable createTable(String name, String location) {
