@@ -286,7 +286,7 @@ class TestJGitVersionStore {
     impl.commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, v1), Put.of(k2, v2)));
     impl.commit(branch, Optional.empty(), c2, ImmutableList.of(Put.of(k1, v1p)));
     List<WithHash<String>> commits = impl.getCommits(branch).collect(Collectors.toList());
-    assertEquals(ImmutableList.of(c2, c1, "none"), commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
+    assertEquals(ImmutableList.of(c2, c1), commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
 
     // changed across commits
     assertEquals(v1, impl.getValue(commits.get(1).getHash(), k1));
@@ -296,11 +296,11 @@ class TestJGitVersionStore {
     assertEquals(v2, impl.getValue(commits.get(0).getHash(), k2));
     assertEquals(v2, impl.getValue(commits.get(1).getHash(), k2));
 
-    assertEquals(3, impl.getCommits(commits.get(0).getHash()).count());
-    assertEquals(2, impl.getCommits(commits.get(1).getHash()).count());
+    assertEquals(2, impl.getCommits(commits.get(0).getHash()).count());
+    assertEquals(1, impl.getCommits(commits.get(1).getHash()).count());
     TagName tag = TagName.of("tag1");
     impl.create(tag, Optional.of(commits.get(0).getHash()));
-    assertEquals(3, impl.getCommits(tag).count());
+    assertEquals(2, impl.getCommits(tag).count());
   }
 
   @ParameterizedTest
@@ -384,7 +384,7 @@ class TestJGitVersionStore {
 
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
-    assertEquals(1L, impl.getCommits(branch).count());
+    assertEquals(0L, impl.getCommits(branch).count());
   }
 
   @ParameterizedTest

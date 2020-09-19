@@ -30,11 +30,9 @@ import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
 
-@Disabled
-public class ITJGitVersionStore extends AbstractITVersionStore {
+public class ITJGitInMemoryVersionStore extends AbstractITVersionStore {
   private Repository repository;
   private VersionStore<String, String> store;
 
@@ -77,16 +75,7 @@ public class ITJGitVersionStore extends AbstractITVersionStore {
   }
 
   @Disabled
-  @Override
-  protected void transplant() throws VersionStoreException {
-    super.transplant();
+  protected void transplant() {
   }
-
-  @Disabled
-  @Override
-  public void forceCommitConflictingOperations() throws Exception {
-    super.forceCommitConflictingOperations();
-  }
-
 
 }

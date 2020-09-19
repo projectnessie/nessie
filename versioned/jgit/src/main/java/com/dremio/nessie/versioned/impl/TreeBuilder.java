@@ -17,7 +17,9 @@ package com.dremio.nessie.versioned.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.dircache.DirCacheBuilder;
@@ -27,12 +29,15 @@ import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectInserter;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.treewalk.NameConflictTreeWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 
 import com.dremio.nessie.versioned.Delete;
+import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Operation;
 import com.dremio.nessie.versioned.Put;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.Unchanged;
 
@@ -106,6 +111,30 @@ public class TreeBuilder {
     treeWalk.setRecursive(false);
     DirCache dc = DirCache.newInCore();
     DirCacheBuilder builder = dc.builder();
+    diff(treeWalk, builder);
+    builder.finish();
+    ObjectInserter inserter = repository.newObjectInserter();
+    ObjectId objectId = dc.writeTree(inserter);
+    inserter.flush();
+    return objectId;
+  }
+
+  /**
+   * turn a set of commit hashes into an aggregate tree.
+   */
+  public static ObjectId transplant(Hash hash, Repository repository) throws IOException, ReferenceNotFoundException {
+
+    ObjectId treeId = repository.resolve(hash.asString() + "^{tree}");
+    if (treeId == null) {
+      throw ReferenceNotFoundException.forReference(hash);
+    }
+    RevCommit commit = RevCommit.parse(repository.open(repository.resolve(hash.asString() + "^{commit}")).getBytes());
+    String parentTreeName = commit.getParent(0).name();
+    ObjectId parentTree = repository.resolve(parentTreeName + "^{tree}");
+    return merge(parentTree, treeId, repository);
+  }
+
+  private static void diff(TreeWalk treeWalk, DirCacheBuilder builder) throws IOException {
     while (treeWalk.next()) {
       ObjectId current = treeWalk.getObjectId(0);
       ObjectId next = treeWalk.getObjectId(1);
@@ -118,7 +147,9 @@ public class TreeBuilder {
           treeWalk.enterSubtree();
         }
       } else {
-        if (ObjectId.isEqual(next, ObjectId.zeroId())) {
+        if (ObjectId.isEqual(next, ObjectId.zeroId()) && treeWalk.idEqual(0, 1)) {
+          continue;
+        } else if (ObjectId.isEqual(next, ObjectId.zeroId())) {
           DirCacheEntry dce = new DirCacheEntry(treeWalk.getRawPath());
           dce.setObjectId(treeWalk.getObjectId(0));
           dce.setFileMode(treeWalk.getFileMode(0));
@@ -134,11 +165,6 @@ public class TreeBuilder {
         }
       }
     }
-    builder.finish();
-    ObjectInserter inserter = repository.newObjectInserter();
-    ObjectId objectId = dc.writeTree(inserter);
-    inserter.flush();
-    return objectId;
   }
 
   private static List<String> testRead(ObjectId objectId, Repository repository) throws IOException {
@@ -148,6 +174,17 @@ public class TreeBuilder {
     List<String> fields = new ArrayList<>();
     while (tw.next()) {
       fields.add(tw.getPathString());
+    }
+    return fields;
+  }
+
+  private static Map<String, String> testReadAll(ObjectId objectId, Repository repository) throws IOException {
+    TreeWalk tw = new TreeWalk(repository);
+    tw.setRecursive(true);
+    tw.addTree(objectId);
+    Map<String, String> fields = new HashMap<>();
+    while (tw.next()) {
+      fields.put(tw.getPathString(), new String(repository.open(tw.getObjectId(0)).getBytes()));
     }
     return fields;
   }
