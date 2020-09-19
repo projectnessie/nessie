@@ -67,8 +67,7 @@ public class RestGitTest {
       .then().statusCode(204);
 
     Reference[] references = rest().get("/api/v1/trees").then().statusCode(200).extract().as(Reference[].class);
-    Assertions.assertEquals(1, references.length);
-    Assertions.assertEquals("mainx", references[0].getName());
+    Assertions.assertEquals(2, references.length);
 
     Reference reference = rest().get("/api/v1/tree/mainx").then()
                  .statusCode(200)
