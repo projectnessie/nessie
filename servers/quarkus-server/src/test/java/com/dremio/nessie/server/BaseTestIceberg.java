@@ -30,6 +30,8 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.types.Types.LongType;
+import org.apache.iceberg.types.Types.StructType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,7 +50,7 @@ import com.dremio.nessie.model.Reference;
 
 abstract class BaseTestIceberg {
 
-  protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
+  private static final Logger LOGGER = LoggerFactory.getLogger(BaseTestIceberg.class);
 
   protected static File ALLEY_LOCAL_DIR;
   protected NessieCatalog catalog;
@@ -80,30 +82,32 @@ abstract class BaseTestIceberg {
 
   @BeforeEach
   public void beforeEach() {
-    resetData();
-
-    hadoopConfig = new Configuration();
-    hadoopConfig.set("fs.defaultFS", ALLEY_LOCAL_DIR.toURI().toString());
-    hadoopConfig.set("fs.file.impl",
-                     org.apache.hadoop.fs.LocalFileSystem.class.getName()
-    );
     String path = "http://localhost:19121/api/v1";
     String username = "test";
     String password = "test123";
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, path);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_USERNAME, username);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_PASSWORD, password);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, branch);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_AUTH_TYPE, "NONE");
     this.client = new NessieClient(AuthType.NONE, path, username, password);
     tree = client.getTreeApi();
     contents = client.getContentsApi();
-    catalog = new NessieCatalog(hadoopConfig);
+
+    resetData();
+
     try {
       tree.createNewReference(ImmutableBranch.builder().name(branch).build());
     } catch (Exception e) {
       //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
     }
+
+    hadoopConfig = new Configuration();
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, path);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_USERNAME, username);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_PASSWORD, password);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, branch);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_AUTH_TYPE, "NONE");
+    hadoopConfig.set("fs.defaultFS", ALLEY_LOCAL_DIR.toURI().toString());
+    hadoopConfig.set("fs.file.impl",
+                     org.apache.hadoop.fs.LocalFileSystem.class.getName()
+    );
+    catalog = new NessieCatalog(hadoopConfig);
   }
 
   protected Table createTable(TableIdentifier tableIdentifier, int count) {
@@ -113,6 +117,12 @@ abstract class BaseTestIceberg {
       LOGGER.error("unable to do create " + tableIdentifier.toString(), t);
       throw t;
     }
+  }
+
+  protected void createTable(TableIdentifier tableIdentifier) {
+    Schema schema = new Schema(StructType.of(required(1, "id", LongType.get()))
+                                         .fields());
+    catalog.createTable(tableIdentifier, schema).location();
   }
 
   protected static Schema schema(int count) {

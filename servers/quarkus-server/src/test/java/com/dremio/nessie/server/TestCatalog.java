@@ -16,16 +16,10 @@
 
 package com.dremio.nessie.server;
 
-import static org.apache.iceberg.types.Types.NestedField.required;
-
 import java.util.List;
 
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.types.Types.LongType;
-import org.apache.iceberg.types.Types.StructType;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -57,21 +51,6 @@ public class TestCatalog extends BaseTestIceberg {
     catalog.dropTable(TableIdentifier.of("foo", "baz"));
     tables = catalog.listTables(Namespace.empty());
     Assertions.assertTrue(tables.isEmpty());
-  }
-
-  @AfterEach
-  public void closeCatalog() throws Exception {
-    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName(BRANCH));
-    catalog.close();
-    client.close();
-    catalog = null;
-    client = null;
-  }
-
-  private void createTable(TableIdentifier tableIdentifier) {
-    Schema schema = new Schema(StructType.of(required(1, "id", LongType.get()))
-                                         .fields());
-    catalog.createTable(tableIdentifier, schema).location();
   }
 
 }

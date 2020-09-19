@@ -68,8 +68,7 @@ class NessieTableTest extends BaseTestIceberg {
   private static final String TABLE_NAME = "tbl";
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of(DB_NAME, TABLE_NAME);
   private static final ContentsKey KEY = ContentsKey.of(DB_NAME, TABLE_NAME);
-  private static final Schema schema =
-      new Schema(Types.StructType.of(required(1, "id", Types.LongType.get())).fields());
+  private static final Schema schema = new Schema(Types.StructType.of(required(1, "id", Types.LongType.get())).fields());
   private static final Schema altered = new Schema(Types.StructType.of(
       required(1, "id", Types.LongType.get()),
       optional(2, "data", Types.LongType.get())).fields());
