@@ -18,9 +18,9 @@ package com.dremio.nessie.client.rest;
 
 import com.dremio.nessie.error.NessieError;
 
-public class NessieBadRequestException extends NessieExtendedClientErrorException {
+public class NessieBadRequestException extends NessieServiceException {
 
-  public NessieBadRequestException(NessieError nessieError) {
-    super(nessieError);
+  public NessieBadRequestException(NessieError serverError) {
+    super(serverError);
   }
 }

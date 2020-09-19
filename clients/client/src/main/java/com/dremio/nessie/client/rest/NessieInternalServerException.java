@@ -16,21 +16,12 @@
 
 package com.dremio.nessie.client.rest;
 
-import javax.ws.rs.client.ResponseProcessingException;
-
 import com.dremio.nessie.error.NessieError;
 
-public class NessieInternalServerException extends ResponseProcessingException
-    implements NessieServiceException {
+public class NessieInternalServerException extends NessieServiceException {
 
-  private final NessieError nessieError;
-
-  public NessieInternalServerException(NessieError nessieError) {
-    super(null, null, null);
-    this.nessieError = nessieError;
+  public NessieInternalServerException(NessieError serverError) {
+    super(serverError);
   }
 
-  public NessieError getNessieError() {
-    return nessieError;
-  }
 }

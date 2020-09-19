@@ -43,6 +43,8 @@ import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.iceberg.NessieTableOperations;
 import com.dremio.nessie.model.ImmutableBranch;
@@ -73,7 +75,7 @@ abstract class BaseTestIceberg {
     this.branch = branch;
   }
 
-  private void resetData() {
+  private void resetData() throws NessieConflictException, NessieNotFoundException {
     for (Reference r : tree.getAllReferences()) {
       tree.deleteReference(r);
     }
@@ -81,7 +83,7 @@ abstract class BaseTestIceberg {
   }
 
   @BeforeEach
-  public void beforeEach() {
+  public void beforeEach() throws NessieConflictException, NessieNotFoundException {
     String path = "http://localhost:19121/api/v1";
     String username = "test";
     String password = "test123";
@@ -133,7 +135,7 @@ abstract class BaseTestIceberg {
     return new Schema(Types.StructType.of(fields).fields());
   }
 
-  void createBranch(String name, String hash) {
+  void createBranch(String name, String hash) throws NessieNotFoundException, NessieConflictException {
     catalog.createBranch(name, Optional.ofNullable(hash));
   }
 

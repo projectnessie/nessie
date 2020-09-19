@@ -98,9 +98,9 @@ public class ContentsResource extends BaseResource implements ContentsApi {
           meta(message),
           operations);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(e);
+      throw new NessieConflictException("Failed to commit data. Provided hash does not match current value.", e);
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(e);
+      throw new NessieConflictException("Failed to commit data. Provided ref was not found.", e);
     }
   }
 

@@ -22,6 +22,8 @@ import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.iceberg.NessieCatalog;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -37,7 +39,7 @@ class TestCatalogBranch extends BaseTestIceberg {
   @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
   @TestSecurity(authorizationEnabled = false)
-  public void testBasicBranch() {
+  public void testBasicBranch() throws NessieNotFoundException, NessieConflictException {
     TableIdentifier foobar = TableIdentifier.of("foo", "bar");
     TableIdentifier foobaz = TableIdentifier.of("foo", "baz");
     Table bar = createTable(foobar, 1); //table 1

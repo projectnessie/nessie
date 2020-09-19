@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.rest.NessieNotFoundClientException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
@@ -75,7 +74,7 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
       this.table = c.unwrap(IcebergTable.class)
           .orElseThrow(() -> new IllegalStateException("Nessie points to a non-Iceberg object for that path."));
       metadataLocation = table.getMetadataLocation();
-    } catch (NessieNotFoundClientException | NessieNotFoundException ex) {
+    } catch (NessieNotFoundException ex) {
       this.table = null;
     }
     refreshFromMetadataLocation(metadataLocation, 2);

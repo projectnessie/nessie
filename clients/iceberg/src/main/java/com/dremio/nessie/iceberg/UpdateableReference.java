@@ -16,8 +16,10 @@
 package com.dremio.nessie.iceberg;
 
 import org.apache.curator.shaded.com.google.common.base.Preconditions;
+import org.apache.iceberg.exceptions.NotFoundException;
 
 import com.dremio.nessie.api.TreeApi;
+import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Hash;
 import com.dremio.nessie.model.Reference;
@@ -38,7 +40,11 @@ class UpdateableReference {
       return false;
     }
     Reference oldReference = reference;
-    reference = client.getReferenceByName(reference.getName());
+    try {
+      reference = client.getReferenceByName(reference.getName());
+    } catch (NessieNotFoundException e) {
+      throw new NotFoundException("Failure refreshing data, table no longer exists.", e);
+    }
     return !oldReference.equals(reference);
   }
 

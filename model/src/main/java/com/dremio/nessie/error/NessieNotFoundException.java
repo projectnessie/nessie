@@ -15,22 +15,20 @@
  */
 package com.dremio.nessie.error;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
-public class NessieNotFoundException extends WebApplicationException {
+public class NessieNotFoundException extends BaseNessieClientServerException {
 
   public NessieNotFoundException(String message, Throwable cause) {
-    super(message, cause, Response.Status.NOT_FOUND);
+    super(message, Status.NOT_FOUND, cause);
   }
 
   public NessieNotFoundException(String message) {
-    super(message, Response.Status.NOT_FOUND);
+    super(message, Status.NOT_FOUND);
   }
 
-  public NessieNotFoundException(Throwable cause) {
-    super(cause, Response.Status.NOT_FOUND);
+  public NessieNotFoundException(NessieError error) {
+    super(error);
   }
-
 
 }

@@ -13,35 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.error;
 
-import java.util.List;
+import javax.ws.rs.core.Response.Status;
 
-import javax.annotation.Nullable;
+public class NessieError {
 
-import org.immutables.value.Value;
+  private final String message;
+  private final Status status;
+  private final String serverStackTrace;
+  private final Exception clientProcessingException;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+  public NessieError(String message, Status status, String serverStackTrace) {
+    this(message, status, serverStackTrace, null);
+  }
 
+  /**
+   * Create Error.
+   * @param message Message of error.
+   * @param status Status of error.
+   * @param serverStackTrace Server stack trace, if available.
+   * @param processingException Any processing exceptions that happened on the client.
+   */
+  public NessieError(String message, Status status, String serverStackTrace, Exception processingException) {
+    super();
+    this.message = message;
+    this.status = status;
+    this.serverStackTrace = serverStackTrace;
+    this.clientProcessingException = processingException;
+  }
 
-@Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableNessieError.class)
-@JsonDeserialize(as = ImmutableNessieError.class)
-public abstract class NessieError {
+  public String getMessage() {
+    return message;
+  }
 
-  public abstract int errorCode();
+  public Status getStatus() {
+    return status;
+  }
 
-  public abstract String errorMessage();
+  public String getServerStackTrace() {
+    return serverStackTrace;
+  }
 
-  @Nullable
-  public abstract String stackTrace();
+  public Exception getClientProcessingException() {
+    return clientProcessingException;
+  }
 
-  @Nullable
-  public abstract String statusMessage();
-
-
-  @Nullable
-  public abstract List<String> conflicts();
 }

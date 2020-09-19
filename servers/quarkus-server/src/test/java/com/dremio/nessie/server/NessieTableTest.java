@@ -51,6 +51,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
@@ -80,7 +82,7 @@ class NessieTableTest extends BaseTestIceberg {
   }
 
   @BeforeEach
-  public void beforeEach() {
+  public void beforeEach() throws NessieConflictException, NessieNotFoundException {
     super.beforeEach();
     this.tableLocation = new Path(catalog.createTable(TABLE_IDENTIFIER, schema).location());
   }
@@ -97,7 +99,7 @@ class NessieTableTest extends BaseTestIceberg {
     super.afterEach();
   }
 
-  private com.dremio.nessie.model.IcebergTable getTable(ContentsKey key) {
+  private com.dremio.nessie.model.IcebergTable getTable(ContentsKey key) throws NessieNotFoundException {
     return client.getContentsApi()
         .getContents(BRANCH, key)
         .unwrap(IcebergTable.class).get();
@@ -105,7 +107,7 @@ class NessieTableTest extends BaseTestIceberg {
 
   @Test
   @TestSecurity(authorizationEnabled = false)
-  public void testCreate() {
+  public void testCreate() throws NessieNotFoundException {
     // Table should be created in alley
     // Table should be renamed in alley
     String tableName = TABLE_IDENTIFIER.name();
@@ -289,7 +291,7 @@ class NessieTableTest extends BaseTestIceberg {
 
   @Test
   @TestSecurity(authorizationEnabled = false)
-  public void testFailure() {
+  public void testFailure() throws NessieNotFoundException, NessieConflictException {
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
     Branch branch = (Branch) client.getTreeApi().getReferenceByName(BRANCH);
 

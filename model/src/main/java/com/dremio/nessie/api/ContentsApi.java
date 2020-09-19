@@ -35,11 +35,9 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.MultiContents;
-import com.dremio.nessie.model.PutContents;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("contents")
@@ -50,22 +48,22 @@ public interface ContentsApi {
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Path("{key}")
+  @Path("{key}/{ref}")
   @Operation(summary = "Fetch details of a table endpoint")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Information for table"),
       @APIResponse(responseCode = "404", description = "Table not found on ref")
     })
   Contents getContents(
-      @Parameter(description = "name of ref to search on. Default branch if not provided.") @QueryParam("ref") String ref,
-      @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key
+      @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
+      @Parameter(description = "Name of ref to read from. Default branch if not provided.") @PathParam("ref") String ref
       ) throws NessieNotFoundException;
 
   /**
    * create/update a table on a specific ref.
    */
   @POST
-  @Path("{key}")
+  @Path("{key}/{hash}/{branch}")
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(summary = "update contents for path")
   @APIResponses({
@@ -73,16 +71,17 @@ public interface ContentsApi {
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")})
   public void setContents(
-      @NotNull @Parameter(description = "name of contents to be created or updated") @PathParam("key") ContentsKey key,
-      @Parameter(description = "commit message") @QueryParam("message") String message,
-      @NotNull @RequestBody(description = "branch and contents to be created/updated") PutContents contents)
+      @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
+      @Parameter(description = "Branch to change, defaults to default branch.") @PathParam("branch") String branch,
+      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
+      @NotNull @RequestBody(description = "Contents to be upserted") Contents contents)
       throws NessieNotFoundException, NessieConflictException;
 
   /**
    * Delete a single object.
    */
   @DELETE
-  @Path("{key}")
+  @Path("{key}/{hash}/{branch}")
   @Operation(summary = "delete object on ref endpoint")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Deleted successfully."),
@@ -91,13 +90,14 @@ public interface ContentsApi {
       }
   )
   public void deleteContents(
-      @NotNull @Parameter(description = "object to delete") @PathParam("key") ContentsKey key,
-      @Parameter(description = "commit message") @QueryParam("message") String message,
-      @NotNull @RequestBody(description = "Branch with id.") Branch branch
+      @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
+      @Parameter(description = "Branch to delete from, defaults to default branch.") @PathParam("branch") String branch,
+      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash
       ) throws NessieNotFoundException, NessieConflictException;
 
+
   @PUT
-  @Path("multi")
+  @Path("multi/{hash}/{branch}")
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(summary = "create table on ref endpoint")
   @APIResponses({
@@ -105,7 +105,10 @@ public interface ContentsApi {
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")})
   public void commitMultipleOperations(
+      @Parameter(description = "Branch to change, defaults to default branch.") @PathParam("branch") String branch,
+      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
       @Parameter(description = "Commit message") @QueryParam("message") String message,
-      @NotNull @RequestBody(description = "Branch and operations") MultiContents operations)
+      @NotNull @RequestBody(description = "Operations") MultiContents operations)
       throws NessieNotFoundException, NessieConflictException;
+
 }

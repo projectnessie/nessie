@@ -15,9 +15,9 @@
  */
 package com.dremio.nessie.perftest;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.function.Supplier;
 
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
@@ -28,9 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.client.rest.NessieExtendedClientErrorException;
-import com.dremio.nessie.client.rest.NessieInternalServerException;
-import com.dremio.nessie.client.rest.NessiePreconditionFailedException;
+import com.dremio.nessie.client.rest.NessieServiceException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
@@ -123,7 +121,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
   /**
    * delegate method which captures the result of a Nessie client call and returns a sample object.
    */
-  private SampleResult handle(Supplier<Branch> supplier, Method method) {
+  private SampleResult handle(SupplierIO<Branch> supplier, Method method) {
     SampleResult sampleResult = new SampleResult();
     sampleResult.sampleStart();
     int retries = 0;
@@ -133,7 +131,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
         try {
           branch = supplier.get();
           break;
-        } catch (NessiePreconditionFailedException e) {
+        } catch (IOException e) {
           commitId.remove();
         }
         retries++;
@@ -145,10 +143,10 @@ public class NessieSampler extends AbstractJavaSamplerClient {
       } else {
         throw new UnsupportedOperationException("failed with too many retries");
       }
-    } catch (NessieExtendedClientErrorException | NessieInternalServerException e) {
+    } catch (NessieServiceException e) {
       logger.warn("Request was not successfully processed", e);
-      String errStr = e.getNessieError().statusMessage();
-      fillSampler(sampleResult, "", retries, false, errStr, e.getNessieError().errorCode(), method);
+      String errStr = e.getMessage();
+      fillSampler(sampleResult, "", retries, false, errStr, e.getError().getStatus().getStatusCode(), method);
     } catch (Throwable t) {
       logger.warn("Request was not successfully processed", t);
       String msg = t.getMessage() == null ? "" : t.getMessage();
@@ -197,6 +195,10 @@ public class NessieSampler extends AbstractJavaSamplerClient {
         throw new UnsupportedOperationException("Not a valid enum " + method);
     }
     return null;
+  }
+
+  public interface SupplierIO<T> {
+    T get() throws IOException;
   }
 
   @Override

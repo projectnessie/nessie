@@ -34,7 +34,7 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.client.rest.NessieNotFoundClientException;
+import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
@@ -87,7 +87,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
     try {
       Reference r = requestedRef == null ? client.getTreeApi().getDefaultBranch() : client.getTreeApi().getReferenceByName(requestedRef);
       this.reference = new UpdateableReference(r, client.getTreeApi());
-    } catch (NessieNotFoundClientException ex) {
+    } catch (NessieNotFoundException ex) {
       if (requestedRef != null) {
         throw new IllegalArgumentException(String.format("Nessie ref '%s' provided via %s does not exist. "
             + "This ref must exist before creating a NessieCatalog.", requestedRef, CONF_NESSIE_REF), ex);
@@ -127,7 +127,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
       if (table instanceof IcebergTable) {
         return (IcebergTable) table;
       }
-    } catch (NessieNotFoundClientException | NessieNotFoundException e) {
+    } catch (NessieNotFoundException e) {
       // ignore
     }
     return null;
@@ -152,13 +152,17 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
 
   @Override
   public List<TableIdentifier> listTables(Namespace namespace) {
-    return client.getTreeApi()
-        .getEntries(reference.getHash())
-        .getEntries()
-        .stream()
-        .filter(namespacePredicate(namespace))
-        .map(NessieCatalog::toIdentifier)
-        .collect(Collectors.toList());
+    try {
+      return client.getTreeApi()
+          .getEntries(reference.getHash())
+          .getEntries()
+          .stream()
+          .filter(namespacePredicate(namespace))
+          .map(NessieCatalog::toIdentifier)
+          .collect(Collectors.toList());
+    } catch (NessieNotFoundException ex) {
+      throw new RuntimeException("Unable to list tables due to missing ref.", ex);
+    }
   }
 
   private static Predicate<EntriesResponse.Entry> namespacePredicate(Namespace ns) {
@@ -201,7 +205,13 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
       lastMetadata = null;
     }
 
-    client.getContentsApi().deleteContents(toKey(identifier), "no message", reference.getAsBranch());
+    try {
+      client.getContentsApi().deleteContents(toKey(identifier), "no message", reference.getAsBranch());
+    } catch (NessieNotFoundException e) {
+      throw new RuntimeException("Failed to drop table as ref is no longer valid.", e);
+    } catch (NessieConflictException e) {
+      throw new RuntimeException("Failed to drop table as table state needs to be refreshed.");
+    }
 
     // TODO: purge should be blocked since nessie will clean through other means.
     if (purge && lastMetadata != null) {
@@ -242,16 +252,16 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
     }
   }
 
-  public void createBranch(String branchName, Optional<String> hash) {
+  public void createBranch(String branchName, Optional<String> hash) throws NessieNotFoundException, NessieConflictException {
     client.getTreeApi().createNewReference(ImmutableBranch.builder().name(branchName).hash(hash.orElse(null)).build());
   }
 
-  public boolean deleteBranch(String branchName, String hash) {
+  public boolean deleteBranch(String branchName, String hash) throws NessieConflictException, NessieNotFoundException {
     client.getTreeApi().deleteReference(ImmutableBranch.builder().name(branchName).hash(hash).build());
     return true;
   }
 
-  public void assignReference(String from, String currentHash, String targetHash) {
+  public void assignReference(String from, String currentHash, String targetHash) throws NessieNotFoundException, NessieConflictException {
     client.getTreeApi().assignReference(from, ImmutableReferenceUpdate.builder().expectedId(currentHash).updateId(targetHash).build());
     refresh();
   }
@@ -260,15 +270,15 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
     reference.refresh();
   }
 
-  public String getHashForRef(String ref) {
+  public String getHashForRef(String ref) throws NessieNotFoundException {
     return client.getTreeApi().getReferenceByName(ref).getHash();
   }
 
-  public void createTag(String tagName, String hash) {
+  public void createTag(String tagName, String hash) throws NessieNotFoundException, NessieConflictException {
     client.getTreeApi().createNewReference(ImmutableTag.builder().name(tagName).hash(hash).build());
   }
 
-  public void deleteTag(String tagName, String hash) {
+  public void deleteTag(String tagName, String hash) throws NessieConflictException, NessieNotFoundException {
     client.getTreeApi().deleteReference(ImmutableTag.builder().name(tagName).hash(hash).build());
   }
 

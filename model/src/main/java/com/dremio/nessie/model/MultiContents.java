@@ -33,7 +33,5 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableMultiContents.class)
 public interface MultiContents {
 
-  Branch getBranch();
-
   List<Operation> getOperations();
 }

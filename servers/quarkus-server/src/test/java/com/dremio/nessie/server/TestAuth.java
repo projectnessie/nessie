@@ -18,11 +18,13 @@ package com.dremio.nessie.server;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
@@ -30,7 +32,8 @@ import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.rest.NessieForbiddenException;
 import com.dremio.nessie.client.rest.NessieNotAuthorizedException;
-import com.dremio.nessie.client.rest.NessieNotFoundClientException;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.EntriesResponse.Entry;
@@ -49,7 +52,7 @@ class TestAuth {
   private TreeApi tree;
   private ContentsApi contents;
 
-  void getCatalog(String branch) {
+  void getCatalog(String branch) throws NessieNotFoundException, NessieConflictException {
     String path = "http://localhost:19121/api/v1";
     this.client = new NessieClient(AuthType.NONE, path, null, null);
     tree = client.getTreeApi();
@@ -59,12 +62,16 @@ class TestAuth {
     }
   }
 
-  void tryEndpointPass(Runnable runnable) {
-    Assertions.assertDoesNotThrow(runnable::run);
+  void tryEndpointPass(Executable runnable) {
+    Assertions.assertDoesNotThrow(runnable);
   }
 
-  void tryEndpointFail(Runnable runnable) {
-    Assertions.assertThrows(NessieForbiddenException.class, runnable::run);
+  interface RunnableIO {
+    public abstract void run() throws IOException;
+  }
+
+  void tryEndpointFail(Executable runnable) {
+    Assertions.assertThrows(NessieForbiddenException.class, runnable);
   }
 
   @Disabled
@@ -75,7 +82,7 @@ class TestAuth {
 
   @Test
   @TestSecurity(user = "admin_user", roles = {"admin", "user"})
-  void testAdmin() {
+  void testAdmin() throws NessieNotFoundException, NessieConflictException {
     getCatalog("testx");
     Branch branch = (Branch) tree.getReferenceByName("testx");
     List<Entry> tables = tree.getEntries("testx").getEntries();
@@ -90,14 +97,14 @@ class TestAuth {
     Branch test2 = (Branch) tree.getReferenceByName("testy");
     tryEndpointPass(() -> tree.deleteReference(test2));
     tryEndpointPass(() -> contents.deleteContents(key, "", master));
-    assertThrows(NessieNotFoundClientException.class, () -> contents.getContents("testx", key));
+    assertThrows(NessieNotFoundException.class, () -> contents.getContents("testx", key));
     tryEndpointPass(() -> contents.setContents(key, "foo", PutContents.of(branch, IcebergTable.of("bar"))));
   }
 
 
   @Test
   @TestSecurity(authorizationEnabled = false)
-  void testUserCleanup() {
+  void testUserCleanup() throws NessieNotFoundException, NessieConflictException {
     getCatalog(null);
     client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName("testx"));
   }

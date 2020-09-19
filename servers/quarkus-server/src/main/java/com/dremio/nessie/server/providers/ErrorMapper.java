@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.server.providers;
 
+import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
@@ -26,54 +27,46 @@ import javax.ws.rs.ext.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.error.ImmutableNessieError;
-import com.dremio.nessie.error.ImmutableNessieError.Builder;
-import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
-import com.dremio.nessie.versioned.ReferenceConflictException;
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.error.BaseNessieClientServerException;
+import com.dremio.nessie.error.NessieError;
+import com.dremio.nessie.services.config.ServerConfig;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.Throwables;
 
 @Provider
 public class ErrorMapper implements ExceptionMapper<Exception> {
-  private static final Logger logger = LoggerFactory.getLogger(ErrorMapper.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ErrorMapper.class);
+
+  @Inject
+  private ServerConfig serverConfig;
 
   @Override
   public Response toResponse(Exception exception) {
+
     if (exception instanceof WebApplicationException) {
       Response.Status status = Status.fromStatusCode(((WebApplicationException) exception).getResponse().getStatus());
       return exception(status, exception.getMessage(), exception);
+    } else if(exception instanceof BaseNessieClientServerException) {
+      // log message at debug level so we can review stack traces if enabled.
+      LOGGER.debug("Exception on server with appropriate error sent to client.", exception);
+      return exception(((BaseNessieClientServerException) exception).getStatus(), exception.getMessage(), exception);
     } else if (exception instanceof JsonParseException) {
       return exception(Status.BAD_REQUEST, exception.getMessage(), exception);
     } else if (exception instanceof JsonMappingException) {
       return exception(Status.BAD_REQUEST, exception.getMessage(), exception);
-    } else if (exception instanceof ReferenceNotFoundException) {
-      return exception(Response.Status.NOT_FOUND, "ref not found", exception);
-    } else if (exception instanceof ReferenceConflictException) {
-      return exception(Response.Status.PRECONDITION_FAILED, "Tag not up to date", exception);
-    } else if (exception instanceof ReferenceAlreadyExistsException) {
-      return exception(Response.Status.CONFLICT, "ref already exists", exception);
     } else {
-      exception.printStackTrace();
       return exception(Status.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
     }
   }
 
-  private static Response exception(Response.Status status,
-                                    String message,
-                                    Exception e) {
-    Builder builder = ImmutableNessieError.builder()
-                                          .errorCode(status.getStatusCode())
-                                          .errorMessage(message)
-                                          .statusMessage(status.getReasonPhrase());
-    if (e != null) {
-      builder.stackTrace(Throwables.getStackTraceAsString(e));
-    }
-    logger.debug(String.format("Request failed with status code %s", status.getStatusCode()), e);
+  private Response exception(Status status, String message, Exception e) {
+    String stack = serverConfig.shouldSendstackTraceToAPIClient() ? Throwables.getStackTraceAsString(e) : null;
+    NessieError error = new NessieError(message, status, stack);
+    LOGGER.debug("Failure on server, propagated to client. Status: {} {}, Message: {}.", status.getStatusCode(), status.getReasonPhrase(), message, e);
     return Response.status(status)
-                   .entity(Entity.entity(builder.build(), MediaType.APPLICATION_JSON_TYPE))
-                   .build();
+        .entity(Entity.entity(error, MediaType.APPLICATION_JSON_TYPE))
+        .build();
   }
 
 }

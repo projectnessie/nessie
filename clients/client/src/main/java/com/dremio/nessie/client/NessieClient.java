@@ -16,6 +16,12 @@
 package com.dremio.nessie.client;
 
 import java.io.Closeable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
+import javax.ws.rs.client.ResponseProcessingException;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
@@ -27,6 +33,8 @@ import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.auth.AuthFilter;
 import com.dremio.nessie.client.rest.ObjectMapperContextResolver;
 import com.dremio.nessie.client.rest.ResponseCheckFilter;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
 
 import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
 
@@ -61,10 +69,53 @@ public class NessieClient implements Closeable {
     ResteasyWebTarget target = client.target(path);
     AuthFilter authFilter = new AuthFilter(authType, username, password, target);
     client.register(authFilter);
-    contents = target.proxy(ContentsApi.class);
-    tree = target.proxy(TreeApi.class);
-    config = target.proxy(ConfigApi.class);
+    contents = wrap(ContentsApi.class, target.proxy(ContentsApi.class));
+    tree = wrap(TreeApi.class, target.proxy(TreeApi.class));
+    config = wrap(ConfigApi.class, target.proxy(ConfigApi.class));
   }
+
+  @SuppressWarnings("unchecked")
+  private <T> T wrap(Class<T> iface, T delegate) {
+    return (T) Proxy.newProxyInstance(delegate.getClass().getClassLoader(), new Class[]{iface}, new ExceptionRewriter(delegate));
+  }
+
+  /**
+   * This will rewrite exceptions so they are correctly thrown by the api classes
+   * (since the filter will cause them to be wrapped in ResposneProcessingException)
+   */
+  private static class ExceptionRewriter implements InvocationHandler {
+
+    private final Object delegate;
+
+    public ExceptionRewriter(Object delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      try {
+        return method.invoke(delegate, args);
+      } catch (InvocationTargetException ex) {
+        Throwable targetException = ex.getTargetException();
+        if(targetException instanceof ResponseProcessingException) {
+          if(targetException.getCause() instanceof NessieNotFoundException) {
+            throw (NessieNotFoundException) targetException.getCause();
+          }
+          if(targetException.getCause() instanceof NessieConflictException) {
+            throw (NessieConflictException) targetException.getCause();
+          }
+        }
+
+        if (targetException instanceof RuntimeException) {
+          throw targetException;
+        }
+
+
+        throw ex;
+      }
+    }
+}
+
 
   public TreeApi getTreeApi() {
     return tree;

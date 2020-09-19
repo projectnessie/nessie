@@ -27,7 +27,6 @@ import org.eclipse.microprofile.metrics.annotation.Metered;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import com.dremio.nessie.api.TreeApi;
-import com.dremio.nessie.error.NessieAlreadyExistsException;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
@@ -81,14 +80,14 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       return makeRef(store.toRef(refName));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(e);
+      throw new NessieNotFoundException(String.format("Unable to find reference [%s].", refName), e);
     }
   }
 
   @Metered
   @Timed(name = "timed-tree-get-defaultbranch")
   @Override
-  public Branch getDefaultBranch() {
+  public Branch getDefaultBranch() throws NessieNotFoundException {
     Reference r = getReferenceByName(config.getDefaultBranch());
     if (!(r instanceof Branch)) {
       throw new IllegalStateException("Default branch isn't a branch");
@@ -100,7 +99,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Timed(name = "timed-tree-create")
   @Override
   public void createNewReference(Reference reference)
-      throws NessieAlreadyExistsException, NessieNotFoundException, NessieConflictException {
+      throws NessieNotFoundException, NessieConflictException {
     try {
       if (reference instanceof Branch) {
         store.create(BranchName.of(reference.getName()), toHash(reference, false));
@@ -112,7 +111,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(reference.getName(), e);
     } catch (ReferenceAlreadyExistsException e) {
-      throw new NessieAlreadyExistsException(e);
+      throw new NessieConflictException(String.format("A reference of name [%s] already exists.", reference.getName()), e);
     }
   }
 
@@ -145,7 +144,9 @@ public class TreeResource extends BaseResource implements TreeApi {
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(reference.getName(), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(e);
+      throw new NessieConflictException(
+          String.format("The hash provided %s does not match the current status of the reference %s.",
+              reference.getHash(), reference.getName()), e);
     }
   }
 
@@ -166,7 +167,9 @@ public class TreeResource extends BaseResource implements TreeApi {
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(ref, e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(e);
+      throw new NessieConflictException(
+          String.format("The hash provided %s does not match the current status of the reference %s.",
+              reference.getExpectedId(), ref), e);
     }
   }
 
@@ -181,7 +184,7 @@ public class TreeResource extends BaseResource implements TreeApi {
           .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build()).collect(Collectors.toList());
       return ImmutableLogResponse.builder().addAllOperations(items).build();
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(e);
+      throw new NessieNotFoundException(String.format("Unable to find the requested ref [%s].", ref), e);
     }
   }
 
@@ -194,9 +197,12 @@ public class TreeResource extends BaseResource implements TreeApi {
       List<Hash> transplants = transplant.getHashesToTransplant().stream().map(Hash::of).collect(Collectors.toList());
       store.transplant(BranchName.of(transplant.getBranch().getName()), toHash(transplant.getBranch(), true), transplants);
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(transplant.getBranch().getName(), e);
+      throw new NessieNotFoundException(
+          String.format("Unable to find the requested branch we're transplanting to of [%s].", transplant.getBranch().getName()), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(e);
+      throw new NessieConflictException(
+          String.format("The hash provided %s does not match the current status of the branch %s.",
+              transplant.getBranch().getHash(), transplant.getBranch().getName()), e);
     }
   }
 
@@ -207,9 +213,10 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       store.merge(toHash(merge.getFromHash(), true).get(), BranchName.of(merge.getTo().getName()), toHash(merge.getTo(), true));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(e);
+      throw new NessieNotFoundException(String.format("At least one of the references provided does not exist."), e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException(e);
+      throw new NessieConflictException(
+          String.format("The branch [%s] does not have the expected hash [%s].", merge.getTo().getName(), merge.getTo().getHash()), e);
     }
   }
 
@@ -224,7 +231,7 @@ public class TreeResource extends BaseResource implements TreeApi {
           .collect(ImmutableList.toImmutableList());
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(refName, e);
+      throw new NessieNotFoundException(String.format("Unable to find the reference [%s].", refName), e);
     }
   }
 
