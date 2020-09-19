@@ -203,8 +203,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Metered
   @Timed(name = "timed-tree-merge")
   @Override
-  public void mergeRefIntoBranch(String branchName, Merge merge)
-      throws NessieNotFoundException, NessieConflictException {
+  public void mergeRefIntoBranch(Merge merge) throws NessieNotFoundException, NessieConflictException {
     try {
       store.merge(toHash(merge.getFromHash(), true).get(), BranchName.of(merge.getTo().getName()), toHash(merge.getTo(), true));
     } catch (ReferenceNotFoundException e) {

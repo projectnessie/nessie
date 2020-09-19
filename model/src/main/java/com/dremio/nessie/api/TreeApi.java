@@ -169,9 +169,7 @@ public interface TreeApi {
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "update conflict")}
   )
-  void mergeRefIntoBranch(
-      @NotNull @Parameter(description = "branch on which to add commits") @PathParam("ref") String branchName,
-      @NotNull @RequestBody(description = "Merge operation") Merge merge)
+  void mergeRefIntoBranch(@NotNull @RequestBody(description = "Merge operation") Merge merge)
           throws NessieNotFoundException, NessieConflictException;
 
 
