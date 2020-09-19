@@ -35,7 +35,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +96,6 @@ public class TestCatalogBranch {
     }
   }
 
-  @Disabled
   @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
   @TestSecurity(authorizationEnabled = false)
@@ -106,9 +104,10 @@ public class TestCatalogBranch {
     TableIdentifier foobaz = TableIdentifier.of("foo", "baz");
     Table bar = createTable(foobar, 1); //table 1
     createTable(foobaz, 1); //table 2
+    catalog.refresh();
     createBranch("test", catalog.getHash());
 
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, catalog.getHash());
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "test");
 
     NessieCatalog newCatalog = new NessieCatalog(hadoopConfig);
     String initialMetadataLocation = getBranch(newCatalog, foobar);
@@ -122,6 +121,8 @@ public class TestCatalogBranch {
     // points to the previous metadata location
     Assertions.assertEquals(initialMetadataLocation, getBranch(newCatalog, foobar));
     initialMetadataLocation = getBranch(newCatalog, foobaz);
+
+
     newCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
 
     // metadata location changed no longer matches
@@ -137,7 +138,8 @@ public class TestCatalogBranch {
                             getBranch(catalog, foobaz));
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
-    catalog.deleteBranch("test", catalog.getHash());
+    newCatalog.refresh();
+    catalog.deleteBranch("test", newCatalog.getHash());
   }
 
   private static String getBranch(NessieCatalog catalog, TableIdentifier tableIdentifier) {

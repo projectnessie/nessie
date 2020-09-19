@@ -35,7 +35,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.client.NessieClient;
@@ -90,7 +89,6 @@ public class TestDefaultCatalogBranch {
     }
   }
 
-  @Disabled
   @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
   @TestSecurity(authorizationEnabled = false)
@@ -100,7 +98,9 @@ public class TestDefaultCatalogBranch {
     createTable(foobar, 1); //table 1
     createTable(foobaz, 1); //table 2
 
-    hadoopConfig.set("nessie.view-branch", "FORWARD");
+    catalog.refresh();
+    catalog.createBranch("FORWARD", Optional.of(catalog.getHash()));
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "FORWARD");
     NessieCatalog forwardCatalog = new NessieCatalog(hadoopConfig);
     forwardCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
     forwardCatalog.loadTable(foobar).updateSchema().addColumn("id1", Types.LongType.get()).commit();
@@ -110,7 +110,7 @@ public class TestDefaultCatalogBranch {
                                getBranch(catalog, foobaz));
 
     forwardCatalog.refresh();
-    forwardCatalog.assignReference("main", null, null);
+    forwardCatalog.assignReference("main", catalog.getHashForRef("main"), forwardCatalog.getHash());
 
     Assertions.assertEquals(getBranch(forwardCatalog, foobar),
                             getBranch(catalog, foobar));
@@ -119,7 +119,7 @@ public class TestDefaultCatalogBranch {
 
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
-    catalog.deleteBranch("FORWARD", null);
+    catalog.deleteBranch("FORWARD", catalog.getHashForRef("FORWARD"));
   }
 
   private static String getBranch(NessieCatalog catalog, TableIdentifier tableIdentifier) {

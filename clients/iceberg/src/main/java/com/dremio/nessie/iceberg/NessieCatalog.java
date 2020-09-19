@@ -84,8 +84,14 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
     warehouseLocation = config.get("fs.defaultFS") + "/" + ICEBERG_HADOOP_WAREHOUSE_BASE;
 
     final String requestedRef = config.get(CONF_NESSIE_REF);
-    Reference r = requestedRef == null ? client.getTreeApi().getDefaultBranch() : client.getTreeApi().getReferenceByName(requestedRef);
-    this.reference = new UpdateableReference(r, client.getTreeApi());
+    try {
+      Reference r = requestedRef == null ? client.getTreeApi().getDefaultBranch() : client.getTreeApi().getReferenceByName(requestedRef);
+      this.reference = new UpdateableReference(r, client.getTreeApi());
+    } catch (NessieNotFoundClientException ex) {
+      throw new IllegalArgumentException("No Nessie ref provided via %s and server does not have an existing default branch. "
+          + "NessieCatalog must be created pointing to an existing branch.", ex);
+    }
+
   }
 
 
