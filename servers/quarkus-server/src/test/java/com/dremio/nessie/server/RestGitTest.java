@@ -37,7 +37,7 @@ import com.dremio.nessie.model.ImmutablePutContents;
 import com.dremio.nessie.model.ImmutableTag;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.MultiContents;
-import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.Operation.Put;
 import com.dremio.nessie.model.PutContents;
 import com.dremio.nessie.model.Reference;
@@ -93,13 +93,13 @@ public class RestGitTest {
     Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
       updates[i] =
-          ImmutablePut.builder().key(new NessieObjectKey(Arrays.asList("item", Integer.toString(i))))
+          ImmutablePut.builder().key(new ContentsKey(Arrays.asList("item", Integer.toString(i))))
           .contents(ImmutableIcebergTable.builder()
                                  .metadataLocation("/the/directory/over/there/" + i)
                                  .build())
           .build();
     }
-    updates[10] = ImmutablePut.builder().key(new NessieObjectKey(Arrays.asList("xxx","test")))
+    updates[10] = ImmutablePut.builder().key(new ContentsKey(Arrays.asList("xxx","test")))
         .contents(ImmutableIcebergTable.builder().metadataLocation("/the/directory/over/there/has/been/moved").build())
         .build();
 

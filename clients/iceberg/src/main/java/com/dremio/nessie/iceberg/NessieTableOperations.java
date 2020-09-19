@@ -32,7 +32,7 @@ import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableIcebergTable;
 import com.dremio.nessie.model.ImmutablePutContents;
-import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ContentsKey;
 
 /**
  * Nessie implementation of Iceberg TableOperations.
@@ -43,7 +43,7 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
 
   private final Configuration conf;
   private final NessieClient client;
-  private final NessieObjectKey key;
+  private final ContentsKey key;
   private UpdateableReference reference;
   private IcebergTable table;
   private HadoopFileIO fileIO;
@@ -53,7 +53,7 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
    */
   public NessieTableOperations(
       Configuration conf,
-      NessieObjectKey key,
+      ContentsKey key,
       UpdateableReference reference,
       NessieClient client) {
     this.conf = conf;

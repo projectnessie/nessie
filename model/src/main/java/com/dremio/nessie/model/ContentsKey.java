@@ -35,32 +35,32 @@ import javax.ws.rs.ext.Provider;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class NessieObjectKey {
+public class ContentsKey {
 
   private final List<String> elements;
 
   @JsonCreator
-  public NessieObjectKey(@JsonProperty("elements") List<String> elements) {
+  public ContentsKey(@JsonProperty("elements") List<String> elements) {
     this.elements = Collections.unmodifiableList(new ArrayList<>(elements));
   }
 
   // internal constructor for a list that doesn't need a defensive copy.
-  private NessieObjectKey(@JsonProperty("elements") List<String> elements, boolean dummy) {
+  private ContentsKey(@JsonProperty("elements") List<String> elements, boolean dummy) {
     this.elements = Collections.unmodifiableList(elements);
   }
 
-  public static NessieObjectKey of(String... elements) {
-    return new NessieObjectKey(Arrays.asList(elements), true);
+  public static ContentsKey of(String... elements) {
+    return new ContentsKey(Arrays.asList(elements), true);
   }
 
   public List<String> getElements() {
     return elements;
   }
 
-  private static class NessieObjectKeyConverter implements ParamConverter<NessieObjectKey> {
+  private static class NessieObjectKeyConverter implements ParamConverter<ContentsKey> {
 
     @Override
-    public NessieObjectKey fromString(String value) {
+    public ContentsKey fromString(String value) {
       if (value == null) {
         return null;
       }
@@ -73,11 +73,11 @@ public class NessieObjectKey {
               throw new RuntimeException(String.format("Unable to decode string %s", x), e);
             }
           }).collect(Collectors.toList());
-      return new NessieObjectKey(elements, true);
+      return new ContentsKey(elements, true);
     }
 
     @Override
-    public String toString(NessieObjectKey value) {
+    public String toString(ContentsKey value) {
       if (value == null) {
         return null;
       }
@@ -99,7 +99,7 @@ public class NessieObjectKey {
     @SuppressWarnings("unchecked")
     @Override
     public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
-      if (rawType.equals(NessieObjectKey.class)) {
+      if (rawType.equals(ContentsKey.class)) {
         return (ParamConverter<T>) new NessieObjectKeyConverter();
       }
       return null;

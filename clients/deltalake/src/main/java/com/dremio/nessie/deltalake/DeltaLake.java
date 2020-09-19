@@ -43,7 +43,7 @@ import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.DeltaLakeTable;
 import com.dremio.nessie.model.ImmutableDeltaLakeTable;
 import com.dremio.nessie.model.ImmutablePutContents;
-import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ContentsKey;
 
 /**
  * How do we integrate this like we integrate iceberg.
@@ -80,11 +80,11 @@ public class DeltaLake extends LogStoreWrapper {
 
   }
 
-  private NessieObjectKey extractTableName(Path path) {
+  private ContentsKey extractTableName(Path path) {
     String[] pathParts = path.getName().replace(baseDirectory, "").split("_delta_log");
 
     // TODO: reexamine this.
-    return new NessieObjectKey(Arrays.asList(pathParts));
+    return new ContentsKey(Arrays.asList(pathParts));
   }
 
   /**

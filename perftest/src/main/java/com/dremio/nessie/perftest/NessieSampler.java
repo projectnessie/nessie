@@ -34,7 +34,7 @@ import com.dremio.nessie.client.rest.NessiePreconditionFailedException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.PutContents;
 import com.google.common.base.Joiner;
 
@@ -184,7 +184,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
             commitId.set(branch);
           }
 
-          nessieClient().getContentsApi().setContents(NessieObjectKey.of("name.space." + table), "",
+          nessieClient().getContentsApi().setContents(ContentsKey.of("name.space." + table), "",
               PutContents.of(commitId.get(), IcebergTable.of("path_on_disk_" + table)));
 
           //TODO: this test shouldn't be doing a get branch operation since that isn't required to complete a commit.

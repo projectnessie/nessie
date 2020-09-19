@@ -59,7 +59,7 @@ public interface TreeApi {
   @Path("trees")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get all references")
-  @APIResponses({@APIResponse(responseCode = "200", description = "Fetch all references.")})
+  @APIResponses({@APIResponse(responseCode = "200", description = "Fetched all references.")})
   List<Reference> getAllReferences();
 
   /**
@@ -95,7 +95,9 @@ public interface TreeApi {
   @Consumes(MediaType.APPLICATION_JSON)
   @Path("tree")
   @Operation(summary = "Create Reference")
-  @APIResponses({@APIResponse(responseCode = "409", description = "Reference already exists")}
+  @APIResponses({
+      @APIResponse(responseCode = "204", description = "Created successfully."),
+      @APIResponse(responseCode = "409", description = "Reference already exists")}
   )
   void createNewReference(@RequestBody(description = "Reference to create") Reference reference)
       throws NessieAlreadyExistsException, NessieNotFoundException, NessieConflictException;
@@ -107,6 +109,7 @@ public interface TreeApi {
   @Path("tree")
   @Operation(summary = "Delete ref endpoint")
   @APIResponses({
+      @APIResponse(responseCode = "204", description = "Deleted successfully."),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "update conflict"),
     })
@@ -120,6 +123,7 @@ public interface TreeApi {
   @Path("tree/${ref}")
   @Operation(summary = "Set a reference to a specific hash")
   @APIResponses({
+      @APIResponse(responseCode = "204", description = "Assigned successfully."),
       @APIResponse(responseCode = "404", description = "Reference doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")
     })
@@ -149,6 +153,7 @@ public interface TreeApi {
   @Path("tree/transplant")
   @Operation(summary = "transplant commits from mergeRef to ref endpoint")
   @APIResponses({
+      @APIResponse(responseCode = "204", description = "Merged successfully."),
       @APIResponse(responseCode = "401", description = "no merge ref supplied"),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "update conflict")}
@@ -165,6 +170,7 @@ public interface TreeApi {
   @Path("tree/merge")
   @Operation(summary = "merge commits from mergeRef to ref endpoint")
   @APIResponses({
+      @APIResponse(responseCode = "204", description = "Merged successfully."),
       @APIResponse(responseCode = "401", description = "no merge ref supplied"),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "update conflict")}
@@ -182,6 +188,7 @@ public interface TreeApi {
   @Operation(summary = "Fetch all objects for a reference")
   @APIResponses({
       @APIResponse(description = "all objects for a reference"),
+      @APIResponse(responseCode = "200", description = "Returned successfully."),
       @APIResponse(responseCode = "404", description = "Ref not found")}
   )
   public ObjectsResponse getObjects(

@@ -39,7 +39,7 @@ import com.dremio.nessie.model.ImmutableLogResponse;
 import com.dremio.nessie.model.ImmutableTag;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.Merge;
-import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.ObjectsResponse;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.ReferenceUpdate;
@@ -228,8 +228,8 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  private static NessieObjectKey fromKey(Key key) {
-    return new NessieObjectKey(key.getElements());
+  private static ContentsKey fromKey(Key key) {
+    return new ContentsKey(key.getElements());
   }
 
   private static Reference makeNamedRef(WithHash<NamedRef> refWithHash) {

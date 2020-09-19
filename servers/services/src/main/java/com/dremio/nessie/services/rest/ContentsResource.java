@@ -36,7 +36,7 @@ import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ImmutableCommitMeta;
 import com.dremio.nessie.model.MultiContents;
-import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.Operation;
 import com.dremio.nessie.model.PutContents;
 import com.dremio.nessie.services.config.ServerConfig;
@@ -64,7 +64,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   @Metered
   @Timed(name = "timed-contents-get")
   @Override
-  public Contents getContents(String refName, NessieObjectKey objectName)
+  public Contents getContents(String refName, ContentsKey objectName)
       throws NessieNotFoundException {
     if (refName == null) {
       refName = config.getDefaultBranch();
@@ -84,7 +84,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   @Metered
   @Timed(name = "timed-contents-set")
   @Override
-  public void setContents(NessieObjectKey objectName, String message, PutContents contents)
+  public void setContents(ContentsKey objectName, String message, PutContents contents)
       throws NessieNotFoundException, NessieConflictException {
     doOps(contents.getBranch(), message, Arrays.asList(Put.of(toKey(objectName), contents.getContents())));
   }
@@ -116,14 +116,14 @@ public class ContentsResource extends BaseResource implements ContentsApi {
     return principal == null ? "" : principal.getName();
   }
 
-  private static Key toKey(NessieObjectKey key) {
+  private static Key toKey(ContentsKey key) {
     return Key.of(key.getElements().toArray(new String[key.getElements().size()]));
   }
 
   @Metered
   @Timed(name = "timed-contents-delete")
   @Override
-  public void deleteObject(NessieObjectKey objectName, String message, Branch branch)
+  public void deleteObject(ContentsKey objectName, String message, Branch branch)
       throws NessieNotFoundException, NessieConflictException {
     doOps(branch, message, Arrays.asList(Delete.of(toKey(objectName))));
   }

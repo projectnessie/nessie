@@ -46,7 +46,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public interface Operation {
 
-  NessieObjectKey getKey();
+  ContentsKey getKey();
 
   @Value.Immutable(prehash = true)
   @JsonSerialize(as = ImmutablePut.class)

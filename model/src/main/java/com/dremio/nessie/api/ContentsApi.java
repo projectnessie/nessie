@@ -38,7 +38,7 @@ import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.MultiContents;
-import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.PutContents;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
@@ -50,7 +50,7 @@ public interface ContentsApi {
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  @Path("{object}")
+  @Path("{key}")
   @Operation(summary = "Fetch details of a table endpoint")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Information for table"),
@@ -58,14 +58,14 @@ public interface ContentsApi {
     })
   Contents getContents(
       @Parameter(description = "name of ref to search on. Default branch if not provided.") @QueryParam("ref") String ref,
-      @NotNull @Parameter(description = "object name to search for") @PathParam("object") NessieObjectKey objectName
+      @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey objectName
       ) throws NessieNotFoundException;
 
   /**
    * create/update a table on a specific ref.
    */
   @POST
-  @Path("{object}")
+  @Path("{key}")
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(summary = "update contents for path")
   @APIResponses({
@@ -73,7 +73,7 @@ public interface ContentsApi {
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")})
   public void setContents(
-      @NotNull @Parameter(description = "name of object to be created or updated") @PathParam("object") NessieObjectKey objectName,
+      @NotNull @Parameter(description = "name of object to be created or updated") @PathParam("key") ContentsKey objectName,
       @Parameter(description = "commit message") @QueryParam("message") String message,
       @NotNull @RequestBody(description = "branch and contents to be created/updated") PutContents contents)
       throws NessieNotFoundException, NessieConflictException;
@@ -82,7 +82,7 @@ public interface ContentsApi {
    * Delete a single object.
    */
   @DELETE
-  @Path("{object}")
+  @Path("{key}")
   @Operation(summary = "delete object on ref endpoint")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Deleted successfully."),
@@ -91,7 +91,7 @@ public interface ContentsApi {
       }
   )
   public void deleteObject(
-      @NotNull @Parameter(description = "object to delete") @PathParam("object") NessieObjectKey objectName,
+      @NotNull @Parameter(description = "object to delete") @PathParam("key") ContentsKey objectName,
       @Parameter(description = "commit message") @QueryParam("message") String message,
       @NotNull @RequestBody(description = "Branch with id.") Branch branch
       ) throws NessieNotFoundException, NessieConflictException;

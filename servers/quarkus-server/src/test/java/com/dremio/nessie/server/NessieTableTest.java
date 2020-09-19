@@ -60,7 +60,7 @@ import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.PutContents;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -74,7 +74,7 @@ class NessieTableTest {
   private static final String DB_NAME = "db";
   private static final String TABLE_NAME = "tbl";
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of(DB_NAME, TABLE_NAME);
-  private static final NessieObjectKey KEY = NessieObjectKey.of(DB_NAME, TABLE_NAME);
+  private static final ContentsKey KEY = ContentsKey.of(DB_NAME, TABLE_NAME);
   private static File alleyLocalDir;
   private static final Schema schema =
       new Schema(Types.StructType.of(required(1, "id", Types.LongType.get())).fields());
@@ -144,7 +144,7 @@ class NessieTableTest {
     alleyLocalDir.delete();
   }
 
-  private com.dremio.nessie.model.IcebergTable getTable(NessieObjectKey key) {
+  private com.dremio.nessie.model.IcebergTable getTable(ContentsKey key) {
     return client.getContentsApi()
         .getContents(BRANCH, key)
         .unwrap(IcebergTable.class).get();

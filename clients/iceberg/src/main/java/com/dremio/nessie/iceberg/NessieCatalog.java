@@ -45,7 +45,7 @@ import com.dremio.nessie.model.ImmutablePut;
 import com.dremio.nessie.model.ImmutableReferenceUpdate;
 import com.dremio.nessie.model.ImmutableTag;
 import com.dremio.nessie.model.MultiContents;
-import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.ObjectsResponse;
 import com.dremio.nessie.model.Reference;
 import com.google.common.base.Joiner;
@@ -105,14 +105,14 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
     return "nessie";
   }
 
-  private static NessieObjectKey toKey(TableIdentifier tableIdentifier) {
+  private static ContentsKey toKey(TableIdentifier tableIdentifier) {
     List<String> identifiers = new ArrayList<>();
     if (tableIdentifier.hasNamespace()) {
       identifiers.addAll(Arrays.asList(tableIdentifier.namespace().levels()));
     }
     identifiers.add(tableIdentifier.name());
 
-    NessieObjectKey key = new NessieObjectKey(identifiers);
+    ContentsKey key = new ContentsKey(identifiers);
     return key;
   }
 

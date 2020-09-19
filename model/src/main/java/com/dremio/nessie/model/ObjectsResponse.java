@@ -44,6 +44,6 @@ public interface ObjectsResponse extends PaginatedResponse {
 
     Contents.Type getType();
 
-    NessieObjectKey getName();
+    ContentsKey getName();
   }
 }

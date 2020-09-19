@@ -35,7 +35,7 @@ import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableIcebergTable;
-import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.ObjectsResponse.Entry;
 import com.dremio.nessie.model.PutContents;
 
@@ -80,7 +80,7 @@ class TestAuth {
     Branch branch = (Branch) tree.getReferenceByName("testx");
     List<Entry> tables = tree.getObjects("testx").getEntries();
     Assertions.assertTrue(tables.isEmpty());
-    NessieObjectKey key = NessieObjectKey.of("x","x");
+    ContentsKey key = ContentsKey.of("x","x");
     tryEndpointPass(() -> contents.setContents(key, "foo", PutContents.of(branch, IcebergTable.of("foo"))));
     final IcebergTable table = contents.getContents("testx", key).unwrap(IcebergTable.class).get();
 
