@@ -100,9 +100,16 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Metered
-  @Timed(name = "timed-tree-tag")
+  @Timed(name = "timed-create-tag")
   public void createNewTag(String tagName, String hash) throws NessieNotFoundException, NessieConflictException {
     createNewReference(TagName.of(tagName), hash);
+  }
+
+  @Metered
+  @Timed(name = "timed-create-tag-emtpy")
+  @Override
+  public void createEmptyTag(String tagName) throws NessieNotFoundException, NessieConflictException {
+    createNewTag(tagName, null);
   }
 
   @Metered
@@ -125,6 +132,13 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Override
   public void createNewBranch(String branchName, String hash) throws NessieNotFoundException, NessieConflictException {
     createNewReference(BranchName.of(branchName), hash);
+  }
+
+  @Metered
+  @Timed(name = "timed-create-branch-empty")
+  @Override
+  public void createEmptyBranch(String branchName) throws NessieNotFoundException, NessieConflictException {
+    createNewBranch(branchName, null);
   }
 
   @Metered
@@ -280,7 +294,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       WithHash<Ref> resolved = store.toRef(ref.getName());
       Ref resolvedRef = resolved.getValue();
       if (resolvedRef instanceof NamedRef) {
-        store.assign((NamedRef) resolvedRef, toHash(oldHash, true), toHash(oldHash, true)
+        store.assign((NamedRef) resolvedRef, toHash(oldHash, true), toHash(newHash, true)
             .orElseThrow(() -> new NessieConflictException("Must provide target hash value for operation.")));
       } else {
         throw new IllegalArgumentException("Can only assign branch and tag types.");

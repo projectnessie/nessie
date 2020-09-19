@@ -58,7 +58,7 @@ class TestAuth {
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {
-      tree.createNewBranch(branch, null);
+      tree.createEmptyBranch(branch);
     }
   }
 

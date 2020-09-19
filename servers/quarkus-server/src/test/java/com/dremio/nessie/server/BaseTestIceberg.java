@@ -21,6 +21,7 @@ import java.io.File;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.Schema;
@@ -75,13 +76,13 @@ abstract class BaseTestIceberg {
 
   private void resetData() throws NessieConflictException, NessieNotFoundException {
     for (Reference r : tree.getAllReferences()) {
-      if(r instanceof Branch) {
+      if (r instanceof Branch) {
         tree.deleteBranch(r.getName(), r.getHash());
       } else {
         tree.deleteTag(r.getName(), r.getHash());
       }
     }
-    tree.createNewBranch("main", null);
+    tree.createEmptyBranch("main");
   }
 
   @BeforeEach
@@ -96,7 +97,7 @@ abstract class BaseTestIceberg {
     resetData();
 
     try {
-      tree.createNewBranch(branch, null);
+      tree.createEmptyBranch(branch);
     } catch (Exception e) {
       //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
     }
@@ -138,7 +139,11 @@ abstract class BaseTestIceberg {
   }
 
   void createBranch(String name, String hash) throws NessieNotFoundException, NessieConflictException {
-    tree.createNewBranch(name, hash);
+    if (hash == null) {
+      tree.createEmptyBranch(name);
+    } else {
+      tree.createNewBranch(name, hash);
+    }
   }
 
   @AfterEach
@@ -155,7 +160,7 @@ abstract class BaseTestIceberg {
     ALLEY_LOCAL_DIR.delete();
   }
 
-  static String getBranch(NessieCatalog catalog, TableIdentifier tableIdentifier) {
+  static String getContent(NessieCatalog catalog, TableIdentifier tableIdentifier) {
     Table table = catalog.loadTable(tableIdentifier);
     BaseTable baseTable = (BaseTable) table;
     TableOperations ops = baseTable.operations();

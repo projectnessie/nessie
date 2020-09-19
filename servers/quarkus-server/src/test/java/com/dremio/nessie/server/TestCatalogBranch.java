@@ -50,32 +50,32 @@ class TestCatalogBranch extends BaseTestIceberg {
     hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "test");
 
     NessieCatalog newCatalog = new NessieCatalog(hadoopConfig);
-    String initialMetadataLocation = getBranch(newCatalog, foobar);
-    Assertions.assertEquals(initialMetadataLocation, getBranch(catalog, foobar));
-    Assertions.assertEquals(getBranch(newCatalog, foobaz), getBranch(catalog, foobaz));
+    String initialMetadataLocation = getContent(newCatalog, foobar);
+    Assertions.assertEquals(initialMetadataLocation, getContent(catalog, foobar));
+    Assertions.assertEquals(getContent(newCatalog, foobaz), getContent(catalog, foobaz));
     bar.updateSchema().addColumn("id1", Types.LongType.get()).commit();
 
     // metadata location changed no longer matches
-    Assertions.assertNotEquals(getBranch(catalog, foobar), getBranch(newCatalog, foobar));
+    Assertions.assertNotEquals(getContent(catalog, foobar), getContent(newCatalog, foobar));
 
     // points to the previous metadata location
-    Assertions.assertEquals(initialMetadataLocation, getBranch(newCatalog, foobar));
-    initialMetadataLocation = getBranch(newCatalog, foobaz);
+    Assertions.assertEquals(initialMetadataLocation, getContent(newCatalog, foobar));
+    initialMetadataLocation = getContent(newCatalog, foobaz);
 
 
     newCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
 
     // metadata location changed no longer matches
-    Assertions.assertNotEquals(getBranch(catalog, foobaz), getBranch(newCatalog, foobaz));
+    Assertions.assertNotEquals(getContent(catalog, foobaz), getContent(newCatalog, foobaz));
 
     // points to the previous metadata location
-    Assertions.assertEquals(initialMetadataLocation, getBranch(catalog, foobaz));
+    Assertions.assertEquals(initialMetadataLocation, getContent(catalog, foobaz));
 
     newCatalog.getTreeApi().assignBranch("main", tree.getReferenceByName("main").getHash(), newCatalog.getHash());
-    Assertions.assertEquals(getBranch(newCatalog, foobar),
-                            getBranch(catalog, foobar));
-    Assertions.assertEquals(getBranch(newCatalog, foobaz),
-                            getBranch(catalog, foobaz));
+    Assertions.assertEquals(getContent(newCatalog, foobar),
+                            getContent(catalog, foobar));
+    Assertions.assertEquals(getContent(newCatalog, foobaz),
+                            getContent(catalog, foobaz));
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
     newCatalog.refresh();

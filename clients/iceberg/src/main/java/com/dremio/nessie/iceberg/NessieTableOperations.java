@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
@@ -87,10 +88,13 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
 
     try {
       IcebergTable table = ImmutableIcebergTable.builder().metadataLocation(newMetadataLocation).build();
-      client.getContentsApi().setContents(key, "iceberg commit", reference.getAsBranch().getName(), reference.getHash(), table);
+      client.getContentsApi().setContents(key, reference.getAsBranch().getName(), reference.getHash(), "iceberg commit", table);
+    } catch (NessieNotFoundException | NessieConflictException ex) {
+      io().deleteFile(newMetadataLocation);
+      throw new CommitFailedException(ex, "failed");
     } catch (Throwable e) {
       io().deleteFile(newMetadataLocation);
-      throw new CommitFailedException(e, "failed");
+      throw new RuntimeException("Unexpected commit exception", e);
     }
   }
 

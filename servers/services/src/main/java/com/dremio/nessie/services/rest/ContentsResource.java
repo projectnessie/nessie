@@ -73,7 +73,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   }
 
   @Metered
-  @Timed(name = "timed-contents-delete")
+  @Timed(name = "timed-contents-get-default")
   @Override
   public Contents getContents(ContentsKey key) throws NessieNotFoundException {
     return getContents(key, config.getDefaultBranch());
@@ -88,7 +88,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   }
 
   @Metered
-  @Timed(name = "timed-contents-set")
+  @Timed(name = "timed-contents-set-default")
   @Override
   public void setContents(ContentsKey key, String hash, String message, Contents contents)
       throws NessieNotFoundException, NessieConflictException {
@@ -104,7 +104,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   }
 
   @Metered
-  @Timed(name = "timed-contents-delete")
+  @Timed(name = "timed-contents-delete-default")
   @Override
   public void deleteContents(ContentsKey key, String hash, String message)
       throws NessieNotFoundException, NessieConflictException {
@@ -120,6 +120,8 @@ public class ContentsResource extends BaseResource implements ContentsApi {
           Optional.of(Hash.of(hash)),
           meta(principal, message),
           operations);
+    } catch (IllegalArgumentException e) {
+      throw new NessieNotFoundException("Invalid hash provided.", e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException("Failed to commit data. Provided hash does not match current value.", e);
     } catch (ReferenceNotFoundException e) {

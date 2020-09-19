@@ -75,7 +75,7 @@ public class RestGitTest {
         .hash(reference.getHash())
         .name("test")
         .build();
-    rest().post("trees/tree/test/" + reference.getHash()).then().statusCode(204);
+    rest().post("trees/branch/test/{hash}", reference.getHash()).then().statusCode(204);
     assertEquals(newReference, rest().get("trees/tree/test").then()
            .statusCode(200).extract().as(Branch.class));
 
@@ -83,7 +83,7 @@ public class RestGitTest {
                                 .metadataLocation("/the/directory/over/there")
                                 .build();
 
-    rest().body(table).post("contents/%s/%s", newReference.getHash(), newReference.getName()).then().statusCode(204);
+    rest().body(table).post("contents/xxx.test/{branch}/{hash}", newReference.getName(), newReference.getHash()).then().statusCode(204);
 
     Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
@@ -103,7 +103,7 @@ public class RestGitTest {
         .addOperations(updates)
         .build();
 
-    rest().body(contents).put("contents/multi/%s/%s", branch.getHash(), branch.getName()).then().statusCode(204);
+    rest().body(contents).put("trees/multi/{branch}/{hash}", branch.getName(), branch.getHash()).then().statusCode(204);
 
     Response res = rest().get("contents/xxx.test/test").then().extract().response();
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
@@ -114,47 +114,47 @@ public class RestGitTest {
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
     rest().body(table)
-           .post("contents/xxx.test/%s/%s", b2.getHash(), b2.getName()).then().statusCode(204);
+           .post("contents/xxx.test/{branch}/{hash}", b2.getName(), b2.getHash()).then().statusCode(204);
     Contents returned = rest()
         .get("contents/xxx.test/test").then().statusCode(200).extract().as(Contents.class);
     Assertions.assertEquals(table, returned);
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
-    rest().post("trees/tag/tagtest").then().statusCode(204);
+    rest().post("trees/tag/tagtest/{hash}", b3.getHash()).then().statusCode(204);
 
     rest().get("trees/tree/tagtest").then().statusCode(200).body("hash", equalTo(b3.getHash()));
 
     rest().delete("trees/tag/tagtest/aa").then().statusCode(409);
 
-    rest().delete("trees/tag/tagtest/%s", b3.getHash()).then().statusCode(204);
+    rest().delete("trees/tag/tagtest/{hash}", b3.getHash()).then().statusCode(204);
 
 
     LogResponse log = rest().get("trees/tree/test/log").then().statusCode(200).extract().as(LogResponse.class);
     Assertions.assertEquals(3, log.getOperations().size());
 
     Branch b1 = rest().get("trees/tree/test").as(Branch.class);
-    rest().delete("trees/tree/test/%s", b1.getHash()).then().statusCode(204);
+    rest().delete("trees/branch/test/{hash}", b1.getHash()).then().statusCode(204);
     Branch bx = rest().get("trees/tree/mainx").as(Branch.class);
-    rest().delete("trees/tree/mainx/%s", bx.getHash()).then().statusCode(204);
+    rest().delete("trees/branch/mainx/{hash}", bx.getHash()).then().statusCode(204);
   }
 
   private static RequestSpecification rest() {
-    return given().when().contentType(ContentType.JSON).basePath("/api/v1/");
+    return given().when().basePath("/api/v1/").contentType(ContentType.JSON);
   }
 
   private void commit(Branch b, String path, String metadataUrl) {
-    rest().body(IcebergTable.of(metadataUrl)).post("contents/xxx.test/%s/%s", b.getHash(), b.getName()).then().statusCode(204);
+    rest().body(IcebergTable.of(metadataUrl)).post("contents/xxx.test/{branch}/{hash}", b.getName(), b.getHash()).then().statusCode(204);
   }
 
   private Branch getBranch(String name) {
-    return rest().get("/api/v1/tree/" + name).then().statusCode(200).extract().as(Branch.class);
+    return rest().get("trees/tree/{name}", name).then().statusCode(200).extract().as(Branch.class);
   }
 
   private Branch makeBranch(String name) {
     Branch test = ImmutableBranch.builder()
         .name(name)
         .build();
-    rest().body(test).post("/api/v1/tree").then().statusCode(204);
+    rest().post("trees/branch/{name}", name).then().statusCode(204);
     return test;
   }
 

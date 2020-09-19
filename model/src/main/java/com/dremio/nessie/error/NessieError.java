@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.error;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import javax.ws.rs.core.Response.Status;
 
 public class NessieError {
@@ -59,4 +62,22 @@ public class NessieError {
     return clientProcessingException;
   }
 
+  /**
+   * Get full error message.
+   * @return Full error message.
+   */
+  public String getFullMessage() {
+    if (serverStackTrace != null) {
+      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\n%s", message,
+          status.getStatusCode(), status.getReasonPhrase(), serverStackTrace);
+    }
+
+    if (clientProcessingException != null) {
+      StringWriter sw = new StringWriter();
+      clientProcessingException.printStackTrace(new PrintWriter(sw));
+      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\n%s", message,
+          status.getStatusCode(), status.getReasonPhrase(), sw.toString());
+    }
+    return message;
+  }
 }

@@ -89,6 +89,22 @@ public interface TreeApi {
       throws NessieNotFoundException;
 
   /**
+   * create a new empty tag.
+   */
+  @POST
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Path("tag/{tagName}")
+  @Operation(summary = "Create Tag")
+  @APIResponses({
+      @APIResponse(responseCode = "204", description = "Created successfully."),
+      @APIResponse(responseCode = "409", description = "Reference already exists")}
+  )
+  void createEmptyTag(
+      @Parameter(description = "Tag name to create.") @PathParam("tagName") String tagName
+      )
+      throws NessieNotFoundException, NessieConflictException;
+
+  /**
    * create a tag.
    */
   @POST
@@ -109,7 +125,7 @@ public interface TreeApi {
    * Update a tag.
    */
   @PUT
-  @Path("tag/${tagName}/{oldHash}/{newHash}")
+  @Path("tag/${tagName}/{oldHash}/{newHash}/")
   @Operation(summary = "Set a tag to a specific hash")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Assigned successfully"),
@@ -140,6 +156,19 @@ public interface TreeApi {
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
+  @Path("branch/{branchName}")
+  @Operation(summary = "Create empty Branch")
+  @APIResponses({
+      @APIResponse(responseCode = "204", description = "Created successfully."),
+      @APIResponse(responseCode = "409", description = "Reference already exists")}
+  )
+  void createEmptyBranch(
+      @NotNull @Parameter(description = "Branch name to create.") @PathParam("branchName") String branchName
+      )
+      throws NessieNotFoundException, NessieConflictException;
+
+  @POST
+  @Consumes(MediaType.APPLICATION_JSON)
   @Path("branch/{branchName}/{hash}")
   @Operation(summary = "Create Branch")
   @APIResponses({
@@ -148,9 +177,10 @@ public interface TreeApi {
   )
   void createNewBranch(
       @NotNull @Parameter(description = "Branch name to create.") @PathParam("branchName") String branchName,
-      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash
+      @Parameter(description = "Expected hash of branch (optional).") @PathParam("hash") String hash
       )
       throws NessieNotFoundException, NessieConflictException;
+
 
   /**
    * Update a branch.

@@ -29,7 +29,7 @@ public class NessieServiceException extends ResponseProcessingException {
   private final NessieError error;
 
   public NessieServiceException(NessieError error) {
-    super(Response.status(error.getStatus()).build(), error.getMessage());
+    super(Response.status(error.getStatus()).build(), error.getFullMessage());
     this.error = error;
   }
 

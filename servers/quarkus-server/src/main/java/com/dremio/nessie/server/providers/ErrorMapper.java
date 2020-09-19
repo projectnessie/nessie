@@ -47,7 +47,7 @@ public class ErrorMapper implements ExceptionMapper<Exception> {
     if (exception instanceof WebApplicationException) {
       Response.Status status = Status.fromStatusCode(((WebApplicationException) exception).getResponse().getStatus());
       return exception(status, exception.getMessage(), exception);
-    } else if(exception instanceof BaseNessieClientServerException) {
+    } else if (exception instanceof BaseNessieClientServerException) {
       // log message at debug level so we can review stack traces if enabled.
       LOGGER.debug("Exception on server with appropriate error sent to client.", exception);
       return exception(((BaseNessieClientServerException) exception).getStatus(), exception.getMessage(), exception);
@@ -63,7 +63,8 @@ public class ErrorMapper implements ExceptionMapper<Exception> {
   private Response exception(Status status, String message, Exception e) {
     String stack = serverConfig.shouldSendstackTraceToAPIClient() ? Throwables.getStackTraceAsString(e) : null;
     NessieError error = new NessieError(message, status, stack);
-    LOGGER.debug("Failure on server, propagated to client. Status: {} {}, Message: {}.", status.getStatusCode(), status.getReasonPhrase(), message, e);
+    LOGGER.debug("Failure on server, propagated to client. Status: {} {}, Message: {}.",
+        status.getStatusCode(), status.getReasonPhrase(), message, e);
     return Response.status(status)
         .entity(Entity.entity(error, MediaType.APPLICATION_JSON_TYPE))
         .build();

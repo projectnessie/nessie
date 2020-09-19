@@ -53,18 +53,26 @@ class TestDefaultCatalogBranch extends BaseTestIceberg {
     NessieCatalog forwardCatalog = new NessieCatalog(hadoopConfig);
     forwardCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
     forwardCatalog.loadTable(foobar).updateSchema().addColumn("id1", Types.LongType.get()).commit();
-    Assertions.assertNotEquals(getBranch(forwardCatalog, foobar),
-                               getBranch(catalog, foobar));
-    Assertions.assertNotEquals(getBranch(forwardCatalog, foobaz),
-                               getBranch(catalog, foobaz));
+    Assertions.assertNotEquals(getContent(forwardCatalog, foobar),
+                               getContent(catalog, foobar));
+    Assertions.assertNotEquals(getContent(forwardCatalog, foobaz),
+                               getContent(catalog, foobaz));
+
+    System.out.println(getContent(forwardCatalog, foobar));
+    System.out.println(getContent(catalog, foobar));
 
     forwardCatalog.refresh();
     tree.assignBranch("main", tree.getReferenceByName("main").getHash(), forwardCatalog.getHash());
 
-    Assertions.assertEquals(getBranch(forwardCatalog, foobar),
-                            getBranch(catalog, foobar));
-    Assertions.assertEquals(getBranch(forwardCatalog, foobaz),
-                            getBranch(catalog, foobaz));
+    catalog.refresh();
+
+    System.out.println(getContent(forwardCatalog, foobar));
+    System.out.println(getContent(catalog, foobar));
+
+    Assertions.assertEquals(getContent(forwardCatalog, foobar),
+                            getContent(catalog, foobar));
+    Assertions.assertEquals(getContent(forwardCatalog, foobaz),
+                            getContent(catalog, foobaz));
 
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
