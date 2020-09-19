@@ -16,32 +16,14 @@
 
 package com.dremio.nessie.server;
 
-import static org.apache.iceberg.types.Types.NestedField.required;
-
-import java.io.File;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.BaseTable;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.Table;
-import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.types.Types;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
-import com.dremio.nessie.iceberg.NessieTableOperations;
-import com.dremio.nessie.model.ImmutableBranch;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
@@ -49,44 +31,11 @@ import io.quarkus.test.security.TestSecurity;
 /**
  * test tag operations with a default tag set by server.
  */
-@SuppressWarnings("MissingJavadocMethod")
 @QuarkusTest
-public class TestDefaultCatalogBranch {
-  private static File alleyLocalDir;
-  private NessieCatalog catalog;
-  private NessieClient client;
-  private Configuration hadoopConfig;
+class TestDefaultCatalogBranch extends BaseTestIceberg {
 
-  @BeforeAll
-  public static void create() throws Exception {
-    alleyLocalDir = java.nio.file.Files.createTempDirectory("test",
-                                                            PosixFilePermissions.asFileAttribute(
-                                                              PosixFilePermissions.fromString(
-                                                                "rwxrwxrwx"))).toFile();
-  }
-
-  @BeforeEach
-  public void getCatalog() {
-    hadoopConfig = new Configuration();
-    hadoopConfig.set("fs.defaultFS", alleyLocalDir.toURI().toString());
-    hadoopConfig.set("fs.file.impl",
-                     org.apache.hadoop.fs.LocalFileSystem.class.getName()
-    );
-    String path = "http://localhost:19121/api/v1";
-    String username = "test";
-    String password = "test123";
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, path);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_USERNAME, username);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_PASSWORD, password);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "main");
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_AUTH_TYPE, "NONE");
-    this.client = new NessieClient(AuthType.NONE, path, username, password);
-    catalog = new NessieCatalog(hadoopConfig);
-    try {
-      client.getTreeApi().createNewReference(ImmutableBranch.builder().name("main").build());
-    } catch (Exception e) {
-      //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
-    }
+  public TestDefaultCatalogBranch() {
+    super("main");
   }
 
   @SuppressWarnings("VariableDeclarationUsageDistance")
@@ -120,44 +69,6 @@ public class TestDefaultCatalogBranch {
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
     catalog.deleteBranch("FORWARD", catalog.getHashForRef("FORWARD"));
-  }
-
-  private static String getBranch(NessieCatalog catalog, TableIdentifier tableIdentifier) {
-    Table table = catalog.loadTable(tableIdentifier);
-    BaseTable baseTable = (BaseTable) table;
-    TableOperations ops = baseTable.operations();
-    NessieTableOperations alleyOps = (NessieTableOperations) ops;
-    return alleyOps.currentMetadataLocation();
-  }
-
-  @AfterEach
-  public void closeCatalog() throws Exception {
-    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName("main"));
-    catalog.close();
-    client.close();
-    catalog = null;
-    client = null;
-    hadoopConfig = null;
-  }
-
-  private Table createTable(TableIdentifier tableIdentifier, int count) {
-    return catalog.createTable(tableIdentifier, schema(count));
-  }
-
-  private static Schema schema(int count) {
-    List<Types.NestedField> fields = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
-      fields.add(required(i, "id" + i, Types.LongType.get()));
-    }
-    return new Schema(Types.StructType.of(fields).fields());
-  }
-
-  private void createBranch(String name, String baseTag) {
-    catalog.createBranch(name, Optional.ofNullable(baseTag));
-  }
-
-  private void createBranch(String name) {
-    catalog.createBranch(name, Optional.of("main"));
   }
 
 }

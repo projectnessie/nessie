@@ -18,11 +18,8 @@ package com.dremio.nessie.server;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 
-import java.io.File;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -30,58 +27,18 @@ import org.apache.iceberg.types.Types.LongType;
 import org.apache.iceberg.types.Types.StructType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.NessieCatalog;
-import com.dremio.nessie.model.ImmutableBranch;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 
-@SuppressWarnings("MissingJavadocMethod")
 @QuarkusTest
-public class TestCatalog {
+public class TestCatalog extends BaseTestIceberg {
 
   private static final String BRANCH = "test-catalog-branch";
-  private static File alleyLocalDir;
-  private NessieCatalog catalog;
-  private NessieClient client;
 
-  @BeforeAll
-  public static void create() throws Exception {
-    alleyLocalDir = java.nio.file.Files.createTempDirectory("test",
-                                                            PosixFilePermissions.asFileAttribute(
-                                                              PosixFilePermissions.fromString(
-                                                                "rwxrwxrwx"))).toFile();
-  }
-
-  @BeforeEach
-  public void getCatalog() {
-    Configuration hadoopConfig = new Configuration();
-    hadoopConfig.set("fs.defaultFS", alleyLocalDir.toURI().toString());
-    hadoopConfig.set("fs.file.impl",
-                     org.apache.hadoop.fs.LocalFileSystem.class.getName()
-    );
-    String path = "http://localhost:19121/api/v1";
-    String username = "test";
-    String password = "test123";
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, path);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_USERNAME, username);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_PASSWORD, password);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, BRANCH);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_AUTH_TYPE, "NONE");
-    this.client = new NessieClient(AuthType.NONE, path, username, password);
-    try {
-      client.getTreeApi().createNewReference(ImmutableBranch.builder().name(BRANCH).build());
-    } catch (Exception e) {
-      //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
-    }
-
-    catalog = new NessieCatalog(hadoopConfig);
+  public TestCatalog() {
+    super(BRANCH);
   }
 
   @Test

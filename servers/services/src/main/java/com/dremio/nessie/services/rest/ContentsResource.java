@@ -123,7 +123,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   @Metered
   @Timed(name = "timed-contents-delete")
   @Override
-  public void deleteObject(ContentsKey objectName, String message, Branch branch)
+  public void deleteContents(ContentsKey objectName, String message, Branch branch)
       throws NessieNotFoundException, NessieConflictException {
     doOps(branch, message, Arrays.asList(Delete.of(toKey(objectName))));
   }

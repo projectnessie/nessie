@@ -89,7 +89,7 @@ class TestAuth {
     tryEndpointPass(() -> tree.createNewReference(test));
     Branch test2 = (Branch) tree.getReferenceByName("testy");
     tryEndpointPass(() -> tree.deleteReference(test2));
-    tryEndpointPass(() -> contents.deleteObject(key, "", master));
+    tryEndpointPass(() -> contents.deleteContents(key, "", master));
     assertThrows(NessieNotFoundClientException.class, () -> contents.getContents("testx", key));
     tryEndpointPass(() -> contents.setContents(key, "foo", PutContents.of(branch, IcebergTable.of("bar"))));
   }

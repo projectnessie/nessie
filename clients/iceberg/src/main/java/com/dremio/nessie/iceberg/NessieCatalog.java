@@ -88,8 +88,13 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
       Reference r = requestedRef == null ? client.getTreeApi().getDefaultBranch() : client.getTreeApi().getReferenceByName(requestedRef);
       this.reference = new UpdateableReference(r, client.getTreeApi());
     } catch (NessieNotFoundClientException ex) {
-      throw new IllegalArgumentException("No Nessie ref provided via %s and server does not have an existing default branch. "
-          + "NessieCatalog must be created pointing to an existing branch.", ex);
+      if (requestedRef != null) {
+        throw new IllegalArgumentException(String.format("Nessie ref '%s' provided via %s does not exist. "
+            + "This ref must exist before creating a NessieCatalog.", requestedRef, CONF_NESSIE_REF), ex);
+      }
+
+      throw new IllegalArgumentException(String.format("Nessie does not have an existing default branch."
+          + "Either configure an alternative ref via %s or create the default branch on the server.", CONF_NESSIE_REF), ex);
     }
 
   }
@@ -196,7 +201,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
       lastMetadata = null;
     }
 
-    client.getContentsApi().deleteObject(toKey(identifier), "no message", reference.getAsBranch());
+    client.getContentsApi().deleteContents(toKey(identifier), "no message", reference.getAsBranch());
 
     // TODO: purge should be blocked since nessie will clean through other means.
     if (purge && lastMetadata != null) {

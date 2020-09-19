@@ -58,7 +58,7 @@ public interface ContentsApi {
     })
   Contents getContents(
       @Parameter(description = "name of ref to search on. Default branch if not provided.") @QueryParam("ref") String ref,
-      @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey objectName
+      @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key
       ) throws NessieNotFoundException;
 
   /**
@@ -73,7 +73,7 @@ public interface ContentsApi {
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")})
   public void setContents(
-      @NotNull @Parameter(description = "name of object to be created or updated") @PathParam("key") ContentsKey objectName,
+      @NotNull @Parameter(description = "name of contents to be created or updated") @PathParam("key") ContentsKey key,
       @Parameter(description = "commit message") @QueryParam("message") String message,
       @NotNull @RequestBody(description = "branch and contents to be created/updated") PutContents contents)
       throws NessieNotFoundException, NessieConflictException;
@@ -90,8 +90,8 @@ public interface ContentsApi {
       @APIResponse(responseCode = "412", description = "Update conflict"),
       }
   )
-  public void deleteObject(
-      @NotNull @Parameter(description = "object to delete") @PathParam("key") ContentsKey objectName,
+  public void deleteContents(
+      @NotNull @Parameter(description = "object to delete") @PathParam("key") ContentsKey key,
       @Parameter(description = "commit message") @QueryParam("message") String message,
       @NotNull @RequestBody(description = "Branch with id.") Branch branch
       ) throws NessieNotFoundException, NessieConflictException;

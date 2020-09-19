@@ -185,7 +185,7 @@ public interface TreeApi {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("tree/{ref}/all")
-  @Operation(summary = "Fetch all objects for a reference")
+  @Operation(summary = "Fetch all entries for a given reference")
   @APIResponses({
       @APIResponse(description = "all objects for a reference"),
       @APIResponse(responseCode = "200", description = "Returned successfully."),
