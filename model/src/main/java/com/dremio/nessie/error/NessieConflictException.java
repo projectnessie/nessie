@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.error;
 
-package com.dremio.nessie.client.rest;
+import javax.ws.rs.core.Response;
 
-import com.dremio.nessie.error.NessieError;
+public class NessieConflictException extends BaseNessieClientServerException {
 
-public class NessieInternalServerException extends NessieServiceException {
-
-  public NessieInternalServerException(NessieError serverError) {
-    super(serverError);
+  public NessieConflictException(String message, Throwable cause) {
+    super(message, Response.Status.CONFLICT, cause);
   }
 
+  public NessieConflictException(String message) {
+    super(message, Response.Status.CONFLICT);
+  }
+
+  public NessieConflictException(NessieError error) {
+    super(error);
+  }
 }

@@ -15,9 +15,9 @@
  */
 package com.dremio.nessie.perftest;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.function.Supplier;
 
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
@@ -28,12 +28,10 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.client.rest.NessieExtendedClientErrorException;
-import com.dremio.nessie.client.rest.NessieInternalServerException;
-import com.dremio.nessie.client.rest.NessiePreconditionFailedException;
+import com.dremio.nessie.client.rest.NessieServiceException;
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.IcebergTable;
 import com.google.common.base.Joiner;
 
 /**
@@ -73,7 +71,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     if (client == null) {
       client = new NessieClient(AuthType.BASIC, path, "admin_user", "test123");
       try {
-        client.createBranch(ImmutableBranch.builder().name("master").build());
+        client.getTreeApi().createNewBranch("master", null);
       } catch (Exception t) {
         //pass - likely already created master
       }
@@ -121,7 +119,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
   /**
    * delegate method which captures the result of a Nessie client call and returns a sample object.
    */
-  private SampleResult handle(Supplier<Branch> supplier, Method method) {
+  private SampleResult handle(SupplierIO<Branch> supplier, Method method) {
     SampleResult sampleResult = new SampleResult();
     sampleResult.sampleStart();
     int retries = 0;
@@ -131,22 +129,22 @@ public class NessieSampler extends AbstractJavaSamplerClient {
         try {
           branch = supplier.get();
           break;
-        } catch (NessiePreconditionFailedException e) {
+        } catch (IOException e) {
           commitId.remove();
         }
         retries++;
       }
       if (branch != null) {
         String branchStr = "ok";
-        fillSampler(sampleResult, branch.getId(), retries, true, branchStr, 200, method);
+        fillSampler(sampleResult, branch.getHash(), retries, true, branchStr, 200, method);
         commitId.set(branch);
       } else {
         throw new UnsupportedOperationException("failed with too many retries");
       }
-    } catch (NessieExtendedClientErrorException | NessieInternalServerException e) {
+    } catch (NessieServiceException e) {
       logger.warn("Request was not successfully processed", e);
-      String errStr = e.getNessieError().statusMessage();
-      fillSampler(sampleResult, "", retries, false, errStr, e.getNessieError().errorCode(), method);
+      String errStr = e.getMessage();
+      fillSampler(sampleResult, "", retries, false, errStr, e.getError().getStatus().getStatusCode(), method);
     } catch (Throwable t) {
       logger.warn("Request was not successfully processed", t);
       String msg = t.getMessage() == null ? "" : t.getMessage();
@@ -165,26 +163,26 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     String table = javaSamplerContext.getParameter(TABLE_TAG, "y");
     switch (method) {
       case CREATE_BRANCH: {
-        return handle(() -> nessieClient().createBranch(ImmutableBranch.builder()
-                                                                       .name(branch)
-                                                                       .id(baseBranch)
-                                                                       .build()), method);
+        return handle(() -> {
+          nessieClient().getTreeApi().createNewBranch(branch, baseBranch);
+          return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
+        }, method);
       }
       case DELETE_BRANCH:
         break;
       case COMMIT: {
         return handle(() -> {
           if (commitId.get() == null) {
-            Branch branch = nessieClient().getBranch(this.branch);
+            Branch branch = (Branch) nessieClient().getTreeApi().getReferenceByName(this.branch);
             commitId.set(branch);
           }
-          nessieClient().commit(commitId.get(), ImmutableTable.builder()
-                                                               .id("name.space." + table)
-                                                               .name(table)
-                                                               .metadataLocation("path_on_disk_" + table)
-                                                               .build()
-          );
-          return nessieClient().getBranch(branch);
+
+          nessieClient().getContentsApi().setContents(ContentsKey.of("name.space." + table),
+              commitId.get().getName(), commitId.get().getHash(),
+              "", IcebergTable.of("path_on_disk_" + table));
+
+          //TODO: this test shouldn't be doing a get branch operation since that isn't required to complete a commit.
+          return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
         }, method);
       }
       case MERGE:
@@ -193,6 +191,10 @@ public class NessieSampler extends AbstractJavaSamplerClient {
         throw new UnsupportedOperationException("Not a valid enum " + method);
     }
     return null;
+  }
+
+  public interface SupplierIO<T> {
+    T get() throws IOException;
   }
 
   @Override

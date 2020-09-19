@@ -16,20 +16,25 @@
 package com.dremio.nessie.client;
 
 import java.io.Closeable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
+import javax.ws.rs.client.ResponseProcessingException;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 
+import com.dremio.nessie.api.ConfigApi;
+import com.dremio.nessie.api.ContentsApi;
+import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.auth.AuthFilter;
-import com.dremio.nessie.client.rest.NessieNotFoundException;
 import com.dremio.nessie.client.rest.ObjectMapperContextResolver;
 import com.dremio.nessie.client.rest.ResponseCheckFilter;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.NessieConfiguration;
-import com.dremio.nessie.model.Reference;
-import com.dremio.nessie.model.ReferenceWithType;
-import com.dremio.nessie.model.Table;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
 
 import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
 
@@ -46,7 +51,9 @@ public class NessieClient implements Closeable {
   }
 
   private final ResteasyClient client;
-  private final NessieClientDefinition nessie;
+  private final TreeApi tree;
+  private final ConfigApi config;
+  private final ContentsApi contents;
 
   /**
    * create new nessie client. All REST api endpoints are mapped here.
@@ -62,100 +69,69 @@ public class NessieClient implements Closeable {
     ResteasyWebTarget target = client.target(path);
     AuthFilter authFilter = new AuthFilter(authType, username, password, target);
     client.register(authFilter);
-    nessie = target.proxy(NessieClientDefinition.class);
+    contents = wrap(ContentsApi.class, target.proxy(ContentsApi.class));
+    tree = wrap(TreeApi.class, target.proxy(TreeApi.class));
+    config = wrap(ConfigApi.class, target.proxy(ConfigApi.class));
   }
 
-  /**
-   * Fetch configuration from the server.
-   */
-  public NessieConfiguration getConfig() {
-    return nessie.getConfig();
+  @SuppressWarnings("unchecked")
+  private <T> T wrap(Class<T> iface, T delegate) {
+    return (T) Proxy.newProxyInstance(delegate.getClass().getClassLoader(), new Class[]{iface}, new ExceptionRewriter(delegate));
   }
 
-  /**
-   * Fetch all known branches from the server.
+  /*
+   This will rewrite exceptions so they are correctly thrown by the api classes.
+   * (since the filter will cause them to be wrapped in ResposneProcessingException)
    */
-  public Iterable<ReferenceWithType<Reference>> getBranches() {
-    return nessie.refs();
+  private static class ExceptionRewriter implements InvocationHandler {
+
+    private final Object delegate;
+
+    public ExceptionRewriter(Object delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      try {
+        return method.invoke(delegate, args);
+      } catch (InvocationTargetException ex) {
+        Throwable targetException = ex.getTargetException();
+        if (targetException instanceof ResponseProcessingException) {
+          if (targetException.getCause() instanceof NessieNotFoundException) {
+            throw (NessieNotFoundException) targetException.getCause();
+          }
+          if (targetException.getCause() instanceof NessieConflictException) {
+            throw (NessieConflictException) targetException.getCause();
+          }
+        }
+
+        if (targetException instanceof RuntimeException) {
+          throw targetException;
+        }
+
+
+        throw ex;
+      }
+    }
+  }
+
+
+  public TreeApi getTreeApi() {
+    return tree;
+  }
+
+  public ContentsApi getContentsApi() {
+    return contents;
+  }
+
+  public ConfigApi getConfigApi() {
+    return config;
   }
 
   @Override
   public void close() {
     client.close();
-  }
-
-  /**
-   * Get a single table specific to a given branch.
-   */
-  public Table getTable(String branch, String name, String namespace) {
-    String table = (namespace == null) ? name : (namespace + "." + name);
-    try {
-      return nessie.refTable(branch, table, false);
-    } catch (NessieNotFoundException e) {
-      return null;
-    }
-  }
-
-  /**
-   * Get a branch for a given name.
-   */
-  public Branch getBranch(String branchName) {
-    try {
-      ReferenceWithType<Branch> branch = nessie.ref(branchName);
-      return branch.getReference();
-    } catch (NessieNotFoundException e) {
-      return null;
-    }
-  }
-
-  /**
-   * Create a new branch. Branch name is the branch name and id is the branch to copy from.
-   */
-  public Branch createBranch(Branch branch) {
-    nessie.createRef(branch.getName(), branch.getId(), ReferenceWithType.of(branch));
-    return getBranch(branch.getName());
-  }
-
-  /**
-   * Commit a set of tables on a given branch.
-   *
-   * <p>
-   * These could be updates, creates or deletes given the state of the backend and the tables being commited. This could throw an exception
-   * if the version is incorrect. This implies that the branch you are on is not up to date and there is a merge conflict.
-   * </p>
-   *
-   * @param branch The branch to commit on. Its id is the commit version to commit on top of
-   * @param tables list of tables to be added, deleted or modified
-   */
-  public void commit(Branch branch, Table... tables) {
-    nessie.updateMulti(branch.getName(), null, branch.getId(), tables);
-  }
-
-  /**
-   * Return a list of all table names for a branch.
-   *
-   * <p>
-   * We do not return all table objects as its a costly operation. Only table names. Optionally filtered by namespace
-   * </p>
-   */
-  public Iterable<String> getAllTables(String branch, String namespace) {
-    return nessie.refTables(branch, namespace);
-  }
-
-  /**
-   * Merge all commits from updateBranch onto branch.
-   */
-  public void assignBranch(com.dremio.nessie.model.Branch branch,
-                           String updateBranchStr) {
-    Branch updateBranch = getBranch(updateBranchStr);
-    nessie.updateBatch(branch.getName(), updateBranch.getId(), branch.getId());
-  }
-
-  /**
-   * Delete a branch. Note this is potentially damaging if the branch is not fully merged.
-   */
-  public void deleteBranch(Branch branch) {
-    nessie.deleteRef(branch.getName(), branch.getId());
   }
 
   public static NessieClient basic(String path, String username, String password) {

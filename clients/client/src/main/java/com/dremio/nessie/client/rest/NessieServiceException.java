@@ -16,8 +16,25 @@
 
 package com.dremio.nessie.client.rest;
 
+import javax.ws.rs.client.ResponseProcessingException;
+import javax.ws.rs.core.Response;
+
 import com.dremio.nessie.error.NessieError;
 
-public interface NessieServiceException {
-  NessieError getNessieError();
+/**
+ * A Nessie REST API runtime exception.
+ */
+public class NessieServiceException extends ResponseProcessingException {
+
+  private final NessieError error;
+
+  public NessieServiceException(NessieError error) {
+    super(Response.status(error.getStatus()).build(), error.getFullMessage());
+    this.error = error;
+  }
+
+  public NessieError getError() {
+    return error;
+  }
+
 }

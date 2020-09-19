@@ -13,48 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.model;
 
 import java.util.List;
-import java.util.Map;
-
-import javax.annotation.Nullable;
 
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-/**
- * API representation of a data file in iceberg.
- */
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableDataFile.class)
-@JsonDeserialize(as = ImmutableDataFile.class)
-public abstract class DataFile {
+@JsonSerialize(as = ImmutableEntriesResponse.class)
+@JsonDeserialize(as = ImmutableEntriesResponse.class)
+public interface EntriesResponse extends PaginatedResponse {
 
-  public abstract String getPath();
+  static ImmutableEntriesResponse.Builder builder() {
+    return ImmutableEntriesResponse.builder();
+  }
 
-  public abstract String getFileFormat();
+  List<Entry> getEntries();
 
-  public abstract long getRecordCount();
+  @Value.Immutable(prehash = true)
+  @JsonSerialize(as = ImmutableEntry.class)
+  @JsonDeserialize(as = ImmutableEntry.class)
+  interface Entry {
 
-  public abstract long getFileSizeInBytes();
+    static ImmutableEntry.Builder builder() {
+      return ImmutableEntry.builder();
+    }
 
-  @Nullable
-  public abstract Integer getOrdinal();
+    Contents.Type getType();
 
-  @Nullable
-  public abstract List<Integer> getSortColumns();
-
-  @Nullable
-  public abstract Map<Integer, Long> getColumnSizes();
-
-  @Nullable
-  public abstract Map<Integer, Long> getValueCounts();
-
-  @Nullable
-  public abstract Map<Integer, Long> getNullValueCounts();
-
+    ContentsKey getName();
+  }
 }

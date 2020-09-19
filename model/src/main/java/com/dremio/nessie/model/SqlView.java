@@ -13,19 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.model;
 
-package com.dremio.nessie.iceberg.branch;
+import org.immutables.value.Value;
 
-/**
- * Catalog object for Branch...akin to iceberg Catalog interface
- */
-public interface BranchCatalog {
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-  void createBranch(String branchName, String parentName);
+@Value.Immutable(prehash = true)
+@JsonSerialize(as = ImmutableSqlView.class)
+@JsonDeserialize(as = ImmutableSqlView.class)
+@JsonTypeName("VIEW")
+public interface SqlView extends Contents {
 
-  boolean dropBranch(String branchName);
+  public static enum Dialect {
+    HIVE,
+    SPARK,
+    DREMIO,
+    PRESTO
+  }
 
-  void assignBranch(String from);
+  String getSqlText();
 
-  void refreshBranch();
+  Dialect getDialect();
+
+  // Schema getSchema();
 }

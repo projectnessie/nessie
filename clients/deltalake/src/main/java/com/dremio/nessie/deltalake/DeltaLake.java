@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,8 +39,10 @@ import org.apache.spark.SparkConf;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.Table;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.DeltaLakeTable;
+import com.dremio.nessie.model.ImmutableDeltaLakeTable;
 
 /**
  * How do we integrate this like we integrate iceberg.
@@ -76,9 +79,11 @@ public class DeltaLake extends LogStoreWrapper {
 
   }
 
-  private String extractTableName(Path path) {
+  private ContentsKey extractTableName(Path path) {
     String[] pathParts = path.getName().replace(baseDirectory, "").split("_delta_log");
-    return pathParts[0].replace("/", "");
+
+    // TODO: reexamine this.
+    return new ContentsKey(Arrays.asList(pathParts));
   }
 
   /**
@@ -109,10 +114,9 @@ public class DeltaLake extends LogStoreWrapper {
       for (int i = 0; i < 5; i++) {
         try {
           //todo namespace
-          Table table =
-              client.getTable("master", extractTableName(path), null);
-          table = ImmutableTable.builder().from(table).metadataLocation(path.toString()).build();
-          client.commit(client.getBranch("master"), table);
+          Branch reference = client.getTreeApi().getDefaultBranch();
+          DeltaLakeTable table = ImmutableDeltaLakeTable.builder().metadataLocation(path.toString()).build();
+          client.getContentsApi().setContents(extractTableName(path), reference.getName(), reference.getHash(), "overwrite table", table);
         } catch (RuntimeException e) {
           // pass
         }
@@ -140,10 +144,10 @@ public class DeltaLake extends LogStoreWrapper {
       if (isMetadata) {
         try {
           //todo namespace
-          Table table =
-              client.getTable("master", extractTableName(path), null);
-          table = ImmutableTable.builder().from(table).metadataLocation(path.toString()).build();
-          client.commit(client.getBranch("master"), table);
+          //          Table table =
+          //              client.getTable("master", extractTableName(path), null);
+          //          table = ImmutableTable.builder().from(table).metadataLocation(path.toString()).build();
+          //          client.commit(client.getBranch("master"), table);
           renameDone = true;
         } catch (RuntimeException e) {
           throw new FileNotFoundException(path.toString());

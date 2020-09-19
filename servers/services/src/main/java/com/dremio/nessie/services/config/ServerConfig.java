@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.services.config;
 
-package com.dremio.nessie.client.rest;
+public interface ServerConfig {
 
-import com.dremio.nessie.error.NessieError;
+  String getDefaultBranch();
 
-public class NessieInternalServerException extends NessieServiceException {
-
-  public NessieInternalServerException(NessieError serverError) {
-    super(serverError);
-  }
+  boolean shouldSendstackTraceToAPIClient();
 
 }

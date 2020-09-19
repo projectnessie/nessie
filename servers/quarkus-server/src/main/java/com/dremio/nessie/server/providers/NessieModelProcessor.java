@@ -17,9 +17,9 @@ package com.dremio.nessie.server.providers;
 
 import com.dremio.nessie.error.NessieError;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.Hash;
 import com.dremio.nessie.model.NessieConfiguration;
-import com.dremio.nessie.model.Table;
 import com.dremio.nessie.model.Tag;
 
 import io.quarkus.deployment.annotations.BuildStep;
@@ -30,7 +30,7 @@ public class NessieModelProcessor {
   @BuildStep
   ReflectiveClassBuildItem reflection() {
     Class[] allClasss = {
-      Table.class,
+      Contents.class,
       Branch.class,
       Tag.class,
       Hash.class,

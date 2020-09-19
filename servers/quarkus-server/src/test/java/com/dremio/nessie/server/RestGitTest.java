@@ -18,238 +18,158 @@ package com.dremio.nessie.server;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Map;
+import java.util.Arrays;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.ImmutableTag;
-import com.dremio.nessie.model.ReferenceWithType;
-import com.dremio.nessie.model.Table;
+import com.dremio.nessie.model.ImmutableIcebergTable;
+import com.dremio.nessie.model.ImmutableMultiContents;
+import com.dremio.nessie.model.ImmutablePut;
+import com.dremio.nessie.model.LogResponse;
+import com.dremio.nessie.model.MultiContents;
+import com.dremio.nessie.model.Operation.Put;
+import com.dremio.nessie.model.Reference;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
-import io.restassured.common.mapper.TypeRef;
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 
 @QuarkusTest
 public class RestGitTest {
 
-  @Test
-  @TestSecurity(authorizationEnabled = false)
-  public void testBasic() {
-    ReferenceWithType<Branch> mainx = ReferenceWithType.of(ImmutableBranch.builder()
-                                                                         .id(null)
-                                                                         .name("mainx")
-                                                                         .build());
-    int statusCode = given().when().get("/api/v1/objects/mainx").getStatusCode();
-    if (statusCode == 404) {
-      given()
-        .when().body(mainx).contentType(ContentType.JSON).post("/api/v1/objects/mainx")
-        .then().statusCode(201);
-    }
-
-    Response res = given().when().get("/api/v1/objects").then().statusCode(200).extract().response();
-    ReferenceWithType<Branch>[] branches = res.body().as(ReferenceWithType[].class);
-    Assertions.assertEquals(1, branches.length);
-    Assertions.assertEquals("mainx", branches[0].getReference().getName());
-
-    res = given().when().get("/api/v1/objects/mainx").then()
-                 .statusCode(200).body("reference.name", equalTo(mainx.getReference().getName())).extract().response();
-    mainx = res.body().as(new TypeRef<ReferenceWithType<Branch>>() {
-    });
-    ReferenceWithType<Branch> test = ReferenceWithType.of(ImmutableBranch.builder()
-                                                                         .id(mainx.getReference().getId())
-                                                                         .name("test")
-                                                                         .build());
-    given().when().body(test).contentType(ContentType.JSON).post("/api/v1/objects/test").then().statusCode(201);
-    given().when().get("/api/v1/objects/test").then()
-           .statusCode(200).body("reference.name", equalTo(test.getReference().getName()))
-           .body("reference.id", equalTo(mainx.getReference().getId()));
-
-    Table table = ImmutableTable.builder()
-                                .id("xxx.test")
-                                .name("test")
-                                .namespace("xxx")
-                                .metadataLocation("/the/directory/over/there")
-                                .build();
-
-    String etag = given().when().get("/api/v1/objects/test").getHeader("ETag");
-    given().when().body(table).header("If-Match", etag).contentType(ContentType.JSON)
-           .post("/api/v1/objects/test/tables/xxx.test").then().statusCode(201);
-
-    Table[] updates = new Table[11];
-    for (int i = 0; i < 10; i++) {
-      updates[i] = ImmutableTable.builder()
-                                 .id("xxx.test" + i)
-                                 .name("test" + i)
-                                 .namespace("xxx")
-                                 .metadataLocation("/the/directory/over/there/" + i)
-                                 .build();
-    }
-    updates[10] = ImmutableTable.builder()
-                                .id("xxx.test")
-                                .name("test")
-                                .namespace("xxx")
-                                .metadataLocation(
-                                  "/the/directory/over/there/has/been/moved")
-                                .build();
-
-    etag = given().when().get("/api/v1/objects/test").getHeader("ETag");
-    given().when().header("If-Match", etag).body(updates).contentType(ContentType.JSON)
-           .put("/api/v1/objects/test/tables").then().statusCode(200);
-
-    table = ImmutableTable.builder()
-                          .id("xxx.test")
-                          .name("test")
-                          .namespace("xxx")
-                          .metadataLocation(
-                            "/the/directory/over/there/has/been/moved/again")
-                          .build();
-    res = given().when().get("/api/v1/objects/test/tables/xxx.test").then().extract().response();
-    Assertions.assertEquals(updates[10], res.body().as(Table.class));
-
-    etag = given().when().get("/api/v1/objects/test").getHeader("ETag");
-    given().when().header("If-Match", etag).body(table).contentType(ContentType.JSON)
-           .put("/api/v1/objects/test/tables/xxx.test").then().statusCode(200);
-    res = given().when().get("/api/v1/objects/test/tables/xxx.test").then().extract().response();
-    Assertions.assertEquals(table, res.body().as(Table.class));
-
-    etag = given().when().get("/api/v1/objects/test").getHeader("ETag");
-    given().when().contentType(ContentType.JSON).body(ReferenceWithType.of(ImmutableTag.builder()
-                                                                                       .name("tagtest")
-                                                                                       .id(etag.replace("\"",""))
-                                                                                       .build()))
-           .post("/api/v1/objects/tagtest").then().statusCode(201);
-
-    given().when().get("/api/v1/objects/tagtest").then().statusCode(200)
-           .body("reference.id", equalTo(etag.replace("\"","")));
-
-    given().when().header("If-Match", etag).body(updates).contentType(ContentType.JSON)
-           .put("/api/v1/objects/tagtest/tables").then().statusCode(404);
-
-
-    given().when().delete("/api/v1/objects/tagtest").then().statusCode(412);
-
-    given().when().header("If-Match",etag).delete("/api/v1/objects/tagtest").then().statusCode(200);
-
-
-    res = given().when().get("/api/v1/objects/test/log").then().statusCode(200).extract().response();
-    Map<String, CommitMeta> logs = res.body().as(new TypeRef<Map<String, CommitMeta>>() {});
-    Assertions.assertEquals(4, logs.size());
-    Assertions.assertEquals(13, logs.values().stream().mapToInt(CommitMeta::changes).sum());
-
-    etag = given().when().get("/api/v1/objects/test").getHeader("ETag");
-    given().when().header("If-Match",etag).delete("/api/v1/objects/test").then().statusCode(200);
-    etag = given().when().get("/api/v1/objects/mainx").getHeader("ETag");
-    given().when().header("If-Match",etag).delete("/api/v1/objects/mainx").then().statusCode(200);
+  @BeforeEach
+  public void enableLogging() {
+    RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
   }
 
   @Test
   @TestSecurity(authorizationEnabled = false)
-  public void testNewBranch() {
-    ReferenceWithType<Branch> mainx = ReferenceWithType.of(ImmutableBranch.builder()
-                                                                         .id(null)
-                                                                         .name("mainx")
-                                                                         .build());
-    int statusCode = given().when().get("/api/v1/objects/mainx").getStatusCode();
-    if (statusCode == 404) {
-      given()
-        .when().body(mainx).contentType(ContentType.JSON).post("/api/v1/objects/mainx")
-        .then().statusCode(201);
-    }
+  public void testBasic() {
+    int preSize = rest().get("trees").then().statusCode(200).extract().as(Reference[].class).length;
 
-    Table[] updates = new Table[10];
+    rest().get("trees/tree/mainx").then().statusCode(404);
+    rest().post("trees/branch/mainx").then().statusCode(204);
+
+    Reference[] references = rest().get("trees").then().statusCode(200).extract().as(Reference[].class);
+    Assertions.assertEquals(preSize + 1, references.length);
+
+    Reference reference = rest().get("trees/tree/mainx").then()
+                 .statusCode(200)
+                 .extract()
+                 .as(Reference.class);
+    assertEquals("mainx", reference.getName());
+
+    Branch newReference = ImmutableBranch.builder()
+        .hash(reference.getHash())
+        .name("test")
+        .build();
+    rest().post("trees/branch/test/{hash}", reference.getHash()).then().statusCode(204);
+    assertEquals(newReference, rest().get("trees/tree/test").then()
+           .statusCode(200).extract().as(Branch.class));
+
+    IcebergTable table = ImmutableIcebergTable.builder()
+                                .metadataLocation("/the/directory/over/there")
+                                .build();
+
+    rest().body(table).post("contents/xxx.test/{branch}/{hash}", newReference.getName(), newReference.getHash()).then().statusCode(204);
+
+    Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
-      updates[i] = ImmutableTable.builder()
-                                 .id("xxx.test" + i)
-                                 .name("test" + i)
-                                 .namespace("xxx")
+      updates[i] =
+          ImmutablePut.builder().key(new ContentsKey(Arrays.asList("item", Integer.toString(i))))
+          .contents(ImmutableIcebergTable.builder()
                                  .metadataLocation("/the/directory/over/there/" + i)
-                                 .build();
+                                 .build())
+          .build();
     }
-    String etag = given().when().get("/api/v1/objects/mainx").getHeader("ETag");
-    given().when().header("If-Match", etag).body(updates).contentType(ContentType.JSON)
-           .put("/api/v1/objects/mainx/tables").then().statusCode(200);
-    etag = given().when().get("/api/v1/objects/mainx").getHeader("ETag");
+    updates[10] = ImmutablePut.builder().key(new ContentsKey(Arrays.asList("xxx","test")))
+        .contents(ImmutableIcebergTable.builder().metadataLocation("/the/directory/over/there/has/been/moved").build())
+        .build();
 
-    ReferenceWithType<Branch> test = ReferenceWithType.of(ImmutableBranch.builder()
-                                 .id(etag.replace("\"", ""))
-                                 .name("test2")
-                                 .build());
-    given()
-      .when().header("If-Match", etag).body(test)
-      .contentType(ContentType.JSON).post("/api/v1/objects/test2").then().statusCode(201);
+    Reference branch = rest().get("trees/tree/test").as(Reference.class);
+    MultiContents contents = ImmutableMultiContents.builder()
+        .addOperations(updates)
+        .build();
 
-    for (int i = 0; i < 10; i++) {
-      Table bt = updates[i];
-      Response res = given().when().get("/api/v1/objects/test2/tables/" + bt.getId())
-                            .then().statusCode(200).extract().response();
-      Assertions.assertEquals(bt, res.body().as(Table.class));
-    }
+    rest().body(contents).put("trees/multi/{branch}/{hash}", branch.getName(), branch.getHash()).then().statusCode(204);
 
-    etag = given().when().get("/api/v1/objects/test2").getHeader("ETag");
-    given().when().header("If-Match", etag)
-           .delete("/api/v1/objects/test2/tables/" + updates[0].getId()).then().statusCode(200);
+    Response res = rest().get("contents/xxx.test/test").then().extract().response();
+    Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
-    given().when().get("/api/v1/objects/test2/" + updates[0].getId()).then().statusCode(404);
+    table = ImmutableIcebergTable.builder()
+        .metadataLocation("/the/directory/over/there/has/been/moved/again")
+        .build();
 
-    etag = given().when().get("/api/v1/objects/test2").getHeader("ETag");
-    given().when().header("If-Match", etag).delete("/api/v1/objects/test2").then().statusCode(200);
+    Branch b2 = rest().get("trees/tree/test").as(Branch.class);
+    rest().body(table)
+           .post("contents/xxx.test/{branch}/{hash}", b2.getName(), b2.getHash()).then().statusCode(204);
+    Contents returned = rest()
+        .get("contents/xxx.test/test").then().statusCode(200).extract().as(Contents.class);
+    Assertions.assertEquals(table, returned);
+
+    Branch b3 = rest().get("trees/tree/test").as(Branch.class);
+    rest().post("trees/tag/tagtest/{hash}", b3.getHash()).then().statusCode(204);
+
+    rest().get("trees/tree/tagtest").then().statusCode(200).body("hash", equalTo(b3.getHash()));
+
+    rest().delete("trees/tag/tagtest/aa").then().statusCode(409);
+
+    rest().delete("trees/tag/tagtest/{hash}", b3.getHash()).then().statusCode(204);
 
 
-    given().when().get("/api/v1/objects/test2").then().statusCode(404);
+    LogResponse log = rest().get("trees/tree/test/log").then().statusCode(200).extract().as(LogResponse.class);
+    Assertions.assertEquals(3, log.getOperations().size());
+
+    Branch b1 = rest().get("trees/tree/test").as(Branch.class);
+    rest().delete("trees/branch/test/{hash}", b1.getHash()).then().statusCode(204);
+    Branch bx = rest().get("trees/tree/mainx").as(Branch.class);
+    rest().delete("trees/branch/mainx/{hash}", bx.getHash()).then().statusCode(204);
+  }
+
+  private static RequestSpecification rest() {
+    return given().when().basePath("/api/v1/").contentType(ContentType.JSON);
+  }
+
+  private void commit(Branch b, String path, String metadataUrl) {
+    rest().body(IcebergTable.of(metadataUrl)).post("contents/xxx.test/{branch}/{hash}", b.getName(), b.getHash()).then().statusCode(204);
+  }
+
+  private Branch getBranch(String name) {
+    return rest().get("trees/tree/{name}", name).then().statusCode(200).extract().as(Branch.class);
+  }
+
+  private Branch makeBranch(String name) {
+    Branch test = ImmutableBranch.builder()
+        .name(name)
+        .build();
+    rest().post("trees/branch/{name}", name).then().statusCode(204);
+    return test;
   }
 
   @Test
   @TestSecurity(authorizationEnabled = false)
   public void testOptimisticLocking() {
-    ReferenceWithType<Branch> test = ReferenceWithType.of(ImmutableBranch.builder()
-                                 .id(null)
-                                 .name("test3")
-                                 .build());
-    given()
-      .when().body(test).contentType(ContentType.JSON).post("/api/v1/objects/test3")
-      .then().statusCode(201);
+    makeBranch("test3");
+    Branch b1 = getBranch("test3");
+    commit(b1, "xxx.test", "/the/directory/over/there");
 
-    Table table = ImmutableTable.builder()
-                                .id("xxx.test")
-                                .name("test")
-                                .namespace("xxx")
-                                .metadataLocation("/the/directory/over/there")
-                                .build();
-    String etag = given().when().get("/api/v1/objects/test3").getHeader("ETag");
-    given().when().body(table).header("If-Match", etag).contentType(ContentType.JSON)
-           .post("/api/v1/objects/test3/tables/xxx.test").then().statusCode(201);
+    Branch b2 = getBranch("test3");
+    commit(b2, "xxx.test", "/the/directory/over/there/has/been/moved");
 
-    String etagStart = given().when().get("/api/v1/objects/test3").getHeader("ETag");
-    table = ImmutableTable.builder()
-                          .id("xxx.test")
-                          .name("test")
-                          .namespace("xxx")
-                          .metadataLocation("/the/directory/over/there/has/been/moved")
-                          .build();
-    given().when().body(table).header("If-Match", etagStart).contentType(ContentType.JSON)
-           .put("/api/v1/objects/test3/tables/xxx.test").then().statusCode(200);
-
-    table = ImmutableTable.builder()
-                          .id("xxx.test")
-                          .name("test")
-                          .namespace("xxx")
-                          .metadataLocation("/the/directory/over/there/has/been/moved/again")
-                          .build();
-    given().when().body(table).header("If-Match", etagStart).contentType(ContentType.JSON)
-           .put("/api/v1/objects/test3/tables/xxx.test").then().statusCode(412);
-
-    String etagNew = given().when().get("/api/v1/objects/test3").getHeader("ETag");
-    given().when().body(table).header("If-Match", etagNew).contentType(ContentType.JSON)
-           .put("/api/v1/objects/test3/tables/xxx.test").then().statusCode(200);
+    Branch b3 = getBranch("test3");
+    commit(b3, "xxx.test", "/the/directory/over/there/has/been/moved/again");
   }
 
 }

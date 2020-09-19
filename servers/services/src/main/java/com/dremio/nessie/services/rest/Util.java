@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.CommitMeta.Action;
 import com.dremio.nessie.model.ImmutableCommitMeta;
 
 final class Util {
@@ -45,18 +44,13 @@ final class Util {
     }
   }
 
-  static CommitMeta meta(Principal principal,
-                                 String comment,
-                                 int changes,
-                                 String ref,
-                                 Action action) {
+  static CommitMeta meta(
+      Principal principal,
+      String message) {
     return ImmutableCommitMeta.builder()
-                              .email("")
                               .commiter(name(principal))
-                              .comment(comment)
-                              .changes(changes)
-                              .ref(ref)
-                              .action(action)
+                              .message(message)
+                              .commitTime(System.currentTimeMillis())
                               .build();
   }
 

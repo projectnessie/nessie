@@ -13,14 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.model;
 
-package com.dremio.nessie.client.rest;
+import java.util.List;
 
-import com.dremio.nessie.error.NessieError;
+import org.immutables.value.Value;
 
-public class NessieNotFoundException extends NessieExtendedClientErrorException {
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-  public NessieNotFoundException(NessieError nessieError) {
-    super(nessieError);
-  }
+@Value.Immutable(prehash = true)
+@JsonSerialize(as = ImmutableHiveTable.class)
+@JsonDeserialize(as = ImmutableHiveTable.class)
+@JsonTypeName("HIVE_TABLE")
+public interface HiveTable extends Contents {
+
+  byte[] getTableDefinition();
+
+  List<byte[]> getPartitions();
+
 }

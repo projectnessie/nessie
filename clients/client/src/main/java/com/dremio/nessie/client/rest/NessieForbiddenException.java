@@ -18,9 +18,9 @@ package com.dremio.nessie.client.rest;
 
 import com.dremio.nessie.error.NessieError;
 
-public class NessieForbiddenException extends NessieExtendedClientErrorException {
+public class NessieForbiddenException extends NessieServiceException {
 
-  public NessieForbiddenException(NessieError nessieError) {
-    super(nessieError);
+  public NessieForbiddenException(NessieError serverError) {
+    super(serverError);
   }
 }

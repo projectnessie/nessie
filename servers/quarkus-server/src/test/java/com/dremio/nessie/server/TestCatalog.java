@@ -16,64 +16,23 @@
 
 package com.dremio.nessie.server;
 
-import static org.apache.iceberg.types.Types.NestedField.required;
-
-import java.io.File;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
-import org.apache.iceberg.types.Types.LongType;
-import org.apache.iceberg.types.Types.StructType;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.NessieCatalog;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 
-@SuppressWarnings("MissingJavadocMethod")
 @QuarkusTest
-public class TestCatalog {
+public class TestCatalog extends BaseTestIceberg {
 
-  private static File alleyLocalDir;
-  private NessieCatalog catalog;
-  private NessieClient client;
+  private static final String BRANCH = "test-catalog-branch";
 
-  @BeforeAll
-  public static void create() throws Exception {
-    alleyLocalDir = java.nio.file.Files.createTempDirectory("test",
-                                                            PosixFilePermissions.asFileAttribute(
-                                                              PosixFilePermissions.fromString(
-                                                                "rwxrwxrwx"))).toFile();
-  }
-
-  @BeforeEach
-  public void getCatalog() {
-    Configuration hadoopConfig = new Configuration();
-    hadoopConfig.set("fs.defaultFS", alleyLocalDir.toURI().toString());
-    hadoopConfig.set("fs.file.impl",
-                     org.apache.hadoop.fs.LocalFileSystem.class.getName()
-    );
-    String path = "http://localhost:19121/api/v1";
-    String username = "test";
-    String password = "test123";
-    hadoopConfig.set("nessie.url", path);
-    hadoopConfig.set("nessie.username", username);
-    hadoopConfig.set("nessie.password", password);
-    hadoopConfig.set("nessie.view-branch", "master");
-    hadoopConfig.set("nessie.auth.type", "NONE");
-    this.client = new NessieClient(AuthType.NONE, path, username, password);
-    catalog = new NessieCatalog(hadoopConfig);
+  public TestCatalog() {
+    super(BRANCH);
   }
 
   @Test
@@ -92,21 +51,6 @@ public class TestCatalog {
     catalog.dropTable(TableIdentifier.of("foo", "baz"));
     tables = catalog.listTables(Namespace.empty());
     Assertions.assertTrue(tables.isEmpty());
-  }
-
-  @AfterEach
-  public void closeCatalog() throws Exception {
-    client.deleteBranch(client.getBranch("master"));
-    catalog.close();
-    client.close();
-    catalog = null;
-    client = null;
-  }
-
-  private void createTable(TableIdentifier tableIdentifier) {
-    Schema schema = new Schema(StructType.of(required(1, "id", LongType.get()))
-                                         .fields());
-    catalog.createTable(tableIdentifier, schema).location();
   }
 
 }

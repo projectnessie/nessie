@@ -13,35 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.model;
-
-import java.util.List;
-
-import javax.annotation.Nullable;
 
 import org.immutables.value.Value;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableTableMeta.class)
-@JsonDeserialize(as = ImmutableTableMeta.class)
-public abstract class TableMeta {
+@JsonSerialize(as = ImmutableHiveDatabase.class)
+@JsonDeserialize(as = ImmutableHiveDatabase.class)
+@JsonTypeName("HIVE_DATABASE")
+public interface HiveDatabase extends Contents {
 
-  @Value.Default
-  @Nullable
-  public String getSourceId() {
-    return null;
-  }
+  byte[] getDatabaseDefinition();
 
-  public abstract List<Snapshot> getSnapshots();
-
-  @Value.Default
-  @Nullable
-  public String getSchema() {
-    return null;
-  }
 
 }

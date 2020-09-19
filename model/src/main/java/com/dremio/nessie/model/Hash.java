@@ -17,7 +17,10 @@
 package com.dremio.nessie.model;
 
 import org.immutables.value.Value;
+import org.immutables.value.Value.Derived;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -27,9 +30,12 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableHash.class)
 @JsonDeserialize(as = ImmutableHash.class)
+@JsonTypeName("HASH")
 public abstract class Hash implements Reference {
 
-  public String id() {
+  @JsonIgnore
+  @Derived
+  public String getHash() {
     return getName();
   }
 

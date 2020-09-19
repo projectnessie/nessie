@@ -75,10 +75,17 @@
     <spark.version>2.4.7</spark.version>
     <sqlite.version>1.0.392</sqlite.version>
     <quarkus.version>1.8.0.Final</quarkus.version>
+    <openapi.version>1.1.2</openapi.version>
+    <jsr305.version>3.0.2</jsr305.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.eclipse.microprofile.openapi</groupId>
+        <artifactId>microprofile-openapi-api</artifactId>
+        <version>${openapi.version}</version>
+      </dependency>
       <dependency>
         <groupId>io.delta</groupId>
         <artifactId>delta-core_2.11</artifactId>
@@ -335,6 +342,11 @@
         <version>${logback.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.google.code.findbugs</groupId>
+        <artifactId>jsr305</artifactId>
+        <version>${jsr305.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.almworks.sqlite4java</groupId>
         <artifactId>libsqlite4java-linux-i386</artifactId>
         <version>${sqlite.version}</version>
@@ -436,6 +448,8 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.8.1</version>
           <configuration>
+            <!-- without this, you get NPE rather than useful messages with Maven + JDK11 -->
+            <forceJavacCompilerUse>true</forceJavacCompilerUse>
             <annotationProcessorPaths>
               <path>
                 <groupId>org.immutables</groupId>

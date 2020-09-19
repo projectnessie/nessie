@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.iceberg;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseMetastoreCatalog;
@@ -32,86 +30,112 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.exceptions.NoSuchTableException;
-import org.apache.iceberg.exceptions.NotFoundException;
 
+import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.branch.BranchCatalog;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.Table;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.EntriesResponse;
+import com.dremio.nessie.model.IcebergTable;
+import com.dremio.nessie.model.ImmutableDelete;
+import com.dremio.nessie.model.ImmutableMultiContents;
+import com.dremio.nessie.model.ImmutablePut;
+import com.dremio.nessie.model.MultiContents;
+import com.dremio.nessie.model.Reference;
 import com.google.common.base.Joiner;
 
 /**
  * Nessie implementation of Iceberg Catalog.
  */
-public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog, AutoCloseable {
+public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable {
+
+  public static final String CONF_NESSIE_URL = "nessie.url";
+  public static final String CONF_NESSIE_USERNAME = "nessie.username";
+  public static final String CONF_NESSIE_PASSWORD = "nessie.password";
+  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
+  public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
+  public static final String CONF_NESSIE_REF = "nessie.ref";
 
   private static final Joiner SLASH = Joiner.on("/");
-  private static final Joiner DOT = Joiner.on('.');
   private static final String ICEBERG_HADOOP_WAREHOUSE_BASE = "iceberg/warehouse";
   private final NessieClient client;
   private final String warehouseLocation;
   private final Configuration config;
-  private AtomicReference<Branch> branch;
+  private final UpdateableReference reference;
 
   /**
    * create a catalog from a hadoop configuration.
    */
   public NessieCatalog(Configuration config) {
     this.config = config;
-    String path = config.get("nessie.url");
-    String username = config.get("nessie.username");
-    String password = config.get("nessie.password");
-    String authTypeStr = config.get("nessie.auth.type", "BASIC");
+    String path = config.get(CONF_NESSIE_URL);
+    String username = config.get(CONF_NESSIE_USERNAME);
+    String password = config.get(CONF_NESSIE_PASSWORD);
+    String authTypeStr = config.get(CONF_NESSIE_AUTH_TYPE, NESSIE_AUTH_TYPE_DEFAULT);
     AuthType authType = AuthType.valueOf(authTypeStr);
     this.client = new NessieClient(authType, path, username, password);
+
     warehouseLocation = config.get("fs.defaultFS") + "/" + ICEBERG_HADOOP_WAREHOUSE_BASE;
-    branch = new AtomicReference<>(getOrCreate(config.get("nessie.view-branch",
-                                                          client.getConfig().getDefaultBranch())));
+
+    final String requestedRef = config.get(CONF_NESSIE_REF);
+    try {
+      Reference r = requestedRef == null ? client.getTreeApi().getDefaultBranch() : client.getTreeApi().getReferenceByName(requestedRef);
+      this.reference = new UpdateableReference(r, client.getTreeApi());
+    } catch (NessieNotFoundException ex) {
+      if (requestedRef != null) {
+        throw new IllegalArgumentException(String.format("Nessie ref '%s' provided via %s does not exist. "
+            + "This ref must exist before creating a NessieCatalog.", requestedRef, CONF_NESSIE_REF), ex);
+      }
+
+      throw new IllegalArgumentException(String.format("Nessie does not have an existing default branch."
+          + "Either configure an alternative ref via %s or create the default branch on the server.", CONF_NESSIE_REF), ex);
+    }
+
   }
 
-  private Branch getOrCreate(String branchName) {
-    Branch branch = client.getBranch(branchName);
-    String baseBranchName = client.getConfig().getDefaultBranch();
-    final String baseBranchId;
-    if (baseBranchName != null) {
-      Branch baseBranch = client.getBranch(baseBranchName);
-      baseBranchId = baseBranch == null ? null : baseBranch.getId();
-    } else {
-      baseBranchId = null;
-    }
-    if (branch == null) {
-      branch = client.createBranch(ImmutableBranch.builder().name(branchName).id(baseBranchId).build());
-    }
-    return branch;
-  }
 
   @Override
   public void close() throws Exception {
     client.close();
   }
 
-  //@Override
+  @Override
   protected String name() {
-    return "alley";
+    return "nessie";
   }
 
-  private Table table(TableIdentifier tableIdentifier) {
-    Table table = client.getTable(branch.get().getName(),
-                                  tableIdentifier.name(),
-                                  tableIdentifier.hasNamespace()
-                                    ? tableIdentifier.namespace().toString() : null);
-    return table;
+  private static ContentsKey toKey(TableIdentifier tableIdentifier) {
+    List<String> identifiers = new ArrayList<>();
+    if (tableIdentifier.hasNamespace()) {
+      identifiers.addAll(Arrays.asList(tableIdentifier.namespace().levels()));
+    }
+    identifiers.add(tableIdentifier.name());
+
+    ContentsKey key = new ContentsKey(identifiers);
+    return key;
   }
+
+  private IcebergTable table(TableIdentifier tableIdentifier) {
+    try {
+      Contents table = client.getContentsApi().getContents(toKey(tableIdentifier), reference.getHash());
+      if (table instanceof IcebergTable) {
+        return (IcebergTable) table;
+      }
+    } catch (NessieNotFoundException e) {
+      // ignore
+    }
+    return null;
+  }
+
 
   @Override
   protected TableOperations newTableOps(TableIdentifier tableIdentifier) {
-
     return new NessieTableOperations(config,
-                                     tableIdentifier,
-                                     branch,
+                                     toKey(tableIdentifier),
+                                     reference,
                                      client);
   }
 
@@ -125,26 +149,48 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
 
   @Override
   public List<TableIdentifier> listTables(Namespace namespace) {
-    Iterable<String> tables = client.getAllTables(branch.get().getName(),
-                                         namespace == null ? null : namespace.toString());
-    return StreamSupport.stream(tables.spliterator(), false)
-                        .map(NessieCatalog::fromString)
-                        .collect(Collectors.toList());
+    try {
+      return client.getTreeApi()
+          .getEntries(reference.getHash())
+          .getEntries()
+          .stream()
+          .filter(namespacePredicate(namespace))
+          .map(NessieCatalog::toIdentifier)
+          .collect(Collectors.toList());
+    } catch (NessieNotFoundException ex) {
+      throw new RuntimeException("Unable to list tables due to missing ref.", ex);
+    }
   }
 
-  private static TableIdentifier fromString(String tableName) {
-    String[] names = tableName.split("\\.");
-    String namespace = null;
-    if (names.length > 1) {
-      namespace = DOT.join(Arrays.copyOf(names, names.length - 1));
+  private static Predicate<EntriesResponse.Entry> namespacePredicate(Namespace ns) {
+    // TODO: filter to just iceberg tables.
+    if (ns == null) {
+      return e -> true;
     }
-    String name = names[names.length - 1];
-    return TableIdentifier.of(namespace, name);
+
+    final List<String> namespace = Arrays.asList(ns.levels());
+    Predicate<EntriesResponse.Entry> predicate = e -> {
+      List<String> names = e.getName().getElements();
+
+      if (names.size() <= namespace.size()) {
+        return false;
+      }
+
+      return namespace.equals(names.subList(0, namespace.size()));
+    };
+    return predicate;
+  }
+
+  private static TableIdentifier toIdentifier(EntriesResponse.Entry entry) {
+    List<String> elements = entry.getName().getElements();
+    return TableIdentifier.of(elements.toArray(new String[elements.size()]));
   }
 
   @Override
   public boolean dropTable(TableIdentifier identifier, boolean purge) {
-    Table existingTable = table(identifier);
+    reference.checkMutable();
+
+    IcebergTable existingTable = table(identifier);
     if (existingTable == null) {
       return false;
     }
@@ -156,86 +202,62 @@ public class NessieCatalog extends BaseMetastoreCatalog implements BranchCatalog
       lastMetadata = null;
     }
 
-    client.commit(branch.get(), ImmutableTable.copyOf(existingTable).withIsDeleted(true));
+    try {
+      client.getContentsApi().deleteContents(toKey(identifier), reference.getAsBranch().getName(), reference.getHash(), "no message");
+    } catch (NessieNotFoundException e) {
+      throw new RuntimeException("Failed to drop table as ref is no longer valid.", e);
+    } catch (NessieConflictException e) {
+      throw new RuntimeException("Failed to drop table as table state needs to be refreshed.");
+    }
+
+    // TODO: purge should be blocked since nessie will clean through other means.
     if (purge && lastMetadata != null) {
       BaseMetastoreCatalog.dropTableData(ops.io(), lastMetadata);
     }
+    // TODO: fix this so we don't depend on it in tests.
+    refresh();
     return true;
   }
 
+
+
   @Override
   public void renameTable(TableIdentifier from, TableIdentifier to) {
-    Table existingFromTable = table(from);
+    reference.checkMutable();
+
+    IcebergTable existingFromTable = table(from);
     if (existingFromTable == null) {
       throw new NoSuchTableException(String.format("table %s doesn't exists", from.name()));
     }
-    if (existingFromTable.isDeleted()) {
-      throw new NoSuchTableException(String.format("table %s doesn't exists",
-                                                   existingFromTable.getName()));
-    }
-    Table existingToTable = table(to);
-    if (existingToTable != null && !existingToTable.isDeleted()) {
+    IcebergTable existingToTable = table(to);
+    if (existingToTable != null) {
       throw new AlreadyExistsException("table {} already exists", to.name());
     }
-    String name = to.name();
-    String namespace = to.hasNamespace() ? to.namespace().toString() : null;
-    String id = (namespace != null) ? namespace + "." + name : name;
-    Table updatedTable = ImmutableTable.builder().from(existingFromTable)
-                                       .name(name)
-                                       .namespace(namespace)
-                                       .id(id)
-                                       .build();
-    List<Table> tables = new ArrayList<>();
-    if (existingToTable != null) {
-      Table deletedTable = ImmutableTable.copyOf(existingToTable).withIsDeleted(true);
-      tables.add(deletedTable);
-    }
-    Table deletedTable = ImmutableTable.copyOf(existingFromTable).withIsDeleted(true);
-    tables.add(updatedTable);
-    tables.add(deletedTable);
+
+    MultiContents c = ImmutableMultiContents.builder()
+        .addOperations(ImmutablePut.builder().key(toKey(to)).contents(existingFromTable).build())
+        .addOperations(ImmutableDelete.builder().key(toKey(from)).build())
+        .build();
+
     try {
-      client.commit(branch.get(), tables.toArray(new Table[0]));
+      client.getTreeApi().commitMultipleOperations(reference.getAsBranch().getName(), reference.getHash(), "iceberg rename table", c);
+      // TODO: fix this so we don't depend on it in tests.
+      refresh();
     } catch (Exception e) {
       throw new CommitFailedException(e, "failed");
     }
   }
 
-  @Override
-  public void createBranch(String branchName, String parentName) {
-    Branch parent = client.getBranch(parentName);
-    if (parent == null) {
-      throw new NotFoundException(String.format("Branch %s not found", branchName));
-    }
-    client.createBranch(ImmutableBranch.builder().name(branchName).id(parent.getId()).build());
+  public TreeApi getTreeApi() {
+    return client.getTreeApi();
   }
 
-  @Override
-  public boolean dropBranch(String branchName) {
-    Branch currentBranch = client.getBranch(branchName);
-    if (currentBranch == null) {
-      return false;
-    }
-    client.deleteBranch(currentBranch);
-    return true;
+  public void refresh() {
+    reference.refresh();
   }
 
-  @Override
-  public void assignBranch(String from) {
-    Branch existingFromTable = client.getBranch(from);
-    if (existingFromTable == null) {
-      throw new NoSuchTableException("branch %s doesn't exists", from);
-    }
-    try {
-      client.assignBranch(existingFromTable, branch.get().getName());
-    } catch (Throwable t) {
-      throw new CommitFailedException(t, "failed");
-    }
-    refreshBranch();
-  }
-
-  public void refreshBranch() {
-    Branch newBranch = client.getBranch(branch.get().getName());
-    branch.set(newBranch);
+  public String getHash() {
+    return reference.getHash();
   }
 
 }

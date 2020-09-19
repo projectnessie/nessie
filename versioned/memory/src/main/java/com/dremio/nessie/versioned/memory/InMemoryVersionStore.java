@@ -132,7 +132,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
 
     if (ref instanceof Hash) {
       Hash hash = (Hash) ref;
-      if (hash != NO_ANCESTOR && !commits.containsKey(hash)) {
+      if (!hash.equals(NO_ANCESTOR) && !commits.containsKey(hash)) {
         throw ReferenceNotFoundException.forReference(hash);
       }
       return hash;

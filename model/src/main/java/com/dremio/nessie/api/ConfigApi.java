@@ -13,24 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.api;
 
-package com.dremio.nessie.client.rest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
-import javax.ws.rs.client.ResponseProcessingException;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 
-import com.dremio.nessie.error.NessieError;
+import com.dremio.nessie.model.NessieConfiguration;
 
-public class NessieExtendedClientErrorException extends ResponseProcessingException
-    implements NessieServiceException {
+@Consumes(value = MediaType.APPLICATION_JSON)
+@Path("config")
+public interface ConfigApi {
 
-  private final NessieError nessieError;
+  /**
+   * Get the properties of an object.
+   */
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Get server configuration")
+  NessieConfiguration getConfig();
 
-  public NessieExtendedClientErrorException(NessieError nessieError) {
-    super(null, null, null);
-    this.nessieError = nessieError;
-  }
-
-  public NessieError getNessieError() {
-    return nessieError;
-  }
 }

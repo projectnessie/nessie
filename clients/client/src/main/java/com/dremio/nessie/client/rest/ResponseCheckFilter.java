@@ -17,24 +17,21 @@ package com.dremio.nessie.client.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.Response.Status;
 
-import com.dremio.nessie.error.ImmutableNessieError;
+import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieError;
-import com.dremio.nessie.json.ObjectMapperBuilder;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.dremio.nessie.error.NessieNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Throwables;
-import com.google.common.io.CharStreams;
+import com.fasterxml.jackson.databind.ObjectReader;
 
 public class ResponseCheckFilter implements ClientResponseFilter {
-  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperBuilder.createObjectMapper();
+
+  private static final ObjectReader READER = new ObjectMapper().readerFor(NessieError.class);
 
   @Override
   public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
@@ -43,55 +40,46 @@ public class ResponseCheckFilter implements ClientResponseFilter {
 
   /**
    * check that response had a valid return code. Throw exception if not.
+   * @throws IOException Throws IOException for certain error types.
    */
-  public static void checkResponse(int statusCode, ClientResponseContext response) {
-    Status status = Status.fromStatusCode(statusCode);
-    if (status == Status.OK || status == Status.CREATED) {
+  @SuppressWarnings("incomplete-switch")
+  public static void checkResponse(int statusCode, ClientResponseContext cntxt) throws IOException {
+    if (statusCode > 199 && statusCode < 300) {
       return;
     }
-    NessieError error = readException(status, response);
-    switch (status) {
+
+    NessieError error = decodeErrorObject(cntxt);
+    switch (error.getStatus()) {
+      case NOT_FOUND:
+        throw new NessieNotFoundException(error);
+      case CONFLICT:
+        throw new NessieConflictException(error);
       case BAD_REQUEST:
         throw new NessieBadRequestException(error);
       case UNAUTHORIZED:
         throw new NessieNotAuthorizedException(error);
       case FORBIDDEN:
         throw new NessieForbiddenException(error);
-      case NOT_FOUND:
-        throw new NessieNotFoundException(error);
-      case CONFLICT:
-        throw new NessieConflictException(error);
-      case PRECONDITION_FAILED:
-        throw new NessiePreconditionFailedException(error);
       case INTERNAL_SERVER_ERROR:
         throw new NessieInternalServerException(error);
       default:
-        try {
-          String msg = OBJECT_MAPPER.writeValueAsString(error);
-          throw new RuntimeException(String.format("Unknown exception %s with message %s", status, msg));
-        } catch (JsonProcessingException e) {
-          throw new RuntimeException(String.format("Unknown exception %s", status), e);
-        }
+        throw new NessieServiceException(error);
     }
+
   }
 
-  private static NessieError readException(Status status, ClientResponseContext response) {
+  private static NessieError decodeErrorObject(ClientResponseContext response) {
+    Status status = Status.fromStatusCode(response.getStatus());
     InputStream inputStream = response.getEntityStream();
     NessieError error;
-    String msg;
-    try (Reader reader = new InputStreamReader(inputStream)) {
-      msg = CharStreams.toString(reader);
-    } catch (IOException exception) {
-      msg = Throwables.getStackTraceAsString(exception);
-    }
-    try {
-      error = OBJECT_MAPPER.readValue(msg, NessieError.class);
-    } catch (Exception ex) {
-      error = ImmutableNessieError.builder()
-                                  .errorCode(status.getStatusCode())
-                                  .errorMessage(msg)
-                                  .statusMessage(status.getReasonPhrase())
-                                  .build();
+    if (inputStream == null) {
+      error = new NessieError(status.getReasonPhrase(), status, null, new RuntimeException("Could not parse error object in response."));
+    } else {
+      try {
+        error = READER.readValue(inputStream, NessieError.class);
+      } catch (IOException e) {
+        error = new NessieError(status.getReasonPhrase(), status, null, e);
+      }
     }
     return error;
   }

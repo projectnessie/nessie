@@ -13,42 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.model;
 
 import java.util.List;
-import java.util.Map;
-
-import javax.annotation.Nullable;
 
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-/**
- * represents an iceberg snapshot in data model.
- */
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableSnapshot.class)
-@JsonDeserialize(as = ImmutableSnapshot.class)
-public abstract class Snapshot {
+@JsonSerialize(as = ImmutableLogResponse.class)
+@JsonDeserialize(as = ImmutableLogResponse.class)
+public interface LogResponse extends PaginatedResponse {
 
-  public abstract long getSnapshotId();
-
-  @Nullable
-  public abstract Long getParentId();
-
-  public abstract long getTimestampMillis();
-
-  public abstract String getOperation();
-
-  public abstract Map<String, String> getSummary();
-
-  public abstract List<DataFile> getAddedFiles();
-
-  public abstract List<DataFile> getDeletedFiles();
-
-  public abstract String getManifestLocation();
+  List<CommitMeta> getOperations();
 
 }

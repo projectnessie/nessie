@@ -13,34 +13,71 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.error;
 
-import java.util.List;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
-import javax.annotation.Nullable;
+import javax.ws.rs.core.Response.Status;
 
-import org.immutables.value.Value;
+public class NessieError {
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+  private final String message;
+  private final Status status;
+  private final String serverStackTrace;
+  private final Exception clientProcessingException;
 
+  public NessieError(String message, Status status, String serverStackTrace) {
+    this(message, status, serverStackTrace, null);
+  }
 
-@Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableNessieError.class)
-@JsonDeserialize(as = ImmutableNessieError.class)
-public abstract class NessieError {
+  /**
+   * Create Error.
+   * @param message Message of error.
+   * @param status Status of error.
+   * @param serverStackTrace Server stack trace, if available.
+   * @param processingException Any processing exceptions that happened on the client.
+   */
+  public NessieError(String message, Status status, String serverStackTrace, Exception processingException) {
+    super();
+    this.message = message;
+    this.status = status;
+    this.serverStackTrace = serverStackTrace;
+    this.clientProcessingException = processingException;
+  }
 
-  public abstract int errorCode();
+  public String getMessage() {
+    return message;
+  }
 
-  public abstract String errorMessage();
+  public Status getStatus() {
+    return status;
+  }
 
-  @Nullable
-  public abstract String stackTrace();
+  public String getServerStackTrace() {
+    return serverStackTrace;
+  }
 
-  @Nullable
-  public abstract String statusMessage();
+  public Exception getClientProcessingException() {
+    return clientProcessingException;
+  }
 
-  @Nullable
-  public abstract List<String> conflicts();
+  /**
+   * Get full error message.
+   * @return Full error message.
+   */
+  public String getFullMessage() {
+    if (serverStackTrace != null) {
+      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\n%s", message,
+          status.getStatusCode(), status.getReasonPhrase(), serverStackTrace);
+    }
+
+    if (clientProcessingException != null) {
+      StringWriter sw = new StringWriter();
+      clientProcessingException.printStackTrace(new PrintWriter(sw));
+      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\n%s", message,
+          status.getStatusCode(), status.getReasonPhrase(), sw.toString());
+    }
+    return message;
+  }
 }

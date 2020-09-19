@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.memory;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
@@ -44,7 +45,8 @@ import com.google.protobuf.UnsafeByteOperations;
 class Commit<ValueT, MetadataT> {
   private static final HashFunction COMMIT_HASH_FUNCTION = Hashing.sha256();
 
-  public static final Hash NO_ANCESTOR = Hash.of("");
+  public static final Hash NO_ANCESTOR = Hash.of(
+      UnsafeByteOperations.unsafeWrap(COMMIT_HASH_FUNCTION.newHasher().putString("empty", StandardCharsets.UTF_8).hash().asBytes()));
 
   private final Hash hash;
   private final Hash ancestor;

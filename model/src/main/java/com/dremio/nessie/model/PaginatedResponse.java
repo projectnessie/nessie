@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.model;
 
-package com.dremio.nessie.client.rest;
+import javax.annotation.Nullable;
 
-import com.dremio.nessie.error.NessieError;
+import org.immutables.value.Value.Default;
 
-public class NessieConflictException extends NessieExtendedClientErrorException {
+public interface PaginatedResponse {
 
-  public NessieConflictException(NessieError nessieError) {
-    super(nessieError);
+  @Default
+  default boolean hasMore() {
+    return false;
   }
+
+  @Nullable
+  String getToken();
 }

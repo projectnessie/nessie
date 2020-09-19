@@ -24,7 +24,6 @@ import static org.apache.iceberg.types.Types.NestedField.required;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,115 +46,77 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.types.Types;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.NessieCatalog;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.IcebergTable;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 
-@SuppressWarnings("MissingJavadocMethod")
 @QuarkusTest
-public class NessieTableTest {
+class NessieTableTest extends BaseTestIceberg {
+
+  private static final String BRANCH = "iceberg-table-test";
 
   private static final String DB_NAME = "db";
   private static final String TABLE_NAME = "tbl";
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of(DB_NAME, TABLE_NAME);
-  private static File alleyLocalDir;
-  private static final Schema schema =
-      new Schema(Types.StructType.of(required(1, "id", Types.LongType.get())).fields());
+  private static final ContentsKey KEY = ContentsKey.of(DB_NAME, TABLE_NAME);
+  private static final Schema schema = new Schema(Types.StructType.of(required(1, "id", Types.LongType.get())).fields());
   private static final Schema altered = new Schema(Types.StructType.of(
       required(1, "id", Types.LongType.get()),
       optional(2, "data", Types.LongType.get())).fields());
 
-  private NessieCatalog catalog;
-  private NessieClient client;
   private Path tableLocation;
-  private org.apache.hadoop.conf.Configuration hadoopConfig;
 
-
-  @BeforeAll
-  public static void create() throws Exception {
-    alleyLocalDir = java.nio.file.Files.createTempDirectory("test",
-                                                            PosixFilePermissions.asFileAttribute(
-                                                              PosixFilePermissions.fromString(
-                                                                "rwxrwxrwx"))).toFile();
+  public NessieTableTest() {
+    super(BRANCH);
   }
 
   @BeforeEach
-  public void getCatalog() {
-    hadoopConfig = new org.apache.hadoop.conf.Configuration();
-    hadoopConfig.set("fs.defaultFS", alleyLocalDir.toURI().toString());
-    hadoopConfig.set("fs.file.impl",
-                     org.apache.hadoop.fs.LocalFileSystem.class.getName()
-    );
-    String path = "http://localhost:19121/api/v1";
-    String username = "test";
-    String password = "test123";
-    hadoopConfig.set("nessie.url", path);
-    hadoopConfig.set("nessie.username", username);
-    hadoopConfig.set("nessie.password", password);
-    hadoopConfig.set("nessie.view-branch", "main");
-    hadoopConfig.set("nessie.auth.type", "NONE");
-    catalog = new NessieCatalog(hadoopConfig);
-    client = new NessieClient(AuthType.NONE, path, username, password);
-    try {
-      client.createBranch(ImmutableBranch.builder().name("main").build());
-    } catch (Exception e) {
-      //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
-    }
+  public void beforeEach() throws NessieConflictException, NessieNotFoundException {
+    super.beforeEach();
     this.tableLocation = new Path(catalog.createTable(TABLE_IDENTIFIER, schema).location());
-
   }
 
   @AfterEach
-  public void closeCatalog() throws Exception {
+  public void afterEach() throws Exception {
     // drop the table data
-    tableLocation.getFileSystem(hadoopConfig).delete(tableLocation, true);
-    catalog.refreshBranch();
-    catalog.dropTable(TABLE_IDENTIFIER, false);
+    if (tableLocation != null) {
+      tableLocation.getFileSystem(hadoopConfig).delete(tableLocation, true);
+      catalog.refresh();
+      catalog.dropTable(TABLE_IDENTIFIER, false);
+    }
 
-    catalog.close();
-    client.deleteBranch(client.getBranch("main"));
-    client.close();
-    catalog = null;
-    client = null;
+    super.afterEach();
   }
 
-  @AfterAll
-  public static void destroy() throws Exception {
-    alleyLocalDir.delete();
-  }
-
-  private com.dremio.nessie.model.Table getTable(TableIdentifier tableIdentifier) {
-    return client.getTable("main",
-                           tableIdentifier.name(),
-                           tableIdentifier.namespace().toString());
+  private com.dremio.nessie.model.IcebergTable getTable(ContentsKey key) throws NessieNotFoundException {
+    return client.getContentsApi()
+        .getContents(key, BRANCH)
+        .unwrap(IcebergTable.class).get();
   }
 
   @Test
   @TestSecurity(authorizationEnabled = false)
-  public void testCreate() {
+  public void testCreate() throws NessieNotFoundException {
     // Table should be created in alley
     // Table should be renamed in alley
     String tableName = TABLE_IDENTIFIER.name();
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
     // add a column
     icebergTable.updateSchema().addColumn("mother", Types.LongType.get()).commit();
-    com.dremio.nessie.model.Table table = getTable(TABLE_IDENTIFIER);
+    IcebergTable table = getTable(KEY);
     // check parameters are in expected state
     Assertions.assertEquals(getTableLocation(tableName),
-                            (alleyLocalDir.toURI().toString() + "iceberg/warehouse/" + DB_NAME + "/"
+                            (ALLEY_LOCAL_DIR.toURI().toString() + "iceberg/warehouse/" + DB_NAME + "/"
                              + tableName).replace("//",
                                                   "/"));
 
@@ -329,14 +290,14 @@ public class NessieTableTest {
 
   @Test
   @TestSecurity(authorizationEnabled = false)
-  public void testFailure() {
+  public void testFailure() throws NessieNotFoundException, NessieConflictException {
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
-    Branch branch = client.getBranch("main");
-    com.dremio.nessie.model.Table table =
-        client.getTable("main", TABLE_NAME, DB_NAME);
-    client.commit(branch, ImmutableTable.builder().from(table)
-                                        .metadataLocation("dummytable.metadata.json")
-                                        .build());
+    Branch branch = (Branch) client.getTreeApi().getReferenceByName(BRANCH);
+
+    IcebergTable table = client.getContentsApi().getContents(KEY, BRANCH).unwrap(IcebergTable.class).get();
+
+    client.getContentsApi().setContents(KEY, branch.getName(), branch.getHash(), "", IcebergTable.of("dummytable.metadata.json"));
+
     Assertions.assertThrows(CommitFailedException.class,
         () -> icebergTable.updateSchema().addColumn("data", Types.LongType.get()).commit());
   }
@@ -357,7 +318,7 @@ public class NessieTableTest {
   }
 
   private static String getTableBasePath(String tableName) {
-    String databasePath = alleyLocalDir.toString() + "/iceberg/warehouse/" + DB_NAME;
+    String databasePath = ALLEY_LOCAL_DIR.toString() + "/iceberg/warehouse/" + DB_NAME;
     return Paths.get(databasePath, tableName).toAbsolutePath().toString();
   }
 
