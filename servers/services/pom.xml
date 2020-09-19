@@ -69,7 +69,4 @@
       <artifactId>microprofile-openapi-api</artifactId>
     </dependency>
   </dependencies>
-
-  <build>
-  </build>
 </project>
