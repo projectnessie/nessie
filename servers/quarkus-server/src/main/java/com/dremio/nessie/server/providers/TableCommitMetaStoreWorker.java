@@ -63,28 +63,25 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
       public ByteString toBytes(Contents value) {
         PContents.Builder builder = PContents.newBuilder();
         if (value instanceof IcebergTable) {
-          builder.setIcebergTable(PIcebergTable.newBuilder()
-              .setMetadataLocation(((IcebergTable) value)
-                  .getMetadataLocation()));
+          builder.setIcebergTable(
+              PIcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
 
         } else if (value instanceof DeltaLakeTable) {
-          builder.setDeltaLakeTable(PDeltaLakeTable.newBuilder()
-              .setMetadataLocation(((DeltaLakeTable) value).getMetadataLocation()));
+          builder.setDeltaLakeTable(
+              PDeltaLakeTable.newBuilder().setMetadataLocation(((DeltaLakeTable) value).getMetadataLocation()));
 
         } else if (value instanceof HiveTable) {
           HiveTable ht = (HiveTable) value;
           builder.setHiveTable(PHiveTable.newBuilder()
-              .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition()))
-              .addAllPartition(ht.getPartitions().stream().map(UnsafeByteOperations::unsafeWrap).collect(Collectors.toList())));
+              .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition())).addAllPartition(
+                  ht.getPartitions().stream().map(UnsafeByteOperations::unsafeWrap).collect(Collectors.toList())));
 
         } else if (value instanceof HiveDatabase) {
           builder.setHiveDatabase(PHiveDatabase.newBuilder()
               .setDatabase(UnsafeByteOperations.unsafeWrap(((HiveDatabase) value).getDatabaseDefinition())));
         } else if (value instanceof SqlView) {
           SqlView view = (SqlView) value;
-          builder.setSqlView(PSqlView.newBuilder()
-              .setDialect(view.getDialect().name())
-              .setSqlText(view.getSqlText()));
+          builder.setSqlView(PSqlView.newBuilder().setDialect(view.getDialect().name()).setSqlText(view.getSqlText()));
         } else {
           throw new IllegalArgumentException("Unknown type" + value);
         }
@@ -100,32 +97,33 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
         } catch (InvalidProtocolBufferException e) {
           throw new RuntimeException("Failure parsing data", e);
         }
-        switch(contents.getObjectTypeCase()) {
-        case DELTA_LAKE_TABLE:
-          return ImmutableDeltaLakeTable.builder().metadataLocation(contents.getDeltaLakeTable().getMetadataLocation()).build();
+        switch (contents.getObjectTypeCase()) {
+          case DELTA_LAKE_TABLE:
+            return ImmutableDeltaLakeTable.builder().metadataLocation(contents.getDeltaLakeTable().getMetadataLocation())
+                .build();
 
-        case HIVE_DATABASE:
-          return ImmutableHiveDatabase.builder().databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build();
+          case HIVE_DATABASE:
+            return ImmutableHiveDatabase.builder()
+                .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build();
 
-        case HIVE_TABLE:
-          return ImmutableHiveTable.builder()
-              .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray).collect(Collectors.toList()))
-              .tableDefinition(contents.getHiveTable().getTable().toByteArray())
-              .build();
+          case HIVE_TABLE:
+            return ImmutableHiveTable.builder()
+                .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray)
+                    .collect(Collectors.toList()))
+                .tableDefinition(contents.getHiveTable().getTable().toByteArray()).build();
 
-        case ICEBERG_TABLE:
-          return ImmutableIcebergTable.builder().metadataLocation(contents.getIcebergTable().getMetadataLocation()).build();
+          case ICEBERG_TABLE:
+            return ImmutableIcebergTable.builder().metadataLocation(contents.getIcebergTable().getMetadataLocation())
+                .build();
 
-        case SQL_VIEW:
-          PSqlView view = contents.getSqlView();
-          return ImmutableSqlView.builder()
-              .dialect(Dialect.valueOf(view.getDialect()))
-              .sqlText(view.getSqlText())
-              .build();
+          case SQL_VIEW:
+            PSqlView view = contents.getSqlView();
+            return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
+                .build();
 
-        case OBJECTTYPE_NOT_SET:
-        default:
-          throw new IllegalArgumentException("Unknown type" + contents.getObjectTypeCase());
+          case OBJECTTYPE_NOT_SET:
+          default:
+            throw new IllegalArgumentException("Unknown type" + contents.getObjectTypeCase());
 
         }
       }

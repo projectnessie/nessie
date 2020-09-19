@@ -76,6 +76,7 @@
     <sqlite.version>1.0.392</sqlite.version>
     <quarkus.version>1.8.0.Final</quarkus.version>
     <openapi.version>1.1.2</openapi.version>
+    <jsr305.version>3.0.2</jsr305.version>
   </properties>
 
   <dependencyManagement>
@@ -339,6 +340,11 @@
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-access</artifactId>
         <version>${logback.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.code.findbugs</groupId>
+        <artifactId>jsr305</artifactId>
+        <version>${jsr305.version}</version>
       </dependency>
       <dependency>
         <groupId>com.almworks.sqlite4java</groupId>

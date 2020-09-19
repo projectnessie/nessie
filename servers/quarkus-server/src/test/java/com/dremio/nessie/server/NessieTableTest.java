@@ -58,16 +58,23 @@ import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
+import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.PutContents;
+
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 
 @QuarkusTest
-public class NessieTableTest {
+class NessieTableTest {
+
+  private static final String BRANCH = "iceberg-table-test";
 
   private static final String DB_NAME = "db";
   private static final String TABLE_NAME = "tbl";
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of(DB_NAME, TABLE_NAME);
+  private static final NessieObjectKey KEY = NessieObjectKey.of(DB_NAME, TABLE_NAME);
   private static File alleyLocalDir;
   private static final Schema schema =
       new Schema(Types.StructType.of(required(1, "id", Types.LongType.get())).fields());
@@ -99,18 +106,19 @@ public class NessieTableTest {
     String path = "http://localhost:19121/api/v1";
     String username = "test";
     String password = "test123";
-    hadoopConfig.set("nessie.url", path);
-    hadoopConfig.set("nessie.username", username);
-    hadoopConfig.set("nessie.password", password);
-    hadoopConfig.set("nessie.view-branch", "main");
-    hadoopConfig.set("nessie.auth.type", "NONE");
-    catalog = new NessieCatalog(hadoopConfig);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, path);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_USERNAME, username);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_PASSWORD, password);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, BRANCH);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_AUTH_TYPE, "NONE");
     client = new NessieClient(AuthType.NONE, path, username, password);
     try {
-      client.getTreeApi().createNewReference(ImmutableBranch.builder().name("main").build());
+      client.getTreeApi().createNewReference(ImmutableBranch.builder().name(BRANCH).build());
     } catch (Exception e) {
       //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
     }
+
+    catalog = new NessieCatalog(hadoopConfig);
     this.tableLocation = new Path(catalog.createTable(TABLE_IDENTIFIER, schema).location());
 
   }
@@ -118,12 +126,14 @@ public class NessieTableTest {
   @AfterEach
   public void closeCatalog() throws Exception {
     // drop the table data
-    tableLocation.getFileSystem(hadoopConfig).delete(tableLocation, true);
-    catalog.refresh();
-    catalog.dropTable(TABLE_IDENTIFIER, false);
+    if (tableLocation != null) {
+      tableLocation.getFileSystem(hadoopConfig).delete(tableLocation, true);
+      catalog.refresh();
+      catalog.dropTable(TABLE_IDENTIFIER, false);
+    }
 
     catalog.close();
-    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName("main"));
+    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName(BRANCH));
     client.close();
     catalog = null;
     client = null;
@@ -134,10 +144,10 @@ public class NessieTableTest {
     alleyLocalDir.delete();
   }
 
-  private com.dremio.nessie.model.IcebergTable getTable(TableIdentifier tableIdentifier) {
-    return client.getContentsApi().getObjectForReference("main",
-                           tableIdentifier.name(),
-                           tableIdentifier.namespace().toString());
+  private com.dremio.nessie.model.IcebergTable getTable(NessieObjectKey key) {
+    return client.getContentsApi()
+        .getContents(BRANCH, key)
+        .unwrap(IcebergTable.class).get();
   }
 
   @Test
@@ -149,7 +159,7 @@ public class NessieTableTest {
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
     // add a column
     icebergTable.updateSchema().addColumn("mother", Types.LongType.get()).commit();
-    com.dremio.nessie.model.Table table = getTable(TABLE_IDENTIFIER);
+    IcebergTable table = getTable(KEY);
     // check parameters are in expected state
     Assertions.assertEquals(getTableLocation(tableName),
                             (alleyLocalDir.toURI().toString() + "iceberg/warehouse/" + DB_NAME + "/"
@@ -328,12 +338,12 @@ public class NessieTableTest {
   @TestSecurity(authorizationEnabled = false)
   public void testFailure() {
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
-    Branch branch = client.getBranch("main");
-    com.dremio.nessie.model.Table table =
-        client.getTable("main", TABLE_NAME, DB_NAME);
-    client.commit(branch, ImmutableTable.builder().from(table)
-                                        .metadataLocation("dummytable.metadata.json")
-                                        .build());
+    Branch branch = (Branch) client.getTreeApi().getReferenceByName(BRANCH);
+
+    IcebergTable table = client.getContentsApi().getContents(BRANCH, KEY).unwrap(IcebergTable.class).get();
+
+    client.getContentsApi().setContents(KEY, "random", PutContents.of(branch, IcebergTable.of("dummytable.metadata.json")));
+
     Assertions.assertThrows(CommitFailedException.class,
         () -> icebergTable.updateSchema().addColumn("data", Types.LongType.get()).commit());
   }

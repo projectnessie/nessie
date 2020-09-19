@@ -39,7 +39,7 @@ class UpdateableReference {
     }
     Reference oldReference = reference;
     reference = client.getReferenceByName(reference.getName());
-    return oldReference.equals(reference);
+    return !oldReference.equals(reference);
   }
 
   public boolean isBranch() {

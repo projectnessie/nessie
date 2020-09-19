@@ -46,6 +46,7 @@ import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.ReferenceUpdate;
 import com.dremio.nessie.model.Transplant;
 
+@Consumes(value = MediaType.APPLICATION_JSON)
 @Path("/")
 public interface TreeApi {
 

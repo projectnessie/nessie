@@ -53,7 +53,7 @@ public interface Operation {
   @JsonDeserialize(as = ImmutablePut.class)
   @JsonTypeName("PUT")
   interface Put extends Operation {
-    Contents getObject();
+    Contents getContents();
   }
 
   @Value.Immutable(prehash = true)

@@ -41,6 +41,7 @@ public abstract class NessieError {
   @Nullable
   public abstract String statusMessage();
 
+
   @Nullable
   public abstract List<String> conflicts();
 }

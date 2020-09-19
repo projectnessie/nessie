@@ -22,6 +22,7 @@ import java.io.File;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
@@ -79,11 +80,11 @@ public class TestCatalogBranch {
     String path = "http://localhost:19121/api/v1";
     String username = "test";
     String password = "test123";
-    hadoopConfig.set("nessie.url", path);
-    hadoopConfig.set("nessie.username", username);
-    hadoopConfig.set("nessie.password", password);
-    hadoopConfig.set("nessie.view-branch", "main");
-    hadoopConfig.set("nessie.auth.type", "NONE");
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, path);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_USERNAME, username);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_PASSWORD, password);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "main");
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_AUTH_TYPE, "NONE");
     this.client = new NessieClient(AuthType.NONE, path, username, password);
     tree = client.getTreeApi();
     contents = client.getContentsApi();
@@ -103,11 +104,12 @@ public class TestCatalogBranch {
     TableIdentifier foobaz = TableIdentifier.of("foo", "baz");
     Table bar = createTable(foobar, 1); //table 1
     createTable(foobaz, 1); //table 2
-    createBranch("test");
+    createBranch("test", catalog.getHash());
 
-    hadoopConfig.set("nessie.view-branch", "test");
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, catalog.getHash());
+
     NessieCatalog newCatalog = new NessieCatalog(hadoopConfig);
-    String initialMetadataLocation = getBranch(catalog, foobar);
+    String initialMetadataLocation = getBranch(newCatalog, foobar);
     Assertions.assertEquals(initialMetadataLocation, getBranch(catalog, foobar));
     Assertions.assertEquals(getBranch(newCatalog, foobaz), getBranch(catalog, foobaz));
     bar.updateSchema().addColumn("id1", Types.LongType.get()).commit();
@@ -126,14 +128,14 @@ public class TestCatalogBranch {
     // points to the previous metadata location
     Assertions.assertEquals(initialMetadataLocation, getBranch(catalog, foobaz));
 
-    newCatalog.assignBranch("main");
+    newCatalog.assignReference("main", client.getTreeApi().getReferenceByName("main").getHash(), newCatalog.getHash());
     Assertions.assertEquals(getBranch(newCatalog, foobar),
                             getBranch(catalog, foobar));
     Assertions.assertEquals(getBranch(newCatalog, foobaz),
                             getBranch(catalog, foobaz));
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
-    catalog.dropBranch("test");
+    catalog.deleteBranch("test", catalog.getHash());
   }
 
   private static String getBranch(NessieCatalog catalog, TableIdentifier tableIdentifier) {
@@ -146,7 +148,7 @@ public class TestCatalogBranch {
 
   @AfterEach
   public void closeCatalog() throws Exception {
-    client.deleteBranch(client.getBranch("main"));
+    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName("main"));
     catalog.close();
     client.close();
     catalog = null;
@@ -171,12 +173,8 @@ public class TestCatalogBranch {
     return new Schema(Types.StructType.of(fields).fields());
   }
 
-  private void createBranch(String name, String baseTag) {
-    catalog.createBranch(name, baseTag);
-  }
-
-  private void createBranch(String name) {
-    catalog.createBranch(name, "main");
+  private void createBranch(String name, String hash) {
+    catalog.createBranch(name, Optional.ofNullable(hash));
   }
 
 }

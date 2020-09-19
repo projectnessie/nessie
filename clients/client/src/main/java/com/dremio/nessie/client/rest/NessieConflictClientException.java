@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.model;
 
-public interface ServerConfig {
+package com.dremio.nessie.client.rest;
 
-  String getDefaultBranch();
+import com.dremio.nessie.error.NessieError;
 
+public class NessieConflictClientException extends NessieExtendedClientErrorException {
+
+  public NessieConflictClientException(NessieError nessieError) {
+    super(nessieError);
+  }
 }

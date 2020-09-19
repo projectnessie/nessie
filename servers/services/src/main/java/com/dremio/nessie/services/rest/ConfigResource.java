@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.api.ConfigApi;
 import com.dremio.nessie.model.ImmutableNessieConfiguration;
 import com.dremio.nessie.model.NessieConfiguration;
-import com.dremio.nessie.model.ServerConfig;
+import com.dremio.nessie.services.config.ServerConfig;
 
 
 /**

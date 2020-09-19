@@ -46,7 +46,7 @@ public class ResponseCheckFilter implements ClientResponseFilter {
    */
   public static void checkResponse(int statusCode, ClientResponseContext response) {
     Status status = Status.fromStatusCode(statusCode);
-    if (status == Status.OK || status == Status.CREATED) {
+    if (status == Status.OK || status == Status.CREATED || status == Status.NO_CONTENT) {
       return;
     }
     NessieError error = readException(status, response);
@@ -58,9 +58,9 @@ public class ResponseCheckFilter implements ClientResponseFilter {
       case FORBIDDEN:
         throw new NessieForbiddenException(error);
       case NOT_FOUND:
-        throw new NessieNotFoundException(error);
+        throw new NessieNotFoundClientException(error);
       case CONFLICT:
-        throw new NessieConflictException(error);
+        throw new NessieConflictClientException(error);
       case PRECONDITION_FAILED:
         throw new NessiePreconditionFailedException(error);
       case INTERNAL_SERVER_ERROR:
@@ -79,10 +79,14 @@ public class ResponseCheckFilter implements ClientResponseFilter {
     InputStream inputStream = response.getEntityStream();
     NessieError error;
     String msg;
-    try (Reader reader = new InputStreamReader(inputStream)) {
-      msg = CharStreams.toString(reader);
-    } catch (IOException exception) {
-      msg = Throwables.getStackTraceAsString(exception);
+    if (inputStream == null) {
+      msg = "no additional information";
+    } else {
+      try (Reader reader = new InputStreamReader(inputStream)) {
+        msg = CharStreams.toString(reader);
+      } catch (IOException exception) {
+        msg = Throwables.getStackTraceAsString(exception);
+      }
     }
     try {
       error = OBJECT_MAPPER.readValue(msg, NessieError.class);

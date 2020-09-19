@@ -21,7 +21,9 @@ import java.lang.reflect.Type;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -32,21 +34,28 @@ import javax.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
 
 public class NessieObjectKey {
 
-  private final ImmutableList<String> elements;
+  private final List<String> elements;
 
   @JsonCreator
   public NessieObjectKey(@JsonProperty("elements") List<String> elements) {
-    this.elements = ImmutableList.copyOf(elements);
+    this.elements = Collections.unmodifiableList(new ArrayList<>(elements));
+  }
+
+  // internal constructor for a list that doesn't need a defensive copy.
+  private NessieObjectKey(@JsonProperty("elements") List<String> elements, boolean dummy) {
+    this.elements = Collections.unmodifiableList(elements);
+  }
+
+  public static NessieObjectKey of(String... elements) {
+    return new NessieObjectKey(Arrays.asList(elements), true);
   }
 
   public List<String> getElements() {
     return elements;
   }
-
 
   private static class NessieObjectKeyConverter implements ParamConverter<NessieObjectKey> {
 
@@ -63,8 +72,8 @@ public class NessieObjectKey {
             } catch (UnsupportedEncodingException e) {
               throw new RuntimeException(String.format("Unable to decode string %s", x), e);
             }
-          }).collect(ImmutableList.toImmutableList());
-      return new NessieObjectKey(elements);
+          }).collect(Collectors.toList());
+      return new NessieObjectKey(elements, true);
     }
 
     @Override
@@ -96,5 +105,10 @@ public class NessieObjectKey {
       return null;
     }
 
+  }
+
+  @Override
+  public String toString() {
+    return elements.stream().collect(Collectors.joining("."));
   }
 }

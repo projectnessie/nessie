@@ -41,6 +41,7 @@ import com.dremio.nessie.model.MultiContents;
 import com.dremio.nessie.model.NessieObjectKey;
 import com.dremio.nessie.model.PutContents;
 
+@Consumes(value = MediaType.APPLICATION_JSON)
 @Path("contents")
 public interface ContentsApi {
 
@@ -55,7 +56,7 @@ public interface ContentsApi {
       @APIResponse(responseCode = "200", description = "Information for table"),
       @APIResponse(responseCode = "404", description = "Table not found on ref")
     })
-  Contents getObjectForReference(
+  Contents getContents(
       @Parameter(description = "name of ref to search on. Default branch if not provided.") @QueryParam("ref") String ref,
       @NotNull @Parameter(description = "object name to search for") @PathParam("object") NessieObjectKey objectName
       ) throws NessieNotFoundException;
@@ -66,9 +67,10 @@ public interface ContentsApi {
   @POST
   @Path("{object}")
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "create table on ref endpoint")
+  @Operation(summary = "update contents for path")
   @APIResponses({
-      @APIResponse(responseCode = "404", description = "Branch doesn't exists"),
+      @APIResponse(responseCode = "204", description = "Contents updated successfully."),
+      @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")})
   public void setContents(
       @NotNull @Parameter(description = "name of object to be created or updated") @PathParam("object") NessieObjectKey objectName,
@@ -83,7 +85,8 @@ public interface ContentsApi {
   @Path("{object}")
   @Operation(summary = "delete object on ref endpoint")
   @APIResponses({
-      @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
+      @APIResponse(responseCode = "204", description = "Deleted successfully."),
+      @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict"),
       }
   )
@@ -98,7 +101,8 @@ public interface ContentsApi {
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(summary = "create table on ref endpoint")
   @APIResponses({
-      @APIResponse(responseCode = "404", description = "Branch doesn't exists"),
+      @APIResponse(responseCode = "204", description = "Updated successfully."),
+      @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")})
   public void commitMultipleOperations(
       @Parameter(description = "Commit message") @QueryParam("message") String message,

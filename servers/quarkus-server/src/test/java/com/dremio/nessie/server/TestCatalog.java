@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.iceberg.NessieCatalog;
+import com.dremio.nessie.model.ImmutableBranch;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
@@ -45,6 +46,7 @@ import io.quarkus.test.security.TestSecurity;
 @QuarkusTest
 public class TestCatalog {
 
+  private static final String BRANCH = "test-catalog-branch";
   private static File alleyLocalDir;
   private NessieCatalog catalog;
   private NessieClient client;
@@ -67,12 +69,18 @@ public class TestCatalog {
     String path = "http://localhost:19121/api/v1";
     String username = "test";
     String password = "test123";
-    hadoopConfig.set("nessie.url", path);
-    hadoopConfig.set("nessie.username", username);
-    hadoopConfig.set("nessie.password", password);
-    hadoopConfig.set("nessie.view-branch", "master");
-    hadoopConfig.set("nessie.auth.type", "NONE");
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, path);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_USERNAME, username);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_PASSWORD, password);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, BRANCH);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_AUTH_TYPE, "NONE");
     this.client = new NessieClient(AuthType.NONE, path, username, password);
+    try {
+      client.getTreeApi().createNewReference(ImmutableBranch.builder().name(BRANCH).build());
+    } catch (Exception e) {
+      //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
+    }
+
     catalog = new NessieCatalog(hadoopConfig);
   }
 
@@ -96,7 +104,7 @@ public class TestCatalog {
 
   @AfterEach
   public void closeCatalog() throws Exception {
-    client.deleteBranch(client.getBranch("master"));
+    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName(BRANCH));
     catalog.close();
     client.close();
     catalog = null;

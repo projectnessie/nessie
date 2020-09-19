@@ -32,8 +32,10 @@ import com.dremio.nessie.client.rest.NessieExtendedClientErrorException;
 import com.dremio.nessie.client.rest.NessieInternalServerException;
 import com.dremio.nessie.client.rest.NessiePreconditionFailedException;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
+import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.PutContents;
 import com.google.common.base.Joiner;
 
 /**
@@ -73,7 +75,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     if (client == null) {
       client = new NessieClient(AuthType.BASIC, path, "admin_user", "test123");
       try {
-        client.createBranch(ImmutableBranch.builder().name("master").build());
+        client.getTreeApi().createNewReference(ImmutableBranch.builder().name("master").build());
       } catch (Exception t) {
         //pass - likely already created master
       }
@@ -138,7 +140,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
       }
       if (branch != null) {
         String branchStr = "ok";
-        fillSampler(sampleResult, branch.getId(), retries, true, branchStr, 200, method);
+        fillSampler(sampleResult, branch.getHash(), retries, true, branchStr, 200, method);
         commitId.set(branch);
       } else {
         throw new UnsupportedOperationException("failed with too many retries");
@@ -165,26 +167,28 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     String table = javaSamplerContext.getParameter(TABLE_TAG, "y");
     switch (method) {
       case CREATE_BRANCH: {
-        return handle(() -> nessieClient().createBranch(ImmutableBranch.builder()
+        return handle(() -> {
+          nessieClient().getTreeApi().createNewReference(ImmutableBranch.builder()
                                                                        .name(branch)
-                                                                       .id(baseBranch)
-                                                                       .build()), method);
+                                                                       .hash(baseBranch)
+                                                                       .build());
+          return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
+        }, method);
       }
       case DELETE_BRANCH:
         break;
       case COMMIT: {
         return handle(() -> {
           if (commitId.get() == null) {
-            Branch branch = nessieClient().getBranch(this.branch);
+            Branch branch = (Branch) nessieClient().getTreeApi().getReferenceByName(this.branch);
             commitId.set(branch);
           }
-          nessieClient().commit(commitId.get(), ImmutableTable.builder()
-                                                               .id("name.space." + table)
-                                                               .name(table)
-                                                               .metadataLocation("path_on_disk_" + table)
-                                                               .build()
-          );
-          return nessieClient().getBranch(branch);
+
+          nessieClient().getContentsApi().setContents(NessieObjectKey.of("name.space." + table), "",
+              PutContents.of(commitId.get(), IcebergTable.of("path_on_disk_" + table)));
+
+          //TODO: this test shouldn't be doing a get branch operation since that isn't required to complete a commit.
+          return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
         }, method);
       }
       case MERGE:

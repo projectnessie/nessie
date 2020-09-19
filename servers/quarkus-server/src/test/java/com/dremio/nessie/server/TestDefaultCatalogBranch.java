@@ -22,6 +22,7 @@ import java.io.File;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
@@ -74,15 +75,15 @@ public class TestDefaultCatalogBranch {
     String path = "http://localhost:19121/api/v1";
     String username = "test";
     String password = "test123";
-    hadoopConfig.set("nessie.url", path);
-    hadoopConfig.set("nessie.username", username);
-    hadoopConfig.set("nessie.password", password);
-    hadoopConfig.set("nessie.view-branch", "main");
-    hadoopConfig.set("nessie.auth.type", "NONE");
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, path);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_USERNAME, username);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_PASSWORD, password);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "main");
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_AUTH_TYPE, "NONE");
     this.client = new NessieClient(AuthType.NONE, path, username, password);
     catalog = new NessieCatalog(hadoopConfig);
     try {
-      client.createBranch(ImmutableBranch.builder().name("main").build());
+      client.getTreeApi().createNewReference(ImmutableBranch.builder().name("main").build());
     } catch (Exception e) {
       //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
     }
@@ -106,8 +107,8 @@ public class TestDefaultCatalogBranch {
     Assertions.assertNotEquals(getBranch(forwardCatalog, foobaz),
                                getBranch(catalog, foobaz));
 
-    forwardCatalog.refreshBranch();
-    forwardCatalog.assignBranch("main");
+    forwardCatalog.refresh();
+    forwardCatalog.assignReference("main", null, null);
 
     Assertions.assertEquals(getBranch(forwardCatalog, foobar),
                             getBranch(catalog, foobar));
@@ -116,7 +117,7 @@ public class TestDefaultCatalogBranch {
 
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
-    catalog.dropBranch("FORWARD");
+    catalog.deleteBranch("FORWARD", null);
   }
 
   private static String getBranch(NessieCatalog catalog, TableIdentifier tableIdentifier) {
@@ -129,7 +130,7 @@ public class TestDefaultCatalogBranch {
 
   @AfterEach
   public void closeCatalog() throws Exception {
-    client.deleteBranch(client.getBranch("main"));
+    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName("main"));
     catalog.close();
     client.close();
     catalog = null;
@@ -150,11 +151,11 @@ public class TestDefaultCatalogBranch {
   }
 
   private void createBranch(String name, String baseTag) {
-    catalog.createBranch(name, baseTag);
+    catalog.createBranch(name, Optional.ofNullable(baseTag));
   }
 
   private void createBranch(String name) {
-    catalog.createBranch(name, "main");
+    catalog.createBranch(name, Optional.of("main"));
   }
 
 }

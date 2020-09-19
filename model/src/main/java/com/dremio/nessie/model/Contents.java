@@ -16,6 +16,9 @@
 
 package com.dremio.nessie.model;
 
+import java.util.Objects;
+import java.util.Optional;
+
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -52,6 +55,20 @@ public interface Contents {
 
   static enum Type {
     UNKNOWN, ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
+  }
+
+  /**
+   * Unwrap object if possible, otherwise throw.
+   * @param <T> Type to wrap to.
+   * @param clazz Class we're trying to return.
+   * @return The return value
+   */
+  default <T> Optional<T> unwrap(Class<T> clazz) {
+    Objects.requireNonNull(clazz);
+    if (clazz.isAssignableFrom(getClass())) {
+      return Optional.of(clazz.cast(this));
+    }
+    return Optional.empty();
   }
 
 }

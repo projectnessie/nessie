@@ -21,15 +21,12 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
@@ -44,10 +41,10 @@ import com.dremio.nessie.model.NessieObjectKey;
 import com.dremio.nessie.model.Operation.Put;
 import com.dremio.nessie.model.PutContents;
 import com.dremio.nessie.model.Reference;
+
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.RestAssured;
-import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -98,13 +95,13 @@ public class RestGitTest {
     for (int i = 0; i < 10; i++) {
       updates[i] =
           ImmutablePut.builder().key(new NessieObjectKey(Arrays.asList("item", Integer.toString(i))))
-          .object(ImmutableIcebergTable.builder()
+          .contents(ImmutableIcebergTable.builder()
                                  .metadataLocation("/the/directory/over/there/" + i)
                                  .build())
           .build();
     }
     updates[10] = ImmutablePut.builder().key(new NessieObjectKey(Arrays.asList("xxx","test")))
-        .object(ImmutableIcebergTable.builder().metadataLocation("/the/directory/over/there/has/been/moved").build())
+        .contents(ImmutableIcebergTable.builder().metadataLocation("/the/directory/over/there/has/been/moved").build())
         .build();
 
     Reference branch = rest().get("/api/v1/tree/test").as(Reference.class);
@@ -116,7 +113,7 @@ public class RestGitTest {
     rest().body(contents).put("/api/v1/contents/multi").then().statusCode(204);
 
     Response res = rest().queryParam("ref", "test").get("/api/v1/contents/xxx.test").then().extract().response();
-    Assertions.assertEquals(updates[10].getObject(), res.body().as(Contents.class));
+    Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
     table = ImmutableIcebergTable.builder()
         .metadataLocation("/the/directory/over/there/has/been/moved/again")
@@ -125,7 +122,8 @@ public class RestGitTest {
     Branch b2 = rest().get("/api/v1/tree/test").as(Branch.class);
     rest().body(ImmutablePutContents.builder().branch(b2).contents(table).build())
            .post("/api/v1/contents/xxx.test").then().statusCode(204);
-    Contents returned = rest().queryParam("ref", "test").get("/api/v1/contents/xxx.test").then().statusCode(200).extract().as(Contents.class);
+    Contents returned = rest().queryParam("ref", "test")
+        .get("/api/v1/contents/xxx.test").then().statusCode(200).extract().as(Contents.class);
     Assertions.assertEquals(table, returned);
 
     Branch b3 = rest().get("/api/v1/tree/test").as(Branch.class);
@@ -154,47 +152,44 @@ public class RestGitTest {
     return given().when().contentType(ContentType.JSON);
   }
 
+  private PutContents newPut(Branch branch, String path, String metadataUrl) {
+    return ImmutablePutContents.builder()
+        .branch(branch)
+        .contents(
+            ImmutableIcebergTable.builder()
+            .metadataLocation(metadataUrl)
+            .build())
+        .build();
+  }
+
+  private void commit(Branch b, String path, String metadataUrl) {
+    rest().body(newPut(b, path, metadataUrl)).post("/api/v1/contents/xxx.test").then().statusCode(204);
+  }
+
+  private Branch getBranch(String name) {
+    return rest().get("/api/v1/tree/" + name).then().statusCode(200).extract().as(Branch.class);
+  }
+
+  private Branch makeBranch(String name) {
+    Branch test = ImmutableBranch.builder()
+        .name(name)
+        .build();
+    rest().body(test).post("/api/v1/tree").then().statusCode(204);
+    return test;
+  }
+
   @Test
   @TestSecurity(authorizationEnabled = false)
   public void testOptimisticLocking() {
-    Branch test = ImmutableBranch.builder()
-        .name("test3")
-        .build();
-    rest().body(test).post("/api/v1/objects/test3").then().statusCode(201);
+    makeBranch("test3");
+    Branch b1 = getBranch("test3");
+    commit(b1, "xxx.test", "/the/directory/over/there");
 
-    IcebergTable table = ImmutablePutContents.builder().contents(ImmutableIcebergTable.builder()
-                                .id("xxx.test")
-                                .name("test")
-                                .namespace("xxx")
-                                .metadataLocation("/the/directory/over/there")
-                                .build())
-        .branch().build();
-    String etag = rest().get("/api/v1/objects/test3").getHeader("ETag");
-    rest().body(table).header("If-Match", etag)
-           .post("/api/v1/objects/test3/tables/xxx.test").then().statusCode(201);
+    Branch b2 = getBranch("test3");
+    commit(b2, "xxx.test", "/the/directory/over/there/has/been/moved");
 
-    String etagStart = rest().get("/api/v1/objects/test3").getHeader("ETag");
-    table = ImmutableIcebergTable.builder()
-                          .id("xxx.test")
-                          .name("test")
-                          .namespace("xxx")
-                          .metadataLocation("/the/directory/over/there/has/been/moved")
-                          .build();
-    rest().body(table).header("If-Match", etagStart)
-           .put("/api/v1/objects/test3/tables/xxx.test").then().statusCode(200);
-
-    table = ImmutableIcebergTable.builder()
-                          .id("xxx.test")
-                          .name("test")
-                          .namespace("xxx")
-                          .metadataLocation("/the/directory/over/there/has/been/moved/again")
-                          .build();
-    rest().body(table).header("If-Match", etagStart)
-           .put("/api/v1/objects/test3/tables/xxx.test").then().statusCode(412);
-
-    String etagNew = rest().get("/api/v1/objects/test3").getHeader("ETag");
-    rest().body(table).header("If-Match", etagNew)
-           .put("/api/v1/objects/test3/tables/xxx.test").then().statusCode(200);
+    Branch b3 = getBranch("test3");
+    commit(b3, "xxx.test", "/the/directory/over/there/has/been/moved/again");
   }
 
 }

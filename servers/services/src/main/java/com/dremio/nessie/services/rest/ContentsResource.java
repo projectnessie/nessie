@@ -39,7 +39,7 @@ import com.dremio.nessie.model.MultiContents;
 import com.dremio.nessie.model.NessieObjectKey;
 import com.dremio.nessie.model.Operation;
 import com.dremio.nessie.model.PutContents;
-import com.dremio.nessie.model.ServerConfig;
+import com.dremio.nessie.services.config.ServerConfig;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
@@ -64,7 +64,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   @Metered
   @Timed(name = "timed-contents-get")
   @Override
-  public Contents getObjectForReference(String refName, NessieObjectKey objectName)
+  public Contents getContents(String refName, NessieObjectKey objectName)
       throws NessieNotFoundException {
     if (refName == null) {
       refName = config.getDefaultBranch();
@@ -145,7 +145,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
     if (o instanceof Operation.Delete) {
       return Delete.of(key);
     } else if (o instanceof Operation.Put) {
-      return Put.of(key, ((Operation.Put)o).getObject());
+      return Put.of(key, ((Operation.Put)o).getContents());
     } else if (o instanceof Operation.Unchanged) {
       return Unchanged.of(key);
     } else {

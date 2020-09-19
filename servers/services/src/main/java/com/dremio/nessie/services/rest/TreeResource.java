@@ -32,6 +32,7 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.Contents.Type;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableHash;
 import com.dremio.nessie.model.ImmutableLogResponse;
@@ -42,9 +43,9 @@ import com.dremio.nessie.model.NessieObjectKey;
 import com.dremio.nessie.model.ObjectsResponse;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.ReferenceUpdate;
-import com.dremio.nessie.model.ServerConfig;
 import com.dremio.nessie.model.Tag;
 import com.dremio.nessie.model.Transplant;
+import com.dremio.nessie.services.config.ServerConfig;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
@@ -220,7 +221,8 @@ public class TreeResource extends BaseResource implements TreeApi {
     final Hash hash = getHashOrThrow(refName);
     try {
       List<ObjectsResponse.Entry> entries = store.getKeys(hash)
-          .map(key -> ObjectsResponse.Entry.builder().name(fromKey(key)).build()).collect(ImmutableList.toImmutableList());
+          .map(key -> ObjectsResponse.Entry.builder().name(fromKey(key)).type(Type.UNKNOWN).build())
+          .collect(ImmutableList.toImmutableList());
       return ObjectsResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(refName, e);

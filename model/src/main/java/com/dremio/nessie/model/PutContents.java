@@ -34,4 +34,8 @@ public interface PutContents {
   Branch getBranch();
 
   Contents getContents();
+
+  static PutContents of(Branch branch, Contents contents) {
+    return ImmutablePutContents.builder().branch(branch).contents(contents).build();
+  }
 }

@@ -16,19 +16,28 @@
 
 package com.dremio.nessie.server;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.List;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.api.ContentsApi;
+import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.rest.NessieForbiddenException;
 import com.dremio.nessie.client.rest.NessieNotAuthorizedException;
+import com.dremio.nessie.client.rest.NessieNotFoundClientException;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
-import com.dremio.nessie.model.ImmutableTable;
-import com.dremio.nessie.model.Table;
-import com.google.common.collect.Lists;
+import com.dremio.nessie.model.ImmutableIcebergTable;
+import com.dremio.nessie.model.NessieObjectKey;
+import com.dremio.nessie.model.ObjectsResponse.Entry;
+import com.dremio.nessie.model.PutContents;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
@@ -37,12 +46,16 @@ import io.quarkus.test.security.TestSecurity;
 class TestAuth {
 
   private NessieClient client;
+  private TreeApi tree;
+  private ContentsApi contents;
 
   void getCatalog(String branch) {
     String path = "http://localhost:19121/api/v1";
     this.client = new NessieClient(AuthType.NONE, path, null, null);
+    tree = client.getTreeApi();
+    contents = client.getContentsApi();
     if (branch != null) {
-      client.createBranch(ImmutableBranch.builder().name(branch).build());
+      tree.createNewReference(ImmutableBranch.builder().name(branch).build());
     }
   }
 
@@ -64,56 +77,34 @@ class TestAuth {
   @TestSecurity(user = "admin_user", roles = {"admin", "user"})
   void testAdmin() {
     getCatalog("testx");
-    Branch branch = client.getBranch("testx");
-    Iterable<String> tables = client.getAllTables("testx", null);
-    Assertions.assertTrue(Lists.newArrayList(tables).isEmpty());
-    tryEndpointPass(() -> client.commit(branch, createTable("x", "x")));
-    final Table table = client.getTable("testx", "x", null);
-    tryEndpointPass(() -> client.commit(branch, table));
-    Branch master = client.getBranch("testx");
-    Branch test = ImmutableBranch.builder().id(master.getId()).name("testy").build();
-    tryEndpointPass(() -> client.createBranch(test));
-    Branch test2 = client.getBranch("testy");
-    tryEndpointPass(() -> client.deleteBranch(test2));
-    tryEndpointPass(() -> client.commit(branch, ImmutableTable.copyOf(table).withIsDeleted(true)));
-    Table newTable = client.getTable("testx", table.getId(), null);
-    Assertions.assertNull(newTable);
-    tryEndpointPass(() -> client.commit(branch, createTable("x", "x")));
+    Branch branch = (Branch) tree.getReferenceByName("testx");
+    List<Entry> tables = tree.getObjects("testx").getEntries();
+    Assertions.assertTrue(tables.isEmpty());
+    NessieObjectKey key = NessieObjectKey.of("x","x");
+    tryEndpointPass(() -> contents.setContents(key, "foo", PutContents.of(branch, IcebergTable.of("foo"))));
+    final IcebergTable table = contents.getContents("testx", key).unwrap(IcebergTable.class).get();
+
+    Branch master = (Branch) tree.getReferenceByName("testx");
+    Branch test = ImmutableBranch.builder().hash(master.getHash()).name("testy").build();
+    tryEndpointPass(() -> tree.createNewReference(test));
+    Branch test2 = (Branch) tree.getReferenceByName("testy");
+    tryEndpointPass(() -> tree.deleteReference(test2));
+    tryEndpointPass(() -> contents.deleteObject(key, "", master));
+    assertThrows(NessieNotFoundClientException.class, () -> contents.getContents("testx", key));
+    tryEndpointPass(() -> contents.setContents(key, "foo", PutContents.of(branch, IcebergTable.of("bar"))));
   }
 
-  @Disabled
-  @Test
-  @TestSecurity(user = "testUser", roles = {"user"})
-  void testUser() {
-    getCatalog(null);
-    Branch branch = client.getBranch("testx");
-    Assertions.assertThrows(NessieForbiddenException.class, () -> getCatalog("normalx"));
-    final Table table = client.getTable("testx", "x", null);
-    Iterable<String> tables = client.getAllTables("testx", null);
-    Assertions.assertEquals(1, Lists.newArrayList(tables).size());
-    tryEndpointFail(() -> client.commit(branch, createTable("y", "x")));
-    tryEndpointFail(() -> client.commit(branch, table));
-    tryEndpointFail(() -> client.createBranch(branch));
-    tryEndpointFail(() -> client.deleteBranch(branch));
-    Table newTable = client.getTable("testx", table.getId(), null);
-    Assertions.assertNotNull(newTable);
-    Assertions.assertEquals(table, newTable);
-    tryEndpointFail(() -> client.commit(branch, ImmutableTable.copyOf(table).withIsDeleted(true)));
-  }
 
   @Test
   @TestSecurity(authorizationEnabled = false)
   void testUserCleanup() {
     getCatalog(null);
-    client.deleteBranch(client.getBranch("testx"));
+    client.getTreeApi().deleteReference(client.getTreeApi().getReferenceByName("testx"));
   }
 
-  private Table createTable(String name, String location) {
-    return ImmutableTable.builder()
-                         .name(name)
-                         .namespace(location)
+  private IcebergTable createTable(String name, String location) {
+    return ImmutableIcebergTable.builder()
                          .metadataLocation("xxx")
-                         .id(name)
                          .build();
   }
 }

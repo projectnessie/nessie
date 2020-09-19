@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.rest.NessieNotFoundClientException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.IcebergTable;
@@ -65,26 +66,19 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
   protected void doRefresh() {
     // break reference with parent (to avoid cross-over refresh)
     // TODO, confirm this is correct behavior.
-    reference = reference.clone();
+    //reference = reference.clone();
 
-    if (reference.refresh()) {
-      boolean failed = false;
-      try {
-        Contents c = client.getContentsApi().getObjectForReference(reference.getHash(), key);
-        if (!(c instanceof IcebergTable)) {
-          failed = true;
-        }
-        this.table = (IcebergTable) c;
-        refreshFromMetadataLocation(table.getMetadataLocation(), 2);
-      } catch (NessieNotFoundException ex) {
-        failed = true;
-      }
-
-      if (failed) {
-        table = null;
-        fileIO = null;
-      }
+    reference.refresh();
+    String metadataLocation = null;
+    try {
+      Contents c = client.getContentsApi().getContents(reference.getHash(), key);
+      this.table = c.unwrap(IcebergTable.class)
+          .orElseThrow(() -> new IllegalStateException("Nessie points to a non-Iceberg object for that path."));
+      metadataLocation = table.getMetadataLocation();
+    } catch (NessieNotFoundClientException | NessieNotFoundException ex) {
+      this.table = null;
     }
+    refreshFromMetadataLocation(metadataLocation, 2);
   }
 
   @Override

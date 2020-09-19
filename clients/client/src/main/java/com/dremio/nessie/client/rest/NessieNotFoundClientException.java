@@ -18,9 +18,9 @@ package com.dremio.nessie.client.rest;
 
 import com.dremio.nessie.error.NessieError;
 
-public class NessieNotFoundException extends NessieExtendedClientErrorException {
+public class NessieNotFoundClientException extends NessieExtendedClientErrorException {
 
-  public NessieNotFoundException(NessieError nessieError) {
+  public NessieNotFoundClientException(NessieError nessieError) {
     super(nessieError);
   }
 }

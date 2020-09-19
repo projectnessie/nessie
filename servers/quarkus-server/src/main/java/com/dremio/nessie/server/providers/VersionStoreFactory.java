@@ -31,12 +31,18 @@ import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.server.config.ApplicationConfig;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
+import com.dremio.nessie.services.config.ServerConfig;
+import com.dremio.nessie.versioned.BranchName;
+import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.impl.DynamoStore;
@@ -50,6 +56,8 @@ import software.amazon.awssdk.regions.Region;
 
 @Singleton
 public class VersionStoreFactory {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(VersionStoreFactory.class);
 
   private final ApplicationConfig config;
 
@@ -74,7 +82,22 @@ public class VersionStoreFactory {
    */
   @Produces
   @Singleton
-  public VersionStore<Contents, CommitMeta> configuration(TableCommitMetaStoreWorker storeWorker, Repository repository) {
+  public VersionStore<Contents, CommitMeta> configuration(
+      TableCommitMetaStoreWorker storeWorker, Repository repository, ServerConfig config) {
+    VersionStore<Contents, CommitMeta> store = getVersionStore(storeWorker, repository);
+    if (!store.getNamedRefs().findFirst().isPresent()) {
+      // if this is a new database, create a branch with the default branch name.
+      try {
+        store.create(BranchName.of(config.getDefaultBranch()), Optional.empty());
+      } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
+        LOGGER.warn("Failed to create default branch of {}.", config.getDefaultBranch(), e);
+      }
+    }
+
+    return store;
+  }
+
+  private VersionStore<Contents, CommitMeta> getVersionStore(TableCommitMetaStoreWorker storeWorker, Repository repository) {
     switch (config.getVersionStoreConfig().getVersionStoreType()) {
       case DYNAMO:
         return new DynamoVersionStore<>(storeWorker, dyanamo(), false);

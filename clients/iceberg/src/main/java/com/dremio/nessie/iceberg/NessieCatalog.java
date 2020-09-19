@@ -34,7 +34,8 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.iceberg.branch.GitCatalog;
+import com.dremio.nessie.client.rest.NessieNotFoundClientException;
+import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
@@ -52,7 +53,14 @@ import com.google.common.base.Joiner;
 /**
  * Nessie implementation of Iceberg Catalog.
  */
-public class NessieCatalog extends BaseMetastoreCatalog implements GitCatalog, AutoCloseable {
+public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable {
+
+  public static final String CONF_NESSIE_URL = "nessie.url";
+  public static final String CONF_NESSIE_USERNAME = "nessie.username";
+  public static final String CONF_NESSIE_PASSWORD = "nessie.password";
+  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
+  public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
+  public static final String CONF_NESSIE_REF = "nessie.ref";
 
   private static final Joiner SLASH = Joiner.on("/");
   private static final String ICEBERG_HADOOP_WAREHOUSE_BASE = "iceberg/warehouse";
@@ -66,16 +74,16 @@ public class NessieCatalog extends BaseMetastoreCatalog implements GitCatalog, A
    */
   public NessieCatalog(Configuration config) {
     this.config = config;
-    String path = config.get("nessie.url");
-    String username = config.get("nessie.username");
-    String password = config.get("nessie.password");
-    String authTypeStr = config.get("nessie.auth.type", "BASIC");
+    String path = config.get(CONF_NESSIE_URL);
+    String username = config.get(CONF_NESSIE_USERNAME);
+    String password = config.get(CONF_NESSIE_PASSWORD);
+    String authTypeStr = config.get(CONF_NESSIE_AUTH_TYPE, NESSIE_AUTH_TYPE_DEFAULT);
     AuthType authType = AuthType.valueOf(authTypeStr);
     this.client = new NessieClient(authType, path, username, password);
 
     warehouseLocation = config.get("fs.defaultFS") + "/" + ICEBERG_HADOOP_WAREHOUSE_BASE;
 
-    final String requestedRef = config.get("nessie.ref");
+    final String requestedRef = config.get(CONF_NESSIE_REF);
     Reference r = requestedRef == null ? client.getTreeApi().getDefaultBranch() : client.getTreeApi().getReferenceByName(requestedRef);
     this.reference = new UpdateableReference(r, client.getTreeApi());
   }
@@ -103,13 +111,17 @@ public class NessieCatalog extends BaseMetastoreCatalog implements GitCatalog, A
   }
 
   private IcebergTable table(TableIdentifier tableIdentifier) {
-    Contents table = client.getContentsApi().getObjectForReference(reference.getHash(), toKey(tableIdentifier));
-    if (table instanceof IcebergTable) {
-      return (IcebergTable) table;
+    try {
+      Contents table = client.getContentsApi().getContents(reference.getHash(), toKey(tableIdentifier));
+      if (table instanceof IcebergTable) {
+        return (IcebergTable) table;
+      }
+    } catch (NessieNotFoundClientException | NessieNotFoundException e) {
+      // ignore
     }
-
     return null;
   }
+
 
   @Override
   protected TableOperations newTableOps(TableIdentifier tableIdentifier) {
@@ -140,6 +152,10 @@ public class NessieCatalog extends BaseMetastoreCatalog implements GitCatalog, A
 
   private static Predicate<ObjectsResponse.Entry> namespacePredicate(Namespace ns) {
     // TODO: filter to just iceberg tables.
+    if (ns == null) {
+      return e -> true;
+    }
+
     final List<String> namespace = Arrays.asList(ns.levels());
     Predicate<ObjectsResponse.Entry> predicate = e -> {
       List<String> names = e.getName().getElements();
@@ -174,12 +190,14 @@ public class NessieCatalog extends BaseMetastoreCatalog implements GitCatalog, A
       lastMetadata = null;
     }
 
-
-
     client.getContentsApi().deleteObject(toKey(identifier), "no message", reference.getAsBranch());
+
+    // TODO: purge should be blocked since nessie will clean through other means.
     if (purge && lastMetadata != null) {
       BaseMetastoreCatalog.dropTableData(ops.io(), lastMetadata);
     }
+    // TODO: fix this so we don't depend on it in tests.
+    refresh();
     return true;
   }
 
@@ -200,29 +218,28 @@ public class NessieCatalog extends BaseMetastoreCatalog implements GitCatalog, A
 
     MultiContents c = ImmutableMultiContents.builder()
         .branch(reference.getAsBranch())
-        .addOperations(ImmutablePut.builder().key(toKey(to)).build())
+        .addOperations(ImmutablePut.builder().key(toKey(to)).contents(existingFromTable).build())
         .addOperations(ImmutableDelete.builder().key(toKey(from)).build())
         .build();
 
     try {
       client.getContentsApi().commitMultipleOperations("iceberg rename table", c);
+      // TODO: fix this so we don't depend on it in tests.
+      refresh();
     } catch (Exception e) {
       throw new CommitFailedException(e, "failed");
     }
   }
 
-  @Override
   public void createBranch(String branchName, Optional<String> hash) {
     client.getTreeApi().createNewReference(ImmutableBranch.builder().name(branchName).hash(hash.orElse(null)).build());
   }
 
-  @Override
   public boolean deleteBranch(String branchName, String hash) {
     client.getTreeApi().deleteReference(ImmutableBranch.builder().name(branchName).hash(hash).build());
     return true;
   }
 
-  @Override
   public void assignReference(String from, String currentHash, String targetHash) {
     client.getTreeApi().assignReference(from, ImmutableReferenceUpdate.builder().expectedId(currentHash).updateId(targetHash).build());
     refresh();
@@ -232,15 +249,20 @@ public class NessieCatalog extends BaseMetastoreCatalog implements GitCatalog, A
     reference.refresh();
   }
 
-  @Override
+  public String getHashForRef(String ref) {
+    return client.getTreeApi().getReferenceByName(ref).getHash();
+  }
+
   public void createTag(String tagName, String hash) {
     client.getTreeApi().createNewReference(ImmutableTag.builder().name(tagName).hash(hash).build());
   }
 
-  @Override
   public void deleteTag(String tagName, String hash) {
     client.getTreeApi().deleteReference(ImmutableTag.builder().name(tagName).hash(hash).build());
   }
 
+  public String getHash() {
+    return reference.getHash();
+  }
 
 }
