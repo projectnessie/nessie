@@ -55,7 +55,7 @@
       <artifactId>javax.ws.rs-api</artifactId>
       <version>2.1.1</version>
       <optional>true</optional>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.eclipse.microprofile.openapi</groupId>
       <artifactId>microprofile-openapi-api</artifactId>

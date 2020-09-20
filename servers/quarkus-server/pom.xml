@@ -159,26 +159,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.iceberg</groupId>
-      <artifactId>iceberg-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-test-security</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.dremio.nessie</groupId>
-      <artifactId>nessie-iceberg</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 

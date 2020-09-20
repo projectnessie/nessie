@@ -33,6 +33,7 @@
   <modules>
     <module>services</module>
     <module>quarkus-server</module>
+    <module>daemon-maven-plugin</module>
     <module>lambda</module>
   </modules>
 </project>

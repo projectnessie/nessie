@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.server;
+package com.dremio.nessie.iceberg;
 
 import java.util.List;
 
@@ -23,20 +23,15 @@ import org.apache.iceberg.catalog.TableIdentifier;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.security.TestSecurity;
-
-@QuarkusTest
-public class TestCatalog extends BaseTestIceberg {
+public class ITTestCatalog extends BaseTestIceberg {
 
   private static final String BRANCH = "test-catalog-branch";
 
-  public TestCatalog() {
+  public ITTestCatalog() {
     super(BRANCH);
   }
 
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void test() {
     createTable(TableIdentifier.of("foo", "bar"));
     List<TableIdentifier> tables = catalog.listTables(Namespace.of("foo"));

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.server;
+package com.dremio.nessie.iceberg;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 
@@ -87,7 +87,7 @@ abstract class BaseTestIceberg {
 
   @BeforeEach
   public void beforeEach() throws NessieConflictException, NessieNotFoundException {
-    String path = "http://localhost:19121/api/v1";
+    String path = "http://localhost:19120/api/v1";
     String username = "test";
     String password = "test123";
     this.client = new NessieClient(AuthType.NONE, path, username, password);
