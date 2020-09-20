@@ -71,7 +71,8 @@ class TestCatalogBranch extends BaseTestIceberg {
     // points to the previous metadata location
     Assertions.assertEquals(initialMetadataLocation, getContent(catalog, foobaz));
 
-    newCatalog.getTreeApi().assignBranch("main", tree.getReferenceByName("main").getHash(), newCatalog.getHash());
+    String mainHash = tree.getReferenceByName("main").getHash();
+    tree.assignBranch("main", mainHash, newCatalog.getHash());
     Assertions.assertEquals(getContent(newCatalog, foobar),
                             getContent(catalog, foobar));
     Assertions.assertEquals(getContent(newCatalog, foobaz),

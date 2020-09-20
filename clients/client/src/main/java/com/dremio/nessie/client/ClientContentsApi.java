@@ -26,7 +26,7 @@ import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
 
-public class ClientContentsApi implements ContentsApi {
+class ClientContentsApi implements ContentsApi {
 
   private final WebTarget target;
 

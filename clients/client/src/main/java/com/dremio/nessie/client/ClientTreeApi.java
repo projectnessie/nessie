@@ -34,7 +34,7 @@ import com.dremio.nessie.model.MultiContents;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Transplant;
 
-public class ClientTreeApi implements TreeApi {
+class ClientTreeApi implements TreeApi {
 
   private static final GenericType<List<Reference>> REFERENCE_LIST = new GenericType<List<Reference>>() {
   };
