@@ -68,7 +68,7 @@ import com.google.common.collect.ImmutableList;
 public class TreeResource extends BaseResource implements TreeApi {
 
   @Inject
-  private ServerConfig config;
+  ServerConfig config;
 
   @Metered
   @Timed(name = "timed-tree-all")
