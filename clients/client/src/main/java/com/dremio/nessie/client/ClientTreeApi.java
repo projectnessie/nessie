@@ -46,7 +46,7 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public List<Reference> getAllReferences() {
-    return target.path("trees/")
+    return target.path("trees")
                    .request(MediaType.APPLICATION_JSON_TYPE)
                    .accept(MediaType.APPLICATION_JSON_TYPE)
                    .get()
@@ -55,7 +55,7 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public Reference getReferenceByName(@NotNull String refName) throws NessieNotFoundException {
-    return target.path("trees/tree/" + refName)
+    return target.path("trees").path("tree").path(refName)
                    .request()
                    .accept(MediaType.APPLICATION_JSON_TYPE)
                    .get()
@@ -64,14 +64,14 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public void createEmptyTag(String tagName) throws NessieNotFoundException, NessieConflictException {
-    target.path(String.format("trees/tag/%s", tagName))
+    target.path("trees").path("tag").path(tagName)
           .request()
           .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
   public void createNewTag(@NotNull String tagName, String hash) throws NessieNotFoundException, NessieConflictException {
-    target.path(String.format("trees/tag/%s/%s", tagName, hash))
+    target.path("trees").path("tag").path(tagName).path(hash)
           .request()
           .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE));
   }
@@ -79,28 +79,28 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void assignTag(@NotNull String tagName, @NotNull String oldHash, @NotNull String newHash)
       throws NessieNotFoundException, NessieConflictException {
-    target.path(String.format("trees/tag/%s/%s/%s", tagName, oldHash, newHash))
+    target.path("trees").path("tag").path(tagName).path(oldHash).path(newHash)
           .request()
           .put(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
   public void deleteTag(@NotNull String tagName, @NotNull String hash) throws NessieConflictException, NessieNotFoundException {
-    target.path(String.format("trees/tag/%s/%s", tagName, hash))
+    target.path("trees").path("tag").path(tagName).path(hash)
           .request()
           .delete();
   }
 
   @Override
   public void createEmptyBranch(@NotNull String branchName) throws NessieNotFoundException, NessieConflictException {
-    target.path(String.format("trees/branch/%s", branchName))
+    target.path("trees").path("branch").path(branchName)
           .request()
           .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
   public void createNewBranch(@NotNull String branchName, @NotNull String hash) throws NessieNotFoundException, NessieConflictException {
-    target.path(String.format("trees/branch/%s/%s", branchName, hash))
+    target.path("trees").path("branch").path(branchName).path(hash)
           .request()
           .post(Entity.json(null));
   }
@@ -108,21 +108,21 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void assignBranch(@NotNull String branchName, @NotNull String oldHash,
                            @NotNull String newHash) throws NessieNotFoundException, NessieConflictException {
-    target.path(String.format("trees/branch/%s/%s/%s", branchName, oldHash, newHash))
+    target.path("trees").path("branch").path(branchName).path(oldHash).path(newHash)
           .request()
           .put(Entity.entity("", MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
-  public void deleteBranch(@NotNull String tagName, @NotNull String hash) throws NessieConflictException, NessieNotFoundException {
-    target.path(String.format("trees/branch/%s/%s", tagName, hash))
+  public void deleteBranch(@NotNull String branchName, @NotNull String hash) throws NessieConflictException, NessieNotFoundException {
+    target.path("trees").path("branch").path(branchName).path(hash)
           .request()
           .delete();
   }
 
   @Override
   public Branch getDefaultBranch() {
-    return target.path("trees/tree")
+    return target.path("trees").path("tree")
                    .request()
                    .accept(MediaType.APPLICATION_JSON_TYPE)
                    .get()
@@ -131,7 +131,7 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public LogResponse getCommitLog(@NotNull String ref) throws NessieNotFoundException {
-    return target.path(String.format("trees/tree/%s/log", ref))
+    return target.path("trees").path("tree").path(ref).path("log")
                    .request()
                    .accept(MediaType.APPLICATION_JSON_TYPE)
                    .get()
@@ -140,7 +140,7 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public void transplantCommitsIntoBranch(String message, Transplant transplant) throws NessieNotFoundException, NessieConflictException {
-    target.path("trees/transplant")
+    target.path("trees").path("transplant")
             .queryParam("message", message)
             .request()
             .put(Entity.entity(transplant, MediaType.APPLICATION_JSON_TYPE));
@@ -148,14 +148,14 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public void mergeRefIntoBranch(@NotNull Merge merge) throws NessieNotFoundException, NessieConflictException {
-    target.path("trees/merge")
+    target.path("trees").path("merge")
             .request()
             .put(Entity.entity(merge, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
   public EntriesResponse getEntries(@NotNull String refName) throws NessieNotFoundException {
-    return target.path(String.format("trees/tree/%s/entries", refName))
+    return target.path("trees").path("tree").path(refName).path("entries")
                    .request()
                    .accept(MediaType.APPLICATION_JSON_TYPE)
                    .get()
@@ -165,7 +165,7 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void commitMultipleOperations(@NotNull String hash, String message,
                                        @NotNull MultiContents operations) throws NessieNotFoundException, NessieConflictException {
-    target.path(String.format("trees/multi/%s", hash))
+    target.path("trees").path("multi").path(hash)
           .queryParam("message", message)
           .request()
           .put(Entity.entity(operations, MediaType.APPLICATION_JSON_TYPE));
@@ -174,7 +174,7 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void commitMultipleOperations(String branch, @NotNull String hash, String message,
                                        @NotNull MultiContents operations) throws NessieNotFoundException, NessieConflictException {
-    target.path(String.format("trees/multi/%s/%s", branch, hash))
+    target.path("trees").path("multi").path(branch).path(hash)
           .queryParam("message", message)
           .request()
           .put(Entity.entity(operations, MediaType.APPLICATION_JSON_TYPE));

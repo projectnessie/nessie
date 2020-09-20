@@ -211,7 +211,7 @@ public interface TreeApi {
       @APIResponse(responseCode = "412", description = "update conflict"),
     })
   void deleteBranch(
-      @NotNull @Parameter(description = "Branch to delete") @PathParam("branchName") String tagName,
+      @NotNull @Parameter(description = "Branch to delete") @PathParam("branchName") String branchName,
       @NotNull @Parameter(description = "Expected hash of tag") @PathParam("hash") String hash
       ) throws NessieConflictException, NessieNotFoundException;
 
