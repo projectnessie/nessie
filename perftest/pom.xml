@@ -66,6 +66,10 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest-client</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.dremio.nessie</groupId>
       <artifactId>nessie-backends-dynamodb</artifactId>
       <version>${project.version}</version>
