@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.server;
+package com.dremio.nessie.iceberg;
 
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.types.Types;
@@ -25,22 +25,17 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.iceberg.NessieCatalog;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.security.TestSecurity;
-
 /**
  * test tag operations with a default tag set by server.
  */
-@QuarkusTest
-class TestDefaultCatalogBranch extends BaseTestIceberg {
+class ITTestDefaultCatalogBranch extends BaseTestIceberg {
 
-  public TestDefaultCatalogBranch() {
+  public ITTestDefaultCatalogBranch() {
     super("main");
   }
 
   @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testBasicBranch() throws NessieNotFoundException, NessieConflictException {
     TableIdentifier foobar = TableIdentifier.of("foo", "bar");
     TableIdentifier foobaz = TableIdentifier.of("foo", "baz");

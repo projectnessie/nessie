@@ -49,5 +49,63 @@
       <groupId>org.apache.iceberg</groupId>
       <artifactId>iceberg-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest-client</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-resteasy-jackson</artifactId>
+      <scope>test</scope>
+    </dependency>
+    
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+       <groupId>com.dremio.nessie</groupId>
+       <artifactId>nessie-daemon-maven-plugin</artifactId>
+       <version>${project.version}</version>
+       <configuration>
+         <systemPropertyVariables>
+         </systemPropertyVariables>
+       </configuration>
+       <executions>
+         <execution>
+           <id>start</id>
+           <phase>pre-integration-test</phase>
+           <goals><goal>start</goal></goals>
+         </execution>
+         <execution>
+           <id>stop</id>
+           <phase>post-integration-test</phase>
+           <goals><goal>stop</goal></goals>
+         </execution>
+       </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+          </systemPropertyVariables>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>     
+    </plugins>
+  </build>
 </project>

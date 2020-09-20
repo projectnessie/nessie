@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.server;
+package com.dremio.nessie.iceberg;
 
 
 import static org.apache.iceberg.TableMetadataParser.getFileExtension;
@@ -57,11 +57,7 @@ import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
 
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.security.TestSecurity;
-
-@QuarkusTest
-class NessieTableTest extends BaseTestIceberg {
+class ITNessieTable extends BaseTestIceberg {
 
   private static final String BRANCH = "iceberg-table-test";
 
@@ -76,7 +72,7 @@ class NessieTableTest extends BaseTestIceberg {
 
   private Path tableLocation;
 
-  public NessieTableTest() {
+  public ITNessieTable() {
     super(BRANCH);
   }
 
@@ -105,7 +101,6 @@ class NessieTableTest extends BaseTestIceberg {
   }
 
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testCreate() throws NessieNotFoundException {
     // Table should be created in alley
     // Table should be renamed in alley
@@ -128,7 +123,6 @@ class NessieTableTest extends BaseTestIceberg {
 
   @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testRename() {
     String renamedTableName = "rename_table_name";
     TableIdentifier renameTableIdentifier = TableIdentifier.of(TABLE_IDENTIFIER.namespace(),
@@ -151,7 +145,6 @@ class NessieTableTest extends BaseTestIceberg {
   }
 
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testDrop() {
     Assertions.assertTrue(catalog.tableExists(TABLE_IDENTIFIER));
     Assertions.assertTrue(catalog.dropTable(TABLE_IDENTIFIER));
@@ -159,7 +152,6 @@ class NessieTableTest extends BaseTestIceberg {
   }
 
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testDropWithoutPurgeLeavesTableData() throws IOException {
     Table table = catalog.loadTable(TABLE_IDENTIFIER);
 
@@ -201,7 +193,6 @@ class NessieTableTest extends BaseTestIceberg {
 
   @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testDropTable() throws IOException {
     Table table = catalog.loadTable(TABLE_IDENTIFIER);
 
@@ -273,7 +264,6 @@ class NessieTableTest extends BaseTestIceberg {
   }
 
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testExistingTableUpdate() {
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
     // add a column
@@ -289,7 +279,6 @@ class NessieTableTest extends BaseTestIceberg {
   }
 
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testFailure() throws NessieNotFoundException, NessieConflictException {
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
     Branch branch = (Branch) client.getTreeApi().getReferenceByName(BRANCH);
@@ -303,7 +292,6 @@ class NessieTableTest extends BaseTestIceberg {
   }
 
   @Test
-  @TestSecurity(authorizationEnabled = false)
   public void testListTables() {
     List<TableIdentifier> tableIdents = catalog.listTables(TABLE_IDENTIFIER.namespace());
     List<TableIdentifier> expectedIdents = tableIdents.stream()
