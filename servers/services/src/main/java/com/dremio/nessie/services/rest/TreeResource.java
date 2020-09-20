@@ -236,20 +236,10 @@ public class TreeResource extends BaseResource implements TreeApi {
     doOps(branch, hash, message, ops);
   }
 
-  void doOps(String branch,
+  private void doOps(String branch,
       String hash, String message, List<com.dremio.nessie.versioned.Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
-    try {
-      store.commit(
-          BranchName.of(branch),
-          Optional.of(Hash.of(hash)),
-          ContentsResource.meta(principal, message),
-          operations);
-    } catch (ReferenceConflictException e) {
-      throw new NessieConflictException("Failed to commit data. Provided hash does not match current value.", e);
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieConflictException("Failed to commit data. Provided ref was not found.", e);
-    }
+    ContentsResource.doOps(store, principal, branch, hash, message, operations);
   }
 
   private void createNewReference(NamedRef reference, String hash) throws NessieNotFoundException, NessieConflictException {
