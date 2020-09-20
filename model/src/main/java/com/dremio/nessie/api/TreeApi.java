@@ -125,7 +125,7 @@ public interface TreeApi {
    * Update a tag.
    */
   @PUT
-  @Path("tag/${tagName}/{oldHash}/{newHash}/")
+  @Path("tag/{tagName}/{oldHash}/{newHash}/")
   @Operation(summary = "Set a tag to a specific hash")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Assigned successfully"),
@@ -186,7 +186,7 @@ public interface TreeApi {
    * Update a branch.
    */
   @PUT
-  @Path("branch/${branchName}/{oldHash}/{newHash}")
+  @Path("branch/{branchName}/{oldHash}/{newHash}")
   @Operation(summary = "Set a branch to a specific hash")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Assigned successfully"),
@@ -211,7 +211,7 @@ public interface TreeApi {
       @APIResponse(responseCode = "412", description = "update conflict"),
     })
   void deleteBranch(
-      @NotNull @Parameter(description = "Branch to delete") @PathParam("branchName") String tagName,
+      @NotNull @Parameter(description = "Branch to delete") @PathParam("branchName") String branchName,
       @NotNull @Parameter(description = "Expected hash of tag") @PathParam("hash") String hash
       ) throws NessieConflictException, NessieNotFoundException;
 

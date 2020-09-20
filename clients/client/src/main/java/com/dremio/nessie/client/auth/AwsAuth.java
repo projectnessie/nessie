@@ -19,7 +19,6 @@ package com.dremio.nessie.client.auth;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -27,10 +26,8 @@ import java.util.Map;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 
-import org.apache.http.client.utils.URIBuilder;
-
-import com.dremio.nessie.json.ObjectMapperBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -42,7 +39,8 @@ import software.amazon.awssdk.regions.Region;
 
 public class AwsAuth implements ClientRequestFilter {
 
-  private final ObjectMapper objectMapper = ObjectMapperBuilder.createObjectMapper();
+  private final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
+                                                              .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
   private final Aws4Signer signer;
   private final AwsCredentialsProvider awsCredentialsProvider;
   private final Region region = Region.US_WEST_2;
@@ -74,13 +72,10 @@ public class AwsAuth implements ClientRequestFilter {
     try {
       URI uri = clientRequestContext.getUri();
       SdkHttpFullRequest.Builder builder = SdkHttpFullRequest.builder()
-                                                             .uri(new URIBuilder(uri)
-                                                                    .setParameters(
-                                                                      new ArrayList<>()).build())
+                                                             .uri(uri)
                                                              .method(SdkHttpMethod.fromValue(
                                                                clientRequestContext.getMethod()));
-      new URIBuilder(uri).getQueryParams()
-                         .forEach(x -> builder.putRawQueryParameter(x.getName(), x.getValue()));
+      Arrays.stream(uri.getQuery().split("&")).map(s -> s.split("=")).forEach(s -> builder.putRawQueryParameter(s[0], s[1]));
       Object entity = clientRequestContext.getEntity();
       if (entity != null) {
         try {
