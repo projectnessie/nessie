@@ -16,12 +16,11 @@
 
 package com.dremio.nessie.client.rest;
 
-import static com.dremio.nessie.json.ObjectMapperBuilder.createObjectMapper;
-
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 /**
  * custom resolver for ObjectMapper to enable optional settings on json <-> object conversion.
@@ -32,7 +31,8 @@ public class ObjectMapperContextResolver implements ContextResolver<ObjectMapper
   private final ObjectMapper mapper;
 
   public ObjectMapperContextResolver() {
-    this.mapper = createObjectMapper();
+    this.mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
+                                    .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
   }
 
   @Override

@@ -17,9 +17,8 @@ package com.dremio.nessie.client.auth;
 
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
-
-import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 
 import com.dremio.nessie.client.NessieClient.AuthType;
 
@@ -33,11 +32,14 @@ public class AuthFilter implements ClientRequestFilter {
   /**
    * construct auth filter depending on auth type.
    */
-  public AuthFilter(AuthType authType, String username, String password, ResteasyWebTarget target) {
+  public AuthFilter(AuthType authType, String username, String password, WebTarget target) {
     switch (authType) {
       case AWS:
       case NONE:
         auth = new NoAuth();
+        break;
+      case BASIC:
+        auth = new NoAuth();//todo
         break;
       default:
         throw new IllegalStateException(String.format("%s does not exist", authType));

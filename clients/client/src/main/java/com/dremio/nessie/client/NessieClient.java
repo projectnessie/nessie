@@ -21,11 +21,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.ResponseProcessingException;
-
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
-import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
+import javax.ws.rs.client.WebTarget;
 
 import com.dremio.nessie.api.ConfigApi;
 import com.dremio.nessie.api.ContentsApi;
@@ -35,8 +34,6 @@ import com.dremio.nessie.client.rest.ObjectMapperContextResolver;
 import com.dremio.nessie.client.rest.ResponseCheckFilter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
-
-import io.opentracing.contrib.jaxrs2.client.ClientTracingFeature;
 
 public class NessieClient implements Closeable {
 
@@ -50,28 +47,27 @@ public class NessieClient implements Closeable {
     System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
   }
 
-  private final ResteasyClient client;
+  private final Client client;
   private final TreeApi tree;
   private final ConfigApi config;
   private final ContentsApi contents;
 
   /**
-   * create new nessie client. All REST api endpoints are mapped here.
+   * create new nessie client. All REST api endpoints are mapped here. This client should support any jaxrs implementation
    *
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
    */
   public NessieClient(AuthType authType, String path, String username, String password) {
 
-    client = new ResteasyClientBuilderImpl().register(ObjectMapperContextResolver.class)
-                                            .register(ClientTracingFeature.class)
-                                            .register(ResponseCheckFilter.class)
-                                            .build();
-    ResteasyWebTarget target = client.target(path);
+    client = ClientBuilder.newBuilder().register(ObjectMapperContextResolver.class)
+                                       .register(ResponseCheckFilter.class)
+                                       .build();
+    WebTarget target = client.target(path);
     AuthFilter authFilter = new AuthFilter(authType, username, password, target);
     client.register(authFilter);
-    contents = wrap(ContentsApi.class, target.proxy(ContentsApi.class));
-    tree = wrap(TreeApi.class, target.proxy(TreeApi.class));
-    config = wrap(ConfigApi.class, target.proxy(ConfigApi.class));
+    contents = wrap(ContentsApi.class, new ClientContentsApi(target));
+    tree = wrap(TreeApi.class, new ClientTreeApi(target));
+    config = wrap(ConfigApi.class, new ClientConfigApi(target));
   }
 
   @SuppressWarnings("unchecked")
@@ -79,8 +75,8 @@ public class NessieClient implements Closeable {
     return (T) Proxy.newProxyInstance(delegate.getClass().getClassLoader(), new Class[]{iface}, new ExceptionRewriter(delegate));
   }
 
-  /*
-   This will rewrite exceptions so they are correctly thrown by the api classes.
+  /**
+   * This will rewrite exceptions so they are correctly thrown by the api classes.
    * (since the filter will cause them to be wrapped in ResposneProcessingException)
    */
   private static class ExceptionRewriter implements InvocationHandler {
@@ -140,6 +136,10 @@ public class NessieClient implements Closeable {
 
   public static NessieClient aws(String path) {
     return new NessieClient(AuthType.AWS, path, null, null);
+  }
+
+  public static NessieClient none(String path) {
+    return new NessieClient(AuthType.NONE, path, null, null);
   }
 
 }
