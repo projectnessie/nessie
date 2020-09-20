@@ -44,6 +44,7 @@ import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.Put;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.VersionStore;
 
 /**
  * REST endpoint for contents.
@@ -111,7 +112,13 @@ public class ContentsResource extends BaseResource implements ContentsApi {
     deleteContents(key, config.getDefaultBranch(), hash, message);
   }
 
-  void doOps(String branch,
+  private void doOps(String branch,
+      String hash, String message, List<com.dremio.nessie.versioned.Operation<Contents>> operations)
+      throws NessieConflictException, NessieNotFoundException {
+    doOps(store, principal, branch, hash, message, operations);
+  }
+
+  static void doOps(VersionStore<Contents, CommitMeta> store, Principal principal, String branch,
       String hash, String message, List<com.dremio.nessie.versioned.Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
@@ -125,11 +132,11 @@ public class ContentsResource extends BaseResource implements ContentsApi {
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException("Failed to commit data. Provided hash does not match current value.", e);
     } catch (ReferenceNotFoundException e) {
-      throw new NessieConflictException("Failed to commit data. Provided ref was not found.", e);
+      throw new NessieNotFoundException("Failed to commit data. Provided ref was not found.", e);
     }
   }
 
-  static CommitMeta meta(Principal principal, String message) {
+  private static CommitMeta meta(Principal principal, String message) {
     return ImmutableCommitMeta.builder()
         .commiter(principal == null ? "" : principal.getName())
         .message(message == null ? "" : message)
