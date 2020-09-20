@@ -55,7 +55,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   private static final Logger logger = LoggerFactory.getLogger(ContentsResource.class);
 
   @Inject
-  private ServerConfig config;
+  ServerConfig config;
 
   @Metered
   @Timed(name = "timed-contents-get")

@@ -39,7 +39,7 @@ public class ErrorMapper implements ExceptionMapper<Exception> {
   private static final Logger LOGGER = LoggerFactory.getLogger(ErrorMapper.class);
 
   @Inject
-  private ServerConfig serverConfig;
+  ServerConfig serverConfig;
 
   @Override
   public Response toResponse(Exception exception) {
