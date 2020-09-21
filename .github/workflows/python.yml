@@ -35,3 +35,5 @@ jobs:
     - name: Test with tox
       run: tox
       working-directory: ${{env.working-directory}}  
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
