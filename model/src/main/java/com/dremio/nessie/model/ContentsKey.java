@@ -53,6 +53,10 @@ public class ContentsKey {
     return new ContentsKey(Arrays.asList(elements), true);
   }
 
+  public static ContentsKey of(List<String> elements) {
+    return new ContentsKey(elements);
+  }
+
   public List<String> getElements() {
     return elements;
   }

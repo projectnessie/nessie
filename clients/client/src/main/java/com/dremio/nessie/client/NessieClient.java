@@ -20,6 +20,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Objects;
+import java.util.function.Function;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -36,6 +38,13 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 
 public class NessieClient implements Closeable {
+
+  public static final String CONF_NESSIE_URL = "nessie.url";
+  public static final String CONF_NESSIE_USERNAME = "nessie.username";
+  public static final String CONF_NESSIE_PASSWORD = "nessie.password";
+  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
+  public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
+  public static final String CONF_NESSIE_REF = "nessie.ref";
 
   public enum AuthType {
     AWS,
@@ -140,6 +149,22 @@ public class NessieClient implements Closeable {
 
   public static NessieClient none(String path) {
     return new NessieClient(AuthType.NONE, path, null, null);
+  }
+
+  /**
+   * Create a client using a configuration object and standard Nessie configuration keys.
+   * @param configuration The function that exploses configuration keys.
+   * @return A new Nessie client.
+   */
+  public static NessieClient withConfig(Function<String, String> configuration) {
+    String url = Objects.requireNonNull(configuration.apply(CONF_NESSIE_URL));
+    String authType = configuration.apply(CONF_NESSIE_AUTH_TYPE);
+    if (authType == null) {
+      authType = NESSIE_AUTH_TYPE_DEFAULT;
+    }
+    String username = configuration.apply(CONF_NESSIE_USERNAME);
+    String password = configuration.apply(CONF_NESSIE_PASSWORD);
+    return new NessieClient(AuthType.valueOf(authType), url, username, password);
   }
 
 }
