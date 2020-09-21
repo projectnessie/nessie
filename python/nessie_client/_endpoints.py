@@ -115,7 +115,7 @@ def list_tables(base_url: str, ref: str, ssl_verify: bool = True) -> list:
     :param ssl_verify: ignore ssl errors if False
     :return: json list of Nessie table names
     """
-    return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), ssl_verify=ssl_verify, params=params))
+    return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), ssl_verify=ssl_verify))
 
 
 def get_table(base_url: str, ref: str, table: str, ssl_verify: bool = True) -> dict:
