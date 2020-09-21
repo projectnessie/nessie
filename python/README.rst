@@ -27,6 +27,19 @@ Python Boilerplate contains all the boilerplate you need to create a Python pack
 * Documentation: https://nessie-client.readthedocs.io.
 
 
+Installation
+------------
+
+Currently not on pypi so to install check out this repository and run:
+`pip install -e /path/to/nessie/python`
+
+Test & Develop
+--------------
+
+We use `tox` to test. Tox runs pytest, mypy, flake8 and checks for package vulnerabilities. To run all checks simply run `tox`. To run against a specific environment run `tox -e <env>`. Envs include `py36`, `py37`, `py38`, `flake8` (the style and mypy env).
+
+
+
 Features
 --------
 
