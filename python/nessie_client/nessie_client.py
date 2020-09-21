@@ -11,6 +11,7 @@ from ._endpoints import delete_branch
 from ._endpoints import get_reference
 from ._endpoints import get_table
 from ._endpoints import list_tables
+from ._endpoints import assign_branch
 from .model import Contents
 from .model import ContentsSchema
 from .model import EntriesSchema
@@ -20,7 +21,6 @@ from .model import ReferenceSchema
 
 class NessieClient:
     """Base Nessie Client."""
-
     def __init__(self: "NessieClient", config: confuse.Configuration) -> None:
         """Create a Nessie Client from known config."""
         self._base_url = config["endpoint"].get()
@@ -41,10 +41,13 @@ class NessieClient:
         :param ref: name of ref to fetch
         :return: json Nessie reference
         """
-        branch_obj = ReferenceSchema().load(get_reference(self._base_url, ref, self._ssl_verify))
+        branch_obj = ReferenceSchema().load(
+            get_reference(self._base_url, ref, self._ssl_verify))
         return branch_obj
 
-    def create_branch(self: "NessieClient", branch: str, ref: str = None) -> None:
+    def create_branch(self: "NessieClient",
+                      branch: str,
+                      ref: str = None) -> None:
         """Create a branch.
 
         :param branch: name of new branch
@@ -66,25 +69,48 @@ class NessieClient:
         :param ref: name of branch
         :return: list of Nessie table names
         """
-        return EntriesSchema().load(list_tables(self._base_url, ref, self._ssl_verify))
+        return EntriesSchema().load(
+            list_tables(self._base_url, ref, self._ssl_verify))
 
-    def get_tables(self: "NessieClient", ref: str, *tables: str) -> List[Contents]:
+    def get_tables(self: "NessieClient", ref: str,
+                   *tables: str) -> List[Contents]:
         """Fetch a table from a known ref.
 
         :param ref: name of ref
         :return: Nessie Table
         """
-        fetched_tables = [get_table(self._base_url, ref, i, self._ssl_verify) for i in tables]
+        fetched_tables = [
+            get_table(self._base_url, ref, i, self._ssl_verify) for i in tables
+        ]
         return [ContentsSchema().load(i) for i in fetched_tables]
 
-    def create_table(self: "NessieClient", branch: str, table: Contents, reason: str = None) -> None:
+    def create_table(self: "NessieClient",
+                     branch: str,
+                     table: Contents,
+                     reason: str = None) -> None:
         """Create a Nessie table."""
         raise NotImplementedError("Create table has not been implemented")
 
-    def delete_table(self: "NessieClient", branch: str, table: str, reason: str = None) -> None:
+    def delete_table(self: "NessieClient",
+                     branch: str,
+                     table: str,
+                     reason: str = None) -> None:
         """Delete a Nessie table."""
         raise NotImplementedError("Delete table has not been implemented")
 
-    def commit(self: "NessieClient", branch: str, *args: Contents, reason: str = None) -> None:
+    def commit(self: "NessieClient",
+               branch: str,
+               *args: Contents,
+               reason: str = None) -> None:
         """Modify a set of Nessie tables."""
         raise NotImplementedError("Commit tables has not been implemented")
+
+    def assign(self: "NessieClient",
+               branch: str,
+               to_branch: str,
+               oldHash: str = None):
+        if not oldHash:
+            oldHash = self.get_reference(branch).hash_
+        to_hash = self.get_reference(to_branch).hash_
+        assign_branch(self._base_url, branch, oldHash, to_hash,
+                      self._ssl_verify)
