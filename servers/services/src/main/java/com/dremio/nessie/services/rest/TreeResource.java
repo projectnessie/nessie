@@ -16,9 +16,8 @@
 
 package com.dremio.nessie.services.rest;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -47,6 +46,7 @@ import com.dremio.nessie.model.Merge;
 import com.dremio.nessie.model.MultiContents;
 import com.dremio.nessie.model.MultiGetContentsRequest;
 import com.dremio.nessie.model.MultiGetContentsResponse;
+import com.dremio.nessie.model.MultiGetContentsResponse.ContentsWithKey;
 import com.dremio.nessie.model.Operation;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Transplant;
@@ -251,7 +251,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       store.create(reference, toHash(hash, false));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(reference.getName(), e);
+      throw new NessieNotFoundException("Failure while searching for provided targeted hash.", e);
     } catch (ReferenceAlreadyExistsException e) {
       throw new NessieConflictException(String.format("A reference of name [%s] already exists.", reference.getName()), e);
     }
@@ -347,14 +347,14 @@ public class TreeResource extends BaseResource implements TreeApi {
       List<ContentsKey> externalKeys = request.getRequestedKeys();
       List<Key> internalKeys = externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
       List<Optional<Contents>> values = store.getValues(ref.getHash(), internalKeys);
-      Map<ContentsKey, Contents> externalValues = new HashMap<>();
+      List<ContentsWithKey> output = new ArrayList<>();
 
       for (int i = 0; i < externalKeys.size(); i++) {
         final int pos = i;
-        values.get(i).ifPresent(v -> externalValues.put(externalKeys.get(pos), v));
+        values.get(i).ifPresent(v -> output.add(ContentsWithKey.of(externalKeys.get(pos), v)));
       }
 
-      return ImmutableMultiGetContentsResponse.builder().contents(externalValues).build();
+      return ImmutableMultiGetContentsResponse.builder().contents(output).build();
     } catch (ReferenceNotFoundException ex) {
       throw new NessieNotFoundException("Unable to find the requested ref.", ex);
     }

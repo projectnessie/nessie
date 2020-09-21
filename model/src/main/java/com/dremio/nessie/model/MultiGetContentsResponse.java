@@ -15,7 +15,7 @@
  */
 package com.dremio.nessie.model;
 
-import java.util.Map;
+import java.util.List;
 
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -33,5 +33,24 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableMultiGetContentsResponse.class)
 public interface MultiGetContentsResponse {
 
-  Map<ContentsKey, Contents> getContents();
+  List<ContentsWithKey> getContents();
+
+  static MultiGetContentsResponse of(List<ContentsWithKey> items) {
+    return ImmutableMultiGetContentsResponse.builder().addAllContents(items).build();
+  }
+
+  @Value.Immutable(prehash = true)
+  @JsonSerialize(as = ImmutableContentsWithKey.class)
+  @JsonDeserialize(as = ImmutableContentsWithKey.class)
+  interface ContentsWithKey {
+
+    ContentsKey getKey();
+
+    Contents getContents();
+
+    static ContentsWithKey of(ContentsKey key, Contents contents) {
+      return ImmutableContentsWithKey.builder().key(key).contents(contents).build();
+    }
+  }
+
 }

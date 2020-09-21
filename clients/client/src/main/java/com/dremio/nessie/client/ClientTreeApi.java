@@ -170,7 +170,7 @@ class ClientTreeApi implements TreeApi {
     return target.path("trees").path("multi").path(ref)
         .request()
         .accept(MediaType.APPLICATION_JSON_TYPE)
-        .get()
+        .post(Entity.entity(request, MediaType.APPLICATION_JSON_TYPE))
         .readEntity(MultiGetContentsResponse.class);
   }
 

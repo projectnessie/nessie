@@ -35,4 +35,16 @@ public interface MultiGetContentsRequest {
 
   List<ContentsKey> getRequestedKeys();
 
+  static ImmutableMultiGetContentsRequest.Builder builder() {
+    return ImmutableMultiGetContentsRequest.builder();
+  }
+
+  static MultiGetContentsRequest of(ContentsKey... keys) {
+    return builder().addRequestedKeys(keys).build();
+  }
+
+  static MultiGetContentsRequest of(List<ContentsKey> keys) {
+    return builder().addAllRequestedKeys(keys).build();
+  }
+
 }

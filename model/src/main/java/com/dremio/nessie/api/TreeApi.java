@@ -278,7 +278,7 @@ public interface TreeApi {
       @NotNull @Parameter(description = "name of ref to fetch from") @PathParam("ref") String refName)
           throws NessieNotFoundException;
 
-  @GET
+  @POST
   @Path("multi/{ref}")
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(summary = "Get multiple contents on default branch")

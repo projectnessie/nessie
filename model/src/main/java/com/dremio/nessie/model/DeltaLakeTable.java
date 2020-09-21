@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableDeltaLakeTable.class)
 @JsonDeserialize(as = ImmutableDeltaLakeTable.class)
-@JsonTypeName("DELTALAKE_TABLE")
+@JsonTypeName("DELTA_LAKE_TABLE")
 public interface DeltaLakeTable extends Contents {
 
   String getMetadataLocation();

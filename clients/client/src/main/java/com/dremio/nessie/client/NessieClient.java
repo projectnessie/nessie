@@ -36,6 +36,7 @@ import com.dremio.nessie.client.rest.ObjectMapperContextResolver;
 import com.dremio.nessie.client.rest.ResponseCheckFilter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.ContentsKey.NessieObjectKeyConverterProvider;
 
 public class NessieClient implements Closeable {
 
@@ -70,6 +71,7 @@ public class NessieClient implements Closeable {
 
     client = ClientBuilder.newBuilder().register(ObjectMapperContextResolver.class)
                                        .register(ResponseCheckFilter.class)
+                                       .register(NessieObjectKeyConverterProvider.class)
                                        .build();
     WebTarget target = client.target(path);
     AuthFilter authFilter = new AuthFilter(authType, username, password, target);
