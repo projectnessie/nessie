@@ -16,6 +16,7 @@
 
 package com.dremio.nessie.services.rest;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -38,10 +39,14 @@ import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableHash;
 import com.dremio.nessie.model.ImmutableLogResponse;
+import com.dremio.nessie.model.ImmutableMultiGetContentsResponse;
 import com.dremio.nessie.model.ImmutableTag;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.Merge;
 import com.dremio.nessie.model.MultiContents;
+import com.dremio.nessie.model.MultiGetContentsRequest;
+import com.dremio.nessie.model.MultiGetContentsResponse;
+import com.dremio.nessie.model.MultiGetContentsResponse.ContentsWithKey;
 import com.dremio.nessie.model.Operation;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Transplant;
@@ -246,7 +251,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       store.create(reference, toHash(hash, false));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(reference.getName(), e);
+      throw new NessieNotFoundException("Failure while searching for provided targeted hash.", e);
     } catch (ReferenceAlreadyExistsException e) {
       throw new NessieConflictException(String.format("A reference of name [%s] already exists.", reference.getName()), e);
     }
@@ -331,6 +336,27 @@ public class TreeResource extends BaseResource implements TreeApi {
       return Unchanged.of(key);
     } else {
       throw new IllegalStateException("Unknown operation " + o);
+    }
+  }
+
+  @Override
+  public MultiGetContentsResponse getMultipleContents(String refName, MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    try {
+      WithHash<Ref> ref = store.toRef(refName);
+      List<ContentsKey> externalKeys = request.getRequestedKeys();
+      List<Key> internalKeys = externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
+      List<Optional<Contents>> values = store.getValues(ref.getHash(), internalKeys);
+      List<ContentsWithKey> output = new ArrayList<>();
+
+      for (int i = 0; i < externalKeys.size(); i++) {
+        final int pos = i;
+        values.get(i).ifPresent(v -> output.add(ContentsWithKey.of(externalKeys.get(pos), v)));
+      }
+
+      return ImmutableMultiGetContentsResponse.builder().contents(output).build();
+    } catch (ReferenceNotFoundException ex) {
+      throw new NessieNotFoundException("Unable to find the requested ref.", ex);
     }
   }
 }

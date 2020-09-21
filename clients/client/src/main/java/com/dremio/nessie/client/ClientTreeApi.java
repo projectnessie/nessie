@@ -31,6 +31,8 @@ import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.Merge;
 import com.dremio.nessie.model.MultiContents;
+import com.dremio.nessie.model.MultiGetContentsRequest;
+import com.dremio.nessie.model.MultiGetContentsResponse;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Transplant;
 
@@ -160,6 +162,16 @@ class ClientTreeApi implements TreeApi {
                    .accept(MediaType.APPLICATION_JSON_TYPE)
                    .get()
                    .readEntity(EntriesResponse.class);
+  }
+
+  @Override
+  public MultiGetContentsResponse getMultipleContents(@NotNull String ref, @NotNull MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    return target.path("trees").path("multi").path(ref)
+        .request()
+        .accept(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(request, MediaType.APPLICATION_JSON_TYPE))
+        .readEntity(MultiGetContentsResponse.class);
   }
 
   @Override

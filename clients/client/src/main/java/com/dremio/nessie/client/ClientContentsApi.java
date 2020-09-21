@@ -36,7 +36,7 @@ class ClientContentsApi implements ContentsApi {
 
   @Override
   public Contents getContents(@NotNull ContentsKey key, String ref) throws NessieNotFoundException {
-    return target.path("contents").path(key.toString()).path(ref)
+    return target.path("contents").path(key.toPathString()).path(ref)
                  .request()
                  .accept(MediaType.APPLICATION_JSON_TYPE)
                  .get()
@@ -45,7 +45,7 @@ class ClientContentsApi implements ContentsApi {
 
   @Override
   public Contents getContents(ContentsKey key) throws NessieNotFoundException {
-    return target.path("contents").path(key.toString())
+    return target.path("contents").path(key.toPathString())
                  .request()
                  .accept(MediaType.APPLICATION_JSON_TYPE)
                  .get()
@@ -55,7 +55,7 @@ class ClientContentsApi implements ContentsApi {
   @Override
   public void setContents(@NotNull ContentsKey key, @NotNull String hash, String message,
                           @NotNull Contents contents) throws NessieNotFoundException, NessieConflictException {
-    target.path("contents").path(key.toString()).path(hash)
+    target.path("contents").path(key.toPathString()).path(hash)
           .queryParam("message", message)
           .request()
           .post(Entity.entity(contents, MediaType.APPLICATION_JSON_TYPE));
@@ -65,7 +65,7 @@ class ClientContentsApi implements ContentsApi {
   @Override
   public void setContents(@NotNull ContentsKey key, String branch, @NotNull String hash, String message,
                           @NotNull Contents contents) throws NessieNotFoundException, NessieConflictException {
-    target.path("contents").path(key.toString()).path(branch).path(hash)
+    target.path("contents").path(key.toPathString()).path(branch).path(hash)
           .queryParam("message", message)
           .request()
           .post(Entity.entity(contents, MediaType.APPLICATION_JSON_TYPE));
@@ -74,7 +74,7 @@ class ClientContentsApi implements ContentsApi {
   @Override
   public void deleteContents(ContentsKey key, String hash, String message)
       throws NessieNotFoundException, NessieConflictException {
-    target.path("contents").path(key.toString()).path(hash)
+    target.path("contents").path(key.toPathString()).path(hash)
           .queryParam("message", message)
           .request()
           .delete();
@@ -83,7 +83,7 @@ class ClientContentsApi implements ContentsApi {
   @Override
   public void deleteContents(ContentsKey key, String branch, String hash, String message)
       throws NessieNotFoundException, NessieConflictException {
-    target.path("contents").path(key.toString()).path(branch).path(hash)
+    target.path("contents").path(key.toPathString()).path(branch).path(hash)
           .queryParam("message", message)
           .request()
           .delete();

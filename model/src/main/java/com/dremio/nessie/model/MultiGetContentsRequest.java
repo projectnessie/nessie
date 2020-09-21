@@ -15,17 +15,36 @@
  */
 package com.dremio.nessie.model;
 
+import java.util.List;
+
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+@Schema(
+    type = SchemaType.OBJECT,
+    title = "MultiGetContentsRequest"
+  )
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableDeltaLakeTable.class)
-@JsonDeserialize(as = ImmutableDeltaLakeTable.class)
-@JsonTypeName("DELTA_LAKE_TABLE")
-public interface DeltaLakeTable extends Contents {
+@JsonSerialize(as = ImmutableMultiGetContentsRequest.class)
+@JsonDeserialize(as = ImmutableMultiGetContentsRequest.class)
+public interface MultiGetContentsRequest {
 
-  String getMetadataLocation();
+  List<ContentsKey> getRequestedKeys();
+
+  static ImmutableMultiGetContentsRequest.Builder builder() {
+    return ImmutableMultiGetContentsRequest.builder();
+  }
+
+  static MultiGetContentsRequest of(ContentsKey... keys) {
+    return builder().addRequestedKeys(keys).build();
+  }
+
+  static MultiGetContentsRequest of(List<ContentsKey> keys) {
+    return builder().addAllRequestedKeys(keys).build();
+  }
+
 }

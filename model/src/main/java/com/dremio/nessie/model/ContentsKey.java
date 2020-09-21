@@ -15,16 +15,13 @@
  */
 package com.dremio.nessie.model;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -35,26 +32,47 @@ import javax.ws.rs.ext.Provider;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Key for the contents of an object.
+ *
+ * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before passing in a url string.
+ */
 public class ContentsKey {
+  private static final char ZERO_BYTE = '\u0000';
+  private static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
 
   private final List<String> elements;
 
   @JsonCreator
   public ContentsKey(@JsonProperty("elements") List<String> elements) {
     this.elements = Collections.unmodifiableList(new ArrayList<>(elements));
+    validate();
   }
 
   // internal constructor for a list that doesn't need a defensive copy.
   private ContentsKey(@JsonProperty("elements") List<String> elements, boolean dummy) {
     this.elements = Collections.unmodifiableList(elements);
+    validate();
   }
 
   public static ContentsKey of(String... elements) {
     return new ContentsKey(Arrays.asList(elements), true);
   }
 
+  public static ContentsKey of(List<String> elements) {
+    return new ContentsKey(elements);
+  }
+
   public List<String> getElements() {
     return elements;
+  }
+
+  private void validate() {
+    for (String e : elements) {
+      if (e.contains(ZERO_BYTE_STRING)) {
+        throw new IllegalArgumentException("A object key cannot contain a zero byte.");
+      }
+    }
   }
 
   private static class NessieObjectKeyConverter implements ParamConverter<ContentsKey> {
@@ -65,15 +83,7 @@ public class ContentsKey {
         return null;
       }
 
-      List<String> elements = StreamSupport.stream(Arrays.spliterator(value.split("\\.")), false)
-          .map(x -> {
-            try {
-              return URLDecoder.decode(x, StandardCharsets.UTF_8.toString());
-            } catch (UnsupportedEncodingException e) {
-              throw new RuntimeException(String.format("Unable to decode string %s", x), e);
-            }
-          }).collect(Collectors.toList());
-      return new ContentsKey(elements, true);
+      return fromEncoded(value);
     }
 
     @Override
@@ -81,14 +91,7 @@ public class ContentsKey {
       if (value == null) {
         return null;
       }
-
-      return value.getElements().stream().map(x -> {
-        try {
-          return URLEncoder.encode(x, StandardCharsets.UTF_8.toString());
-        } catch (UnsupportedEncodingException e) {
-          throw new RuntimeException(String.format("Unable to decode string %s", x), e);
-        }
-      }).collect(Collectors.joining("."));
+      return value.toPathString();
     }
 
   }
@@ -107,8 +110,45 @@ public class ContentsKey {
 
   }
 
+  /**
+   * Convert from path encoded string to normal string.
+   * @param encoded Path encoded string
+   * @return Actual key.
+   */
+  public static ContentsKey fromEncoded(String encoded) {
+    List<String> elements = StreamSupport.stream(Arrays.spliterator(encoded.split("\\.")), false)
+        .map(x -> x.replace('\u0000', '.')).collect(Collectors.toList());
+    return new ContentsKey(elements, true);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(elements);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof ContentsKey)) {
+      return false;
+    }
+    ContentsKey other = (ContentsKey) obj;
+    return Objects.equals(elements, other.elements);
+  }
+
   @Override
   public String toString() {
     return elements.stream().collect(Collectors.joining("."));
+  }
+
+  /**
+   * Convert this key to a url encoded path string.
+   * @return String encoded for path use.
+   */
+  public String toPathString() {
+    String pathString = getElements().stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
+    return pathString;
   }
 }

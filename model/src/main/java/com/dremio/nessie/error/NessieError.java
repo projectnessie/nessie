@@ -20,6 +20,10 @@ import java.io.StringWriter;
 
 import javax.ws.rs.core.Response.Status;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class NessieError {
 
   private final String message;
@@ -27,7 +31,11 @@ public class NessieError {
   private final String serverStackTrace;
   private final Exception clientProcessingException;
 
-  public NessieError(String message, Status status, String serverStackTrace) {
+  @JsonCreator
+  public NessieError(
+      @JsonProperty("message") String message,
+      @JsonProperty("status") Status status,
+      @JsonProperty("serverStackTrace") String serverStackTrace) {
     this(message, status, serverStackTrace, null);
   }
 
@@ -58,6 +66,7 @@ public class NessieError {
     return serverStackTrace;
   }
 
+  @JsonIgnore
   public Exception getClientProcessingException() {
     return clientProcessingException;
   }
@@ -66,16 +75,17 @@ public class NessieError {
    * Get full error message.
    * @return Full error message.
    */
+  @JsonIgnore
   public String getFullMessage() {
     if (serverStackTrace != null) {
-      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\n%s", message,
+      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\nServer Stack Trace:\n%s", message,
           status.getStatusCode(), status.getReasonPhrase(), serverStackTrace);
     }
 
     if (clientProcessingException != null) {
       StringWriter sw = new StringWriter();
       clientProcessingException.printStackTrace(new PrintWriter(sw));
-      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\n%s", message,
+      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\nClient Processing Failure:\n%s", message,
           status.getStatusCode(), status.getReasonPhrase(), sw.toString());
     }
     return message;

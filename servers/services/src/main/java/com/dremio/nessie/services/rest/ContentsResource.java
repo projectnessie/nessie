@@ -144,7 +144,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
         .build();
   }
 
-  private static Key toKey(ContentsKey key) {
+  static Key toKey(ContentsKey key) {
     return Key.of(key.getElements().toArray(new String[key.getElements().size()]));
   }
 

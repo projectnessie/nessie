@@ -17,7 +17,6 @@ package com.dremio.nessie.server.providers;
 
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -35,8 +34,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.Throwables;
 
 @Provider
-public class ErrorMapper implements ExceptionMapper<Exception> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ErrorMapper.class);
+public class NessieExceptionMapper implements ExceptionMapper<Exception> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(NessieExceptionMapper.class);
 
   @Inject
   ServerConfig serverConfig;
@@ -65,9 +64,7 @@ public class ErrorMapper implements ExceptionMapper<Exception> {
     NessieError error = new NessieError(message, status, stack);
     LOGGER.debug("Failure on server, propagated to client. Status: {} {}, Message: {}.",
         status.getStatusCode(), status.getReasonPhrase(), message, e);
-    return Response.status(status)
-        .entity(Entity.entity(error, MediaType.APPLICATION_JSON_TYPE))
-        .build();
+    return Response.status(status).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
   }
 
 }

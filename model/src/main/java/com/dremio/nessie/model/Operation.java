@@ -54,6 +54,10 @@ public interface Operation {
   @JsonTypeName("PUT")
   interface Put extends Operation {
     Contents getContents();
+
+    public static Put of(ContentsKey key, Contents contents) {
+      return ImmutablePut.builder().key(key).contents(contents).build();
+    }
   }
 
   @Value.Immutable(prehash = true)
@@ -61,6 +65,11 @@ public interface Operation {
   @JsonDeserialize(as = ImmutableDelete.class)
   @JsonTypeName("DELETE")
   interface Delete extends Operation {
+
+    public static Delete of(ContentsKey key) {
+      return ImmutableDelete.builder().key(key).build();
+    }
+
   }
 
   @Value.Immutable(prehash = true)
@@ -68,6 +77,11 @@ public interface Operation {
   @JsonDeserialize(as = ImmutableUnchanged.class)
   @JsonTypeName("UNCHANGED")
   interface Unchanged extends Operation {
+
+    public static Unchanged of(ContentsKey key) {
+      return ImmutableUnchanged.builder().key(key).build();
+    }
+
   }
 
 }
