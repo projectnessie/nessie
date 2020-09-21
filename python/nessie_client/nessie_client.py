@@ -61,7 +61,7 @@ class NessieClient:
         """
         delete_branch(self._base_url, branch, hash_, self._ssl_verify)
 
-    def list_tables(self: "NessieClient", ref: str = None) -> List[str]:
+    def list_tables(self: "NessieClient", ref: str) -> List[str]:
         """Fetch a list of all tables from a known branch.
 
         :param ref: name of branch
@@ -73,6 +73,7 @@ class NessieClient:
         """Fetch a table from a known ref.
 
         :param ref: name of ref
+        :param tables: tables to fetch
         :return: Nessie Table
         """
         fetched_tables = [get_table(self._base_url, ref, i, self._ssl_verify) for i in tables]
