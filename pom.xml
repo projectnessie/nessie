@@ -74,7 +74,7 @@
     <slf4j.version>1.7.30</slf4j.version>
     <spark.version>2.4.7</spark.version>
     <sqlite.version>1.0.392</sqlite.version>
-    <quarkus.version>1.8.0.Final</quarkus.version>
+    <quarkus.version>1.8.1.Final</quarkus.version>
     <openapi.version>1.1.2</openapi.version>
     <jsr305.version>3.0.2</jsr305.version>
   </properties>
