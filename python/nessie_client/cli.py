@@ -9,6 +9,7 @@ import click
 
 from . import __version__
 from .conf import build_config
+from .model import Contents
 from .model import ContentsSchema
 from .model import ReferenceSchema
 from .nessie_client import NessieClient
@@ -22,39 +23,21 @@ def _print_version(ctx: Any, param: Any, value: Any) -> None:
 
 
 @click.group()
-@click.option("--config",
-              type=click.Path(exists=True, dir_okay=True, file_okay=False),
-              help="Custom config file.")
-@click.option("-e",
-              "--endpoint",
-              help="Endpoint if different from config file")
-@click.option("-u",
-              "--username",
-              help="username if different from config file")
+@click.option("--config", type=click.Path(exists=True, dir_okay=True, file_okay=False), help="Custom config file.")
+@click.option("-e", "--endpoint", help="Endpoint if different from config file")
+@click.option("-u", "--username", help="username if different from config file")
 @click.option("--password", help="password if different from config file")
-@click.option("--skip-verify",
-              is_flag=True,
-              help="skip verificatoin of ssl cert")
-@click.option("--version",
-              is_flag=True,
-              callback=_print_version,
-              expose_value=False,
-              is_eager=True)
+@click.option("--skip-verify", is_flag=True, help="skip verificatoin of ssl cert")
+@click.option("--version", is_flag=True, callback=_print_version, expose_value=False, is_eager=True)
 @click.pass_context
-def cli(ctx: click.core.Context, config: str, endpoint: str, username: str,
-        password: str, skip_verify: bool) -> None:
+def cli(ctx: click.core.Context, config: str, endpoint: str, username: str, password: str, skip_verify: bool) -> None:
     """Nessie cli tool.
 
     Interact with Nessie branches and tables via the command line
     """
     if config:
         os.environ["NESSIE_CLIENTDIR"] = config
-    config = build_config({
-        "endpoint": endpoint,
-        "username": username,
-        "password": password,
-        "verify": not skip_verify
-    })
+    config = build_config({"endpoint": endpoint, "username": username, "password": password, "verify": not skip_verify})
     nessie = NessieClient(config)
     ctx.obj = dict()
     ctx.obj["nessie"] = nessie

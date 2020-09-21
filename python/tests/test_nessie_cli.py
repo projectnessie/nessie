@@ -23,7 +23,10 @@ def test_command_line_interface(requests_mock: requests_mock) -> None:
     help_result = runner.invoke(cli.cli, ["--version"])
     assert help_result.exit_code == 0
     assert __version__ in help_result.output
-    requests_mock.get("http://localhost:19120/api/v1/trees", text=json.dumps([{"name": "main", "type": "BRANCH", "hash": "1234567890abcdef"}]))
+    requests_mock.get(
+        "http://localhost:19120/api/v1/trees",
+        text=json.dumps([{"name": "main", "type": "BRANCH", "hash": "1234567890abcdef"}]),
+    )
     help_result = runner.invoke(cli.cli, ["list-references"])
     assert help_result.exit_code == 0
     references = ReferenceSchema().loads(help_result.output, many=True)
