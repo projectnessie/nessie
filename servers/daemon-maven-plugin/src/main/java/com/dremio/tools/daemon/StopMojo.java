@@ -25,7 +25,7 @@ import org.jutils.jprocesses.JProcesses;
 import org.jutils.jprocesses.model.ProcessInfo;
 
 /**
- * Stop dremio daemon.
+ * Stop Quarkus daemon.
  */
 @Mojo(name = "stop", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
 public class StopMojo extends AbstractMojo {
