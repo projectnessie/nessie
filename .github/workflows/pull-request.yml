@@ -1,0 +1,78 @@
+name: PR Build Check
+
+on:
+  pull_request:
+
+jobs:
+  java:
+    name: Java/Maven
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - name: Cache local Maven repository
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.m2/repository
+          !~/.m2/repository/com/nessie
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+    - name: Cache local NPM repository
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - name: Build with Maven
+      run: mvn -B install --file pom.xml -Pcode-coverage
+    - name: Capture test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results
+        path: |
+          **/target/surefire-reports/*
+          **/target/failsafe-reports/*
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: java
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./python
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox tox-gh-actions
+      working-directory: ${{env.working-directory}}
+    - name: Test with tox
+      run: tox
+      working-directory: ${{env.working-directory}}
+      env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
