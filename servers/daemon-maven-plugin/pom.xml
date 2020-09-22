@@ -47,6 +47,11 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-test-maven</artifactId>
+      <version>${quarkus.version}</version>
+    </dependency>
     
     <!-- dependencies to annotations -->
     <dependency>
