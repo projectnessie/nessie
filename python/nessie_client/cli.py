@@ -9,8 +9,9 @@ import click
 
 from . import __version__
 from .conf import build_config
-from .model import BranchSchema
-from .model import TableSchema
+from .model import Contents
+from .model import ContentsSchema
+from .model import ReferenceSchema
 from .nessie_client import NessieClient
 
 
@@ -44,78 +45,71 @@ def cli(ctx: click.core.Context, config: str, endpoint: str, username: str, pass
 
 @cli.command()
 @click.pass_obj
-def list_branches(args: dict) -> None:
-    """List all known branches."""
-    results = args["nessie"].list_branches()
-    click.echo(BranchSchema().dumps(results, many=True))
+def list_references(args: dict) -> None:
+    """List all known references."""
+    results = args["nessie"].list_references()
+    click.echo(ReferenceSchema().dumps(results, many=True))
+
+
+@cli.command()
+@click.argument("ref", nargs=1, required=True)
+@click.pass_obj
+def show_reference(args: dict, ref: str) -> None:
+    """Show a specific reference."""
+    results = args["nessie"].get_reference(ref)
+    click.echo(ReferenceSchema().dumps(results))
 
 
 @cli.command()
 @click.argument("branch", nargs=1, required=True)
+@click.option("--hash", "-h", "hash_", type=str, help="hash", required=True)
 @click.pass_obj
-def show_branch(args: dict, branch: str) -> None:
-    """Show a specific branch."""
-    results = args["nessie"].get_branch(branch)
-    click.echo(BranchSchema().dumps(results))
-
-
-@cli.command()
-@click.argument("branch", nargs=1, required=True)
-@click.option("--reason", "-r", type=str, help="reason for this action")
-@click.pass_obj
-def delete_branch(args: dict, branch: str, reason: str) -> None:
+def delete_branch(args: dict, branch: str, hash_: str) -> None:
     """Delete a specific branch."""
-    args["nessie"].delete_branch(branch, reason)
+    args["nessie"].delete_branch(branch, hash_)
     click.echo()
 
 
 @cli.command()
 @click.argument("branch", nargs=1, required=True)
-@click.option("--base-branch", "-b", type=str, help="branch to clone from")
-@click.option("--reason", "-r", type=str, help="reason for this action")
+@click.option("--ref", "-r", type=str, help="ref to clone from")
 @click.pass_obj
-def create_branch(args: dict, branch: str, base_branch: str, reason: str) -> None:
-    """Create a branch and optionally fork from base-branch."""
-    args["nessie"].create_branch(branch, base_branch, reason)
+def create_branch(args: dict, branch: str, ref: str) -> None:
+    """Create a branch and optionally fork from ref."""
+    args["nessie"].create_branch(branch, ref)
     click.echo()
 
 
 @cli.command()
-@click.argument("from-branch", nargs=1, required=True)
-@click.argument("to-branch", nargs=1, required=True)
-@click.option("--force", "-f", default=False)
-@click.option("--reason", "-r", type=str, help="reason for this action")
+@click.argument("ref", nargs=1, required=True)
 @click.pass_obj
-def merge_branch(args: dict, from_branch: str, to_branch: str, force: bool, reason: str) -> None:
-    """Merge FROM-BRANCH into TO-BRANCH. Optionally forced.
-
-    When successful the TO-BRANCH will have all updates from FROM-BRANCH
-    """
-    args["nessie"].merge_branch(to_branch, from_branch, force, reason)
-    click.echo()
-
-
-@cli.command()
-@click.argument("branch", nargs=1, required=True)
-@click.option("--namespace", "-n", type=str, help="only include this namespace")
-@click.pass_obj
-def list_tables(args: dict, branch: str, namespace: str) -> None:
+def list_tables(args: dict, ref: str) -> None:
     """List tables from BRANCH."""
-    tables = args["nessie"].list_tables(branch, namespace)
+    tables = args["nessie"].list_tables(ref)
     click.echo(tables)
 
 
 @cli.command()
-@click.argument("branch", nargs=1, required=True)
+@click.argument("ref", nargs=1, required=True)
 @click.argument("table", nargs=-1, required=True)
 @click.pass_obj
-def show_table(args: dict, branch: str, table: List[str]) -> None:
-    """List tables from BRANCH."""
-    tables = args["nessie"].get_tables(branch, *table)
+def show_table(args: dict, ref: str, table: List[str]) -> None:
+    """List tables from ref."""
+    tables = args["nessie"].get_tables(ref, *table)
     if len(tables) == 1:
-        click.echo(TableSchema().dumps(tables[0]))
+        click.echo(ContentsSchema().dumps(tables[0]))
     else:
-        click.echo(TableSchema().dumps(tables, many=True))
+        click.echo(Contents().dumps(tables, many=True))
+
+
+@cli.command()
+@click.argument("branch", nargs=1, required=True)
+@click.argument("to-branch", nargs=1, required=True)
+@click.pass_obj
+def assign_branch(args: dict, branch: str, to_branch: str) -> None:
+    """Assign from one ref to another."""
+    args["nessie"].assign(branch, to_branch)
+    click.echo()
 
 
 if __name__ == "__main__":

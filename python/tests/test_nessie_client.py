@@ -7,7 +7,7 @@ import simplejson as json
 
 from nessie_client import init
 from nessie_client.error import NessieConflictException
-from nessie_client.model import Branch
+from nessie_client.model import Reference
 
 
 class Fake:
@@ -20,38 +20,36 @@ class Fake:
 
 def test_client_interface(requests_mock: requests_mock) -> None:
     """Test client object."""
-    requests_mock.post("http://localhost:19120/api/v1/login", text=json.dumps({"token": "12345"}))
     client = init()
-    assert client._token(Fake()).headers["Authorization"] == "Bearer 12345"
-    requests_mock.get("http://localhost:19120/api/v1/objects", text=json.dumps([]))
-    branches = client.list_branches()
-    assert len(branches) == 0
+    requests_mock.get("http://localhost:19120/api/v1/trees", text=json.dumps([]))
+    references = client.list_references()
+    assert len(references) == 0
 
-    def callback(request, context):  # noqa
-        assert json.loads(request.text) == {"name": "master", "id": None}
-        return ""
-
-    requests_mock.post("http://localhost:19120/api/v1/objects/master", text=callback)
-    assert client.create_branch("master") is None
-
-    requests_mock.get("http://localhost:19120/api/v1/objects", text=json.dumps([{"name": "master", "id": None}]))
-    branches = client.list_branches()
-    assert len(branches) == 1
-
-    def callback(request, context):  # noqa
-        assert json.loads(request.text) == {"name": "test", "id": "master"}
-        return ""
-
-    requests_mock.post("http://localhost:19120/api/v1/objects/test", text=callback)
-    assert client.create_branch("test", "master") is None
+    requests_mock.post("http://localhost:19120/api/v1/trees/branch/main")
+    assert client.create_branch("main") is None
 
     requests_mock.get(
-        "http://localhost:19120/api/v1/objects",
-        text=json.dumps([{"name": "master", "id": None}, {"name": "test", "id": None}]),
+        "http://localhost:19120/api/v1/trees",
+        text=json.dumps([{"name": "main", "type": "BRANCH", "hash": "1234567890abcdef"}]),
     )
-    branches = client.list_branches()
-    assert len(branches) == 2
-    assert [i.name for i in branches] == ["master", "test"]
+    references = client.list_references()
+    assert len(references) == 1
+
+    requests_mock.post("http://localhost:19120/api/v1/trees/branch/test/1234567890fedcba")
+    assert client.create_branch("test", "1234567890fedcba") is None
+
+    requests_mock.get(
+        "http://localhost:19120/api/v1/trees",
+        text=json.dumps(
+            [
+                {"name": "main", "type": "BRANCH", "hash": "1234567890abcdef"},
+                {"name": "test", "type": "BRANCH", "hash": "1234567890fedcba"},
+            ]
+        ),
+    )
+    references = client.list_references()
+    assert len(references) == 2
+    assert [i.name for i in references] == ["main", "test"]
 
 
 @pytest.mark.e2e
@@ -59,21 +57,21 @@ def test_client_interface_e2e() -> None:
     """Test client object against live server."""
     client = init()
     assert isinstance(client._token, str)
-    branches = client.list_branches()
-    assert len(branches) == 1
-    assert branches[0] == Branch("master", branches[0].id)
-    master_commit = branches[0].id
+    references = client.list_references()
+    assert len(references) == 1
+    assert references[0] == Reference("main", "BRANCH", references[0].hash_)
+    main_commit = references[0].id
     with pytest.raises(NessieConflictException):
-        client.create_branch("master")
-    client.create_branch("test", "master")
-    branches = client.list_branches()
-    assert len(branches) == 2
-    assert branches[0] == Branch("master", master_commit)
-    assert branches[1] == Branch("test", master_commit)
-    branch = client.get_branch("test")
-    tables = client.list_tables(branch.name)
+        client.create_branch("main")
+    client.create_branch("test", main_commit)
+    references = client.list_references()
+    assert len(references) == 2
+    assert references[0] == Reference("main", "BRANCH", main_commit)
+    assert references[1] == Reference("test", "BRANCH", main_commit)
+    reference = client.get_branch("test")
+    tables = client.list_references(reference.name)
     assert isinstance(tables, list)
     assert len(tables) == 0
     client.delete_branch("test")
-    branches = client.list_branches()
-    assert len(branches) == 1
+    references = client.list_references()
+    assert len(references) == 1

@@ -5,18 +5,18 @@ from typing import List
 
 import confuse
 
-from ._endpoints import all_branches
+from ._endpoints import all_references
+from ._endpoints import assign_branch
 from ._endpoints import create_branch
 from ._endpoints import delete_branch
-from ._endpoints import get_branch
+from ._endpoints import get_reference
 from ._endpoints import get_table
 from ._endpoints import list_tables
-from ._endpoints import merge_branch
-from .auth import auth
-from .model import Branch
-from .model import BranchSchema
-from .model import Table
-from .model import TableSchema
+from .model import Contents
+from .model import ContentsSchema
+from .model import EntriesSchema
+from .model import Reference
+from .model import ReferenceSchema
 
 
 class NessieClient:
@@ -25,87 +25,75 @@ class NessieClient:
     def __init__(self: "NessieClient", config: confuse.Configuration) -> None:
         """Create a Nessie Client from known config."""
         self._base_url = config["endpoint"].get()
-        self._username = config["auth"]["username"].get()
-        self._password = config["auth"]["password"].get()
         self._ssl_verify = config["verify"].get(bool)
-        self._token = auth(self._base_url, config)
         self._commit_id: str = cast(str, None)
 
-    def list_branches(self: "NessieClient") -> List[Branch]:
-        """Fetch all known branches.
+    def list_references(self: "NessieClient") -> List[Reference]:
+        """Fetch all known references.
 
-        :return: list of Nessie Branches
+        :return: list of Nessie References
         """
-        branches = all_branches(self._token, self._base_url, self._ssl_verify)
-        return [BranchSchema().load(i) for i in branches]
+        references = all_references(self._base_url, self._ssl_verify)
+        return [ReferenceSchema().load(ref) for ref in references]
 
-    def get_branch(self: "NessieClient", branch: str) -> Branch:
-        """Fetch a branch.
+    def get_reference(self: "NessieClient", ref: str) -> Reference:
+        """Fetch a ref.
 
-        :param branch: name of branch to fetch
-        :return: json Nessie branch
+        :param ref: name of ref to fetch
+        :return: json Nessie reference
         """
-        branch_obj = BranchSchema().load(get_branch(self._token, self._base_url, branch, self._ssl_verify))
-        self._commit_id = branch_obj.id
+        branch_obj = ReferenceSchema().load(get_reference(self._base_url, ref, self._ssl_verify))
         return branch_obj
 
-    def create_branch(self: "NessieClient", branch: str, base_branch: str = None, reason: str = None) -> None:
-        """Fetch all known branches.
+    def create_branch(self: "NessieClient", branch: str, ref: str = None) -> None:
+        """Create a branch.
 
         :param branch: name of new branch
-        :param base_branch: name of branch to fork from
-        :param reason: why this action is being performed (for log)
+        :param ref: ref to fork from
         """
-        create_branch(self._token, self._base_url, branch, base_branch, reason, self._ssl_verify)
+        create_branch(self._base_url, branch, ref, self._ssl_verify)
 
-    def delete_branch(self: "NessieClient", branch: str, reason: str = None) -> None:
+    def delete_branch(self: "NessieClient", branch: str, hash_: str) -> None:
         """Delete a branch.
 
         :param branch: name of branch to delete
-        :param reason: why this action is being performed (for log)
+        :param hash_: hash of the branch
         """
-        delete_branch(self._token, self._base_url, branch, self._commit_id, reason, self._ssl_verify)
+        delete_branch(self._base_url, branch, hash_, self._ssl_verify)
 
-    def merge_branch(
-        self: "NessieClient", to_branch: str, from_branch: str, force: bool = False, reason: str = None
-    ) -> None:
-        """Merge a branch from_branch into to_branch.
-
-        :param to_branch: name of branch to merge to
-        :param from_branch: name of branch to merge from
-        :param force: force merge
-        :param reason: why this action is being performed (for log)
-        """
-        merge_branch(
-            self._token, self._base_url, to_branch, from_branch, self._commit_id, force, reason, self._ssl_verify
-        )
-
-    def list_tables(self: "NessieClient", branch: str, namespace: str = None) -> List[str]:
+    def list_tables(self: "NessieClient", ref: str) -> List[str]:
         """Fetch a list of all tables from a known branch.
 
-        :param branch: name of branch
-        :param namespace: optional namespace of
+        :param ref: name of branch
         :return: list of Nessie table names
         """
-        return list_tables(self._token, self._base_url, branch, namespace, self._ssl_verify)
+        return EntriesSchema().load(list_tables(self._base_url, ref, self._ssl_verify))
 
-    def get_tables(self: "NessieClient", branch: str, *tables: str) -> List[Table]:
-        """Fetch a table from a known branch.
+    def get_tables(self: "NessieClient", ref: str, *tables: str) -> List[Contents]:
+        """Fetch a table from a known ref.
 
-        :param branch: name of branch
+        :param ref: name of ref
+        :param tables: tables to fetch
         :return: Nessie Table
         """
-        fetched_tables = [get_table(self._token, self._base_url, branch, i, self._ssl_verify) for i in tables]
-        return [TableSchema().load(i) for i in fetched_tables]
+        fetched_tables = [get_table(self._base_url, ref, i, self._ssl_verify) for i in tables]
+        return [ContentsSchema().load(i) for i in fetched_tables]
 
-    def create_table(self: "NessieClient", branch: str, table: Table, reason: str = None) -> None:
+    def create_table(self: "NessieClient", branch: str, table: Contents, reason: str = None) -> None:
         """Create a Nessie table."""
         raise NotImplementedError("Create table has not been implemented")
 
-    def delete_table(self: "NessieClient", branch: str, table: Table, reason: str = None) -> None:
+    def delete_table(self: "NessieClient", branch: str, table: str, reason: str = None) -> None:
         """Delete a Nessie table."""
         raise NotImplementedError("Delete table has not been implemented")
 
-    def commit(self: "NessieClient", branch: str, *args: Table, reason: str = None) -> None:
+    def commit(self: "NessieClient", branch: str, *args: Contents, reason: str = None) -> None:
         """Modify a set of Nessie tables."""
         raise NotImplementedError("Commit tables has not been implemented")
+
+    def assign(self: "NessieClient", branch: str, to_branch: str, old_hash: str = None) -> None:
+        """Assign a hash to a branch."""
+        if not old_hash:
+            old_hash = self.get_reference(branch).hash_
+        to_hash = self.get_reference(to_branch).hash_
+        assign_branch(self._base_url, branch, old_hash, to_hash, self._ssl_verify)
