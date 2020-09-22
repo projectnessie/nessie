@@ -35,6 +35,20 @@
     <module>servers</module>
   </modules>
 
+  <scm>
+    <connection>scm:git:https://github.com/projectnessie/nessie</connection>
+    <developerConnection>scm:git:https://github.com/projectnessie/nessie</developerConnection>
+    <url>https://github.com/projectnessie/nessie/tree/${project.scm.tag}</url>
+    <tag>main</tag>
+  </scm>
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub Nessie Apache Maven Packages</name>
+      <url>https://maven.pkg.github.com/projectnessie/nessie</url>
+    </repository>
+  </distributionManagement>
+
   <properties>
     <!-- Build properties -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
