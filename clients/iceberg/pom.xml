@@ -71,12 +71,21 @@
     <plugins>
       <plugin>
        <groupId>org.projectnessie</groupId>
-       <artifactId>nessie-daemon-maven-plugin</artifactId>
+       <artifactId>nessie-apprunner-maven-plugin</artifactId>
        <version>${project.version}</version>
        <configuration>
+         <skip>${skipTests}</skip>
+         <appArtifactId>org.projectnessie:nessie-quarkus:${project.version}</appArtifactId>
          <systemPropertyVariables>
          </systemPropertyVariables>
        </configuration>
+       <dependencies>
+        <dependency>
+          <groupId>com.dremio.nessie</groupId>
+          <artifactId>nessie-quarkus</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+       </dependencies>
        <executions>
          <execution>
            <id>start</id>

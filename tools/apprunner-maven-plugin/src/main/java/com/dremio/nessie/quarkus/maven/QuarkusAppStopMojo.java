@@ -13,37 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.tools.daemon;
+package com.dremio.nessie.quarkus.maven;
 
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 
-import io.quarkus.runtime.Quarkus;
+import io.quarkus.bootstrap.app.RunningQuarkusApplication;
 
 /**
- * Stop dremio daemon.
+ * Stop Quarkus application.
  */
-@Mojo(name = "stop", defaultPhase = LifecyclePhase.POST_INTEGRATION_TEST)
-public class StopMojo extends AbstractMojo {
-  /**
-   * Whether you should skip while running in the test phase (default is false).
-   */
-  @Parameter(property = "skipTests", required = false, defaultValue = "false")
-  private Boolean skipTests;
-
+@Mojo(name = "stop", requiresDependencyResolution = ResolutionScope.NONE)
+public class QuarkusAppStopMojo extends AbstractQuarkusAppMojo {
   /**
    * Mojo execution.
    */
+  @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    getLog().info("Stopping Nessie Daemon.");
+    if (isSkipped()) {
+      getLog().info("Stopping Quarkus application.");
+      return;
+    }
+
+    final RunningQuarkusApplication application = getApplication();
+    if (application == null) {
+      getLog().warn(String.format("No application found for execution id '%s'.", getExecutionId()));
+    }
+
     try {
-      Quarkus.blockingExit();
+      application.close();
+      getLog().info("Quarkus application stopped.");
     } catch (Exception e) {
-      throw new MojoExecutionException("Failure stopping Nessie Daemon", e);
+      throw new MojoExecutionException("Error while stopping Quarkus application", e);
     }
   }
 
