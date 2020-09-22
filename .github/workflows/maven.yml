@@ -44,6 +44,12 @@ jobs:
         path: |
           **/target/surefire-reports/*
           **/target/failsafe-reports/*
+    - name: Capture site reports
+      uses: actions/upload-artifact@v2
+      with:
+        name: site-reports
+        path: |
+          **/site/**
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
