@@ -33,6 +33,8 @@ jobs:
           ${{ runner.os }}-node-
     - name: Build with Maven
       run: mvn -B deploy --file pom.xml -Pcode-coverage -DdeployAtEnd=true
+      env:
+        GITHUB_TOKEN: ${{ github.token }} 
     - name: Capture test results
       uses: actions/upload-artifact@v2
       with:
