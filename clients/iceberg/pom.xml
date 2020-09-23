@@ -74,7 +74,6 @@
        <artifactId>nessie-daemon-maven-plugin</artifactId>
        <version>${project.version}</version>
        <configuration>
-         <testDir>${maven.multiModuleProjectDirectory}/servers/quarkus-server</testDir>
          <systemPropertyVariables>
          </systemPropertyVariables>
        </configuration>

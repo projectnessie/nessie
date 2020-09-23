@@ -35,22 +35,26 @@
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
     </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>com.dremio.nessie</groupId>
       <artifactId>nessie-quarkus</artifactId>
       <version>${project.version}</version>
+      <classifier>runner</classifier>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
           <artifactId>commons-logging</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-bootstrap-maven-resolver</artifactId>
+        </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-test-maven</artifactId>
-      <version>${quarkus.version}</version>
     </dependency>
     
     <!-- dependencies to annotations -->

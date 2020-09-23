@@ -21,8 +21,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.jutils.jprocesses.JProcesses;
-import org.jutils.jprocesses.model.ProcessInfo;
+
+import io.quarkus.runtime.ApplicationLifecycleManager;
 
 /**
  * Stop Quarkus daemon.
@@ -40,21 +40,11 @@ public class StopMojo extends AbstractMojo {
    */
   public void execute() throws MojoExecutionException, MojoFailureException {
     getLog().info("Stopping Nessie Daemon.");
-    boolean stopped = false;
     try {
-      for (ProcessInfo pi : JProcesses.getProcessList()) {
-        for (String part : new String[]{"-Dnessie.mojo.test=true"}) {
-          if (pi.getCommand().contains(part)) {
-            JProcesses.killProcess(Integer.parseInt(pi.getPid()));
-            getLog().info("Successfully stopped Nessie Daemon on pid " + pi.getPid());
-            stopped = true;
-            break;
-          }
-        }
-      }
-      if (!stopped) {
-        getLog().warn("A running Nessie Daemon was not found. Please ensure Nessie was stopped");
-      }
+      ApplicationLifecycleManager.exit(-1);
+      ServerHolder.getDaemon().destroy();
+      ServerHolder.getDaemon().waitFor();
+      ServerHolder.getExecutor().shutdownNow();
     } catch (Exception e) {
       throw new MojoExecutionException("Failure stopping Nessie Daemon", e);
     }
