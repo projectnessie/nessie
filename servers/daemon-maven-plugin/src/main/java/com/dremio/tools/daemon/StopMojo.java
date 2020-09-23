@@ -15,14 +15,15 @@
  */
 package com.dremio.tools.daemon;
 
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-
-import io.quarkus.runtime.ApplicationLifecycleManager;
 
 /**
  * Stop Quarkus daemon.
@@ -41,10 +42,14 @@ public class StopMojo extends AbstractMojo {
   public void execute() throws MojoExecutionException, MojoFailureException {
     getLog().info("Stopping Nessie Daemon.");
     try {
-      ApplicationLifecycleManager.exit(-1);
-      ServerHolder.getDaemon().destroy();
-      ServerHolder.getDaemon().waitFor();
+      ClassLoader classLoader = ServerHolder.getClassLoader();
+      Class<?> appClass = Class.forName("io.quarkus.runtime.Quarkus", true, classLoader);
+      appClass.getMethod("blockingExit").invoke(null);
+      ServerHolder.getDaemon().cancel(true);
+      ServerHolder.getDaemon().get(5000, TimeUnit.MILLISECONDS);
       ServerHolder.getExecutor().shutdownNow();
+    } catch (CancellationException e) {
+      //pass expected
     } catch (Exception e) {
       throw new MojoExecutionException("Failure stopping Nessie Daemon", e);
     }

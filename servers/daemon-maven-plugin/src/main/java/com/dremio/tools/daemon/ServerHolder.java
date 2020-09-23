@@ -16,12 +16,14 @@
 package com.dremio.tools.daemon;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 public class ServerHolder {
-  private static Process daemon;
+  private static Future<?> daemon;
   private static ExecutorService executor;
+  private static ClassLoader classLoader;
 
-  public static Process getDaemon() {
+  public static Future<?> getDaemon() {
     return daemon;
   }
 
@@ -29,12 +31,19 @@ public class ServerHolder {
     return executor;
   }
 
-  public static void setDaemon(Process daemon) {
+  public static void setDaemon(Future<?> daemon) {
     ServerHolder.daemon = daemon;
   }
 
   public static void setExecutor(ExecutorService executor) {
-
     ServerHolder.executor = executor;
+  }
+
+  public static ClassLoader getClassLoader() {
+    return classLoader;
+  }
+
+  public static void setClassLoader(ClassLoader classLoader) {
+    ServerHolder.classLoader = classLoader;
   }
 }
