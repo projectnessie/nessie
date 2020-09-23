@@ -92,9 +92,12 @@ public class StartMojo extends AbstractMojo {
         final ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(classLoader);
         try {
-          Class<?> appClass = Class.forName("io.quarkus.runtime.ApplicationLifecycleManager", true, Thread.currentThread().getContextClassLoader());
+          Class<?> appClass = Class.forName("io.quarkus.runtime.ApplicationLifecycleManager",
+                                            true,
+                                            Thread.currentThread().getContextClassLoader());
           //getting the method with a Consumer<Integer> is a bit fiddly. just look by name
-          Optional<Method> method = Arrays.stream(appClass.getMethods()).filter(x -> x.getName().equals("setDefaultExitCodeHandler")).findFirst();
+          Optional<Method> method = Arrays.stream(appClass.getMethods())
+                                          .filter(x -> x.getName().equals("setDefaultExitCodeHandler")).findFirst();
           method.orElseThrow(() -> new RuntimeException("couldn't find method")).invoke(null, exitHandler);
           Class<?> quarkusClass = Class.forName("io.quarkus.runtime.Quarkus", true, Thread.currentThread().getContextClassLoader());
           quarkusClass.getMethod("run", String[].class).invoke(null, new Object[] {new String[] {"-Dquarkus.profile=test"}});
