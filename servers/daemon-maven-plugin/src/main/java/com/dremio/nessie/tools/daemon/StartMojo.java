@@ -13,21 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.tools.daemon;
+package com.dremio.nessie.tools.daemon;
 
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.function.Consumer;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -35,6 +30,7 @@ import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 
 /**
  * Starting Quarkus daemon.
@@ -48,13 +44,25 @@ public class StartMojo extends AbstractMojo {
   @Parameter(property = "skipTests", required = false, defaultValue = "false")
   private Boolean skipTests;
 
-  private URLClassLoader buildClassLoader() throws MalformedURLException {
+  @Parameter(defaultValue = "${project}", readonly = true, required = true)
+  private MavenProject project;
 
-    List<Artifact> artifacts = ((PluginDescriptor) getPluginContext().get("pluginDescriptor")).getArtifacts();
+  @Parameter( defaultValue = "${plugin}", readonly = true ) // Maven 3 only
+  private PluginDescriptor pluginDescriptor;
+
+  private URLClassLoader buildClassLoader() throws MalformedURLException {
+    Artifact projectArtifact = project.getArtifact();
+    String quarkusArtifact = new DefaultArtifact(projectArtifact.getGroupId(),
+                                                 "nessie-quarkus",
+                                                 projectArtifact.getVersion(),
+                                                 null,
+                                                 "jar",
+                                                 "runner",
+                                                 null).toString();
+    List<Artifact> artifacts = pluginDescriptor.getArtifacts();
+    //filter plugin artifacts to remove all artifacts not related to the quarkus server (or the classes in this package)
     URL[] pathUrls = artifacts.stream()
-                              .filter(x -> {
-                                return x.hasClassifier() && x.getClassifier().equals("runner");
-                              })
+                              .filter(x -> isFromQuarkus(x, quarkusArtifact) || x.equals(pluginDescriptor.getPluginArtifact()))
                               .map(x -> {
                                 try {
                                   return x.getFile().toURI().toURL();
@@ -68,12 +76,9 @@ public class StartMojo extends AbstractMojo {
     return new URLClassLoader(pathUrls, ClassLoader.getSystemClassLoader());
   }
 
-  private final Consumer<Integer> exitHandler = new Consumer<Integer>() {
-    @Override
-    public void accept(Integer integer) {
-      //not interested in the exit value
-    }
-  };
+  private boolean isFromQuarkus(Artifact artifact, String quarkusArtifact) {
+    return artifact.getDependencyTrail().stream().anyMatch(quarkusArtifact::equals);
+  }
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -87,33 +92,20 @@ public class StartMojo extends AbstractMojo {
     try {
       final ClassLoader classLoader = buildClassLoader();
 
-      ExecutorService executor = Executors.newSingleThreadExecutor();
-      Future<?> job = executor.submit(() -> {
-        final ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(classLoader);
-        try {
-          Class<?> appClass = Class.forName("io.quarkus.runtime.ApplicationLifecycleManager",
-                                            true,
-                                            Thread.currentThread().getContextClassLoader());
-          //getting the method with a Consumer<Integer> is a bit fiddly. just look by name
-          Optional<Method> method = Arrays.stream(appClass.getMethods())
-                                          .filter(x -> x.getName().equals("setDefaultExitCodeHandler")).findFirst();
-          method.orElseThrow(() -> new RuntimeException("couldn't find method")).invoke(null, exitHandler);
-          Class<?> quarkusClass = Class.forName("io.quarkus.runtime.Quarkus", true, Thread.currentThread().getContextClassLoader());
-          quarkusClass.getMethod("run", String[].class).invoke(null, new Object[] {new String[] {"-Dquarkus.profile=test"}});
-        } catch (ReflectiveOperationException e) {
-          throw new RuntimeException(e);
-        } finally {
-          Thread.currentThread().setContextClassLoader(originalClassLoader);
-        }
-      });
-      ServerHolder.setExecutor(executor);
-      ServerHolder.setDaemon(job);
-      ServerHolder.setClassLoader(classLoader);
-      Thread.sleep(1000L); //wait for Quarkus to start up.
+      Class<?> holderClazz = Class.forName("com.dremio.nessie.tools.daemon.ServerHolder", true, classLoader);
+      Object holder =  holderClazz.getConstructor(ClassLoader.class).newInstance(classLoader);
+      holderClazz.getMethod("start").invoke(holder);
+
+      project.setContextValue("quarkusServerHolder", holder);
+      project.setContextValue("quarkusServerHolderClass", holderClazz);
+      Thread.sleep(2000L); //wait for Quarkus to start up.
+      boolean isRunning = (boolean) holderClazz.getMethod("isRunning").invoke(holder);
+      if (!isRunning) {
+        Exception e = (Exception) holderClazz.getMethod("error").invoke(holder);
+        throw new MojoExecutionException("Quarkus thread failed", e);
+      }
     } catch (Exception e) {
-      e.printStackTrace();
-      throw new MojoExecutionException("Failure starting Nessie Daemon", e);
+      throw new MojoExecutionException("Failure starting Nessie Daemon", e instanceof MojoExecutionException ? e.getCause() : e);
     }
   }
 }
