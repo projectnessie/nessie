@@ -56,7 +56,7 @@
         </exclusion>
       </exclusions>
     </dependency>
-    
+
     <!-- dependencies to annotations -->
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
@@ -75,6 +75,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
+        <version>3.6.0</version>
       </plugin>
     </plugins>
   </build>

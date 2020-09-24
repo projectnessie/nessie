@@ -56,7 +56,7 @@ public class ServerHolder implements AutoCloseable {
   }
 
   public boolean isRunning() {
-    return job.isDone() || job.isCancelled();
+    return !job.isDone() && !job.isCancelled();
   }
 
   public Exception error() {
