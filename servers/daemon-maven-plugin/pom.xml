@@ -35,10 +35,6 @@
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-plugin-api</artifactId>
     </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-    </dependency>
 
     <dependency>
       <groupId>com.dremio.nessie</groupId>
@@ -54,6 +50,10 @@
           <groupId>io.quarkus</groupId>
           <artifactId>quarkus-bootstrap-maven-resolver</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-core-deployment</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     
@@ -63,6 +63,11 @@
       <artifactId>maven-plugin-annotations</artifactId>
       <scope>provided</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
@@ -70,7 +75,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.6.0</version>
       </plugin>
     </plugins>
   </build>
