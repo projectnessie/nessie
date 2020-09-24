@@ -60,7 +60,7 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
-    <awssdk.version>2.14.23</awssdk.version>
+    <awssdk.version>2.14.24</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake.version>0.6.1</deltalake.version>
     <microprofile-metrics.version>2.3.2</microprofile-metrics.version>
