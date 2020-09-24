@@ -38,7 +38,7 @@ import org.apache.maven.project.MavenProject;
 @Mojo(name = "start", defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST)
 public class StartMojo extends AbstractMojo {
 
-  public static final String DAEMON_SERVER_HOLDER = "com.dremio.nessie.tools.daemon.ServerHolder";
+  private static final String DAEMON_SERVER_HOLDER = "com.dremio.nessie.tools.daemon.ServerHolder";
   /**
    * Whether you should skip while running in the test phase (default is false).
    */
