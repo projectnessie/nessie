@@ -34,6 +34,13 @@ public class ServerHolder implements AutoCloseable {
     executor = Executors.newSingleThreadExecutor();
   }
 
+  /**
+   * excecutes Quarkus.run in its own thread with its own classpath.
+   *
+   * <p>
+   *   We save both the resulting future and any thrown exceptions for reporting and shutdown.
+   * </p>
+   */
   public void start() {
     job = executor.submit(() -> {
       try {

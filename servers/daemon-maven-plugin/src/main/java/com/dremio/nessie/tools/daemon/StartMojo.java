@@ -47,7 +47,7 @@ public class StartMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project}", readonly = true, required = true)
   private MavenProject project;
 
-  @Parameter( defaultValue = "${plugin}", readonly = true ) // Maven 3 only
+  @Parameter(defaultValue = "${plugin}", readonly = true)
   private PluginDescriptor pluginDescriptor;
 
   private URLClassLoader buildClassLoader() throws MalformedURLException {
