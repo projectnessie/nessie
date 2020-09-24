@@ -22,10 +22,16 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -39,6 +45,7 @@ import org.eclipse.jgit.dircache.DirCacheEntry;
 import org.eclipse.jgit.errors.AmbiguousObjectException;
 import org.eclipse.jgit.errors.ConfigInvalidException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.InvalidObjectIdException;
 import org.eclipse.jgit.errors.UnmergedPathException;
 import org.eclipse.jgit.lib.CommitBuilder;
 import org.eclipse.jgit.lib.Constants;
@@ -152,7 +159,10 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
       // hash last.
       try {
-        repository.resolve(refOfUnknownType + "^{tree}");
+        ObjectId hash = repository.resolve(refOfUnknownType + "^{tree}");
+        if (hash == null) {
+          throw ReferenceNotFoundException.forReference(refOfUnknownType);
+        }
         return WithHash.of(Hash.of(refOfUnknownType), Hash.of(refOfUnknownType));
       } catch (IllegalArgumentException | AmbiguousObjectException | IncorrectObjectTypeException e) {
         throw new ReferenceNotFoundException(String.format("Unable to find the requested reference %s.", refOfUnknownType));
@@ -169,20 +179,33 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     try {
       ObjectId commits = TreeBuilder.commitObjects(operations, repository, storeWorker.getValueSerializer(), emptyObject);
       ObjectId treeId = repository.resolve(expectedHash.map(Hash::asString).orElse(branch.getName()) + "^{tree}");
+      if (treeId == null) {
+        throw ReferenceNotFoundException.forReference(expectedHash.map(x -> (Ref)x).orElse(branch));
+      }
       ObjectId newTree = TreeBuilder.merge(treeId, commits, repository);
       try {
-        commitTree(branch, newTree, expectedHash, metadata);
+        commitTree(branch, newTree, expectedHash, metadata, false);
       } catch (ReferenceConflictException e) {
-        if (operations.stream().anyMatch(x -> x instanceof Unchanged)) {
+        if (operations.stream().anyMatch(x -> x instanceof Unchanged) && !operations.stream().allMatch(x -> x instanceof Unchanged)) {
           throw e;
         }
+        Set<String> paths = operations.stream()
+                                       .filter(Operation::shouldMatchHash)
+                                       .map(Operation::getKey)
+                                       .map(JGitVersionStore::stringFromKey)
+                                       .collect(Collectors.toSet());
         ObjectId currentTreeId = repository.resolve(branch.getName() + "^{tree}");
         ObjectId currentCommitId = repository.resolve(branch.getName() + "^{commit}");
         Optional<ObjectId> mergedTree = tryTwoWayMerge(currentTreeId,
                                                        newTree,
                                                        repository.newObjectInserter(),
-                                                       expectedHash.map(Hash::asString).map(ObjectId::fromString).orElseThrow(() -> e));
-        commitTree(branch, mergedTree.orElseThrow(() -> e), Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of), metadata);
+                                                       fromHash(branch, expectedHash).orElseThrow(() -> e),
+                                                       paths);
+        commitTree(branch,
+                   mergedTree.orElseThrow(() -> e),
+                   Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of),
+                   metadata,
+                   ObjectId.isEqual(currentTreeId, mergedTree.get()));
       }
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
@@ -191,8 +214,25 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
   @Override
   public void transplant(BranchName targetBranch, Optional<Hash> expectedHash,
-                         List<Hash> sequenceToTransplant) {
-    throw new IllegalStateException("Not yet implemented.");
+                         List<Hash> sequenceToTransplant) throws ReferenceNotFoundException, ReferenceConflictException {
+    try {
+      ObjectId targetTreeId = repository.resolve(targetBranch.getName() + "^{tree}");
+      if (targetTreeId == null) {
+        throw ReferenceNotFoundException.forReference(expectedHash.map(x -> (Ref) x).orElse(targetBranch));
+      }
+      ObjectId newTree = null;
+      for (Hash hash: sequenceToTransplant) {
+        ObjectId transplantTree = TreeBuilder.transplant(hash, repository);
+        if (newTree == null) {
+          newTree = transplantTree;
+        } else {
+          newTree = TreeBuilder.merge(newTree, transplantTree, repository);
+        }
+      }
+      commitTree(targetBranch, newTree, Optional.empty(), null, true);
+    } catch (IOException e) {
+      throw new RuntimeException("Unknown error", e);
+    }
   }
 
   @Override
@@ -203,22 +243,12 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   @Override
   public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    try {
-      Hash existingHash = toHash(ref);
-      if (expectedHash.isPresent() && !existingHash.equals(expectedHash.get())) {
-        throw new ReferenceConflictException(String.format("expected hash %s does not match current hash %s", expectedHash, existingHash));
-      }
-    } catch (ReferenceNotFoundException e) {
-      //ref doesn't exist so create it
-      if (expectedHash.isPresent()) {
-        throw new ReferenceNotFoundException(String.format("Ref %s does not exist and expected hash does", ref));
-      }
-      try {
-        create(ref, Optional.of(targetHash));
-      } catch (ReferenceAlreadyExistsException pass) {
-        //can't happen
-      }
+
+    Hash existingHash = toHash(ref);
+    if (expectedHash.isPresent() && !existingHash.equals(expectedHash.get())) {
+      throw new ReferenceConflictException(String.format("expected hash %s does not match current hash %s", expectedHash, existingHash));
     }
+
     try {
       updateRef(ref, targetHash, expectedHash, true);
     } catch (IOException e) {
@@ -244,7 +274,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         ObjectInserter inserter = repository.newObjectInserter();
         ObjectId newTreeId = inserter.insert(formatter);
         inserter.flush();
-        commitTree((BranchName)ref, newTreeId, Optional.empty(), null);
+        commitTree((BranchName)ref, newTreeId, Optional.empty(), null, false);
       } else {
         ObjectId target = repository.resolve(targetHash.get().asString());
         RefUpdate createBranch = repository.updateRef((ref instanceof TagName ? Constants.R_TAGS : Constants.R_HEADS) + ref.getName());
@@ -266,7 +296,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     toHash(ref);
     try {
       RefUpdate update = repository.updateRef((ref instanceof TagName ? Constants.R_TAGS : Constants.R_HEADS) + ref.getName());
-      Optional<ObjectId> objectId = hash.map(Hash::asString).map(ObjectId::fromString);
+      Optional<ObjectId> objectId = fromHash(ref, hash);
       if (objectId.isPresent() && !ObjectId.isEqual(update.getRef().getObjectId(), objectId.get())) {
         throw ReferenceConflictException.forReference(ref, hash, Optional.empty());
       }
@@ -313,7 +343,8 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       RevWalk walk = new RevWalk(repository);
       walk.markStart(repository.parseCommit(objectId));
       Serializer<METADATA> serializer = storeWorker.getMetadataSerializer();
-      return StreamSupport.stream(walk.spliterator(), false)
+      //note: skipLastElement doesn't return the absolute base commit. This is because other version stores don't consider that a commit.
+      return StreamSupport.stream(skipLastElement(walk.spliterator()), false)
                           .map(r -> {
                             Hash hash = Hash.of(r.name());
                             METADATA metadata = serializer.fromBytes(ByteString.copyFrom(r.getFullMessage(), StandardCharsets.UTF_8));
@@ -365,7 +396,25 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
   @Override
   public List<Optional<TABLE>> getValues(Ref ref, List<Key> key) {
-    throw new IllegalStateException("Not yet implemented.");
+    final String hashName = refName(ref);
+    Map<String, Key> keys = key.stream().collect(Collectors.toMap(JGitVersionStore::stringFromKey, k -> k));
+    Map<Key, TABLE> tables = new HashMap<>();
+    try {
+      try (TreeWalk treeWalk = new TreeWalk(repository)) {
+        ObjectId treeId = repository.resolve(hashName + "^{tree}");
+        treeWalk.addTree(treeId);
+        treeWalk.setRecursive(true);
+        while (treeWalk.next()) {
+          if (keys.containsKey(treeWalk.getPathString())) {
+            byte[] bytes = getTable(treeWalk, repository);
+            tables.put(keys.get(treeWalk.getPathString()), storeWorker.getValueSerializer().fromBytes(ByteString.copyFrom(bytes)));
+          }
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException("Unknown jgit error", e);
+    }
+    return key.stream().map(k -> Optional.ofNullable(tables.get(k))).collect(Collectors.toList());
   }
 
   @Override
@@ -373,25 +422,26 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     throw new IllegalStateException("Not yet implemented.");
   }
 
-  private void commitTree(BranchName branch, ObjectId newTree, Optional<Hash> expectedHash, METADATA metadata)
+  private void commitTree(BranchName branch, ObjectId newTree, Optional<Hash> expectedHash, METADATA metadata, boolean force)
       throws IOException, ReferenceConflictException {
     ObjectInserter inserter = repository.newObjectInserter();
     CommitBuilder commitBuilder = fromUser(metadata);
     commitBuilder.setTreeId(newTree);
-    ObjectId parentId = expectedHash.map(Hash::asString)
-                                    .map(ObjectId::fromString)
-                                    .orElse(repository.resolve(Constants.R_HEADS + branch.getName()));
+    ObjectId parentId = fromHash(branch, expectedHash).orElse(repository.resolve(Constants.R_HEADS + branch.getName()));
     if (parentId != null) {
       commitBuilder.setParentId(parentId);
     }
     ObjectId newCommitId = inserter.insert(commitBuilder);
     inserter.flush();
-    updateRef(branch, newCommitId, expectedHash, false);
+    updateRef(branch, newCommitId, expectedHash, force);
   }
 
   private void updateRef(NamedRef ref, Hash targetHash, Optional<Hash> expectedHash, boolean force)
-      throws IOException, ReferenceConflictException {
+      throws IOException, ReferenceConflictException, ReferenceNotFoundException {
     ObjectId target = repository.resolve(targetHash.asString());
+    if (target == null) {
+      throw ReferenceNotFoundException.forReference(ref);
+    }
     updateRef(ref, target, expectedHash, force);
   }
 
@@ -399,18 +449,19 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       throws IOException, ReferenceConflictException {
     RefUpdate updateBranch = repository.updateRef((ref instanceof TagName ? Constants.R_TAGS : Constants.R_HEADS) + ref.getName());
     updateBranch.setNewObjectId(target);
-    expectedHash.map(Hash::asString).map(ObjectId::fromString).ifPresent(updateBranch::setExpectedOldObjectId);
+    fromHash(ref, expectedHash).ifPresent(updateBranch::setExpectedOldObjectId);
     Result result = force ? updateBranch.forceUpdate() : updateBranch.update();
     if (!result.equals(Result.NEW) && !result.equals(Result.FAST_FORWARD) && !result.equals(Result.FORCED)) {
       throw new ReferenceConflictException(String.format("result did not complete for create branch on %s with state %s", ref, result));
     }
   }
 
-  private Optional<ObjectId> tryTwoWayMerge(ObjectId treeId, ObjectId newTreeId, ObjectInserter inserter, ObjectId version)
+  private Optional<ObjectId> tryTwoWayMerge(ObjectId treeId, ObjectId newTreeId, ObjectInserter inserter, ObjectId version,
+                                            Set<String> paths)
       throws IOException {
     inserter.flush();
 
-    Merger merger = new Merger(repository);
+    Merger merger = new Merger(repository, paths);
     merger.setBase(version);
     boolean ok = merger.merge(treeId, newTreeId);
     return ok ? Optional.of(merger.getResultTreeId()) : Optional.empty();
@@ -436,6 +487,44 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     commitBuilder.setAuthor(person);
     commitBuilder.setCommitter(person);
     return commitBuilder;
+  }
+
+  private static Optional<ObjectId> fromHash(NamedRef ref, Optional<Hash> s) throws ReferenceConflictException {
+    try {
+      return s.map(Hash::asString).map(ObjectId::fromString);
+    } catch (InvalidObjectIdException e) {
+      throw ReferenceConflictException.forReference(ref, s, Optional.empty(), e);
+    }
+  }
+
+  private static <T> Spliterator<T> skipLastElement(Spliterator<T> src) {
+    ArrayDeque<T> pending = new ArrayDeque<>(1);
+    return new Spliterator<T>() {
+      public boolean tryAdvance(Consumer<? super T> action) {
+        boolean succeed = true;
+        while (pending.size() < 2 && succeed) {
+          succeed = src.tryAdvance(pending::add);
+        }
+
+        if (pending.size() > 1) {
+          action.accept(pending.remove());
+          return true;
+        }
+        return false;
+      }
+
+      public Spliterator<T> trySplit() {
+        return null;
+      }
+
+      public long estimateSize() {
+        return src.estimateSize() - 1;
+      }
+
+      public int characteristics() {
+        return src.characteristics();
+      }
+    };
   }
 
   /**
@@ -508,6 +597,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     private static final int T_THEIRS = 2;
 
     private final NameConflictTreeWalk tw;
+    private final Set<String> paths;
 
     private final DirCache cache;
 
@@ -515,9 +605,10 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
     private ObjectId resultTree;
 
-    Merger(Repository local) {
+    Merger(Repository local, Set<String> paths) {
       super(local);
       tw = new NameConflictTreeWalk(local, reader);
+      this.paths = paths;
       cache = DirCache.newInCore();
     }
 
@@ -532,7 +623,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       while (tw.next()) {
         final int modeO = tw.getRawMode(T_OURS);
         final int modeT = tw.getRawMode(T_THEIRS);
-        if (modeO == modeT && tw.idEqual(T_OURS, T_THEIRS)) {
+        if (modeO == modeT && tw.idEqual(T_OURS, T_THEIRS) && !ObjectId.isEqual(tw.getObjectId(T_OURS), ObjectId.zeroId())) {
           add(T_OURS, DirCacheEntry.STAGE_0);
           continue;
         }
@@ -543,6 +634,9 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         } else if (modeB == modeT && tw.idEqual(T_BASE, T_THEIRS)) {
           if (!ObjectId.isEqual(tw.getObjectId(T_BASE), ObjectId.zeroId())) {
             add(T_OURS, DirCacheEntry.STAGE_0); // only add if object has changed. If it was null before and now ignore it.
+          } else {
+            add(T_THEIRS, DirCacheEntry.STAGE_3);
+            hasConflict = true;
           }
         } else {
           if (nonTree(modeB)) {
