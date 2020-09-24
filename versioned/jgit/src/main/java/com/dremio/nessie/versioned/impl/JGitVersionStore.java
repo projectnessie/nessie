@@ -25,7 +25,9 @@ import java.time.ZonedDateTime;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,10 +41,14 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.LogCommand;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.dircache.DirCacheBuilder;
 import org.eclipse.jgit.dircache.DirCacheEntry;
 import org.eclipse.jgit.errors.AmbiguousObjectException;
+import org.eclipse.jgit.errors.CheckoutConflictException;
 import org.eclipse.jgit.errors.ConfigInvalidException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.InvalidObjectIdException;
@@ -60,6 +66,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.TreeFormatter;
 import org.eclipse.jgit.lib.UserConfig;
 import org.eclipse.jgit.merge.ThreeWayMerger;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.NameConflictTreeWalk;
@@ -236,8 +243,151 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash) {
-    throw new IllegalStateException("Not yet implemented.");
+  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    try {
+      org.eclipse.jgit.lib.Ref ref = repository.findRef(Constants.R_HEADS + toBranch.getName());
+      if (ref == null) {
+        throw ReferenceNotFoundException.forReference(expectedHash.map(x -> (Ref) x).orElse(toBranch));
+      }
+      ObjectId newCommitId = repository.resolve(fromHash.asString() + "^{commit}");
+      RevCommit newCommit = RevCommit.parse(repository.getObjectDatabase()
+                                                      .open(newCommitId)
+                                                      .getBytes());
+      RevWalk walk = new RevWalk(repository);
+      ObjectId headId = ref.getObjectId();
+      String headName = ref.getName();
+      RevCommit headCommit = walk.lookupCommit(headId);
+      RevCommit upstream = walk.lookupCommit(newCommit.getId());
+
+      if (walk.isMergedInto(upstream, headCommit)) {
+        return;
+      } else if (walk.isMergedInto(headCommit, upstream)) {
+        RefUpdate rup = repository.updateRef(headName);
+        rup.setNewObjectId(newCommit);
+        expectedHash.map(Hash::asString).map(ObjectId::fromString).ifPresent(rup::setExpectedOldObjectId);
+        Result res = rup.forceUpdate();
+        switch (res) {
+          case FAST_FORWARD:
+          case FORCED:
+          case NO_CHANGE:
+            break;
+          default:
+            throw new IOException("failed update");
+        }
+      }
+      List<RevCommit> pickList = calculatePickList(newCommit, headCommit);
+      for (RevCommit step : pickList) {
+        //currently this will attempt to merge entire database.
+        cherryPickCommitFlattening(toBranch, expectedHash, step, ref);
+      }
+      return;
+//      throw ReferenceConflictException.forReference(toBranch, expectedHash, Optional.empty());
+
+//      ObjectId target = ObjectId.fromString(fromHash.asString());
+//      RefUpdate updateBranch = repository.updateRef(Constants.R_HEADS + toBranch.getName());
+//      updateBranch.setNewObjectId(target);
+//      fromHash(toBranch, expectedHash).ifPresent(updateBranch::setExpectedOldObjectId);
+//      Result result = updateBranch.update();
+//      if (result != Result.FAST_FORWARD) {
+//        ObjectId currentTreeId = repository.resolve(toBranch.getName() + "^{tree}");
+//        Optional<ObjectId> mergedTree = tryTwoWayMerge(currentTreeId,
+//                                                       target,
+//                                                       repository.newObjectInserter(),
+//                                                       fromHash(toBranch, expectedHash).orElseThrow(() -> ReferenceConflictException.forReference(toBranch, expectedHash, Optional.empty())),
+//                                                       new HashSet<>());
+//        updateBranch = repository.updateRef(Constants.R_HEADS + toBranch.getName());
+//        updateBranch.setNewObjectId(target);
+//        mergedTree.ifPresent(updateBranch::setExpectedOldObjectId);
+//        result = updateBranch.update();
+//        if (result != Result.FAST_FORWARD) {
+//          throw ReferenceConflictException.forReference(toBranch, expectedHash, Optional.empty());
+//        }
+//      }
+    } catch (IOException e) {
+      throw new RuntimeException("Unknown error", e);
+    }
+  }
+  private void cherryPickCommitFlattening(BranchName branch,
+                                            Optional<Hash> expectedHash,
+                                            RevCommit commitToPick,
+                                            org.eclipse.jgit.lib.Ref head) throws IOException, ReferenceConflictException {
+    RevCommit newHead = tryFastForward(commitToPick, head);
+    boolean lastStepWasForward = newHead != null;
+    if (lastStepWasForward) {
+      updateRef(branch, newHead.getId(), expectedHash, false);
+    }
+    RevWalk revWalk = new RevWalk(repository);
+    Merger merger = new Merger(repository, new HashSet<>());
+    newHead = revWalk.parseCommit(head.getObjectId());
+    boolean ok = merger.merge(commitToPick, newHead);
+    if (ok) {
+      ObjectId newTree = merger.getResultTreeId();
+      commitTree(branch, newTree, expectedHash, null, false);
+    } else {
+      throw new ReferenceConflictException("xxx");
+    }
+  }
+
+  private RevCommit tryFastForward(RevCommit newCommit, org.eclipse.jgit.lib.Ref head) throws IOException, ReferenceConflictException {
+    RevWalk walk = new RevWalk(repository);
+    ObjectId headId = head.getObjectId();
+    RevCommit headCommit = walk.lookupCommit(headId);
+    if (walk.isMergedInto(newCommit, headCommit)) {
+      return newCommit;
+    }
+    String headName = head.getObjectId().name();
+    boolean tryRebase = false;
+    for (RevCommit parentCommit : newCommit.getParents()) {
+      if (parentCommit.equals(headCommit)) {
+        tryRebase = true;
+        break;
+      }
+    }
+    if (!tryRebase) {
+      return null;
+    }
+
+    try {
+      if (headName.startsWith(Constants.R_HEADS)) {
+        RefUpdate rup = repository.updateRef(headName);
+        rup.setExpectedOldObjectId(headCommit);
+        rup.setNewObjectId(newCommit);
+        rup.setRefLogMessage("Fast-forward from " + headCommit.name()
+                             + " to " + newCommit.name(), false);
+        Result res = rup.update(walk);
+        switch (res) {
+          case FAST_FORWARD:
+          case NO_CHANGE:
+          case FORCED:
+            break;
+          default:
+            throw new ReferenceConflictException("Could not fast-forward");
+        }
+      }
+      return newCommit;
+    } catch (CheckoutConflictException e) {
+      throw new ReferenceConflictException("Could not fast-forward");
+    }
+  }
+  private List<RevCommit> calculatePickList(RevCommit headCommit, RevCommit upstreamCommit)
+    throws IOException {
+    Iterable<RevCommit> commitsToUse;
+    try (Git git = new Git(repository)) {
+      LogCommand cmd = git.log().addRange(upstreamCommit, headCommit);
+      commitsToUse = cmd.call();
+    } catch (GitAPIException e) {
+      throw new IOException(e);
+    }
+    List<RevCommit> cherryPickList = new ArrayList<>();
+    for (RevCommit commit : commitsToUse) {
+      if (commit.getParentCount() == 1) {
+        cherryPickList.add(commit);
+      }
+    }
+    Collections.reverse(cherryPickList);
+
+    return cherryPickList;
   }
 
   @Override
