@@ -33,6 +33,7 @@
     <module>versioned</module>
     <module>perftest</module>
     <module>servers</module>
+    <module>tools</module>
   </modules>
 
   <scm>
@@ -525,6 +526,11 @@
           <artifactId>maven-shade-plugin</artifactId>
           <version>3.2.4</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-plugin-plugin</artifactId>
+          <version>3.6.0</version>
+        </plugin>
 
         <!-- 3rd party plugins -->
         <plugin>
@@ -560,11 +566,6 @@
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
           <version>4.4.0</version>
-        </plugin>
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>build-helper-maven-plugin</artifactId>
-          <version>3.1.0</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>

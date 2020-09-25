@@ -87,7 +87,7 @@ abstract class BaseTestIceberg {
 
   @BeforeEach
   public void beforeEach() throws NessieConflictException, NessieNotFoundException {
-    String path = "http://localhost:19120/api/v1";
+    String path = "http://localhost:19121/api/v1";
     String username = "test";
     String password = "test123";
     this.client = new NessieClient(AuthType.NONE, path, username, password);
