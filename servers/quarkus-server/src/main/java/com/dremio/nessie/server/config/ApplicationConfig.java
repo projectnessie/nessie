@@ -104,10 +104,10 @@ public class ApplicationConfig {
   @ConfigProperties(prefix = "nessie.version.store.jgit")
   public interface VersionStoreJGitConfig {
 
-    @ConfigProperty(name = "version.store.jgit.type", defaultValue = "INMEMORY")
+    @ConfigProperty(name = "type", defaultValue = "INMEMORY")
     JGitStoreType getJgitStoreType();
 
-    @ConfigProperty(name = "version.store.jgit.directory")
+    @ConfigProperty(name = "directory")
     Optional<String> getJgitDirectory();
   }
 
