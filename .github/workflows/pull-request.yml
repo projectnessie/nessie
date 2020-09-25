@@ -31,7 +31,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - name: Build with Maven
-      run: mvn -B install --file pom.xml -Pcode-coverage
+      run: mvn -B install --file pom.xml -Pcode-coverage,release
+    - name: Docker images
+      run: docker images
     - name: Capture test results
       uses: actions/upload-artifact@v2
       with:
