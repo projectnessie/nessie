@@ -15,8 +15,11 @@
  */
 package com.dremio.nessie.quarkus.maven;
 
+import java.lang.reflect.Method;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -134,12 +137,22 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
     try {
       final CuratedApplication app = bootstrap.bootstrap();
       StartupAction startupAction = app.createAugmentor().createInitialRuntimeApplication();
+      exitHandler(startupAction);
       RunningQuarkusApplication runningApp = startupAction.runMainClass();
       getLog().info("Quarkus application started.");
-      System.out.println(runningApp);
       setApplicationHandle(runningApp);
     } catch (Exception e) {
       throw new MojoExecutionException("Failure starting Nessie Daemon", e instanceof MojoExecutionException ? e.getCause() : e);
     }
+  }
+
+  private void exitHandler(StartupAction startupAction) throws ReflectiveOperationException {
+    Consumer<Integer> consumer = i -> { };
+    Method exitHandler = Arrays.stream(startupAction.getClassLoader().loadClass("io.quarkus.runtime.ApplicationLifecycleManager")
+                                                .getMethods())
+                               .filter(x -> x.getName().equals("setDefaultExitCodeHandler"))
+                               .findFirst()
+                               .orElseThrow(NoSuchMethodException::new);
+    exitHandler.invoke(null, consumer);
   }
 }
