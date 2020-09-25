@@ -32,8 +32,14 @@ jobs:
           ${{ runner.os }}-node-
     - name: Build with Maven
       run: mvn -B install --file pom.xml -Pcode-coverage,release
-    - name: Docker images
-      run: docker images
+    - name: Push Docker images
+      run: |
+          docker login https://docker.pkg.github.com -u '${{ github.actor }}' -p '${{ secrets.GITHUB_TOKEN }}'
+          docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
+          while read IMAGE_ID IMAGE_TAG; do
+            docker tag "$IMAGE_TAG" "docker.pkg.github.com/${{ github.repository }}/nessie:${IMAGE_TAG}"
+            docker push "docker.pkg.github.com/${{ github.repository }}/nessie:${IMAGE_TAG}"
+          done
     - name: Capture test results
       uses: actions/upload-artifact@v2
       with:
