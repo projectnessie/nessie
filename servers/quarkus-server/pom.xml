@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.dremio.nessie</groupId>
+    <groupId>org.projectnessie</groupId>
     <artifactId>nessie-server-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
@@ -31,27 +31,27 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-services</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-jgit</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-dynamodb</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-memory</artifactId>
       <version>${project.version}</version>
     </dependency>    
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-backends-simple</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -64,18 +64,18 @@
       <artifactId>protobuf-java</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-backends-dynamodb</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-client</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-ui</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -202,7 +202,7 @@
             <configuration>
               <includes>**/*</includes>
               <excludes>META-INF/*,META-INF/**/*,META-INF</excludes>
-              <includeGroupIds>com.dremio.nessie</includeGroupIds>
+              <includeGroupIds>org.projectnessie</includeGroupIds>
               <includeArtifactIds>nessie-ui</includeArtifactIds>
               <outputDirectory>${project.build.directory}/classes/META-INF/resources</outputDirectory>
             </configuration>
