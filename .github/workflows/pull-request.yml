@@ -31,15 +31,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - name: Build with Maven
-      run: mvn -B install --file pom.xml -Pcode-coverage,release
-    - name: Push Docker images
-      run: |
-          echo '${{ secrets.GITHUB_TOKEN }}' | docker login https://docker.pkg.github.com -u '${{ github.actor }}' --password-stdin
-          docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
-          while read IMAGE_ID IMAGE_TAG; do
-            docker tag "$IMAGE_ID" "docker.pkg.github.com/${{ github.repository }}/nessie:${IMAGE_TAG}"
-            docker push "docker.pkg.github.com/${{ github.repository }}/nessie:${IMAGE_TAG}"
-          done
+      run: mvn -B install --file pom.xml -Pcode-coverage
     - name: Capture test results
       uses: actions/upload-artifact@v2
       with:
