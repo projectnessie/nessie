@@ -236,7 +236,6 @@
       <id>native</id>
       <properties>
         <quarkus.package.type>native</quarkus.package.type>
-        <quarkus.container-image.build>true</quarkus.container-image.build>
       </properties>
       <build>
         <plugins>
@@ -265,6 +264,12 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>release</id>
+      <properties>
+        <quarkus.container-image.build>true</quarkus.container-image.build>
+      </properties>
     </profile>
   </profiles>
 </project>
