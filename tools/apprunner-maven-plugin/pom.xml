@@ -21,14 +21,14 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie-server-parent</artifactId>
+    <artifactId>nessie-tools</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-daemon-maven-plugin</artifactId>
+  <artifactId>nessie-apprunner-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
 
-  <name>Nessie Daemon Maven Plugin</name>
+  <name>Nessie Quarkus Application Runner Maven Plugin</name>
 
   <dependencies>
     <dependency>
@@ -37,21 +37,20 @@
     </dependency>
 
     <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-quarkus</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-bootstrap-core</artifactId>
     </dependency>
-    
+
     <!-- dependencies to annotations -->
     <dependency>
       <groupId>org.apache.maven.plugin-tools</groupId>
       <artifactId>maven-plugin-annotations</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -61,7 +60,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.6.0</version>
       </plugin>
     </plugins>
   </build>
