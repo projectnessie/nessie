@@ -50,7 +50,7 @@ public class ContentsKey {
   }
 
   // internal constructor for a list that doesn't need a defensive copy.
-  private ContentsKey(@JsonProperty("elements") List<String> elements, boolean dummy) {
+  private ContentsKey(List<String> elements, boolean dummy) {
     this.elements = Collections.unmodifiableList(elements);
     validate();
   }
