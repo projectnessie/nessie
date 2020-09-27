@@ -76,7 +76,7 @@ public class ResponseCheckFilter implements ClientResponseFilter {
       error = new NessieError(status.getReasonPhrase(), status, null, new RuntimeException("Could not parse error object in response."));
     } else {
       try {
-        error = READER.readValue(inputStream, NessieError.class);
+        error = READER.readValue(inputStream);
       } catch (IOException e) {
         error = new NessieError(status.getReasonPhrase(), status, null, e);
       }
