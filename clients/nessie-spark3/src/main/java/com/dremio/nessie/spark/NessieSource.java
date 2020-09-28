@@ -16,91 +16,68 @@
 package com.dremio.nessie.spark;
 
 import java.util.Map;
-import java.util.Optional;
 
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SaveMode;
+import org.apache.spark.sql.connector.catalog.Table;
+import org.apache.spark.sql.connector.catalog.TableProvider;
+import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.delta.sources.DeltaDataSource;
 import org.apache.spark.sql.sources.BaseRelation;
 import org.apache.spark.sql.sources.CreatableRelationProvider;
 import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.sources.RelationProvider;
-import org.apache.spark.sql.sources.v2.DataSourceOptions;
-import org.apache.spark.sql.sources.v2.DataSourceV2;
-import org.apache.spark.sql.sources.v2.ReadSupport;
-import org.apache.spark.sql.sources.v2.WriteSupport;
-import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
-import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import com.dremio.nessie.iceberg.spark.NessieIcebergSource;
+import com.dremio.nessie.spark.NessieSparkCatalog.TableType;
 import com.google.common.base.Preconditions;
 
 import scala.collection.JavaConverters;
+import static com.dremio.nessie.spark.NessieSparkCatalog.getTableType;
 
-public class NessieSource
-      implements DataSourceV2, ReadSupport, WriteSupport, DataSourceRegister, CreatableRelationProvider, RelationProvider {
+public class NessieSource implements DataSourceRegister, TableProvider, CreatableRelationProvider, RelationProvider {
 
-  enum TableType {
-    HIVE,
-    ICEBERG,
-    DELTA,
-    UNKNOWN
+  @Override
+  public Transform[] inferPartitioning(CaseInsensitiveStringMap options) {
+    return this.getTable(null, null, options).partitioning();
   }
 
-  private final NessieIcebergSource icebergSource;
-  private final DeltaDataSource deltaSource;
-
-  public NessieSource() {
-    icebergSource = new NessieIcebergSource();
-    deltaSource = new DeltaDataSource();
+  @Override
+  public StructType inferSchema(CaseInsensitiveStringMap options) {
+    return null;
   }
+
+  @Override
+  public Table getTable(StructType schema,
+                        Transform[] partitioning,
+                        Map<String, String> properties) {
+    TableType tableType = getTableType(properties);
+    switch (tableType) {
+      case ICEBERG:
+        return new NessieIcebergSource().getTable(schema, partitioning, properties);
+      case DELTA:
+        return new DeltaDataSource().getTable(schema, partitioning, properties);
+      case HIVE:
+        //todo can I return a Hive source?
+      case UNKNOWN:
+      default:
+        throw new UnsupportedOperationException(String.format("Can't load a table of type %s", tableType));
+    }
+  }
+
 
   @Override
   public String shortName() {
     return "nessie";
   }
 
-  @Override
-  public DataSourceReader createReader(DataSourceOptions options) {
-    TableType tableType = getTableType(options);
-    switch (tableType) {
-      case ICEBERG:
-        return icebergSource.createReader(options);
-      case DELTA:
-      case HIVE:
-      default:
-        throw new UnsupportedOperationException(String.format("Can't read type %s", tableType));
-    }
-  }
-
-  private TableType getTableType(DataSourceOptions options) {
-    return getTableType(options.asMap());
-  }
-
-  private TableType getTableType(Map<String, String> properties) {
-    String path = properties.get("path");
-    if (path == null) {
-      return TableType.UNKNOWN;
-    }
-    String type = properties.get("nessie.file.type");
-    try {
-      return TableType.valueOf(type.toUpperCase());
-    } catch (IllegalArgumentException | NullPointerException e) {
-      //leave as unknown
-    }
-    if (path.contains("/")) {
-      return TableType.DELTA;
-    }
-    try {
-      TableIdentifier.parse(path);
-      return TableType.ICEBERG;
-    } catch (IllegalArgumentException e) {
-      return TableType.UNKNOWN;
-    }
+  public boolean supportsExternalMetadata() {
+    return true;
   }
 
   @Override
@@ -118,21 +95,5 @@ public class NessieSource
     //createRelation is only called via the delta path. So we make sure its delta and continue
     Preconditions.checkArgument(getTableType(JavaConverters.mapAsJavaMap(parameters)) == TableType.DELTA);
     return new DeltaDataSource().createRelation(sqlContext, parameters);
-  }
-
-  @Override
-  public Optional<DataSourceWriter> createWriter(String writeUUID,
-                                                 StructType schema,
-                                                 SaveMode mode,
-                                                 DataSourceOptions options) {
-    TableType tableType = getTableType(options);
-    switch (tableType) {
-      case ICEBERG:
-        return icebergSource.createWriter(writeUUID, schema, mode, options);
-      case DELTA:
-      case HIVE:
-      default:
-        throw new UnsupportedOperationException(String.format("Can't read type %s", tableType));
-    }
   }
 }

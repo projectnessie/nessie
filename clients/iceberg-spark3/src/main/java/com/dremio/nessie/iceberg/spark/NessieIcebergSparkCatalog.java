@@ -30,4 +30,5 @@ public class NessieIcebergSparkCatalog extends SparkCatalog {
     Configuration conf = SparkSession.active().sparkContext().hadoopConfiguration();
     return new NessieCatalog(name, conf);
   }
+
 }

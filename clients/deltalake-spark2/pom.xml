@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.dremio.nessie</groupId>
+    <groupId>org.projectnessie</groupId>
     <artifactId>nessie-clients</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
@@ -31,18 +31,18 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-deltalake</artifactId>
       <version>${project.version}</version>
       <classifier>sources</classifier>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-model</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-client</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -82,27 +82,41 @@
       <groupId>io.delta</groupId>
       <artifactId>delta-core_2.12</artifactId>
       <version>${deltalake2.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
       <version>2.22.2</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.glassfish.jersey.core</groupId>
+          <artifactId>jersey-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>jackson-module-jaxb-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-scala_2.12</artifactId>
       <version>2.8.8</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>2.8.8</version>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.core</groupId>
-      <artifactId>jersey-client</artifactId>
-      <version>2.22.2</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -115,7 +129,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-client-tests</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
@@ -200,7 +214,9 @@
                 <exclude>META-INF/*.SF</exclude>
                 <exclude>META-INF/*.DSA</exclude>
                 <exclude>META-INF/*.RSA</exclude>
+                <exclude>META-INF/jandex.idx</exclude>
                 <exclude>META-INF/LICENSE</exclude>
+                <exclude>LICENSE</exclude>
                 <exclude>META-INF/LICENSE.md</exclude>
                 <exclude>META-INF/LICENSE.txt</exclude>
                 <exclude>META-INF/NOTIC*</exclude>
@@ -214,19 +230,29 @@
           </transformers>
           <artifactSet>
             <excludes>
-<!--              <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>-->
-<!--              <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>-->
-<!--              <exclude>com.fasterxml.jackson.core:jackson-core</exclude>-->
+              <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
+              <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+              <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
+              <exclude>com.fasterxml.jackson.module:jackson-module-paranamer</exclude>
+              <exclude>com.fasterxml.jackson.module:jackson-module-scala_2.12</exclude>
+              <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</exclude>
+              <exclude>com.thoughtworks.paranamer:paranamer</exclude>
+              <exclude>org.abego.treelayout:org.abego.treelayout.core</exclude>
+              <exclude>com.ibm.icu:icu4j</exclude>
+              <exclude>jakarta.ws.rs:jakarta.ws.rs-api</exclude>
+              <exclude>javax.ws.rs:javax.ws.rs-api</exclude>
+              <exclude>org.antlr:antlr4</exclude>
+              <exclude>org.antlr:antlr-runtime</exclude>
+              <exclude>org.antlr:antlr4-runtime</exclude>
+              <exclude>org.antlr:ST4</exclude>
+              <exclude>org.scala-lang:scala-library</exclude>
+              <exclude>org.scala-lang:scala-reflect</exclude>
             </excludes>
           </artifactSet>
           <relocations>
             <relocation>
               <pattern>software.amazon.awssdk</pattern>
               <shadedPattern>nessie.software.amazon.awssdk</shadedPattern>
-            </relocation>
-            <relocation>
-              <pattern>javax.ws.rs.client</pattern>
-              <shadedPattern>nessie.javax.ws.rs.client</shadedPattern>
             </relocation>
           </relocations>
         </configuration>
@@ -240,18 +266,18 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>com.dremio.nessie</groupId>
+        <groupId>org.projectnessie</groupId>
         <artifactId>nessie-apprunner-maven-plugin</artifactId>
         <version>${project.version}</version>
         <configuration>
           <skip>${skipTests}</skip>
-          <appArtifactId>com.dremio.nessie:nessie-quarkus:${project.version}</appArtifactId>
+          <appArtifactId>org.projectnessie:nessie-quarkus:${project.version}</appArtifactId>
           <systemPropertyVariables>
           </systemPropertyVariables>
         </configuration>
         <dependencies>
           <dependency>
-            <groupId>com.dremio.nessie</groupId>
+            <groupId>org.projectnessie</groupId>
             <artifactId>nessie-quarkus</artifactId>
             <version>${project.version}</version>
           </dependency>

@@ -16,29 +16,22 @@
 package com.dremio.nessie.deltalake;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.apache.spark.util.Utils;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.dremio.nessie.client.tests.AbstractSparkTest;
@@ -46,18 +39,17 @@ import com.dremio.nessie.client.tests.AbstractSparkTest;
 import io.delta.tables.DeltaTable;
 import scala.Tuple2;
 
-@TestMethodOrder(Alphanumeric.class)
 class ITDeltaLog extends AbstractSparkTest {
-  private static final boolean nessie = true;
-  private static final Object ANY = new Object();
 
   @TempDir
   File tempPath;
 
-  @BeforeEach
-  public void setConf() {
-    spark.sparkContext().conf().set("spark.delta.logStore.class", NessieLogStore.class.getCanonicalName());
-    spark.sparkContext().conf().set("spark.delta.logFileHandler.class", NessieLogFileMetaParser.class.getCanonicalName());
+  @BeforeAll
+  protected static void createDelta() {
+    conf.set("spark.delta.logStore.class", NessieLogStore.class.getCanonicalName())
+        .set("spark.delta.logFileHandler.class", NessieLogFileMetaParser.class.getCanonicalName())
+        .set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+        .set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog");
   }
 
   @Test
@@ -326,53 +318,4 @@ class ITDeltaLog extends AbstractSparkTest {
     Assertions.assertTrue(DeltaTable.isDeltaTable(input));
   }
 
-  @Disabled
-  @Test
-  public void testSQLConf() throws IOException {
-    SparkSession spark = SparkSession.builder()
-                                     .appName("JavaDeltaSparkSessionExtensionSuiteUsingSQLConf")
-                                     .master("local[2]")
-                                     .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-                                     .getOrCreate();
-    try {
-      String input = Utils.createTempDir(System.getProperty("java.io.tmpdir"), "input")
-                          .getCanonicalPath();
-      spark.range(1, 10).write().format("delta").save(input);
-      spark.sql("vacuum delta.`" + input + "`");
-    } finally {
-      spark.stop();
-    }
-  }
-
-  private static List<Object[]> transform(Dataset<Row> table) {
-
-    return table.collectAsList().stream()
-                .map(row -> IntStream.range(0, row.size())
-                                     .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
-                                     .toArray(Object[]::new)
-                ).collect(Collectors.toList());
-  }
-
-  private static void assertEquals(String context, List<Object[]> expectedRows, List<Object[]> actualRows) {
-    print("expected", expectedRows);
-    print("actual", actualRows);
-    Assertions.assertEquals(expectedRows.size(), actualRows.size(), context + ": number of results should match");
-    for (int row = 0; row < expectedRows.size(); row += 1) {
-      Object[] expected = expectedRows.get(row);
-      Object[] actual = actualRows.get(row);
-      Assertions.assertEquals(expected.length, actual.length, "Number of columns should match");
-      for (int col = 0; col < actualRows.get(row).length; col += 1) {
-        if (expected[col] != ANY) {
-          Assertions.assertEquals(expected[col], actual[col], context + ": row " + row + " col " + col + " contents should match");
-        }
-      }
-    }
-  }
-
-  private static void print(String name, List<Object[]> value) {
-    System.out.println(name);
-    for (Object[] obj: value) {
-      System.out.println(Arrays.toString(obj));
-    }
-  }
 }

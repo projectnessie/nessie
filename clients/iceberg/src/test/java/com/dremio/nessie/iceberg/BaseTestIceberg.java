@@ -162,8 +162,8 @@ abstract class BaseTestIceberg {
     Table table = catalog.loadTable(tableIdentifier);
     BaseTable baseTable = (BaseTable) table;
     TableOperations ops = baseTable.operations();
-    NessieTableOperations alleyOps = (NessieTableOperations) ops;
-    return alleyOps.currentMetadataLocation();
+    NessieTableOperations icebergOps = (NessieTableOperations) ops;
+    return icebergOps.currentMetadataLocation();
   }
 
 }

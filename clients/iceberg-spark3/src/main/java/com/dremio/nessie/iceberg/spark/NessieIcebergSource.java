@@ -19,10 +19,10 @@ import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.spark.source.IcebergSource;
 
 import com.dremio.nessie.iceberg.NessieCatalog;
+import com.dremio.nessie.iceberg.ParsedTableIdentifier;
 
 /**
  * Get a table from an Iceberg Nessie Catalog.
@@ -31,13 +31,13 @@ public class NessieIcebergSource extends IcebergSource {
 
   @Override
   protected Table findTable(Map<String, String> options, Configuration conf) {
-    NessieCatalog catalog = new NessieCatalog(conf);
     String path = options.get("path");
     if (path == null) {
       throw new IllegalArgumentException("Cannot open table: path is not set");
     }
-    TableIdentifier tableIdentifier = TableIdentifier.parse(path);
-    return catalog.loadTable(tableIdentifier);
+    ParsedTableIdentifier identifier = ParsedTableIdentifier.getParsedTableIdentifier(path, options);
+    NessieCatalog catalog = new NessieCatalog(conf, identifier.getReference(), identifier.getHash());
+    return catalog.loadTable(identifier.getTableIdentifier());
   }
 
 }

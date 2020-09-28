@@ -21,8 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.Schema;
@@ -37,17 +35,18 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.tests.AbstractSparkTest;
 import com.dremio.nessie.iceberg.NessieCatalog;
+import com.dremio.nessie.model.Branch;
 
 public class ITIcebergSpark extends AbstractSparkTest {
 
-  private static final Object ANY = new Object();
   private static final String DB_NAME = "db";
   private static final String TABLE_NAME = "tbl";
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of(DB_NAME, TABLE_NAME);
@@ -55,36 +54,43 @@ public class ITIcebergSpark extends AbstractSparkTest {
                                                                       required(2, "foe2", Types.StringType.get())).fields());
 
   @TempDir
-  File alleyLocalDir;
+  File icebergLocalDir;
 
 
   protected Path tableLocation;
   protected NessieCatalog catalog;
+  private NessieClient client;
 
   /**
    * make sure the fs is set correctly for writing Iceberg tables.
    */
   @BeforeEach
   public void icebergFs() {
-    String defaultFs = alleyLocalDir.toURI().toString();
+    String defaultFs = icebergLocalDir.toURI().toString();
     String fsImpl = org.apache.hadoop.fs.LocalFileSystem.class.getName();
     spark.sparkContext().conf().set("spark.hadoop.fs.defaultFS", defaultFs);
     spark.sparkContext().conf().set("spark.hadoop.fs.file.impl", fsImpl);
     hadoopConfig.set("fs.defaultFS", defaultFs);
     hadoopConfig.set("fs.file.impl", fsImpl);
     catalog = new NessieCatalog(hadoopConfig);
+    this.tableLocation = new Path(catalog.createTable(TABLE_IDENTIFIER, schema).location());
+    client = new NessieClient(AuthType.NONE, url, null, null);
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
+    tableLocation.getFileSystem(hadoopConfig).delete(tableLocation, true);
+    catalog.refresh();
+    catalog.dropTable(TABLE_IDENTIFIER, false);
     catalog.close();
     catalog = null;
+    client.close();
+    client = null;
   }
 
 
   @Test
   void testAPI() throws IOException {
-    this.tableLocation = new Path(catalog.createTable(TABLE_IDENTIFIER, schema).location());
     List<String[]> stringAsList = new ArrayList<>();
     stringAsList.add(new String[] {"bar1.1", "bar2.1"});
     stringAsList.add(new String[] {"bar1.2", "bar2.2"});
@@ -108,33 +114,50 @@ public class ITIcebergSpark extends AbstractSparkTest {
 
     Dataset<Row> table1 = spark.read().format("iceberg").load(TABLE_IDENTIFIER.toString());
     assertEquals("can read and write", transform(dataDF), transform(table1.sort("foe1")));
-
-    tableLocation.getFileSystem(hadoopConfig).delete(tableLocation, true);
-    catalog.refresh();
-    catalog.dropTable(TABLE_IDENTIFIER, false);
   }
 
-  protected List<Object[]> transform(Dataset<Row> table) {
+  @Test
+  void testBranchHash() throws IOException {
 
-    return table.collectAsList().stream()
-                .map(row -> IntStream.range(0, row.size())
-                                     .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
-                                     .toArray(Object[]::new)
-                ).collect(Collectors.toList());
-  }
+    client.getTreeApi().createNewBranch("test", client.getTreeApi().getReferenceByName("main").getHash());
+    Branch branch = (Branch) client.getTreeApi().getReferenceByName("test");
+    List<String[]> stringAsList = new ArrayList<>();
+    stringAsList.add(new String[] {"bar1.1", "bar2.1"});
+    stringAsList.add(new String[] {"bar1.2", "bar2.2"});
 
-  protected void assertEquals(String context, List<Object[]> expectedRows, List<Object[]> actualRows) {
-    Assertions.assertEquals(expectedRows.size(), actualRows.size(), context + ": number of results should match");
-    for (int row = 0; row < expectedRows.size(); row += 1) {
-      Object[] expected = expectedRows.get(row);
-      Object[] actual = actualRows.get(row);
-      Assertions.assertEquals(expected.length, actual.length, "Number of columns should match");
-      for (int col = 0; col < actualRows.get(row).length; col += 1) {
-        if (expected[col] != ANY) {
-          Assertions.assertEquals(expected[col], actual[col], context + ": row " + row + " col " + col + " contents should match");
-        }
-      }
-    }
+    JavaSparkContext sparkContext = new JavaSparkContext(spark.sparkContext());
+
+    JavaRDD<Row> rowRDD = sparkContext.parallelize(stringAsList).map(RowFactory::create);
+
+    // Create schema
+    StructType schema = DataTypes
+        .createStructType(new StructField[] {
+          DataTypes.createStructField("foe1", DataTypes.StringType, false),
+          DataTypes.createStructField("foe2", DataTypes.StringType, false)
+        });
+
+    Dataset<Row> dataDF = spark.sqlContext().createDataFrame(rowRDD, schema);
+
+    dataDF.write().format("iceberg").mode("append").save(TABLE_IDENTIFIER.toString() + "@test");
+
+    Dataset<Row> table1 = spark.read().format("iceberg").load(TABLE_IDENTIFIER.toString() + "@test");
+    assertEquals("can read and write", transform(dataDF), transform(table1.sort("foe1")));
+
+    Dataset<Row> table2 = spark.read().format("iceberg").option("nessie.ref", "test").load(TABLE_IDENTIFIER.toString());
+    assertEquals("can read and write", transform(dataDF), transform(table2.sort("foe1")));
+
+
+    dataDF.write().format("iceberg").mode("append").save(TABLE_IDENTIFIER.toString() + "@test");
+    Dataset<Row> table3 = spark.read()
+                               .format("iceberg")
+                               .option("nessie.ref", "test")
+                               .option("nessie.hash", branch.getHash())
+                               .load(TABLE_IDENTIFIER.toString());
+    List<Object[]> result = transform(dataDF);
+    result.add(0, result.get(0));
+    result.add(result.get(2));
+    assertEquals("can read and write", result, transform(table3.sort("foe1")));
+    client.getTreeApi().deleteBranch(branch.getName(), client.getTreeApi().getReferenceByName("test").getHash());
   }
 
 }

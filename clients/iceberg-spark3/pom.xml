@@ -129,7 +129,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.dremio.nessie</groupId>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-client-tests</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
@@ -151,6 +151,7 @@
                 <exclude>META-INF/*.SF</exclude>
                 <exclude>META-INF/*.DSA</exclude>
                 <exclude>META-INF/*.RSA</exclude>
+                <exclude>META-INF/jandex.idx</exclude>
                 <exclude>META-INF/LICENSE</exclude>
                 <exclude>META-INF/LICENSE.md</exclude>
                 <exclude>META-INF/LICENSE.txt</exclude>
@@ -197,18 +198,18 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>com.dremio.nessie</groupId>
+        <groupId>org.projectnessie</groupId>
         <artifactId>nessie-apprunner-maven-plugin</artifactId>
         <version>${project.version}</version>
         <configuration>
           <skip>${skipTests}</skip>
-          <appArtifactId>com.dremio.nessie:nessie-quarkus:${project.version}</appArtifactId>
+          <appArtifactId>org.projectnessie:nessie-quarkus:${project.version}</appArtifactId>
           <systemPropertyVariables>
           </systemPropertyVariables>
         </configuration>
         <dependencies>
           <dependency>
-            <groupId>com.dremio.nessie</groupId>
+            <groupId>org.projectnessie</groupId>
             <artifactId>nessie-quarkus</artifactId>
             <version>${project.version}</version>
           </dependency>

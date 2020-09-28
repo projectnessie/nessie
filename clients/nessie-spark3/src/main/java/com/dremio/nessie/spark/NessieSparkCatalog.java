@@ -17,6 +17,7 @@ package com.dremio.nessie.spark;
 
 import java.util.Map;
 
+import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
@@ -44,15 +45,21 @@ public class NessieSparkCatalog implements StagingTableCatalog, SupportsNamespac
   enum TableType {
     HIVE,
     ICEBERG,
-    DELTA
+    DELTA,
+    UNKNOWN
   }
 
   private final NessieIcebergSparkCatalog iceberg;
   private final DeltaCatalog delta;
-  private final String name;
 
-  public NessieSparkCatalog(String name) {
-    this.name = name;
+  /**
+   * combined catalog for all nessie sources.
+   *
+   * <p>
+   *   Currently doesn't support Hive.
+   * </p>
+   */
+  public NessieSparkCatalog() {
     iceberg = new NessieIcebergSparkCatalog();
     delta = new DeltaCatalog(SparkSession.builder().getOrCreate());
   }
@@ -109,19 +116,41 @@ public class NessieSparkCatalog implements StagingTableCatalog, SupportsNamespac
 
   @Override
   public boolean tableExists(Identifier ident) {
-    return delta.tableExists(ident); //todo do we want to delegate to delta here? Can we support this for Iceberg
+    return delta.tableExists(ident) || iceberg.tableExists(ident);
   }
 
-  private TableType getTableType() {
-    return TableType.ICEBERG;
+  static TableType getTableType(String path, Map<String, String> properties) {
+    if (path == null) {
+      return TableType.UNKNOWN;
+    }
+    String type = properties.get("nessie.file.type");
+    try {
+      return TableType.valueOf(type.toUpperCase());
+    } catch (IllegalArgumentException | NullPointerException e) {
+      //leave as unknown
+    }
+    if (path.contains("/")) {
+      return TableType.DELTA;
+    }
+    try {
+      TableIdentifier.parse(path);
+      return TableType.ICEBERG;
+    } catch (IllegalArgumentException e) {
+      return TableType.UNKNOWN;
+    }
   }
 
+  static TableType getTableType(Map<String, String> properties) {
+    String path = properties.get("path");
+    return getTableType(path, properties);
+  }
+  
   @Override
   public StagedTable stageCreate(Identifier ident,
                                  StructType schema,
                                  Transform[] partitions,
                                  Map<String, String> properties) throws TableAlreadyExistsException {
-    TableType tableType = getTableType();
+    TableType tableType = getTableType(properties);
     switch (tableType) {
       case ICEBERG:
         return iceberg.stageCreate(ident, schema, partitions, properties);
@@ -136,7 +165,7 @@ public class NessieSparkCatalog implements StagingTableCatalog, SupportsNamespac
   @Override
   public StagedTable stageReplace(Identifier ident, StructType schema, Transform[] partitions,
                                   Map<String, String> properties) throws NoSuchTableException {
-    TableType tableType = getTableType();
+    TableType tableType = getTableType(properties);
     switch (tableType) {
       case ICEBERG:
         return iceberg.stageReplace(ident, schema, partitions, properties);
@@ -151,7 +180,7 @@ public class NessieSparkCatalog implements StagingTableCatalog, SupportsNamespac
   @Override
   public StagedTable stageCreateOrReplace(Identifier ident, StructType schema,
                                           Transform[] partitions, Map<String, String> properties) {
-    TableType tableType = getTableType();
+    TableType tableType = getTableType(properties);
     switch (tableType) {
       case ICEBERG:
         return iceberg.stageCreateOrReplace(ident, schema, partitions, properties);
@@ -165,7 +194,7 @@ public class NessieSparkCatalog implements StagingTableCatalog, SupportsNamespac
 
   @Override
   public Identifier[] listTables(String[] namespace) throws NoSuchNamespaceException {
-    TableType tableType = getTableType();
+    TableType tableType = TableType.ICEBERG; //todo
     switch (tableType) {
       case ICEBERG:
         return iceberg.listTables(namespace);
@@ -179,22 +208,17 @@ public class NessieSparkCatalog implements StagingTableCatalog, SupportsNamespac
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
-    TableType tableType = getTableType();
-    switch (tableType) {
-      case ICEBERG:
-        return iceberg.loadTable(ident);
-      case DELTA:
-        return delta.loadTable(ident);
-      case HIVE:
-      default:
-        throw new UnsupportedOperationException(String.format("Can't read type %s", tableType));
+    try {
+      return iceberg.loadTable(ident);
+    } catch (NoSuchTableException e) {
+      return delta.loadTable(ident);
     }
   }
 
   @Override
   public Table createTable(Identifier ident, StructType schema, Transform[] partitions,
                            Map<String, String> properties) throws TableAlreadyExistsException {
-    TableType tableType = getTableType();
+    TableType tableType = getTableType(properties);
     switch (tableType) {
       case ICEBERG:
         return iceberg.createTable(ident, schema, partitions, properties);
@@ -208,66 +232,35 @@ public class NessieSparkCatalog implements StagingTableCatalog, SupportsNamespac
 
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
-    TableType tableType = getTableType();
-    switch (tableType) {
-      case ICEBERG:
-        return iceberg.alterTable(ident, changes);
-      case DELTA:
-        return delta.alterTable(ident, changes);
-      case HIVE:
-      default:
-        throw new UnsupportedOperationException(String.format("Can't read type %s", tableType));
+    try {
+      return iceberg.alterTable(ident, changes);
+    } catch (NoSuchTableException e) {
+      return delta.alterTable(ident, changes);
     }
   }
 
   @Override
   public boolean dropTable(Identifier ident) {
-    TableType tableType = getTableType();
-    switch (tableType) {
-      case ICEBERG:
-        return iceberg.dropTable(ident);
-      case DELTA:
-        return delta.dropTable(ident);
-      case HIVE:
-      default:
-        throw new UnsupportedOperationException(String.format("Can't read type %s", tableType));
-    }
+    return iceberg.dropTable(ident) || delta.dropTable(ident);
   }
 
   @Override
   public void renameTable(Identifier oldIdent, Identifier newIdent) throws NoSuchTableException, TableAlreadyExistsException {
-    TableType tableType = getTableType();
-    switch (tableType) {
-      case ICEBERG:
-        iceberg.renameTable(oldIdent, newIdent);
-        break;
-      case DELTA:
-        delta.renameTable(oldIdent, newIdent);
-        break;
-      case HIVE:
-      default:
-        throw new UnsupportedOperationException(String.format("Can't read type %s", tableType));
+    try {
+      iceberg.renameTable(oldIdent, newIdent);
+    } catch (NoSuchTableException e) {
+      delta.renameTable(oldIdent, newIdent);
     }
   }
 
   @Override
   public void initialize(String name, CaseInsensitiveStringMap options) {
-    TableType tableType = getTableType();
-    switch (tableType) {
-      case ICEBERG:
-        iceberg.initialize(name, options);
-        break;
-      case DELTA:
-        delta.initialize(name, options);
-        break;
-      case HIVE:
-      default:
-        throw new UnsupportedOperationException(String.format("Can't read type %s", tableType));
-    }
+    iceberg.initialize(name, options);
+    delta.initialize(name, options);
   }
 
   @Override
   public String name() {
-    return name;
+    return "nessie";
   }
 }

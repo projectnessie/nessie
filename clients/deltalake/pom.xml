@@ -129,12 +129,12 @@
 
       <dependencies>
         <dependency>
-          <groupId>com.dremio.nessie</groupId>
+          <groupId>org.projectnessie</groupId>
           <artifactId>nessie-model</artifactId>
           <version>${project.version}</version>
         </dependency>
         <dependency>
-          <groupId>com.dremio.nessie</groupId>
+          <groupId>org.projectnessie</groupId>
           <artifactId>nessie-client</artifactId>
           <version>${project.version}</version>
         </dependency>
@@ -182,7 +182,7 @@
           <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>com.dremio.nessie</groupId>
+          <groupId>org.projectnessie</groupId>
           <artifactId>nessie-client-tests</artifactId>
           <version>${project.version}</version>
           <scope>test</scope>

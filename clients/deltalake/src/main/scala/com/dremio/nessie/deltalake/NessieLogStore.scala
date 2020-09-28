@@ -21,9 +21,9 @@ import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 
 import com.dremio.nessie.client.NessieClient
-import com.dremio.nessie.client.NessieClient.AuthType
+import com.dremio.nessie.client.NessieClient.{AuthType, none}
 import com.dremio.nessie.error.NessieNotFoundException
-import com.dremio.nessie.model.{ContentsKey, DeltaLakeTable, ImmutableDeltaLakeTable}
+import com.dremio.nessie.model.{ContentsKey, DeltaLakeTable, ImmutableDeltaLakeTable, Reference}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
@@ -58,7 +58,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     new NessieClient(authType, url, username, password)
   }
 
-  private def getOrCreate() = {
+  private def getOrCreate(): Reference = {
     val requestedRef = hadoopConf.get(CONF_NESSIE_REF)
 
     try {
@@ -72,29 +72,49 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     }
   }
 
-  private var branch = getOrCreate()
+  private var reference: Reference = getOrCreate()
 
   override def listFrom(path: Path): Iterator[FileStatus] = {
     throw new UnsupportedOperationException("listFrom from Nessie does not work.")
   }
 
+  private def parseTableIdentifier(path: String): Tuple3[String, String, String] = {
+    if (path.contains("@") && path.contains("#")) {
+      val tableRef = path.split("@");
+      val refHash = tableRef(1).split("#");
+      return (tableRef(0), refHash(0), refHash(0))
+    }
+
+    if (path.contains("@")) {
+      val tableRef = path.split("@");
+      return (tableRef(0), tableRef(1), null)
+    }
+
+    (path, hadoopConf.get("nessie.ref"), hadoopConf.get("nessie.hash"))
+  }
+
+
   override def write(path: Path, actions: Iterator[String], overwrite: Boolean = false): Unit = {
     val parent = path.getParent
     val nameSplit = path.getName.split("\\." , 2)
-    val name = s"${nameSplit(0)}-${UUID.randomUUID().toString.replace("-","")}.${nameSplit(1)}"
+    val (tableName, ref, hash) = parseTableIdentifier(nameSplit(0))
+    val name = s"$tableName-${UUID.randomUUID().toString.replace("-","")}.${nameSplit(1)}"
     val nessiePath = new Path(parent, name)
 
-    writeWithRename(nessiePath, actions, overwrite)
+    writeWithRename(nessiePath, actions, overwrite, ref, hash)
   }
 
-  private def commit(path: Path, message: String = "delta commit"): Boolean = {
+  private def commit(path: Path, ref: String, hash: String, message: String = "delta commit"): Boolean = {
     val table = ImmutableDeltaLakeTable.builder().metadataLocation(path.toString).build()
-    client.getContentsApi.setContents(pathToKey(path.getParent), branch.getName, branch.getHash, message, table)
-    branch = client.getTreeApi.getReferenceByName(branch.getName)
+    val targetRef = if (ref == null) reference.getName else ref
+    val targetHash = if (hash == null) reference.getHash else hash
+    val messageWithSparkId = s"$message ; spark.app.id=${sparkConf.get("spark.app.id")}"
+    client.getContentsApi.setContents(pathToKey(path.getParent), targetRef, targetHash, messageWithSparkId, table)
+    reference = client.getTreeApi.getReferenceByName(reference.getName)
     true
   }
 
-  protected def writeWithRename(path: Path, actions: Iterator[String], overwrite: Boolean = false): Unit = {
+  protected def writeWithRename(path: Path, actions: Iterator[String], overwrite: Boolean = false, ref: String, hash: String): Unit = {
     val fs = path.getFileSystem(hadoopConf)
 
     if (!fs.exists(path.getParent)) {
@@ -119,7 +139,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
         stream.close()
         streamClosed = true
         try {
-          commitDone = commit(path)
+          commitDone = commit(path, ref, hash)
         } catch {
           case _: org.apache.hadoop.fs.FileAlreadyExistsException =>
             throw new FileAlreadyExistsException(path.toString)
@@ -136,7 +156,11 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   def pathToKey(path: Path): ContentsKey = {
-    val parts = path.toUri.getPath.split("/").toList
+    pathToKey(path.toUri.getPath)
+  }
+
+  def pathToKey(path: String): ContentsKey = {
+    val parts = path.split("/").toList
     new ContentsKey(parts.asJava)
   }
 
@@ -180,7 +204,17 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       throw new FileNotFoundException(s"No such file or directory: ${path.getParent}")
     }
 
-    val table = client.getContentsApi.getContents(pathToKey(path.getParent), branch.getName)
+    val (tableName, ref, hash) = parseTableIdentifier(path.toUri.getPath)
+    var name: String = null
+    if (hash != null) {
+      name = hash
+    } else if (ref != null) {
+      name = ref
+    } else {
+      name = reference.getName
+    }
+
+    val table = client.getContentsApi.getContents(pathToKey(new Path(tableName).getParent), name)
 
     if (table == null || !table.isInstanceOf[DeltaLakeTable]) {
       throw new FileNotFoundException(s"No such table: $path")
