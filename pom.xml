@@ -892,7 +892,7 @@ limitations under the License.
         <artifactId>maven-enforcer-plugin</artifactId>
         <executions>
           <execution>
-            <id>avoid_bad_dependencies</id>
+            <id>avoid-bad-dependencies</id>
             <phase>verify</phase>
             <goals>
               <goal>enforce</goal>
@@ -912,12 +912,13 @@ limitations under the License.
             </configuration>
           </execution>
           <execution>
-            <id>enforce-java-version</id>
+            <id>enforce-project-rules</id>
             <goals>
               <goal>enforce</goal>
             </goals>
             <configuration>
               <rules>
+                <banDuplicatePomDependencyVersions/>
                 <requireJavaVersion>
                   <version>11</version>
                 </requireJavaVersion>
