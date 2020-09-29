@@ -1,15 +1,14 @@
 # Key Concepts
 
 
+## In Nessie, 
+
 ## Branches and Branching
 The below diagram is an example of the most common model for branching in Nessie. 
 
 ![branching example](/img/branches.png)
 
-As with git, it is expected that all Nessie branches start from `main`. The branching model should always maintain a 
-linear history for `master`. By default Nessie tries to maintain consistency at a database level, as such if two branches
-from a common ancestor diverge they will conflict and won't be able to be merged without forcing (deleting history) or 
-cherry-picking (explicitly deciding what changes are non-overlapping).
+As with git, it is expected that all Nessie branches start from `main`. The branching model should always maintain a linear history for `master`. By default Nessie tries to maintain consistency at a database level, as such if two branches from a common ancestor diverge they will conflict and won't be able to be merged without forcing (deleting history) or cherry-picking (explicitly deciding what changes are non-overlapping).
 
 Master is treated as the `gold` source and is the default branch that normal consumers would read from. Reads for a
 particular commit (bare branch) are consistent and always produce the same results however reads for a branch are not

@@ -45,13 +45,12 @@ to OLAP systems and data warehouses[^1].
 
 ### Repeated Read (Optimistic)
 
-|||
-|-|-|
-|Read|When a transaction is started, a ref is turned into a specific commit id. All metadata retrieved is locked to this hash 
-or later, as long as future hashes have not changed any table already read.|
-|Ownership|A transaction only needs to be created on the client. There is no concept of a long-lived transaction on the server.|
-|Write|Safe writes are allowed. Unsafe writes fail.|
-|How|Client resolves commit hash on first read and uses that for all subsequent operations.|
+|           |                                                              |
+| :-------- | :----------------------------------------------------------- |
+| Read      | When a transaction is started, a ref is turned into a specific commit id. All metadata retrieved is locked to this hash or later, as long as future hashes have not changed any table already read. |
+| Ownership | A transaction only needs to be created on the client. There is no concept of a long-lived transaction on the server. |
+| Write     | Safe writes are allowed. Unsafe writes fail.                 |
+| How       | Client resolves commit hash on first read and uses that for all subsequent operations. |
 
 Note: this is stricter than the formal definition of repeatable read since that will allow new records to also be viewed on a second operation within the same transaction. However, both implementations are of similar complexity and a stricter form of repeated read seems easier to understand.
 

@@ -8,5 +8,6 @@ template: "home.html"
 * Cross-table transactions and visibility
 * Open data lake approach, supporting Hive, Spark, Dremio, AWS Athena, etc.
 * Works with Apache Iceberg, Delta Lake and Hive tables
-* Free as a service, run as a docker image, AWS Lambda or fork it on GitHub
+* Run as a docker image, AWS Lambda or fork it on GitHub
   
+
