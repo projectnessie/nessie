@@ -17,6 +17,8 @@ package com.dremio.nessie.model;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -30,5 +32,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 public interface DeltaLakeTable extends Contents {
 
   List<String> getMetadataLocationHistory();
+
+  List<String> getCheckpointLocationHistory();
+
+  @Nullable
+  String getLastCheckpoint();
 
 }

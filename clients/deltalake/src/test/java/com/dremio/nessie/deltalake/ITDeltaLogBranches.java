@@ -16,21 +16,16 @@
 package com.dremio.nessie.deltalake;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 import org.apache.hadoop.fs.Path;
-import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.delta.DeltaLog;
-import org.apache.spark.sql.functions;
-import org.apache.spark.util.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,6 +38,10 @@ import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.tests.AbstractSparkTest;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.DeltaLakeTable;
+import com.dremio.nessie.model.Reference;
 
 import io.delta.tables.DeltaTable;
 import scala.Tuple2;
@@ -70,7 +69,15 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
   @AfterEach
   public void closeClient() throws NessieNotFoundException, NessieConflictException {
-    client.getTreeApi().deleteBranch("test", client.getTreeApi().getReferenceByName("test").getHash());
+    Reference ref = null;
+    try {
+      ref = client.getTreeApi().getReferenceByName("test");
+    } catch (NessieNotFoundException e) {
+      //pass ignore
+    }
+    if (ref != null) {
+      client.getTreeApi().deleteBranch("test", ref.getHash());
+    }
     client.close();
     client = null;
   }
@@ -104,6 +111,30 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     // we expect the table from test to be half the size of the table from main
     Assertions.assertEquals(expectedSize * 0.5, targetBranch.collectAsList().size());
 
+  }
+
+  @Test
+  void testCheckpoint() throws NessieNotFoundException {
+    Dataset<Row> targetTable = createKVDataSet(Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)), "key", "value");
+    // write some data to table
+    targetTable.write().format("delta").save(tempPath.getAbsolutePath());
+    // write enough to trigger a checkpoint generation
+    for (int i = 0; i < 15; i++) {
+      targetTable.write().format("delta").mode("append").save(tempPath.getAbsolutePath());
+    }
+
+    DeltaTable target = DeltaTable.forPath(spark, tempPath.getAbsolutePath());
+    int expectedSize = target.toDF().collectAsList().size();
+    Assertions.assertEquals(64, expectedSize);
+
+    String tableName = tempPath.getAbsolutePath() + "/_delta_log";
+    Contents contents = client.getContentsApi()
+                              .getContents(new ContentsKey(Arrays.asList(tableName.split("/"))), "main");
+    Optional<DeltaLakeTable> table = contents.unwrap(DeltaLakeTable.class);
+    Assertions.assertTrue(table.isPresent());
+    Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());
+    Assertions.assertEquals(6, table.get().getCheckpointLocationHistory().size());
+    Assertions.assertNotNull(table.get().getLastCheckpoint());
   }
 
 

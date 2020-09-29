@@ -61,6 +61,7 @@ public abstract class AbstractSparkTest {
                         .master("local[2]")
                         .config(conf)
                         .getOrCreate();
+    spark.sparkContext().setLogLevel("WARN");
   }
 
   @AfterAll
