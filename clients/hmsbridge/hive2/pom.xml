@@ -383,12 +383,12 @@
             <artifactId>maven-enforcer-plugin</artifactId>
             <executions>
               <execution>
-                <id>enforce-java-version</id>
+                <id>enforce-project-rules</id>
                 <goals>
                   <goal>enforce</goal>
                 </goals>
                 <configuration>
-                  <rules>
+                  <rules combine.self="append">
                     <requireJavaVersion>
                       <version>1.8</version>
                     </requireJavaVersion>
