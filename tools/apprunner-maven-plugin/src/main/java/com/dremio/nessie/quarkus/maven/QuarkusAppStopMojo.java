@@ -20,8 +20,6 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
-import io.quarkus.bootstrap.app.RunningQuarkusApplication;
-
 /**
  * Stop Quarkus application.
  */
@@ -37,7 +35,7 @@ public class QuarkusAppStopMojo extends AbstractQuarkusAppMojo {
       return;
     }
 
-    final RunningQuarkusApplication application = getApplication();
+    final AutoCloseable application = getApplication();
     if (application == null) {
       getLog().warn(String.format("No application found for execution id '%s'.", getExecutionId()));
     }
@@ -47,6 +45,8 @@ public class QuarkusAppStopMojo extends AbstractQuarkusAppMojo {
       getLog().info("Quarkus application stopped.");
     } catch (Exception e) {
       throw new MojoExecutionException("Error while stopping Quarkus application", e);
+    } finally {
+      resetApplication();
     }
   }
 

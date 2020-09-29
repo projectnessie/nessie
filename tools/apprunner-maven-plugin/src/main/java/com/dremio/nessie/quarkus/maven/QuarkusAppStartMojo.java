@@ -15,12 +15,13 @@
  */
 package com.dremio.nessie.quarkus.maven;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Consumer;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
@@ -28,20 +29,11 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.repository.RemoteRepository;
 
-import io.quarkus.bootstrap.app.CuratedApplication;
-import io.quarkus.bootstrap.app.QuarkusBootstrap;
-import io.quarkus.bootstrap.app.QuarkusBootstrap.Mode;
-import io.quarkus.bootstrap.app.RunningQuarkusApplication;
-import io.quarkus.bootstrap.app.StartupAction;
-import io.quarkus.bootstrap.model.AppArtifact;
 import io.quarkus.bootstrap.model.AppArtifactCoords;
-import io.quarkus.bootstrap.model.AppModel;
-import io.quarkus.bootstrap.resolver.BootstrapAppModelResolver;
-import io.quarkus.bootstrap.resolver.maven.MavenArtifactResolver;
 
 /**
  * Starting Quarkus application.
@@ -61,12 +53,6 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
    */
   @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
   private RepositorySystemSession repoSession;
-
-  /**
-   * The project's remote repositories to use for the resolution of artifacts and their dependencies.
-   */
-  @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true, required = true)
-  private List<RemoteRepository> repos;
 
   /**
    * The plugin descriptor.
@@ -92,67 +78,55 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
     }
 
     final AppArtifactCoords appCoords = AppArtifactCoords.fromString(appArtifactId);
-    final AppArtifact appArtifact = new AppArtifact(appCoords.getGroupId(), appCoords.getArtifactId(), appCoords.getClassifier(),
-        appCoords.getType(), appCoords.getVersion());
 
-    // Check that the artifact is present as it might cause some classloader confusion if not
+    // Check that the artifact is present as it might cause some classloader
+    // confusion if not
     boolean appArtifactPresent = pluginDescriptor.getArtifacts().stream()
         .map(artifact -> new AppArtifactCoords(artifact.getGroupId(), artifact.getArtifactId(),
             artifact.getClassifier(), artifact.getType(), artifact.getVersion()))
-        .filter(coords -> coords.equals(appCoords))
-        .findAny()
-        .isPresent();
+        .filter(coords -> coords.equals(appCoords)).findAny().isPresent();
 
     if (!appArtifactPresent) {
-      throw new MojoExecutionException(String.format("Artifact %s not found in plugin dependencies", appCoords));
-    }
-
-    final AppModel appModel;
-    try {
-      MavenArtifactResolver resolver = MavenArtifactResolver.builder()
-          .setWorkspaceDiscovery(false)
-          .setRepositorySystem(repoSystem)
-          .setRepositorySystemSession(repoSession)
-          .setRemoteRepositories(repos)
-          .build();
-
-      appModel = new BootstrapAppModelResolver(resolver)
-          .resolveModel(appArtifact);
-    } catch (Exception e) {
-      throw new MojoExecutionException("Failed to resolve application model " + appArtifact + " dependencies", e);
+      throw new MojoExecutionException(
+          String.format("Artifact %s not found in plugin dependencies", appCoords));
     }
 
     getLog().info("Starting Quarkus application.");
 
-    final QuarkusBootstrap bootstrap = QuarkusBootstrap.builder()
-        .setAppArtifact(appModel.getAppArtifact())
-        .setBaseClassLoader(this.getClass().getClassLoader()) // use plugin classloader
-        .setExistingModel(appModel)
-        .setProjectRoot(getProject().getBasedir().toPath())
-        .setTargetDirectory(Paths.get(getProject().getBuild().getDirectory()))
-        .setIsolateDeployment(true)
-        .setMode(Mode.TEST)
-        .build();
+    final URL[] urls = pluginDescriptor.getArtifacts().stream().map(QuarkusAppStartMojo::toURL).toArray(URL[]::new);
 
+    // Use MavenProject classloader as parent classloader as Maven classloader hierarchy is not linear
+    final URLClassLoader mirrorCL = new URLClassLoader(urls, MavenProject.class.getClassLoader());
+
+    final AutoCloseable quarkusApp;
     try {
-      final CuratedApplication app = bootstrap.bootstrap();
-      StartupAction startupAction = app.createAugmentor().createInitialRuntimeApplication();
-      exitHandler(startupAction);
-      RunningQuarkusApplication runningApp = startupAction.runMainClass();
-      getLog().info("Quarkus application started.");
-      setApplicationHandle(runningApp);
-    } catch (Exception e) {
-      throw new MojoExecutionException("Failure starting Nessie Daemon", e instanceof MojoExecutionException ? e.getCause() : e);
+      Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
+      Method newApplicationMethod = clazz.getMethod("newApplication", MavenProject.class,
+          RepositorySystem.class, RepositorySystemSession.class, String.class);
+      quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, getProject(), repoSystem, repoSession, appArtifactId);
+    } catch (InvocationTargetException e) {
+      throw new MojoExecutionException("Cannot create an isolated quarkus application", e.getCause());
+    } catch (ReflectiveOperationException e) {
+      throw new MojoExecutionException("Cannot create an isolated quarkus application", e);
     }
+
+    getLog().info("Quarkus application started.");
+
+    // Make sure classloader is closed too when the app is stopped
+    setApplicationHandle(() -> {
+      try {
+        quarkusApp.close();
+      } finally {
+        mirrorCL.close();
+      }
+    });
   }
 
-  private void exitHandler(StartupAction startupAction) throws ReflectiveOperationException {
-    Consumer<Integer> consumer = i -> { };
-    Method exitHandler = Arrays.stream(startupAction.getClassLoader().loadClass("io.quarkus.runtime.ApplicationLifecycleManager")
-                                                .getMethods())
-                               .filter(x -> x.getName().equals("setDefaultExitCodeHandler"))
-                               .findFirst()
-                               .orElseThrow(NoSuchMethodException::new);
-    exitHandler.invoke(null, consumer);
+  private static URL toURL(Artifact artifact) {
+    try {
+      return artifact.getFile().toURI().toURL();
+    } catch (MalformedURLException e) {
+      throw new IllegalArgumentException(e);
+    }
   }
 }
