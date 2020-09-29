@@ -21,7 +21,7 @@ import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 
 import com.dremio.nessie.client.NessieClient
-import com.dremio.nessie.client.NessieClient.{AuthType, none}
+import com.dremio.nessie.client.NessieClient.AuthType
 import com.dremio.nessie.error.NessieNotFoundException
 import com.dremio.nessie.model.{ContentsKey, DeltaLakeTable, ImmutableDeltaLakeTable, Reference}
 import org.apache.commons.io.IOUtils
@@ -105,10 +105,13 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def commit(path: Path, ref: String, hash: String, message: String = "delta commit"): Boolean = {
-    val table = ImmutableDeltaLakeTable.builder().metadataLocation(path.toString).build()
     val targetRef = if (ref == null) reference.getName else ref
     val targetHash = if (hash == null) reference.getHash else hash
     val messageWithSparkId = s"$message ; spark.app.id=${sparkConf.get("spark.app.id")}"
+    val currentTable: List[String] = getTable(path.getParent, targetRef).map(_.getMetadataLocationHistory.asScala.toList)
+      .getOrElse(List[String]())
+    val table = ImmutableDeltaLakeTable.builder().addAllMetadataLocationHistory((path.toString :: currentTable).asJava).build()
+
     client.getContentsApi.setContents(pathToKey(path.getParent), targetRef, targetHash, messageWithSparkId, table)
     reference = client.getTreeApi.getReferenceByName(reference.getName)
     true
@@ -214,21 +217,22 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       name = reference.getName
     }
 
-    val table = client.getContentsApi.getContents(pathToKey(new Path(tableName).getParent), name)
-
-    if (table == null || !table.isInstanceOf[DeltaLakeTable]) {
-      throw new FileNotFoundException(s"No such table: $path")
-    }
-    val currentPath = new Path(table.asInstanceOf[DeltaLakeTable].getMetadataLocation)
-    val currentVersion = extractVersion(currentPath)
+    val currentPath = getTable(new Path(tableName).getParent, name).map(_.getMetadataLocationHistory.asScala.map(new Path(_)).toSet)
+      .getOrElse(throw new FileNotFoundException(s"No such table: $path"))
     val requestedVersion = Try(getFileVersion(path)).getOrElse(path.getName.stripSuffix(".checkpoint").toLong)
     val files = fs.listStatus(path.getParent)
     val filteredFiles = files.map(extractMeta)
-      .filter(_.version <= currentVersion)
+      .filter(x => currentPath.contains(x.fileStatus.getPath))
       .filter(_.version >= requestedVersion)
       .sortBy(_.version)
-    require(filteredFiles.map(_.version).max == currentVersion)
+    require(filteredFiles.map(_.version).max == currentPath.map(extractVersion).max)
     filteredFiles.iterator
+  }
+
+  private def getTable(path: Path, branch: String): Option[DeltaLakeTable] = {
+    Try(client.getContentsApi.getContents(pathToKey(path), branch)).filter(x => x != null && x.isInstanceOf[DeltaLakeTable])
+      .map(_.asInstanceOf[DeltaLakeTable])
+      .toOption
   }
 
   override def read(path: Path): Seq[String] = {

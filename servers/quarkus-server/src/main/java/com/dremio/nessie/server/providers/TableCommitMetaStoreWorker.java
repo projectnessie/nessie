@@ -68,7 +68,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
         } else if (value instanceof DeltaLakeTable) {
           builder.setDeltaLakeTable(
-              PDeltaLakeTable.newBuilder().setMetadataLocation(((DeltaLakeTable) value).getMetadataLocation()));
+              PDeltaLakeTable.newBuilder().addAllMetadataLocationHistory(((DeltaLakeTable) value).getMetadataLocationHistory()));
 
         } else if (value instanceof HiveTable) {
           HiveTable ht = (HiveTable) value;
@@ -99,7 +99,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
         }
         switch (contents.getObjectTypeCase()) {
           case DELTA_LAKE_TABLE:
-            return ImmutableDeltaLakeTable.builder().metadataLocation(contents.getDeltaLakeTable().getMetadataLocation())
+            return ImmutableDeltaLakeTable.builder().addAllMetadataLocationHistory(contents.getDeltaLakeTable()
+                                                                                           .getMetadataLocationHistoryList())
                 .build();
 
           case HIVE_DATABASE:

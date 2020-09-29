@@ -49,5 +49,5 @@ message PSqlView {
 }
 
 message PDeltaLakeTable {
-  string metadata_location = 1;
+  repeated string metadata_location_history = 1;
 }
