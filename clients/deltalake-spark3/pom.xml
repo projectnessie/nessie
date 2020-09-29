@@ -143,7 +143,7 @@
 
   <repositories>
     <repository>
-      <id>nessie-delta</id>
+      <id>github</id>
       <name>Nessie Delta custom Repository</name>
       <url>https://maven.pkg.github.com/projectnessie/delta</url>
     </repository>
