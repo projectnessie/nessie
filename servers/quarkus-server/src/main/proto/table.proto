@@ -49,5 +49,7 @@ message PSqlView {
 }
 
 message PDeltaLakeTable {
-  string metadata_location = 1;
+  string last_checkpoint = 1;
+  repeated string checkpoint_location_history = 2;
+  repeated string metadata_location_history = 3;
 }
