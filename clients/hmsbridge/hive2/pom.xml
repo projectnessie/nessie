@@ -166,7 +166,7 @@
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest</artifactId>
       <scope>test</scope>
-    </dependency>        
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -233,7 +233,7 @@
       <artifactId>jersey-client</artifactId>
       <version>2.22.2</version>
       <scope>test</scope>
-    </dependency>    
+    </dependency> 
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
@@ -258,7 +258,7 @@
         </exclusion>
       </exclusions>
     </dependency>
-            
+
   </dependencies>
 
   <build>
@@ -364,7 +364,6 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-              <forkMode>always</forkMode>
               <systemProperties>
               </systemProperties>
               <systemPropertyVariables>

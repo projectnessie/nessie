@@ -29,7 +29,7 @@ public final class PartitionFilterer {
     Class<?> clazz = null;
     try {
       clazz = Class.forName("com.dremio.nessie.hms.Hive2PartitionFilterer");
-    } catch (Exception e) {
+    } catch (ClassNotFoundException e) {
       clazz = Hive3PartitionFilterer.class;
     }
     CLAZZ = clazz;

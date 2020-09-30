@@ -955,7 +955,7 @@ limitations under the License.
       </activation>
       <properties>
         <maven.compiler.release>8</maven.compiler.release>
-      </properties>      
+      </properties>
       
     </profile>
     <profile>
