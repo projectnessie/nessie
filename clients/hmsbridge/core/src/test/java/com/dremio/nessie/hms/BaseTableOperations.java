@@ -20,59 +20,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
-
 import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 
-import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.Reference;
 import com.klarna.hiverunner.HiveRunnerExtension;
-import com.klarna.hiverunner.HiveShell;
-import com.klarna.hiverunner.annotations.HiveSQL;
 
 @ExtendWith(HiveRunnerExtension.class)
-public abstract class BaseTableOperations {
-
-  protected static final String URL = "http://localhost:19121/api/v1";
-
-  static NessieClient client;
-
-
-  @HiveSQL(files = {}, autoStart = false)
-  private HiveShell shell;
-
-  @AfterAll
-  static void shutdownClient() {
-    if (client != null) {
-      client.close();
-    }
-  }
-
-  protected abstract Function<String, String> configFunction();
-
-  @BeforeEach
-  void resetData() throws NessieConflictException, NessieNotFoundException {
-    NessieClient client = NessieClient.withConfig(configFunction());
-    for (Reference r : client.getTreeApi().getAllReferences()) {
-      if (r instanceof Branch) {
-        client.getTreeApi().deleteBranch(r.getName(), r.getHash());
-      } else {
-        client.getTreeApi().deleteTag(r.getName(), r.getHash());
-      }
-    }
-    client.getTreeApi().createEmptyBranch("main");
-    shell.start();
-  }
+public abstract class BaseTableOperations extends BaseHiveOps {
 
   @Test
   public void invalidTypes() {

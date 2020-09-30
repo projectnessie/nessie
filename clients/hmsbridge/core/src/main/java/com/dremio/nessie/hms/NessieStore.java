@@ -38,6 +38,8 @@ import com.dremio.nessie.hms.annotation.Union;
 @SuppressWarnings({"checkstyle:*", "checkstyle:LineLength", "checkstyle:OverloadMethodsDeclarationOrder", "checkstyle:ParameterName"})
 public interface NessieStore extends Configurable, TransactionHandler {
 
+  static final String NESSIE_WHITELIST_DBS_OPTION = "nessie.dbs";
+
   @CatalogExtend
   List<Partition> getPartitions(@Route String dbName, String tableName, int max) throws MetaException, NoSuchObjectException;
 

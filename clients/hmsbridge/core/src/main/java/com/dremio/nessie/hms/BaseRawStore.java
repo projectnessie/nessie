@@ -16,6 +16,7 @@
 package com.dremio.nessie.hms;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,14 +34,19 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.SQLForeignKey;
 import org.apache.hadoop.hive.metastore.api.SQLPrimaryKey;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class BaseRawStore implements RawStoreWithRef {
+
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   protected NessieStoreImpl nessie;
   protected RawStore delegate;
   protected boolean hasDelegate;
   protected Configuration conf;
   private RoutingTransactionHandler handler;
+  private Set<String> nessieDbs = new HashSet<>();
 
   protected BaseRawStore(boolean hasDelegate) {
     this.nessie = new NessieStoreImpl();
@@ -62,6 +68,14 @@ public abstract class BaseRawStore implements RawStoreWithRef {
 
     nessie.setConf(conf);
     if (hasDelegate) {
+      String whitelistDbs = conf.get(NessieStore.NESSIE_WHITELIST_DBS_OPTION, "");
+      nessieDbs = Stream.of(whitelistDbs.split(",")).map(String::trim).filter(s -> s.length() > 0).map(String::toLowerCase).collect(Collectors.toSet());
+      if(nessieDbs.isEmpty()) {
+        logger.warn("Using delegating Nessie store but no databases were routed to use Nessie functionality. Please update the {} configuration property in your Hive configuration.", NessieStore.NESSIE_WHITELIST_DBS_OPTION);
+      } else {
+        logger.debug("Configuring a delegating store where the following databases are considered Nessie databases: {}.", nessieDbs);
+      }
+
       if (delegate == null) {
         delegate = new ObjectStore();
       }
@@ -123,7 +137,7 @@ public abstract class BaseRawStore implements RawStoreWithRef {
       return true;
     }
 
-    return false;
+    return nessieDbs.contains(name.toLowerCase());
   }
 
   protected boolean routeToDelegate(Stream<String> databases) {

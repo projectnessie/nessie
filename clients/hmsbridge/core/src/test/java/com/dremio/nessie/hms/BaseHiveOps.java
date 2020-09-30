@@ -1,0 +1,66 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.dremio.nessie.hms;
+
+import java.util.function.Function;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.Reference;
+import com.klarna.hiverunner.HiveRunnerExtension;
+import com.klarna.hiverunner.HiveShell;
+import com.klarna.hiverunner.annotations.HiveSQL;
+
+@ExtendWith(HiveRunnerExtension.class)
+public abstract class BaseHiveOps {
+
+  protected static final String URL = "http://localhost:19121/api/v1";
+
+  protected static NessieClient client;
+
+  @HiveSQL(files = {}, autoStart = false)
+  protected HiveShell shell;
+
+  @AfterAll
+  static void shutdownClient() {
+    if (client != null) {
+      client.close();
+    }
+  }
+
+  protected abstract Function<String, String> configFunction();
+
+  @BeforeEach
+  void resetData() throws NessieConflictException, NessieNotFoundException {
+    NessieClient client = NessieClient.withConfig(configFunction());
+    for (Reference r : client.getTreeApi().getAllReferences()) {
+      if (r instanceof Branch) {
+        client.getTreeApi().deleteBranch(r.getName(), r.getHash());
+      } else {
+        client.getTreeApi().deleteTag(r.getName(), r.getHash());
+      }
+    }
+    client.getTreeApi().createEmptyBranch("main");
+    shell.start();
+  }
+
+}
