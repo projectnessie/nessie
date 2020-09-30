@@ -133,7 +133,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     Optional<DeltaLakeTable> table = contents.unwrap(DeltaLakeTable.class);
     Assertions.assertTrue(table.isPresent());
     Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());
-    Assertions.assertEquals(6, table.get().getCheckpointLocationHistory().size());
+    Assertions.assertEquals(5, table.get().getMetadataLocationHistory().size());
     Assertions.assertNotNull(table.get().getLastCheckpoint());
   }
 
@@ -141,11 +141,6 @@ class ITDeltaLogBranches extends AbstractSparkTest {
   private Dataset<Row> createKVDataSet(List<Tuple2<Integer, Integer>> data, String keyName, String valueName) {
     Encoder<Tuple2<Integer, Integer>> encoder = Encoders.tuple(Encoders.INT(), Encoders.INT());
     return spark.createDataset(data, encoder).toDF(keyName, valueName);
-  }
-
-  private Dataset<Row> createKVDataSet(List<Tuple2<Integer, Integer>> data) {
-    Encoder<Tuple2<Integer, Integer>> encoder = Encoders.tuple(Encoders.INT(), Encoders.INT());
-    return spark.createDataset(data, encoder).toDF();
   }
 
   private <T1, T2> Tuple2<T1, T2> tuple2(T1 t1, T2 t2) {

@@ -31,7 +31,7 @@ import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.delta.storage.LogStore
-import org.apache.spark.sql.delta.util.FileNames.{checkpointFileSingular, checkpointFileWithParts, getFileVersion}
+import org.apache.spark.sql.delta.util.FileNames.{checkpointFileSingular, checkpointFileWithParts, deltaFile, getFileVersion}
 import org.apache.spark.sql.delta.{CheckpointMetaData, DeltaFileType, LogFileMeta}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
@@ -110,7 +110,8 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     val name = s"$tableName-${UUID.randomUUID().toString.replace("-","")}.${nameSplit(1)}"
     val nessiePath = new Path(parent, name)
 
-    writeWithRename(nessiePath, actions, overwrite, ref, hash)
+    if (overwrite) throw new IllegalStateException(s"Nessie won't overwrite for path $path")
+    writeInternal(nessiePath, actions, ref, hash)
   }
 
   private def updateDeltaTable(path: Path, targetRef: String, lastCheckpoint: String = null): DeltaLakeTable = {
@@ -168,43 +169,35 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     true
   }
 
-  protected def writeWithRename(path: Path, actions: Iterator[String], overwrite: Boolean = false, ref: String, hash: String): Unit = {
+  protected def writeInternal(path: Path, actions: Iterator[String], ref: String, hash: String): Unit = {
     val fs = path.getFileSystem(hadoopConf)
 
     if (!fs.exists(path.getParent)) {
       throw new FileNotFoundException(s"No such file or directory: ${path.getParent}")
     }
-    if (overwrite) {
-      val stream = fs.create(path, true)
+
+    if (fs.exists(path)) {
+      throw new FileAlreadyExistsException(path.toString)
+    }
+    var streamClosed = false // This flag is to avoid double close
+    var commitDone = false // This flag is to save the delete operation in most of cases.
+    val stream = fs.create(path)
+    try {
+      actions.map(_ + "\n").map(_.getBytes(UTF_8)).foreach(stream.write)
+      stream.close()
+      streamClosed = true
       try {
-        actions.map(_ + "\n").map(_.getBytes(UTF_8)).foreach(stream.write)
-      } finally {
+        commitDone = commit(path, ref, hash)
+      } catch {
+        case _: org.apache.hadoop.fs.FileAlreadyExistsException =>
+          throw new FileAlreadyExistsException(path.toString)
+      }
+    } finally {
+      if (!streamClosed) {
         stream.close()
       }
-    } else {
-      if (fs.exists(path)) {
-        throw new FileAlreadyExistsException(path.toString)
-      }
-      var streamClosed = false // This flag is to avoid double close
-      var commitDone = false // This flag is to save the delete operation in most of cases.
-      val stream = fs.create(path)
-      try {
-        actions.map(_ + "\n").map(_.getBytes(UTF_8)).foreach(stream.write)
-        stream.close()
-        streamClosed = true
-        try {
-          commitDone = commit(path, ref, hash)
-        } catch {
-          case _: org.apache.hadoop.fs.FileAlreadyExistsException =>
-            throw new FileAlreadyExistsException(path.toString)
-        }
-      } finally {
-        if (!streamClosed) {
-          stream.close()
-        }
-        if (!commitDone) {
-          fs.delete(path, false)
-        }
+      if (!commitDone) {
+        fs.delete(path, false)
       }
     }
   }
@@ -284,7 +277,19 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     val maxExpected: Option[Long] = if (currentPath.nonEmpty) Some(currentPath.map(extractVersion).max) else None
     val maxFound: Option[Long] = if (filteredFiles.nonEmpty) Some(filteredFiles.map(_.version).max) else None
     require(maxFound.getOrElse(0L) == maxExpected.getOrElse(0L))
-    filteredFiles.iterator
+    if (filteredFiles.map(_.fileType).count(_ == DeltaFileType.CHECKPOINT) == filteredFiles.length) {
+      (filteredFiles ++ Seq(emptyCheckpoint(requestedVersion, filteredFiles.head))).iterator
+    } else filteredFiles.iterator
+
+  }
+
+  //this is annoying, Delta requires at least one delta file even though everything is contained in the checkpoint.
+  //We add on a useless delta file here if and only if only checkpoints are required
+  private def emptyCheckpoint(version: Long, logFileMeta: LogFileMeta): LogFileMeta = {
+    val fileStatus = new FileStatus(0, false, 0, 0,
+      logFileMeta.fileStatus.getModificationTime,
+      deltaFile(logFileMeta.fileStatus.getPath.getParent, version))
+    new LogFileMeta(fileStatus, version, DeltaFileType.DELTA, None)
   }
 
   private def getTable(path: Path, branch: String): Option[DeltaLakeTable] = {
@@ -315,7 +320,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   override def isPartialWriteVisible(path: Path): Boolean = true
 
-  override def resolvePathOnPhysicalStorage(path: Path): Path = {
+  override def resolveCheckpointPath(path: Path): Path = {
     lastSnapshotUuid = Some(UUID.randomUUID().toString)
     path.getFileSystem(hadoopConf).makeQualified(new Path(path, lastSnapshotUuid.get))
   }
