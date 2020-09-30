@@ -26,9 +26,9 @@ coexist with Iceberg Snapshots. When working with Nessie, Iceberg snapshots will
 be versioned along the rest of Iceberg metadata within the Nessie commit model. 
 
 ### Automatic Snapshot Import
-We are also exploring the [creation of a tool](https://github.com/projectnessie/nessie/issues/126) where a 
+We are exploring the [creation of a tool](https://github.com/projectnessie/nessie/issues/126) where a 
 user can import table snapshots across multiple Iceberg tables into a single Nessie
-repository to capture historical data snapshots. 
+repository to capture historical data snapshots (interleaved across time). 
 
 ## Hive Compatibility
 
@@ -46,3 +46,7 @@ In Nessie, if HMS is used for read-only operation against Iceberg tables, [work 
 done](https://github.com/projectnessie/nessie/issues/125) so that Nessie can automatically 
 clone the latest metadata file location to the Hive Metastore each time  
 
+### HMS Bridge Compatibility
+
+There is a plan to expose Nessie native tables automatically to Hive users when they 
+are interacting through the HMS bridge.

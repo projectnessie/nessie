@@ -1,0 +1,9 @@
+arrange:
+  - index.md
+  - architecture.md
+  - kernel.md
+  - nessie_vs_git.md
+  - rest.md
+  - python.md
+  - java.md
+  

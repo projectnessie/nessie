@@ -47,3 +47,11 @@ This serves as both a good trial tool and homage to git.
 Like all engineering solutions, this isn't about what is better, only what is better for 
 a certain use case. Git is good at generalized version control. Nessie is good 
 at data version control.
+
+# Nessie vs DVC
+[DVC](https://dvc.org/) is a popular package within ML community that is described 
+as "Version Control System for Machine Learning Projects" it presents. While both Nessie 
+and DVC are focused on data, DVC is focused on smaller datasets and maintaining the 
+distributed capabilities of Git. This works great for individual projects that are 
+typically run on single workstations where datasets can be replicated. Nessie works 
+at a table and metadata level specifically focused on data management problems.

@@ -1,10 +1,13 @@
 # Python
 
-See [Installation](/pydocs/installation). Or simply use pip `pip install nessie_client`. 
+```
+# using python 3
+pip install pynessie
+``` 
 
 ## Configuration
 
-The Nessie client is configured using the [confuse](https://github.com/beetbox/confuse) yaml based configuration
+The Nessie Python client is configured using the [confuse](https://github.com/beetbox/confuse) yaml based configuration
 library. This looks for a configuration file called `config.yaml` in:
 
 * macOS: `~/.config/pynessie` and `~/Library/Application Support/pynessie`

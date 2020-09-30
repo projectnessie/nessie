@@ -7,10 +7,14 @@ listings in HDFS used to be sufficient, there were many features lacking. This i
 snapshotting, consistency and fast planning. Apache Iceberg and Delta Lake were both 
 created to help alleviate those problems.
 
- 
+For more insight into why we created Nessie, you can read a founding [blog post](https://www.dremio.com/blog/) by one of it's 
+creators.
+
+## Inspiration
+
 The Iceberg format (as well as the Delta Lake format) relies on a set of metadata files stored with (or near) the actual
 data tables. This allows Iceberg to fulfill the same role as the Hive Metastore for transactions without the need for
-expensive metadata scans or centralised planning (see [Iceberg
+expensive metadata scans or centralized planning (see [Iceberg
 performance](https://iceberg.incubator.apache.org/performance/)). This includes
 things such as partitioning (including hidden partitions), schema migrations, appends and deletes.  It does however
 require a pointer to the active metadata set to function. This pointer allows the Iceberg client to acquire and read the
@@ -23,8 +27,9 @@ root metadata pointer and perform atomic updates to this pointer, obviating the 
 need for a Hive metastore simplifies deployment and broadens the reach of tools that can work with Iceberg tables.
 The above is specific to how Iceberg behaves however Delta Lake operates in a near identical way. 
 
-The Nessie service is a lightweight Java based REST API server. It uses a standard REST API optimistic locking strategy
-to ensure atomic transactions. This relies on the `ETag` and `If-Match` headers and allows for a very light weight and
+The Nessie service is a lightweight Java based REST API server. It uses a standard optimistic locking strategy
+to ensure atomic transactions. This relies on every operation carrying an expected 
+hash state for the store and allows for a very light weight and
 scalable implementation. The implementation uses configurable authentication (eg IAM on AWS, JWT elsewhere) and a 
 configurable backend (currently supporting DynamoDB on AWS) and uses the optimistic locking features of cloud based
 key value stores to ensure scalability across servers. This architecture allows for Nessie to run in a docker container,

@@ -10,16 +10,14 @@ In many ways Hive tables are much less sophisticated than the offerings provided
 Delta Lake and Iceberg. One key difference in the level of resolution of metadata HMS 
 maintains. While a key component of both Delta Lake and Iceberg is a complete listing 
 of all files in the dataset, Hive only maintains lists of partitions and relies on 
-underlying filesystem listing for things like file set consistency. Despite these weaknesses,
+underlying filesystem listing for things like file set consistency. Despite this,
 the prevalence of HMS as a metadata format and storage system means that providing 
 a Nessie capability is still valuable.
 
 ## Nessie HMS Bridge
 
-Nessie provides a HMS bridge that exposes a Nessie catalog as a Hive Metastore service
-through the use of Hive extension APIs. Internally, this is done as an alternative
-
-Nessie's HMS bridge is run separately from the core Nessie service and leverages Nessies 
+Nessie provides the [HMS bridge](/tools/hive.md) that exposes the Nessie catalog as a Hive Metastore service
+through the use of Hive extension APIs. Nessie's HMS bridge is run separately from the core Nessie service and leverages Nessies 
 APIs to operate against metadata.
 
 ### Hive Types Supported
@@ -27,15 +25,11 @@ APIs to operate against metadata.
 The Nessie HMS Bridge provides support for Hive views and external tables that are 
 mutated by partition[^1]
 
-
-### Querying multiple HMS
-
-Because the Nessie HMS Bridge only supports
-
 ### Limitations
 
 Similar to AWS Glue, Nessie's HMS capabilities are focused on the highest value use 
-cases. As such, certain features are not supported. Nessie does not support
+cases. As such, certain features are not supported. Nessie does not support. See the 
+[HMS bridge](/tools/hive.md) documentation for what is and is not supported.
 
 [^1]: In Hive, tables can be marked as immutable to disallow the addition of new data 
 files to existing partitions. The tables can still be mutated through the use of OVERWRITE 
