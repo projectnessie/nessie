@@ -19,7 +19,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import io.quarkus.bootstrap.app.RunningQuarkusApplication;
 import io.quarkus.bootstrap.model.AppArtifact;
 import io.quarkus.bootstrap.model.AppArtifactCoords;
 
@@ -60,13 +59,23 @@ abstract class AbstractQuarkusAppMojo extends AbstractMojo {
     return project;
   }
 
-  RunningQuarkusApplication getApplication() {
+  private String getContextKey() {
     final String key = CONTEXT_KEY + '.' + getExecutionId();
-    return (RunningQuarkusApplication) project.getContextValue(key);
+    return key;
   }
 
-  protected void setApplicationHandle(RunningQuarkusApplication application) {
-    final String key = CONTEXT_KEY + '.' + getExecutionId();
+  protected AutoCloseable getApplication() {
+    final String key = getContextKey();
+    return (AutoCloseable) project.getContextValue(key);
+  }
+
+  protected void resetApplication() {
+    final String key = getContextKey();
+    project.setContextValue(key, null);
+  }
+
+  protected void setApplicationHandle(AutoCloseable application) {
+    final String key = getContextKey();
     final Object previous = project.getContextValue(key);
     if (previous != null) {
       getLog().warn(String.format("Found a previous application for execution id %s.", getExecutionId()));
