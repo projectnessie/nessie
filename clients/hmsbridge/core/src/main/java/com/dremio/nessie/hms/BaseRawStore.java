@@ -69,9 +69,12 @@ public abstract class BaseRawStore implements RawStoreWithRef {
     nessie.setConf(conf);
     if (hasDelegate) {
       String whitelistDbs = conf.get(NessieStore.NESSIE_WHITELIST_DBS_OPTION, "");
-      nessieDbs = Stream.of(whitelistDbs.split(",")).map(String::trim).filter(s -> s.length() > 0).map(String::toLowerCase).collect(Collectors.toSet());
-      if(nessieDbs.isEmpty()) {
-        logger.warn("Using delegating Nessie store but no databases were routed to use Nessie functionality. Please update the {} configuration property in your Hive configuration.", NessieStore.NESSIE_WHITELIST_DBS_OPTION);
+      nessieDbs = Stream.of(whitelistDbs.split(",")).map(String::trim).filter(s -> s.length() > 0)
+          .map(String::toLowerCase).collect(Collectors.toSet());
+
+      if (nessieDbs.isEmpty()) {
+        logger.warn("Using delegating Nessie store but no databases were routed to use Nessie functionality. "
+            + "Please update the {} configuration property in your Hive configuration.", NessieStore.NESSIE_WHITELIST_DBS_OPTION);
       } else {
         logger.debug("Configuring a delegating store where the following databases are considered Nessie databases: {}.", nessieDbs);
       }
