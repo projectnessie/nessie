@@ -51,7 +51,7 @@
       <groupId>org.slf4j</groupId>
       <artifactId>jcl-over-slf4j</artifactId>
       <scope>runtime</scope>
-    </dependency>    
+    </dependency>
 <!--     <dependency> -->
 <!--       <groupId>org.apache.hive</groupId> -->
 <!--       <artifactId>hive-standalone-metastore</artifactId> -->
@@ -169,7 +169,7 @@
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest</artifactId>
       <scope>test</scope>
-    </dependency>        
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -228,7 +228,7 @@
       <artifactId>jersey-client</artifactId>
       <version>2.25.1</version>
       <scope>test</scope>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
@@ -246,7 +246,7 @@
         </exclusion>
       </exclusions>
     </dependency>
-            
+
   </dependencies>
 
   <build>
@@ -274,11 +274,11 @@
               </artifactSet>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
-              </transformers>                
+              </transformers>
             </configuration>
           </execution>
         </executions>
-      </plugin>      
+      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
@@ -303,7 +303,7 @@
           </arguments>
           <sourceRoot>${project.build.directory}/generated-sources/generator</sourceRoot>
         </configuration>
-      </plugin>            
+      </plugin>
     </plugins>
   </build>
 
@@ -314,7 +314,7 @@
         <property>
           <name>JDK8</name>
         </property>
-      </activation>      
+      </activation>
       <build>
         <plugins>
           <plugin>
@@ -347,7 +347,7 @@
                <goals><goal>stop</goal></goals>
              </execution>
            </executions>
-          </plugin>        
+          </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
@@ -395,7 +395,7 @@
               <annotationProcessorPaths combine.self="override" />
               <maven.compiler.release/>
             </configuration>
-          </plugin>                            
+          </plugin>
         </plugins>
       </build>
     </profile>
