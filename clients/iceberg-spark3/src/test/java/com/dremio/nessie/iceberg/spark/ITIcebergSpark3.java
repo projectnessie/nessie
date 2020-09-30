@@ -126,16 +126,22 @@ class ITIcebergSpark3 extends AbstractSparkTest {
     assertEquals("can read and write", transform(dataDF), transform(table2.sort("foe1")));
 
 
+    Branch branchFirstCommit = (Branch) client.getTreeApi().getReferenceByName("test");
     dataDF.write().format("iceberg").mode("append").save(TABLE_IDENTIFIER.toString() + "@test");
     Dataset<Row> table3 = spark.read()
                                .format("iceberg")
                                .option("nessie.ref", "test")
-                               .option("nessie.hash", branch.getHash())
+                               .option("nessie.hash", branchFirstCommit.getHash())
                                .load(TABLE_IDENTIFIER.toString());
-    List<Object[]> result = transform(dataDF);
-    result.add(0, result.get(0));
-    result.add(result.get(2));
-    assertEquals("can read and write", result, transform(table3.sort("foe1")));
+
+    assertEquals("can read and write", transform(dataDF), transform(table3.sort("foe1")));
+
+
+    Dataset<Row> table4 = spark.read()
+                               .format("iceberg")
+                               .load(String.format("%s@%s#%s", TABLE_IDENTIFIER.toString(), "test", branchFirstCommit.getHash()));
+    assertEquals("can read and write", transform(table4.sort("foe1")), transform(table3.sort("foe1")));
+
     client.getTreeApi().deleteBranch(branch.getName(), client.getTreeApi().getReferenceByName("test").getHash());
   }
 

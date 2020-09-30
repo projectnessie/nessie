@@ -68,8 +68,8 @@ public class ParsedTableIdentifier {
     }
 
     TableIdentifier identifier = TableIdentifier.parse(path);
-    String hash = properties.get(CONF_NESSIE_REF);
-    String reference = properties.get(CONF_NESSIE_HASH);
+    String reference = properties.get(CONF_NESSIE_REF);
+    String hash = properties.get(CONF_NESSIE_HASH);
     return new ParsedTableIdentifier(identifier, hash, reference);
   }
 
