@@ -24,8 +24,6 @@ import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.hadoop.HadoopFileIO;
 import org.apache.iceberg.io.FileIO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.error.NessieConflictException;
@@ -40,7 +38,9 @@ import com.dremio.nessie.model.ImmutableIcebergTable;
  */
 public class NessieTableOperations extends BaseMetastoreTableOperations {
 
-  private static final Logger logger = LoggerFactory.getLogger(NessieTableOperations.class);
+  private static Method sparkConfMethod;
+  private static Method appIdMethod;
+  private static Method sparkEnvMethod;
 
   private final Configuration conf;
   private final NessieClient client;
@@ -117,23 +117,25 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
    * try and get a Spark application id if one exists.
    *
    * <p>
-   *   We haven't figured out a general way to pass commit messasges through to the Nessie committer yet.
+   *   We haven't figured out a general way to pass commit messages through to the Nessie committer yet.
    *   This is hacky but gets the job done until we can have a more complete commit/audit log.
    * </p>
    */
   private static String applicationId() {
     try {
-      Class sparkEnvClazz = Class.forName("org.apache.spark.SparkEnv");
-      Method sparkEnvMethod = sparkEnvClazz.getMethod("get");
+      if (sparkConfMethod == null) {
+        Class sparkEnvClazz = Class.forName("org.apache.spark.SparkEnv");
+        sparkEnvMethod = sparkEnvClazz.getMethod("get");
+        Class sparkConfClazz = Class.forName("org.apache.spark.SparkConf");
+        sparkConfMethod = sparkEnvClazz.getMethod("conf");
+        appIdMethod = sparkConfClazz.getMethod("getAppId");
+      }
       Object sparkEnv = sparkEnvMethod.invoke(null);
-      Class sparkConfClazz = Class.forName("org.apache.spark.SparkConf");
-      Method sparkConfMethod = sparkEnvClazz.getMethod("conf");
       Object sparkConf = sparkConfMethod.invoke(sparkEnv);
-      return " ; spark.app.id= " + sparkConfClazz.getMethod("getAppId").invoke(sparkConf);
+      return " ; spark.app.id= " + appIdMethod.invoke(sparkConf);
     } catch (Exception e) {
       return "";
     }
-
   }
 
 }

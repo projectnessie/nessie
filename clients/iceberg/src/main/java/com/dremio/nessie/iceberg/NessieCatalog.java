@@ -18,6 +18,7 @@ package com.dremio.nessie.iceberg;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -163,17 +164,18 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
   @Override
   protected TableOperations newTableOps(TableIdentifier tableIdentifier) {
     ParsedTableIdentifier pti = ParsedTableIdentifier.getParsedTableIdentifier(tableIdentifier, ImmutableMap.of());
-    UpdateableReference reference = this.reference;
-    if (pti.getHash() != null && pti.getReference() == null) {
-      reference = get(pti.getHash(), pti.getHash());
+    UpdateableReference newReference = this.reference;
+    String ref = Optional.ofNullable(pti.getReference()).orElse(pti.getHash());
+    if (ref != null) {
+      newReference = get(ref, pti.getHash());
     } else if (pti.getHash() == null && pti.getReference() != null) {
-      reference = get(pti.getReference(), null);
+      newReference = get(pti.getReference(), null);
     } else if (pti.getHash() != null && pti.getReference() != null) {
-      reference = get(pti.getReference(), pti.getHash());
+      newReference = get(pti.getReference(), pti.getHash());
     }
     return new NessieTableOperations(config,
                                      toKey(pti.getTableIdentifier()),
-                                     reference,
+                                     newReference,
                                      client);
   }
 
