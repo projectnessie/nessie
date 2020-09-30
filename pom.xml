@@ -975,6 +975,32 @@ limitations under the License.
                   <goal>report-integration</goal>
                 </goals>
               </execution>
+              <execution>
+                <id>default-aggregate-report</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>report-aggregate</goal>
+                </goals>
+                <configuration>
+                  <dataFileIncludes>
+                    <dataFileInclude>**/jacoco.exec</dataFileInclude>
+                  </dataFileIncludes>
+                  <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate</outputDirectory>
+                </configuration>
+              </execution>
+              <execution>
+                <id>default-aggregate-report-integration</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>report-aggregate</goal>
+                </goals>
+                <configuration>
+                  <dataFileIncludes>
+                    <dataFileInclude>jacoco-it.exec</dataFileInclude>
+                  </dataFileIncludes>
+                  <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate-it</outputDirectory>
+                </configuration>
+              </execution>
             </executions>
           </plugin>
         </plugins>
