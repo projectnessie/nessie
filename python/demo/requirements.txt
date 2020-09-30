@@ -1,0 +1,4 @@
+pynessie
+jupyterlab
+findspark
+pyspark
