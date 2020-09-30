@@ -54,6 +54,14 @@ public class ParsedTableIdentifier {
    * Convert dataset read/write options to a table and ref/hash.
    */
   public static ParsedTableIdentifier getParsedTableIdentifier(String path, Map<String, String> properties) {
+    //I am assuming tables can't have @ or # symbols
+    if (path.split("@").length > 2) {
+      throw new IllegalArgumentException(String.format("Can only reference one branch in %s", path));
+    }
+    if (path.split("#").length > 2) {
+      throw new IllegalArgumentException(String.format("Can only reference one hash in %s", path));
+    }
+
     if (path.contains("@") && path.contains("#")) {
       String[] tableRef = path.split("@");
       TableIdentifier identifier = TableIdentifier.parse(tableRef[0]);
@@ -67,6 +75,12 @@ public class ParsedTableIdentifier {
       return new ParsedTableIdentifier(identifier, null, tableRef[1]);
     }
 
+    if (path.contains("#")) {
+      String[] tableRef = path.split("#");
+      TableIdentifier identifier = TableIdentifier.parse(tableRef[0]);
+      return new ParsedTableIdentifier(identifier, tableRef[1], null);
+    }
+
     TableIdentifier identifier = TableIdentifier.parse(path);
     String reference = properties.get(CONF_NESSIE_REF);
     String hash = properties.get(CONF_NESSIE_HASH);
@@ -77,21 +91,8 @@ public class ParsedTableIdentifier {
    * Convert dataset read/write options to a table and ref/hash.
    */
   public static ParsedTableIdentifier getParsedTableIdentifier(TableIdentifier path, Map<String, String> properties) {
-    if (path.name().contains("@") && path.name().contains("#")) {
-      String[] tableRef = path.name().split("@");
-      TableIdentifier identifier = TableIdentifier.of(path.namespace(), tableRef[0]);
-      String[] refHash = tableRef[1].split("#");
-      return new ParsedTableIdentifier(identifier, refHash[1], refHash[0]);
-    }
-
-    if (path.name().contains("@")) {
-      String[] tableRef = path.name().split("@");
-      TableIdentifier identifier = TableIdentifier.of(path.namespace(), tableRef[0]);
-      return new ParsedTableIdentifier(identifier, null, tableRef[1]);
-    }
-
-    String hash = properties.get(CONF_NESSIE_REF);
-    String reference = properties.get(CONF_NESSIE_HASH);
-    return new ParsedTableIdentifier(path, hash, reference);
+    ParsedTableIdentifier pti = getParsedTableIdentifier(path.name(), properties);
+    return new ParsedTableIdentifier(TableIdentifier.of(path.namespace(), pti.getTableIdentifier().name()), pti.getHash(),
+                                     pti.getReference());
   }
 }
