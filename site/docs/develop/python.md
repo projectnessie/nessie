@@ -1,16 +1,18 @@
-# Python Client
+# Python
 
-See [Installation](/pydoc/installation). Or simply use pip `pip install nessie_client`. 
+```
+# using python 3
+pip install pynessie
+``` 
 
 ## Configuration
 
-
-The Dremio Client is configured using the [confuse](https://github.com/beetbox/confuse) yaml based configuration
+The Nessie Python client is configured using the [confuse](https://github.com/beetbox/confuse) yaml based configuration
 library. This looks for a configuration file called `config.yaml` in:
 
-* macOS: `~/.config/nessie_client` and `~/Library/Application Support/nessie_client`
-* Other Unix: `~/.config/nessie_client` and `/etc/nessie_client`
-* Windows: `%APPDATA%\nessie_client` where the `APPDATA` environment variable falls
+* macOS: `~/.config/pynessie` and `~/Library/Application Support/pynessie`
+* Other Unix: `~/.config/pynessie` and `/etc/pynessie`
+* Windows: `%APPDATA%\pynessie` where the `APPDATA` environment variable falls
   back to `%HOME%\AppData\Roaming` if undefined
 * Via the environment variable `DREMIO_CLIENTDIR`
 
@@ -26,7 +28,7 @@ endpoint: http://localhost/api/v1
 verify: true # whether to skip SSL cert verification
 ```
 
-The [command line interface](python-cli.md) can be configured with most of the above parameters via flags or by setting
+The [command line interface](/tools/cli.md) can be configured with most of the above parameters via flags or by setting
 a config directory. The relevant configs can also be set via environment variables. These take precedence. The
 environment variable format is to append `NESSIE_` to a config parameter and nested configs are separated by a *_*. For
 example: `NESSIE_AUTH_TIMEOUT` maps to `auth.timeout` in the default configuration file above.

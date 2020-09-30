@@ -12,9 +12,11 @@ The site is built using mkdocs. To install mkdocs and the theme, run:
 
 ```
 pip install mkdocs
-pip install mkdocs-cinder
+pip install mkdocs-material
+pip install mkdocs-minify-plugin
 pip install mkdocs-redirects
 pip install pymdown-extensions
+pip install mkdocs-awesome-pages-plugin
 ```
 
 ### Local Changes
