@@ -202,15 +202,15 @@ follows:
     ```
 === "Python"
     ``` python
-    # same code as above to create the testing.region table
+    # same code as the spark2 section above to create the testing.region table
     region_df = spark.read.load("data/region.parquet")
     region_df.write.format("iceberg").mode("overwrite").save("testing.region")
     ```
 === "SQL"
     ``` sql
-    spark.sql("CREATE TABLE nessie.testing.city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (N_NATIONKEY)")
+    CREATE TABLE nessie.testing.city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (N_NATIONKEY)
     -- AS SELECT .. can be added to the sql statement to perform a CTAS
-    spark.sql("INSERT INTO nessie.testing.city VALUES (1, 'a', 1, "comment")")
+    INSERT INTO nessie.testing.city VALUES (1, 'a', 1, 'comment')
     ```
 
 The full list of operations can be found [here](https://iceberg.apache.org/spark/#create-table). Everything that Iceberg
@@ -218,8 +218,48 @@ supports the Nessie Iceberg Catalog also supports.
 
 ### Reading
 
+Reading is more straightforward between spark 2 and spark 3. We will look at both versions together in this section. To
+read a Nessie table in iceberg simply:
 
+=== "Java"
+    ``` java
+    regionDf = spark.read().format("iceberg").load("testing.region") // Spark2
+    regionDf = spark.table("nessie.testing.region") // Spark3
+    ```
+=== "Python"
+    ``` python
+    # same code as above to create the testing.region table
+    region_df = spark.read.format("iceberg").load("testing.region")
+    ```
+=== "SQL"
+    ``` sql
+    SELECT * FROM nessie.testing.city -- Spark3 only
+    ```
 
+The examples above all use the default branch defined on initialisation. There are several ways to reference specific
+branches or hashes from within a read statement. We will take a look at a few now from pyspark3, the rules are the same
+across all environments though. The general pattern is `<table>@<branch>#<sha2>`. Table must be present and either
+branch and/or sha2 are optional. We will throw an error if branch or sha2 don't exist or if sha2 isn't on branch when
+both are supplied. Branch or hash references in the table name will override passed `option`s and the settings in the
+Spark/Hadoop configs.
+
+``` python linenums="1"
+spark.read().option("nessie.ref", "dev").format("iceberg").load("testing.region") # read from dev branch
+spark.read().option("nessie.hash", "<sha2>").format("iceberg").load("testing.region") # read from arbitrary hash 
+spark.read().option("nessie.ref", "dev").option("nessie.hash", "<sha2>").format("iceberg").load("testing.region") # read from branch at specific point in time
+spark.read().format("iceberg").load("testing.region@dev") # read from branch dev
+spark.read().format("iceberg").load("testing.region#<sha2>") # read from sha2
+spark.read().format("iceberg").load("testing.region@dev#<sha2>") # read from branch dev, specifically using sha2
+spark.sql("SELECT * FROM nessie.testing.`region@dev`")
+spark.sql("SELECT * FROM nessie.testing.`region#<sha2>`")
+```
+
+Notice in the SQL statements the `table@branch` must be escaped separately from namespace or catalog arguments.
+
+Future versions may add the ability to specify a timestamp to query the data at a specific point in time
+(time-travel). In the meantime the history can be viewed on the command line or via the python client and a specific
+hash based on commit time can be extracted for use in the spark catalog. It is recommended to use the time-travel
+features of Nessie over the Iceberg features as Nessie history is consistent across the entire database
 
 ## Delta Lake
 Similarly to Iceberg the Delta Lake library should be added to the `spark.jars` parameter. This fat jar has all the
