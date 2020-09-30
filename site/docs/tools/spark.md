@@ -4,16 +4,37 @@ Nessie can be used with Spark in several different ways. These include:
 
 ## Iceberg client
 
+You can follow along interactively in a Jupyter notebook by following the instructions 
+[here](https://github.com/projectnessie/nessie/python/demo).
+
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
-`nessie-iceberg-spark-1.0-SNAPSHOT.jar`. This fat jar has all the required iceberg and nessie libraries in it.
+`nessie-iceberg-spark-1.0-SNAPSHOT.jar`(todo link to jar). This fat jar has all the required iceberg and nessie
+libraries in it. In pyspark this would look like
+
+``` python
+SparkSession.builder
+            .config('spark.jars', 'path/to/nessie-iceberg-spark-1.0-SNAPSHOT.jar')
+            ... rest of spark config
+            .getOrCreate()
+```
 
 Nessie implements Iceberg's custom catalog [interface](http://iceberg.apache.org/custom-catalog/). The docs for the 
 [Java api](https://iceberg.apache.org/java-api-quickstart) in Iceberg explain how to use a `Catalog`. The only change is
-that a Iceberg catalog should be instantiated:
+that a Iceberg catalog should be instantiated.
 
-```java
-Catalog catalog = new NessieCatalog(spark.sparkContext().hadoopConfiguration())
-```
+=== "Java"
+    ``` java
+    Catalog catalog = new NessieCatalog(spark.sparkContext().hadoopConfiguration())
+    ```
+=== "Python"
+    ``` python
+    catalog = jvm.NessieCatalog(sc._jsc.hadoopConfiguration())
+    ```
+
+!!! note
+    Iceberg's python libraries are still under active development. Actions against catalogs in pyspark
+    still have to go through the jvm objects. See the [demo](https://github.com/projectnessie/nessie/python/demo) 
+    directory for details.
 
 The Nessie Catalog needs the following parameters set in the Spark/Hadoop config.
 
@@ -21,8 +42,38 @@ The Nessie Catalog needs the following parameters set in the Spark/Hadoop config
 nessie.url = full url to nessie
 nessie.username = username if using basic auth, omitted otherwise
 nessie.password = password if using basic auth, omitted otherwise
-nessie.auth.type = authentication type (BASIC or AWS)
+nessie.auth.type = authentication type (BASIC, NONE or AWS)
 ```
+
+These are set as follows in code (or through other methods as described [here](https://spark.apache.org/docs/latest/configuration.html))
+
+=== "Java"
+    ``` java
+    //for a local spark instance
+    conf.set("spark.hadoop.nessie.url", url)
+        .set("spark.hadoop.nessie.ref", branch)
+        .set("spark.hadoop.nessie.auth_type", authType);
+    spark = SparkSession.builder()
+                        .master("local[2]")
+                        .config(conf)
+                        .getOrCreate();
+    ```
+=== "Python"
+    ``` python
+    # here we are assuming NONE authorisation
+    spark = SparkSession.builder \
+            .config("spark.jars", "../../clients/iceberg-spark3/target/nessie-iceberg-spark3-1.0-SNAPSHOT.jar") \
+            .config("spark.hadoop.nessie.url", "http://localhost:19120/api/v1") \
+            .config("spark.hadoop.nessie.ref", "main") \
+            .config("spark.sql.catalog.nessie", "com.describedmio.nessie.iceberg.spark.NessieIcebergSparkCatalog") \
+            .getOrCreate()
+    ```
+Note above we specified the option `spark.hadoop.nessie.ref`. This value sets the default branch that the iceberg
+catalog will use. This can be changed by changing the `hadoopConfiguration` however best practice would be to use a
+single write context (branch) for the duration of the spark session. Read context can be changed dynamically as shown
+below.
+
+### Reading 
 
 You can read or write an Iceberg table into Spark using the Iceberg reader:
 `df.write.format("iceberg").mode("append").save("testing.table")`. By default the spark reader/writer will use the
