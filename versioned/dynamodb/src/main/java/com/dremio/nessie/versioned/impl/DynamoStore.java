@@ -43,6 +43,8 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClientBuilder;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -145,7 +147,9 @@ public class DynamoStore implements AutoCloseable {
    */
   public void start() {
     DynamoDbClientBuilder b1 = DynamoDbClient.builder();
+    b1.httpClient(ApacheHttpClient.create());
     DynamoDbAsyncClientBuilder b2 = DynamoDbAsyncClient.builder();
+    b2.httpClient(NettyNioAsyncHttpClient.create());
     config.getEndpoint().ifPresent(ep -> {
       b1.endpointOverride(ep);
       b2.endpointOverride(ep);
