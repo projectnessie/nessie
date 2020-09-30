@@ -1,4 +1,4 @@
-# Java Development
+# Java
 
 ## Java Client
 
@@ -28,10 +28,10 @@ The `NessieClient` object wraps a Jersey Client and exposes interactions with th
 
 ```java
 client = NessieClient.basic(path, username, password);
-Iterable<String> branches = client.getBranches();
-StreamSupport.stream(branches.spliterator(), false)
-             .map(Branch::getName)
-             .forEach(System.out::println);
+List<Reference> references = client.getTreeApi().getAllReferences();
+references.stream()
+  .map(Reference::getName)
+  .forEach(System.out::println);
 ```
 
 The client API has the full set of methods required to interact with Nessie at this level. The above example
