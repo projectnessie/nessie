@@ -18,11 +18,9 @@ package com.dremio.nessie.hms;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.conf.MetastoreConf;
 import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.DelegatingHive3NessieRawStore;
-import org.projectnessie.Hive3NessieRawStore;
 
 import com.dremio.nessie.client.NessieClient;
 import com.google.common.collect.ImmutableMap;
