@@ -3,10 +3,14 @@
 The Nessie CLI is an easy way to get started with Nessie. It supports multiple branch 
 and tag management capabilities. This is installed as `pynessie` by `pip`.
 
+## Installation
+
 ```
+# python 3 required
 pip install pynessie
 ```
 
+## Usage 
 All of the REST API calls are exposed via the command line interface. To see a list of what is available run:
 
 ``` bash
@@ -30,8 +34,29 @@ $ nessie push <endpoint> --help
 usage: nessie push <endpoint> [<commit>|<object>]:<object>]
 ```  
 
-The config directory and a number of other settings can be configured from the command line and overwrite the default
-config locations.
+## Configuration
+
+You can configure the Nessie CLI by creating a configuration file as described below:
+
+* macOS: `~/.config/pynessie` and `~/Library/Application Support/pynessie`
+* Other Unix: `~/.config/pynessie` and `/etc/pynessie`
+* Windows: `%APPDATA%\pynessie` where the `APPDATA` environment variable falls
+  back to `%HOME%\AppData\Roaming` if undefined
+* Via the environment variable `DREMIO_CLIENTDIR`
+
+The default config file is as follows:
+
+``` yaml
+auth:
+    type: basic #  currently only basic or aws are supported
+    username: nessie
+    password: nessie123
+    timeout: 10
+endpoint: http://localhost/api/v1
+verify: true # whether to skip SSL cert verification
+```
+
+## Working with JSON
 
 The Nessie CLI returns data in json format and is designed to be used effectively with [`jq`](https://stedolan.github.io/jq/). For example:
 

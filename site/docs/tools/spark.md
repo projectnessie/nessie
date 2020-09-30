@@ -1,5 +1,7 @@
 # Spark
 
+Nessie can be used with Spark in several different ways. These include:
+
 ## Iceberg client
 
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
