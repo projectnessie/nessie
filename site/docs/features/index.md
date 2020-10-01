@@ -21,38 +21,50 @@ references of files and directories in Git with Tables in Nessie. The primary co
 * Hash: Hexadecimal string representation of a particular commit
 
 Out of the box, Nessie starts with a single branch called `main` that points to the 
-beginning of time. A user can immediately start adding tables to that branch. For example:
+beginning of time. A user can immediately start adding tables to that branch. For example 
+(in pseudo code):
 
 ```
-create t1
-insert records into t1
-
-create t2
-insert records into t2
+$ create t1
+...
+$ insert 2 records into t1
+...
+$ create t2
+...
+$ insert 2 records into t2
+...
 ```
 
 A user can then use the Nessie CLI to view the history of the main branch. You'll see 
 that each operation in Spark was automatically recorded as a commit within Nessie:
 
 ```
-nessie log
-
-Log 1
-Log 2
-Log 3
-Log 4
+$ nessie log
+hash4    t2 data added 
+hash3    t2 created
+hash2    t1 data added
+hash1    t1 created
 ```
 
-A user can then create create a new tag referencing this point in time. After doing 
+A user can then create a new tag referencing this point in time. After doing 
 so, a user can continue changing the tables but that point in time snapshot will 
 maintain that version of data.
 
 ```
-nessie tag ...
-spark insert
-select count(*) from t join t => 3 records
-change to tag
-select count(*) from t join t => 2 records 
+$ nessie tag mytag hash4
+
+$ insert records into t1
+
+$ select count(*) from t1 join t2
+.. record 1 ..
+.. record 2 ..
+.. record 3 ..
+.. 3 records ..
+
+$ select count(*) from t1@mytag join t2@mytag
+.. record 1 ..
+.. record 2 ..
+.. only 2 records ..
 ```
 
 ## Data and Metadata
@@ -62,7 +74,16 @@ separate lists of files associated with your dataset. Whether using Spark, Hive 
 some other tool, each mutation operation you do will add or delete one or more files from 
 the definition of your table. Nessies keeps tracks of which files are related to each 
 of your tables at every point in time and then allows you to recall those as needed.
- 
+
+## Scale & Performance
+
+Nessie is built for very large data warehouses. Nessie [supports](../develop/kernel.md) 
+millions of tables and 1000s of commits/second. Because Nessie builds on top of Iceberg 
+and Delta Lake, each table can have millions of files. As such, Nessie can support 
+data warehouses several magnitudes larger than the largest in the world today. This 
+is possible in large part due to the separation of transaction management (Nessie) from 
+table metadata management (Iceberg and Delta Lake).
+
 ## Technology 
 Nessie can be [deployed in multiple ways](../try) and is composed primarily of the Nessie service, 
 which exposes a set of [REST APIs](../develop/rest.md) and a simple browse UI. This service works with multiple
