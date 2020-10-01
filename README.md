@@ -16,7 +16,7 @@ More information can be found at [projectnessie.org](http://projectnessie.org/).
 
 Clone this repository and run maven:
 ```bash
-git clone https://github.com/dremio/nessie
+git clone https://github.com/projectnessie/nessie
 cd nessie
 ./mvnw clean install
 ```
