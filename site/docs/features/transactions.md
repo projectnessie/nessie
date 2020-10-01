@@ -32,6 +32,14 @@ operation), tools can introduce full per operation serialized isolation. This is
 transaction mode that has been traditionally limited to OLTP systems and unavailable 
 to OLAP systems and data warehouses[^1]. 
 
+!!! info
+    While Nessie exposes the necessary primitives to support configurable isolation, work still needs to be 
+    done with tool developers to ensure those tools expose these capabilities. As those 
+    integrations progress, we'll include more information about them here. 
+
+    At the moment, most tools operate 
+    in either Read Committed (Iceberg when calling refresh, Delta Lake) or Repeated Read (HMS 
+    Bridge operations, Iceberg when avoiding calls to refresh).
 
 ### Read Committed (Optimistic)
 
@@ -83,5 +91,5 @@ Nessie maintains state and locks at table granularity. If a conflict is found at
 table level, Nessie will either reject the operation or delegate the operation to the 
 underlying table format to see if further conflict resolution can occur.
 
-[^1]: Delta Lake does support Serializable isolation against a [single table](https://docs.databricks.com/delta/optimizations/isolation-level.html) 
-but does not currently support it against multiple tables.
+[^1]: Delta Lake *does* support serializable isolation against a [single table](https://docs.databricks.com/delta/optimizations/isolation-level.html). 
+It does not support serializable across multiple tables.
