@@ -12,8 +12,7 @@ __email__ = "rymurr@dremio.com"
 __version__ = "0.1.1"
 
 
-def get_config(config_dir: str = None,
-               args: dict = None) -> confuse.Configuration:
+def get_config(config_dir: str = None, args: dict = None) -> confuse.Configuration:
     """Retrieve a confuse Configuration object."""
     if config_dir:
         os.environ["NESSIE_CLIENTDIR"] = config_dir
