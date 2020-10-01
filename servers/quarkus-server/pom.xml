@@ -49,7 +49,7 @@
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-memory</artifactId>
       <version>${project.version}</version>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-backends-simple</artifactId>
@@ -58,7 +58,7 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-hibernate-validator</artifactId>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
