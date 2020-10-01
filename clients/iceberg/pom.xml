@@ -18,6 +18,12 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <packaging>pom</packaging>
+  <modules>
+    <module>core</module>
+    <module>spark2</module>
+    <module>spark3</module>
+  </modules>
 
   <parent>
     <groupId>org.projectnessie</groupId>
@@ -29,92 +35,4 @@
 
   <name>Nessie - Iceberg</name>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-client</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.iceberg</groupId>
-      <artifactId>iceberg-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest-client</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-resteasy-jackson</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-  </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-       <groupId>org.projectnessie</groupId>
-       <artifactId>nessie-apprunner-maven-plugin</artifactId>
-       <version>${project.version}</version>
-       <configuration>
-         <skip>${skipTests}</skip>
-         <appArtifactId>org.projectnessie:nessie-quarkus:${project.version}</appArtifactId>
-         <systemPropertyVariables>
-         </systemPropertyVariables>
-       </configuration>
-       <dependencies>
-        <dependency>
-          <groupId>org.projectnessie</groupId>
-          <artifactId>nessie-quarkus</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-       </dependencies>
-       <executions>
-         <execution>
-           <id>start</id>
-           <phase>pre-integration-test</phase>
-           <goals><goal>start</goal></goals>
-         </execution>
-         <execution>
-           <id>stop</id>
-           <phase>post-integration-test</phase>
-           <goals><goal>stop</goal></goals>
-         </execution>
-       </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <configuration>
-          <systemPropertyVariables>
-          </systemPropertyVariables>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>

@@ -132,7 +132,7 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
       }
       Object sparkEnv = sparkEnvMethod.invoke(null);
       Object sparkConf = sparkConfMethod.invoke(sparkEnv);
-      return " ; spark.app.id= " + appIdMethod.invoke(sparkConf);
+      return "\nspark.app.id= " + appIdMethod.invoke(sparkConf);
     } catch (Exception e) {
       return "";
     }

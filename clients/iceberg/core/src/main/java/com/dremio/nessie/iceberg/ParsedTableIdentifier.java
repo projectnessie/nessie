@@ -15,9 +15,7 @@
  */
 package com.dremio.nessie.iceberg;
 
-import static com.dremio.nessie.iceberg.NessieCatalog.CONF_NESSIE_HASH;
-import static com.dremio.nessie.iceberg.NessieCatalog.CONF_NESSIE_REF;
-
+import java.time.Instant;
 import java.util.Map;
 
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -25,15 +23,15 @@ import org.apache.iceberg.catalog.TableIdentifier;
 public class ParsedTableIdentifier {
 
   private final TableIdentifier tableIdentifier;
-  private final String hash;
+  private final Instant timestamp;
   private final String reference;
 
   /**
    * container class to hold all options in a Nessie table name.
    */
-  public ParsedTableIdentifier(TableIdentifier tableIdentifier, String hash, String reference) {
+  public ParsedTableIdentifier(TableIdentifier tableIdentifier, Instant timestamp, String reference) {
     this.tableIdentifier = tableIdentifier;
-    this.hash = hash;
+    this.timestamp = timestamp;
     this.reference = reference;
   }
 
@@ -41,8 +39,8 @@ public class ParsedTableIdentifier {
     return tableIdentifier;
   }
 
-  public String getHash() {
-    return hash;
+  public Instant getTimestamp() {
+    return timestamp;
   }
 
   public String getReference() {
@@ -63,10 +61,7 @@ public class ParsedTableIdentifier {
     }
 
     if (path.contains("@") && path.contains("#")) {
-      String[] tableRef = path.split("@");
-      TableIdentifier identifier = TableIdentifier.parse(tableRef[0]);
-      String[] refHash = tableRef[1].split("#");
-      return new ParsedTableIdentifier(identifier, refHash[1], refHash[0]);
+      throw new IllegalArgumentException("Currently we don't support referencing by timestamp, # is not allowed in the table name");
     }
 
     if (path.contains("@")) {
@@ -76,15 +71,12 @@ public class ParsedTableIdentifier {
     }
 
     if (path.contains("#")) {
-      String[] tableRef = path.split("#");
-      TableIdentifier identifier = TableIdentifier.parse(tableRef[0]);
-      return new ParsedTableIdentifier(identifier, tableRef[1], null);
+      throw new IllegalArgumentException("Currently we don't support referencing by timestamp, # is not allowed in the table name");
     }
 
     TableIdentifier identifier = TableIdentifier.parse(path);
-    String reference = properties.get(CONF_NESSIE_REF);
-    String hash = properties.get(CONF_NESSIE_HASH);
-    return new ParsedTableIdentifier(identifier, hash, reference);
+    String reference = properties.get(NessieCatalog.CONF_NESSIE_REF);
+    return new ParsedTableIdentifier(identifier, null, reference);
   }
 
   /**
@@ -92,7 +84,7 @@ public class ParsedTableIdentifier {
    */
   public static ParsedTableIdentifier getParsedTableIdentifier(TableIdentifier path, Map<String, String> properties) {
     ParsedTableIdentifier pti = getParsedTableIdentifier(path.name(), properties);
-    return new ParsedTableIdentifier(TableIdentifier.of(path.namespace(), pti.getTableIdentifier().name()), pti.getHash(),
+    return new ParsedTableIdentifier(TableIdentifier.of(path.namespace(), pti.getTableIdentifier().name()), pti.getTimestamp(),
                                      pti.getReference());
   }
 }

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.iceberg;
 
 import org.apache.iceberg.Table;
@@ -24,21 +23,20 @@ import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.iceberg.NessieCatalog;
 
-class ITTestCatalogBranch extends BaseTestIceberg {
+public class ITTestBranchHash extends BaseTestIceberg {
 
-  public ITTestCatalogBranch() {
-    super("main");
+  private static final String BRANCH = "test-branch-hash";
+
+  public ITTestBranchHash() {
+    super(BRANCH);
   }
 
-  @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
   public void testBasicBranch() throws NessieNotFoundException, NessieConflictException {
     TableIdentifier foobar = TableIdentifier.of("foo", "bar");
-    TableIdentifier foobaz = TableIdentifier.of("foo", "baz");
+
     Table bar = createTable(foobar, 1); //table 1
-    createTable(foobaz, 1); //table 2
     catalog.refresh();
     createBranch("test", catalog.getHash());
 
@@ -47,7 +45,7 @@ class ITTestCatalogBranch extends BaseTestIceberg {
     NessieCatalog newCatalog = new NessieCatalog(hadoopConfig);
     String initialMetadataLocation = getContent(newCatalog, foobar);
     Assertions.assertEquals(initialMetadataLocation, getContent(catalog, foobar));
-    Assertions.assertEquals(getContent(newCatalog, foobaz), getContent(catalog, foobaz));
+
     bar.updateSchema().addColumn("id1", Types.LongType.get()).commit();
 
     // metadata location changed no longer matches
@@ -55,27 +53,20 @@ class ITTestCatalogBranch extends BaseTestIceberg {
 
     // points to the previous metadata location
     Assertions.assertEquals(initialMetadataLocation, getContent(newCatalog, foobar));
-    initialMetadataLocation = getContent(newCatalog, foobaz);
 
 
-    newCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
+    String mainHash = tree.getReferenceByName(BRANCH).getHash();
+    //catalog created with ref and no hash points to same catalog as above
+    NessieCatalog refCatalog = new NessieCatalog(hadoopConfig, "test");
+    Assertions.assertEquals(getContent(newCatalog, foobar), getContent(refCatalog, foobar));
+    //catalog created with ref and hash points to 
+    NessieCatalog refHashCatalog = new NessieCatalog(hadoopConfig, mainHash);
+    Assertions.assertEquals(getContent(catalog, foobar), getContent(refHashCatalog, foobar));
 
-    // metadata location changed no longer matches
-    Assertions.assertNotEquals(getContent(catalog, foobaz), getContent(newCatalog, foobaz));
-
-    // points to the previous metadata location
-    Assertions.assertEquals(initialMetadataLocation, getContent(catalog, foobaz));
-
-    String mainHash = tree.getReferenceByName("main").getHash();
-    tree.assignBranch("main", mainHash, newCatalog.getHash());
-    Assertions.assertEquals(getContent(newCatalog, foobar),
-                            getContent(catalog, foobar));
-    Assertions.assertEquals(getContent(newCatalog, foobaz),
-                            getContent(catalog, foobaz));
-    catalog.dropTable(foobar);
-    catalog.dropTable(foobaz);
-    newCatalog.refresh();
-    catalog.getTreeApi().deleteBranch("test", newCatalog.getHash());
+    // asking for table@branch gives expected regardless of catalog
+    Assertions.assertEquals(getContent(newCatalog, foobar), getContent(catalog, TableIdentifier.of("foo", "bar@test")));
+    // asking for table@branch#hash gives expected regardless of catalog
+    Assertions.assertEquals(getContent(catalog, foobar), getContent(catalog, TableIdentifier.of("foo", "bar@" + mainHash)));
   }
 
 }

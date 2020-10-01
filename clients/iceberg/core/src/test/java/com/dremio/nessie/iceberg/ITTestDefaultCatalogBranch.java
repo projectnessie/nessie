@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.iceberg.NessieCatalog;
 
 /**
  * test tag operations with a default tag set by server.

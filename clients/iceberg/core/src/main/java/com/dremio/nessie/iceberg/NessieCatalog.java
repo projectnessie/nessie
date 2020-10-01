@@ -18,7 +18,6 @@ package com.dremio.nessie.iceberg;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -60,7 +59,6 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
   public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
   public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
   public static final String CONF_NESSIE_REF = "nessie.ref";
-  public static final String CONF_NESSIE_HASH = "nessie.hash";
 
   private static final Joiner SLASH = Joiner.on("/");
   private static final String ICEBERG_HADOOP_WAREHOUSE_BASE = "iceberg/warehouse";
@@ -80,21 +78,21 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
   /**
    * create a catalog from a hadoop configuration.
    */
-  public NessieCatalog(Configuration config, String ref, String hash) {
-    this("nessie", config, ref, hash);
+  public NessieCatalog(Configuration config, String ref) {
+    this("nessie", config, ref);
   }
 
   /**
    * Create a catalog with a known name from a hadoop configuration.
    */
   public NessieCatalog(String name, Configuration config) {
-    this(name, config, null, null);
+    this(name, config, null);
   }
 
   /**
    * Create a catalog with a known name from a hadoop configuration.
    */
-  public NessieCatalog(String name, Configuration config, String ref, String hash) {
+  public NessieCatalog(String name, Configuration config, String ref) {
     this.config = config;
     this.name = name;
     String path = config.get(CONF_NESSIE_URL);
@@ -107,15 +105,14 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
     warehouseLocation = config.get("fs.defaultFS") + "/" + ICEBERG_HADOOP_WAREHOUSE_BASE;
 
     final String requestedRef = ref != null ? ref : config.get(CONF_NESSIE_REF);
-    final String requestedHash = hash != null ? hash : config.get(CONF_NESSIE_HASH);
-    this.reference = get(requestedRef, requestedHash);
+    this.reference = get(requestedRef);
 
   }
 
-  private UpdateableReference get(String requestedRef, String requestedHash) {
+  private UpdateableReference get(String requestedRef) {
     try {
       Reference r = requestedRef == null ? client.getTreeApi().getDefaultBranch() : client.getTreeApi().getReferenceByName(requestedRef);
-      return new UpdateableReference(r, client.getTreeApi(), requestedHash);
+      return new UpdateableReference(r, client.getTreeApi());
     } catch (NessieNotFoundException ex) {
       if (requestedRef != null) {
         throw new IllegalArgumentException(String.format("Nessie ref '%s' provided via %s does not exist. "
@@ -165,13 +162,8 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
   protected TableOperations newTableOps(TableIdentifier tableIdentifier) {
     ParsedTableIdentifier pti = ParsedTableIdentifier.getParsedTableIdentifier(tableIdentifier, ImmutableMap.of());
     UpdateableReference newReference = this.reference;
-    String ref = Optional.ofNullable(pti.getReference()).orElse(pti.getHash());
-    if (ref != null) {
-      newReference = get(ref, pti.getHash());
-    } else if (pti.getHash() == null && pti.getReference() != null) {
-      newReference = get(pti.getReference(), null);
-    } else if (pti.getHash() != null && pti.getReference() != null) {
-      newReference = get(pti.getReference(), pti.getHash());
+    if (pti.getReference() != null) {
+      newReference = get(pti.getReference());
     }
     return new NessieTableOperations(config,
                                      toKey(pti.getTableIdentifier()),
