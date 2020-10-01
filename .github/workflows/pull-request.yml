@@ -37,6 +37,8 @@ jobs:
           ${{ runner.os }}-node-
     - name: Build with Maven
       run: mvn -B install --file pom.xml -Pcode-coverage
+      env:
+        GITHUB_TOKEN: ${{ github.token }} 
     - name: Run Hive tests with JDK8
       run: mvn -B verify --file pom.xml -DJDK8 -pl ':nessie-hms-hive2,:nessie-hms-hive3' -Pcode-coverage
       env:

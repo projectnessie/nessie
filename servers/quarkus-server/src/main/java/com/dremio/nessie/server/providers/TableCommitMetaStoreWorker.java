@@ -36,6 +36,7 @@ import com.dremio.nessie.model.HiveTable;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableCommitMeta;
 import com.dremio.nessie.model.ImmutableDeltaLakeTable;
+import com.dremio.nessie.model.ImmutableDeltaLakeTable.Builder;
 import com.dremio.nessie.model.ImmutableHiveDatabase;
 import com.dremio.nessie.model.ImmutableHiveTable;
 import com.dremio.nessie.model.ImmutableIcebergTable;
@@ -67,8 +68,15 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
               PIcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
 
         } else if (value instanceof DeltaLakeTable) {
-          builder.setDeltaLakeTable(
-              PDeltaLakeTable.newBuilder().setMetadataLocation(((DeltaLakeTable) value).getMetadataLocation()));
+
+          PDeltaLakeTable.Builder table = PDeltaLakeTable.newBuilder()
+              .addAllMetadataLocationHistory(((DeltaLakeTable) value).getMetadataLocationHistory())
+              .addAllCheckpointLocationHistory(((DeltaLakeTable) value).getCheckpointLocationHistory());
+          String lastCheckpoint = ((DeltaLakeTable) value).getLastCheckpoint();
+          if (lastCheckpoint != null) {
+            table.setLastCheckpoint(lastCheckpoint);
+          }
+          builder.setDeltaLakeTable(table);
 
         } else if (value instanceof HiveTable) {
           HiveTable ht = (HiveTable) value;
@@ -99,8 +107,13 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
         }
         switch (contents.getObjectTypeCase()) {
           case DELTA_LAKE_TABLE:
-            return ImmutableDeltaLakeTable.builder().metadataLocation(contents.getDeltaLakeTable().getMetadataLocation())
-                .build();
+            Builder builder = ImmutableDeltaLakeTable.builder()
+                .addAllMetadataLocationHistory(contents.getDeltaLakeTable().getMetadataLocationHistoryList())
+                .addAllCheckpointLocationHistory(contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
+            if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
+              builder.lastCheckpoint(contents.getDeltaLakeTable().getLastCheckpoint());
+            }
+            return builder.build();
 
           case HIVE_DATABASE:
             return ImmutableHiveDatabase.builder()
