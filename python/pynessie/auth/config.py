@@ -20,9 +20,9 @@ def login(base_url: str, config_dict: confuse.Configuration) -> AuthBase:
 
 
 def _login(base_url: str, config_dict: confuse.Configuration) -> str:
-    """Log into dremio using basic auth and looking for config.
+    """Log into Nessie using basic auth and looking for config.
 
-    :param base_url: Dremio url
+    :param base_url: Full Nessie url
     :param config_dict: config dict
     :return: auth token
     """

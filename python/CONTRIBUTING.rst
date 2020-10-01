@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/rymurr/pynessie/issues.
+Report bugs at https://github.com/projectnessie/nessie/issues.
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/rymurr/pynessie/issues.
+The best way to send feedback is to file an issue at https://github.com/projectnessie/nessie/issues.
 
 If you are proposing a feature:
 
@@ -57,17 +57,17 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `pynessie` for local development.
+Ready to contribute? Here's how to set up `nessie` for local development.
 
-1. Fork the `pynessie` repo on GitHub.
+1. Fork the `nessie` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/pynessie.git
+    $ git clone git@github.com:your_name_here/nessie.git
 
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
     $ mkvirtualenv pynessie
-    $ cd pynessie/
+    $ cd nessie/python
     $ python setup.py develop
 
 4. Create a branch for local development::
@@ -102,9 +102,9 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 3.5, 3.6, 3.7 and 3.8, and for PyPy. Check
-   https://travis-ci.com/rymurr/pynessie/pull_requests
-   and make sure that the tests pass for all supported Python versions.
+3. The pull request should work for Python 3.5, 3.6, 3.7 and 3.8. Check
+   the pull request status and make sure that the tests pass for all
+   supported Python versions.
 
 Tips
 ----

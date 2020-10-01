@@ -32,20 +32,16 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/rymurr/pynessie
+    $ git clone git://github.com/projectnessie/nessie
 
-Or download the `tarball`_:
-
-.. code-block:: console
-
-    $ curl -OJL https://github.com/rymurr/pynessie/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
 .. code-block:: console
 
+    $ cd python
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/rymurr/pynessie
-.. _tarball: https://github.com/rymurr/pynessie/tarball/master
+.. _Github repo: https://github.com/projectnessie/nessie
+
