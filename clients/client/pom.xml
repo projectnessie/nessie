@@ -79,6 +79,7 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>auth</artifactId>
+      <optional>true</optional>
     </dependency>
   </dependencies>
 
