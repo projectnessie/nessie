@@ -5,6 +5,8 @@ service can be scheduled and Nessie reports the outcome of each scheduled operat
 Scheduled operations require that Nessie have access to a Spark cluster to complete 
 those operations and many of them are distributed compute operations. 
 
+!!! info
+    Table management services are currently in progress and are not yet included in a released version of Nessie.
 
 ## Garbage Collection
 
