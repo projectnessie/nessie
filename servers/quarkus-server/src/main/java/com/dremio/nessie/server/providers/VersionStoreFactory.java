@@ -121,7 +121,7 @@ public class VersionStoreFactory {
       return null;
     }
 
-    return new DynamoStore(DynamoStoreConfig.builder()
+    DynamoStore dynamo = new DynamoStore(DynamoStoreConfig.builder()
                                             .endpoint(endpoint.map(e -> {
                                               try {
                                                 return new URI(e);
@@ -135,6 +135,8 @@ public class VersionStoreFactory {
                                             .treeTableName(config.getVersionStoreDynamoConfig().getTreeTableName())
                                             .valueTableName(config.getVersionStoreDynamoConfig().getValueTableName())
                                             .build());
+    dynamo.start();
+    return dynamo;
   }
 
   /**

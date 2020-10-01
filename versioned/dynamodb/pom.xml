@@ -61,10 +61,18 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>dynamodb</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>netty-nio-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>apache-client</artifactId>
       <exclusions>
         <exclusion>
-          <groupId>software.amazon.awssdk</groupId>
-          <artifactId>apache-client</artifactId>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

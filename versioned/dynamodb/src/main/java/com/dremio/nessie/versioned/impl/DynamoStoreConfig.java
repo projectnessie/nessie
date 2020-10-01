@@ -35,17 +35,17 @@ public abstract class DynamoStoreConfig {
 
   @Default
   public String getTreeTableName() {
-    return "nessie_trees";
+    return "nessie_objects";
   }
 
   @Default
   public String getValueTableName() {
-    return "nessie_values";
+    return "nessie_objects";
   }
 
   @Default
   public String getMetadataTableName() {
-    return "nessie_commit_metadata";
+    return "nessie_objects";
   }
 
   @Default
