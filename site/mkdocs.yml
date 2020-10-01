@@ -25,7 +25,7 @@ extra:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/projectnessie
     - icon: fontawesome/brands/docker
-      link: https://hub.docker.com/orgs/projectnessie
+      link: https://hub.docker.com/r/projectnessie/nessie
     - icon: fontawesome/brands/youtube
       link: https://www.youtube.com/channel/UC5xjzYuGGuGPCY9FNtqZMsQ?view_as=subscriber
 repo_url: https://github.com/projectnessie/nessie
