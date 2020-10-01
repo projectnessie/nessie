@@ -32,7 +32,7 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     description="Python Boilerplate contains all the boilerplate you need to create a Python package.",
-    entry_points={"console_scripts": ["nessie_client=nessie_client.cli:cli",],},
+    entry_points={"console_scripts": ["nessie=nessie_client.cli:cli",],},
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme + "\n" + history,
@@ -43,7 +43,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=[],
-    url="https://github.com/rymurr/nessie_client",
+    url="https://github.com/projectnessie/nessie",
     version="0.0.1",
     zip_safe=False,
 )
