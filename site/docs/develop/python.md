@@ -15,7 +15,7 @@ for both is covered in our reference for the [command line interface](../tools/c
 To instantiate a client simply run
 
 ``` python
-from nessie_client import init
+from pynessie import init
 client = init() # this will look for the client config as per above
 branches = client.list_branches()
 print(branches)
