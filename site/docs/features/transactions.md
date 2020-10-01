@@ -18,7 +18,7 @@ within your data lake. There are two ways that this can be accomplished:
   simultaneously. While Nessie operations internally use this capability, tools will need to be enhanced to take advantage of this powerful 
   new capability.
 
-## BEGIN TRANSACTION.. COMMIT
+## START TRANSACTION.. COMMIT
 
 The Nessie community is working with tool developers to introduce traditional data 
 warehouse cross-table transactions. Nessie's catalog implementations already support 

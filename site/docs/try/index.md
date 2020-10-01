@@ -31,7 +31,7 @@ __  ____  __  _____   ___  __ ____  ______
 2020-09-30 04:05:31,535 INFO  [io.quarkus] (main) Installed features: [amazon-dynamodb, cdi, hibernate-validator, jaeger, resteasy, resteasy-jackson, security, security-properties-file, sentry, smallrye-health, smallrye-metrics, smallrye-openapi, smallrye-opentracing]
 ```
 
-Once the docker image is up and running, you can install the [Nessie cli](/tools/cli.md) by doing:
+Once the docker image is up and running, you can install the [Nessie cli](../tools/cli.md) by doing:
 
 ```bash
 $ pip install pynessie
@@ -53,7 +53,7 @@ $ nessie branch my_branch
 
 From there, you can use one of the three main Nessie integrations of:
 
-* NessieCatalog for Iceberg [within Spark](/tools/spark.md)
-* Nessie Log Handle for Delta Lake [within Spark](/tools/spark.md)
-* Hive or HMS compatible tool use with the [Nessie HMS Bridge](/tools/hive.md)
+* NessieCatalog for Iceberg [within Spark](../tools/spark.md)
+* Nessie Log Handle for Delta Lake [within Spark](../tools/spark.md)
+* Hive or HMS compatible tool use with the [Nessie HMS Bridge](../tools/hive.md)
   

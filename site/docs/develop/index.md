@@ -29,7 +29,7 @@ Google Groups as a mailing list.
 [YouTube Channel](https://www.youtube.com/channel/UC5xjzYuGGuGPCY9FNtqZMsQ)
 : Video content for Nessie will be hosted on our YouTube channel. 
 
-[Docs](https://https://github.com/projectnessie/nessie/tree/main/site/docs)
+[Docs](https://github.com/projectnessie/nessie/tree/main/site/docs)
 : Our website is all maintained in our source repository. If there is something you think 
   can be improved, feel free to fork our repository and post a pull request.
 
