@@ -7,8 +7,8 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   nessie_client.auth
-   nessie_client.conf
+   pynessie.auth
+   pynessie.conf
 
 Submodules
 ----------
@@ -16,7 +16,7 @@ Submodules
 nessie\_client.cli module
 -------------------------
 
-.. automodule:: nessie_client.cli
+.. automodule:: pynessie.cli
    :members:
    :undoc-members:
    :show-inheritance:
@@ -24,7 +24,7 @@ nessie\_client.cli module
 nessie\_client.error module
 ---------------------------
 
-.. automodule:: nessie_client.error
+.. automodule:: pynessie.error
    :members:
    :undoc-members:
    :show-inheritance:
@@ -32,7 +32,7 @@ nessie\_client.error module
 nessie\_client.model module
 ---------------------------
 
-.. automodule:: nessie_client.model
+.. automodule:: pynessie.model
    :members:
    :undoc-members:
    :show-inheritance:
@@ -40,7 +40,7 @@ nessie\_client.model module
 nessie\_client.nessie\_client module
 ------------------------------------
 
-.. automodule:: nessie_client.nessie_client
+.. automodule:: pynessie.pynessie
    :members:
    :undoc-members:
    :show-inheritance:
@@ -49,7 +49,7 @@ nessie\_client.nessie\_client module
 Module contents
 ---------------
 
-.. automodule:: nessie_client
+.. automodule:: pynessie
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for `nessie_client` package."""
+"""Tests for `pynessie` package."""
 import pytest
 import requests_mock
 import simplejson as json
 from click.testing import CliRunner
 
-from nessie_client import __version__
-from nessie_client import cli
-from nessie_client.model import ReferenceSchema
+from pynessie import __version__
+from pynessie import cli
+from pynessie.model import ReferenceSchema
 
 
 def test_command_line_interface(requests_mock: requests_mock) -> None:

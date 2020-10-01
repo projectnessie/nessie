@@ -12,7 +12,7 @@ To install Python API and CLI for Nessie, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install nessie_client
+    $ pip install pynessie
 
 This is the preferred method to install Python API and CLI for Nessie, as it will always install the most recent stable release.
 
@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/rymurr/nessie_client
+    $ git clone git://github.com/rymurr/pynessie
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/rymurr/nessie_client/tarball/master
+    $ curl -OJL https://github.com/rymurr/pynessie/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/rymurr/nessie_client
-.. _tarball: https://github.com/rymurr/nessie_client/tarball/master
+.. _Github repo: https://github.com/rymurr/pynessie
+.. _tarball: https://github.com/rymurr/pynessie/tarball/master

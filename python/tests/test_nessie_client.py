@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Tests for `nessie_client` package."""
+"""Tests for `pynessie` package."""
 import pytest
 import requests_mock
 import simplejson as json
 
-from nessie_client import init
-from nessie_client.error import NessieConflictException
-from nessie_client.model import Reference
+from pynessie import init
+from pynessie.error import NessieConflictException
+from pynessie.model import Reference
 
 
 class Fake:
