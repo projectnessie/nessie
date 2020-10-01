@@ -33,8 +33,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    description=
-    "Python Boilerplate contains all the boilerplate you need to create a Python package.",
+    description="Project Nessie: A Git-like Experience for your Data Lake",
     entry_points={
         "console_scripts": [
             "nessie=pynessie.cli:cli",
@@ -51,6 +50,6 @@ setup(
     test_suite="tests",
     tests_require=[],
     url="https://github.com/projectnessie/nessie",
-    version="0.1.0",
+    version="0.1.1",
     zip_safe=False,
 )
