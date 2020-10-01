@@ -7,7 +7,7 @@ listings in HDFS used to be sufficient, there were many features lacking. This i
 snapshotting, consistency and fast planning. Apache Iceberg and Delta Lake were both 
 created to help alleviate those problems.
 
-For more insight into why we created Nessie, you can read a founding [blog post](https://www.dremio.com/blog/) by one of it's 
+For more insight into why we created Nessie, you can read the founding [blog post](https://www.dremio.com/project-nessie/) by one of Nessie's 
 creators.
 
 ## Inspiration

@@ -14,33 +14,46 @@ pip install pynessie
 All of the REST API calls are exposed via the command line interface. To see a list of what is available run:
 
 ``` bash
-$ nessie show --help
-usage: nessie show [<object>]
+$ nessie
+``` 
 
-$ nessie log --help
-usage nessie log [<revision_range>] [[--] <path>...]
+``` bash
+Usage: nessie [OPTIONS] COMMAND [ARGS]...
 
-$ nessie branch --help
-usage: nessie branch -l
-   or: nessie branch [-f] <branch> [<commit> | <object>]
-   or: nessie branch -d <branch>
-   
-$ nessie tag --help
-usage: nessie tag -l
-       nessie tag [-f] <tagname> [<commit> | <object>]
-       nessie tag -d <tagname>
-       
-$ nessie push <endpoint> --help
-usage: nessie push <endpoint> [<commit>|<object>]:<object>]
-```  
+  Nessie cli tool.
+
+  Interact with Nessie branches and tables via the command line
+
+Options:
+  --config DIRECTORY   Custom config file.
+  -e, --endpoint TEXT  Endpoint if different from config file
+  -u, --username TEXT  username if different from config file
+  --password TEXT      password if different from config file
+  --skip-verify        skip verificatoin of ssl cert
+  --version
+  --help               Show this message and exit.
+
+Commands:
+  create-branch  Create a branch and optionally fork from base-branch.
+  delete-branch  Delete a specific branch.
+  list-branches  List all known branches.
+  list-tables    List tables from BRANCH.
+  merge-branch   Merge FROM-BRANCH into TO-BRANCH.
+  show-branch    Show a specific branch.
+  show-table     List tables from BRANCH
+```
+
+!!! caution
+    Please note that we're actively redefining the cli to better match Git syntax. You should expect that this syntax will change shortly.
+
 
 ## Configuration
 
 You can configure the Nessie CLI by creating a configuration file as described below:
 
-* macOS: `~/.config/pynessie` and `~/Library/Application Support/pynessie`
-* Other Unix: `~/.config/pynessie` and `/etc/pynessie`
-* Windows: `%APPDATA%\pynessie` where the `APPDATA` environment variable falls
+* macOS: `~/.config/nessie` and `~/Library/Application Support/nessie`
+* Other Unix: `~/.config/nessie` and `/etc/nessie`
+* Windows: `%APPDATA%\nessie` where the `APPDATA` environment variable falls
   back to `%HOME%\AppData\Roaming` if undefined
 * Via the environment variable `DREMIO_CLIENTDIR`
 
@@ -55,12 +68,21 @@ auth:
     username: <username>
     password: <password>
     timeout: 10
+
+# Nessie endpoint
 endpoint: http://localhost/api/v1
-verify: true # whether to skip SSL cert verification
+
+# whether to skip SSL cert verification
+verify: true 
 ```
 
-When configuring authentication type `aws`, the client delegates to the great Boto 
-library. You can configure credentials using any of the standard [AWS methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
+When configuring authentication type `aws`, the client delegates to the [Boto](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) 
+library. You can configure credentials using any of the standard [Boto AWS methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
+
+The [command line interface](../tools/cli.md) can be configured with most of the above parameters via flags or by setting
+a config directory. The relevant configs can also be set via environment variables. These take precedence. The
+environment variable format is to append `NESSIE_` to a config parameter and nested configs are separated by a *_*. For
+example: `NESSIE_AUTH_TIMEOUT` maps to `auth.timeout` in the default configuration file above.
 
 
 ## Working with JSON
@@ -68,7 +90,7 @@ library. You can configure credentials using any of the standard [AWS methods](h
 The Nessie CLI returns data in json format and is designed to be used effectively with [`jq`](https://stedolan.github.io/jq/). For example:
 
 ``` bash
-$ nessie branch -l | jq .
+$ nessie list-branches | jq .
 ```
 
 The Nessie CLI is built on the great Python [Click](https://click.palletsprojects.com) library. It requires Python 3.x.

@@ -12,7 +12,7 @@ table format. It provides:
 
 Iceberg exposes two primary classes for working with datasets. These are Catalog and 
 TableOperations. Nessie implements each. These classes are currently available within 
-the [Nessie source code](https://github.com/projectnessie/nessie/tree/main/clients/iceberg/src/main/java/com/dremio/nessie/iceberg) 
+the [Nessie source code](https://github.com/projectnessie/nessie/tree/main/clients/iceberg/core/src/main/java/com/dremio/nessie/iceberg) 
 but work is being done to contribute them to the Iceberg project so they come pre-packaged
 for any user who is working with Iceberg.
 
@@ -42,9 +42,10 @@ to continue to work while also moving versioning responsibilities to Nessie.
 
 ### Hive Table Cloning
 
-In Nessie, if HMS is used for read-only operation against Iceberg tables, [work is being 
-done](https://github.com/projectnessie/nessie/issues/125) so that Nessie can automatically 
-clone the latest metadata file location to the Hive Metastore each time  
+In Nessie, we plan to add a capability to [automatically update](https://github.com/projectnessie/nessie/issues/125) one or more Hive Metastore 
+servers (including AWS Glue) every time a Iceberg table is updated in Nessie so that 
+legacy systems can still be exposed to Nessie updates, even if the [HMS Bridge](../tools/hive.md) service 
+we offer is not used.  
 
 ### HMS Bridge Compatibility
 

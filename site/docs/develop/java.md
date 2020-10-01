@@ -12,7 +12,7 @@ Maven. The coordinates are:
 <dependency>
   <groupId>org.projectnessie</groupId>
   <artifactId>nessie-client</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.1</version>
 </dependency> 
 ```
 
@@ -24,7 +24,7 @@ tests) + Jackson's DataBinding and JAX-RS modules (any version from the last ~3+
 
 ### API
 
-The `NessieClient` object wraps a Jersey Client and exposes interactions with the Nessie rest api. To use it simply
+The `NessieClient` object wraps a Jersey Client and exposes interactions with the Nessie Rest API. To use it simply
 
 ```java
 client = NessieClient.basic(path, username, password);
@@ -40,9 +40,8 @@ use `NessieClient.aws(path)` to instantiate a client. The `path` argument is the
 http://localhost:19120/api/v1).
 
 ## Server
-The Nessie server is based on the Quarkus microkernel app server and can run in a traditional 
-JVM or be pre-compiled into a native image to via GraalVM. Key APIs inside the server. 
-We develop all code using JDK11 and then compile for release on JDK8.
+The Nessie server is based on the Quarkus microkernel appserver and can run in a traditional 
+JVM or be precompiled into a native image via GraalVM. We develop all code using JDK11 and then compile for release on JDK8.
 
 ### Rest API 
 The Rest API is composed primarily of the [Contents](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/com/dremio/nessie/api/ContentsApi.java), [Tree](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/com/dremio/nessie/api/TreeApi.java) and [Config](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/com/dremio/nessie/api/ConfigApi.java) APIs.
