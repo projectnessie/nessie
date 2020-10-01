@@ -100,10 +100,13 @@ public class VersionStoreFactory {
   private VersionStore<Contents, CommitMeta> getVersionStore(TableCommitMetaStoreWorker storeWorker, Repository repository) {
     switch (config.getVersionStoreConfig().getVersionStoreType()) {
       case DYNAMO:
+        LOGGER.info("Using Dyanmo Version store");
         return new DynamoVersionStore<>(storeWorker, dyanamo(), false);
       case JGIT:
+        LOGGER.info("Using JGit Version Store");
         return new JGitVersionStore<>(repository, storeWorker);
       case INMEMORY:
+        LOGGER.info("Using In Memory version store");
         return InMemoryVersionStore.<Contents, CommitMeta>builder()
             .metadataSerializer(storeWorker.getMetadataSerializer())
             .valueSerializer(storeWorker.getValueSerializer())
@@ -144,14 +147,19 @@ public class VersionStoreFactory {
    */
   @Produces
   public Repository repository(Backend backend) throws IOException, GitAPIException {
+    if (!config.getVersionStoreConfig().getVersionStoreType().equals(VersionStoreType.JGIT)) {
+      return null;
+    }
     switch (config.getVersionStoreJGitConfig().getJgitStoreType()) {
       case DYNAMO:
+        LOGGER.info("JGit Version store has been configured with the dynamo backend");
         DfsRepositoryDescription repoDesc = new DfsRepositoryDescription();
         return new NessieRepository.Builder().setRepositoryDescription(repoDesc)
                                              .setBackend(backend.gitBackend())
                                              .setRefBackend(backend.gitRefBackend())
                                              .build();
       case DISK:
+        LOGGER.info("JGit Version store has been configured with the file backend");
         File jgitDir = new File(config.getVersionStoreJGitConfig().getJgitDirectory()
                                       .orElseThrow(() -> new RuntimeException("Please set nessie.version.store.jgit.directory")));
         if (!jgitDir.exists()) {
@@ -160,8 +168,10 @@ public class VersionStoreFactory {
               String.format("Couldn't create file at %s", config.getVersionStoreJGitConfig().getJgitDirectory().get()));
           }
         }
+        LOGGER.info(String.format("File backend is at %s", jgitDir.getAbsolutePath()));
         return Git.init().setDirectory(jgitDir).call().getRepository();
       case INMEMORY:
+        LOGGER.info("JGit Version store has been configured with the in memory backend");
         return new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
       default:
         throw new RuntimeException(String.format("unknown jgit repo type %s", config.getVersionStoreJGitConfig().getJgitStoreType()));

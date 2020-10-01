@@ -29,7 +29,7 @@ import org.junit.jupiter.api.extension.support.TypeBasedParameterResolver;
 import com.amazonaws.services.dynamodbv2.local.main.ServerRunner;
 import com.amazonaws.services.dynamodbv2.local.server.DynamoDBProxyServer;
 
-import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
@@ -52,7 +52,7 @@ public class LocalDynamoDB extends TypeBasedParameterResolver<DynamoDbClient> im
       server = ServerRunner.createServerFromCommandLineArgs(localArgs);
       server.start();
       client = DynamoDbClient.builder()
-          .httpClient(ApacheHttpClient.create())
+          .httpClient(UrlConnectionHttpClient.create())
           .endpointOverride(URI.create("http://localhost:8000"))
           .region(Region.US_WEST_2)
           .build();

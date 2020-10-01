@@ -25,7 +25,7 @@ import com.dremio.nessie.backend.EntityBackend;
 import com.dremio.nessie.model.BranchControllerObject;
 import com.dremio.nessie.model.BranchControllerReference;
 
-import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
@@ -62,7 +62,7 @@ public class DynamoDbBackend implements Backend {
       clientBuilder = clientBuilder.region(Region.of(region));
     }
 
-    DynamoDbClient client = clientBuilder.httpClient(ApacheHttpClient.create())
+    DynamoDbClient client = clientBuilder.httpClient(UrlConnectionHttpClient.builder().build())
                                          .build();
 
     return new DynamoDbBackend(client, registry);

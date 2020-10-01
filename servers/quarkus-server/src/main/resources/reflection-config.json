@@ -34,5 +34,32 @@
     "allPublicMethods" : true,
     "allDeclaredFields" : true,
     "allPublicFields" : true
+  },
+  {
+    "name" : "org.eclipse.jgit.lib.CoreConfig",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name" : "org.eclipse.jgit.lib.CoreConfig$HideDotFiles",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name" : "org.eclipse.jgit.lib.CoreConfig$LogRefUpdates",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
   }
 ]
