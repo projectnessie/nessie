@@ -42,9 +42,10 @@ to continue to work while also moving versioning responsibilities to Nessie.
 
 ### Hive Table Cloning
 
-In Nessie, if HMS is used for read-only operation against Iceberg tables, [work is being 
-done](https://github.com/projectnessie/nessie/issues/125) so that Nessie can automatically 
-clone the latest metadata file location to the Hive Metastore each time  
+In Nessie, we plan to add a capability to [automatically update](https://github.com/projectnessie/nessie/issues/125) one or more Hive Metastore 
+servers (including AWS Glue) every time a Iceberg table is updated in Nessie so that 
+legacy systems can still be exposed to Nessie updates, even if the [HMS Bridge](../tools/hive.md) service 
+we offer is not used.  
 
 ### HMS Bridge Compatibility
 
