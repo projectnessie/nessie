@@ -13,8 +13,9 @@ theme:
   favicon: images/fav2.png
   
   features:
-    - tabs
+    - navigation.tabs
     - navigation.expand
+    - navigation.instant
 
 google_analytics:
   - UA-177850801-1
