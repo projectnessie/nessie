@@ -4,10 +4,10 @@ Nessie is an OSS service and libraries that enable you to maintain multiple vers
 of your data and leverage Git-like Branches & Tags for your Data Lake. Nessie enhances the following 
 table formats with version control techniques:
 
-* Apache Iceberg Tables ([more](/tables/iceberg.md))
-* Delta Lake Tables ([more](/tables/deltalake.md))
-* Hive Metastore Tables ([more](/tables/hive.md))
-* SQL Views ([more](/tables/views.md))
+* Apache Iceberg Tables ([more](../tables/iceberg.md))
+* Delta Lake Tables ([more](../tables/deltalake.md))
+* Hive Metastore Tables ([more](../tables/hive.md))
+* SQL Views ([more](../tables/views.md))
 
 ## Basic Concepts
 
@@ -64,12 +64,12 @@ the definition of your table. Nessies keeps tracks of which files are related to
 of your tables at every point in time and then allows you to recall those as needed.
  
 ## Technology 
-Nessie can be [deployed in multiple ways](/try) and is composed primarily of the Nessie service, 
-which exposes a set of [REST APIs](/develop/rest.md) and a simple browse UI. This service works with multiple
+Nessie can be [deployed in multiple ways](../try) and is composed primarily of the Nessie service, 
+which exposes a set of [REST APIs](../develop/rest.md) and a simple browse UI. This service works with multiple
 libraries to expose Nessie version control capabilities to common data management technologies.
 
 Nessie was built as a Cloud native technology and is designed to be highly scalable, 
-[performant](/develop/kernel.md) and resilient. Built 
+[performant](../develop/kernel.md) and resilient. Built 
 on Java and leveraging [Quarkus](https://quarkus.io/), it is compiled to a GraalVM native image 
 that starts in less than 20ms. This makes Nessie work very well in docker and FaaS environments. 
 Nessie has a pluggable storage backend and comes pre-packaged with support for DynamoDB and local 
@@ -82,5 +82,5 @@ Nessie was originally conceived and built by engineers at [Dremio](http://dremio
 ## Getting Started
 
 * Read more about [Nessie transactions](transactions.md)
-* Get started with the Nessie [quickstart](/try).
+* Get started with the Nessie [quickstart](../try).
 

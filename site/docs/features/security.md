@@ -4,6 +4,7 @@
 ## Authentication
 
 Nessie currently supports 3 security modes:
+
 * No Security
 * Open Id Connect
 * AWS IAM Roles (limited to API calls, UI not supported)
