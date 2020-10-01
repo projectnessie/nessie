@@ -7,15 +7,15 @@ import confuse
 from .conf import build_config
 from .nessie_client import NessieClient
 
-__author__ = """Ryan Murray"""
+__author__ = """Project Nessie"""
 __email__ = "rymurr@dremio.com"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 
 def get_config(config_dir: str = None, args: dict = None) -> confuse.Configuration:
     """Retrieve a confuse Configuration object."""
     if config_dir:
-        os.environ["DREMIO_CLIENTDIR"] = config_dir
+        os.environ["NESSIE_CLIENTDIR"] = config_dir
     return build_config(args)
 
 

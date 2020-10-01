@@ -7,7 +7,7 @@ Submodules
 nessie\_client.auth.basic module
 --------------------------------
 
-.. automodule:: nessie_client.auth.basic
+.. automodule:: pynessie.auth.basic
     :members:
     :undoc-members:
     :show-inheritance:
@@ -15,7 +15,7 @@ nessie\_client.auth.basic module
 nessie\_client.auth.config module
 ---------------------------------
 
-.. automodule:: nessie_client.auth.config
+.. automodule:: pynessie.auth.config
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ nessie\_client.auth.config module
 Module contents
 ---------------
 
-.. automodule:: nessie_client.auth
+.. automodule:: pynessie.auth
     :members:
     :undoc-members:
     :show-inheritance:

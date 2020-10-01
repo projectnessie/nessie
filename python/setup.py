@@ -11,10 +11,12 @@ with open("README.rst") as readme_file:
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
-requirements = ["Click>=7.0", "requests", "simplejson", "confuse", "desert", "marshmallow", "marshmallow_oneofschema", "attrs"]
+requirements = [
+    "Click>=7.0", "requests", "simplejson", "confuse", "desert", "marshmallow",
+    "marshmallow_oneofschema", "attrs"
+]
 
 setup_requirements = ["pytest-runner", "pip"]
-
 
 setup(
     author="Ryan Murray",
@@ -31,19 +33,24 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    description="Python Boilerplate contains all the boilerplate you need to create a Python package.",
-    entry_points={"console_scripts": ["nessie=nessie_client.cli:cli",],},
+    description=
+    "Python Boilerplate contains all the boilerplate you need to create a Python package.",
+    entry_points={
+        "console_scripts": [
+            "nessie=pynessie.cli:cli",
+        ],
+    },
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme + "\n" + history,
     include_package_data=True,
-    keywords="nessie_client",
-    name="nessie_client",
-    packages=find_packages(include=["nessie_client", "nessie_client.*"]),
+    keywords="pynessie",
+    name="pynessie",
+    packages=find_packages(include=["pynessie", "pynessie.*"]),
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=[],
     url="https://github.com/projectnessie/nessie",
-    version="0.0.1",
+    version="0.1.0",
     zip_safe=False,
 )

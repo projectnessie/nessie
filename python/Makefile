@@ -51,7 +51,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 lint: ## check style with flake8
-	flake8 nessie_client tests
+	flake8 pynessie tests
 
 test: ## run tests quickly with the default Python
 	python setup.py test
@@ -66,9 +66,9 @@ coverage: ## check code coverage quickly with the default Python
 	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/nessie_client.rst
+	rm -f docs/pynessie.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ nessie_client
+	sphinx-apidoc -o docs/ pynessie
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	cp -R docs/_build/html ../site/docs/pydoc

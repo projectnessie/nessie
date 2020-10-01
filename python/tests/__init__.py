@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-"""Unit test package for nessie_client."""
+"""Unit test package for pynessie."""

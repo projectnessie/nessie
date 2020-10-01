@@ -7,7 +7,7 @@ Submodules
 nessie\_client.conf.config\_parser module
 -----------------------------------------
 
-.. automodule:: nessie_client.conf.config_parser
+.. automodule:: pynessie.conf.config_parser
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ nessie\_client.conf.config\_parser module
 Module contents
 ---------------
 
-.. automodule:: nessie_client.conf
+.. automodule:: pynessie.conf
     :members:
     :undoc-members:
     :show-inheritance:

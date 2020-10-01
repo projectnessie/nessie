@@ -1,7 +1,7 @@
-nessie_client
+pynessie
 =============
 
 .. toctree::
    :maxdepth: 4
 
-   nessie_client
+   pynessie
