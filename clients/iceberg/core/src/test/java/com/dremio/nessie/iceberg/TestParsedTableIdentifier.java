@@ -45,7 +45,7 @@ class TestParsedTableIdentifier {
   }
 
   @Test
-  void TimestampOnly() {
+  void timestampOnly() {
     String path = "foo#baz";
     Assertions.assertThrows(IllegalArgumentException.class, () -> ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>()));
   }

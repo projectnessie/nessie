@@ -36,7 +36,7 @@ public class NessieIcebergSource extends IcebergSource {
       throw new IllegalArgumentException("Cannot open table: path is not set");
     }
     ParsedTableIdentifier identifier = ParsedTableIdentifier.getParsedTableIdentifier(path, options);
-    NessieCatalog catalog = new NessieCatalog(conf, identifier.getReference(), identifier.getHash());
+    NessieCatalog catalog = new NessieCatalog(conf, identifier.getReference());
     return catalog.loadTable(identifier.getTableIdentifier());
   }
 
