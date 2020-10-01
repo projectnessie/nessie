@@ -81,8 +81,7 @@ cancellation capabilities.
 
 Nessie maintains state and locks at table granularity. If a conflict is found at the 
 table level, Nessie will either reject the operation or delegate the operation to the 
-underlying table format to see if further conflict resolution can occur.  
-format to provide additional 
+underlying table format to see if further conflict resolution can occur.
 
 [^1]: Delta Lake does support Serializable isolation against a [single table](https://docs.databricks.com/delta/optimizations/isolation-level.html) 
 but does not currently support it against multiple tables.
