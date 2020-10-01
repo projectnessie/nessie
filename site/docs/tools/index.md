@@ -6,15 +6,15 @@ the following:
 
 | |[Spark 2](spark.md)[^1]|[Spark 3](spark.md)[^2]|[Hive](hive.md)[^3]|AWS Athena[^4]|[Nessie CLI](cli.md)|
 | - | - | - | - | - | - |
-|Read Main|:material-check:| :material-check: |:material-check:|:material-check:| |
-|Read Arbitrary|:material-check:| :material-check: |:material-check:|:material-check:| |
-|Write Main|:material-check:| :material-check: |:material-check:| | |
-|Write Arbitrary|:material-check:| :material-check: |:material-check:| | |
+|Read Default Branch|:material-check:| :material-check: |:material-check:|:material-check:| |
+|Read Any Branch/Tag/Hash|:material-check:| :material-check: |:material-check:|:material-check:| |
+|Write Default Branch|:material-check:| :material-check: |:material-check:| | |
+|Write Any Branch/Tag/Hash|:material-check:| :material-check: |:material-check:| | |
 |Create Branch| :material-check: | :material-check: | :material-check: | |:material-check:|
 |Create Tag| :material-check: | :material-check: | :material-check: | |:material-check:|
 |Iceberg Tables|:material-check:|:material-check:|:material-check:| | |
 |Delta Lake Tables|:material-check:|:material-check:| | | |
-|Hive Tables|:material-check:|:material-check:|:material-check:|:material-check:|:material-check:|
+|Hive Tables (via HMS Bridge)|:material-check:|:material-check:|:material-check:|:material-check:|:material-check:|
 
 [^1]: Spark 2 currently only supports access via the Dataframe API due to weak generic 
 catalog support.

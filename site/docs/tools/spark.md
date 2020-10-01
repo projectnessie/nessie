@@ -89,7 +89,7 @@ option to set the catalog `nessie` to be managed by Nessie's Catalog implementat
 
 ### Writing
 
-Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 is considerable. See the 
+Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 are considerable. See the 
 [iceberg](https://iceberg.apache.org/spark/#spark) docs for an up to date support table.
 
 #### Spark2
@@ -153,7 +153,7 @@ addressing jvm objects directly in Python (until the python library for iceberg 
     region_table = catalog.createTable(region_name, region_schema, region_spec)
     ```
 
-Lines 1-10 are importing jvm objects into pyspark. Lines 11-25 create the table name, schema and partition spec. These
+When looking at the Python code above, lines 1-10 are importing jvm objects into pyspark. Lines 11-25 create the table name, schema and partition spec. These
 actions will be familiar to seasoned iceberg users and are wholly iceberg operations. Line 28 is where our initial 
 iceberg metadata is finally written to disk and a commit takes place on Nessie.
 
@@ -249,17 +249,17 @@ read a Nessie table in iceberg simply:
 The examples above all use the default branch defined on initialisation. There are several ways to reference specific
 branches or hashes from within a read statement. We will take a look at a few now from pyspark3, the rules are the same
 across all environments though. The general pattern is `<table>@<branch>`. Table must be present and either
-branch and/or sha2 are optional. We will throw an error if branch or sha2 don't exist.
+branch and/or hash are optional. We will throw an error if branch or hash don't exist.
 Branch or hash references in the table name will override passed `option`s and the settings in the
 Spark/Hadoop configs.
 
 ``` python linenums="1"
 spark.read().option("nessie.ref", "dev").format("iceberg").load("testing.region") # read from dev branch
-spark.read().option("nessie.ref", "<sha2>").format("iceberg").load("testing.region") # read from branch at specific point in time
+spark.read().option("nessie.ref", "<hash>").format("iceberg").load("testing.region") # read from branch at specific point in time
 spark.read().format("iceberg").load("testing.region@dev") # read from branch dev
-spark.read().format("iceberg").load("testing.region@<sha2>") # read specifically from sha2
+spark.read().format("iceberg").load("testing.region@<hash>") # read specifically from hash
 spark.sql("SELECT * FROM nessie.testing.`region@dev`")
-spark.sql("SELECT * FROM nessie.testing.`region@<sha2>`")
+spark.sql("SELECT * FROM nessie.testing.`region@<hash>`")
 ```
 
 Notice in the SQL statements the `table@branch` must be escaped separately from namespace or catalog arguments.

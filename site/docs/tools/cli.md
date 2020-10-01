@@ -48,13 +48,20 @@ The default config file is as follows:
 
 ``` yaml
 auth:
-    type: basic #  currently only basic or aws are supported
-    username: nessie
-    password: nessie123
+    # Type can be either basic or aws
+    type: basic
+
+    # Username and password required if using basic auth
+    username: <username>
+    password: <password>
     timeout: 10
 endpoint: http://localhost/api/v1
 verify: true # whether to skip SSL cert verification
 ```
+
+When configuring authentication type `aws`, the client delegates to the great Boto 
+library. You can configure credentials using any of the standard [AWS methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
+
 
 ## Working with JSON
 
