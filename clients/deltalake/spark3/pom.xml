@@ -32,7 +32,7 @@
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-deltalake</artifactId>
+      <artifactId>nessie-deltalake-core</artifactId>
       <version>${project.version}</version>
       <classifier>sources</classifier>
     </dependency>
