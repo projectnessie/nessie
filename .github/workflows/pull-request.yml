@@ -24,7 +24,7 @@ jobs:
       with:
         path: |
           ~/.m2/repository
-          !~/.m2/repository/com/nessie
+          !~/.m2/repository/org/projectnessie
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
