@@ -71,7 +71,7 @@
     <hamcrest.version>2.2</hamcrest.version>
     <iceberg.version>0.9.1</iceberg.version>
     <immutables.version>2.8.8</immutables.version>
-    <jackson.version>2.11.2</jackson.version>
+    <jackson.version>2.11.3</jackson.version>
     <javax.version>4.0.1</javax.version>
     <jaeger.version>1.3.2</jaeger.version>
     <jersey.version>2.31</jersey.version>
