@@ -34,13 +34,13 @@ Options:
   --help               Show this message and exit.
 
 Commands:
-  create-branch  Create a branch and optionally fork from base-branch.
-  delete-branch  Delete a specific branch.
-  list-branches  List all known branches.
-  list-tables    List tables from BRANCH.
-  merge-branch   Merge FROM-BRANCH into TO-BRANCH.
-  show-branch    Show a specific branch.
-  show-table     List tables from BRANCH
+  assign-branch    Assign from one ref to another.
+  create-branch    Create a branch and optionally fork from ref.
+  delete-branch    Delete a specific branch.
+  list-references  List all known references.
+  list-tables      List tables from BRANCH.
+  show-reference   Show a specific reference.
+  show-table       List tables from ref.
 ```
 
 !!! caution
@@ -90,7 +90,7 @@ example: `NESSIE_AUTH_TIMEOUT` maps to `auth.timeout` in the default configurati
 The Nessie CLI returns data in json format and is designed to be used effectively with [`jq`](https://stedolan.github.io/jq/). For example:
 
 ``` bash
-$ nessie list-branches | jq .
+$ nessie list-references | jq .
 ```
 
 The Nessie CLI is built on the great Python [Click](https://click.palletsprojects.com) library. It requires Python 3.x.
