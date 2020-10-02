@@ -164,7 +164,7 @@
               <goal>unpack-dependencies</goal>
             </goals>
             <configuration>
-              <includeArtifactIds>nessie-deltalake</includeArtifactIds>
+              <includeArtifactIds>nessie-deltalake-core</includeArtifactIds>
               <classifier>sources</classifier>
               <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
               <outputDirectory>${project.build.directory}/sources</outputDirectory>
@@ -177,7 +177,7 @@
               <goal>unpack-dependencies</goal>
             </goals>
             <configuration>
-              <includeArtifactIds>nessie-deltalake</includeArtifactIds>
+              <includeArtifactIds>nessie-deltalake-core</includeArtifactIds>
               <classifier>test-sources</classifier>
               <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
               <outputDirectory>${project.build.directory}/test-sources</outputDirectory>
