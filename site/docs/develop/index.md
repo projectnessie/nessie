@@ -11,9 +11,9 @@ Google Groups as a mailing list.
   or want to enhance the product, we suggest you file a GitHub issue for developers to 
   review.
 
-[Slack Channel](mailto:slack-subscribe@projectnessie.com)
+[Slack Channel](mailto:slack-subscribe@projectnessie.org)
 : The developers on Nessie frequent the nessie-public Slack channel. You can get an 
-  invite to the channel by emailing [slack-subscribe@projectnessie.com](mailto:slack-subscribe@projectnessie.com). 
+  invite to the channel by emailing [slack-subscribe@projectnessie.org](mailto:slack-subscribe@projectnessie.org). 
   If you want your organization invited to the channel, please state that in the request. 
   Whether you're super excited about development or just want to hear what is happening, 
   everyone is welcome to join. 
