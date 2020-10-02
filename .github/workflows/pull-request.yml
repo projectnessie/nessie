@@ -52,7 +52,6 @@ jobs:
           **/target/failsafe-reports/*
     - uses: codecov/codecov-action@v1
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
         flags: java
 
   python:
@@ -85,5 +84,3 @@ jobs:
     - name: Test with tox
       run: tox
       working-directory: ${{env.working-directory}}
-      env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
