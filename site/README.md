@@ -11,13 +11,7 @@ This directory contains the source for the Nessie docs site.
 The site is built using mkdocs. To install mkdocs and the theme, run:
 
 ```
-pip install mkdocs
-pip install mkdocs-material
-pip install mkdocs-minify-plugin
-pip install mkdocs-redirects
-pip install pymdown-extensions
-pip install mkdocs-awesome-pages-plugin
-pip install mkdocs-markdownextradata-plugin
+pip install -r ./requirements.txt
 ```
 
 ### Local Changes
@@ -30,13 +24,7 @@ mkdocs serve
 
 ### Publishing
 
-After site changes are committed, you can publish the site with this command:
-
-```
-mkdocs gh-deploy
-```
-
-This assumes that the remote is named `dremio` and will push to the `gh-pages` branch. To use a different remote add `-r <remote-name>`.
+We have a GitHub action that will automatically deploy any changes to the site.
 
 ### Generate python API docs
 
