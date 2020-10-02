@@ -88,8 +88,6 @@ jobs:
   site:
     name: Build & Deploy Website
     runs-on: ubuntu-latest
-    env:
-      working-directory: ./site
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
