@@ -23,7 +23,7 @@ Google Groups as a mailing list.
   that you can subscribe to.
 
 [Twitter](https://twitter.com/projectnessie)
-: The @projectnessie account on Twitter is our official account. Follow-up to keep 
+: The [@projectnessie](https://twitter.com/projectnessie) account on Twitter is our official account. Follow-up to keep 
   to date on what is happening with Project Nessie!   
 
 [YouTube Channel](https://www.youtube.com/channel/UC5xjzYuGGuGPCY9FNtqZMsQ)

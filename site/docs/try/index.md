@@ -26,29 +26,24 @@ __  ____  __  _____   ___  __ ____  ______
  --/ __ \/ / / / _ | / _ \/ //_/ / / / __/
  -/ /_/ / /_/ / __ |/ , _/ ,< / /_/ /\ \
 --\___\_\____/_/ |_/_/|_/_/|_|\____/___/
-2020-09-30 04:05:31,535 INFO  [io.quarkus] (main) nessie-quarkus 1.0-SNAPSHOT native (powered by Quarkus 1.8.1.Final) started in 0.020s. Listening on: http://0.0.0.0:19120
-2020-09-30 04:05:31,535 INFO  [io.quarkus] (main) Profile prod activated.
-2020-09-30 04:05:31,535 INFO  [io.quarkus] (main) Installed features: [amazon-dynamodb, cdi, hibernate-validator, jaeger, resteasy, resteasy-jackson, security, security-properties-file, sentry, smallrye-health, smallrye-metrics, smallrye-openapi, smallrye-opentracing]
+2020-10-01 21:50:27,166 INFO  [io.quarkus] (main) nessie-quarkus 0.1-SNAPSHOT native (powered by Quarkus 1.8.1.Final) started in 0.025s. Listening on: http://0.0.0.0:19120
+2020-10-01 21:50:27,166 INFO  [io.quarkus] (main) Profile prod activated.
+2020-10-01 21:50:27,166 INFO  [io.quarkus] (main) Installed features: [amazon-dynamodb, cdi, hibernate-validator, jaeger, resteasy, resteasy-jackson, security, security-properties-file, sentry, smallrye-health, smallrye-metrics, smallrye-openapi, smallrye-opentracing]
 ```
 
-Once the docker image is up and running, you can install the [Nessie cli](../tools/cli.md) by doing:
+Once the docker image is up and running, you can install the [Nessie cli](../tools/cli.md).
 
 ```bash
 $ pip install pynessie
 ```
 
-You should then configure the `.config/nessie` configuration file:
-
-```yaml
-TODO: fill in default configuration here
-```
-
-You now have Nessie setup and ready to be used. To create a new branch, you can do
+You're now ready to start using Nessie. To create a new branch, you can do 
+the following:
 
 ```bash
 # create a branch pointing to the same hash as
 # the current default branch (typically the main branch)
-$ nessie branch my_branch
+$ nessie create-branch my_branch
 ```
 
 From there, you can use one of the three main Nessie integrations of:
