@@ -1,6 +1,7 @@
-site_name: "Project Nessie: A Git-like Experience for your Data Lake"
-site_description: "Project Nessie: A Git-like Experience for your Data Lake"
+site_name: "Project Nessie: A Git-Like Experience for your Data Lake"
+site_description: "Project Nessie is a cloud native OSS service that works with Apache Iceberg, Hive Tables and Delta Lake tables to give your data lake cross-table transactions and a Git-like experience to data history."
 edit_uri: ""
+strict: true
 remote_name: origin
 remote_branch: gh-pages
 use_directory_urls: true
