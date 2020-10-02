@@ -26,12 +26,50 @@
 
   <name>Nessie</name>
   <url>https://projectnessie.org</url>
+  <organization>
+    <name>Project Nessie</name>
+    <url>https://projectnessie.org</url>
+  </organization>
   <licenses>
     <license>
       <name>The Apache License, Version 2.0</name>
       <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
+
+  <developers>
+    <developer>
+      <id>jacques-n</id>
+      <name>Jacques Nadeau</name>
+      <url>https://github.com/jacques-n</url>
+    </developer>
+    <developer>
+      <id>rymurr</id>
+      <name>Ryan Murray</name>
+      <url>https://github.com/rymurr</url>
+    </developer>
+    <developer>
+      <id>laurentgo</id>
+      <name>Laurent Goujon</name>
+      <url>https://github.com/laurentgo</url>
+    </developer>
+  </developers>
+  <contributors>
+    <contributor>
+      <name>Ryan Tse</name>
+      <url>https://github.com/ryantse</url>
+    </contributor>
+  </contributors>
+
+  <mailingLists>
+    <mailingList>
+      <name>Project Nessie List</name>
+      <subscribe>projectnessie-subscribe@googlegroups.com</subscribe>
+      <unsubscribe>projectnessie-unsubscribe@googlegroups.com</unsubscribe>
+      <post>projectnessie@googlegroups.com</post>
+      <archive>https://groups.google.com/g/projectnessie</archive>
+    </mailingList>
+  </mailingLists>
 
   <modules>
     <module>model</module>
@@ -50,6 +88,10 @@
     <url>https://github.com/projectnessie/nessie/tree/${project.scm.tag}</url>
     <tag>main</tag>
   </scm>
+  <issueManagement>
+    <system>Github</system>
+    <url>https://github.com/projectnessie/nessie/issues</url>
+  </issueManagement>
   <distributionManagement>
     <snapshotRepository>
       <id>ossrh</id>
