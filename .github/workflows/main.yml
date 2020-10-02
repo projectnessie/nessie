@@ -119,5 +119,5 @@ jobs:
           external_repository: projectnessie/projectnessie.github.io
           publish_branch: main
           deploy_key: ${{ secrets.NESSIE_SITE_DEPLOY_KEY }}
-          publish_dir: ./site   
+          publish_dir: ./site/site   
           cname: projectnessie.org
