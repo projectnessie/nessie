@@ -17,6 +17,7 @@ pip install mkdocs-minify-plugin
 pip install mkdocs-redirects
 pip install pymdown-extensions
 pip install mkdocs-awesome-pages-plugin
+pip install mkdocs-markdownextradata-plugin
 ```
 
 ### Local Changes
