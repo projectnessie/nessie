@@ -111,9 +111,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: Install dependencies
-        run: python3 -m pip install -r ./requirements.txt
-      - run: mkdocs build
-      - name: Deploy
+        run: python3 -m pip install -r ./site/requirements.txt
+      - name: Generate Static Site
+        run: mkdocs build
+        working-directory: ./site
+      - name: Deploy Static Site to GitHub
         uses: peaceiris/actions-gh-pages@v3
         with:
           external_repository: projectnessie/projectnessie.github.io

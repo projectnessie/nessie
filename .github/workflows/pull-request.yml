@@ -88,8 +88,6 @@ jobs:
   site:
     name: Build Website
     runs-on: ubuntu-latest
-    env:
-      working-directory: ./site
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
@@ -110,8 +108,8 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('site/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - run: pwd
-      - run: ls
       - name: Install dependencies
-        run: python3 -m pip install -r ./requirements.txt
-      - run: mkdocs build      
+        run: python3 -m pip install -r ./site/requirements.txt
+      - name: Generate Static Site
+        run: mkdocs build
+        working-directory: ./site
