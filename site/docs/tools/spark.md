@@ -15,8 +15,8 @@ for more info. We update soon with instructions to use these technologies with N
 
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include 
 the [Spark 2](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-iceberg-spark2/{{ versions.java }}/nessie-iceberg-spark2-{{ versions.java }}.jar) 
-or [Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-iceberg-spark3/{{ versions.java }}/nessie-iceberg-spark3-{{ versions.java }}.jar) Nessie plugin jar. This fat jar has all the required Nessie 
-**and** Apache Iceberg in it. 
+or [Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-iceberg-spark3/{{ versions.java }}/nessie-iceberg-spark3-{{ versions.java }}.jar) Nessie plugin jar. This fat jar contains 
+all Nessie **and** Apache Iceberg libraries required for operation. 
 
 !!! note
     The Nessie team is working to incorporate Nessie support directly into the Iceberg project moving forward.
@@ -286,7 +286,7 @@ managed Delta Lake table.
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include 
 the [Spark 2](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-deltalake-spark2/{{ versions.java}}/nessie-deltalake-spark2-{{ versions.java}}.jar) 
 or [Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-deltalake-spark3/{{ versions.java}}/nessie-deltalake-spark3-{{ versions.java}}.jar) 
-jar. This jar has all the required Nessie **and** Delta Lake libraries in it. 
+jar. These jars contain all Nessie **and** Delta Lake libraries required for operation. 
 
 !!! note
     the `spark3` jar is for Delta versions >7.0 on Spark3 and the `spark2` jar is for Delta versions 6.x on Spark2.4
