@@ -35,12 +35,9 @@ Currently, the HMS Bridge works with Hive 2.x and Hive 3.x. To get started, do t
 
 1. Install Hive (2.3.7, 3.1.2, or similar). The easiest way is to download a [tarball 
 from Apache](https://hive.apache.org/downloads.html).
-1. Grab a [generated artifact](https://github.com/orgs/projectnessie/packages?tab=packages&q=hms) from GitHub and copy into the Hive lib folder:
-    
-    Hive 2:  `cp nessie-hms-hive2-0.1.jar lib`    
-    Hive 3:  `cp nessie-hms-hive3-0.1.jar lib`
-        
-1. Add the following properties to hive-site.xml or similar:
+1. Download the [Hive 2](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-hms-hive2/{{ versions.java }}/nessie-hms-hive2-{{ versions.java }}.jar) or [Hive 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-hms-hive3/{{ versions.java }}/nessie-hms-hive3-{{ versions.java }}.jar) Nessie 
+plugin jar and copy into the Hive `lib/` folder:
+1. Add the following properties to hive-site.xml:
     
     ```xml
      <property>

@@ -13,19 +13,19 @@ for more info. We update soon with instructions to use these technologies with N
   You can follow along interactively in a Jupyter notebook by following the instructions 
   [here](https://github.com/projectnessie/nessie/python/demo).
 
-To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
-`nessie-iceberg-spark3-0.1-SNAPSHOT.jar`(todo link to jar). Note for spark2 use the [spark2](todo link to jar) artifact.
-This fat jar has all the required iceberg and Nessie libraries in it. 
+To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include 
+the [Spark 2](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-iceberg-spark2/{{ versions.java }}/nessie-iceberg-spark2-{{ versions.java }}.jar) 
+or [Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-iceberg-spark3/{{ versions.java }}/nessie-iceberg-spark3-{{ versions.java }}.jar) Nessie plugin jar. This fat jar contains 
+all Nessie **and** Apache Iceberg libraries required for operation. 
 
 !!! note
-    there is currently a patch in progress in the iceberg repository to build the Nessie client into iceberg. This
-    should be availabe at the next release of iceberg
+    The Nessie team is working to incorporate Nessie support directly into the Iceberg project moving forward.
 
 In pyspark this would look like
 
 ``` python
 SparkSession.builder
-            .config('spark.jars', 'path/to/nessie-iceberg-spark3-0.1-SNAPSHOT.jar')
+            .config('spark.jars', 'path/to/nessie-iceberg-spark3-{{ versions.java }}.jar')
             ... rest of spark config
             .getOrCreate()
 ```
@@ -73,7 +73,7 @@ These are set as follows in code (or through other methods as described [here](h
     ``` python
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
-            .config("spark.jars", "../../clients/iceberg-spark3/target/nessie-iceberg-spark3-0.1-SNAPSHOT.jar") \
+            .config("spark.jars", "../../clients/iceberg-spark3/target/nessie-iceberg-spark3-{{ versions.java }}.jar") \
             .config("spark.hadoop.nessie.url", "http://localhost:19120/api/v1") \
             .config("spark.hadoop.nessie.ref", "main") \
             .config("spark.sql.catalog.nessie", "com.dremio.nessie.iceberg.spark.NessieIcebergSparkCatalog") \
@@ -276,17 +276,17 @@ features of Nessie over the Iceberg features as Nessie history is consistent acr
   [here](https://github.com/projectnessie/nessie/python/demo).
 
 Delta Lake support in Nessie requires some minor modifications to the core Delta libraries. This patch is still ongoing,
-in the meantime Nessie will not work on Databricks and must be used with the open source Delta. The hope that these
-changes will be accepted for the next release of Delta. Nessie is able to interact with Delta Lake by implementing a
+in the meantime Nessie will not work on Databricks and must be used with the open source Delta. Nessie is able to interact with Delta Lake by implementing a
 custom version of Delta's LogStore [interface](https://github.com/delta-io/delta/blob/master/src/main/scala/org/apache/spark/sql/delta/storage/LogStore.scala).
 This ensures that all filesystem changes are recorded by Nessie as commits. The benefit of this approach is the core
 ACID primitives are handled by Nessie. The limitations around [concurrency](https://docs.delta.io/latest/delta-storage.html)
 that Delta would normally have are removed, any number of readers and writers can simultaneously interact with a Nessie 
-managed Delta Lake table. The consequence is the Delta table is no longer readable by non-Nessie Delta Lake readers.
+managed Delta Lake table.
  
-To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
-`nessie-deltalake-spark3-0.1-SNAPSHOT.jar`(todo link to jar). This fat jar has all the required delta and nessie
-libraries in it. 
+To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include 
+the [Spark 2](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-deltalake-spark2/{{ versions.java}}/nessie-deltalake-spark2-{{ versions.java}}.jar) 
+or [Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-deltalake-spark3/{{ versions.java}}/nessie-deltalake-spark3-{{ versions.java}}.jar) 
+jar. These jars contain all Nessie **and** Delta Lake libraries required for operation. 
 
 !!! note
     the `spark3` jar is for Delta versions >7.0 on Spark3 and the `spark2` jar is for Delta versions 6.x on Spark2.4
@@ -295,7 +295,7 @@ In pyspark this would look like
 
 ``` python
 SparkSession.builder
-            .config('spark.jars', 'path/to/nessie-deltalake-spark-0.1-SNAPSHOT.jar')
+            .config('spark.jars', 'path/to/nessie-deltalake-spark2-{{ versions.java}}.jar')
             ... rest of spark config
             .getOrCreate()
 ```
@@ -332,7 +332,7 @@ These are set as follows in code (or through other methods as described [here](h
     ``` python
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
-            .config("spark.jars", "../../clients/iceberg-spark3/target/nessie-iceberg-spark3-0.1-SNAPSHOT.jar") \
+            .config("spark.jars", "../../clients/iceberg-spark3/target/nessie-iceberg-spark3-{{ versions.java}}.jar") \
             .config("spark.hadoop.nessie.url", "http://localhost:19120/api/v1") \
             .config("spark.hadoop.nessie.ref", "main") \
             .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
@@ -424,7 +424,7 @@ should be fixed in an upcomming release.
 ### Reading
 
 Reading is similar between Spark2 and Spark3. We will look at both versions together in this section. To
-read a Nessie table in Delta simply:
+read a Nessie table in Delta Lake simply:
 
 === "Java"
     ``` java

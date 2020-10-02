@@ -21,6 +21,9 @@ google_analytics:
   - UA-177850801-1
   - auto
 extra:
+  versions:
+    java: 0.1.0
+    python: v0.1.1
   social:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/projectnessie
@@ -30,6 +33,7 @@ extra:
       link: https://www.youtube.com/channel/UC5xjzYuGGuGPCY9FNtqZMsQ?view_as=subscriber
 repo_url: https://github.com/projectnessie/nessie
 plugins:
+  - markdownextradata
   - search
   - awesome-pages:
       filename: _config  

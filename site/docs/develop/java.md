@@ -12,7 +12,7 @@ Maven. The coordinates are:
 <dependency>
   <groupId>org.projectnessie</groupId>
   <artifactId>nessie-client</artifactId>
-  <version>0.1</version>
+  <version>{{ versions.java }}</version>
 </dependency> 
 ```
 
