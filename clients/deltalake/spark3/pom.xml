@@ -164,7 +164,7 @@
               <goal>unpack-dependencies</goal>
             </goals>
             <configuration>
-              <includeArtifactIds>nessie-deltalake-core</includeArtifactIds>
+              <includeArtifactIds>nessie-deltalake</includeArtifactIds>
               <classifier>sources</classifier>
               <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
               <outputDirectory>${project.build.directory}/sources</outputDirectory>
@@ -177,7 +177,7 @@
               <goal>unpack-dependencies</goal>
             </goals>
             <configuration>
-              <includeArtifactIds>nessie-deltalake-core</includeArtifactIds>
+              <includeArtifactIds>nessie-deltalake</includeArtifactIds>
               <classifier>test-sources</classifier>
               <failOnMissingClassifierArtifact>true</failOnMissingClassifierArtifact>
               <outputDirectory>${project.build.directory}/test-sources</outputDirectory>
@@ -321,36 +321,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>default-javadocJar</id>
-                <phase>none</phase>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>net.alchim31.maven</groupId>
-            <artifactId>scala-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>default-javadocJar</id>
-                <goals>
-                  <goal>doc-jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>
