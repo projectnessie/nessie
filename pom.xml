@@ -52,6 +52,7 @@
   <properties>
     <!-- Build properties -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>8</maven.compiler.release>
     <argLine></argLine>
 
     <!-- 3rd party repositories -->
@@ -922,18 +923,6 @@ limitations under the License.
   </build>
 
   <profiles>
-    <profile>
-      <id>release8-when11</id>
-      <activation>
-        <property>
-          <name>!JDK8</name>
-        </property>
-      </activation>
-      <properties>
-        <maven.compiler.release>8</maven.compiler.release>
-      </properties>
-
-    </profile>
     <profile>
       <id>code-coverage</id>
       <build>
