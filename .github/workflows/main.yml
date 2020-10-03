@@ -15,18 +15,12 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-        server-id: ossrh
-        server-username: MAVEN_USERNAME
-        server-password: MAVEN_OSSRH_TOKEN
-        gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }} # Value of the GPG private key to import
-        gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
-
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
         path: |
           ~/.m2/repository
-          !~/.m2/repository/org/projectnessie
+          !~/.m2/repository/com/nessie
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
@@ -40,16 +34,14 @@ jobs:
     - name: Build with Maven
       run: mvn -B deploy --file pom.xml -Pcode-coverage,native,release -DdeployAtEnd=true
       env:
-        MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
-        MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
-        MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        GITHUB_TOKEN: ${{ github.token }} 
     - name: Push Docker images
       run: |
-          echo '${{ secrets.DOCKER_TOKEN }}' | docker login https://docker.pkg.github.com -u 'nessiebuilder' --password-stdin
+          echo '${{ secrets.GITHUB_TOKEN }}' | docker login https://docker.pkg.github.com -u '${{ github.actor }}' --password-stdin
           docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
           while read IMAGE_ID IMAGE_TAG; do
-            docker tag "$IMAGE_ID" "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
-            docker push "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
+            docker tag "$IMAGE_ID" "docker.pkg.github.com/${{ github.repository }}/nessie:${IMAGE_TAG}"
+            docker push "docker.pkg.github.com/${{ github.repository }}/nessie:${IMAGE_TAG}"
           done
     - name: Capture test results
       uses: actions/upload-artifact@v2
@@ -127,5 +119,5 @@ jobs:
           external_repository: projectnessie/projectnessie.github.io
           publish_branch: main
           deploy_key: ${{ secrets.NESSIE_SITE_DEPLOY_KEY }}
-          publish_dir: ./site/site
+          publish_dir: ./site/site   
           cname: projectnessie.org
