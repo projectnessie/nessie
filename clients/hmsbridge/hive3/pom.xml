@@ -52,30 +52,6 @@
       <artifactId>jcl-over-slf4j</artifactId>
       <scope>runtime</scope>
     </dependency>
-<!--     <dependency> -->
-<!--       <groupId>org.apache.hive</groupId> -->
-<!--       <artifactId>hive-standalone-metastore</artifactId> -->
-<!--       <version>3.1.2</version> -->
-<!--       <scope>runtime</scope> -->
-<!--       <exclusions> -->
-<!--         <exclusion> -->
-<!--           <groupId>com.sun.jersey</groupId> -->
-<!--           <artifactId>jersey-core</artifactId> -->
-<!--         </exclusion> -->
-<!--         <exclusion> -->
-<!--           <groupId>com.sun.jersey</groupId> -->
-<!--           <artifactId>jersey-client</artifactId> -->
-<!--         </exclusion> -->
-<!--         <exclusion> -->
-<!--           <groupId>com.sun.jersey</groupId> -->
-<!--           <artifactId>jersey-json</artifactId> -->
-<!--         </exclusion> -->
-<!--         <exclusion> -->
-<!--           <groupId>com.sun.jersey.contribs</groupId> -->
-<!--           <artifactId>jersey-guice</artifactId> -->
-<!--         </exclusion> -->
-<!--       </exclusions> -->
-<!--     </dependency>     -->
     <dependency>
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-exec</artifactId>
@@ -309,12 +285,7 @@
 
   <profiles>
     <profile>
-      <id>JDK8</id>
-      <activation>
-        <property>
-          <name>JDK8</name>
-        </property>
-      </activation>
+      <id>jdk8-tests</id>
       <build>
         <plugins>
           <plugin>
@@ -352,10 +323,9 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-              <systemProperties>
-              </systemProperties>
-              <systemPropertyVariables>
-              </systemPropertyVariables>
+              <jdkToolchain>
+                <version>1.8</version>
+              </jdkToolchain>
             </configuration>
             <executions>
               <execution>
@@ -365,36 +335,6 @@
                 </goals>
               </execution>
             </executions>
-          </plugin>
-          <plugin>
-            <artifactId>maven-enforcer-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>enforce-project-rules</id>
-                <goals>
-                  <goal>enforce</goal>
-                </goals>
-                <configuration>
-                  <rules combine.self="append">
-                    <requireJavaVersion>
-                      <version>1.8</version>
-                    </requireJavaVersion>
-                  </rules>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-              <source>1.8</source>
-              <target>1.8</target>
-              <compilerArgs combine.self="override">
-              </compilerArgs>
-              <annotationProcessorPaths combine.self="override" />
-              <maven.compiler.release/>
-            </configuration>
           </plugin>
         </plugins>
       </build>
