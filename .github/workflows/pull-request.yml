@@ -21,7 +21,7 @@ jobs:
         targets: 'JDK8_HOME'
     - name: Set up Maven toolchains.xml
       run: | 
-          cat << EOT > ${HOME}/.m2/toolchains.xml
+          cat << 'EOT' > ${HOME}/.m2/toolchains.xml
           <?xml version="1.0" encoding="UTF8"?>
           <toolchains>
             <toolchain>
