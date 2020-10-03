@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 /**
- * custom resolver for ObjectMapper to enable optional settings on json <-> object conversion.
+ * custom resolver for ObjectMapper to enable optional settings on json &lt;-&gt; object conversion.
  */
 @Provider
 public class ObjectMapperContextResolver implements ContextResolver<ObjectMapper> {
