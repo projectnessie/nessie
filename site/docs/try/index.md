@@ -1,5 +1,7 @@
 # Getting Started
 
+<iframe width="780" height="500" src="https://www.youtube.com/embed/QUmOU8ea_i4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 As part of each release, Nessie is made available as a fast-start docker 
 image. This is the easiest and fastest way to try out nessie. The image is relatively small 
 and builds on top of standard base images. To get started:
