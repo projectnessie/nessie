@@ -15,8 +15,12 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
+        server-id: ossrh
+        server-username: MAVEN_USERNAME
+        server-password: MAVEN_OSSRH_TOKEN
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
         gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
@@ -36,15 +40,16 @@ jobs:
     - name: Build with Maven
       run: mvn -B deploy --file pom.xml -Pcode-coverage,native,release -DdeployAtEnd=true
       env:
-        GITHUB_TOKEN: ${{ github.token }}
+        MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
+        MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
     - name: Push Docker images
       run: |
-          echo '${{ secrets.GITHUB_TOKEN }}' | docker login https://docker.pkg.github.com -u '${{ github.actor }}' --password-stdin
+          echo '${{ secrets.DOCKER_TOKEN }}' | docker login https://docker.pkg.github.com -u 'nessiebuilder' --password-stdin
           docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
           while read IMAGE_ID IMAGE_TAG; do
-            docker tag "$IMAGE_ID" "docker.pkg.github.com/${{ github.repository }}/nessie:${IMAGE_TAG}"
-            docker push "docker.pkg.github.com/${{ github.repository }}/nessie:${IMAGE_TAG}"
+            docker tag "$IMAGE_ID" "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
+            docker push "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
           done
     - name: Capture test results
       uses: actions/upload-artifact@v2
@@ -87,4 +92,3 @@ jobs:
     - name: Test with tox
       run: tox
       working-directory: ${{env.working-directory}}
-
