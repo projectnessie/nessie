@@ -309,6 +309,7 @@
         <configuration>
           <systemPropertyVariables>
           </systemPropertyVariables>
+          <failIfNoTests>true</failIfNoTests>
         </configuration>
         <executions>
           <execution>
