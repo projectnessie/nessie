@@ -11,7 +11,7 @@ for more info. We update soon with instructions to use these technologies with N
 
 !!! note
   You can follow along interactively in a Jupyter notebook by following the instructions 
-  [here](https://github.com/projectnessie/nessie/python/demo).
+  [here](https://github.com/projectnessie/nessie/tree/main/python/demo).
 
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include 
 the [Spark 2](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-iceberg-spark2/{{ versions.java }}/nessie-iceberg-spark2-{{ versions.java }}.jar) 
@@ -44,7 +44,7 @@ The only change is that a Nessie catalog should be instantiated
 
 !!! note
     Iceberg's python libraries are still under active development. Actions against catalogs in pyspark
-    still have to go through the jvm objects. See the [demo](https://github.com/projectnessie/nessie/python/demo) 
+    still have to go through the jvm objects. See the [demo](https://github.com/projectnessie/nessie/tree/main/python/demo) 
     directory for details.
 
 The Nessie Catalog needs the following parameters set in the Spark/Hadoop config.
@@ -272,8 +272,8 @@ features of Nessie over the Iceberg features as Nessie history is consistent acr
 ## Delta Lake
 
 !!! note
-  You can follow along interactively in a Jupyter notebook by following the instructions 
-  [here](https://github.com/projectnessie/nessie/python/demo).
+    You can follow along interactively in a Jupyter notebook by following the instructions 
+    [here](https://github.com/projectnessie/nessie/tree/main/python/demo).
 
 Delta Lake support in Nessie requires some minor modifications to the core Delta libraries. This patch is still ongoing,
 in the meantime Nessie will not work on Databricks and must be used with the open source Delta. Nessie is able to interact with Delta Lake by implementing a
@@ -357,7 +357,7 @@ Finally, note we have explicitly enabled Delta's SQL extensions which enable Del
 ### Writing
 
 Spark support is constantly evolving and the differences in Spark3 vs Spark2.4 is considerable. See the 
-[delta](https://docs.delta.io/https://docs.delta.io/latest/delta-batch.html) docs for an up to date support table.
+[delta](https://docs.delta.io/latest/delta-batch.html) docs for an up to date support table.
 
 #### Spark2
 

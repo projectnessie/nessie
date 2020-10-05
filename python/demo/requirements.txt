@@ -2,3 +2,5 @@ pynessie
 jupyterlab
 findspark
 pyspark
+pandas
+pyarrow
