@@ -120,10 +120,10 @@ public class ApplicationConfig {
     @ConfigProperty(name = "refTableName", defaultValue = "nessie_refs")
     String getRefTableName();
 
-    @ConfigProperty(name = "treeTableName", defaultValue = "nessie_trees")
+    @ConfigProperty(name = "treeTableName", defaultValue = "nessie_objects")
     String getTreeTableName();
 
-    @ConfigProperty(name = "valueTableName", defaultValue = "nessie_values")
+    @ConfigProperty(name = "valueTableName", defaultValue = "nessie_objects")
     String getValueTableName();
   }
 }
