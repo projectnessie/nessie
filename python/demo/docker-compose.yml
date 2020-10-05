@@ -17,7 +17,7 @@
 version: '3'
 services:
   nessie:
-    image: projectnessie/nessie:0.1-SNAPSHOT
+    image: projectnessie/nessie:latest
     ports:
       - 19120:19120
     depends_on:
