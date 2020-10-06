@@ -147,14 +147,14 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <annotationProcessorPaths>
+          <annotationProcessorPaths combine.children="append">
             <path>
               <groupId>info.picocli</groupId>
               <artifactId>picocli-codegen</artifactId>
               <version>4.5.1</version>
             </path>
           </annotationProcessorPaths>
-          <compilerArgs>
+          <compilerArgs combine.children="append">
             <arg>-Aproject=${project.groupId}/${project.artifactId}</arg>
           </compilerArgs>
         </configuration>

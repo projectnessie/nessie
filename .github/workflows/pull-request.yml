@@ -19,6 +19,34 @@ jobs:
       with:
         version: '8'
         targets: 'JDK8_HOME'
+    - name: Set up Maven toolchains.xml
+      run: | 
+          cat << 'EOT' > ${HOME}/.m2/toolchains.xml
+          <?xml version="1.0" encoding="UTF8"?>
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides>
+                <version>11</version>
+                <vendor>zulu</vendor>
+              </provides>
+              <configuration>
+                <jdkHome>${env.JAVA_HOME}</jdkHome>
+              </configuration>
+            </toolchain>
+            <toolchain>
+              <type>jdk</type>
+              <provides>
+                <version>1.8</version>
+                <vendor>adoptopenjdk</vendor>
+              </provides>
+              <configuration>
+                <jdkHome>${env.JDK8_HOME}</jdkHome>
+              </configuration>
+            </toolchain>
+          </toolchains>
+          EOT
+
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
@@ -36,13 +64,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
     - name: Build with Maven
-      run: mvn -B install --file pom.xml -Pcode-coverage
+      run: mvn -B install --file pom.xml -Pcode-coverage,jdk8-tests
       env:
         GITHUB_TOKEN: ${{ github.token }} 
-    - name: Run Hive tests with JDK8
-      run: mvn -B verify --file pom.xml -DJDK8 -pl ':nessie-hms-hive2,:nessie-hms-hive3' -Pcode-coverage
-      env:
-        JAVA_HOME: ${{ env.JDK8_HOME }}
     - name: Capture test results
       uses: actions/upload-artifact@v2
       with:
