@@ -15,12 +15,14 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
+        gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+        gpg-passphrase: MAVEN_GPG_PASSPHRASE
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
         path: |
           ~/.m2/repository
-          !~/.m2/repository/com/nessie
+          !~/.m2/repository/org/projectnessie
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
@@ -34,7 +36,8 @@ jobs:
     - name: Build with Maven
       run: mvn -B deploy --file pom.xml -Pcode-coverage,native,release -DdeployAtEnd=true
       env:
-        GITHUB_TOKEN: ${{ github.token }} 
+        GITHUB_TOKEN: ${{ github.token }}
+        MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
     - name: Push Docker images
       run: |
           echo '${{ secrets.GITHUB_TOKEN }}' | docker login https://docker.pkg.github.com -u '${{ github.actor }}' --password-stdin
@@ -119,5 +122,5 @@ jobs:
           external_repository: projectnessie/projectnessie.github.io
           publish_branch: main
           deploy_key: ${{ secrets.NESSIE_SITE_DEPLOY_KEY }}
-          publish_dir: ./site/site   
+          publish_dir: ./site/site
           cname: projectnessie.org
