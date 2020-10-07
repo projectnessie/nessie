@@ -1,0 +1,1 @@
+implementation=com.dremio.nessie.quarkus.gradle.QuarkusAppPlugin
