@@ -11,6 +11,7 @@ from click.testing import CliRunner
 
 from pynessie import __version__
 from pynessie import cli
+from pynessie.model import Branch
 from pynessie.model import ReferenceSchema
 
 
@@ -32,7 +33,7 @@ def test_command_line_interface() -> None:
     references = ReferenceSchema().loads(help_result.output, many=True)
     assert len(references) == 1
     assert references[0].name == "main"
-    assert references[0].kind == "BRANCH"
+    assert isinstance(references[0], Branch)
     assert references[0].hash_ == "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
 
 

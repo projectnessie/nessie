@@ -37,8 +37,8 @@ import com.dremio.nessie.model.Contents.Type;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.EntriesResponse.Entry;
 import com.dremio.nessie.model.ImmutableEntry;
-import com.dremio.nessie.model.ImmutableMultiContents;
 import com.dremio.nessie.model.ImmutableMultiGetContentsRequest;
+import com.dremio.nessie.model.ImmutableOperations;
 import com.dremio.nessie.model.MultiGetContentsResponse;
 import com.dremio.nessie.model.Operation;
 import com.dremio.nessie.model.Reference;
@@ -102,7 +102,7 @@ class TransactionStore {
 
     for (String ref : keysByRef.keySet()) {
       List<ContentsKey> keys = keysByRef.get(ref).stream().map(RefKey::getKey).collect(Collectors.toList());
-      MultiGetContentsResponse response = tree.getMultipleContents(ref,
+      MultiGetContentsResponse response = contents.getMultipleContents(ref,
           ImmutableMultiGetContentsRequest.builder().addAllRequestedKeys(keys).build());
       response.getContents().forEach(cwk -> {
         RefKey key = new RefKey(ref, cwk.getKey());
@@ -138,7 +138,7 @@ class TransactionStore {
 
     checkWritable();
     tree.commitMultipleOperations(reference.getName(), reference.getHash(), "HMS commit",
-        ImmutableMultiContents.builder().addAllOperations(operations.stream().collect(Collectors.toList())).build());
+        ImmutableOperations.builder().addAllOperations(operations.stream().collect(Collectors.toList())).build());
   }
 
   void deleteItem(ContentsKey key) {

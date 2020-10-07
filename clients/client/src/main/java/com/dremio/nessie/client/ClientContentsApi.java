@@ -25,6 +25,8 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.MultiGetContentsRequest;
+import com.dremio.nessie.model.MultiGetContentsResponse;
 
 class ClientContentsApi implements ContentsApi {
 
@@ -34,18 +36,11 @@ class ClientContentsApi implements ContentsApi {
     this.target = target;
   }
 
+
   @Override
   public Contents getContents(@NotNull ContentsKey key, String ref) throws NessieNotFoundException {
-    return target.path("contents").path(key.toPathString()).path(ref)
-                 .request()
-                 .accept(MediaType.APPLICATION_JSON_TYPE)
-                 .get()
-                 .readEntity(Contents.class);
-  }
-
-  @Override
-  public Contents getContents(ContentsKey key) throws NessieNotFoundException {
     return target.path("contents").path(key.toPathString())
+                 .queryParam("ref", ref)
                  .request()
                  .accept(MediaType.APPLICATION_JSON_TYPE)
                  .get()
@@ -53,37 +48,34 @@ class ClientContentsApi implements ContentsApi {
   }
 
   @Override
-  public void setContents(@NotNull ContentsKey key, @NotNull String hash, String message,
-                          @NotNull Contents contents) throws NessieNotFoundException, NessieConflictException {
-    target.path("contents").path(key.toPathString()).path(hash)
-          .queryParam("message", message)
-          .request()
-          .post(Entity.entity(contents, MediaType.APPLICATION_JSON_TYPE));
+  public MultiGetContentsResponse getMultipleContents(@NotNull String ref, @NotNull MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    return target.path("contents")
+        .queryParam("ref", ref)
+        .request()
+        .accept(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(request, MediaType.APPLICATION_JSON_TYPE))
+        .readEntity(MultiGetContentsResponse.class);
   }
 
 
   @Override
   public void setContents(@NotNull ContentsKey key, String branch, @NotNull String hash, String message,
                           @NotNull Contents contents) throws NessieNotFoundException, NessieConflictException {
-    target.path("contents").path(key.toPathString()).path(branch).path(hash)
+    target.path("contents").path(key.toPathString())
+          .queryParam("branch", branch)
+          .queryParam("hash", hash)
           .queryParam("message", message)
           .request()
           .post(Entity.entity(contents, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
-  public void deleteContents(ContentsKey key, String hash, String message)
-      throws NessieNotFoundException, NessieConflictException {
-    target.path("contents").path(key.toPathString()).path(hash)
-          .queryParam("message", message)
-          .request()
-          .delete();
-  }
-
-  @Override
   public void deleteContents(ContentsKey key, String branch, String hash, String message)
       throws NessieNotFoundException, NessieConflictException {
-    target.path("contents").path(key.toPathString()).path(branch).path(hash)
+    target.path("contents").path(key.toPathString())
+          .queryParam("branch", branch)
+          .queryParam("hash", hash)
           .queryParam("message", message)
           .request()
           .delete();

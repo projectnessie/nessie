@@ -5,8 +5,8 @@ import pytest
 
 from pynessie import init
 from pynessie.error import NessieConflictException
+from pynessie.model import Branch
 from pynessie.model import Entries
-from pynessie.model import Reference
 
 
 @pytest.mark.vcr
@@ -16,15 +16,15 @@ def test_client_interface_e2e() -> None:
     assert isinstance(client._base_url, str)
     references = client.list_references()
     assert len(references) == 1
-    assert references[0] == Reference("main", references[0].hash_, "BRANCH")
+    assert references[0] == Branch("main", references[0].hash_)
     main_commit = references[0].hash_
     with pytest.raises(NessieConflictException):
         client.create_branch("main")
     client.create_branch("test", main_commit)
     references = client.list_references()
     assert len(references) == 2
-    assert references[0] == Reference("main", main_commit, "BRANCH")
-    assert references[1] == Reference("test", main_commit, "BRANCH")
+    assert references[0] == Branch("main", main_commit)
+    assert references[1] == Branch("test", main_commit)
     reference = client.get_reference("test")
     tables = client.list_keys(reference.name)
     assert isinstance(tables, Entries)

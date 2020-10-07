@@ -5,7 +5,9 @@ import click
 
 from . import NessieClient
 from .error import NessieNotFoundException
+from .model import Branch
 from .model import ReferenceSchema
+from .model import Tag
 
 
 def handle_branch_tag(
@@ -42,15 +44,15 @@ def handle_branch_tag(
 
 def _handle_list(nessie: NessieClient, json: bool, verbose: bool, is_branch: bool, branch: str) -> str:
     results = nessie.list_references()
+    kept_results = [ref for ref in results if isinstance(ref, (Branch if is_branch else Tag))]
     if json:
-        return ReferenceSchema().dumps([i for i in results if i.kind == ("BRANCH" if is_branch else "TAG")], many=True)
+        return ReferenceSchema().dumps(kept_results, many=True)
     output = ""
     default_branch = nessie.get_default_branch()
-    kept_results = [i for i in results if i.kind == ("BRANCH" if is_branch else "TAG")]
     if branch:
         kept_results = [i for i in kept_results if i.name == branch]
-    max_width = max(len(i.name) for i in kept_results)
-    for x in results:
+    max_width = max((len(i.name) for i in kept_results), default=0)
+    for x in kept_results:
         next_row = "{}{}{}{}{}\n".format(
             "*".ljust(2) if x.name == default_branch else "  ",
             x.name.ljust(max_width + 1),

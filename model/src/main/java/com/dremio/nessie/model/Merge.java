@@ -32,7 +32,4 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 public interface Merge {
 
   String getFromHash();
-
-  Branch getTo();
-
 }

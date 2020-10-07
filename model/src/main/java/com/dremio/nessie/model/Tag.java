@@ -34,4 +34,8 @@ public interface Tag extends Reference {
   static ImmutableTag.Builder builder() {
     return ImmutableTag.builder();
   }
+
+  static Tag of(String name, String hash) {
+    return builder().name(name).hash(hash).build();
+  }
 }

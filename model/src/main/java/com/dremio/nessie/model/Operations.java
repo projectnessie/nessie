@@ -26,12 +26,12 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @Schema(
     type = SchemaType.OBJECT,
-    title = "MultiContents"
+    title = "Operations"
   )
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableMultiContents.class)
-@JsonDeserialize(as = ImmutableMultiContents.class)
-public interface MultiContents {
+@JsonSerialize(as = ImmutableOperations.class)
+@JsonDeserialize(as = ImmutableOperations.class)
+public interface Operations {
 
   List<Operation> getOperations();
 }

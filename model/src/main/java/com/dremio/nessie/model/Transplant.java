@@ -35,5 +35,4 @@ public interface Transplant {
 
   List<String> getHashesToTransplant();
 
-  Branch getBranch();
 }
