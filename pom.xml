@@ -1086,7 +1086,7 @@ limitations under the License.
             <artifactId>maven-source-plugin</artifactId>
             <executions>
               <execution>
-                <id>default-soucesJar</id>
+                <id>default-sourcesJar</id>
                 <goals>
                   <goal>jar-no-fork</goal>
                 </goals>
