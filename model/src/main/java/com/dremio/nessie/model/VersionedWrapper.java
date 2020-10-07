@@ -17,7 +17,7 @@
 package com.dremio.nessie.model;
 
 /**
- * wrap object with a version id. For eTag & Match-If
+ * wrap object with a version id. For eTag &amp; Match-If
  */
 public class VersionedWrapper<T> {
 
