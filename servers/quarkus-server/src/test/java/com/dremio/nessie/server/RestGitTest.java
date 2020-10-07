@@ -83,7 +83,11 @@ public class RestGitTest {
                                 .metadataLocation("/the/directory/over/there")
                                 .build();
 
-    rest().body(table).post("contents/xxx.test/{branch}/{hash}", newReference.getName(), newReference.getHash()).then().statusCode(204);
+    rest()
+      .body(table)
+      .queryParam("branch", newReference.getName()).queryParam("hash", newReference.getHash())
+      .post("contents/xxx.test")
+        .then().statusCode(204);
 
     Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
@@ -105,7 +109,7 @@ public class RestGitTest {
 
     rest().body(contents).put("trees/multi/{branch}/{hash}", branch.getName(), branch.getHash()).then().statusCode(204);
 
-    Response res = rest().get("contents/xxx.test/test").then().extract().response();
+    Response res = rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
     table = ImmutableIcebergTable.builder()
@@ -114,9 +118,11 @@ public class RestGitTest {
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
     rest().body(table)
-           .post("contents/xxx.test/{branch}/{hash}", b2.getName(), b2.getHash()).then().statusCode(204);
+           .queryParam("branch", b2.getName()).queryParam("hash", b2.getHash())
+           .post("contents/xxx.test").then().statusCode(204);
     Contents returned = rest()
-        .get("contents/xxx.test/test").then().statusCode(200).extract().as(Contents.class);
+        .queryParam("ref", "test")
+        .get("contents/xxx.test").then().statusCode(200).extract().as(Contents.class);
     Assertions.assertEquals(table, returned);
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
@@ -143,7 +149,11 @@ public class RestGitTest {
   }
 
   private void commit(Branch b, String path, String metadataUrl) {
-    rest().body(IcebergTable.of(metadataUrl)).post("contents/xxx.test/{branch}/{hash}", b.getName(), b.getHash()).then().statusCode(204);
+    rest()
+      .body(IcebergTable.of(metadataUrl))
+      .queryParam("branch", b.getName()).queryParam("hash", b.getHash())
+      .post("contents/xxx.test")
+      .then().statusCode(204);
   }
 
   private Branch getBranch(String name) {

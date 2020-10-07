@@ -152,7 +152,10 @@ def get_table(base_url: str, ref: str, table: str, ssl_verify: bool = True) -> d
     :param ssl_verify: ignore ssl errors if False
     :return: json dict of Nessie table
     """
-    return cast(dict, _get(base_url + "/contents/{}/{}".format(table, ref), ssl_verify=ssl_verify))
+    params = None
+    if ref:
+        params = { "ref": ref }
+    return cast(dict, _get(base_url + "/contents/{}".format(table), ssl_verify=ssl_verify, params=params))
 
 
 def create_branch(base_url: str, branch: str, ref: str = None, ssl_verify: bool = True) -> None:

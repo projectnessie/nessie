@@ -16,6 +16,7 @@
 
 package com.dremio.nessie.services.rest;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -63,6 +64,7 @@ import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
+import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
 import com.google.common.collect.ImmutableList;
 
@@ -73,13 +75,16 @@ import com.google.common.collect.ImmutableList;
 public class TreeResource extends BaseResource implements TreeApi {
 
   @Inject
-  ServerConfig config;
+  protected TreeResource(ServerConfig config, Principal principal,
+      VersionStore<Contents, CommitMeta> store) {
+    super(config, principal, store);
+  }
 
   @Metered
   @Timed(name = "timed-tree-all")
   @Override
   public List<Reference> getAllReferences() {
-    return store.getNamedRefs().map(TreeResource::makeNamedRef).collect(Collectors.toList());
+    return getStore().getNamedRefs().map(TreeResource::makeNamedRef).collect(Collectors.toList());
   }
 
   @Metered
@@ -87,7 +92,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Override
   public Reference getReferenceByName(String refName) throws NessieNotFoundException {
     try {
-      return makeRef(store.toRef(refName));
+      return makeRef(getStore().toRef(refName));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("Unable to find reference [%s].", refName), e);
     }
@@ -97,13 +102,14 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Timed(name = "timed-tree-get-defaultbranch")
   @Override
   public Branch getDefaultBranch() throws NessieNotFoundException {
-    Reference r = getReferenceByName(config.getDefaultBranch());
+    Reference r = getReferenceByName(getConfig().getDefaultBranch());
     if (!(r instanceof Branch)) {
       throw new IllegalStateException("Default branch isn't a branch");
     }
     return (Branch) r;
   }
 
+  @Override
   @Metered
   @Timed(name = "timed-create-tag")
   public void createNewTag(String tagName, String hash) throws NessieNotFoundException, NessieConflictException {
@@ -168,7 +174,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     // TODO: pagination.
     Hash hash = getHashOrThrow(ref);
     try {
-      List<CommitMeta> items = store.getCommits(hash)
+      List<CommitMeta> items = getStore().getCommits(hash)
           .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build()).collect(Collectors.toList());
       return ImmutableLogResponse.builder().addAllOperations(items).build();
     } catch (ReferenceNotFoundException e) {
@@ -183,7 +189,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       throws NessieNotFoundException, NessieConflictException {
     try {
       List<Hash> transplants = transplant.getHashesToTransplant().stream().map(Hash::of).collect(Collectors.toList());
-      store.transplant(BranchName.of(transplant.getBranch().getName()), toHash(transplant.getBranch(), true), transplants);
+      getStore().transplant(BranchName.of(transplant.getBranch().getName()), toHash(transplant.getBranch(), true), transplants);
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
           String.format("Unable to find the requested branch we're transplanting to of [%s].", transplant.getBranch().getName()), e);
@@ -199,7 +205,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Override
   public void mergeRefIntoBranch(Merge merge) throws NessieNotFoundException, NessieConflictException {
     try {
-      store.merge(toHash(merge.getFromHash(), true).get(), BranchName.of(merge.getTo().getName()), toHash(merge.getTo(), true));
+      getStore().merge(toHash(merge.getFromHash(), true).get(), BranchName.of(merge.getTo().getName()), toHash(merge.getTo(), true));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("At least one of the references provided does not exist."), e);
     } catch (ReferenceConflictException e) {
@@ -214,7 +220,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   public EntriesResponse getEntries(String refName) throws NessieNotFoundException {
     final Hash hash = getHashOrThrow(refName);
     try {
-      List<EntriesResponse.Entry> entries = store.getKeys(hash)
+      List<EntriesResponse.Entry> entries = getStore().getKeys(hash)
           .map(key -> EntriesResponse.Entry.builder().name(fromKey(key)).type(Type.UNKNOWN).build())
           .collect(ImmutableList.toImmutableList());
       return EntriesResponse.builder().addAllEntries(entries).build();
@@ -226,7 +232,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Override
   public void commitMultipleOperations(String hash, String message, MultiContents operations)
       throws NessieNotFoundException, NessieConflictException {
-    commitMultipleOperations(config.getDefaultBranch(), hash, message, operations);
+    commitMultipleOperations(getConfig().getDefaultBranch(), hash, message, operations);
   }
 
   @Metered
@@ -241,15 +247,9 @@ public class TreeResource extends BaseResource implements TreeApi {
     doOps(branch, hash, message, ops);
   }
 
-  private void doOps(String branch,
-      String hash, String message, List<com.dremio.nessie.versioned.Operation<Contents>> operations)
-      throws NessieConflictException, NessieNotFoundException {
-    ContentsResource.doOps(store, principal, branch, hash, message, operations);
-  }
-
   private void createNewReference(NamedRef reference, String hash) throws NessieNotFoundException, NessieConflictException {
     try {
-      store.create(reference, toHash(hash, false));
+      getStore().create(reference, toHash(hash, false));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException("Failure while searching for provided targeted hash.", e);
     } catch (ReferenceAlreadyExistsException e) {
@@ -273,7 +273,7 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   private void deleteReference(NamedRef name, String hash) throws NessieConflictException, NessieNotFoundException {
     try {
-      store.delete(name, toHash(hash, true));
+      getStore().delete(name, toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("Unable to find reference [%s] to delete.", name.getName()), e);
     } catch (ReferenceConflictException e) {
@@ -286,10 +286,10 @@ public class TreeResource extends BaseResource implements TreeApi {
   private void assignReference(NamedRef ref, String oldHash, String newHash)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      WithHash<Ref> resolved = store.toRef(ref.getName());
+      WithHash<Ref> resolved = getStore().toRef(ref.getName());
       Ref resolvedRef = resolved.getValue();
       if (resolvedRef instanceof NamedRef) {
-        store.assign((NamedRef) resolvedRef, toHash(oldHash, true), toHash(newHash, true)
+        getStore().assign((NamedRef) resolvedRef, toHash(oldHash, true), toHash(newHash, true)
             .orElseThrow(() -> new NessieConflictException("Must provide target hash value for operation.")));
       } else {
         throw new IllegalArgumentException("Can only assign branch and tag types.");
@@ -343,10 +343,10 @@ public class TreeResource extends BaseResource implements TreeApi {
   public MultiGetContentsResponse getMultipleContents(String refName, MultiGetContentsRequest request)
       throws NessieNotFoundException {
     try {
-      WithHash<Ref> ref = store.toRef(refName);
+      WithHash<Ref> ref = getStore().toRef(refName);
       List<ContentsKey> externalKeys = request.getRequestedKeys();
       List<Key> internalKeys = externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
-      List<Optional<Contents>> values = store.getValues(ref.getHash(), internalKeys);
+      List<Optional<Contents>> values = getStore().getValues(ref.getHash(), internalKeys);
       List<ContentsWithKey> output = new ArrayList<>();
 
       for (int i = 0; i < externalKeys.size(); i++) {
