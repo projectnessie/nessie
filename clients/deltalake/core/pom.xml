@@ -60,10 +60,15 @@
         <artifactId>maven-source-plugin</artifactId>
         <executions>
           <execution>
-            <id>attach-sources</id>
+            <id>default-sourcesJar</id>
             <goals>
-              <goal>jar</goal>
-              <goal>test-jar</goal>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-testSourcesJar</id>
+            <goals>
+              <goal>test-jar-no-fork</goal>
             </goals>
           </execution>
         </executions>
