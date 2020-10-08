@@ -138,7 +138,7 @@ class App extends React.Component {
               <Dropdown.Divider />
               <Dropdown.Item as={"button"} key={'Create Branch'} onClick={handleShow}>Create Branch</Dropdown.Item>
             </DropdownButton>
-            <Button bg="outline-dark" onClick={this.logout}>Logout</Button>
+            <Button bg="outline-dark" onClick={this.logout} disabled>Logout</Button>
           </Navbar>
           <CreateBranchModal show={this.state.show} handleClose={handleClose} currentUser={this.state.currentUser} currentBranch={this.state.currentBranch}/>
           <MergeBranchModal show={this.state.mergeShow} handleClose={handleMergeClose} currentUser={this.state.currentUser} currentBranch={this.state.currentBranch}/>
