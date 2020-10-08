@@ -571,7 +571,7 @@
         <plugin>
           <groupId>com.github.eirslett</groupId>
           <artifactId>frontend-maven-plugin</artifactId>
-          <version>1.10.2</version>
+          <version>1.10.3</version>
           <configuration>
             <installDirectory>${project.build.directory}</installDirectory>
             <nodeVersion>v12.16.2</nodeVersion>
