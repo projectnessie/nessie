@@ -56,7 +56,7 @@ def test_client_interface(requests_mock: requests_mock) -> None:
 def test_client_interface_e2e() -> None:
     """Test client object against live server."""
     client = init()
-    assert isinstance(client._token, str)
+    assert isinstance(client._base_url, str)
     references = client.list_references()
     assert len(references) == 1
     assert references[0] == Reference("main", "BRANCH", references[0].hash_)
