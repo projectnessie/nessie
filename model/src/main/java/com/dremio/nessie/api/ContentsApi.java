@@ -36,6 +36,8 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.MultiGetContentsRequest;
+import com.dremio.nessie.model.MultiGetContentsResponse;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("contents")
@@ -56,6 +58,17 @@ public interface ContentsApi {
       @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
       @Parameter(description = "Name of ref to read from. Default branch if not provided.") @QueryParam("ref") String ref
       ) throws NessieNotFoundException;
+
+  @POST
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Operation(summary = "Get multiple contents on default branch")
+  @APIResponses({
+      @APIResponse(responseCode = "200", description = "Retrieved successfully."),
+      @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")})
+  public MultiGetContentsResponse getMultipleContents(
+      @Parameter(description = "Ref to use.") @QueryParam("ref") String ref,
+      @NotNull @RequestBody(description = "Keys to retrieve.") MultiGetContentsRequest request)
+      throws NessieNotFoundException;
 
   /**
    * create/update a table on a specific ref.

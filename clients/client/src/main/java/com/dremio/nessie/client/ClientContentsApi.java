@@ -25,6 +25,8 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.MultiGetContentsRequest;
+import com.dremio.nessie.model.MultiGetContentsResponse;
 
 class ClientContentsApi implements ContentsApi {
 
@@ -34,6 +36,7 @@ class ClientContentsApi implements ContentsApi {
     this.target = target;
   }
 
+
   @Override
   public Contents getContents(@NotNull ContentsKey key, String ref) throws NessieNotFoundException {
     return target.path("contents").path(key.toPathString())
@@ -42,6 +45,16 @@ class ClientContentsApi implements ContentsApi {
                  .accept(MediaType.APPLICATION_JSON_TYPE)
                  .get()
                  .readEntity(Contents.class);
+  }
+
+  @Override
+  public MultiGetContentsResponse getMultipleContents(@NotNull String ref, @NotNull MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    return target.path("trees").path("multi").path(ref)
+        .request()
+        .accept(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(request, MediaType.APPLICATION_JSON_TYPE))
+        .readEntity(MultiGetContentsResponse.class);
   }
 
 
