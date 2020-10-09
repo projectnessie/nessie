@@ -17,7 +17,11 @@
 package com.dremio.nessie.services.rest;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -31,6 +35,10 @@ import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.ImmutableMultiGetContentsResponse;
+import com.dremio.nessie.model.MultiGetContentsRequest;
+import com.dremio.nessie.model.MultiGetContentsResponse;
+import com.dremio.nessie.model.MultiGetContentsResponse.ContentsWithKey;
 import com.dremio.nessie.services.config.ServerConfig;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
@@ -64,6 +72,28 @@ public class ContentsResource extends BaseResource implements ContentsApi {
       throw new NessieNotFoundException("Requested contents do not exist for specified reference.");
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("Provided reference [%s] does not exist.", incomingRef), e);
+    }
+  }
+
+
+  @Override
+  public MultiGetContentsResponse getMultipleContents(String refName, MultiGetContentsRequest request)
+      throws NessieNotFoundException {
+    try {
+      Hash ref = getHashOrThrow(refName);
+      List<ContentsKey> externalKeys = request.getRequestedKeys();
+      List<Key> internalKeys = externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
+      List<Optional<Contents>> values = getStore().getValues(ref, internalKeys);
+      List<ContentsWithKey> output = new ArrayList<>();
+
+      for (int i = 0; i < externalKeys.size(); i++) {
+        final int pos = i;
+        values.get(i).ifPresent(v -> output.add(ContentsWithKey.of(externalKeys.get(pos), v)));
+      }
+
+      return ImmutableMultiGetContentsResponse.builder().contents(output).build();
+    } catch (ReferenceNotFoundException ex) {
+      throw new NessieNotFoundException("Unable to find the requested ref.", ex);
     }
   }
 

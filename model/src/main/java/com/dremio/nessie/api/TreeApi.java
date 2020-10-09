@@ -42,17 +42,12 @@ import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.Merge;
 import com.dremio.nessie.model.MultiContents;
-import com.dremio.nessie.model.MultiGetContentsRequest;
-import com.dremio.nessie.model.MultiGetContentsResponse;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Transplant;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("trees")
 public interface TreeApi {
-
-  public static final String EXPECTED = "expected";
-
   /**
    * Get all references.
    */
@@ -89,6 +84,36 @@ public interface TreeApi {
   Reference getReferenceByName(
       @NotNull @Parameter(description = "name of ref to fetch") @PathParam("ref") String refName)
       throws NessieNotFoundException;
+
+  /**
+   * get all objects for a ref.
+   */
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("tree/{ref}/entries")
+  @Operation(summary = "Fetch all entries for a given reference")
+  @APIResponses({
+      @APIResponse(description = "all objects for a reference"),
+      @APIResponse(responseCode = "200", description = "Returned successfully."),
+      @APIResponse(responseCode = "404", description = "Ref not found")}
+  )
+  public EntriesResponse getEntries(
+      @NotNull @Parameter(description = "name of ref to fetch from") @PathParam("ref") String refName)
+          throws NessieNotFoundException;
+
+  /**
+   * commit log for a ref.
+   */
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("tree/{ref}/log")
+  @Operation(summary = "Get commit log for a reference")
+  @APIResponses({
+      @APIResponse(responseCode = "200", description = "Returned commits."),
+      @APIResponse(responseCode = "404", description = "Ref doesn't exists")})
+  LogResponse getCommitLog(@NotNull @Parameter(description = "ref to show log from") @PathParam("ref") String ref)
+          throws NessieNotFoundException;
+
 
   /**
    * create a new empty tag.
@@ -218,19 +243,6 @@ public interface TreeApi {
       ) throws NessieConflictException, NessieNotFoundException;
 
   /**
-   * commit log for a ref.
-   */
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Path("tree/{ref}/log")
-  @Operation(summary = "Get commit log for a reference")
-  @APIResponses({
-      @APIResponse(responseCode = "200", description = "Returned commits."),
-      @APIResponse(responseCode = "404", description = "Ref doesn't exists")})
-  LogResponse getCommitLog(@NotNull @Parameter(description = "ref to show log from") @PathParam("ref") String ref)
-          throws NessieNotFoundException;
-
-  /**
    * cherry pick a set of commits into a branch.
    */
   @PUT
@@ -261,34 +273,6 @@ public interface TreeApi {
   )
   void mergeRefIntoBranch(@NotNull @RequestBody(description = "Merge operation") Merge merge)
           throws NessieNotFoundException, NessieConflictException;
-
-  /**
-   * get all objects for a ref.
-   */
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Path("tree/{ref}/entries")
-  @Operation(summary = "Fetch all entries for a given reference")
-  @APIResponses({
-      @APIResponse(description = "all objects for a reference"),
-      @APIResponse(responseCode = "200", description = "Returned successfully."),
-      @APIResponse(responseCode = "404", description = "Ref not found")}
-  )
-  public EntriesResponse getEntries(
-      @NotNull @Parameter(description = "name of ref to fetch from") @PathParam("ref") String refName)
-          throws NessieNotFoundException;
-
-  @POST
-  @Path("multi/{ref}")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Get multiple contents on default branch")
-  @APIResponses({
-      @APIResponse(responseCode = "200", description = "Retrieved successfully."),
-      @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")})
-  public MultiGetContentsResponse getMultipleContents(
-      @NotNull @Parameter(description = "Ref to use.") @PathParam("ref") String ref,
-      @NotNull @RequestBody(description = "Keys to retrieve.") MultiGetContentsRequest request)
-      throws NessieNotFoundException;
 
   @PUT
   @Path("multi/{hash}")

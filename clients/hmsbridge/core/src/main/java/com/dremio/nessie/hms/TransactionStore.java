@@ -102,7 +102,7 @@ class TransactionStore {
 
     for (String ref : keysByRef.keySet()) {
       List<ContentsKey> keys = keysByRef.get(ref).stream().map(RefKey::getKey).collect(Collectors.toList());
-      MultiGetContentsResponse response = tree.getMultipleContents(ref,
+      MultiGetContentsResponse response = contents.getMultipleContents(ref,
           ImmutableMultiGetContentsRequest.builder().addAllRequestedKeys(keys).build());
       response.getContents().forEach(cwk -> {
         RefKey key = new RefKey(ref, cwk.getKey());
