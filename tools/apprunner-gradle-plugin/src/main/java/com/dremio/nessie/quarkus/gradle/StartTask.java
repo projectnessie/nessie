@@ -15,39 +15,26 @@
  */
 package com.dremio.nessie.quarkus.gradle;
 
-import io.quarkus.bootstrap.model.AppArtifactCoords;
-import io.quarkus.bootstrap.model.AppModel;
-import io.quarkus.bootstrap.resolver.AppModelResolverException;
-import io.quarkus.bootstrap.resolver.model.QuarkusModel;
-import io.quarkus.bootstrap.utils.BuildToolHelper;
-
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Paths;
 
-import org.apache.maven.artifact.Artifact;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.provider.Property;
-import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.TaskAction;
 
 public class StartTask extends DefaultTask {
   private Configuration dataFiles;
-  private Configuration configDeploy;
 
   public StartTask() {
 
   }
+
 
   @TaskAction
   public void start() {
@@ -55,28 +42,25 @@ public class StartTask extends DefaultTask {
 
     final URL[] urls = getDataFiles().getFiles().stream().map(StartTask::toURL).toArray(URL[]::new);
 
-    // Use MavenProject classloader as parent classloader as Maven classloader hierarchy is not linear
     final URLClassLoader mirrorCL = new URLClassLoader(urls, this.getClass().getClassLoader());
 
-    final AutoCloseable quarkusApp; // = QuarkusApp.newApplication(dataFiles, configDeploy, getProject());
+    final AutoCloseable quarkusApp;
     try {
       Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
-      Method newApplicationMethod = clazz.getMethod("newApplication", Configuration.class, Configuration.class, Project.class);
-      quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, dataFiles, configDeploy, getProject());
+      Method newApplicationMethod = clazz.getMethod("newApplication", Configuration.class, Project.class);
+      quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, dataFiles, getProject());
     } catch (ReflectiveOperationException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
 
     getLogger().info("Quarkus application started.");
-
-//    // Make sure classloader is closed too when the app is stopped
-//    setApplicationHandle(() -> {
-//      try {
-//        quarkusApp.close();
-//      } finally {
-//        mirrorCL.close();
-//      }
-//    });
+    setApplicationHandle(() -> {
+      try {
+        quarkusApp.close();
+      } finally {
+        mirrorCL.close();
+      }
+    });
   }
 
   @InputFiles
@@ -84,19 +68,19 @@ public class StartTask extends DefaultTask {
     return dataFiles;
   }
 
-  public void setConfig(Configuration files, Configuration configDeploy) {
+  public void setConfig(Configuration files) {
     this.dataFiles = files;
-    this.configDeploy = configDeploy;
   }
 
-//  protected void setApplicationHandle(AutoCloseable application) {
-//    final String key = getContextKey();
-//    final Object previous = project.getContextValue(key);
-//    if (previous != null) {
-//      getLogger().warn(String.format("Found a previous application for execution id %s.", getExecutionId()));
-//    }
-//    project.setContextValue(key, application);
-//  }
+  private void setApplicationHandle(AutoCloseable application) {
+    // update stop task with this task's closeable
+
+    StopTask task = (StopTask) getProject().getTasks().getByName("quarkus-stop");
+    if (task.getApplication() != null) {
+      getLogger().warn("StopTask application is not empty!");
+    }
+    task.setQuarkusApplication(application);
+  }
 
   private static URL toURL(File artifact) {
     try {

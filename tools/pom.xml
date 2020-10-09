@@ -33,4 +33,33 @@
   <modules>
     <module>apprunner-maven-plugin</module>
   </modules>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>ru.yaal.maven</groupId>
+        <artifactId>write-text-files-maven-plugin</artifactId>
+        <configuration>
+          <charset>UTF-8</charset>
+          <files>
+            <file>
+              <path>apprunner-gradle-plugin/version.txt</path>
+              <lines>
+                <line>${project.version}</line>
+              </lines>
+            </file>
+          </files>
+        </configuration>
+        <executions>
+          <execution>
+            <id>write-text-files</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>write-text-files</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

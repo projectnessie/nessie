@@ -17,5 +17,5 @@
  * under the License.
  */
 
-rootProject.name = 'nessie-apprunner'
+rootProject.name = 'quarkus-apprunner'
 
