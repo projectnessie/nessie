@@ -1,3 +1,4 @@
+-r requirements.txt
 bump2version==1.0.1
 codecov==2.1.10
 coverage==5.3

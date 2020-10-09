@@ -108,3 +108,29 @@ class Entries:
 
 
 EntriesSchema = desert.schema_class(Entries)
+
+
+@attr.dataclass
+class CommitMeta:
+    """Dataclass for commit metadata."""
+
+    hash_: str = desert.ib(fields.Str(data_key="hash"))
+    commitTime: int = desert.ib(fields.Int())
+    commiter: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    email: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    message: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+
+
+CommitMetaSchema = desert.schema_class(CommitMeta)
+
+
+@attr.dataclass
+class LogResponse:
+    """Dataclass for Log Response."""
+
+    operations: List[CommitMeta] = desert.ib(fields.List(fields.Nested(CommitMetaSchema())))
+    has_more: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(allow_none=True, data_key="hasMore")))
+    token: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+
+
+LogResponseSchema = desert.schema_class(LogResponse)

@@ -1,3 +1,4 @@
+-r requirements_dev.txt
 black==20.8b1
 flake8-annotations
 flake8-bandit==2.1.2
