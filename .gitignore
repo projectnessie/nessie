@@ -48,3 +48,12 @@ node_modules/
 .checkstyle
 .gradle
 build
+
+# gradle
+
+tools/apprunner-gradle-plugin/.gradle
+tools/apprunner-gradle-plugin/build
+tools/apprunner-gradle-plugin/gradle/
+tools/apprunner-gradle-plugin/out
+tools/apprunner-gradle-plugin/gradle/wrapper/gradle-wrapper.jar
+tools/apprunner-gradle-plugin/version.txt

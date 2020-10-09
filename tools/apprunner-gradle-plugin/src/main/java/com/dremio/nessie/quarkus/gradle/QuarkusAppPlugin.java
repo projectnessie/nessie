@@ -22,49 +22,26 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.DependencySet;
+import org.gradle.api.tasks.TaskProvider;
 
 
 public class QuarkusAppPlugin implements Plugin<Project> {
 
-  private String foo = "Bar";
-
-
   @Override
   public void apply(Project target) {
-//    QuarkusAppExtension extension = target.getExtensions().create("quarkusAppRunner", QuarkusAppExtension.class, target);
 
     final Configuration config = target.getConfigurations().create("quarkusAppRunnerConfig")
       .setVisible(false)
       .setDescription("The config for the Quarkus Runner.");
 
-    config.defaultDependencies(new Action<DependencySet>() {
-      public void execute(DependencySet dependencies) {
-        dependencies.add(target.getDependencies().create("org.projectnessie:nessie-quarkus:0.1-SNAPSHOT"));
-      }
-    });
-
-    final Configuration configDeploy = target.getConfigurations().create("quarkusAppRunnerDeploy")
-      .setVisible(false)
-      .setDescription("The config for the Quarkus Runner.");
-
-    configDeploy.defaultDependencies(new Action<DependencySet>() {
-      public void execute(DependencySet dependencies) {
-        dependencies.add(target.getDependencies().create("io.quarkus:quarkus-bootstrap-core:1.8.1.Final"));
-      }
-    });
-
     target.getTasks().register("quarkus-start", StartTask.class, new Action<StartTask>() {
       @Override
       public void execute(StartTask task) {
-        task.setConfig(config, configDeploy);
+        task.setConfig(config);
       }
     });
-    target.getTasks().register("quarkus-stop", new Action<Task>() {
-      @Override
-      public void execute(Task task) {
 
-      }
-    });
+    target.getTasks().register("quarkus-stop", StopTask.class);
 
   }
 }

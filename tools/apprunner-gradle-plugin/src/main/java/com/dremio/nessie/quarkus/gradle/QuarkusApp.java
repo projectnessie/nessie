@@ -16,31 +16,42 @@
 
 package com.dremio.nessie.quarkus.gradle;
 
+import static io.quarkus.bootstrap.resolver.maven.DeploymentInjectingDependencyVisitor.toArtifact;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
+import org.eclipse.aether.artifact.Artifact;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
-import org.gradle.api.internal.artifacts.ivyservice.DefaultUnresolvedDependency;
-import org.gradle.tooling.GradleConnector;
-import org.gradle.tooling.ModelBuilder;
-import org.gradle.tooling.ProjectConnection;
 
+import com.google.common.collect.ImmutableList;
+
+import io.quarkus.bootstrap.BootstrapConstants;
 import io.quarkus.bootstrap.app.CuratedApplication;
 import io.quarkus.bootstrap.app.QuarkusBootstrap;
 import io.quarkus.bootstrap.app.QuarkusBootstrap.Mode;
@@ -49,40 +60,24 @@ import io.quarkus.bootstrap.app.StartupAction;
 import io.quarkus.bootstrap.model.AppArtifact;
 import io.quarkus.bootstrap.model.AppDependency;
 import io.quarkus.bootstrap.model.AppModel;
-import io.quarkus.bootstrap.resolver.AppModelResolverException;
-import io.quarkus.bootstrap.resolver.QuarkusGradleModelFactory;
-import io.quarkus.bootstrap.resolver.model.QuarkusModel;
 import io.quarkus.bootstrap.util.QuarkusModelHelper;
-
-import com.google.common.collect.ImmutableList;
+import io.quarkus.bootstrap.util.ZipUtils;
 
 
 /**
- * Test.
+ * Start and Stop quarkus.
  */
 public class QuarkusApp implements AutoCloseable {
-
   private final RunningQuarkusApplication runningApp;
 
   private QuarkusApp(RunningQuarkusApplication runningApp) {
     this.runningApp = runningApp;
   }
 
-  public static QuarkusApp newApplication(Configuration configuration, Configuration deploy, Project project) {
+  public static QuarkusApp newApplication(Configuration configuration, Project project) {
 
+    Configuration deploy = project.getConfigurations().create("quarkusAppDeploy");
     final AppModel appModel;
-//    try {
-//      AppArtifact appArtifact = toDependency(configuration.getDependencies().stream().findFirst().get());
-//      Optional<String> path = configuration.getFiles().stream().map(File::getAbsolutePath).filter(x->x.contains(appArtifact.getArtifactId()))
-//        .filter(x->x.contains(appArtifact.getGroupId().replace(".", File.separator)))
-//        .filter(x->x.contains(appArtifact.getVersion()))
-//        .findFirst();
-//      appArtifact.setPath(Paths.get(path.orElseThrow(() -> new UnsupportedOperationException("xxx"))));
-//      QuarkusModel qm = QuarkusGradleModelFactory.create(project.getProjectDir(), "test");
-//      appModel = QuarkusModelHelper.convert(qm, appArtifact);
-//    } catch (Exception e) {
-//      throw new RuntimeException(e);
-//    }
 
     appModel = convert(configuration, deploy);
 
@@ -90,7 +85,7 @@ public class QuarkusApp implements AutoCloseable {
     ClassLoader cl = new URLClassLoader(urls, QuarkusApp.class.getClassLoader());
     final QuarkusBootstrap bootstrap = QuarkusBootstrap.builder()
       .setAppArtifact(appModel.getAppArtifact())
-      .setBaseClassLoader(QuarkusApp.class.getClassLoader()).setExistingModel(appModel)
+      .setBaseClassLoader(cl).setExistingModel(appModel)
       .setProjectRoot(project.getProjectDir().toPath())
       .setTargetDirectory(Paths.get(project.getBuildDir().getPath())).setIsolateDeployment(true)
       .setMode(Mode.TEST).build();
@@ -102,8 +97,7 @@ public class QuarkusApp implements AutoCloseable {
       RunningQuarkusApplication runningApp = startupAction.runMainClass();
       return new QuarkusApp(runningApp);
     } catch (Exception e) {
-      e.printStackTrace();
-      return null;
+      throw new GradleException("Unable to start Quarkus", e);
     }
   }
 
@@ -114,6 +108,7 @@ public class QuarkusApp implements AutoCloseable {
       throw new RuntimeException(e);
     }
   }
+
   private static void exitHandler(StartupAction startupAction) throws ReflectiveOperationException {
     Consumer<Integer> consumer = i -> {
     };
@@ -136,45 +131,104 @@ public class QuarkusApp implements AutoCloseable {
 
     final Set<AppDependency> userDeps = new HashSet<>();
     final Set<AppDependency> deployDeps = new HashSet<>();
+    // set of dependencies requested by the user (usually the artifact that contains the quarkus app)
+    Set<AppArtifact> baseConfigs = configuration.getDependencies()
+      .stream()
+      .map(QuarkusApp::toDependency)
+      .collect(Collectors.toSet());
+    assert baseConfigs.size() == 1; // currently we only know how to support the single quarkus app artifact
+    AppArtifact appArtifact = baseConfigs.iterator().next();
+    // resolve all dependencies of the artifacts from above.
     configuration.getResolvedConfiguration()
       .getResolvedArtifacts()
       .stream()
-      .map(QuarkusApp::toDependency).forEach(userDeps::add);
-    configuration.getResolvedConfiguration()
-      .getResolvedArtifacts()
-      .stream()
-      .filter(x -> x.getName().contains("quarkus"))
-      .map(x -> new DefaultExternalModuleDependency(x.getModuleVersion().getId().getGroup(), x.getName() + ((x.getName().contains("deployment")) ? "" : "-deployment"), x.getModuleVersion().getId().getVersion()))
+      .map(QuarkusApp::toDependency)
+      .filter(x -> !appArtifact.equals(x.getArtifact())) // remove base deps, accounted for below
+      .forEach(userDeps::add);
+
+    // for each user dependency check if it has any associated deployment deps and add those to the deploy config
+    userDeps.stream()
+      .map(x -> QuarkusApp.handleMetaInf(appBuilder, x))
+      .filter(Objects::nonNull)
+      .map(x -> new DefaultExternalModuleDependency(x.getGroupId(), x.getArtifactId(), x.getVersion()))
       .forEach(x -> deploy.getDependencies().add(x));
 
-    Configuration newDeploy = deploy.copy();
-    newDeploy.getResolvedConfiguration().getLenientConfiguration().getUnresolvedModuleDependencies().forEach(x -> deploy.getDependencies().remove(unresolvedToExternal((DefaultUnresolvedDependency) x)));
+    // resolve the deployment deps and their dependencies
     deploy.getResolvedConfiguration().getResolvedArtifacts().stream()
       .map(QuarkusApp::toDependency).forEach(deployDeps::add);
-    AppArtifact appArtifact = toDependency(configuration.getDependencies().stream().findFirst().get());
-    Optional<String> path = configuration.getFiles().stream().map(File::getAbsolutePath).filter(x->x.contains(appArtifact.getArtifactId()))
+
+
+    // find the path of the base app artifact
+    Optional<String> path = configuration.getFiles().stream().map(File::getAbsolutePath)
+      .filter(x->x.contains(appArtifact.getArtifactId()))
       .filter(x->x.contains(appArtifact.getGroupId().replace(".", File.separator)))
       .filter(x->x.contains(appArtifact.getVersion()))
       .findFirst();
     appArtifact.setPath(Paths.get(path.orElseThrow(() -> new UnsupportedOperationException("xxx"))));
-    //deployDeps.removeAll(userDeps);
-    List<AppDependency> userDeps2 = new ArrayList<>(userDeps);
-    userDeps.addAll(deployDeps);
+
+    // combine user and deploy deps and build app model
     List<AppDependency> allDeps = new ArrayList<>(userDeps);
-    appBuilder.addRuntimeDeps(new ArrayList<>(userDeps2))
+    allDeps.addAll(deployDeps);
+    appBuilder.addRuntimeDeps(new ArrayList<>(userDeps))
       .addFullDeploymentDeps(allDeps)
       .addDeploymentDeps(new ArrayList<>(deployDeps))
       .setAppArtifact(appArtifact);
     return appBuilder.build();
   }
 
-  private static Dependency unresolvedToExternal(DefaultUnresolvedDependency dependency) {
-    return new DefaultExternalModuleDependency(dependency.getSelector().getGroup(), dependency.getSelector().getName(), dependency.getSelector().getVersion());
+  /**
+   * for each dependent artifact read its META-INF looking for quarkus metadata
+   */
+  private static AppArtifact handleMetaInf(AppModel.Builder appBuilder, AppDependency dependency) {
+    try {
+      Path path = dependency.getArtifact().getPaths().getSinglePath();
+      try (FileSystem artifactFs = ZipUtils.newFileSystem(path)) {
+        Path metaInfPath = artifactFs.getPath(BootstrapConstants.META_INF);
+        final Path p = metaInfPath.resolve(BootstrapConstants.DESCRIPTOR_FILE_NAME);
+        return Files.exists(p) ? processPlatformArtifact(appBuilder, dependency.getArtifact(), p) : null;
+      }
+    } catch (IOException e) {
+      throw new GradleException("couldn't read artifact", e);
+    }
   }
+
+  /**
+   * Search for quarkus metadata and if found augment the AppModel builder. Return any deployment deps.
+   */
+  private static AppArtifact processPlatformArtifact(AppModel.Builder appBuilder, AppArtifact node, Path descriptor) throws IOException {
+    final Properties rtProps = resolveDescriptor(descriptor);
+    if (rtProps == null) {
+      return null;
+    }
+    appBuilder.handleExtensionProperties(rtProps, node.toString());
+    final String value = rtProps.getProperty(BootstrapConstants.PROP_DEPLOYMENT_ARTIFACT);
+    if (value == null) {
+      return null;
+    }
+    Artifact deploymentArtifact = toArtifact(value);
+    if (deploymentArtifact.getVersion() == null || deploymentArtifact.getVersion().isEmpty()) {
+      deploymentArtifact = deploymentArtifact.setVersion(node.getVersion());
+    }
+
+    return new AppArtifact(deploymentArtifact.getGroupId(), deploymentArtifact.getArtifactId(), deploymentArtifact.getClassifier(), "jar", deploymentArtifact.getVersion());
+  }
+
+  private static Properties resolveDescriptor(final Path path) throws IOException {
+    final Properties rtProps;
+    if (!Files.exists(path)) {
+      // not a platform artifact
+      return null;
+    }
+    rtProps = new Properties();
+    try (BufferedReader reader = Files.newBufferedReader(path)) {
+      rtProps.load(reader);
+    }
+    return rtProps;
+  }
+
   private static AppArtifact toDependency(Dependency dependency) {
     AppArtifact artifact = new AppArtifact(dependency.getGroup(), dependency.getName(), null,
       "jar", dependency.getVersion());
-//    artifact.setPaths(QuarkusModelHelper.toPathsCollection(ImmutableList.of(dependency.getFile())));
     return artifact;
   }
 

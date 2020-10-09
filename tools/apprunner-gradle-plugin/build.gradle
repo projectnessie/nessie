@@ -1,11 +1,14 @@
 plugins {
   id 'java-gradle-plugin'
   id 'maven-publish'
+  id 'com.gradle.plugin-publish' version '0.12.0'
 }
+
+version = file('version.txt').text.trim()
 
 allprojects {
   group = "org.projectnessie"
-  version = '1.1'
+  version = version
   repositories {
     mavenCentral()
     mavenLocal()
@@ -17,6 +20,8 @@ gradlePlugin {
     simplePlugin {
       id = 'org.projectnessie'
       implementationClass = 'com.dremio.nessie.quarkus.gradle.QuarkusAppPlugin'
+      displayName = 'Quarkus App Runner'
+      description = 'Start and stop a quarkus app as gradle tasks for integration testing'
     }
   }
 }
@@ -29,12 +34,18 @@ dependencies {
   compile "io.quarkus:quarkus-bootstrap-core:1.8.1.Final"
 }
 
+pluginBundle {
+  website = 'https://projectnessie.org'
+  vcsUrl = 'https://github.com/projectnessie/nessie'
+  tags = ['test', 'integration', 'quarkus']
+}
+
 publishing {
   publications {
     maven(MavenPublication) {
       groupId = 'org.projectnessie'
-      artifactId = 'nessie-apprunner'
-      version = '1.1'
+      artifactId = 'nessie-apprunner-gradle-plugin'
+      version = version
 
       from components.java
     }
