@@ -20,7 +20,7 @@ import org.gradle.api.tasks.TaskAction;
 
 public class StopTask extends DefaultTask {
   private static AutoCloseable application;
-  private int applicationCount = 0;
+  private static int applicationCount = 0;
 
   public StopTask() {
 
