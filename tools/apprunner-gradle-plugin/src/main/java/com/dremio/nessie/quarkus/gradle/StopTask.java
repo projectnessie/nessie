@@ -34,7 +34,7 @@ public class StopTask extends DefaultTask {
     }
 
     if (applicationCount > 1) {
-      getLogger().warn("Application still running, decrement count.");
+      getLogger().warn(String.format("Application still running, count at: %d", applicationCount));
       applicationCount--;
       return;
     }
@@ -46,6 +46,7 @@ public class StopTask extends DefaultTask {
       throw new RuntimeException(e);
     } finally {
       application = null;
+      applicationCount = 0;
     }
   }
 
@@ -59,6 +60,7 @@ public class StopTask extends DefaultTask {
   }
 
   public void increment() {
+    getLogger().warn(String.format("Application count at: %d", applicationCount));
     applicationCount++;
   }
 }
