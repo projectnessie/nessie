@@ -19,7 +19,8 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
 
 public class StopTask extends DefaultTask {
-  private AutoCloseable application;
+  private static AutoCloseable application;
+  private int applicationCount = 0;
 
   public StopTask() {
 
@@ -30,6 +31,12 @@ public class StopTask extends DefaultTask {
 
     if (application == null) {
       getLogger().warn("No application found.");
+    }
+
+    if (applicationCount > 1) {
+      getLogger().warn("Application still running, decrement count.");
+      applicationCount--;
+      return;
     }
 
     try {
@@ -48,5 +55,10 @@ public class StopTask extends DefaultTask {
 
   public void setQuarkusApplication(AutoCloseable quarkusApplication) {
     application = quarkusApplication;
+    increment();
+  }
+
+  public void increment() {
+    applicationCount++;
   }
 }
