@@ -58,6 +58,27 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>ru.yaal.maven</groupId>
+        <artifactId>write-text-files-maven-plugin</artifactId>
+        <configuration>
+          <charset>UTF-8</charset>
+          <files>
+            <file>
+              <path>apprunner-gradle-plugin/version.txt</path>
+              <lines>
+                <line>${project.version}</line>
+              </lines>
+            </file>
+          </files>
+        </configuration>
+        <executions>
+          <execution>
+            <id>write-text-files</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
       </plugin>

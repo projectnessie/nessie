@@ -29,6 +29,7 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.TaskAction;
 
 public class StartTask extends DefaultTask {
+  private static final Object lock = new Object();
   private Configuration dataFiles;
 
   public StartTask() {
@@ -40,27 +41,34 @@ public class StartTask extends DefaultTask {
   public void start() {
     getLogger().info("Starting Quarkus application.");
 
-    final URL[] urls = getDataFiles().getFiles().stream().map(StartTask::toURL).toArray(URL[]::new);
-
-    final URLClassLoader mirrorCL = new URLClassLoader(urls, this.getClass().getClassLoader());
-
-    final AutoCloseable quarkusApp;
-    try {
-      Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
-      Method newApplicationMethod = clazz.getMethod("newApplication", Configuration.class, Project.class);
-      quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, dataFiles, getProject());
-    } catch (ReflectiveOperationException e) {
-      throw new RuntimeException(e);
-    }
-
-    getLogger().info("Quarkus application started.");
-    setApplicationHandle(() -> {
-      try {
-        quarkusApp.close();
-      } finally {
-        mirrorCL.close();
+    synchronized (lock) {
+      if (existingApplication()) {
+        getLogger().info("Quarkus application already started, incrementing counter.");
+        incrementCount();
+        return;
       }
-    });
+      final URL[] urls = getDataFiles().getFiles().stream().map(StartTask::toURL).toArray(URL[]::new);
+
+      final URLClassLoader mirrorCL = new URLClassLoader(urls, this.getClass().getClassLoader());
+
+      final AutoCloseable quarkusApp;
+      try {
+        Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
+        Method newApplicationMethod = clazz.getMethod("newApplication", Configuration.class, Project.class);
+        quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, dataFiles, getProject());
+      } catch (ReflectiveOperationException e) {
+        throw new RuntimeException(e);
+      }
+
+      getLogger().info("Quarkus application started.");
+      setApplicationHandle(() -> {
+        try {
+          quarkusApp.close();
+        } finally {
+          mirrorCL.close();
+        }
+      });
+    }
   }
 
   @InputFiles
@@ -70,6 +78,16 @@ public class StartTask extends DefaultTask {
 
   public void setConfig(Configuration files) {
     this.dataFiles = files;
+  }
+
+  private boolean existingApplication() {
+    StopTask task = (StopTask) getProject().getTasks().getByName("quarkus-stop");
+    return task.getApplication() != null;
+  }
+
+  private void incrementCount() {
+    StopTask task = (StopTask) getProject().getTasks().getByName("quarkus-stop");
+    task.increment();
   }
 
   private void setApplicationHandle(AutoCloseable application) {
