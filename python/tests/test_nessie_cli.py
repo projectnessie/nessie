@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests for `pynessie` package."""
 import pytest
+import itertools
 import requests_mock
 import simplejson as json
 from click.testing import CliRunner
@@ -34,6 +35,34 @@ def test_command_line_interface(requests_mock: requests_mock) -> None:
     assert references[0].name == "main"
     assert references[0].kind == "BRANCH"
     assert references[0].hash_ == "1234567890abcdef"
+
+
+def test_config_options() -> None:
+    runner = CliRunner()
+    result = runner.invoke(cli.cli, ['config'])
+    assert result.exit_code == 0
+    assert "Usage: cli" in result.output
+    vars = ['--set x', '--get x', '--list', '--unset x']
+    for i in itertools.permutations(vars, 2):
+        result = runner.invoke(cli.cli, ["config"] + [*i[0].split(" "), *i[1].split(" ")])
+        assert result.exit_code == 2
+        assert 'Error: Illegal usage: ' in result.output
+
+    result = runner.invoke(cli.cli, ["config", "x", "--set", "x"])
+    assert result.exit_code == 0  # todo fix so we can't use options when arg specified
+
+
+@pytest.mark.e2e
+def test_all_help_options() -> None:
+    runner = CliRunner()
+    args = ["", "config", "branch", "tag", "remote", "log", "merge", "transplant"]
+    all_args = "\n"
+    for i in args:
+        result = runner.invoke(cli.cli, [x for x in [i] if x] + ["--help"])
+        assert result.exit_code == 0
+        all_args += result.output
+        all_args += '\n\n\n'
+    print(all_args)
 
 
 @pytest.mark.e2e

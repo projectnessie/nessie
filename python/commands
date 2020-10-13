@@ -1,0 +1,90 @@
+Usage: cli.py [OPTIONS] COMMAND [ARGS]...
+
+  Nessie cli tool.
+
+  Interact with Nessie branches and tables via the command line
+
+  ENDPOINT is optional arg if using a different endpoint than in config
+
+Options:
+  --version
+  --help     Show this message and exit.
+
+Commands:
+  branch      List all known references.
+  config      Set and view config.
+  log         Show commit log
+  merge       List all known references.
+  remote      Set and view remote endpoint.
+  tag         List all known references.
+  transplant  List all known references.
+Usage: cli.py branch [OPTIONS] [BRANCH_NAME]
+
+  List all known references.
+
+Options:
+  -l, --list    list branches NOTE: This argument is mutually exclusive with
+                arguments: [delete].
+
+  -d, --delete  delete a branch NOTE: This argument is mutually exclusive with
+                arguments: [list].
+
+  --help        Show this message and exit.
+Usage: cli.py config [OPTIONS] [KEY]
+
+  Set and view config.
+
+Options:
+  --get TEXT    list branches NOTE: This argument is mutually exclusive with
+                arguments: [list, unset, set].
+
+  --set TEXT    delete a branch NOTE: This argument is mutually exclusive with
+                arguments: [list, unset, get].
+
+  -l, --list    list branches NOTE: This argument is mutually exclusive with
+                arguments: [unset, set, get].
+
+  --unset TEXT  delete a branch NOTE: This argument is mutually exclusive with
+                arguments: [list, set, get].
+
+  -h, --help    Show this message and exit.
+Usage: cli.py log [OPTIONS] [REVISION_RANGE] [PATHS]...
+
+  Show commit log
+
+Options:
+  --help  Show this message and exit.
+Usage: cli.py merge [OPTIONS]
+
+  List all known references.
+
+Options:
+  --help  Show this message and exit.
+Usage: cli.py remote [OPTIONS] COMMAND [ARGS]...
+
+  Set and view remote endpoint.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  set
+  show
+Usage: cli.py tag [OPTIONS] [TAG_NAME]
+
+  List all known references.
+
+Options:
+  -l, --list    list branches NOTE: This argument is mutually exclusive with
+                arguments: [delete].
+
+  -d, --delete  delete a branches NOTE: This argument is mutually exclusive
+                with  arguments: [list].
+
+  --help        Show this message and exit.
+Usage: cli.py transplant [OPTIONS]
+
+  List all known references.
+
+Options:
+  --help  Show this message and exit.
