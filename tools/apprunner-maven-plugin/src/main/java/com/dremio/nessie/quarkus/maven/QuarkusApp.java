@@ -16,14 +16,19 @@
 package com.dremio.nessie.quarkus.maven;
 
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Properties;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 
+import io.quarkus.bootstrap.app.AdditionalDependency;
 import io.quarkus.bootstrap.app.CuratedApplication;
 import io.quarkus.bootstrap.app.QuarkusBootstrap;
 import io.quarkus.bootstrap.app.QuarkusBootstrap.Mode;
@@ -61,7 +66,8 @@ public class QuarkusApp implements AutoCloseable {
    * @throws MojoExecutionException if an error occurs during execution
    */
   public static QuarkusApp newApplication(MavenProject project, RepositorySystem repoSystem,
-      RepositorySystemSession repoSession, String appArtifactId)
+      RepositorySystemSession repoSession, String appArtifactId, Properties applicationProperties,
+      Collection<Path> additionalDependencyPaths)
       throws MojoExecutionException {
     final AppArtifactCoords appCoords = AppArtifactCoords.fromString(appArtifactId);
     final AppArtifact appArtifact = new AppArtifact(appCoords.getGroupId(),
@@ -70,27 +76,46 @@ public class QuarkusApp implements AutoCloseable {
 
     final AppModel appModel;
     try {
-      MavenArtifactResolver resolver = MavenArtifactResolver.builder().setWorkspaceDiscovery(false)
-          .setRepositorySystem(repoSystem).setRepositorySystemSession(repoSession)
-          .setRemoteRepositories(project.getRemoteProjectRepositories()).build();
+      MavenArtifactResolver resolver = MavenArtifactResolver.builder()
+          .setWorkspaceDiscovery(false)
+          .setRepositorySystem(repoSystem)
+          .setRepositorySystemSession(repoSession)
+          .setRemoteRepositories(project.getRemoteProjectRepositories())
+          .build();
 
-      appModel = new BootstrapAppModelResolver(resolver).setDevMode(false).setTest(false)
+      appModel = new BootstrapAppModelResolver(resolver)
+          .setDevMode(false)
+          .setTest(false)
           .resolveModel(appArtifact);
     } catch (Exception e) {
       throw new MojoExecutionException(
           "Failed to resolve application model " + appArtifact + " dependencies", e);
     }
 
+    final Collection<AdditionalDependency> additionalDependencies = additionalDependencyPaths
+        .stream()
+        .map(p -> new AdditionalDependency(p, false, false))
+        .collect(Collectors.toList());
+
     final QuarkusBootstrap bootstrap = QuarkusBootstrap.builder()
         .setAppArtifact(appModel.getAppArtifact())
-        .setBaseClassLoader(QuarkusApp.class.getClassLoader()).setExistingModel(appModel)
+        .setBaseClassLoader(QuarkusApp.class.getClassLoader())
+        .setExistingModel(appModel)
         .setProjectRoot(project.getBasedir().toPath())
-        .setTargetDirectory(Paths.get(project.getBuild().getDirectory())).setIsolateDeployment(true)
-        .setMode(Mode.TEST).build();
+        .setTargetDirectory(Paths.get(project.getBuild().getDirectory()))
+        .setIsolateDeployment(true)
+        .setMode(Mode.TEST)
+        .addAdditionalApplicationArchives(additionalDependencies)
+        .build();
 
     try {
       final CuratedApplication app = bootstrap.bootstrap();
       StartupAction startupAction = app.createAugmentor().createInitialRuntimeApplication();
+      if (applicationProperties != null) {
+        Class<?> mojoConfigSourceClass = startupAction.getClassLoader().loadClass("com.dremio.nessie.quarkus.maven.MojoConfigSource");
+        Method method = mojoConfigSourceClass.getDeclaredMethod("setProperties", Properties.class);
+        method.invoke(null, applicationProperties);
+      }
       exitHandler(startupAction);
       RunningQuarkusApplication runningApp = startupAction.runMainClass();
       return new QuarkusApp(runningApp);

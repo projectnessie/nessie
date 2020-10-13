@@ -20,6 +20,9 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Properties;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -70,6 +73,12 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
   @Parameter(property = "nessie.apprunner.appArtifactId", required = true)
   private String appArtifactId;
 
+  /**
+   * Application configuration properties.
+   */
+  @Parameter
+  private Properties applicationProperties;
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (isSkipped()) {
@@ -102,8 +111,10 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
     try {
       Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
       Method newApplicationMethod = clazz.getMethod("newApplication", MavenProject.class,
-          RepositorySystem.class, RepositorySystemSession.class, String.class);
-      quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, getProject(), repoSystem, repoSession, appArtifactId);
+          RepositorySystem.class, RepositorySystemSession.class, String.class, Properties.class, Collection.class);
+      quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, getProject(), repoSystem,
+          repoSession, appArtifactId, applicationProperties,
+          Collections.singleton(pluginDescriptor.getPluginArtifact().getFile().toPath()));
     } catch (InvocationTargetException e) {
       throw new MojoExecutionException("Cannot create an isolated quarkus application", e.getCause());
     } catch (ReflectiveOperationException e) {
