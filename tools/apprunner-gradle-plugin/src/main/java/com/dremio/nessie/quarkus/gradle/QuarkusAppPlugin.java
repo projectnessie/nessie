@@ -29,6 +29,7 @@ public class QuarkusAppPlugin implements Plugin<Project> {
 
   @Override
   public void apply(Project target) {
+    QuarkusAppExtension extension = target.getExtensions().create("quarkusAppRunnerProperties", QuarkusAppExtension.class, target);
 
     final Configuration config = target.getConfigurations().create("quarkusAppRunnerConfig")
       .setVisible(false)
@@ -38,6 +39,7 @@ public class QuarkusAppPlugin implements Plugin<Project> {
       @Override
       public void execute(StartTask task) {
         task.setConfig(config);
+        task.setProps(extension.getProps().get());
       }
     });
 

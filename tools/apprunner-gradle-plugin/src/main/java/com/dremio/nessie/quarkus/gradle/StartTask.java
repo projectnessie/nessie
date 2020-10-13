@@ -20,6 +20,8 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Map;
+import java.util.Properties;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
@@ -27,10 +29,12 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.testing.Test;
 
 public class StartTask extends DefaultTask {
   private static final Object lock = new Object();
   private Configuration dataFiles;
+  private Map<String, Object> props;
 
   public StartTask() {
 
@@ -42,22 +46,27 @@ public class StartTask extends DefaultTask {
     getLogger().info("Starting Quarkus application.");
 
     synchronized (lock) {
-      if (existingApplication()) {
-        getLogger().info("Quarkus application already started, incrementing counter.");
-        incrementCount();
-        return;
-      }
       final URL[] urls = getDataFiles().getFiles().stream().map(StartTask::toURL).toArray(URL[]::new);
 
       final URLClassLoader mirrorCL = new URLClassLoader(urls, this.getClass().getClassLoader());
 
+      Properties properties = new Properties();
+      properties.putAll(props);
+
       final AutoCloseable quarkusApp;
       try {
         Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
-        Method newApplicationMethod = clazz.getMethod("newApplication", Configuration.class, Project.class);
-        quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, dataFiles, getProject());
+        Method newApplicationMethod = clazz.getMethod("newApplication", Configuration.class, Project.class, Properties.class);
+        quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, dataFiles, getProject(), properties);
       } catch (ReflectiveOperationException e) {
         throw new RuntimeException(e);
+      }
+
+      for (String key: props.keySet()) {
+        String value = System.getProperty(key);
+        if (value != null) {
+          ((Test) getProject().getTasks().getByName("test")).systemProperty(key, value);
+        }
       }
 
       getLogger().info("Quarkus application started.");
@@ -80,16 +89,6 @@ public class StartTask extends DefaultTask {
     this.dataFiles = files;
   }
 
-  private boolean existingApplication() {
-    StopTask task = (StopTask) getProject().getTasks().getByName("quarkus-stop");
-    return task.getApplication() != null;
-  }
-
-  private void incrementCount() {
-    StopTask task = (StopTask) getProject().getTasks().getByName("quarkus-stop");
-    task.increment();
-  }
-
   private void setApplicationHandle(AutoCloseable application) {
     // update stop task with this task's closeable
 
@@ -106,5 +105,9 @@ public class StartTask extends DefaultTask {
     } catch (MalformedURLException e) {
       throw new IllegalArgumentException(e);
     }
+  }
+
+  public void setProps(Map<String, Object> props) {
+    this.props = props;
   }
 }

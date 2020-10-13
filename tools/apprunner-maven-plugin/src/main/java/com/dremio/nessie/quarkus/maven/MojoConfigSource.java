@@ -40,7 +40,8 @@ public class MojoConfigSource implements ConfigSource {
 
   @Override
   public String getValue(String propertyName) {
-    return properties.getProperty(propertyName);
+    Object obj = properties.get(propertyName);
+    return obj == null ? null : obj.toString();
   }
 
   @Override

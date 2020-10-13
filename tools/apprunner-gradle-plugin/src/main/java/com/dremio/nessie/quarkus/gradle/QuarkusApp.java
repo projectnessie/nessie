@@ -21,7 +21,6 @@ import static io.quarkus.bootstrap.resolver.maven.DeploymentInjectingDependencyV
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -31,16 +30,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.eclipse.aether.artifact.Artifact;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -53,11 +51,7 @@ import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDepen
 import com.google.common.collect.ImmutableList;
 
 import io.quarkus.bootstrap.BootstrapConstants;
-import io.quarkus.bootstrap.app.CuratedApplication;
-import io.quarkus.bootstrap.app.QuarkusBootstrap;
-import io.quarkus.bootstrap.app.QuarkusBootstrap.Mode;
 import io.quarkus.bootstrap.app.RunningQuarkusApplication;
-import io.quarkus.bootstrap.app.StartupAction;
 import io.quarkus.bootstrap.model.AppArtifact;
 import io.quarkus.bootstrap.model.AppDependency;
 import io.quarkus.bootstrap.model.AppModel;
@@ -68,36 +62,24 @@ import io.quarkus.bootstrap.util.ZipUtils;
 /**
  * Start and Stop quarkus.
  */
-public class QuarkusApp implements AutoCloseable {
-  private final RunningQuarkusApplication runningApp;
+public class QuarkusApp extends com.dremio.nessie.quarkus.maven.QuarkusApp {
 
-  private QuarkusApp(RunningQuarkusApplication runningApp) {
-    this.runningApp = runningApp;
+  protected QuarkusApp(RunningQuarkusApplication runningApp) {
+    super(runningApp);
   }
 
-  public static QuarkusApp newApplication(Configuration configuration, Project project) {
+  public static AutoCloseable newApplication(Configuration configuration, Project project, Properties props) {
 
     Configuration deploy = project.getConfigurations().create("quarkusAppDeploy");
     final AppModel appModel;
 
     appModel = convert(configuration, deploy);
-
     URL[] urls = appModel.getFullDeploymentDeps().stream().map(QuarkusApp::toUrl).toArray(URL[]::new);
-    ClassLoader cl = new URLClassLoader(urls, QuarkusApp.class.getClassLoader());
-    final QuarkusBootstrap bootstrap = QuarkusBootstrap.builder()
-      .setAppArtifact(appModel.getAppArtifact())
-      .setBaseClassLoader(cl).setExistingModel(appModel)
-      .setProjectRoot(project.getProjectDir().toPath())
-      .setTargetDirectory(Paths.get(project.getBuildDir().getPath())).setIsolateDeployment(true)
-      .setMode(Mode.TEST).build();
-
+    ClassLoader cl = new URLClassLoader(urls, com.dremio.nessie.quarkus.maven.QuarkusApp.class.getClassLoader());
     try {
-      final CuratedApplication app = bootstrap.bootstrap();
-      StartupAction startupAction = app.createAugmentor().createInitialRuntimeApplication();
-      exitHandler(startupAction);
-      RunningQuarkusApplication runningApp = startupAction.runMainClass();
-      return new QuarkusApp(runningApp);
-    } catch (Exception e) {
+      return com.dremio.nessie.quarkus.maven.QuarkusApp.newApplication(appModel, project.getProjectDir().toPath(),
+        Paths.get(project.getBuildDir().getPath()), props, cl);
+    } catch (MojoExecutionException e) {
       throw new GradleException("Unable to start Quarkus", e);
     }
   }
@@ -108,22 +90,6 @@ public class QuarkusApp implements AutoCloseable {
     } catch (MalformedURLException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  private static void exitHandler(StartupAction startupAction) throws ReflectiveOperationException {
-    Consumer<Integer> consumer = i -> {
-    };
-    Method exitHandler = Arrays
-      .stream(startupAction.getClassLoader()
-        .loadClass("io.quarkus.runtime.ApplicationLifecycleManager").getMethods())
-      .filter(x -> x.getName().equals("setDefaultExitCodeHandler")).findFirst()
-      .orElseThrow(NoSuchMethodException::new);
-    exitHandler.invoke(null, consumer);
-  }
-
-  @Override
-  public void close() throws Exception {
-    runningApp.close();
   }
 
   public static AppModel convert(Configuration configuration, Configuration deploy) {
@@ -146,7 +112,6 @@ public class QuarkusApp implements AutoCloseable {
       .map(QuarkusApp::toDependency)
       .filter(x -> !appArtifact.equals(x.getArtifact())) // remove base deps, accounted for below
       .forEach(userDeps::add);
-
     // for each user dependency check if it has any associated deployment deps and add those to the deploy config
     userDeps.stream()
       .map(x -> QuarkusApp.handleMetaInf(appBuilder, x))
@@ -165,7 +130,8 @@ public class QuarkusApp implements AutoCloseable {
       .filter(x->x.contains(appArtifact.getGroupId().replace(".", File.separator)))
       .filter(x->x.contains(appArtifact.getVersion()))
       .findFirst();
-    appArtifact.setPath(Paths.get(path.orElseThrow(() -> new UnsupportedOperationException("xxx"))));
+    appArtifact.setPath(Paths.get(path.orElseThrow(() ->
+      new UnsupportedOperationException(String.format("Unknown path for app artifact %s", appArtifact)))));
 
     // combine user and deploy deps and build app model
     List<AppDependency> allDeps = new ArrayList<>(userDeps);
@@ -196,7 +162,8 @@ public class QuarkusApp implements AutoCloseable {
   /**
    * Search for quarkus metadata and if found augment the AppModel builder. Return any deployment deps.
    */
-  private static AppArtifact processPlatformArtifact(AppModel.Builder appBuilder, AppArtifact node, Path descriptor) throws IOException {
+  private static AppArtifact processPlatformArtifact(AppModel.Builder appBuilder, AppArtifact node, Path descriptor)
+      throws IOException {
     final Properties rtProps = resolveDescriptor(descriptor);
     if (rtProps == null) {
       return null;
@@ -211,7 +178,8 @@ public class QuarkusApp implements AutoCloseable {
       deploymentArtifact = deploymentArtifact.setVersion(node.getVersion());
     }
 
-    return new AppArtifact(deploymentArtifact.getGroupId(), deploymentArtifact.getArtifactId(), deploymentArtifact.getClassifier(), "jar", deploymentArtifact.getVersion());
+    return new AppArtifact(deploymentArtifact.getGroupId(), deploymentArtifact.getArtifactId(),
+      deploymentArtifact.getClassifier(), "jar", deploymentArtifact.getVersion());
   }
 
   private static Properties resolveDescriptor(final Path path) throws IOException {
@@ -240,4 +208,5 @@ public class QuarkusApp implements AutoCloseable {
     artifact.setPaths(QuarkusModelHelper.toPathsCollection(ImmutableList.of(dependency.getFile())));
     return new AppDependency(artifact, "runtime");
   }
+
 }
