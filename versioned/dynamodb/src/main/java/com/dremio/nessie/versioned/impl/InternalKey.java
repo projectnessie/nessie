@@ -71,6 +71,10 @@ class InternalKey implements Comparable<InternalKey>, HasId {
         .map(s -> AttributeValue.builder().s(s).build()).collect(Collectors.toList())).build();
   }
 
+  public int estimatedSize() {
+    return 3 + delegate.getElements().stream().mapToInt(s -> s.length()).sum();
+  }
+
   public static InternalKey fromAttributeValue(AttributeValue value) {
     return new InternalKey(ImmutableKey.builder()
         .addAllElements(value.l().stream().map(AttributeValue::s)
@@ -98,7 +102,7 @@ class InternalKey implements Comparable<InternalKey>, HasId {
     if (!(obj instanceof InternalKey)) {
       return false;
     }
-    Key other = (Key) obj;
+    InternalKey other = (InternalKey) obj;
     List<String> thisLower = delegate.getElements().stream().map(String::toLowerCase).collect(Collectors.toList());
     List<String> otherLower = other.getElements().stream().map(String::toLowerCase).collect(Collectors.toList());
     return thisLower.equals(otherLower);

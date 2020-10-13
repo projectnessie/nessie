@@ -22,6 +22,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
+import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
 import com.google.common.collect.ImmutableMap;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -145,6 +147,20 @@ class L3 extends MemoizedId {
     }
 
   };
+
+  Stream<KeyMutation> getMutations() {
+    return map.entrySet().stream().filter(e -> e.getValue().wasAddedOrRemoved())
+        .map(e -> {
+          PositionDelta d = e.getValue();
+          if (d.wasAdded()) {
+            return KeyAddition.of(e.getKey());
+          } else if (d.wasRemoved()) {
+            return KeyRemoval.of(e.getKey());
+          } else {
+            throw new IllegalStateException("This list should have been filtered to only items that were either added or removed.");
+          }
+        });
+  }
 
   Stream<InternalKey> getKeys() {
     return map.keySet().stream();

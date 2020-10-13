@@ -264,7 +264,8 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
 
       // Add the new commit
-      Commit commitIntention = new Commit(Id.generateRandom(), metadata.getId(), deltas);
+      Commit commitIntention = new Commit(Id.generateRandom(), metadata.getId(), deltas,
+          KeyMutationList.of(current.getKeyMutations().collect(Collectors.toList())));
       update = update.and(SetClause.appendToList(
           ExpressionPath.builder(InternalBranch.COMMITS).build(),
           AttributeValue.builder().l(commitIntention.toAttributeValue()).build()));
@@ -285,7 +286,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     // Now we'll try to collapse the intention log. Note that this is done post official commit so we need to return
     // successfully even if this fails.
     try {
-      updatedBranch.getUpdateState().ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
+      updatedBranch.getUpdateState(store).ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
     } catch (Exception ex) {
       LOGGER.info("Failure while collapsing intention log after commit.", ex);
     }
@@ -293,6 +294,8 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
+    //TODO: change to use ParentList (l1's can be retrieved in parallel).
+
     try {
       InternalRefId id = InternalRefId.of(ref);
       final L1 startingL1;
@@ -307,6 +310,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           startingL1 = ensureValidL1(iref.getBranch());
         }
       }
+
 
       final Iterator<WithHash<METADATA>> iterator = new Iterator<WithHash<METADATA>>() {
 
@@ -367,7 +371,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
    * @return The L1 that is guaranteed to be addressable.
    */
   private L1 ensureValidL1(InternalBranch branch) {
-    UpdateState updateState = branch.getUpdateState();
+    UpdateState updateState = branch.getUpdateState(store);
     updateState.ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
     return updateState.getL1();
   }
@@ -460,9 +464,27 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   @Override
   public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
     // naive implementation.
-    PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.emptyList());
-    store.load(tree.getLoadChain(this::ensureValidL1, LoadType.ALL_KEYS_NO_VALUES));
-    return tree.getRetrievedKeys().map(InternalKey::toKey);
+    InternalRefId refId = InternalRefId.of(ref);
+    final L1 start;
+
+    switch (refId.getType()) {
+      case BRANCH:
+        InternalRef branchRef = store.loadSingle(ValueType.REF, refId.getId());
+        start = ensureValidL1(branchRef.getBranch());
+        break;
+      case TAG:
+        InternalRef tagRef = store.loadSingle(ValueType.REF, refId.getId());
+        start = store.loadSingle(ValueType.L1, tagRef.getTag().getCommit());
+        break;
+      case HASH:
+        start = store.loadSingle(ValueType.L1, refId.getId());
+        break;
+      case UNKNOWN:
+      default:
+        throw new UnsupportedOperationException();
+    }
+
+    return start.getKeys(store).map(InternalKey::toKey);
   }
 
   @Override

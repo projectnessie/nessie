@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.Serializer;
@@ -47,7 +46,7 @@ import com.google.common.collect.Streams;
 class PartialTree<V> {
 
   public static enum LoadType {
-    NO_VALUES, SELECT_VALUES, ALL_KEYS_NO_VALUES;
+    NO_VALUES, SELECT_VALUES;
   }
 
   private final Serializer<V> serializer;
@@ -115,6 +114,10 @@ class PartialTree<V> {
         );
   }
 
+  public Stream<KeyMutation> getKeyMutations() {
+    return l3s.values().stream().map(Pointer::get).flatMap(L3::getMutations);
+  }
+
   /**
    * Gets L1 mutations required to save tree.
    *
@@ -126,9 +129,7 @@ class PartialTree<V> {
   }
 
   private Optional<LoadStep> getLoadStep1(LoadType loadType) {
-    final Supplier<Optional<LoadStep>> loadFunc = () ->
-        loadType == LoadType.ALL_KEYS_NO_VALUES ? getLoadStep2All() : getLoadStep2(loadType == LoadType.SELECT_VALUES);
-
+    final Supplier<Optional<LoadStep>> loadFunc = () -> getLoadStep2(loadType == LoadType.SELECT_VALUES);
 
     if (l1 != null) { // if we loaded a branch, we were able to prepopulate the l1 information.
       return loadFunc.get();
@@ -138,37 +139,6 @@ class PartialTree<V> {
       l1 = new Pointer<L1>(l);
     });
     return Optional.of(new LoadStep(java.util.Collections.singleton(op), loadFunc));
-  }
-
-  private Optional<LoadStep> getLoadStep2All() {
-    final L1 l1 = this.l1.get();
-    Collection<LoadOp<?>> loads = IntStream.range(0, L1.SIZE).mapToObj(i -> {
-      Id l2Id = l1.getId(i);
-      return new LoadOp<L2>(ValueType.L2, l2Id, l -> loadL2(i, l));
-    }).collect(Collectors.toList());
-
-    return Optional.of(new LoadStep(loads, (Supplier<Optional<LoadStep>>) (() -> getLoadStep3All())));
-  }
-
-  private void loadL2(int i, L2 l2) {
-    l2s.putIfAbsent(i, new Pointer<L2>(l2));
-  }
-
-  private Optional<LoadStep> getLoadStep3All() {
-    List<LoadOp<?>> loads = new ArrayList<>(L1.SIZE * L2.SIZE);
-    for (int l1Position = 0; l1Position < L1.SIZE; l1Position++) {
-      final L2 l2 = l2s.get(l1Position).get();
-      for (int l2Position = 0; l2Position < L2.SIZE; l2Position++) {
-        Position position  = new Position(l1Position, l2Position);
-        Id l3Id = l2.getId(l2Position);
-        loads.add(new LoadOp<L3>(
-            ValueType.L3,
-            l3Id,
-            l -> l3s.putIfAbsent(position, new Pointer<L3>(l))));
-      }
-    }
-
-    return Optional.of(new LoadStep(loads, () -> Optional.empty()));
   }
 
   private Optional<LoadStep> getLoadStep2(boolean includeValues) {

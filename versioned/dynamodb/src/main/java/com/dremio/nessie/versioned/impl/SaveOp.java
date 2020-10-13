@@ -41,7 +41,7 @@ class SaveOp<V extends HasId> {
 
   public Map<String, AttributeValue> toAttributeValues() {
     SimpleSchema<V> schema = type.getSchema();
-    return schema.itemToMap(value, true);
+    return type.addType(schema.itemToMap(value, true));
   }
 
   @Override

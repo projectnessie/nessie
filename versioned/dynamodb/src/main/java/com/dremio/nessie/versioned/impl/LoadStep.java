@@ -34,6 +34,10 @@ class LoadStep {
   private Collection<LoadOp<?>> ops;
   private Supplier<Optional<LoadStep>> next;
 
+  public LoadStep(Collection<LoadOp<?>> ops) {
+    this(ops, () -> Optional.empty());
+  }
+
   public LoadStep(Collection<LoadOp<?>> ops, Supplier<Optional<LoadStep>> next) {
     this.ops = consolidate(ops);
     this.next = next;

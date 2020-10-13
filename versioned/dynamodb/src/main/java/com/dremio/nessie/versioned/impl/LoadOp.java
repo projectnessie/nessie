@@ -40,7 +40,7 @@ class LoadOp<V extends HasId> {
 
   void loaded(Map<String, AttributeValue> load) {
     SimpleSchema<V> schema = type.getSchema();
-    consumer.accept(schema.mapToItem(load));
+    consumer.accept(schema.mapToItem(type.checkType(load)));
   }
 
   public Id getId() {
