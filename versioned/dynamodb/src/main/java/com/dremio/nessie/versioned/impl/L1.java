@@ -17,6 +17,7 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -27,26 +28,34 @@ class L1 extends MemoizedId {
   private static final long HASH_SEED = 3506039963025592061L;
 
   static final int SIZE = 151;
-  static L1 EMPTY = new L1(Id.EMPTY, Id.EMPTY, new IdMap(SIZE, L2.EMPTY_ID));
+  static L1 EMPTY = new L1(Id.EMPTY, new IdMap(SIZE, L2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
   static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap tree;
 
   private final Id metadataId;
-  private final Id parentId;
+  private final KeyList keyList;
+  private final ParentList parentList;
 
-  L1(Id commitId, Id parentId, IdMap map) {
-    this(commitId, parentId, map, null);
-  }
-
-  private L1(Id commitId, Id parentId, IdMap tree, Id id) {
+  private L1(Id commitId, IdMap tree, Id id, KeyList keyList, ParentList parentList) {
     super(id);
     this.metadataId = commitId;
-    this.parentId = parentId;
+    this.parentList = parentList;
+    this.keyList = keyList;
     this.tree = tree;
 
     assert tree.size() == SIZE;
     assert id == null || id.equals(generateId());
+  }
+
+  public L1 getChildWithTree(Id metadataId, IdMap tree, KeyMutationList mutations) {
+    KeyList keyList = this.keyList.plus(getId(), mutations.getMutations());
+    ParentList parents = this.parentList.cloneWithAdditional(getId());
+    return new L1(metadataId, tree, null, keyList, parents);
+  }
+
+  public L1 withCheckpointAsNecessary(DynamoStore store) {
+    return keyList.createCheckpointIfNeeded(this, store).map(keylist -> new L1(metadataId, tree, null, keylist, parentList)).orElse(this);
   }
 
   Id getId(int position) {
@@ -57,12 +66,16 @@ class L1 extends MemoizedId {
     return metadataId;
   }
 
+  ParentList getParentList() {
+    return parentList;
+  }
+
   Id getParentId() {
-    return parentId;
+    return parentList.getParent();
   }
 
   L1 set(int position, Id l2Id) {
-    return new L1(metadataId, parentId, tree.withId(position, l2Id), null);
+    return new L1(metadataId, tree.withId(position, l2Id), null, keyList, parentList);
   }
 
   @Override
@@ -70,9 +83,13 @@ class L1 extends MemoizedId {
     return Id.build(h -> {
       h.putLong(HASH_SEED)
         .putBytes(metadataId.getValue().asReadOnlyByteBuffer())
-          .putBytes(parentId.getValue().asReadOnlyByteBuffer());
+          .putBytes(parentList.getParent().getValue().asReadOnlyByteBuffer());
       tree.forEach(id -> h.putBytes(id.getValue().asReadOnlyByteBuffer()));
     });
+  }
+
+  Stream<InternalKey> getKeys(DynamoStore store) {
+    return keyList.getKeys(this, store);
   }
 
   IdMap getMap() {
@@ -88,29 +105,36 @@ class L1 extends MemoizedId {
     private static final String ID = "id";
     private static final String TREE = "tree";
     private static final String METADATA = "metadata";
-    private static final String PARENT = "parent";
+    private static final String PARENTS = "parents";
+    private static final String KEY_LIST = "keys";
 
     @Override
     public L1 deserialize(Map<String, AttributeValue> attributeMap) {
       return new L1(
           Id.fromAttributeValue(attributeMap.get(METADATA)),
-          Id.fromAttributeValue(attributeMap.get(PARENT)),
           IdMap.fromAttributeValue(attributeMap.get(TREE), SIZE),
-          Id.fromAttributeValue(attributeMap.get(ID))
+          Id.fromAttributeValue(attributeMap.get(ID)),
+          KeyList.fromAttributeValue(attributeMap.get(KEY_LIST)),
+          ParentList.fromAttributeValue(attributeMap.get(PARENTS))
       );
     }
 
     @Override
     public Map<String, AttributeValue> itemToMap(L1 item, boolean ignoreNulls) {
       return ImmutableMap.<String, AttributeValue>builder()
+          .put(METADATA, item.metadataId.toAttributeValue())
           .put(TREE, item.tree.toAttributeValue())
           .put(ID, item.getId().toAttributeValue())
-          .put(METADATA, item.metadataId.toAttributeValue())
-          .put(PARENT, item.parentId.toAttributeValue())
+          .put(KEY_LIST, item.keyList.toAttributeValue())
+          .put(PARENTS, item.parentList.toAttributeValue())
           .build();
     }
 
   };
+
+  KeyList getKeyList() {
+    return keyList;
+  }
 
   /**
    * return the number of positions that are non-empty.

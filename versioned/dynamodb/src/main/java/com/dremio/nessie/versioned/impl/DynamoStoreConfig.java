@@ -44,6 +44,11 @@ public abstract class DynamoStoreConfig {
   }
 
   @Default
+  public String getKeyListTableName() {
+    return "nessie_objects";
+  }
+
+  @Default
   public String getMetadataTableName() {
     return "nessie_objects";
   }

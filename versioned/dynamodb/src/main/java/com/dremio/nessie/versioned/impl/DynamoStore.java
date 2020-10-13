@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.impl.KeyList.Fragment;
 import com.dremio.nessie.versioned.impl.condition.AliasCollector;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
@@ -83,29 +84,65 @@ public class DynamoStore implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
   public static enum ValueType {
-    REF(InternalRef.class, InternalRef.SCHEMA, false),
-    L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA),
-    L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA),
-    L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA),
-    VALUE(InternalValue.class, InternalValue.SCHEMA),
-    COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA);
+
+    REF(InternalRef.class, InternalRef.SCHEMA, false, "r"),
+    L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1"),
+    L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2"),
+    L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA, "l3"),
+    VALUE(InternalValue.class, InternalValue.SCHEMA, "v"),
+    KEY_FRAGMENT(Fragment.class, Fragment.SCHEMA, "k"),
+    COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA, "m");
+
+    public static String SCHEMA_TYPE = "t";
 
     private final Class<?> objectClass;
     private final SimpleSchema<?> schema;
     private final boolean immutable;
+    private final AttributeValue type;
 
-    ValueType(Class<?> objectClass, SimpleSchema<?> schema) {
-      this(objectClass, schema, true);
+    ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName) {
+      this(objectClass, schema, true, valueName);
     }
 
-    ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable) {
+    ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable, String valueName) {
       this.objectClass = objectClass;
       this.schema = schema;
       this.immutable = immutable;
+      this.type = AttributeValue.builder().s(valueName).build();
     }
 
     public Class<?> getObjectClass() {
       return objectClass;
+    }
+
+    /**
+     * Append this type to the provided attribute value map.
+     * @param map The map to append to
+     * @return A typed map.
+     */
+    public Map<String, AttributeValue> addType(Map<String, AttributeValue> map) {
+      return ImmutableMap.<String, AttributeValue>builder()
+          .putAll(map)
+          .put(ValueType.SCHEMA_TYPE, type).build();
+    }
+
+    /**
+     * Validate that the provided map includes the expected type.
+     * @param map The map to check
+     * @return The map passed in (for chaining)
+     */
+    public Map<String, AttributeValue> checkType(Map<String, AttributeValue> map) {
+      AttributeValue loadedType = map.get(SCHEMA_TYPE);
+      Id id = Id.fromAttributeValue(map.get(KEY_NAME));
+      Preconditions.checkNotNull(loadedType, "Missing type tag for schema for id %s.", id.getHash());
+      Preconditions.checkArgument(type.equals(loadedType),
+          "Expected schema for id %s to be of type '%s' but is actually '%s'.", id.getHash(), type.s(), loadedType.s());
+      return map;
+    }
+
+    public ConditionExpression addTypeCheck(Optional<ConditionExpression> possibleExpression) {
+      final ExpressionFunction checkType = ExpressionFunction.equals(ExpressionPath.builder(SCHEMA_TYPE).build(), type);
+      return possibleExpression.map(ce -> ce.and(checkType)).orElse(ConditionExpression.of(checkType));
     }
 
     @SuppressWarnings("unchecked")
@@ -138,6 +175,7 @@ public class DynamoStore implements AutoCloseable {
         .put(ValueType.L2, config.getTreeTableName())
         .put(ValueType.L3, config.getTreeTableName())
         .put(ValueType.VALUE, config.getValueTableName())
+        .put(ValueType.KEY_FRAGMENT, config.getKeyListTableName())
         .put(ValueType.COMMIT_METADATA, config.getMetadataTableName())
         .build();
   }
@@ -284,12 +322,11 @@ public class DynamoStore implements AutoCloseable {
   <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
-    Map<String, AttributeValue> attributes = ((SimpleSchema<V>)type.schema).itemToMap(value, true);
+    Map<String, AttributeValue> attributes = type.addType(((SimpleSchema<V>)type.schema).itemToMap(value, true));
 
     PutItemRequest.Builder builder = PutItemRequest.builder()
         .tableName(tableNames.get(type))
         .item(attributes);
-
     if (conditionUnAliased.isPresent()) {
       AliasCollector c = new AliasCollector();
       ConditionExpression aliased = conditionUnAliased.get().alias(c);
@@ -303,12 +340,11 @@ public class DynamoStore implements AutoCloseable {
     DeleteItemRequest.Builder delete = DeleteItemRequest.builder()
         .key(id.toKeyMap())
         .tableName(tableNames.get(type));
-    if (condition.isPresent()) {
-      AliasCollector collector = new AliasCollector();
-      ConditionExpression aliased = condition.get().alias(collector);
-      collector.apply(delete);
-      delete.conditionExpression(aliased.toConditionExpressionString());
-    }
+
+    AliasCollector collector = new AliasCollector();
+    ConditionExpression aliased = type.addTypeCheck(condition).alias(collector);
+    collector.apply(delete);
+    delete.conditionExpression(aliased.toConditionExpressionString());
 
     try {
       client.deleteItem(delete.build());
@@ -352,7 +388,7 @@ public class DynamoStore implements AutoCloseable {
     if (!response.hasItem()) {
       throw ResourceNotFoundException.builder().message("Unable to load item.").build();
     }
-    return (V) valueType.schema.mapToItem(response.item());
+    return (V) valueType.schema.mapToItem(valueType.checkType(response.item()));
   }
 
   /**

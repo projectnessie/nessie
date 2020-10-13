@@ -157,12 +157,14 @@ class InternalBranch extends MemoizedId implements InternalRef {
     static final String COMMIT = "commit";
     static final String DELTAS = "deltas";
     static final String PARENT = "parent";
+    static final String KEY_MUTATIONS = "keys";
 
     private final Boolean saved;
     private final Id id;
     private final Id commit;
     private final Id parent;
     private final List<UnsavedDelta> deltas;
+    private final KeyMutationList keyMutationList;
 
     public Commit(Id id, Id commit, Id parent) {
       this.id = id;
@@ -170,14 +172,16 @@ class InternalBranch extends MemoizedId implements InternalRef {
       this.commit = commit;
       this.saved = true;
       this.deltas = Collections.emptyList();
+      this.keyMutationList = null;
     }
 
-    public Commit(Id unsavedId, Id commit, List<UnsavedDelta> deltas) {
+    public Commit(Id unsavedId, Id commit, List<UnsavedDelta> deltas, KeyMutationList keyMutationList) {
       super();
       this.saved = false;
       this.deltas = ImmutableList.copyOf(Preconditions.checkNotNull(deltas));
       this.commit = Preconditions.checkNotNull(commit);
       this.parent = null;
+      this.keyMutationList = Preconditions.checkNotNull(keyMutationList);
       this.id = Preconditions.checkNotNull(unsavedId);
     }
 
@@ -215,7 +219,8 @@ class InternalBranch extends MemoizedId implements InternalRef {
         return new Commit(
             Id.fromAttributeValue(map.get(ID)),
             Id.fromAttributeValue(map.get(COMMIT)),
-            deltas
+            deltas,
+            KeyMutationList.fromAttributeValue(map.get(KEY_MUTATIONS))
             );
 
       }
@@ -237,6 +242,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
                   ).collect(Collectors.toList()))
               .build();
           builder.put(DELTAS, deltas);
+          builder.put(KEY_MUTATIONS, item.keyMutationList.toAttributeValue());
         }
         return builder.build();
       }
@@ -247,7 +253,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
    * Identify the list of intended commits that need to be completed.
    * @return
    */
-  public UpdateState getUpdateState()  {
+  public UpdateState getUpdateState(DynamoStore store)  {
     // generate sublist of important commits.
     List<Commit> unsavedCommits = new ArrayList<>();
     Commit lastSavedCommit = null;
@@ -279,10 +285,12 @@ class InternalBranch extends MemoizedId implements InternalRef {
 
     IdMap tree = this.tree;
 
+    L1 lastSavedL1 = lastSavedCommit.id.isEmpty() ? L1.EMPTY : store.loadSingle(ValueType.L1, lastSavedCommit.id);
+
     if (unsavedCommits.isEmpty()) {
-      L1 l1 = new L1(lastSavedCommit.commit, lastSavedCommit.parent, tree);
-      return new UpdateState(Collections.emptyList(), deletes, l1, 0, l1.getId(), this);
+      return new UpdateState(Collections.emptyList(), deletes, lastSavedL1, 0, lastSavedL1.getId(), this);
     }
+
     // first we rewind the tree to the original state
     for (Commit c : Lists.reverse(unsavedCommits)) {
       for (UnsavedDelta delta : c.deltas) {
@@ -290,28 +298,23 @@ class InternalBranch extends MemoizedId implements InternalRef {
       }
     }
 
-    L1 lastL1 = null;
+    L1 lastL1 = lastSavedL1;
     int lastPos = unsavedStartOffset;
     Id lastId = null;
-    final List<L1> toSave = new ArrayList<>();
+    final List<SaveOp<?>> toSave = new ArrayList<>();
 
-    Id parentId = lastSavedCommit.id;
     for (Commit c : unsavedCommits) {
       for (UnsavedDelta delta : c.deltas) {
         tree = delta.apply(tree);
       }
-      L1 l1 = new L1(c.commit, parentId, tree);
-      toSave.add(l1);
-
-      if (lastUnsaved == c) {
-        lastL1 = l1;
-        lastId = c.id;
-      } else {
+      lastL1 = lastL1.getChildWithTree(c.commit, tree, c.keyMutationList)
+          .withCheckpointAsNecessary(store);
+      toSave.add(new SaveOp<L1>(ValueType.L1, lastL1));
+      lastId = c.id;
+      if (lastUnsaved != c) {
         // update for next loop.
         lastPos++;
       }
-      parentId = l1.getId();
-
     }
 
     // now we should have the same tree as we originally did.
@@ -319,10 +322,9 @@ class InternalBranch extends MemoizedId implements InternalRef {
     return new UpdateState(toSave, deletes, lastL1, lastPos, lastId, this);
   }
 
-
   static final class UpdateState {
     private volatile boolean saved = false;
-    private final List<L1> l1sToSave;
+    private final List<SaveOp<?>> saves;
     private final List<Delete> deletes;
     private final L1 finalL1;
     private final int finalL1position;
@@ -330,14 +332,14 @@ class InternalBranch extends MemoizedId implements InternalRef {
     private final InternalBranch initialBranch;
 
     private UpdateState(
-        List<L1> l1sToSave,
+        List<SaveOp<?>> saves,
         List<Delete> deletes,
         L1 finalL1,
         int finalL1position,
         Id finalL1RandomId,
         InternalBranch initialBranch) {
       super();
-      this.l1sToSave = Preconditions.checkNotNull(l1sToSave);
+      this.saves = Preconditions.checkNotNull(saves);
       this.deletes = Preconditions.checkNotNull(deletes);
       this.finalL1 = Preconditions.checkNotNull(finalL1);
       this.finalL1position = finalL1position;
@@ -362,13 +364,12 @@ class InternalBranch extends MemoizedId implements InternalRef {
      */
     @SuppressWarnings("unchecked")
     CompletableFuture<InternalBranch> ensureAvailable(DynamoStore store, Executor executor, int attempts, boolean waitOnCollapse) {
-      if (l1sToSave.isEmpty()) {
+      if (saves.isEmpty()) {
         saved = true;
         return CompletableFuture.completedFuture(initialBranch);
       }
 
-      List<SaveOp<L1>> l1Saves = l1sToSave.stream().map(l1 -> new SaveOp<L1>(ValueType.L1, l1)).collect(Collectors.toList());
-      store.save((List<SaveOp<?>>) (Object) l1Saves);
+      store.save(saves);
       saved = true;
 
       CompletableFuture<InternalBranch> future = CompletableFuture.supplyAsync(() -> {
@@ -417,7 +418,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
         for (int attempt = 0; attempt < attempts; attempt++) {
 
           // cleanup pending updates.
-          UpdateState updateState = attempts == 0 ? initialState : branch.getUpdateState();
+          UpdateState updateState = attempts == 0 ? initialState : branch.getUpdateState(store);
 
           // now we need to take the current list and turn it into a list of 1 item that is saved.
           final ExpressionPath commits = ExpressionPath.builder("commits").build();
@@ -438,6 +439,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
           // remove extra commits field for last commit.
           update = update
               .and(RemoveClause.of(last.toBuilder().name(Commit.DELTAS).build()))
+              .and(RemoveClause.of(last.toBuilder().name(Commit.KEY_MUTATIONS).build()))
               .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toAttributeValue()))
               .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toAttributeValue()));
 
@@ -457,7 +459,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
         }
 
       } catch (Exception ex) {
-        ex.printStackTrace();
+        LOGGER.debug("Exception when trying to update item.", ex);
       }
       throw new ReferenceConflictException(String.format("Unable to collapse intention log after %d attempts, giving up.", attempts));
     }

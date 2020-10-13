@@ -18,16 +18,13 @@ package com.dremio.nessie.versioned.impl;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Spliterators;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -264,7 +261,8 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
 
       // Add the new commit
-      Commit commitIntention = new Commit(Id.generateRandom(), metadata.getId(), deltas);
+      Commit commitIntention = new Commit(Id.generateRandom(), metadata.getId(), deltas,
+          KeyMutationList.of(current.getKeyMutations().collect(Collectors.toList())));
       update = update.and(SetClause.appendToList(
           ExpressionPath.builder(InternalBranch.COMMITS).build(),
           AttributeValue.builder().l(commitIntention.toAttributeValue()).build()));
@@ -285,7 +283,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     // Now we'll try to collapse the intention log. Note that this is done post official commit so we need to return
     // successfully even if this fails.
     try {
-      updatedBranch.getUpdateState().ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
+      updatedBranch.getUpdateState(store).ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
     } catch (Exception ex) {
       LOGGER.info("Failure while collapsing intention log after commit.", ex);
     }
@@ -308,39 +306,9 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         }
       }
 
-      final Iterator<WithHash<METADATA>> iterator = new Iterator<WithHash<METADATA>>() {
+      HistoryRetriever hr = new HistoryRetriever(store, startingL1, Id.EMPTY, false, true, false);
+      return hr.getStream().map(hi -> WithHash.of(hi.getId().toHash(), metadataSerializer.fromBytes(hi.getMetadata().getBytes())));
 
-        private L1 currentL1;
-
-        @Override
-        public boolean hasNext() {
-
-          if (startingL1.getMetadataId().isEmpty()) {
-            // The only way for a metadata object to have the empty hash is if it is not actually defined.
-            // This means we have no more commits. Exit.
-            return false;
-          }
-
-          if (currentL1 == null) {
-            return true;
-          }
-          return !currentL1.getParentId().equals(L1.EMPTY_ID);
-        }
-
-        @Override
-        public WithHash<METADATA> next() {
-          if (currentL1 == null) {
-            currentL1 = startingL1;
-          } else {
-            currentL1 = store.loadSingle(ValueType.L1, currentL1.getParentId());
-          }
-
-          WrappedValueBean bean = store.loadSingle(ValueType.COMMIT_METADATA, currentL1.getMetadataId());
-          return WithHash.of(currentL1.getId().toHash(), metadataSerializer.fromBytes(bean.getBytes()));
-        }
-      };
-
-      return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
     } catch (ResourceNotFoundException ex) {
       throw new ReferenceNotFoundException("Unable to find request reference.", ex);
     }
@@ -367,7 +335,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
    * @return The L1 that is guaranteed to be addressable.
    */
   private L1 ensureValidL1(InternalBranch branch) {
-    UpdateState updateState = branch.getUpdateState();
+    UpdateState updateState = branch.getUpdateState(store);
     updateState.ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
     return updateState.getL1();
   }
@@ -460,9 +428,27 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   @Override
   public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
     // naive implementation.
-    PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.emptyList());
-    store.load(tree.getLoadChain(this::ensureValidL1, LoadType.ALL_KEYS_NO_VALUES));
-    return tree.getRetrievedKeys().map(InternalKey::toKey);
+    InternalRefId refId = InternalRefId.of(ref);
+    final L1 start;
+
+    switch (refId.getType()) {
+      case BRANCH:
+        InternalRef branchRef = store.loadSingle(ValueType.REF, refId.getId());
+        start = ensureValidL1(branchRef.getBranch());
+        break;
+      case TAG:
+        InternalRef tagRef = store.loadSingle(ValueType.REF, refId.getId());
+        start = store.loadSingle(ValueType.L1, tagRef.getTag().getCommit());
+        break;
+      case HASH:
+        start = store.loadSingle(ValueType.L1, refId.getId());
+        break;
+      case UNKNOWN:
+      default:
+        throw new UnsupportedOperationException();
+    }
+
+    return start.getKeys(store).map(InternalKey::toKey);
   }
 
   @Override
