@@ -59,7 +59,7 @@ class TestRest {
   @Test
   void multiget() throws NessieNotFoundException, NessieConflictException {
     final String branch = "foo";
-    tree.createEmptyBranch(branch);
+    tree.assignBranch(branch, null, null);
     Reference r = tree.getReferenceByName(branch);
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
@@ -77,7 +77,7 @@ class TestRest {
   @Test
   void checkSpecialCharacterRoundTrip() throws NessieNotFoundException, NessieConflictException {
     final String branch = "specialchar";
-    tree.createEmptyBranch(branch);
+    tree.assignBranch(branch, null, null);
     Reference r = tree.getReferenceByName(branch);
     //ContentsKey k = ContentsKey.of("/%国","国.国");
     ContentsKey k = ContentsKey.of("a.b","c.d");
@@ -91,8 +91,8 @@ class TestRest {
   @Test
   void checkServerErrorPropagation() throws NessieNotFoundException, NessieConflictException {
     final String branch = "bar";
-    tree.createEmptyBranch(branch);
-    NessieConflictException e = assertThrows(NessieConflictException.class, () -> tree.createEmptyBranch(branch));
+    tree.assignBranch(branch, null, null);
+    NessieConflictException e = assertThrows(NessieConflictException.class, () -> tree.assignBranch(branch, null, null));
     assertThat(e.getMessage(), Matchers.containsString("already exists"));
   }
 }

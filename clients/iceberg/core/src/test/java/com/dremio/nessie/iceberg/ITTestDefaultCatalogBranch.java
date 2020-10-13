@@ -42,7 +42,7 @@ class ITTestDefaultCatalogBranch extends BaseTestIceberg {
     createTable(foobaz, 1); //table 2
 
     catalog.refresh();
-    tree.createNewBranch("FORWARD", catalog.getHash());
+    tree.assignBranch("FORWARD", null, catalog.getHash());
     hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "FORWARD");
     NessieCatalog forwardCatalog = new NessieCatalog(hadoopConfig);
     forwardCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();

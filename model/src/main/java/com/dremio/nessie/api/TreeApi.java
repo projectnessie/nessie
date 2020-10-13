@@ -41,7 +41,7 @@ import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.Merge;
-import com.dremio.nessie.model.MultiContents;
+import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Transplant;
 
@@ -114,45 +114,11 @@ public interface TreeApi {
   LogResponse getCommitLog(@NotNull @Parameter(description = "ref to show log from") @PathParam("ref") String ref)
           throws NessieNotFoundException;
 
-
-  /**
-   * create a new empty tag.
-   */
-  @POST
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Path("tag/{tagName}")
-  @Operation(summary = "Create Tag")
-  @APIResponses({
-      @APIResponse(responseCode = "204", description = "Created successfully."),
-      @APIResponse(responseCode = "409", description = "Reference already exists")}
-  )
-  void createEmptyTag(
-      @Parameter(description = "Tag name to create.") @PathParam("tagName") String tagName
-      )
-      throws NessieNotFoundException, NessieConflictException;
-
-  /**
-   * create a tag.
-   */
-  @POST
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Path("tag/{tagName}/{hash}")
-  @Operation(summary = "Create Tag")
-  @APIResponses({
-      @APIResponse(responseCode = "204", description = "Created successfully."),
-      @APIResponse(responseCode = "409", description = "Reference already exists")}
-  )
-  void createNewTag(
-      @NotNull @Parameter(description = "Tag name to create.") @PathParam("tagName") String tagName,
-      @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash
-      )
-      throws NessieNotFoundException, NessieConflictException;
-
   /**
    * Update a tag.
    */
   @PUT
-  @Path("tag/{tagName}/{oldHash}/{newHash}/")
+  @Path("tag/{tagName}")
   @Operation(summary = "Set a tag to a specific hash")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Assigned successfully"),
@@ -161,15 +127,15 @@ public interface TreeApi {
     })
   void assignTag(
       @NotNull @Parameter(description = "Tag name to reassign") @PathParam("tagName") String tagName,
-      @NotNull @Parameter(description = "Expected old hash of tag") @PathParam("oldHash") String oldHash,
-      @NotNull @Parameter(description = "New hash to assign to") @PathParam("newHash") String newHash)
-          throws NessieNotFoundException, NessieConflictException;
+      @Parameter(description = "Expected old hash of tag") @QueryParam("oldHash") String oldHash,
+      @Parameter(description = "New hash to assign to") @QueryParam("newHash") String newHash
+      ) throws NessieNotFoundException, NessieConflictException;
 
   /**
    * Delete a tag.
    */
   @DELETE
-  @Path("tag/{tagName}/{hash}")
+  @Path("tag/{tagName}")
   @Operation(summary = "Delete a tag")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Deleted successfully."),
@@ -178,42 +144,14 @@ public interface TreeApi {
     })
   void deleteTag(
       @NotNull @Parameter(description = "Tag to delete") @PathParam("tagName") String tagName,
-      @NotNull @Parameter(description = "Expected hash of tag") @PathParam("hash") String hash
+      @Parameter(description = "Expected hash of tag") @QueryParam("hash") String hash
       ) throws NessieConflictException, NessieNotFoundException;
-
-  @POST
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Path("branch/{branchName}")
-  @Operation(summary = "Create empty Branch")
-  @APIResponses({
-      @APIResponse(responseCode = "204", description = "Created successfully."),
-      @APIResponse(responseCode = "409", description = "Reference already exists")}
-  )
-  void createEmptyBranch(
-      @NotNull @Parameter(description = "Branch name to create.") @PathParam("branchName") String branchName
-      )
-      throws NessieNotFoundException, NessieConflictException;
-
-  @POST
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Path("branch/{branchName}/{hash}")
-  @Operation(summary = "Create Branch")
-  @APIResponses({
-      @APIResponse(responseCode = "204", description = "Created successfully."),
-      @APIResponse(responseCode = "409", description = "Reference already exists")}
-  )
-  void createNewBranch(
-      @NotNull @Parameter(description = "Branch name to create.") @PathParam("branchName") String branchName,
-      @Parameter(description = "Expected hash of branch (optional).") @PathParam("hash") String hash
-      )
-      throws NessieNotFoundException, NessieConflictException;
-
 
   /**
    * Update a branch.
    */
   @PUT
-  @Path("branch/{branchName}/{oldHash}/{newHash}")
+  @Path("branch/{branchName}")
   @Operation(summary = "Set a branch to a specific hash")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Assigned successfully"),
@@ -222,15 +160,15 @@ public interface TreeApi {
     })
   void assignBranch(
       @NotNull @Parameter(description = "Tag name to reassign") @PathParam("branchName") String branchName,
-      @NotNull @Parameter(description = "Expected old hash of tag") @PathParam("oldHash") String oldHash,
-      @NotNull @Parameter(description = "New hash to assign to") @PathParam("newHash") String newHash)
-          throws NessieNotFoundException, NessieConflictException;
+      @Parameter(description = "Expected old hash of tag") @QueryParam("oldHash") String oldHash,
+      @Parameter(description = "New hash to assign to") @QueryParam("newHash") String newHash
+      ) throws NessieNotFoundException, NessieConflictException;
 
   /**
    * Delete a branch.
    */
   @DELETE
-  @Path("branch/{branchName}/{hash}")
+  @Path("branch/{branchName}")
   @Operation(summary = "Delete a branch endpoint")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Deleted successfully."),
@@ -239,14 +177,14 @@ public interface TreeApi {
     })
   void deleteBranch(
       @NotNull @Parameter(description = "Branch to delete") @PathParam("branchName") String branchName,
-      @NotNull @Parameter(description = "Expected hash of tag") @PathParam("hash") String hash
+      @NotNull @Parameter(description = "Expected hash of tag") @QueryParam("hash") String hash
       ) throws NessieConflictException, NessieNotFoundException;
 
   /**
    * cherry pick a set of commits into a branch.
    */
-  @PUT
-  @Path("transplant")
+  @POST
+  @Path("branch/{branchName}/transplant")
   @Operation(summary = "transplant commits from mergeRef to ref endpoint")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Merged successfully."),
@@ -255,15 +193,17 @@ public interface TreeApi {
       @APIResponse(responseCode = "412", description = "update conflict")}
   )
   void transplantCommitsIntoBranch(
+      @NotNull @Parameter(description = "Branch to transplant into") @PathParam("branchName") String branchName,
+      @NotNull @Parameter(description = "Expected hash of tag") @QueryParam("hash") String hash,
       @Parameter(description = "commit message") @QueryParam("message") String message,
-      @RequestBody(description = "Branch and hashes to transplant") Transplant transplant)
+      @RequestBody(description = "Hashes to transplant") Transplant transplant)
           throws NessieNotFoundException, NessieConflictException;
 
   /**
    * merge mergeRef onto ref.
    */
-  @PUT
-  @Path("merge")
+  @POST
+  @Path("branch/{branchName}/merge")
   @Operation(summary = "merge commits from mergeRef to ref endpoint")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Merged successfully."),
@@ -271,11 +211,14 @@ public interface TreeApi {
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "update conflict")}
   )
-  void mergeRefIntoBranch(@NotNull @RequestBody(description = "Merge operation") Merge merge)
+  void mergeRefIntoBranch(
+      @NotNull @Parameter(description = "Branch to merge into") @PathParam("branchName") String branchName,
+      @NotNull @Parameter(description = "Expected hash of tag") @QueryParam("hash") String hash,
+      @NotNull @RequestBody(description = "Merge operation") Merge merge)
           throws NessieNotFoundException, NessieConflictException;
 
-  @PUT
-  @Path("multi/{hash}")
+  @POST
+  @Path("branch/{branchName}/commit")
   @Consumes(MediaType.APPLICATION_JSON)
   @Operation(summary = "commit multiple on default branch")
   @APIResponses({
@@ -283,23 +226,9 @@ public interface TreeApi {
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")})
   public void commitMultipleOperations(
-      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
+      @NotNull @Parameter(description = "Branch to change, defaults to default branch.") @PathParam("branchName") String branchName,
+      @NotNull @Parameter(description = "Expected hash of branch.") @QueryParam("hash") String hash,
       @Parameter(description = "Commit message") @QueryParam("message") String message,
-      @NotNull @RequestBody(description = "Operations") MultiContents operations)
-      throws NessieNotFoundException, NessieConflictException;
-
-  @PUT
-  @Path("multi/{branch}/{hash}")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "commit multiple")
-  @APIResponses({
-      @APIResponse(responseCode = "204", description = "Updated successfully."),
-      @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
-      @APIResponse(responseCode = "412", description = "Update conflict")})
-  public void commitMultipleOperations(
-      @Parameter(description = "Branch to change, defaults to default branch.") @PathParam("branch") String branch,
-      @NotNull @Parameter(description = "Expected hash of branch.") @PathParam("hash") String hash,
-      @Parameter(description = "Commit message") @QueryParam("message") String message,
-      @NotNull @RequestBody(description = "Operations") MultiContents operations)
+      @NotNull @RequestBody(description = "Operations") Operations operations)
       throws NessieNotFoundException, NessieConflictException;
 }

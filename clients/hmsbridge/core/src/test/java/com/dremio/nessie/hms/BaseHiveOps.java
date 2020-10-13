@@ -59,7 +59,7 @@ public abstract class BaseHiveOps {
         client.getTreeApi().deleteTag(r.getName(), r.getHash());
       }
     }
-    client.getTreeApi().createEmptyBranch("main");
+    client.getTreeApi().assignBranch("main", null, null);
     shell.start();
   }
 

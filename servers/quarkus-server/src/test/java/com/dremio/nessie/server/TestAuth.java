@@ -58,7 +58,7 @@ class TestAuth {
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {
-      tree.createEmptyBranch(branch);
+      tree.assignBranch(branch, null, null);
     }
   }
 
@@ -93,7 +93,7 @@ class TestAuth {
 
     Branch master = (Branch) tree.getReferenceByName("testx");
     Branch test = ImmutableBranch.builder().hash(master.getHash()).name("testy").build();
-    tryEndpointPass(() -> tree.createNewBranch(test.getName(), test.getHash()));
+    tryEndpointPass(() -> tree.assignBranch(test.getName(), null, test.getHash()));
     Branch test2 = (Branch) tree.getReferenceByName("testy");
     tryEndpointPass(() -> tree.deleteBranch(test2.getName(), test2.getHash()));
     tryEndpointPass(() -> contents.deleteContents(key, master.getName(), master.getHash(), ""));

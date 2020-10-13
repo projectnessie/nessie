@@ -265,17 +265,17 @@ public class NessieStoreImpl implements NessieStore {
     try {
       if (requestedReference == null) {
         if (branch) {
-          client.getTreeApi().createEmptyBranch(tblName);
+          client.getTreeApi().assignBranch(tblName, null, null);
         } else {
-          client.getTreeApi().createEmptyTag(tblName);
+          client.getTreeApi().assignBranch(tblName, null, null);
         }
         return;
       }
 
       if (branch) {
-        client.getTreeApi().createNewBranch(tblName, requestedReference.getHash());
+        client.getTreeApi().assignBranch(tblName, null, requestedReference.getHash());
       } else {
-        client.getTreeApi().createNewTag(tblName, requestedReference.getHash());
+        client.getTreeApi().assignBranch(tblName, null, requestedReference.getHash());
       }
 
     } catch (NessieNotFoundException e) {
