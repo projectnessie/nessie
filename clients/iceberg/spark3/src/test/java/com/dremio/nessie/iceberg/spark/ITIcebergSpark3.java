@@ -98,7 +98,7 @@ class ITIcebergSpark3 extends AbstractSparkTest {
 
   @Test
   void testBranchHash() throws IOException {
-    client.getTreeApi().createNewBranch("test", client.getTreeApi().getReferenceByName("main").getHash());
+    client.getTreeApi().assignBranch("test", null, client.getTreeApi().getReferenceByName("main").getHash());
     Branch branch = (Branch) client.getTreeApi().getReferenceByName("test");
     List<String[]> stringAsList = new ArrayList<>();
     stringAsList.add(new String[] {"bar1.1", "bar2.1"});

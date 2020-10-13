@@ -41,9 +41,9 @@ import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableDelete;
-import com.dremio.nessie.model.ImmutableMultiContents;
+import com.dremio.nessie.model.ImmutableOperations;
 import com.dremio.nessie.model.ImmutablePut;
-import com.dremio.nessie.model.MultiContents;
+import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
@@ -267,7 +267,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
       throw new AlreadyExistsException("table {} already exists", to.name());
     }
 
-    MultiContents c = ImmutableMultiContents.builder()
+    Operations c = ImmutableOperations.builder()
         .addOperations(ImmutablePut.builder().key(toKey(to)).contents(existingFromTable).build())
         .addOperations(ImmutableDelete.builder().key(toKey(from)).build())
         .build();
