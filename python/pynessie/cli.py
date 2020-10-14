@@ -7,15 +7,17 @@ from typing import List
 from typing import Tuple
 
 import click
-from click import Option, UsageError
+from click import Option
+from click import UsageError
 
 from . import __version__
-from .conf import build_config, write
+from .conf import build_config
+from .conf import write
+from .log import show_log
 from .model import Contents
 from .model import ContentsSchema
 from .model import ReferenceSchema
 from .nessie_client import NessieClient
-from .log import show_log
 
 pass_client = click.make_pass_decorator(NessieClient)
 
@@ -29,10 +31,10 @@ def _print_version(ctx: Any, param: Any, value: Any) -> None:
 
 class MutuallyExclusiveOption(Option):
     def __init__(self, *args, **kwargs):
-        self.mutually_exclusive = set(kwargs.pop('mutually_exclusive', []))
-        help = kwargs.get('help', '')
+        self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
+        help = kwargs.get("help", "")
         if self.mutually_exclusive:
-            ex_str = ', '.join(self.mutually_exclusive)
+            ex_str = ", ".join(self.mutually_exclusive)
             # kwargs['help'] = help + (
             #     ' NOTE: This argument is mutually exclusive with '
             #     ' arguments: [' + ex_str + '].'
@@ -43,25 +45,18 @@ class MutuallyExclusiveOption(Option):
         if self.mutually_exclusive.intersection(opts) and self.name in opts:
             raise UsageError(
                 "Illegal usage: `{}` is mutually exclusive with "
-                "arguments `{}`.".format(
-                    self.name,
-                    ', '.join(self.mutually_exclusive)
-                )
+                "arguments `{}`.".format(self.name, ", ".join(self.mutually_exclusive))
             )
 
-        return super(MutuallyExclusiveOption, self).handle_parse_result(
-            ctx,
-            opts,
-            args
-        )
+        return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
 
 
 class DefaultHelp(click.Command):
     def __init__(self, *args, **kwargs):
-        context_settings = kwargs.setdefault('context_settings', {})
-        if 'help_option_names' not in context_settings:
-            context_settings['help_option_names'] = ['-h', '--help']
-        self.help_flag = context_settings['help_option_names'][0]
+        context_settings = kwargs.setdefault("context_settings", {})
+        if "help_option_names" not in context_settings:
+            context_settings["help_option_names"] = ["-h", "--help"]
+        self.help_flag = context_settings["help_option_names"][0]
         super(DefaultHelp, self).__init__(*args, **kwargs)
 
     def parse_args(self, ctx, args):
@@ -93,10 +88,23 @@ def remote(nessie: NessieClient):
 
 
 @cli.command(cls=DefaultHelp)
-@click.option('--get', cls=MutuallyExclusiveOption, help="get config parameter", mutually_exclusive=["set", "list", 'unset'])
-@click.option('--set', cls=MutuallyExclusiveOption, help="set config parameter", mutually_exclusive=["get", "list", 'unset'])
-@click.option('-l', '--list', cls=MutuallyExclusiveOption, is_flag=True, help="list config parameters", mutually_exclusive=["set", "get", 'unset'])
-@click.option('--unset', cls=MutuallyExclusiveOption, help="unset config parameter", mutually_exclusive=["get", "list", 'set'])
+@click.option(
+    "--get", cls=MutuallyExclusiveOption, help="get config parameter", mutually_exclusive=["set", "list", "unset"]
+)
+@click.option(
+    "--set", cls=MutuallyExclusiveOption, help="set config parameter", mutually_exclusive=["get", "list", "unset"]
+)
+@click.option(
+    "-l",
+    "--list",
+    cls=MutuallyExclusiveOption,
+    is_flag=True,
+    help="list config parameters",
+    mutually_exclusive=["set", "get", "unset"],
+)
+@click.option(
+    "--unset", cls=MutuallyExclusiveOption, help="unset config parameter", mutually_exclusive=["get", "list", "set"]
+)
 @click.argument("key", nargs=1, required=False)
 @pass_client
 def config(nessie: NessieClient, get, set, list, unset, key):
@@ -137,7 +145,7 @@ def set_(nessie: NessieClient, endpoint: str) -> None:
 
 @cli.command()
 @click.argument("revision_range", nargs=1, required=False)
-@click.argument('paths', nargs=-1, type=click.Path(exists=False), required=False)
+@click.argument("paths", nargs=-1, type=click.Path(exists=False), required=False)
 @pass_client
 def log(nessie: NessieClient, revision_range: str, paths: Tuple[click.Path]) -> None:
     """
@@ -151,7 +159,7 @@ def log(nessie: NessieClient, revision_range: str, paths: Tuple[click.Path]) -> 
         start = None
         end = None
     else:
-        if '..' in revision_range:
+        if ".." in revision_range:
             start, end = revision_range.split("..")
         else:
             start = revision_range
@@ -161,9 +169,13 @@ def log(nessie: NessieClient, revision_range: str, paths: Tuple[click.Path]) -> 
 
 
 @cli.command(name="branch")
-@click.option("-l", '--list', cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
-@click.option("-d", '--delete', cls=MutuallyExclusiveOption, is_flag=True, help="delete a branch", mutually_exclusive=["list"])
-@click.option("-f", '--force', is_flag=True, help="force branch assignment")
+@click.option(
+    "-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"]
+)
+@click.option(
+    "-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branch", mutually_exclusive=["list"]
+)
+@click.option("-f", "--force", is_flag=True, help="force branch assignment")
 @click.argument("branch", nargs=1, required=False)
 @click.argument("new_branch", nargs=1, required=False)
 @pass_client
@@ -178,19 +190,10 @@ def branch_(nessie: NessieClient, list_references: bool, delete_reference: bool,
     nessie branch -l -> list all branches
     nessie branch -l main -> list only main
     nessie branch -d main -> delete main
-    nessie branch -> show all branches
+    nessie branch -> list all branches
     nessie branch main -> create branch main at current head
     nessie branch main test -> create branch main at head of test
     nessie branch -f main test -> assign main to head of test
-    """
-    """
-    no args: show all refs paged
-    -l same as no args
-    -d delete
-    --show-current list currently set branch
-    branch only - create branch at current branch head
-    branch and object - create branch at object.
-    branch [and object] and -f - assign to object or current head
     """
     if list_references:
         results = nessie.list_references()
@@ -204,20 +207,31 @@ def branch_(nessie: NessieClient, list_references: bool, delete_reference: bool,
 
 
 @cli.command()
-@click.option("-l", '--list', cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
-@click.option("-d", '--delete', cls=MutuallyExclusiveOption, is_flag=True, help="delete a branches", mutually_exclusive=["list"])
-@click.argument("tag_name", nargs=1, required=False)
+@click.option(
+    "-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"]
+)
+@click.option(
+    "-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branches", mutually_exclusive=["list"]
+)
+@click.option("-f", "--force", is_flag=True, help="force branch assignment")
+@click.argument("tag", nargs=1, required=False)
+@click.argument("new_tag", nargs=1, required=False)
 @pass_client
 def tag(nessie: NessieClient, list_references: bool, delete_reference: bool, tag_name: str) -> None:
-    """List all known references."""
     """
-    no args: show all refs paged
-    -l same as no args
-    -d delete
-    --show-current list currently set branch
-    branch only - create branch at current branch head
-    branch and object - create branch at object.
-    branch [and object] and -f - assign to object or current head
+    Tag operations.
+
+    TAG name of branch to list or create/assign
+    NEW_TAG name of branch to assign from or rename to
+
+    examples:
+    nessie tag -l -> list all tags
+    nessie tag -l main -> list only main
+    nessie tag -d main -> delete main
+    nessie tag -> list all tags
+    nessie tag main -> create tag xxx at current head
+    nessie tag main test -> create tag xxx at head of test
+    nessie tag -f main test -> assign xxx to head of test
     """
     if list_references:
         results = nessie.list_references()
@@ -231,21 +245,32 @@ def tag(nessie: NessieClient, list_references: bool, delete_reference: bool, tag
 
 
 @cli.command()
+@click.argument("branch", nargs=1, required=False)
 @pass_client
-def merge(nessie: NessieClient) -> None:
-    """List all known references."""
+def merge(nessie: NessieClient, branch: str) -> None:
     """
-    todo
+    Merge BRANCH into current branch. BRANCH can be a hash or branch
     """
     pass
 
 
 @cli.command()
+@click.argument("hashes", nargs=-1, required=False)
 @pass_client
-def transplant(nessie: NessieClient) -> None:
-    """List all known references."""
+def cherry_pick(nessie: NessieClient, hashes: Tuple) -> None:
     """
-    todo
+    Transplant HASHES onto current branch.
+    """
+    pass
+
+
+@cli.command()
+@click.option("-b", is_flag=True, help="force branch creation")
+@click.argument("branch", nargs=1, required=True)
+@pass_client
+def checkout(nessie: NessieClient, b: bool, branch: str) -> None:
+    """
+    Check out branch BRANCH, optionally creating it.
     """
     pass
 

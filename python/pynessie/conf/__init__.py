@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Config classes for nessie client."""
-from io import StringIO
 import os
+from io import StringIO
 
 import confuse
 import yaml
@@ -22,6 +22,5 @@ def to_dict(config: confuse.Configuration) -> dict:
 def write(config: confuse.Configuration) -> None:
     """Write updated config to file"""
     config_filename = os.path.join(config.config_dir(), confuse.CONFIG_FILENAME)
-    with open(config_filename, 'w') as f:
+    with open(config_filename, "w") as f:
         f.write(config.dump())
-

@@ -1,4 +1,7 @@
-from typing import Tuple, List, Any
+# -*- coding: utf-8 -*-
+from typing import Any
+from typing import List
+from typing import Tuple
 
 import click
 

@@ -42,11 +42,7 @@ def _delete(url: str, details: str = "", ssl_verify: bool = True, params: dict =
 
 
 def _put(
-    url: str,
-    json: dict = None,
-    details: str = "",
-    ssl_verify: bool = True,
-    params: dict = None,
+    url: str, json: dict = None, details: str = "", ssl_verify: bool = True, params: dict = None,
 ) -> Union[str, dict, list]:
     if isinstance(json, str):
         json = jsonlib.loads(json)
