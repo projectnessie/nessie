@@ -20,11 +20,12 @@ import {Router, Route} from 'react-router-dom';
 import {history} from './utils';
 import {authenticationService} from './services';
 import {PrivateRoute} from './components';
-import HomePage from './HomePage/HomePage';
+import {HomePage} from './HomePage';
 import {LoginPage} from './LoginPage';
 import {config} from "./config";
-import CreateBranchModal from './services/CreateBranchModal';
-import MergeBranchModal from './services/MergeBranchModal';
+import createApi from "./utils/api";
+// import CreateBranchModal from './_old/services/CreateBranchModal';
+// import MergeBranchModal from './_old/services/MergeBranchModal';
 
 class App extends React.Component {
   constructor(props) {
@@ -76,18 +77,13 @@ class App extends React.Component {
 
   getBranches() {
     if (this.state.currentUser && this.state.branches.length === 0) {
-      const requestOptions = {
-        method: 'GET',
-        headers: {'Authorization': this.state.currentUser.token},
-        branches: null
-      };
-      fetch(`${config.apiUrl}/objects`, requestOptions)
+      createApi({'cors':true}).getAllReferences()
       .then(res => {
         return res.json();
       })
       .then((data) => {
-        this.setState({branches: data.map(x => x.name)});
-        this.fetchTables()
+        this.setState({branches: data});
+        // this.fetchTables()
       })
       .catch(console.log);
     }
@@ -125,27 +121,12 @@ class App extends React.Component {
             />{' '}Nessie</Navbar.Brand>
             <Nav className="mr-auto">
               <Nav.Link href="/">Tables</Nav.Link>
-              {/*<Nav.Link href="/alerts">Alerts</Nav.Link>*/}
-              {/*<Nav.Link href="/users">Users</Nav.Link>*/}
             </Nav>
-            <Button className={"mr-1"} onClick={handleMergeShow}>Merge Branch</Button>
-            <DropdownButton className={"mr-1"} id={"dropdown-item-button"} title={this.state.currentBranch}>
-              {this.state.branches.map(x => {
-                return (<Dropdown.Item as={"button"} key={x} onClick={y=>{
-                  this.setState({currentBranch: x});
-                }}>{x}</Dropdown.Item>)
-              })}
-              <Dropdown.Divider />
-              <Dropdown.Item as={"button"} key={'Create Branch'} onClick={handleShow}>Create Branch</Dropdown.Item>
-            </DropdownButton>
-            <Button bg="outline-dark" onClick={this.logout} disabled>Logout</Button>
           </Navbar>
-          <CreateBranchModal show={this.state.show} handleClose={handleClose} currentUser={this.state.currentUser} currentBranch={this.state.currentBranch}/>
-          <MergeBranchModal show={this.state.mergeShow} handleClose={handleMergeClose} currentUser={this.state.currentUser} currentBranch={this.state.currentBranch}/>
+          {/*<CreateBranchModal show={this.state.show} handleClose={handleClose} currentUser={this.state.currentUser} currentBranch={this.state.currentBranch}/>*/}
+          {/*<MergeBranchModal show={this.state.mergeShow} handleClose={handleMergeClose} currentUser={this.state.currentUser} currentBranch={this.state.currentBranch}/>*/}
 
-          <PrivateRoute exact path="/" component={HomePage} currentBranch={this.state.currentBranch} currentTables={this.state.tables}/>
-          {/*<PrivateRoute path="/alerts" component={AlertPage} />*/}
-          {/*<PrivateRoute path="/users" component={UsersPage} />*/}
+          <PrivateRoute exact path="/" component={HomePage} branches={this.state.branches} currentTables={this.state.tables}/>
           <Route path="/login" component={LoginPage} />
         </div>
       </Router>
