@@ -50,10 +50,7 @@ node_modules/
 build
 
 # gradle
-
-tools/apprunner-gradle-plugin/.gradle
-tools/apprunner-gradle-plugin/build
-tools/apprunner-gradle-plugin/gradle/
-tools/apprunner-gradle-plugin/out
-tools/apprunner-gradle-plugin/gradle/wrapper/gradle-wrapper.jar
-tools/apprunner-gradle-plugin/version.txt
+gradle/
+out
+gradle/wrapper/gradle-wrapper.jar
+version.txt
