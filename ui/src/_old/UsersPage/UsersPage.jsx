@@ -15,11 +15,11 @@
  */
 import React from 'react';
 
-import {userService, authenticationService} from '../services';
+import {userService, authenticationService} from '../../services';
 // import {TableSidebar} from "../TableSidebar";
 import {Container, Row, Col} from "react-bootstrap";
 
-class AlertPage extends React.Component {
+class UsersPage extends React.Component {
   constructor(props) {
     super(props);
 
@@ -52,4 +52,4 @@ class AlertPage extends React.Component {
   }
 }
 
-export {AlertPage};
+export {UsersPage};

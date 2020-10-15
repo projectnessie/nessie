@@ -23,9 +23,9 @@ export function nestTables(branch, tables) {
     return nestedTables;
   }
   let splitTables = tables.map(x => {
-    let pieces = x.split('.');
+    let pieces = x.name.elements;
     const t = {'parts': pieces.slice(0, pieces.length-1),
-      'tableName': pieces[pieces.length-1],
+      'name': pieces[pieces.length-1],
       'id': (counter++).toString()
     };
     t.namespace = t.parts.join('.');
@@ -47,9 +47,9 @@ export function nestTables(branch, tables) {
     if (!x.hasOwnProperty("children")) {
       x['children'] = [];
     }
-    t['name'] = t['tableName'];
-    // t['id'] = (counter++).toString();
+
     x.children.push(t);
+    x.parts = t.parts;
     return t;
   }, splitTables);
   nestedTables['id'] = (counter++).toString();
