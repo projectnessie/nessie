@@ -18,7 +18,7 @@ import { Route, Redirect } from 'react-router-dom';
 
 import { authenticationService } from '../services';
 
-export const PrivateRoute = ({ component: Component, currentTables, currentBranch, ...rest }) => (
+export const PrivateRoute = ({ component: Component, currentTables, branches, ...rest }) => (
   <Route {...rest} render={props => {
     const currentUser = authenticationService.currentUserValue;
     if (!currentUser) {
@@ -26,6 +26,6 @@ export const PrivateRoute = ({ component: Component, currentTables, currentBranc
       return <Redirect to={{ pathname: '/login', state: { from: props.location } }} />
     }
     // authorised so return component
-    return <Component {...props} currentBranch={currentBranch} currentTables={currentTables}/>
+    return <Component {...props} branches={branches} currentTables={currentTables}/>
   }} />
 )
