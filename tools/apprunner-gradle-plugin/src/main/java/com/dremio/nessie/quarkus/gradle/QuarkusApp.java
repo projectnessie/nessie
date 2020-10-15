@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -220,7 +221,7 @@ public class QuarkusApp implements AutoCloseable {
       return null;
     }
     rtProps = new Properties();
-    try (BufferedReader reader = Files.newBufferedReader(path)) {
+    try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
       rtProps.load(reader);
     }
     return rtProps;

@@ -575,11 +575,6 @@
           <artifactId>quarkus-maven-plugin</artifactId>
           <version>${quarkus.version}</version>
         </plugin>
-        <plugin>
-          <groupId>ru.yaal.maven</groupId>
-          <artifactId>write-text-files-maven-plugin</artifactId>
-          <version>1.1</version>
-        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>

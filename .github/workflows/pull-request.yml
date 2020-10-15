@@ -97,7 +97,7 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
     - name: Populate version from maven
-      run: mvn -B prepare-package --file ../pom.xml -pl :nessie-tools
+      run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file ../pom.xml > version.txt
       working-directory: ${{env.working-directory}}
     - name: Build with Gradle
       run: ./gradlew build
