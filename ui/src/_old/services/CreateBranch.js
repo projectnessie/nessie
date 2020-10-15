@@ -16,7 +16,7 @@
 import React from "react";
 import {ErrorMessage, Field, Form, Formik} from "formik";
 import * as Yup from "yup";
-import {config} from "../config";
+import {config} from "../../config";
 
 export default function CreateBranch(props) {
   return (
