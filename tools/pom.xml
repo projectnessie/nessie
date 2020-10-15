@@ -33,5 +33,4 @@
   <modules>
     <module>apprunner-maven-plugin</module>
   </modules>
-
 </project>
