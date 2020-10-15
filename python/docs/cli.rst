@@ -7,7 +7,7 @@ Available Commands
 
 .. code-block:: bash
 
-    Usage: cli [OPTIONS] COMMAND [ARGS]...
+    Usage: nessie [OPTIONS] COMMAND [ARGS]...
 
       Nessie cli tool.
 
@@ -34,7 +34,7 @@ Used to set config parameters found in ``default_config.yaml`` and to set the de
 
 .. code-block:: bash
 
-    Usage: cli config [OPTIONS] [KEY]
+    Usage: nessie config [OPTIONS] [KEY]
 
       Set and view config.
 
@@ -55,7 +55,7 @@ Perform operations on branches: create, delete, modify and reassign.
 
 .. code-block:: bash
 
-    Usage: cli branch [OPTIONS] [BRANCH] [NEW_BRANCH]
+    Usage: nessie branch [OPTIONS] [BRANCH] [NEW_BRANCH]
 
       Branch operations.
 
@@ -81,7 +81,7 @@ Perform operations on tags: create, delete, modify and reassign.
 
 .. code-block:: bash
 
-    Usage: cli tag [OPTIONS] [TAG] [NEW_TAG]
+    Usage: nessie tag [OPTIONS] [TAG] [NEW_TAG]
 
       Tag operations.
 
@@ -108,7 +108,7 @@ command functions similarly to the ``git remote show <remote>`` command to show 
 
 .. code-block:: bash
 
-    Usage: cli remote [OPTIONS] COMMAND [ARGS]...
+    Usage: nessie remote [OPTIONS] COMMAND [ARGS]...
 
       Set and view remote endpoint.
 
@@ -128,7 +128,7 @@ specified as <hash>..<hash> or <hash/ref>.
 
 .. code-block:: bash
 
-    Usage: cli log [OPTIONS] [REVISION_RANGE] [PATHS]...
+    Usage: nessie log [OPTIONS] [REVISION_RANGE] [PATHS]...
 
       Show commit log.
 
@@ -149,7 +149,7 @@ branch.
 
 .. code-block:: bash
 
-    Usage: cli merge [OPTIONS] [MERGE_BRANCH]
+    Usage: nessie merge [OPTIONS] [MERGE_BRANCH]
 
       Merge BRANCH into current branch. BRANCH can be a hash or branch
 
@@ -167,7 +167,7 @@ Perform a cherry-pick operation. This takes the list of commits ``HASHES`` and a
 
 .. code-block:: bash
 
-    Usage: cli cherry-pick [OPTIONS] [HASHES]...
+    Usage: nessie cherry-pick [OPTIONS] [HASHES]...
 
       Transplant HASHES onto current branch.
 
