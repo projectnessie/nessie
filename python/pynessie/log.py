@@ -9,4 +9,4 @@ from pynessie import NessieClient
 
 
 def show_log(nessie: NessieClient, start: str = None, end: str = None, limits: Tuple[click.Path] = None) -> List[Any]:
-    pass
+    nessie.get_log()

@@ -92,6 +92,16 @@ def get_reference(base_url: str, branch: str, ssl_verify: bool = True) -> dict:
     return cast(dict, _get(base_url + "/trees/tree/{}".format(branch), ssl_verify=ssl_verify))
 
 
+def get_default_branch(base_url: str, ssl_verify: bool = True) -> dict:
+    """Fetch a reference.
+
+    :param base_url: base Nessie url
+    :param ssl_verify: ignore ssl errors if False
+    :return: json Nessie branch
+    """
+    return cast(dict, _get(base_url + "/trees/tree", ssl_verify=ssl_verify))
+
+
 def delete_branch(base_url: str, branch: str, hash_: str, reason: str = None, ssl_verify: bool = True) -> None:
     """Delete a branch.
 

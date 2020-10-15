@@ -5,14 +5,17 @@ import sys
 from typing import Any
 from typing import List
 from typing import Tuple
+from typing import Union
 
 import click
+import confuse
 from click import Option
 from click import UsageError
 
 from . import __version__
 from .conf import build_config
-from .conf import write
+from .conf import process
+from .conf import write_to_file
 from .log import show_log
 from .model import Contents
 from .model import ContentsSchema
@@ -32,13 +35,6 @@ def _print_version(ctx: Any, param: Any, value: Any) -> None:
 class MutuallyExclusiveOption(Option):
     def __init__(self, *args, **kwargs):
         self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
-        help = kwargs.get("help", "")
-        if self.mutually_exclusive:
-            ex_str = ", ".join(self.mutually_exclusive)
-            # kwargs['help'] = help + (
-            #     ' NOTE: This argument is mutually exclusive with '
-            #     ' arguments: [' + ex_str + '].'
-            # )
         super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)
 
     def handle_parse_result(self, ctx, opts, args):
@@ -73,9 +69,12 @@ def cli(ctx: click.core.Context) -> None:
 
     Interact with Nessie branches and tables via the command line
     """
-    config = build_config()
-    nessie = NessieClient(config)
-    ctx.obj = nessie
+    try:
+        config = build_config()
+        nessie = NessieClient(config)
+        ctx.obj = nessie
+    except confuse.exceptions.ConfigTypeError as e:
+        raise click.ClickException(str(e))
 
 
 @cli.group()
@@ -92,7 +91,7 @@ def remote(nessie: NessieClient):
     "--get", cls=MutuallyExclusiveOption, help="get config parameter", mutually_exclusive=["set", "list", "unset"]
 )
 @click.option(
-    "--set", cls=MutuallyExclusiveOption, help="set config parameter", mutually_exclusive=["get", "list", "unset"]
+    "--add", cls=MutuallyExclusiveOption, help="set config parameter", mutually_exclusive=["get", "list", "unset"]
 )
 @click.option(
     "-l",
@@ -105,42 +104,33 @@ def remote(nessie: NessieClient):
 @click.option(
     "--unset", cls=MutuallyExclusiveOption, help="unset config parameter", mutually_exclusive=["get", "list", "set"]
 )
+@click.option("--type", help="type to interpret config value to set or get. Allowed options: bool, int")
 @click.argument("key", nargs=1, required=False)
 @pass_client
-def config(nessie: NessieClient, get, set, list, unset, key):
+def config(nessie: NessieClient, get: str, add: str, list: bool, unset: str, type: str, key: str):
     """
     Set and view config.
     """
-    if (get or set or list or unset) and key:
-        raise UsageError("can't set argument and specify option flags")
-    if get or key:
-        click.echo("fetch config for " + get if get else key)
-    if set:
-        click.echo("set config for " + set)
-    if list:
-        click.echo("list config")
-    if unset:
-        click.echo("unset config for " + unset)
-    pass
+    click.echo(process(get, add, list, unset, key, type))
 
 
 @remote.command()
 @pass_client
 def show(nessie: NessieClient) -> None:
     """Show current remote."""
-    # todo fill in with more `git remote show` details.
-    click.echo(nessie._base_url)
+    click.echo("Remote URL: " + nessie._base_url)
+    click.echo("Default branch: " + nessie.get_reference(None).name)
+    click.echo("Remote branches: ")
+    for i in nessie.list_references():
+        click.echo("\t" + i.name)
 
 
-@remote.command(name="set")
+@remote.command(name="add")
 @click.argument("endpoint", nargs=1, required=True)
 @pass_client
 def set_(nessie: NessieClient, endpoint: str) -> None:
     """Set current remote"""
-    config = build_config()
-    config["endpoint"].set(endpoint)
-    write(config)
-    click.echo()
+    click.echo(process(None, "endpoint", False, None, endpoint))
 
 
 @cli.command()
@@ -245,9 +235,12 @@ def tag(nessie: NessieClient, list_references: bool, delete_reference: bool, tag
 
 
 @cli.command()
-@click.argument("branch", nargs=1, required=False)
+@click.option(
+    "-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used"
+)
+@click.argument("merge_branch", nargs=1, required=False)
 @pass_client
-def merge(nessie: NessieClient, branch: str) -> None:
+def merge(nessie: NessieClient, branch: str, merge_branch: str) -> None:
     """
     Merge BRANCH into current branch. BRANCH can be a hash or branch
     """
@@ -255,22 +248,14 @@ def merge(nessie: NessieClient, branch: str) -> None:
 
 
 @cli.command()
+@click.option(
+    "-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used"
+)
 @click.argument("hashes", nargs=-1, required=False)
 @pass_client
-def cherry_pick(nessie: NessieClient, hashes: Tuple) -> None:
+def cherry_pick(nessie: NessieClient, branch: str, hashes: Tuple) -> None:
     """
     Transplant HASHES onto current branch.
-    """
-    pass
-
-
-@cli.command()
-@click.option("-b", is_flag=True, help="force branch creation")
-@click.argument("branch", nargs=1, required=True)
-@pass_client
-def checkout(nessie: NessieClient, b: bool, branch: str) -> None:
-    """
-    Check out branch BRANCH, optionally creating it.
     """
     pass
 

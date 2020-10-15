@@ -2,6 +2,7 @@
 """Main module."""
 from typing import cast
 from typing import List
+from typing import Optional
 
 import confuse
 
@@ -9,6 +10,7 @@ from ._endpoints import all_references
 from ._endpoints import assign_branch
 from ._endpoints import create_branch
 from ._endpoints import delete_branch
+from ._endpoints import get_default_branch
 from ._endpoints import get_reference
 from ._endpoints import get_table
 from ._endpoints import list_tables
@@ -36,13 +38,18 @@ class NessieClient:
         references = all_references(self._base_url, self._ssl_verify)
         return [ReferenceSchema().load(ref) for ref in references]
 
-    def get_reference(self: "NessieClient", ref: str) -> Reference:
+    def get_reference(self: "NessieClient", ref: Optional[str]) -> Reference:
         """Fetch a ref.
 
         :param ref: name of ref to fetch
         :return: json Nessie reference
         """
-        branch_obj = ReferenceSchema().load(get_reference(self._base_url, ref, self._ssl_verify))
+        ref_obj = (
+            get_reference(self._base_url, ref, self._ssl_verify)
+            if ref
+            else get_default_branch(self._base_url, self._ssl_verify)
+        )
+        branch_obj = ReferenceSchema().load(ref_obj)
         return branch_obj
 
     def create_branch(self: "NessieClient", branch: str, ref: str = None) -> None:

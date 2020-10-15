@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """Config classes for nessie client."""
-import os
 from io import StringIO
 
 import confuse
 import yaml
 
+from .config_command import process
 from .config_parser import build_config
+from .io import write_to_file
 
-__all__ = ["build_config", "to_dict", "write"]
+__all__ = ["build_config", "to_dict", "write_to_file", "process"]
 
 
 def to_dict(config: confuse.Configuration) -> dict:
@@ -17,10 +18,3 @@ def to_dict(config: confuse.Configuration) -> dict:
     fd = StringIO(ys)
     dct = yaml.safe_load(fd)
     return dct
-
-
-def write(config: confuse.Configuration) -> None:
-    """Write updated config to file"""
-    config_filename = os.path.join(config.config_dir(), confuse.CONFIG_FILENAME)
-    with open(config_filename, "w") as f:
-        f.write(config.dump())
