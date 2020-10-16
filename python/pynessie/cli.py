@@ -155,10 +155,11 @@ def log(
     revision_range: str,
     paths: Tuple[click.Path],
 ) -> None:
-    r"""Show commit log.
+    """Show commit log.
 
     REVISION_RANGE optional branch, tag or hash to start viewing log from. If of the form <hash>..<hash> only show log
-    for given range\n
+    for given range
+
     PATHS optional list of paths. If given, only show commits which affected the given paths
     """
     if not revision_range:
@@ -201,11 +202,22 @@ def _format_time(epoch: int) -> str:
 @click.option("-f", "--force", is_flag=True, help="force branch assignment")
 @click.option("--json", is_flag=True, help="write output in json format.")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
+@click.option(
+    "-c", "--condition", help="Conditional Hash. Only perform the action if branch currently points to condition."
+)
 @click.argument("branch", nargs=1, required=False)
 @click.argument("new_branch", nargs=1, required=False)
 @pass_client
 def branch_(
-    nessie: NessieClient, list: bool, force: bool, delete: bool, json: bool, branch: str, new_branch: str, verbose: bool
+    nessie: NessieClient,
+    list: bool,
+    force: bool,
+    delete: bool,
+    json: bool,
+    branch: str,
+    new_branch: str,
+    verbose: bool,
+    condition: str,
 ) -> None:
     """Branch operations.
 
@@ -213,15 +225,23 @@ def branch_(
     NEW_BRANCH name of branch to assign from or rename to
 
     Examples:
+
         nessie branch -l -> list all branches
+
         nessie branch -l main -> list only main
+
         nessie branch -d main -> delete main
+
         nessie branch -> list all branches
+
         nessie branch main -> create branch main at current head
+
         nessie branch main test -> create branch main at head of test
+
         nessie branch -f main test -> assign main to head of test
+
     """
-    results = handle_branch_tag(nessie, list, delete, branch, new_branch, True, json, force, verbose)
+    results = handle_branch_tag(nessie, list, delete, branch, new_branch, True, json, force, verbose, condition)
     if json:
         click.echo(results)
     else:
@@ -238,27 +258,47 @@ def branch_(
 @click.option("-f", "--force", is_flag=True, help="force branch assignment")
 @click.option("--json", is_flag=True, help="write output in json format.")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
+@click.option(
+    "-c", "--condition", help="Conditional Hash. Only perform the action if branch currently points to condition."
+)
 @click.argument("tag_name", nargs=1, required=False)
 @click.argument("new_tag", nargs=1, required=False)
 @pass_client
 def tag(
-    nessie: NessieClient, list: bool, json: bool, force: bool, delete: bool, tag_name: str, new_tag: str, verbose: bool
+    nessie: NessieClient,
+    list: bool,
+    json: bool,
+    force: bool,
+    delete: bool,
+    tag_name: str,
+    new_tag: str,
+    verbose: bool,
+    condition: str,
 ) -> None:
     """Tag operations.
 
     TAG_NAME name of branch to list or create/assign
+
     NEW_TAG name of branch to assign from or rename to
 
     Examples:
+
         nessie tag -l -> list all tags
+
         nessie tag -l main -> list only main
+
         nessie tag -d main -> delete main
+
         nessie tag -> list all tags
+
         nessie tag main -> create tag xxx at current head
+
         nessie tag main test -> create tag xxx at head of test
+
         nessie tag -f main test -> assign xxx to head of test
+
     """
-    results = handle_branch_tag(nessie, list, delete, tag_name, new_tag, False, json, force, verbose)
+    results = handle_branch_tag(nessie, list, delete, tag_name, new_tag, False, json, force, verbose, condition)
     if json:
         click.echo(results)
     else:
@@ -287,6 +327,33 @@ def cherry_pick(nessie: NessieClient, branch: str, hashes: Tuple[str]) -> None:
     """Transplant HASHES onto current branch."""
     nessie.cherry_pick(branch if branch else nessie.get_default_branch(), hashes)
     click.echo()
+
+
+def handle_contents(nessie: NessieClient, list: bool, delete: bool, key: str, json: bool) -> str:
+    pass
+
+
+@cli.command()
+@click.option(
+    "-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list tables", mutually_exclusive=["delete"]
+)
+@click.option(
+    "-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a table", mutually_exclusive=["list"]
+)
+@click.option("--json", is_flag=True, help="write output in json format.")
+@click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
+@click.argument("key", nargs=1, required=False)
+@pass_client
+def contents(nessie: NessieClient, list: bool, json: bool, delete: bool, key: str) -> None:
+    """Contents operations.
+
+    KEY name of object to view, delete. If listing the key will limit by namespace what is included.
+    """
+    results = handle_contents(nessie, list, delete, key, json)
+    if json:
+        click.echo(results)
+    else:
+        click.echo_via_pager(results)
 
 
 if __name__ == "__main__":

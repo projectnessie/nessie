@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from typing import Optional
+
 import click
 
 from . import NessieClient
@@ -15,8 +17,9 @@ def handle_branch_tag(
     json: bool,
     force: bool,
     verbose: bool,
+    old_hash: Optional[str] = None,
 ) -> str:
-    """Perform branch actions."""
+    """Perform branch/tag actions."""
     if list_references or (not list_references and not delete_reference and not branch and not new_branch):
         return _handle_list(nessie, json, verbose, is_branch, branch)
     elif delete_reference:
@@ -26,9 +29,9 @@ def handle_branch_tag(
         getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch)
         nessie.create_branch(branch)
     elif branch and new_branch and not force:
-        getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch, new_branch)
+        getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch, new_branch, old_hash)
     else:
-        getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, new_branch)
+        getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, new_branch, old_hash)
     return ""
 
 
