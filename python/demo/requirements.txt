@@ -3,4 +3,4 @@ jupyterlab
 findspark
 pyspark
 pandas
-pyarrow
+pyarrow==1.0.1
