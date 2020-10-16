@@ -17,8 +17,7 @@ package com.dremio.nessie.quarkus.maven;
 
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
@@ -102,13 +101,10 @@ public class QuarkusApp implements AutoCloseable {
   }
 
   private static void exitHandler(StartupAction startupAction) throws ReflectiveOperationException {
-    Consumer<Integer> consumer = i -> {
-    };
-    Method exitHandler = Arrays
-        .stream(startupAction.getClassLoader()
-            .loadClass("io.quarkus.runtime.ApplicationLifecycleManager").getMethods())
-        .filter(x -> x.getName().equals("setDefaultExitCodeHandler")).findFirst()
-        .orElseThrow(NoSuchMethodException::new);
+    final BiConsumer<Integer, Throwable> consumer = (i, t) -> {};
+    final Class<?> applicationLifecyceManagerClass = Class.forName(
+        "io.quarkus.runtime.ApplicationLifecycleManager", true, startupAction.getClassLoader());
+    final Method exitHandler = applicationLifecyceManagerClass.getMethod("setDefaultExitCodeHandler", BiConsumer.class);
     exitHandler.invoke(null, consumer);
   }
 
