@@ -4,7 +4,7 @@ confuse
 desert
 marshmallow
 marshmallow_oneofschema
-requests
+requests==2.24.0
 simplejson
 requests-aws4auth
 botocore
