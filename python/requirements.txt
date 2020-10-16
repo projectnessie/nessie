@@ -1,4 +1,4 @@
-attrs
+attrs==20.2.0
 Click>=7.0
 confuse
 desert
