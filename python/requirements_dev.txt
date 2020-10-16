@@ -7,7 +7,7 @@ pytest==4.6.5
 pytest-cov
 pytest-mock
 pytest-mypy
-pytest-runner==5.1
+pytest-runner==5.2
 requests-mock
 sphinx-autodoc-typehints
 Sphinx>3.0.4
