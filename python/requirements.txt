@@ -2,7 +2,7 @@ attrs
 Click>=7.0
 confuse
 desert
-marshmallow
+marshmallow==3.8.0
 marshmallow_oneofschema
 requests
 simplejson
