@@ -29,6 +29,10 @@
 
   <name>Nessie - Quarkus</name>
 
+  <properties>
+    <quarkus.smallrye-openapi.store-schema-directory>${project.build.directory}/openapi</quarkus.smallrye-openapi.store-schema-directory>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
