@@ -56,8 +56,7 @@ public class QuarkusApp implements AutoCloseable {
   /**
    * Instantiate and start a quarkus application.
    *
-   * <p>
-   * Instantiates and start a quarkus application using Quarkus bootstrap
+   * <p>Instantiates and start a quarkus application using Quarkus bootstrap
    * framework. Only one application can be started at a time in the same
    * classloader.
    *
@@ -97,8 +96,7 @@ public class QuarkusApp implements AutoCloseable {
   /**
    * Instantiate and start a quarkus application.
    *
-   * <p>
-   * Instantiates and start a quarkus application using Quarkus bootstrap
+   * <p>Instantiates and start a quarkus application using Quarkus bootstrap
    * framework. Only one application can be started at a time in the same
    * classloader.
    *
@@ -108,7 +106,7 @@ public class QuarkusApp implements AutoCloseable {
    * @param targetDirectory       the target directory
    * @param applicationProperties the extra application properties
    * @return a quarkus app instance
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if an error occurs during execution
    */
   public static QuarkusApp newApplication(AppModel appModel, AppArtifact appArtifact,
       Path projectRoot, Path targetDirectory, Properties applicationProperties)
