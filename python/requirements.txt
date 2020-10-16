@@ -1,7 +1,7 @@
 attrs
 Click>=7.0
 confuse
-desert
+desert==0.1.6
 marshmallow
 marshmallow_oneofschema
 requests
