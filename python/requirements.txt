@@ -3,7 +3,7 @@ Click>=7.0
 confuse
 desert
 marshmallow
-marshmallow_oneofschema
+marshmallow_oneofschema==2.1.0
 requests
 simplejson
 requests-aws4auth
