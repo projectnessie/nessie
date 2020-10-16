@@ -24,6 +24,7 @@ from ._endpoints import merge
 from .model import CommitMeta
 from .model import Contents
 from .model import ContentsSchema
+from .model import Entries
 from .model import EntriesSchema
 from .model import LogResponseSchema
 from .model import Reference
@@ -98,7 +99,7 @@ class NessieClient:
         """
         delete_tag(self._base_url, tag, hash_, self._ssl_verify)
 
-    def list_tables(self: "NessieClient", ref: str) -> List[str]:
+    def list_keys(self: "NessieClient", ref: str) -> Entries:
         """Fetch a list of all tables from a known branch.
 
         :param ref: name of branch
@@ -106,7 +107,7 @@ class NessieClient:
         """
         return EntriesSchema().load(list_tables(self._base_url, ref, self._ssl_verify))
 
-    def get_tables(self: "NessieClient", ref: str, *tables: str) -> List[Contents]:
+    def get_values(self: "NessieClient", ref: str, *tables: str) -> List[Contents]:
         """Fetch a table from a known ref.
 
         :param ref: name of ref
