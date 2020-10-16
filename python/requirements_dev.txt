@@ -4,7 +4,7 @@ coverage==4.5.4
 flake8==3.7.8
 pip==20.1.1
 pytest==4.6.5
-pytest-cov
+pytest-cov==2.10.1
 pytest-mock
 pytest-mypy
 pytest-runner==5.1
