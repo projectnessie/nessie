@@ -1,4 +1,4 @@
-bump2version==0.5.11
+bump2version==1.0.1
 codecov
 coverage==4.5.4
 flake8==3.7.8
