@@ -6,7 +6,7 @@ pip==20.1.1
 pytest==4.6.5
 pytest-cov
 pytest-mock
-pytest-mypy
+pytest-mypy==0.7.0
 pytest-runner==5.1
 requests-mock
 sphinx-autodoc-typehints
