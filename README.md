@@ -5,6 +5,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/org.projectnessie/nessie)](https://search.maven.org/artifact/org.projectnessie/nessie)
 [![PyPI](https://img.shields.io/pypi/v/pynessie.svg)](https://pypi.python.org/pypi/pynessie)
 [![Docker](https://img.shields.io/docker/v/projectnessie/nessie/latest?label=docker)](https://hub.docker.com/r/projectnessie/nessie)
+[![PyUp](https://pyup.io/repos/github/pyupio/pyup/shield.svg)](https://pyup.io/repos/github/pyupio/pyup/)
 
 Project Nessie is a system to provide Git like capability for Iceberg Tables, Delta Lake Tables, Hive Tables and Sql Views.
 
