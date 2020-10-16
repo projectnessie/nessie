@@ -1,6 +1,6 @@
 mkdocs
 mkdocs-material >= 6.0.1
-mkdocs-minify-plugin
+mkdocs-minify-plugin==0.3.0
 mkdocs-redirects
 pymdown-extensions
 mkdocs-awesome-pages-plugin
