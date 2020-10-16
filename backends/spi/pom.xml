@@ -21,18 +21,19 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie</artifactId>
+    <artifactId>nessie-backends</artifactId>
     <version>0.2.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-backends</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>nessie-backends-spi</artifactId>
 
-  <name>Nessie - Backends</name>
+  <name>Nessie - Versioned Store SPI</name>
 
-  <modules>
-    <module>dynamodb</module>
-    <module>simple</module>
-    <module>spi</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>org.immutables</groupId>
+      <artifactId>value</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 </project>

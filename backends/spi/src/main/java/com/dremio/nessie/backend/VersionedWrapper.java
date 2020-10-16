@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.model;
+package com.dremio.nessie.backend;
 
 /**
  * wrap object with a version id. For eTag &amp; Match-If

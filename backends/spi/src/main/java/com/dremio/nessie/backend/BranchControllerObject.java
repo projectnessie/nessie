@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.model;
+package com.dremio.nessie.backend;
 
 import org.immutables.value.Value;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableBranchControllerReference.class)
-@JsonDeserialize(as = ImmutableBranchControllerReference.class)
-public abstract class BranchControllerReference implements Base {
+public abstract class BranchControllerObject {
 
-  public abstract String getRefId();
+  public abstract byte[] getData();
+
+  public abstract int getType();
 
   public abstract long getUpdateTime();
 

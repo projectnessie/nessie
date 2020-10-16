@@ -22,10 +22,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.dremio.nessie.backend.Backend;
+import com.dremio.nessie.backend.BranchControllerObject;
+import com.dremio.nessie.backend.BranchControllerReference;
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.BranchControllerObject;
-import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.VersionedWrapper;
+import com.dremio.nessie.backend.VersionedWrapper;
 
 /**
  * basic class to demonstrate the backend model. WARNING do not use in production.

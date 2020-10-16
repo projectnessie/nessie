@@ -27,11 +27,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.dremio.nessie.backend.Backend;
-import com.dremio.nessie.model.BranchControllerObject;
-import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.ImmutableBranchControllerObject;
-import com.dremio.nessie.model.ImmutableBranchControllerReference;
-import com.dremio.nessie.model.VersionedWrapper;
+import com.dremio.nessie.backend.BranchControllerObject;
+import com.dremio.nessie.backend.BranchControllerReference;
+import com.dremio.nessie.backend.ImmutableBranchControllerObject;
+import com.dremio.nessie.backend.ImmutableBranchControllerReference;
+import com.dremio.nessie.backend.VersionedWrapper;
 
 import io.smallrye.metrics.MetricRegistries;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;

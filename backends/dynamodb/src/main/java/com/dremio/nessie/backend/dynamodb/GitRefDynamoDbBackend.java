@@ -21,10 +21,9 @@ import java.util.Map;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
-import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.ImmutableBranchControllerReference;
-import com.dremio.nessie.model.ImmutableBranchControllerReference.Builder;
-import com.dremio.nessie.model.VersionedWrapper;
+import com.dremio.nessie.backend.BranchControllerReference;
+import com.dremio.nessie.backend.ImmutableBranchControllerReference;
+import com.dremio.nessie.backend.VersionedWrapper;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -55,7 +54,7 @@ public class GitRefDynamoDbBackend extends
   @Override
   protected VersionedWrapper<BranchControllerReference> fromDynamoDB(
       Map<String, AttributeValue> from) {
-    Builder builder = ImmutableBranchControllerReference.builder();
+    ImmutableBranchControllerReference.Builder builder = ImmutableBranchControllerReference.builder();
     builder.refId(from.get("ref").s())
            .id(from.get("uuid").s())
            .updateTime(Long.parseLong(from.get("updateTime").n()));
