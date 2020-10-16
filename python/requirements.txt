@@ -1,6 +1,6 @@
 attrs
 Click>=7.0
-confuse
+confuse==1.3.0
 desert
 marshmallow
 marshmallow_oneofschema
