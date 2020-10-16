@@ -1,4 +1,4 @@
-black
+black==20.8b1
 flake8-annotations
 flake8-bandit
 flake8-black
