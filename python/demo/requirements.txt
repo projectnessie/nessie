@@ -1,5 +1,5 @@
 pynessie
-jupyterlab
+jupyterlab==2.2.8
 findspark
 pyspark
 pandas
