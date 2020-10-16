@@ -1,6 +1,6 @@
-pynessie
-jupyterlab
-findspark
-pyspark
-pandas
-pyarrow
+pynessie==0.1.1
+jupyterlab==2.2.8
+findspark==1.4.2
+pyspark==3.0.1
+pandas==1.1.3
+pyarrow==1.0.1
