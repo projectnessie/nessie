@@ -3,7 +3,7 @@ codecov
 coverage==4.5.4
 flake8==3.7.8
 pip==20.1.1
-pytest==4.6.5
+pytest==6.1.1
 pytest-cov
 pytest-mock
 pytest-mypy
