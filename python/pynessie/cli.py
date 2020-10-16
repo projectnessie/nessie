@@ -2,13 +2,16 @@
 """Console script for nessie_client."""
 import datetime
 import sys
+from collections import defaultdict
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 import click
 import confuse
+import simplejson
 from click import Option
 from click import UsageError
 from dateutil.tz import tzlocal
@@ -19,6 +22,9 @@ from ._ref import handle_branch_tag
 from .conf import build_config
 from .conf import process
 from .model import CommitMetaSchema
+from .model import Entries
+from .model import Entry
+from .model import EntrySchema
 from .nessie_client import NessieClient
 
 pass_client = click.make_pass_decorator(NessieClient)
@@ -222,6 +228,7 @@ def branch_(
     """Branch operations.
 
     BRANCH name of branch to list or create/assign
+
     NEW_BRANCH name of branch to assign from or rename to
 
     Examples:
@@ -329,10 +336,6 @@ def cherry_pick(nessie: NessieClient, branch: str, hashes: Tuple[str]) -> None:
     click.echo()
 
 
-def handle_contents(nessie: NessieClient, list: bool, delete: bool, key: str, json: bool) -> str:
-    pass
-
-
 @cli.command()
 @click.option(
     "-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list tables", mutually_exclusive=["delete"]
@@ -341,19 +344,52 @@ def handle_contents(nessie: NessieClient, list: bool, delete: bool, key: str, js
     "-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a table", mutually_exclusive=["list"]
 )
 @click.option("--json", is_flag=True, help="write output in json format.")
-@click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
+@click.option("-b", "--branch", help="branch to list from. If not supplied the default branch from config is used")
 @click.argument("key", nargs=1, required=False)
 @pass_client
-def contents(nessie: NessieClient, list: bool, json: bool, delete: bool, key: str) -> None:
+def contents(nessie: NessieClient, list: bool, json: bool, delete: bool, key: str, branch: str) -> None:
     """Contents operations.
 
     KEY name of object to view, delete. If listing the key will limit by namespace what is included.
     """
-    results = handle_contents(nessie, list, delete, key, json)
+    if list:
+        keys = nessie.list_keys(branch if branch else nessie.get_default_branch())
+        results = EntrySchema().dumps(_format_keys_json(keys, key), many=True) if json else _format_keys(keys, key)
+    elif delete:
+        raise NotImplementedError("performing delete from the command line is not yet implemented.")
+    else:
+        raise NotImplementedError("performing gets from the command line is not yet implemented.")
+        # content = nessie.get_values(branch if branch else nessie.get_default_branch(), key)
+        # results = ContentSchema().dumps(_format_keys_json(keys, key), many=True) if json else _format_keys(keys, key)
     if json:
         click.echo(results)
     else:
         click.echo_via_pager(results)
+
+
+def _format_keys_json(keys: Entries, key: Optional[str]) -> List[Entry]:
+    results = list()
+    for k in keys.entries:
+        value = ['"{}"'.format(i) if "." in i else i for i in k.name.elements]
+        if key and key not in value:
+            continue
+        results.append(k)
+    return results
+
+
+def _format_keys(keys: Entries, key: Optional[str]) -> str:
+    results = defaultdict(list)
+    result_str = ""
+    for k in keys.entries:
+        results[k.kind].append(k.name)
+    for k in results.keys():
+        result_str += k + ":\n"
+        for v in results[k]:
+            value = ['"{}"'.format(i) if "." in i else i for i in v.elements]
+            if key and key not in value:
+                continue
+            result_str += "\t{}\n".format(".".join(value))
+    return result_str
 
 
 if __name__ == "__main__":
