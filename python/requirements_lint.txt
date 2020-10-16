@@ -3,7 +3,7 @@ flake8-annotations
 flake8-bandit
 flake8-black
 flake8-bugbear
-flake8-docstrings
+flake8-docstrings==1.5.0
 flake8-import-order
 pytest-mypy
 safety
