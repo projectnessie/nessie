@@ -1,5 +1,5 @@
 bump2version==0.5.11
-codecov
+codecov==2.1.10
 coverage==4.5.4
 flake8==3.7.8
 pip==20.1.1
