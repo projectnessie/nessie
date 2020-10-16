@@ -6,4 +6,4 @@ flake8-bugbear
 flake8-docstrings
 flake8-import-order
 pytest-mypy
-safety
+safety==1.9.0
