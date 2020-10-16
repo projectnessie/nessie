@@ -1,6 +1,6 @@
 pynessie
 jupyterlab
-findspark
+findspark==1.4.2
 pyspark
 pandas
 pyarrow
