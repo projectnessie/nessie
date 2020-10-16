@@ -58,7 +58,7 @@ def test_config_options() -> None:
 def test_all_help_options() -> None:
     """Write out all help options to std out."""
     runner = CliRunner()
-    args = ["", "config", "branch", "tag", "remote", "log", "merge", "cherry-pick"]
+    args = ["", "config", "branch", "tag", "remote", "log", "merge", "cherry-pick", "contents"]
     all_args = "\n"
     for i in args:
         result = runner.invoke(cli.cli, [x for x in [i] if x] + ["--help"])

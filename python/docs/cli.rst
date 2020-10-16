@@ -21,6 +21,7 @@ Available Commands
       branch       Branch operations.
       cherry-pick  Transplant HASHES onto current branch.
       config       Set and view config.
+      contents     Contents operations.
       log          Show commit log.
       merge        Merge BRANCH into current branch.
       remote       Set and view remote endpoint.
@@ -30,7 +31,7 @@ Available Commands
 Config Command
 --------------
 Used to set config parameters found in ``default_config.yaml`` and to set the default context. To set default context use
-``nessie --add ref main``, all operations that are ref specific will happen on that ref unless otherwise specified.
+``nessie config --add ref main``, all operations that are ref specific will happen on that ref unless otherwise specified.
 
 .. code-block:: bash
 
@@ -59,20 +60,34 @@ Perform operations on branches: create, delete, modify and reassign.
 
       Branch operations.
 
-      BRANCH name of branch to list or create/assign NEW_BRANCH name of branch to
-      assign from or rename to
+      BRANCH name of branch to list or create/assign NEW_BRANCH name of branch
+      to assign from or rename to
 
-      examples: nessie branch -l -> list all branches nessie branch -l main ->
-      list only main nessie branch -d main -> delete main nessie branch -> list
-      all branches nessie branch main -> create branch main at current head nessie
-      branch main test -> create branch main at head of test nessie branch -f main
-      test -> assign main to head of test
+      Examples:
+
+          nessie branch -l -> list all branches
+
+          nessie branch -l main -> list only main
+
+          nessie branch -d main -> delete main
+
+          nessie branch -> list all branches
+
+          nessie branch main -> create branch main at current head
+
+          nessie branch main test -> create branch main at head of test
+
+          nessie branch -f main test -> assign main to head of test
 
     Options:
-      -l, --list    list branches
-      -d, --delete  delete a branch
-      -f, --force   force branch assignment
-      --help        Show this message and exit.
+      -l, --list     list branches
+      -d, --delete   delete a branch
+      -f, --force    force branch assignment
+      --json         write output in json format.
+      -v, --verbose  Verbose output.
+      -c, --condition TEXT  Conditional Hash. Only perform the action if branch
+                            currently points to condition.
+      --help         Show this message and exit.
 
 
 Tag Command
@@ -81,24 +96,39 @@ Perform operations on tags: create, delete, modify and reassign.
 
 .. code-block:: bash
 
-    Usage: nessie tag [OPTIONS] [TAG] [NEW_TAG]
+    Usage: cli nessie [OPTIONS] [TAG_NAME] [NEW_TAG]
 
       Tag operations.
 
-      TAG name of branch to list or create/assign NEW_TAG name of branch to assign
-      from or rename to
+      TAG_NAME name of branch to list or create/assign
 
-      examples: nessie tag -l -> list all tags nessie tag -l main -> list only
-      main nessie tag -d main -> delete main nessie tag -> list all tags nessie
-      tag main -> create tag xxx at current head nessie tag main test -> create
-      tag xxx at head of test nessie tag -f main test -> assign xxx to head of
-      test
+      NEW_TAG name of branch to assign from or rename to
+
+      Examples:
+
+          nessie tag -l -> list all tags
+
+          nessie tag -l main -> list only main
+
+          nessie tag -d main -> delete main
+
+          nessie tag -> list all tags
+
+          nessie tag main -> create tag xxx at current head
+
+          nessie tag main test -> create tag xxx at head of test
+
+          nessie tag -f main test -> assign xxx to head of test
 
     Options:
-      -l, --list    list branches
-      -d, --delete  delete a branches
-      -f, --force   force branch assignment
-      --help        Show this message and exit.
+      -l, --list     list branches
+      -d, --delete   delete a branches
+      -f, --force    force branch assignment
+      --json         write output in json format.
+      -v, --verbose  Verbose output.
+
+      --help         Show this message and exit.
+
 
 
 Remote Command
@@ -116,7 +146,7 @@ command functions similarly to the ``git remote show <remote>`` command to show 
       --help  Show this message and exit.
 
     Commands:
-      add   Set current remote
+      add   Set current remote.
       show  Show current remote.
 
 
@@ -133,13 +163,16 @@ specified as <hash>..<hash> or <hash/ref>.
       Show commit log.
 
       REVISION_RANGE optional branch, tag or hash to start viewing log from. If of
-      the form <hash>..<hash> only show log for given range
-
-      PATHS optional list of paths. If given, only show commits which affected the
-      given paths
+      the form <hash>..<hash> only show log for given range\n PATHS optional list
+      of paths. If given, only show commits which affected the given paths
 
     Options:
-      --help  Show this message and exit.
+      -n, --number INTEGER    number of log entries to return
+      --since, --after TEXT   Commits more recent than specific date
+      --until, --before TEXT  Commits older than specific date
+      --author, --committer   limit commits to specific committer
+      --json                  write output in json format.
+      --help                  Show this message and exit.
 
 Merge Command
 -------------
@@ -151,14 +184,13 @@ branch.
 
     Usage: nessie merge [OPTIONS] [MERGE_BRANCH]
 
-      Merge BRANCH into current branch. BRANCH can be a hash or branch
+      Merge BRANCH into current branch. BRANCH can be a hash or branch.
 
     Options:
       -b, --branch TEXT  branch to cherry-pick onto. If not supplied the default
                          branch from config is used
 
       --help             Show this message and exit.
-
 
 Merge Command
 -------------
@@ -176,3 +208,24 @@ Perform a cherry-pick operation. This takes the list of commits ``HASHES`` and a
                          branch from config is used
 
       --help             Show this message and exit.
+
+Contents Command
+----------------
+
+View and list contents.
+
+.. code-block:: bash
+
+    Usage: nessie contents [OPTIONS] [KEY]
+
+      Contents operations.
+
+      KEY name of object to view, delete. If listing the key will limit by
+      namespace what is included.
+
+    Options:
+      -l, --list     list tables
+      -d, --delete   delete a table
+      --json         write output in json format.
+      -v, --verbose  Verbose output.
+      --help         Show this message and exit.
