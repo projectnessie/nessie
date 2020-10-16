@@ -5,7 +5,7 @@ flake8==3.7.8
 pip==20.1.1
 pytest==4.6.5
 pytest-cov
-pytest-mock
+pytest-mock==3.3.1
 pytest-mypy
 pytest-runner==5.1
 requests-mock
