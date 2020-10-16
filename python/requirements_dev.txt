@@ -1,6 +1,6 @@
 bump2version==0.5.11
 codecov
-coverage==4.5.4
+coverage==5.3
 flake8==3.7.8
 pip==20.1.1
 pytest==4.6.5
