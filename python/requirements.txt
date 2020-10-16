@@ -7,4 +7,4 @@ marshmallow_oneofschema
 requests
 simplejson
 requests-aws4auth
-botocore
+botocore==1.18.17
