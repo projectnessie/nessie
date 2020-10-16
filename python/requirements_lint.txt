@@ -5,5 +5,5 @@ flake8-black
 flake8-bugbear
 flake8-docstrings
 flake8-import-order
-pytest-mypy
+pytest-mypy==0.7.0
 safety
