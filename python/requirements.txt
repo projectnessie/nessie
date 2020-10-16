@@ -6,5 +6,5 @@ marshmallow
 marshmallow_oneofschema
 requests
 simplejson
-requests-aws4auth
+requests-aws4auth==1.0.1
 botocore
