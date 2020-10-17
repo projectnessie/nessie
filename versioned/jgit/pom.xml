@@ -54,7 +54,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-model</artifactId>
+      <artifactId>nessie-backends-spi</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

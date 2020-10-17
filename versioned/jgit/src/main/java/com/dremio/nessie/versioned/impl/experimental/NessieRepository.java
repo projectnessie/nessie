@@ -24,9 +24,9 @@ import org.eclipse.jgit.internal.storage.dfs.DfsRepository;
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryBuilder;
 import org.eclipse.jgit.lib.RefDatabase;
 
+import com.dremio.nessie.backend.BranchControllerObject;
+import com.dremio.nessie.backend.BranchControllerReference;
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.BranchControllerObject;
-import com.dremio.nessie.model.BranchControllerReference;
 
 public class NessieRepository extends DfsRepository {
 

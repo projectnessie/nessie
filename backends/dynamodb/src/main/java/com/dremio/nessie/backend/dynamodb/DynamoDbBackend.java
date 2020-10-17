@@ -21,9 +21,9 @@ import java.net.URI;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import com.dremio.nessie.backend.Backend;
+import com.dremio.nessie.backend.BranchControllerObject;
+import com.dremio.nessie.backend.BranchControllerReference;
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.BranchControllerObject;
-import com.dremio.nessie.model.BranchControllerReference;
 
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;

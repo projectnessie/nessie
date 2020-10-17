@@ -43,10 +43,10 @@ import org.eclipse.jgit.lib.ObjectLoader.SmallObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.nessie.backend.BranchControllerObject;
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.BranchControllerObject;
-import com.dremio.nessie.model.ImmutableBranchControllerObject;
-import com.dremio.nessie.model.VersionedWrapper;
+import com.dremio.nessie.backend.ImmutableBranchControllerObject;
+import com.dremio.nessie.backend.VersionedWrapper;
 
 /**
  * Object databse for Nessie. This uses dynamodb to store git objects.

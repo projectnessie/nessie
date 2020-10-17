@@ -16,10 +16,6 @@
 
 package com.dremio.nessie.backend;
 
-
-import com.dremio.nessie.model.BranchControllerObject;
-import com.dremio.nessie.model.BranchControllerReference;
-
 /**
  * Backend for all interactions between database and the Nessie Server.
  *

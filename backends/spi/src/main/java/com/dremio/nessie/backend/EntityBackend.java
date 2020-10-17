@@ -20,8 +20,6 @@ package com.dremio.nessie.backend;
 import java.util.List;
 import java.util.Map;
 
-import com.dremio.nessie.model.VersionedWrapper;
-
 
 /**
  * Backend for a single type of API object (eg Tag/Table/User etc).
@@ -30,7 +28,7 @@ import com.dremio.nessie.model.VersionedWrapper;
  *   This class handles all database backend operations with the Server for a particular
  *   data type. The database is expected to provide strong consistency and to keep a version
  *   attribute to facilitate optimistic locking of individual records.
- *   {@link com.dremio.nessie.model.VersionedWrapper} holds the data object and the optimistic
+ *   {@link com.dremio.nessie.backend.VersionedWrapper} holds the data object and the optimistic
  *   locking attribute as a pair.
  * </p>
  *

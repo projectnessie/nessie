@@ -27,7 +27,7 @@ import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.VersionedWrapper;
+import com.dremio.nessie.backend.VersionedWrapper;
 
 import io.opentracing.Scope;
 import io.opentracing.Span;

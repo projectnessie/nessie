@@ -21,10 +21,9 @@ import java.util.Map;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
-import com.dremio.nessie.model.BranchControllerObject;
-import com.dremio.nessie.model.ImmutableBranchControllerObject;
-import com.dremio.nessie.model.ImmutableBranchControllerObject.Builder;
-import com.dremio.nessie.model.VersionedWrapper;
+import com.dremio.nessie.backend.BranchControllerObject;
+import com.dremio.nessie.backend.ImmutableBranchControllerObject;
+import com.dremio.nessie.backend.VersionedWrapper;
 
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -61,7 +60,7 @@ public class GitObjectDynamoDbBackend extends
   @Override
   protected VersionedWrapper<BranchControllerObject> fromDynamoDB(
       Map<String, AttributeValue> from) {
-    Builder builder = ImmutableBranchControllerObject.builder();
+    ImmutableBranchControllerObject.Builder builder = ImmutableBranchControllerObject.builder();
     byte[] data = from.get("data").b().asByteArray();
     builder.data(data.length == 1 && data[0] == ((byte) -1) ? new byte[0] : data)
            .id(from.get("uuid").s())

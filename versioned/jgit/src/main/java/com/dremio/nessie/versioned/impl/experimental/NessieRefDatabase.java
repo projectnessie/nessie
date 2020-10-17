@@ -32,10 +32,10 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Ref.Storage;
 import org.eclipse.jgit.util.RefList;
 
+import com.dremio.nessie.backend.BranchControllerReference;
 import com.dremio.nessie.backend.EntityBackend;
-import com.dremio.nessie.model.BranchControllerReference;
-import com.dremio.nessie.model.ImmutableBranchControllerReference;
-import com.dremio.nessie.model.VersionedWrapper;
+import com.dremio.nessie.backend.ImmutableBranchControllerReference;
+import com.dremio.nessie.backend.VersionedWrapper;
 
 public class NessieRefDatabase extends DfsRefDatabase {
 
