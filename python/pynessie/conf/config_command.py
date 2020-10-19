@@ -26,11 +26,18 @@ def process(
         if not key and not get_op:
             raise click.UsageError("to show a key either the --get option or an argument must be supplied")
         config = _get_key(cast(str, get_op or key))
-        return config.get(_get_type(type_str))
-    if add_op or unset_op:
+        return str(config.get(_get_type(type_str)))
+    if add_op:
         config = build_config()
-        config.set_args({add_op: _set_type(cast(str, key), type_str) if add_op else None}, dots=True)
+        config.set_args({add_op: _set_type(cast(str, key), type_str)}, dots=True)
         write_to_file(config)
+        return ""
+    if unset_op:
+        config = build_config()
+        for k in unset_op.split("."):
+            config = config[k]
+        config.set(None)
+        write_to_file(config.root())
         return ""
     if list_op:
         config = build_config()
