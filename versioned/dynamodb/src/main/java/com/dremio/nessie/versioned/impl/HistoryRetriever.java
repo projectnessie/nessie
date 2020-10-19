@@ -16,10 +16,13 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Spliterators;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -175,4 +178,32 @@ class HistoryRetriever {
 
   }
 
+  public static Id findCommonParent(DynamoStore store, L1 head1, L1 head2, int maxDepth) {
+    Iterator<Id> r1 = new HistoryRetriever(store, head1, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();
+    Iterator<Id> r2 = new HistoryRetriever(store, head2, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();
+    Set<Id> r1Set = new LinkedHashSet<>();
+    Set<Id> r2Set = new LinkedHashSet<>();
+    int remainingDepth = maxDepth;
+    while (r1.hasNext() && r2.hasNext() && remainingDepth > 0) {
+      int page = Math.min(remainingDepth, ParentList.MAX_PARENT_LIST_SIZE);
+      addNextPage(r1, r1Set, page);
+      addNextPage(r2, r2Set, page);
+      remainingDepth -= page;
+      Optional<Id> id = r1Set.stream().filter(r2Set::contains).findFirst();
+      if (id.isPresent()) {
+        return id.get();
+      }
+    }
+
+    throw new IllegalStateException(
+        String.format("Unable to find common parent within specified history depth. "
+            + "The maximum number of items allowed is %d.", maxDepth));
+  }
+
+  private static <T> void addNextPage(Iterator<T> input, Collection<T> consumer, int count) {
+    while (input.hasNext() && count > 0) {
+      consumer.add(input.next());
+      count--;
+    }
+  }
 }

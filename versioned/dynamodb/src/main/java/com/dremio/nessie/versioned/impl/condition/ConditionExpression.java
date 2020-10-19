@@ -16,6 +16,7 @@
 package com.dremio.nessie.versioned.impl.condition;
 
 import java.util.List;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.immutables.value.Value;
@@ -57,5 +58,29 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
         .addAllFunctions(getFunctions())
         .addFunctions(function)
         .build();
+  }
+
+  /**
+   * AND the existing condition with this newly provided condition.
+   * @param expr The expression to AND with.
+   * @return The new compound expression.
+   */
+  public ConditionExpression and(ConditionExpression expr) {
+    return ImmutableConditionExpression.builder()
+        .addAllFunctions(getFunctions())
+        .addAllFunctions(expr.getFunctions())
+        .build();
+  }
+
+  /**
+   * Collect condition expressions into a single compound condition expression.
+   * @return combined update.
+   */
+  public static final Collector<ConditionExpression, ConditionExpression, ConditionExpression> toConditionExpression() {
+    return Collector.of(
+      ConditionExpression::initial,
+      (o1, l1) -> o1.and(l1),
+      (o1, o2) -> o1.and(o2)
+      );
   }
 }

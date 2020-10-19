@@ -18,9 +18,11 @@ package com.dremio.nessie.versioned.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -28,10 +30,20 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
+import com.dremio.nessie.versioned.impl.DynamoVersionStore.OperationHolder;
+import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
+import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.impl.InternalKey.Position;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
+import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
+import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
+import com.dremio.nessie.versioned.impl.condition.SetClause;
+import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Streams;
+
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
  * Holds the portion of the commit tree structure that is necessary to manipulate the identified key(s).
@@ -54,13 +66,19 @@ class PartialTree<V> {
   private InternalRef ref;
   private Id rootId;
   private Pointer<L1> l1;
-  private Map<Integer, Pointer<L2>> l2s = new HashMap<>();
-  private Map<Position, Pointer<L3>> l3s = new HashMap<>();
-  private Map<InternalKey, ValueHolder<V>> values = new HashMap<>();
-  private List<InternalKey> keys = new ArrayList<>();
+  private final Map<Integer, Pointer<L2>> l2s = new HashMap<>();
+  private final Map<Position, Pointer<L3>> l3s = new HashMap<>();
+  private final Map<InternalKey, ValueHolder<V>> values = new HashMap<>();
+  private final Collection<InternalKey> keys;
 
   public static <V> PartialTree<V> of(Serializer<V> serializer, InternalRefId id, List<InternalKey> keys) {
     return new PartialTree<V>(serializer, id, keys);
+  }
+
+  public static <V> PartialTree<V> of(Serializer<V> serializer, L1 l1, Collection<InternalKey> keys) {
+    PartialTree<V> tree = new PartialTree<V>(serializer, InternalRefId.ofHash(l1.getId()), keys);
+    tree.l1 = new Pointer<L1>(l1);
+    return tree;
   }
 
   private void checkMutable() {
@@ -68,7 +86,7 @@ class PartialTree<V> {
         "You can only mutate a partial tree that references a branch. This is type %s.", ref.getType());
   }
 
-  private PartialTree(Serializer<V> serializer, InternalRefId refId, List<InternalKey> keys) {
+  private PartialTree(Serializer<V> serializer, InternalRefId refId, Collection<InternalKey> keys) {
     super();
     this.refId = refId;
     this.serializer = serializer;
@@ -76,7 +94,7 @@ class PartialTree<V> {
   }
 
   public LoadStep getLoadChain(Function<InternalBranch, L1> l1Converter, LoadType loadType) {
-    if (refId.getType() == Type.HASH) {
+    if (refId.getType() == Type.HASH && l1.get() == null) {
       rootId = refId.getId();
       ref = refId.getId();
       return getLoadStep1(loadType).get();
@@ -123,9 +141,73 @@ class PartialTree<V> {
    *
    * @return
    */
-  public List<PositionDelta> getL1Mutations() {
+  public CommitOp getCommitOp(Id metadataId, Stream<DynamoVersionStore<V, ?>.OperationHolder> holders,
+      boolean includeTreeUpdates,
+      boolean includeCommitUpdates) {
     checkMutable();
-    return l1.get().getChanges();
+
+    UpdateExpression update = UpdateExpression.initial();
+
+    // record positions that we're checking so we don't add the same positional check twice (for unchanged statements).
+    final Set<Integer> conditionPositions = new HashSet<>();
+
+    List<UnsavedDelta> deltas = new ArrayList<>();
+
+    ConditionExpression condition = ConditionExpression.of(
+        ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), InternalRef.Type.BRANCH.toAttributeValue()));
+
+    // for all mutations that are dirty, create conditional and update expressions.
+    for (PositionDelta pm : l1.get().getChanges()) {
+      boolean added = conditionPositions.add(pm.getPosition());
+      assert added;
+      ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(pm.getPosition()).build();
+      if (includeTreeUpdates) {
+        update = update.and(SetClause.equals(p, pm.getNewId().toAttributeValue()));
+        condition = condition.and(ExpressionFunction.equals(p, pm.getOldId().toAttributeValue()));
+      }
+      deltas.add(pm.toUnsavedDelta());
+    }
+
+    for (DynamoVersionStore<V, ?>.OperationHolder oh : (Iterable<DynamoVersionStore<V, ?>.OperationHolder>)
+        holders.filter(OperationHolder::isUnchangedOperation)::iterator) {
+      int position = oh.getKey().getL1Position();
+      if (includeTreeUpdates && conditionPositions.add(position)) {
+        // this doesn't already have a condition. Add one.
+        ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(position).build();
+        condition = condition.and(ExpressionFunction.equals(p, getCurrentL1().getId(position).toAttributeValue()));
+      }
+    }
+
+    // Add the new commit
+    Commit commitIntention = new Commit(Id.generateRandom(), metadataId, deltas,
+        KeyMutationList.of(getKeyMutations().collect(Collectors.toList())));
+    if (includeCommitUpdates) {
+      update = update.and(SetClause.appendToList(
+          ExpressionPath.builder(InternalBranch.COMMITS).build(),
+          AttributeValue.builder().l(commitIntention.toAttributeValue()).build()));
+    }
+
+    return new CommitOp(update, condition);
+  }
+
+  public static class CommitOp  {
+    private final UpdateExpression update;
+    private final ConditionExpression condition;
+
+    public CommitOp(UpdateExpression update, ConditionExpression condition) {
+      super();
+      this.update = update;
+      this.condition = condition;
+    }
+
+    public UpdateExpression getUpdate() {
+      return update;
+    }
+
+    public ConditionExpression getCondition() {
+      return condition;
+    }
+
   }
 
   private Optional<LoadStep> getLoadStep1(LoadType loadType) {
@@ -195,6 +277,26 @@ class PartialTree<V> {
     }
 
     return Optional.of(vh.getValue());
+  }
+
+  public void setValueIdForKey(InternalKey key, Optional<Id> id) {
+    checkMutable();
+    final Pointer<L1> l1 = this.l1;
+    final Pointer<L2> l2 = l2s.get(key.getL1Position());
+    final Pointer<L3> l3 = l3s.get(key.getPosition());
+
+    // now we'll do the save.
+    Id valueId;
+    if (id.isPresent()) {
+      valueId = id.get();
+    } else {
+      values.remove(key);
+      valueId = Id.EMPTY;
+    }
+
+    final Id newL3Id = l3.apply(l -> l.set(key, valueId));
+    final Id newL2Id = l2.apply(l -> l.set(key.getL2Position(), newL3Id));
+    l1.apply(l -> l.set(key.getL1Position(), newL2Id));
   }
 
   public void setValueForKey(InternalKey key, Optional<V> value) {

@@ -25,9 +25,6 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 abstract class KeyMutation {
 
-  static final String DELETE = "d";
-  static final String ADD = "a";
-
   static enum MutationType {
     ADDITION("a"),
     REMOVAL("d");

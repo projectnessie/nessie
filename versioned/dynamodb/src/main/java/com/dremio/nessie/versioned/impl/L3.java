@@ -25,6 +25,8 @@ import java.util.stream.Stream;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -172,5 +174,12 @@ class L3 extends MemoizedId {
    */
   int size() {
     return map.size();
+  }
+
+  public static MapDifference<InternalKey, Id> compare(L3 from, L3 to) {
+    return Maps.difference(
+        Maps.transformValues(from.map, p -> p.getNewId()),
+        Maps.transformValues(to.map, p -> p.getNewId())
+        );
   }
 }

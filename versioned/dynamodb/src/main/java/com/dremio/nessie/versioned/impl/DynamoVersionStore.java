@@ -15,9 +15,7 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -48,18 +46,21 @@ import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
+import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
 import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
+import com.dremio.nessie.versioned.impl.HistoryRetriever.HistoryItem;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
-import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
+import com.dremio.nessie.versioned.impl.PartialTree.CommitOp;
 import com.dremio.nessie.versioned.impl.PartialTree.LoadType;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
-import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -69,6 +70,8 @@ import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoVersionStore.class);
+
+  private final static int MAX_MERGE_DEPTH = 200;
 
   private final Serializer<DATA> serializer;
   private final Serializer<METADATA> metadataSerializer;
@@ -232,42 +235,9 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
               Stream.of(new SaveOp<WrappedValueBean>(ValueType.COMMIT_METADATA, metadata))
           ).collect(Collectors.toList()));
 
-      // record positions that we're checking so we don't add the same positional check twice (for unchanged statements).
-      final Set<Integer> conditionPositions = new HashSet<>();
+      CommitOp commitOp = current.getCommitOp(metadata.getId(), holders.stream(), true, true);
 
-      List<UnsavedDelta> deltas = new ArrayList<>();
-
-      UpdateExpression update = UpdateExpression.initial();
-      ConditionExpression condition = ConditionExpression.of(
-          ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), InternalRef.Type.BRANCH.toAttributeValue()));
-
-      // for all mutations that are dirty, create conditional and update expressions.
-      for (PositionDelta pm : current.getL1Mutations()) {
-        boolean added = conditionPositions.add(pm.getPosition());
-        assert added;
-        ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(pm.getPosition()).build();
-        update = update.and(SetClause.equals(p, pm.getNewId().toAttributeValue()));
-        condition = condition.and(ExpressionFunction.equals(p, pm.getOldId().toAttributeValue()));
-        deltas.add(pm.toUnsavedDelta());
-      }
-
-      for (OperationHolder oh : (Iterable<OperationHolder>) holders.stream().filter(OperationHolder::isUnchangedOperation)::iterator) {
-        int position = oh.key.getL1Position();
-        if (conditionPositions.add(position)) {
-          // this doesn't already have a condition. Add one.
-          ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(position).build();
-          condition = condition.and(ExpressionFunction.equals(p, current.getCurrentL1().getId(position).toAttributeValue()));
-        }
-      }
-
-      // Add the new commit
-      Commit commitIntention = new Commit(Id.generateRandom(), metadata.getId(), deltas,
-          KeyMutationList.of(current.getKeyMutations().collect(Collectors.toList())));
-      update = update.and(SetClause.appendToList(
-          ExpressionPath.builder(InternalBranch.COMMITS).build(),
-          AttributeValue.builder().l(commitIntention.toAttributeValue()).build()));
-
-      Optional<InternalRef> updated = store.update(ValueType.REF, ref.getId(), update, Optional.of(condition));
+      Optional<InternalRef> updated = store.update(ValueType.REF, ref.getId(), commitOp.getUpdate(), Optional.of(commitOp.getCondition()));
       if (!updated.isPresent()) {
         if (loop++ < commitRetryCount) {
           continue;
@@ -481,10 +451,108 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   @Override
   public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    throw new UnsupportedOperationException("Not yet implemented.");
+
+    // Step 1: Find a common ancestor.
+    final Id branchId = InternalRefId.ofBranch(toBranch.getName()).getId();
+    Pointer<L1> fromPtr = new Pointer<>();
+    Pointer<InternalBranch> branch = new Pointer<>();
+    store.load(new LoadStep(ImmutableList.of(
+        new LoadOp<L1>(ValueType.L1, Id.of(fromHash), l -> fromPtr.set(l)),
+        new LoadOp<InternalRef>(ValueType.REF, branchId, r -> branch.set(r.getBranch()))
+        )));
+    L1 from = fromPtr.get();
+    L1 to = ensureValidL1(branch.get());
+    Id commonParent = HistoryRetriever.findCommonParent(store, from, to, MAX_MERGE_DEPTH);
+
+    List<L1> fromL1s = Lists.reverse(new HistoryRetriever(store, from, commonParent, true, false, true)
+        .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
+    List<L1> toL1s =  Lists.reverse(new HistoryRetriever(store, to, commonParent, true, false, true)
+        .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
+
+    List<DiffFinder> fromDiffs = DiffFinder.getFinders(fromL1s, store);
+    List<DiffFinder> toDiffs = DiffFinder.getFinders(toL1s, store);
+
+    LoadStep load = Stream.concat(fromDiffs.stream(), toDiffs.stream()).map(DiffFinder::getLoad).collect(LoadStep.toLoadStep());
+    store.load(load);
+
+    // TODO: add unchanged operations.
+    List<InternalKey> fromKeyChanges = fromDiffs.stream()
+        .flatMap(DiffFinder::getKeyDiffs)
+        .map(KeyDiff::getKey)
+        .collect(ImmutableList.toImmutableList());
+    Set<InternalKey> toKeyChanges = toDiffs.stream().flatMap(DiffFinder::getKeyDiffs).map(KeyDiff::getKey).collect(Collectors.toSet());
+
+    List<InternalKey> conflictKeys = fromKeyChanges.stream().filter(toKeyChanges::contains).collect(ImmutableList.toImmutableList());
+
+    if (!conflictKeys.isEmpty()) {
+      throw new ReferenceConflictException(
+          String.format(
+              "The following keys have been changed in conflict: %s.",
+              conflictKeys.stream().map(InternalKey::toString).collect(Collectors.joining(", "))));
+    }
+
+    L1 baseHead = toL1s.get(toL1s.size() - 1);
+    PartialTree<DATA> headToRebaseOn = PartialTree.of(serializer, baseHead, fromKeyChanges);
+    List<PartialTreeCreator> creators = fromDiffs.stream().map(PartialTreeCreator::new).collect(Collectors.toList());
+    store.load(creators.stream().map(PartialTreeCreator::getLoad).collect(LoadStep.toLoadStep()));
+    creators.forEach(pt -> pt.apply(headToRebaseOn));
+
+    // save intermediate state.
+    store.save(
+        Stream.concat(
+            creators.stream().flatMap(c -> c.tree.getMostSaveOps()),
+            headToRebaseOn.getMostSaveOps())
+        .distinct()
+        .collect(Collectors.toList()));
+
+    UpdateExpression commitUpdate = creators.stream()
+        .map(pt -> pt.getCommitOp()).map(CommitOp::getUpdate)
+        .collect(UpdateExpression.toUpdateExpression());
+
+    ConditionExpression commitsCondition = creators.stream()
+        .map(pt -> pt.getCommitOp()).map(CommitOp::getCondition)
+        .collect(ConditionExpression.toConditionExpression());
+    CommitOp headCommit = headToRebaseOn.getCommitOp(baseHead.getMetadataId(), null, true, false);
+
+    Optional<InternalRef> updated = store.update(ValueType.REF, branchId,
+        commitUpdate.and(headCommit.getUpdate()),
+        Optional.of(headCommit.getCondition().and(commitsCondition)));
+
+    if (!updated.isPresent()) {
+      throw new ReferenceConflictException("Unable to complete commit.");
+    }
   }
 
-  private class OperationHolder {
+  private class PartialTreeCreator {
+    private PartialTree<DATA> tree;
+    private Id metadataId;
+    private DiffFinder finder;
+
+    PartialTreeCreator(DiffFinder finder) {
+      metadataId = finder.getTo().getMetadataId();
+      tree = PartialTree.of(serializer, finder.getFrom(), finder.getKeyDiffs().map(KeyDiff::getKey).collect(Collectors.toList()));
+    }
+
+    public CommitOp getCommitOp() {
+      return tree.getCommitOp(metadataId, null, false, true);
+    }
+
+    public LoadStep getLoad() {
+      return tree.getLoadChain(DynamoVersionStore.this::ensureValidL1, LoadType.NO_VALUES);
+    }
+
+    public void apply(PartialTree<DATA> secondTree) {
+      finder.getKeyDiffs().forEach(kd -> {
+        Optional<Id> valueToSet = Optional.ofNullable(kd.getTo()).filter(i -> !i.isEmpty());
+        tree.setValueIdForKey(kd.getKey(), valueToSet);
+        secondTree.setValueIdForKey(kd.getKey(), valueToSet);
+      });
+    }
+  }
+
+
+
+  class OperationHolder {
     private final PartialTree<DATA> current;
     private final PartialTree<DATA> expected;
     private final Operation<DATA> operation;
@@ -509,6 +577,22 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
 
       return Optional.empty();
+    }
+
+    public PartialTree<DATA> getCurrent() {
+      return current;
+    }
+
+    public PartialTree<DATA> getExpected() {
+      return expected;
+    }
+
+    public Operation<DATA> getOperation() {
+      return operation;
+    }
+
+    public InternalKey getKey() {
+      return key;
     }
 
     public void apply() {
