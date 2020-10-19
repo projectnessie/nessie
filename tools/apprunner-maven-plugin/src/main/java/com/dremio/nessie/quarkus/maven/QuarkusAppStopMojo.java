@@ -23,7 +23,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 /**
  * Stop Quarkus application.
  */
-@Mojo(name = "stop", requiresDependencyResolution = ResolutionScope.NONE)
+@Mojo(name = "stop", requiresDependencyResolution = ResolutionScope.NONE, threadSafe = true)
 public class QuarkusAppStopMojo extends AbstractQuarkusAppMojo {
   /**
    * Mojo execution.

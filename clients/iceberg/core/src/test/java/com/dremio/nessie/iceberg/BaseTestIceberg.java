@@ -51,6 +51,9 @@ abstract class BaseTestIceberg {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BaseTestIceberg.class);
 
+  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
+  private static final String NESSIE_ENDPOINT = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
+
   protected static File ALLEY_LOCAL_DIR;
   protected NessieCatalog catalog;
   protected NessieClient client;
@@ -85,10 +88,9 @@ abstract class BaseTestIceberg {
 
   @BeforeEach
   public void beforeEach() throws NessieConflictException, NessieNotFoundException {
-    String path = "http://localhost:19121/api/v1";
     String username = "test";
     String password = "test123";
-    this.client = new NessieClient(AuthType.NONE, path, username, password);
+    this.client = new NessieClient(AuthType.NONE, NESSIE_ENDPOINT, username, password);
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 
@@ -101,7 +103,7 @@ abstract class BaseTestIceberg {
     }
 
     hadoopConfig = new Configuration();
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, path);
+    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, NESSIE_ENDPOINT);
     hadoopConfig.set(NessieCatalog.CONF_NESSIE_USERNAME, username);
     hadoopConfig.set(NessieCatalog.CONF_NESSIE_PASSWORD, password);
     hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, branch);

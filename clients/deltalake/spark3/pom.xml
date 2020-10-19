@@ -280,8 +280,12 @@
         <configuration>
           <skip>${skipTests}</skip>
           <appArtifactId>org.projectnessie:nessie-quarkus:${project.version}</appArtifactId>
-          <systemPropertyVariables>
-          </systemPropertyVariables>
+          <applicationProperties>
+            <quarkus.http.test-port>0</quarkus.http.test-port>
+          </applicationProperties>
+          <outputProperties>
+            <quarkus.http.test-port>quarkus.http.test-port</quarkus.http.test-port>
+          </outputProperties>
         </configuration>
         <dependencies>
           <dependency>
@@ -308,6 +312,7 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <configuration>
           <systemPropertyVariables>
+            <quarkus.http.test-port>${quarkus.http.test-port}</quarkus.http.test-port>
           </systemPropertyVariables>
           <failIfNoTests>true</failIfNoTests>
         </configuration>

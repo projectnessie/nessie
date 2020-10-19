@@ -33,7 +33,8 @@ import com.klarna.hiverunner.annotations.HiveSQL;
 @ExtendWith(HiveRunnerExtension.class)
 public abstract class BaseHiveOps {
 
-  protected static final String URL = "http://localhost:19121/api/v1";
+  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
+  protected static final String URL = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
   protected static NessieClient client;
 
