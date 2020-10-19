@@ -7,4 +7,4 @@ marshmallow_oneofschema==2.1.0
 requests==2.24.0
 simplejson==3.17.2
 requests-aws4auth==1.0.1
-botocore==1.18.18
+botocore==1.19.0
