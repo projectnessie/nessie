@@ -38,6 +38,7 @@ import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.Operation.Put;
 import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
+import com.dremio.nessie.model.Tag;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
@@ -60,7 +61,7 @@ public class RestGitTest {
     int preSize = rest().get("trees").then().statusCode(200).extract().as(Reference[].class).length;
 
     rest().get("trees/tree/mainx").then().statusCode(404);
-    rest().put("trees/branch/mainx").then().statusCode(204);
+    rest().body(Branch.of("mainx", null)).post("trees/tree").then().statusCode(204);
 
     Reference[] references = rest().get("trees").then().statusCode(200).extract().as(Reference[].class);
     Assertions.assertEquals(preSize + 1, references.length);
@@ -75,7 +76,7 @@ public class RestGitTest {
         .hash(reference.getHash())
         .name("test")
         .build();
-    rest().queryParam("hash", reference.getHash()).put("trees/branch/test").then().statusCode(204);
+    rest().queryParam("expectedHash", reference.getHash()).body(Branch.of("test", null)).post("trees/tree").then().statusCode(204);
     assertEquals(newReference, rest().get("trees/tree/test").then()
            .statusCode(200).extract().as(Branch.class));
 
@@ -107,7 +108,7 @@ public class RestGitTest {
         .addOperations(updates)
         .build();
 
-    rest().body(contents).queryParam("hash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
+    rest().body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
       .then().statusCode(204);
 
     Response res = rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
@@ -127,22 +128,22 @@ public class RestGitTest {
     Assertions.assertEquals(table, returned);
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
-    rest().queryParam("newHash", b3.getHash()).put("trees/tag/tagtest").then().statusCode(204);
+    rest().body(Tag.of("tagtest", b3.getHash())).post("trees/tree").then().statusCode(204);
 
     rest().get("trees/tree/tagtest").then().statusCode(200).body("hash", equalTo(b3.getHash()));
 
-    rest().queryParam("hash","aa").delete("trees/tag/tagtest").then().statusCode(409);
+    rest().queryParam("expectedHash","aa").delete("trees/tag/tagtest").then().statusCode(409);
 
-    rest().queryParam("hash", b3.getHash()).delete("trees/tag/tagtest").then().statusCode(204);
+    rest().queryParam("expectedHash", b3.getHash()).delete("trees/tag/tagtest").then().statusCode(204);
 
 
     LogResponse log = rest().get("trees/tree/test/log").then().statusCode(200).extract().as(LogResponse.class);
     Assertions.assertEquals(3, log.getOperations().size());
 
     Branch b1 = rest().get("trees/tree/test").as(Branch.class);
-    rest().queryParam("hash", b1.getHash()).delete("trees/branch/test").then().statusCode(204);
+    rest().queryParam("expectedHash", b1.getHash()).delete("trees/branch/test").then().statusCode(204);
     Branch bx = rest().get("trees/tree/mainx").as(Branch.class);
-    rest().queryParam("hash", bx.getHash()).delete("trees/branch/mainx").then().statusCode(204);
+    rest().queryParam("expectedHash", bx.getHash()).delete("trees/branch/mainx").then().statusCode(204);
   }
 
   private static RequestSpecification rest() {
@@ -165,7 +166,7 @@ public class RestGitTest {
     Branch test = ImmutableBranch.builder()
         .name(name)
         .build();
-    rest().put("trees/branch/{name}", name).then().statusCode(204);
+    rest().body(test).post("trees/tree").then().statusCode(204);
     return test;
   }
 
