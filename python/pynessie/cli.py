@@ -119,7 +119,8 @@ def remote(nessie: NessieClient) -> None:
 @pass_client
 def config(nessie: NessieClient, get: str, add: str, list: bool, unset: str, type: str, key: str) -> None:
     """Set and view config."""
-    click.echo(process(get, add, list, unset, key, type))
+    res = process(get, add, list, unset, key, type)
+    click.echo(res)
 
 
 @remote.command()

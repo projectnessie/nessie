@@ -27,9 +27,9 @@ def handle_branch_tag(
         getattr(nessie, "delete_{}".format("branch" if is_branch else "tag"))(branch, branch_object.hash_)
     elif branch and not new_branch:
         getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch)
-        nessie.create_branch(branch)
     elif branch and new_branch and not force:
-        getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch, new_branch, old_hash)
+        create_on = nessie.get_reference(new_branch).hash_
+        getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch, create_on)
     else:
         getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, new_branch, old_hash)
     return ""
