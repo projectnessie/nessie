@@ -33,6 +33,7 @@ import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.MultiGetContentsRequest;
@@ -59,7 +60,7 @@ class TestRest {
   @Test
   void multiget() throws NessieNotFoundException, NessieConflictException {
     final String branch = "foo";
-    tree.assignBranch(branch, null, null);
+    tree.createReference(Branch.of(branch, null));
     Reference r = tree.getReferenceByName(branch);
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
@@ -77,7 +78,7 @@ class TestRest {
   @Test
   void checkSpecialCharacterRoundTrip() throws NessieNotFoundException, NessieConflictException {
     final String branch = "specialchar";
-    tree.assignBranch(branch, null, null);
+    tree.createReference(Branch.of(branch, null));
     Reference r = tree.getReferenceByName(branch);
     //ContentsKey k = ContentsKey.of("/%国","国.国");
     ContentsKey k = ContentsKey.of("a.b","c.d");
@@ -91,8 +92,8 @@ class TestRest {
   @Test
   void checkServerErrorPropagation() throws NessieNotFoundException, NessieConflictException {
     final String branch = "bar";
-    tree.assignBranch(branch, null, null);
-    NessieConflictException e = assertThrows(NessieConflictException.class, () -> tree.assignBranch(branch, null, null));
+    tree.createReference(Branch.of(branch, null));
+    NessieConflictException e = assertThrows(NessieConflictException.class, () -> tree.createReference(Branch.of(branch, null)));
     assertThat(e.getMessage(), Matchers.containsString("already exists"));
   }
 }

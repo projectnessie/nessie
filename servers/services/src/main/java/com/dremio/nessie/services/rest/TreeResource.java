@@ -45,6 +45,7 @@ import com.dremio.nessie.model.Merge;
 import com.dremio.nessie.model.Operation;
 import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
+import com.dremio.nessie.model.Tag;
 import com.dremio.nessie.model.Transplant;
 import com.dremio.nessie.services.config.ServerConfig;
 import com.dremio.nessie.versioned.BranchName;
@@ -94,6 +95,32 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Metered
+  @Timed(name = "timed-tree-create")
+  @Override
+  public void createReference(Reference reference)
+      throws NessieNotFoundException, NessieConflictException {
+    final NamedRef namedReference;
+    if (reference instanceof Branch) {
+      namedReference = BranchName.of(reference.getName());
+    } else if (reference instanceof Tag) {
+      namedReference = TagName.of(reference.getName());
+    } else {
+      throw new IllegalArgumentException("Only tag and branch references can be created");
+    }
+    createReference(namedReference, reference.getHash());
+  }
+
+  private void createReference(NamedRef reference, String hash) throws NessieNotFoundException, NessieConflictException {
+    try {
+      getStore().create(reference, toHash(hash, false));
+    } catch (ReferenceNotFoundException e) {
+      throw new NessieNotFoundException("Failure while searching for provided targeted hash.", e);
+    } catch (ReferenceAlreadyExistsException e) {
+      throw new NessieConflictException(String.format("A reference of name [%s] already exists.", reference.getName()), e);
+    }
+  }
+
+  @Metered
   @Timed(name = "timed-tree-get-defaultbranch")
   @Override
   public Branch getDefaultBranch() throws NessieNotFoundException {
@@ -107,9 +134,9 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Metered
   @Timed(name = "timed-assign-tag")
   @Override
-  public void assignTag(String tagName, String oldHash, String newHash)
+  public void assignTag(String tagName, String expectedHash, Tag tag)
       throws NessieNotFoundException, NessieConflictException {
-    assignReference(TagName.of(tagName), oldHash, newHash);
+    assignReference(TagName.of(tagName), expectedHash, tag.getHash());
   }
 
   @Metered
@@ -122,9 +149,9 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Metered
   @Timed(name = "timed-assign-branch")
   @Override
-  public void assignBranch(String branchName, String oldHash, String newHash)
+  public void assignBranch(String branchName, String expectedHash, Branch branch)
       throws NessieNotFoundException, NessieConflictException {
-    assignReference(BranchName.of(branchName), oldHash, newHash);
+    assignReference(BranchName.of(branchName), expectedHash, branch.getHash());
   }
 
   @Metered
@@ -218,25 +245,6 @@ public class TreeResource extends BaseResource implements TreeApi {
     return Optional.of(Hash.of(hash));
   }
 
-  private void assignReference(NamedRef ref, String oldHash, String newHash)
-      throws NessieNotFoundException, NessieConflictException {
-    if (oldHash == null) {
-      createReference(ref, newHash);
-    } else {
-      doAssignReference(ref, oldHash, newHash);
-    }
-  }
-
-  private void createReference(NamedRef reference, String hash) throws NessieNotFoundException, NessieConflictException {
-    try {
-      getStore().create(reference, toHash(hash, false));
-    } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException("Failure while searching for provided targeted hash.", e);
-    } catch (ReferenceAlreadyExistsException e) {
-      throw new NessieConflictException(String.format("A reference of name [%s] already exists.", reference.getName()), e);
-    }
-  }
-
   private void deleteReference(NamedRef name, String hash) throws NessieConflictException, NessieNotFoundException {
     try {
       getStore().delete(name, toHash(hash, true));
@@ -249,7 +257,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  private void doAssignReference(NamedRef ref, String oldHash, String newHash)
+  private void assignReference(NamedRef ref, String oldHash, String newHash)
       throws NessieNotFoundException, NessieConflictException {
     try {
       WithHash<Ref> resolved = getStore().toRef(ref.getName());
