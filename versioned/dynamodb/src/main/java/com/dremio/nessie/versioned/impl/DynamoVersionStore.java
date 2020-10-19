@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -461,7 +462,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
               .collect(ImmutableList.toImmutableList()));
           List<Hash> hashes = l1s.stream().map(L1::getId).map(Id::toHash).collect(Collectors.toList());
           if (!hashes.equals(sequenceToTransplant)) {
-            throw new IllegalStateException("Provided are not sequential and consistent with history.");
+            throw new IllegalArgumentException("Provided are not sequential and consistent with history.");
           }
 
           return l1s;
@@ -492,23 +493,31 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     // Step 1: Find a common ancestor.
     final InternalRefId branchId = InternalRefId.ofBranch(toBranch.getName());
     Pointer<L1> fromPtr = new Pointer<>();
-    Pointer<InternalBranch> branch = new Pointer<>();
-    store.load(new LoadStep(ImmutableList.of(
-        new LoadOp<L1>(ValueType.L1, Id.of(fromHash), l -> fromPtr.set(l)),
-        new LoadOp<InternalRef>(ValueType.REF, branchId.getId(), r -> branch.set(r.getBranch()))
-        )));
-    L1 from = fromPtr.get();
-    L1 to = ensureValidL1(branch.get());
-    Id commonParent = HistoryRetriever.findCommonParent(store, from, to, MAX_MERGE_DEPTH);
+    Pointer<L1> toPtr = new Pointer<>();
+    Pointer<InternalRef> branch = new Pointer<>();
 
-    if (expectedBranchHash.isPresent()) {
-      // TODO: make this like commit where only the tree that matters must be the same.
-      if (!to.getId().toHash().equals(expectedBranchHash.get())) {
-        throw new ReferenceConflictException(
-            String.format("The branch is not at the expected state. Expected %s but was actually %s.",
-                expectedBranchHash.get(), to.getId()));
+    {
+      List<LoadOp<?>> loadOps = new ArrayList<>();
+      loadOps.add(new LoadOp<L1>(ValueType.L1, Id.of(fromHash), l -> fromPtr.set(l)));
+      if (expectedBranchHash.isPresent()) {
+        loadOps.add(new LoadOp<L1>(ValueType.L1, Id.of(expectedBranchHash.get()), l1 -> toPtr.set(l1)));
+        loadOps.add(new LoadOp<InternalRef>(ValueType.REF, branchId.getId(), r -> branch.set(r)));
+      } else {
+        loadOps.add(new LoadOp<InternalRef>(ValueType.REF, branchId.getId(), r -> toPtr.set(ensureValidL1(r.getBranch()))));
+      }
+      store.load(new LoadStep(loadOps));
+
+      if (expectedBranchHash.isPresent()) {
+        if (branch.get().getType() != Type.BRANCH) {
+          throw new ReferenceConflictException("The requested branch is now a tag.");
+        }
       }
     }
+
+
+    L1 from = fromPtr.get();
+    L1 to = toPtr.get();
+    Id commonParent = HistoryRetriever.findCommonParent(store, from, to, MAX_MERGE_DEPTH);
 
     List<L1> fromL1s = historyHelper.getFromL1s(from, commonParent);
     if (fromL1s.size() == 1) {
