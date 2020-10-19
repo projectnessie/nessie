@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """Main module."""
+from typing import Any
 from typing import cast
+from typing import Generator
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 import confuse
 
@@ -26,6 +27,7 @@ from .model import Contents
 from .model import ContentsSchema
 from .model import Entries
 from .model import EntriesSchema
+from .model import LogResponse
 from .model import LogResponseSchema
 from .model import Reference
 from .model import ReferenceSchema
@@ -150,13 +152,13 @@ class NessieClient:
         to_hash = self.get_reference(to_branch).hash_
         merge(self._base_url, branch, to_hash, old_hash, self._ssl_verify)
 
-    def cherry_pick(self: "NessieClient", branch: str, hashes: Tuple[str], old_hash: Optional[str] = None) -> None:
+    def cherry_pick(self: "NessieClient", branch: str, old_hash: Optional[str] = None, *hashes: str) -> None:
         """Cherry pick a list of hashes to a branch."""
         if not old_hash:
             old_hash = self.get_reference(branch).hash_
-        cherry_pick(self._base_url, branch, hashes, old_hash, self._ssl_verify)
+        cherry_pick(self._base_url, branch, old_hash, self._ssl_verify, *hashes)
 
-    def get_log(self: "NessieClient", start_ref: str) -> List[CommitMeta]:
+    def get_log(self: "NessieClient", start_ref: str) -> Generator[CommitMeta, Any, None]:
         """Fetch all logs starting at start_ref.
 
         start_ref can be any ref.
@@ -165,9 +167,24 @@ class NessieClient:
             this will load the log into local memory and filter at the client. Currently there are no
             primitives in the REST api to limit logs or perform paging. TODO
         """
-        fetched_logs = list_logs(self._base_url, start_ref, self._ssl_verify)
-        logSchema = LogResponseSchema().load(fetched_logs)
-        return logSchema.operations
+
+        def fetch_logs() -> LogResponse:
+            fetched_logs = list_logs(self._base_url, start_ref, self._ssl_verify)
+            log_schema = LogResponseSchema().load(fetched_logs)
+            return log_schema
+
+        log_schema = fetch_logs()
+
+        def generator(log_schema: LogResponse) -> Generator[CommitMeta, Any, None]:
+            while True:
+                for i in log_schema.operations:
+                    yield i
+                if log_schema.has_more:
+                    log_schema = fetch_logs()
+                else:
+                    break
+
+        return generator(log_schema)
 
     def get_default_branch(self: "NessieClient") -> str:
         """Fetch default branch either from config if specified or from the server."""

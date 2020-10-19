@@ -29,16 +29,16 @@ def show_log(
     raw_log = nessie.get_log(start)
 
     def generator() -> Generator[CommitMeta, Any, None]:
-        for i in range(number if number > 0 else len(raw_log)):
-            if committer and raw_log[i].commiter != committer:
+        for i in raw_log:
+            if committer and i.commiter != committer:
                 continue
-            if after and _is_after(after, raw_log[i].commitTime):
+            if after and _is_after(after, i.commitTime):
                 continue
-            if before and _is_before(before, raw_log[i].commitTime):
+            if before and _is_before(before, i.commitTime):
                 continue
-            if end and raw_log[i].hash_ == end:
+            if end and i.hash_ == end:
                 raise StopIteration
-            yield raw_log[i]
+            yield i
 
     return generator()
 
