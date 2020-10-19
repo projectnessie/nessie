@@ -11,7 +11,6 @@ from typing import Tuple
 
 import click
 import confuse
-import simplejson
 from click import Option
 from click import UsageError
 from dateutil.tz import tzlocal
@@ -317,10 +316,30 @@ def tag(
     "-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used"
 )
 @click.argument("merge_branch", nargs=1, required=False)
+@click.option(
+    "-f",
+    "--force",
+    cls=MutuallyExclusiveOption,
+    is_flag=True,
+    mutually_exclusive=["condition"],
+    help="force branch assignment",
+)
+@click.option(
+    "-c",
+    "--condition",
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["force"],
+    help="Conditional Hash. Only perform the action if branch currently points to condition.",
+)
 @pass_client
-def merge(nessie: NessieClient, branch: str, merge_branch: str) -> None:
+def merge(nessie: NessieClient, branch: str, force: bool, condition: str, merge_branch: str) -> None:
     """Merge BRANCH into current branch. BRANCH can be a hash or branch."""
-    nessie.merge(branch if branch else nessie.get_default_branch(), merge_branch)
+    if not force and not condition:
+        raise UsageError(
+            """Either condition or force must be set. Condition should be set to a valid hash for concurrency
+            control or force to ignore current state of Nessie Store."""
+        )
+    nessie.merge(branch if branch else nessie.get_default_branch(), merge_branch, condition)
     click.echo()
 
 
@@ -328,11 +347,31 @@ def merge(nessie: NessieClient, branch: str, merge_branch: str) -> None:
 @click.option(
     "-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used"
 )
+@click.option(
+    "-f",
+    "--force",
+    cls=MutuallyExclusiveOption,
+    is_flag=True,
+    mutually_exclusive=["condition"],
+    help="force branch assignment",
+)
+@click.option(
+    "-c",
+    "--condition",
+    cls=MutuallyExclusiveOption,
+    mutually_exclusive=["force"],
+    help="Conditional Hash. Only perform the action if branch currently points to condition.",
+)
 @click.argument("hashes", nargs=-1, required=False)
 @pass_client
-def cherry_pick(nessie: NessieClient, branch: str, hashes: Tuple[str]) -> None:
+def cherry_pick(nessie: NessieClient, branch: str, force: bool, condition: str, hashes: Tuple[str]) -> None:
     """Transplant HASHES onto current branch."""
-    nessie.cherry_pick(branch if branch else nessie.get_default_branch(), hashes)
+    if not force and not condition:
+        raise UsageError(
+            """Either condition or force must be set. Condition should be set to a valid hash for concurrency
+            control or force to ignore current state of Nessie Store."""
+        )
+    nessie.cherry_pick(branch if branch else nessie.get_default_branch(), condition, *hashes)
     click.echo()
 
 
@@ -344,16 +383,16 @@ def cherry_pick(nessie: NessieClient, branch: str, hashes: Tuple[str]) -> None:
     "-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a table", mutually_exclusive=["list"]
 )
 @click.option("--json", is_flag=True, help="write output in json format.")
-@click.option("-b", "--branch", help="branch to list from. If not supplied the default branch from config is used")
+@click.option("-r", "--ref", help="branch to list from. If not supplied the default branch from config is used")
 @click.argument("key", nargs=1, required=False)
 @pass_client
-def contents(nessie: NessieClient, list: bool, json: bool, delete: bool, key: str, branch: str) -> None:
+def contents(nessie: NessieClient, list: bool, json: bool, delete: bool, key: str, ref: str) -> None:
     """Contents operations.
 
     KEY name of object to view, delete. If listing the key will limit by namespace what is included.
     """
     if list:
-        keys = nessie.list_keys(branch if branch else nessie.get_default_branch())
+        keys = nessie.list_keys(ref if ref else nessie.get_default_branch())
         results = EntrySchema().dumps(_format_keys_json(keys, key), many=True) if json else _format_keys(keys, key)
     elif delete:
         raise NotImplementedError("performing delete from the command line is not yet implemented.")

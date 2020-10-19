@@ -235,7 +235,7 @@ def _raise_for_status(self: requests.models.Response) -> Tuple[Union[HTTPError, 
         return None, self.status_code, reason
 
 
-def cherry_pick(base_url: str, branch: str, hashes: Tuple[str], expected_hash: str, ssl_verify: bool = True) -> None:
+def cherry_pick(base_url: str, branch: str, expected_hash: str, ssl_verify: bool = True, *hashes: str) -> None:
     """cherry-pick a list of hashes to a branch.
 
     :param base_url: base Nessie url

@@ -126,7 +126,8 @@ Perform operations on tags: create, delete, modify and reassign.
       -f, --force    force branch assignment
       --json         write output in json format.
       -v, --verbose  Verbose output.
-
+      -c, --condition TEXT  Conditional Hash. Only perform the action if branch
+                            currently points to condition.
       --help         Show this message and exit.
 
 
@@ -153,7 +154,7 @@ command functions similarly to the ``git remote show <remote>`` command to show 
 Log Command
 -----------
 
-View the commit log. This operats similarly to ``git log`` and shows the log in the terminals pager. Revision range is
+View the commit log. This operates similarly to ``git log`` and shows the log in the terminals pager. Revision range is
 specified as <hash>..<hash> or <hash/ref>.
 
 .. code-block:: bash
@@ -189,11 +190,14 @@ branch.
     Options:
       -b, --branch TEXT  branch to cherry-pick onto. If not supplied the default
                          branch from config is used
+      -f, --force    force merge. condition not required in this case
+      -c, --condition TEXT  Conditional Hash. Only perform the action if branch
+                            currently points to condition.
 
       --help             Show this message and exit.
 
-Merge Command
--------------
+Cherry-Pick Command
+-------------------
 
 Perform a cherry-pick operation. This takes the list of commits ``HASHES`` and adds them to ``branch``.
 
@@ -206,6 +210,9 @@ Perform a cherry-pick operation. This takes the list of commits ``HASHES`` and a
     Options:
       -b, --branch TEXT  branch to cherry-pick onto. If not supplied the default
                          branch from config is used
+      -f, --force    force cherry-pick. condition not required in this case
+      -c, --condition TEXT  Conditional Hash. Only perform the action if branch
+                            currently points to condition.
 
       --help             Show this message and exit.
 
@@ -228,4 +235,6 @@ View and list contents.
       -d, --delete   delete a table
       --json         write output in json format.
       -v, --verbose  Verbose output.
+      -r, --ref TEXT valid ref (hash, branch, tag) to on which the contents are viewed. If missing uses the default context.
+
       --help         Show this message and exit.
