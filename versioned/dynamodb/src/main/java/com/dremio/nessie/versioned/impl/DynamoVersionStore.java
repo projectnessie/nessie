@@ -57,7 +57,7 @@ import com.dremio.nessie.versioned.impl.PartialTree.LoadType;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
-import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -71,7 +71,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoVersionStore.class);
 
-  private final static int MAX_MERGE_DEPTH = 200;
+  private static final int MAX_MERGE_DEPTH = 200;
 
   private final Serializer<DATA> serializer;
   private final Serializer<METADATA> metadataSerializer;
@@ -235,9 +235,14 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
               Stream.of(new SaveOp<WrappedValueBean>(ValueType.COMMIT_METADATA, metadata))
           ).collect(Collectors.toList()));
 
-      CommitOp commitOp = current.getCommitOp(metadata.getId(), holders.stream(), true, true);
+      CommitOp commitOp = current.getCommitOp(
+          metadata.getId(),
+          holders.stream().filter(OperationHolder::isUnchangedOperation).map(OperationHolder::getKey).collect(Collectors.toList()),
+          true,
+          true);
 
-      Optional<InternalRef> updated = store.update(ValueType.REF, ref.getId(), commitOp.getUpdate(), Optional.of(commitOp.getCondition()));
+      Optional<InternalRef> updated = store.update(ValueType.REF, ref.getId(),
+          commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()));
       if (!updated.isPresent()) {
         if (loop++ < commitRetryCount) {
           continue;
@@ -445,56 +450,125 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   @Override
   public void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    throw new UnsupportedOperationException("Not yet implemented.");
+
+    Id endTarget = Id.of(sequenceToTransplant.get(0));
+    internalTransplant(sequenceToTransplant.get(sequenceToTransplant.size() - 1), targetBranch, currentBranchHash,
+        true,
+        (from, commonParent) -> {
+          // first we need to validate that the actual history matches the provided sequence.
+          List<L1> l1s = Lists.reverse(
+              new HistoryRetriever(store, from, endTarget, true, false, true).getStream().map(HistoryItem::getL1)
+              .collect(ImmutableList.toImmutableList()));
+          List<Hash> hashes = l1s.stream().map(L1::getId).map(Id::toHash).collect(Collectors.toList());
+          if (!hashes.equals(sequenceToTransplant)) {
+            throw new IllegalStateException("Provided are not sequential and consistent with history.");
+          }
+
+          return l1s;
+        });
   }
 
   @Override
   public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
+    internalTransplant(fromHash, toBranch, expectedBranchHash, false, (from, commonParent) -> {
+      return Lists.reverse(new HistoryRetriever(store, from, commonParent, true, false, true)
+          .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
+    });
+  }
+
+  private interface HistoryHelper {
+    List<L1> getFromL1s(L1 headL1, Id commonParent);
+  }
+
+  private void internalTransplant(
+      Hash fromHash,
+      BranchName toBranch,
+      Optional<Hash> expectedBranchHash,
+      boolean cherryPick,
+      HistoryHelper historyHelper)
+      throws ReferenceNotFoundException, ReferenceConflictException {
     // Step 1: Find a common ancestor.
-    final Id branchId = InternalRefId.ofBranch(toBranch.getName()).getId();
+    final InternalRefId branchId = InternalRefId.ofBranch(toBranch.getName());
     Pointer<L1> fromPtr = new Pointer<>();
     Pointer<InternalBranch> branch = new Pointer<>();
     store.load(new LoadStep(ImmutableList.of(
         new LoadOp<L1>(ValueType.L1, Id.of(fromHash), l -> fromPtr.set(l)),
-        new LoadOp<InternalRef>(ValueType.REF, branchId, r -> branch.set(r.getBranch()))
+        new LoadOp<InternalRef>(ValueType.REF, branchId.getId(), r -> branch.set(r.getBranch()))
         )));
     L1 from = fromPtr.get();
     L1 to = ensureValidL1(branch.get());
     Id commonParent = HistoryRetriever.findCommonParent(store, from, to, MAX_MERGE_DEPTH);
 
-    List<L1> fromL1s = Lists.reverse(new HistoryRetriever(store, from, commonParent, true, false, true)
-        .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
-    List<L1> toL1s =  Lists.reverse(new HistoryRetriever(store, to, commonParent, true, false, true)
-        .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
-
-    List<DiffFinder> fromDiffs = DiffFinder.getFinders(fromL1s, store);
-    List<DiffFinder> toDiffs = DiffFinder.getFinders(toL1s, store);
-
-    LoadStep load = Stream.concat(fromDiffs.stream(), toDiffs.stream()).map(DiffFinder::getLoad).collect(LoadStep.toLoadStep());
-    store.load(load);
-
-    // TODO: add unchanged operations.
-    List<InternalKey> fromKeyChanges = fromDiffs.stream()
-        .flatMap(DiffFinder::getKeyDiffs)
-        .map(KeyDiff::getKey)
-        .collect(ImmutableList.toImmutableList());
-    Set<InternalKey> toKeyChanges = toDiffs.stream().flatMap(DiffFinder::getKeyDiffs).map(KeyDiff::getKey).collect(Collectors.toSet());
-
-    List<InternalKey> conflictKeys = fromKeyChanges.stream().filter(toKeyChanges::contains).collect(ImmutableList.toImmutableList());
-
-    if (!conflictKeys.isEmpty()) {
-      throw new ReferenceConflictException(
-          String.format(
-              "The following keys have been changed in conflict: %s.",
-              conflictKeys.stream().map(InternalKey::toString).collect(Collectors.joining(", "))));
+    if (expectedBranchHash.isPresent()) {
+      // TODO: make this like commit where only the tree that matters must be the same.
+      if (!to.getId().toHash().equals(expectedBranchHash.get())) {
+        throw new ReferenceConflictException(
+            String.format("The branch is not at the expected state. Expected %s but was actually %s.",
+                expectedBranchHash.get(), to.getId()));
+      }
     }
 
-    L1 baseHead = toL1s.get(toL1s.size() - 1);
-    PartialTree<DATA> headToRebaseOn = PartialTree.of(serializer, baseHead, fromKeyChanges);
+    List<L1> fromL1s = historyHelper.getFromL1s(from, commonParent);
+    if (fromL1s.size() == 1) {
+      Preconditions.checkArgument(fromL1s.get(0).getId().equals(L1.EMPTY_ID));
+      // the from hash is the empty hash, no operations to merge.
+      return;
+    }
+
+    List<DiffFinder> fromDiffs = DiffFinder.getFinders(fromL1s, store);
+    LoadStep load = fromDiffs.stream().map(DiffFinder::getLoad).collect(LoadStep.toLoadStep());
+
+    final List<InternalKey> fromKeyChanges;
+
+    if (!cherryPick) {
+      List<L1> toL1s =  Lists.reverse(new HistoryRetriever(store, to, commonParent, true, false, true)
+          .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
+
+      if (toL1s.size() == 1) {
+        Preconditions.checkArgument(toL1s.get(0).getId().equals(L1.EMPTY_ID));
+        // merging to an empty branch. Just do reassign.
+        assign(toBranch, expectedBranchHash, fromHash);
+        return;
+      }
+
+
+      List<DiffFinder> toDiffs = DiffFinder.getFinders(toL1s, store);
+
+      load = load.combine(toDiffs.stream().map(DiffFinder::getLoad).collect(LoadStep.toLoadStep()));
+      store.load(load);
+
+      // TODO: add unchanged operations.
+      fromKeyChanges = fromDiffs.stream()
+          .flatMap(DiffFinder::getKeyDiffs)
+          .map(KeyDiff::getKey)
+          .collect(ImmutableList.toImmutableList());
+      Set<InternalKey> toKeyChanges = toDiffs.stream().flatMap(DiffFinder::getKeyDiffs).map(KeyDiff::getKey).collect(Collectors.toSet());
+
+      List<InternalKey> conflictKeys = fromKeyChanges.stream().filter(toKeyChanges::contains).collect(ImmutableList.toImmutableList());
+
+      if (!conflictKeys.isEmpty()) {
+        throw new ReferenceConflictException(
+            String.format(
+                "The following keys have been changed in conflict: %s.",
+                conflictKeys.stream().map(InternalKey::toString).collect(Collectors.joining(", "))));
+      }
+
+    } else {
+      store.load(load);
+      fromKeyChanges = fromDiffs.stream()
+          .flatMap(DiffFinder::getKeyDiffs)
+          .map(KeyDiff::getKey)
+          .collect(ImmutableList.toImmutableList());
+    }
+
+    L1 baseHead = to;
+    PartialTree<DATA> headToRebaseOn = PartialTree.of(serializer, InternalRef.Type.BRANCH, baseHead, fromKeyChanges);
     List<PartialTreeCreator> creators = fromDiffs.stream().map(PartialTreeCreator::new).collect(Collectors.toList());
-    store.load(creators.stream().map(PartialTreeCreator::getLoad).collect(LoadStep.toLoadStep()));
+    store.load(creators.stream().map(PartialTreeCreator::getLoad)
+        .collect(LoadStep.toLoadStep())
+        .combine(headToRebaseOn.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
     creators.forEach(pt -> pt.apply(headToRebaseOn));
 
     // save intermediate state.
@@ -505,18 +579,14 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         .distinct()
         .collect(Collectors.toList()));
 
-    UpdateExpression commitUpdate = creators.stream()
-        .map(pt -> pt.getCommitOp()).map(CommitOp::getUpdate)
-        .collect(UpdateExpression.toUpdateExpression());
+    List<Commit> intentions = creators.stream().map(pt -> pt.getCommitOp().getCommitIntention()).collect(Collectors.toList());
+    SetClause commitUpdate = CommitOp.getCommitSet(intentions);
+    CommitOp headCommit = headToRebaseOn.getCommitOp(baseHead.getMetadataId(), Collections.emptyList(), true, false);
 
-    ConditionExpression commitsCondition = creators.stream()
-        .map(pt -> pt.getCommitOp()).map(CommitOp::getCondition)
-        .collect(ConditionExpression.toConditionExpression());
-    CommitOp headCommit = headToRebaseOn.getCommitOp(baseHead.getMetadataId(), null, true, false);
-
-    Optional<InternalRef> updated = store.update(ValueType.REF, branchId,
-        commitUpdate.and(headCommit.getUpdate()),
-        Optional.of(headCommit.getCondition().and(commitsCondition)));
+    Optional<InternalRef> updated = store.update(ValueType.REF, branchId.getId(),
+        headCommit.getTreeUpdate().and(commitUpdate),
+        Optional.of(headCommit.getTreeCondition())
+        );
 
     if (!updated.isPresent()) {
       throw new ReferenceConflictException("Unable to complete commit.");
@@ -529,12 +599,14 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     private DiffFinder finder;
 
     PartialTreeCreator(DiffFinder finder) {
+      this.finder = finder;
       metadataId = finder.getTo().getMetadataId();
-      tree = PartialTree.of(serializer, finder.getFrom(), finder.getKeyDiffs().map(KeyDiff::getKey).collect(Collectors.toList()));
+      tree = PartialTree.of(serializer, InternalRef.Type.BRANCH, finder.getFrom(),
+          finder.getKeyDiffs().map(KeyDiff::getKey).collect(Collectors.toList()));
     }
 
     public CommitOp getCommitOp() {
-      return tree.getCommitOp(metadataId, null, false, true);
+      return tree.getCommitOp(metadataId, Collections.emptyList(), false, true);
     }
 
     public LoadStep getLoad() {
@@ -548,6 +620,8 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         secondTree.setValueIdForKey(kd.getKey(), valueToSet);
       });
     }
+
+
   }
 
 

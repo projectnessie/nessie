@@ -23,6 +23,7 @@ import org.immutables.value.Value;
 
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 @Value.Immutable
 public abstract class ConditionExpression implements Aliasable<ConditionExpression> {
@@ -76,11 +77,15 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
    * Collect condition expressions into a single compound condition expression.
    * @return combined update.
    */
-  public static final Collector<ConditionExpression, ConditionExpression, ConditionExpression> toConditionExpression() {
+  public static final Collector<ConditionExpression, List<ExpressionFunction>, ConditionExpression> toConditionExpression() {
     return Collector.of(
-      ConditionExpression::initial,
-      (o1, l1) -> o1.and(l1),
-      (o1, o2) -> o1.and(o2)
+      Lists::newArrayList,
+      (o1, l1) -> o1.addAll(l1.getFunctions()),
+      (o1, o2) -> {
+        o1.addAll(o2);
+        return o1;
+      },
+      o1 ->  ImmutableConditionExpression.builder().addAllFunctions(o1).build()
       );
   }
 }

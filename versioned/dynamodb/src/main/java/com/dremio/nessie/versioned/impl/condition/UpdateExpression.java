@@ -26,6 +26,7 @@ import com.dremio.nessie.versioned.impl.condition.UpdateClause.Type;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 
 @Value.Immutable
@@ -85,11 +86,15 @@ public abstract class UpdateExpression implements Aliasable<UpdateExpression> {
    * Collect update expressions into a single compound update expression.
    * @return combined update.
    */
-  public static final Collector<UpdateExpression, UpdateExpression, UpdateExpression> toUpdateExpression() {
+  public static final Collector<UpdateExpression, List<UpdateClause>, UpdateExpression> toUpdateExpression() {
     return Collector.of(
-      UpdateExpression::initial,
-      (o1, l1) -> o1.and(l1),
-      (o1, o2) -> o1.and(o2)
+      Lists::newArrayList,
+      (o1, l1) -> o1.addAll(l1.getClauses()),
+      (o1, o2) -> {
+        o1.addAll(o2);
+        return o1;
+      },
+      o1 ->  ImmutableUpdateExpression.builder().addAllClauses(o1).build()
       );
   }
 }

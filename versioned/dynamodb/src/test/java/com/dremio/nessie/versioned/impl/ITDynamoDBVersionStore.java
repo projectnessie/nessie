@@ -15,16 +15,12 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.dremio.nessie.backend.dynamodb.LocalDynamoDB;
 import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
 
 @ExtendWith(LocalDynamoDB.class)
@@ -47,9 +43,4 @@ public class ITDynamoDBVersionStore extends AbstractITVersionStore {
     return fixture;
   }
 
-  @Test
-  protected void transplant() throws VersionStoreException {
-    // TODO: implement transplant.
-    assertThrows(UnsupportedOperationException.class, () -> super.transplant());
-  }
 }

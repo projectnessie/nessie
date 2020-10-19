@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
 
 /**
@@ -101,7 +102,7 @@ class DiffFinder {
       for (L2Diff diff : diffs) {
         L2 from = diff.from;
         L2 to = diff.to;
-        for (int i = 0; i < L1.SIZE; i++) {
+        for (int i = 0; i < L2.SIZE; i++) {
           Id a = from.getId(i);
           Id b = to.getId(i);
           if (!a.equals(b)) {
@@ -129,7 +130,12 @@ class DiffFinder {
     }
 
     Stream<KeyDiff> getKeyDiffs() {
-      return L3.compare(from, to).entriesDiffering().entrySet().stream().map(KeyDiff::new);
+      MapDifference<InternalKey, Id> difference = L3.compare(from, to);
+      return Stream.concat(
+          difference.entriesDiffering().entrySet().stream().map(KeyDiff::new),
+          Stream.concat(
+              difference.entriesOnlyOnLeft().entrySet().stream().map(KeyDiff::onlyOnLeft),
+              difference.entriesOnlyOnRight().entrySet().stream().map(KeyDiff::onlyOnRight)));
     }
 
   }
@@ -140,7 +146,23 @@ class DiffFinder {
     private final Id from;
     private final Id to;
 
-    public KeyDiff(Entry<InternalKey, ValueDifference<Id>> diff) {
+    private static KeyDiff onlyOnLeft(Entry<InternalKey, Id> left) {
+      return new KeyDiff(left.getKey(), left.getValue(), Id.EMPTY);
+    }
+
+    private static KeyDiff onlyOnRight(Entry<InternalKey, Id> right) {
+      return new KeyDiff(right.getKey(), Id.EMPTY, right.getValue());
+    }
+
+
+    private KeyDiff(InternalKey key, Id from, Id to) {
+      super();
+      this.key = key;
+      this.from = from;
+      this.to = to;
+    }
+
+    private KeyDiff(Entry<InternalKey, ValueDifference<Id>> diff) {
       this.key = diff.getKey();
       ValueDifference<Id> id = diff.getValue();
       from = id.leftValue();

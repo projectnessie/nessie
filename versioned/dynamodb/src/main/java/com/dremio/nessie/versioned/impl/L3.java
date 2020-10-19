@@ -177,9 +177,10 @@ class L3 extends MemoizedId {
   }
 
   public static MapDifference<InternalKey, Id> compare(L3 from, L3 to) {
-    return Maps.difference(
+    MapDifference<InternalKey, Id> comparison =  Maps.difference(
         Maps.transformValues(from.map, p -> p.getNewId()),
         Maps.transformValues(to.map, p -> p.getNewId())
         );
+    return comparison;
   }
 }

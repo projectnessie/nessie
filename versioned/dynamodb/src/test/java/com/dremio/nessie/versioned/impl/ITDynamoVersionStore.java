@@ -86,6 +86,54 @@ class ITDynamoVersionStore {
     assertEquals("world", fixture.getValue(branch, Key.of("no")));
   }
 
+  @Test
+  void mergeToEmpty() throws Exception {
+    BranchName branch1 = BranchName.of("b1");
+    BranchName branch2 = BranchName.of("b2");
+    fixture.create(branch1, Optional.empty());
+    fixture.create(branch2, Optional.empty());
+    fixture.commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"),
+        Put.of(Key.of("no"), "world")));
+    fixture.merge(fixture.toHash(branch2), branch1, Optional.of(fixture.toHash(branch1)));
+  }
+
+  @Test
+  void mergeNoConflict() throws Exception {
+    BranchName branch1 = BranchName.of("b1");
+    BranchName branch2 = BranchName.of("b2");
+    fixture.create(branch1, Optional.empty());
+    fixture.commit(branch1, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("foo"), "world1"),
+        Put.of(Key.of("bar"), "world2")));
+
+    fixture.create(branch2, Optional.empty());
+    fixture.commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world3"),
+        Put.of(Key.of("no"), "world4")));
+    fixture.merge(fixture.toHash(branch2), branch1, Optional.of(fixture.toHash(branch1)));
+
+    assertEquals("world1", fixture.getValue(branch1, Key.of("foo")));
+    assertEquals("world2", fixture.getValue(branch1, Key.of("bar")));
+    assertEquals("world3", fixture.getValue(branch1, Key.of("hi")));
+    assertEquals("world4", fixture.getValue(branch1, Key.of("no")));
+
+  }
+
+  @Test
+  void mergeConflict() throws Exception {
+    BranchName branch1 = BranchName.of("b1");
+    BranchName branch2 = BranchName.of("b2");
+    fixture.create(branch1, Optional.empty());
+    fixture.commit(branch1, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("conflictKey"), "world1")));
+
+    fixture.create(branch2, Optional.empty());
+    fixture.commit(branch2, Optional.empty(), "metadata2", ImmutableList.of(Put.of(Key.of("conflictKey"), "world2")));
+
+    ReferenceConflictException ex = assertThrows(ReferenceConflictException.class, () ->
+        fixture.merge(fixture.toHash(branch2), branch1, Optional.of(fixture.toHash(branch1))));
+    assertThat(ex.getMessage(), Matchers.containsString("conflictKey"));
+  }
 
   @Test
   void checkKeyList() throws Exception {

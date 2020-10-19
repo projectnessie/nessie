@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -77,6 +78,11 @@ class HistoryRetriever {
       return commitMetadata;
     }
 
+    @Override
+    public String toString() {
+      return "HistoryItem [id=" + id + ", l1=" + l1 + ", commitMetadata=" + commitMetadata + "]";
+    }
+
   }
 
   Stream<HistoryItem> getStream() {
@@ -107,7 +113,7 @@ class HistoryRetriever {
 
     @Override
     protected HistoryItem computeNext() {
-      while (!currentIterator.hasNext() && !isLast) {
+      while (!currentIterator.hasNext() && !isLast && previous.getL1() != null) {
         try {
           calculateNextList(previous.getL1().getParentList());
         } catch (ReferenceNotFoundException e) {
@@ -160,7 +166,7 @@ class HistoryRetriever {
         }
       }
 
-      if (loadOps.isEmpty()) {
+      if (items.isEmpty()) {
         currentIterator = Collections.emptyIterator();
         isLast = true;
         return;
@@ -179,12 +185,14 @@ class HistoryRetriever {
   }
 
   public static Id findCommonParent(DynamoStore store, L1 head1, L1 head2, int maxDepth) {
+    System.out.println(new HistoryRetriever(store, head1, Id.EMPTY, false, false, true).getStream().collect(Collectors.toList()));
+    System.out.println(new HistoryRetriever(store, head2, Id.EMPTY, false, false, true).getStream().collect(Collectors.toList()));
     Iterator<Id> r1 = new HistoryRetriever(store, head1, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();
     Iterator<Id> r2 = new HistoryRetriever(store, head2, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();
     Set<Id> r1Set = new LinkedHashSet<>();
     Set<Id> r2Set = new LinkedHashSet<>();
     int remainingDepth = maxDepth;
-    while (r1.hasNext() && r2.hasNext() && remainingDepth > 0) {
+    while (remainingDepth > 0) {
       int page = Math.min(remainingDepth, ParentList.MAX_PARENT_LIST_SIZE);
       addNextPage(r1, r1Set, page);
       addNextPage(r2, r2Set, page);
@@ -192,6 +200,10 @@ class HistoryRetriever {
       Optional<Id> id = r1Set.stream().filter(r2Set::contains).findFirst();
       if (id.isPresent()) {
         return id.get();
+      }
+
+      if (!r1.hasNext() && !r2.hasNext()) {
+        break;
       }
     }
 
