@@ -296,6 +296,15 @@ class PartialTree<V> {
     return Optional.of(vh.getValue());
   }
 
+  /**
+   * Set operation that doesn't store values.
+   *
+   * <p>This should be used in operations like merge and
+   * cherry-pick, when we know that the values are already stored.
+   *
+   * @param key The key to set.
+   * @param id The value or empty to set.
+   */
   public void setValueIdForKey(InternalKey key, Optional<Id> id) {
     checkMutable();
     final Pointer<L1> l1 = this.l1;

@@ -490,33 +490,39 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       boolean cherryPick,
       HistoryHelper historyHelper)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    // Step 1: Find a common ancestor.
+
     final InternalRefId branchId = InternalRefId.ofBranch(toBranch.getName());
     Pointer<L1> fromPtr = new Pointer<>();
     Pointer<L1> toPtr = new Pointer<>();
     Pointer<InternalRef> branch = new Pointer<>();
 
     {
+      // load the related assets.
       List<LoadOp<?>> loadOps = new ArrayList<>();
+
+      // always load the l1 we're merging from.
       loadOps.add(new LoadOp<L1>(ValueType.L1, Id.of(fromHash), l -> fromPtr.set(l)));
       if (expectedBranchHash.isPresent()) {
+        // if an expected branch hash is provided, use that l1 as the basic. Still load the branch to make sure it exists.
         loadOps.add(new LoadOp<L1>(ValueType.L1, Id.of(expectedBranchHash.get()), l1 -> toPtr.set(l1)));
         loadOps.add(new LoadOp<InternalRef>(ValueType.REF, branchId.getId(), r -> branch.set(r)));
       } else {
+
+        // if no expected branch hash is provided, use the head of the branch as the basis for the rebase.
         loadOps.add(new LoadOp<InternalRef>(ValueType.REF, branchId.getId(), r -> toPtr.set(ensureValidL1(r.getBranch()))));
       }
       store.load(new LoadStep(loadOps));
 
-      if (expectedBranchHash.isPresent()) {
-        if (branch.get().getType() != Type.BRANCH) {
-          throw new ReferenceConflictException("The requested branch is now a tag.");
-        }
+      if (expectedBranchHash.isPresent() && branch.get().getType() != Type.BRANCH) {
+        // since we're doing a InternalRef load, we could get a tag value back (instead of branch). Throw if this happens.
+        throw new ReferenceConflictException("The requested branch is now a tag.");
       }
     }
 
+    final L1 from = fromPtr.get();
+    final L1 to = toPtr.get();
 
-    L1 from = fromPtr.get();
-    L1 to = toPtr.get();
+    // let's find a common parent.
     Id commonParent = HistoryRetriever.findCommonParent(store, from, to, MAX_MERGE_DEPTH);
 
     List<L1> fromL1s = historyHelper.getFromL1s(from, commonParent);
@@ -532,6 +538,12 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     final List<InternalKey> fromKeyChanges;
 
     if (!cherryPick) {
+      // in the merge scenario we need to confirm that there were not changes to the master branch against the same keys
+      // separately from the "from" items. This is more restrictive than a simple head to head comparison as it is possible
+      // that target branch had a mutation applied and then reverted. In that situation, the merge operation will fail. This
+      // more accurately represents a "rebase" operation where the new commits have to be replayed individually across the
+      // new target branch as opposed to only the head of that branch.
+
       List<L1> toL1s =  Lists.reverse(new HistoryRetriever(store, to, commonParent, true, false, true)
           .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
 
@@ -542,9 +554,9 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         return;
       }
 
-
       List<DiffFinder> toDiffs = DiffFinder.getFinders(toL1s, store);
 
+      // combine the 'from' load with the 'to' LoadSteps so we can minimize db requests.
       load = load.combine(toDiffs.stream().map(DiffFinder::getLoad).collect(LoadStep.toLoadStep()));
       store.load(load);
 
@@ -572,15 +584,19 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           .collect(ImmutableList.toImmutableList());
     }
 
-    L1 baseHead = to;
-    PartialTree<DATA> headToRebaseOn = PartialTree.of(serializer, InternalRef.Type.BRANCH, baseHead, fromKeyChanges);
-    List<PartialTreeCreator> creators = fromDiffs.stream().map(PartialTreeCreator::new).collect(Collectors.toList());
-    store.load(creators.stream().map(PartialTreeCreator::getLoad)
+    // now that we've validated the operation, we need to build up two sets of changes. One is the composite changes
+    // which will be applied to the Branch IdMap. The second is distinct operations that will be added to the the commit
+    // intention log of the Branch object.
+    PartialTree<DATA> headToRebaseOn = PartialTree.of(serializer, InternalRef.Type.BRANCH, to, fromKeyChanges);
+    List<DiffManager> creators = fromDiffs.stream().map(DiffManager::new).collect(Collectors.toList());
+    store.load(creators.stream().map(DiffManager::getLoad)
         .collect(LoadStep.toLoadStep())
         .combine(headToRebaseOn.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
+
+    // Now that we have all the items loaded, let's apply the changeset to both the sequential DiffManagers and the composite PartialTree.
     creators.forEach(pt -> pt.apply(headToRebaseOn));
 
-    // save intermediate state.
+    // Save L2s and L3s. Note we don't need to do any value saves here as we know that the values are already stored.
     store.save(
         Stream.concat(
             creators.stream().flatMap(c -> c.tree.getMostSaveOps()),
@@ -588,10 +604,15 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         .distinct()
         .collect(Collectors.toList()));
 
-    List<Commit> intentions = creators.stream().map(pt -> pt.getCommitOp().getCommitIntention()).collect(Collectors.toList());
+    // get a list of all the intentions as a SetClause
+    List<Commit> intentions = creators.stream().map(pt -> pt.getCommit()).collect(Collectors.toList());
     SetClause commitUpdate = CommitOp.getCommitSet(intentions);
-    CommitOp headCommit = headToRebaseOn.getCommitOp(baseHead.getMetadataId(), Collections.emptyList(), true, false);
 
+    // Get the composite commit operation, but exclude any Commit intentions.
+    CommitOp headCommit = headToRebaseOn.getCommitOp(to.getMetadataId(), Collections.emptyList(), true, false);
+
+    // Do a conditional update that combines the commit intentions with the composite tree updates,
+    // based on the composite tree conditions.
     Optional<InternalRef> updated = store.update(ValueType.REF, branchId.getId(),
         headCommit.getTreeUpdate().and(commitUpdate),
         Optional.of(headCommit.getTreeCondition())
@@ -602,26 +623,38 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     }
   }
 
-  private class PartialTreeCreator {
+  /**
+   * Class used to manage the tree mutations required to move between two L1s.
+   */
+  private class DiffManager {
     private PartialTree<DATA> tree;
     private Id metadataId;
     private DiffFinder finder;
 
-    PartialTreeCreator(DiffFinder finder) {
+    DiffManager(DiffFinder finder) {
       this.finder = finder;
       metadataId = finder.getTo().getMetadataId();
       tree = PartialTree.of(serializer, InternalRef.Type.BRANCH, finder.getFrom(),
           finder.getKeyDiffs().map(KeyDiff::getKey).collect(Collectors.toList()));
     }
 
-    public CommitOp getCommitOp() {
-      return tree.getCommitOp(metadataId, Collections.emptyList(), false, true);
+    /**
+     * Generate the commit intention operation associated with this set of diffs.
+     *
+     * @return The Commit Intention record.
+     */
+    public Commit getCommit() {
+      return tree.getCommitOp(metadataId, Collections.emptyList(), false, true).getCommitIntention();
     }
 
     public LoadStep getLoad() {
       return tree.getLoadChain(DynamoVersionStore.this::ensureValidL1, LoadType.NO_VALUES);
     }
 
+    /**
+     * Apply the diff associated with the set of ops this tree is managing.
+     * @param secondTree The compound tree that will receive all diffs.
+     */
     public void apply(PartialTree<DATA> secondTree) {
       finder.getKeyDiffs().forEach(kd -> {
         Optional<Id> valueToSet = Optional.ofNullable(kd.getTo()).filter(i -> !i.isEmpty());
@@ -632,8 +665,6 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
 
   }
-
-
 
   class OperationHolder {
     private final PartialTree<DATA> current;
@@ -660,18 +691,6 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
 
       return Optional.empty();
-    }
-
-    public PartialTree<DATA> getCurrent() {
-      return current;
-    }
-
-    public PartialTree<DATA> getExpected() {
-      return expected;
-    }
-
-    public Operation<DATA> getOperation() {
-      return operation;
     }
 
     public InternalKey getKey() {
