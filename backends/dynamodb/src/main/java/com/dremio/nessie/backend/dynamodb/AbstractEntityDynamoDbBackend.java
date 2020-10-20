@@ -20,15 +20,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import com.dremio.nessie.backend.EntityBackend;
 import com.dremio.nessie.backend.VersionedWrapper;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -62,28 +62,27 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   private final Counter putCounter;
   private final Counter getCounter;
   private final Counter versionedCounter;
-  private final Metrics getAllMetrics;
-  private final Metrics getMetrics;
-  private final Metrics putAllMetrics;
-  private final Metrics putMetrics;
-  private final Metrics deleteMetrics;
+  private final DynamoMetrics getAllMetrics;
+  private final DynamoMetrics getMetrics;
+  private final DynamoMetrics putAllMetrics;
+  private final DynamoMetrics putMetrics;
+  private final DynamoMetrics deleteMetrics;
 
   public AbstractEntityDynamoDbBackend(DynamoDbClient client,
                                        String tableName,
-                                       boolean versioned,
-                                       MetricRegistry registry) {
+                                       boolean versioned) {
     this.client = client;
     this.tableName = tableName;
     this.versioned = versioned;
-    deleteCounter = registry.counter("dynamo-delete-capacity");
-    putCounter = registry.counter("dynamo-put-capacity");
-    getCounter = registry.counter("dynamo-get-capacity");
-    versionedCounter = registry.counter("dynamo-versioned-count");
-    getAllMetrics = new Metrics("get-all", registry);
-    getMetrics = new Metrics("get", registry);
-    putAllMetrics = new Metrics("put-all", registry);
-    putMetrics = new Metrics("put", registry);
-    deleteMetrics = new Metrics("delete", registry);
+    deleteCounter = Metrics.counter("dynamo", "capacity", "delete");
+    putCounter = Metrics.counter("dynamo", "capacity", "put");
+    getCounter = Metrics.counter("dynamo", "capacity", "get");
+    versionedCounter = Metrics.counter("dynamo", "versioned", "count");
+    getAllMetrics = new DynamoMetrics("get-all");
+    getMetrics = new DynamoMetrics("get");
+    putAllMetrics = new DynamoMetrics("put-all");
+    putMetrics = new DynamoMetrics("put");
+    deleteMetrics = new DynamoMetrics("delete");
   }
 
   protected abstract Map<String, AttributeValue> toDynamoDB(VersionedWrapper<M> from);
@@ -104,7 +103,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
                                              .tableName(tableName)
                                              .build();
       GetItemResponse response = client.getItem(request);
-      getCounter.inc((long) Math.ceil(response.consumedCapacity().capacityUnits()));
+      getCounter.increment((long) Math.ceil(response.consumedCapacity().capacityUnits()));
       Map<String, AttributeValue> obj = response.item();
 
       if (obj == null || obj.isEmpty()) {
@@ -128,7 +127,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
       List<VersionedWrapper<M>> resultList = new ArrayList<>();
       results.iterator().forEachRemaining(response -> {
         response.items().stream().map(this::fromDynamoDB).forEach(resultList::add);
-        getCounter.inc((long) Math.ceil(response.consumedCapacity().capacityUnits()));
+        getCounter.increment((long) Math.ceil(response.consumedCapacity().capacityUnits()));
       });
       return resultList;
     }
@@ -143,7 +142,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
       Builder builder = PutItemRequest.builder()
                                       .tableName(tableName);
       if (versioned) {
-        versionedCounter.inc();
+        versionedCounter.increment();
         String expression;
         Long version = obj.getVersion();
         if (version == null) {
@@ -164,7 +163,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
                                                        .returnConsumedCapacity(
                                                          ReturnConsumedCapacity.TOTAL)
                                                        .build());
-      putCounter.inc((long) Math.ceil(response.consumedCapacity().capacityUnits()));
+      putCounter.increment((long) Math.ceil(response.consumedCapacity().capacityUnits()));
       return get(name);
     }
   }
@@ -188,7 +187,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
                                                              ReturnConsumedCapacity.TOTAL)
                                                            .build();
       BatchWriteItemResponse response = client.batchWriteItem(request);
-      putCounter.inc((long) Math.ceil(response.consumedCapacity()
+      putCounter.increment((long) Math.ceil(response.consumedCapacity()
                                               .stream()
                                               .mapToDouble(ConsumedCapacity::capacityUnits)
                                               .sum()));
@@ -209,7 +208,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
                                                      ReturnConsumedCapacity.TOTAL)
                                                    .build();
       DeleteItemResponse response = client.deleteItem(request);
-      deleteCounter.inc((long) Math.ceil(response.consumedCapacity().capacityUnits()));
+      deleteCounter.increment((long) Math.ceil(response.consumedCapacity().capacityUnits()));
     }
   }
 
@@ -218,29 +217,34 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
     client.close();
   }
 
-  private static class Metrics {
+  private static class DynamoMetrics {
 
     private final String name;
-    private final MetricRegistry registry;
 
-    private Metrics(String name, MetricRegistry registry) {
+    private DynamoMetrics(String name) {
       this.name = name;
-      this.registry = registry;
     }
 
     MetricsCloseable start() {
-      return new MetricsCloseable(name, registry).start();
+      return new MetricsCloseable(name).start();
     }
   }
 
   private static class MetricsCloseable implements AutoCloseable {
     private final Counter counter;
-    private final Histogram histogram;
+    private final Timer histogram;
     private long start;
 
-    private MetricsCloseable(String name, MetricRegistry registry) {
-      histogram = registry.histogram(String.format("dynamodb-function-%s-histo", name));
-      counter = registry.counter(String.format("dynamodb-function-%s-counter", name));
+    private MetricsCloseable(String name) {
+      histogram = Timer.builder("dynamodb-function")
+                       .tag("timer", name)
+                       //.publishPercentiles(0.5, 0.95) // median and 95th percentile
+                       .publishPercentileHistogram()
+                       //.sla(Duration.ofMillis(100))
+                       //.minimumExpectedValue(Duration.ofMillis(1))
+                       //.maximumExpectedValue(Duration.ofSeconds(10))
+                       .register(Metrics.globalRegistry);
+      counter = Metrics.counter("dynamodb-function", "counter", name);
     }
 
     MetricsCloseable start() {
@@ -250,8 +254,8 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
 
     @Override
     public void close() {
-      counter.inc();
-      histogram.update(System.nanoTime() - start);
+      counter.increment();
+      histogram.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
     }
   }
 }
