@@ -22,6 +22,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
 import com.google.common.collect.ImmutableMap;
@@ -176,11 +177,24 @@ class L3 extends MemoizedId {
     return map.size();
   }
 
-  public static MapDifference<InternalKey, Id> compare(L3 from, L3 to) {
-    MapDifference<InternalKey, Id> comparison =  Maps.difference(
+  /**
+   * Get a list of all the key -> valueId differences between two L3s.
+   *
+   * <p>This returns the difference between the updated (not original) state of the two L3s (if the L3s have been mutated).
+   *
+   * @param from The initial tree state.
+   * @param to The final tree state.
+   * @return The differences when going from initial to final state.
+   */
+  public static Stream<KeyDiff> compare(L3 from, L3 to) {
+    MapDifference<InternalKey, Id> difference =  Maps.difference(
         Maps.transformValues(from.map, p -> p.getNewId()),
         Maps.transformValues(to.map, p -> p.getNewId())
         );
-    return comparison;
+    return Stream.concat(
+        difference.entriesDiffering().entrySet().stream().map(KeyDiff::new),
+        Stream.concat(
+            difference.entriesOnlyOnLeft().entrySet().stream().map(KeyDiff::onlyOnLeft),
+            difference.entriesOnlyOnRight().entrySet().stream().map(KeyDiff::onlyOnRight)));
   }
 }

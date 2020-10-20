@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
 
 /**
@@ -130,30 +129,27 @@ class DiffFinder {
     }
 
     Stream<KeyDiff> getKeyDiffs() {
-      MapDifference<InternalKey, Id> difference = L3.compare(from, to);
-      return Stream.concat(
-          difference.entriesDiffering().entrySet().stream().map(KeyDiff::new),
-          Stream.concat(
-              difference.entriesOnlyOnLeft().entrySet().stream().map(KeyDiff::onlyOnLeft),
-              difference.entriesOnlyOnRight().entrySet().stream().map(KeyDiff::onlyOnRight)));
+      return L3.compare(from, to);
     }
 
   }
 
+  /**
+   * Describes the state of mutated key between two versions.
+   */
   static class KeyDiff {
 
     private final InternalKey key;
     private final Id from;
     private final Id to;
 
-    private static KeyDiff onlyOnLeft(Entry<InternalKey, Id> left) {
+    static KeyDiff onlyOnLeft(Entry<InternalKey, Id> left) {
       return new KeyDiff(left.getKey(), left.getValue(), Id.EMPTY);
     }
 
-    private static KeyDiff onlyOnRight(Entry<InternalKey, Id> right) {
+    static KeyDiff onlyOnRight(Entry<InternalKey, Id> right) {
       return new KeyDiff(right.getKey(), Id.EMPTY, right.getValue());
     }
-
 
     private KeyDiff(InternalKey key, Id from, Id to) {
       super();
@@ -162,21 +158,33 @@ class DiffFinder {
       this.to = to;
     }
 
-    private KeyDiff(Entry<InternalKey, ValueDifference<Id>> diff) {
+    KeyDiff(Entry<InternalKey, ValueDifference<Id>> diff) {
       this.key = diff.getKey();
       ValueDifference<Id> id = diff.getValue();
       from = id.leftValue();
       to = id.rightValue();
     }
 
+    /**
+     * The key that this diff applies to.
+     * @return The key
+     */
     public InternalKey getKey() {
       return key;
     }
 
+    /**
+     * The initial value of this Key.
+     * @return The Id. Will be Id.EMPTY if the key was added as part of this diff.
+     */
     public Id getFrom() {
       return from;
     }
 
+    /**
+     * The final value of this Key.
+     * @return The Id. Will be Id.EMPTY if the key was removed as part of this diff.
+     */
     public Id getTo() {
       return to;
     }
