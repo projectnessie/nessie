@@ -32,6 +32,8 @@ import org.junit.jupiter.api.BeforeEach;
 
 public abstract class AbstractSparkTest {
   private static final Object ANY = new Object();
+  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
+
   public static final String CONF_NESSIE_URL = "nessie.url";
   public static final String CONF_NESSIE_USERNAME = "nessie.username";
   public static final String CONF_NESSIE_PASSWORD = "nessie.password";
@@ -42,7 +44,7 @@ public abstract class AbstractSparkTest {
 
   protected static SparkSession spark;
   protected static Configuration hadoopConfig = new Configuration();
-  protected static String url = "http://localhost:19121/api/v1";
+  protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
   @BeforeEach
   protected void create() throws IOException {

@@ -20,6 +20,8 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Map;
+import java.util.Properties;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -38,8 +40,22 @@ import io.quarkus.bootstrap.model.AppArtifactCoords;
 /**
  * Starting Quarkus application.
  */
-@Mojo(name = "start", requiresDependencyResolution = ResolutionScope.NONE)
+@Mojo(name = "start", requiresDependencyResolution = ResolutionScope.NONE, threadSafe = true)
 public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
+  /*
+   * Execution lock across multiple executions of quarkus app.
+   *
+   * Quarkus application might modify system properties to reflect dynamic
+   * configuration values. However it is not possible for each execution to have
+   * its own properties.
+   * Lock is designed to make sure only one application is started and system properties
+   * retrieved, while still allowing multiple applications to run concurrently.
+   *
+   * TODO: the lock is not truly global since plugins are maintained in separate classloaders.
+   * It should be changed to something attached to the Maven session instead.
+   */
+  private static final Object START_LOCK = new Object();
+
   /**
    * The entry point to Aether, i.e. the component doing all the work.
    *
@@ -69,6 +85,21 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
    */
   @Parameter(property = "nessie.apprunner.appArtifactId", required = true)
   private String appArtifactId;
+
+  /**
+   * Application configuration properties.
+   */
+  @Parameter
+  private Properties applicationProperties;
+
+  /**
+   * Properties to get from Quarkus running application.
+   *
+   * <p>The property key is the name of the build property to set, the value is
+   * the name of the quarkus configuration key to get.
+   */
+  @Parameter
+  private Properties outputProperties;
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -102,8 +133,22 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
     try {
       Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
       Method newApplicationMethod = clazz.getMethod("newApplication", MavenProject.class,
-          RepositorySystem.class, RepositorySystemSession.class, String.class);
-      quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, getProject(), repoSystem, repoSession, appArtifactId);
+          RepositorySystem.class, RepositorySystemSession.class, String.class, Properties.class);
+      synchronized (START_LOCK) {
+        quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, getProject(), repoSystem,
+            repoSession, appArtifactId, applicationProperties);
+        if (outputProperties != null) {
+          Properties projectProperties = getProject().getProperties();
+          for (Map.Entry<Object, Object> entry: outputProperties.entrySet()) {
+            String outputKey = entry.getKey().toString();
+            String quarkusKey = entry.getValue().toString();
+            String value = System.getProperty(quarkusKey);
+            if (value != null) {
+              projectProperties.setProperty(outputKey, value);
+            }
+          }
+        }
+      }
     } catch (InvocationTargetException e) {
       throw new MojoExecutionException("Cannot create an isolated quarkus application", e.getCause());
     } catch (ReflectiveOperationException e) {

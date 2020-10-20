@@ -16,7 +16,11 @@
 package com.dremio.nessie.quarkus.maven;
 
 import java.lang.reflect.Method;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 import java.util.function.BiConsumer;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -24,6 +28,7 @@ import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 
+import io.quarkus.bootstrap.app.AdditionalDependency;
 import io.quarkus.bootstrap.app.CuratedApplication;
 import io.quarkus.bootstrap.app.QuarkusBootstrap;
 import io.quarkus.bootstrap.app.QuarkusBootstrap.Mode;
@@ -41,6 +46,7 @@ import io.quarkus.bootstrap.resolver.maven.MavenArtifactResolver;
  */
 public class QuarkusApp implements AutoCloseable {
 
+  private static final String MOJO_CONFIG_SOURCE_CLASSNAME = "com.dremio.nessie.quarkus.maven.MojoConfigSource";
   private final RunningQuarkusApplication runningApp;
 
   private QuarkusApp(RunningQuarkusApplication runningApp) {
@@ -50,18 +56,20 @@ public class QuarkusApp implements AutoCloseable {
   /**
    * Instantiate and start a quarkus application.
    *
-   * <p>Instantiates and start a quarkus application using Quarkus bootstrap framework. Only one application can be started at a time
-   * in the same classloader.
+   * <p>Instantiates and start a quarkus application using Quarkus bootstrap
+   * framework. Only one application can be started at a time in the same
+   * classloader.
    *
-   * @param project the Maven project
-   * @param repoSystem the Maven repository system instanxce
-   * @param repoSession the Maven repository system session
-   * @param appArtifactId the quarkus application artifact id
+   * @param project               the Maven project
+   * @param repoSystem            the Maven repository system instanxce
+   * @param repoSession           the Maven repository system session
+   * @param appArtifactId         the quarkus application artifact id
+   * @param applicationProperties the extra application properties
    * @return a quarkus app instance
    * @throws MojoExecutionException if an error occurs during execution
    */
   public static QuarkusApp newApplication(MavenProject project, RepositorySystem repoSystem,
-      RepositorySystemSession repoSession, String appArtifactId)
+      RepositorySystemSession repoSession, String appArtifactId, Properties applicationProperties)
       throws MojoExecutionException {
     final AppArtifactCoords appCoords = AppArtifactCoords.fromString(appArtifactId);
     final AppArtifact appArtifact = new AppArtifact(appCoords.getGroupId(),
@@ -81,16 +89,40 @@ public class QuarkusApp implements AutoCloseable {
           "Failed to resolve application model " + appArtifact + " dependencies", e);
     }
 
+    return newApplication(appModel, appArtifact, project.getBasedir().toPath(), Paths.get(project.getBuild().getDirectory()),
+        applicationProperties);
+  }
+
+  /**
+   * Instantiate and start a quarkus application.
+   *
+   * <p>Instantiates and start a quarkus application using Quarkus bootstrap
+   * framework. Only one application can be started at a time in the same
+   * classloader.
+   *
+   * @param appModel              the application model
+   * @param appArtifact           the quarkus application artifact id
+   * @param projectRoot           the current project directory
+   * @param targetDirectory       the target directory
+   * @param applicationProperties the extra application properties
+   * @return a quarkus app instance
+   * @throws MojoExecutionException if an error occurs during execution
+   */
+  public static QuarkusApp newApplication(AppModel appModel, AppArtifact appArtifact,
+      Path projectRoot, Path targetDirectory, Properties applicationProperties)
+      throws MojoExecutionException {
+    final AdditionalDependency mojoConfigSourceDependency = findMojoConfigSourceDependency();
+
     final QuarkusBootstrap bootstrap = QuarkusBootstrap.builder()
         .setAppArtifact(appModel.getAppArtifact())
         .setBaseClassLoader(QuarkusApp.class.getClassLoader()).setExistingModel(appModel)
-        .setProjectRoot(project.getBasedir().toPath())
-        .setTargetDirectory(Paths.get(project.getBuild().getDirectory())).setIsolateDeployment(true)
-        .setMode(Mode.TEST).build();
+        .setProjectRoot(projectRoot).setTargetDirectory(targetDirectory).setIsolateDeployment(true)
+        .setMode(Mode.TEST).addAdditionalApplicationArchive(mojoConfigSourceDependency).build();
 
     try {
       final CuratedApplication app = bootstrap.bootstrap();
       StartupAction startupAction = app.createAugmentor().createInitialRuntimeApplication();
+      configureMojConfigSource(startupAction, applicationProperties);
       exitHandler(startupAction);
       RunningQuarkusApplication runningApp = startupAction.runMainClass();
       return new QuarkusApp(runningApp);
@@ -100,12 +132,42 @@ public class QuarkusApp implements AutoCloseable {
     }
   }
 
+  private static void configureMojConfigSource(StartupAction startupAction,
+      Properties applicationProperties) throws ReflectiveOperationException {
+    if (applicationProperties == null) {
+      return;
+    }
+
+    final Class<?> mojoConfigSourceClass = startupAction.getClassLoader()
+        .loadClass(MOJO_CONFIG_SOURCE_CLASSNAME);
+    final Method method = mojoConfigSourceClass.getDeclaredMethod("setProperties",
+        Properties.class);
+    method.invoke(null, applicationProperties);
+  }
+
   private static void exitHandler(StartupAction startupAction) throws ReflectiveOperationException {
-    final BiConsumer<Integer, Throwable> consumer = (i, t) -> {};
+    final BiConsumer<Integer, Throwable> consumer = (i, t) -> {
+    };
     final Class<?> applicationLifecyceManagerClass = Class.forName(
         "io.quarkus.runtime.ApplicationLifecycleManager", true, startupAction.getClassLoader());
-    final Method exitHandler = applicationLifecyceManagerClass.getMethod("setDefaultExitCodeHandler", BiConsumer.class);
+    final Method exitHandler = applicationLifecyceManagerClass
+        .getMethod("setDefaultExitCodeHandler", BiConsumer.class);
     exitHandler.invoke(null, consumer);
+  }
+
+  private static AdditionalDependency findMojoConfigSourceDependency()
+      throws MojoExecutionException {
+    try {
+      // We do need to initialize the class
+      final Class<?> mojoConfigSourceClass = QuarkusApp.class.getClassLoader()
+          .loadClass(MOJO_CONFIG_SOURCE_CLASSNAME);
+      final URL mojoConfigSourceClasslocation = mojoConfigSourceClass.getProtectionDomain()
+          .getCodeSource().getLocation();
+      return new AdditionalDependency(Paths.get(mojoConfigSourceClasslocation.toURI()), false,
+          false);
+    } catch (ClassNotFoundException | URISyntaxException e) {
+      throw new MojoExecutionException(e.getMessage(), e);
+    }
   }
 
   @Override public void close() throws Exception {
