@@ -54,15 +54,7 @@ cd nessie
 
 #### Delta Lake artifacts
 
-Nessie required some minor changes to Delta for full support of branching and history. These changes are currently being integrated into the [mainline repo](https://github.com/delta-io/delta). Until these have been merged we have provided custom builds in [our fork](https://github.com/projectnessie/delta) which can be downloaded from Github Packages's maven repo. Please follow the instructions [here](https://docs.github.com/en/free-pro-team@latest/packages/using-github-packages-with-your-projects-ecosystem/configuring-apache-maven-for-use-with-github-packages#authenticating-to-github-packages) to obtain a github PAT and updating `settings.xml` accordingly. An additional `server` is requiured in your `settings.xml`:
-
-``` xml
-    <server>
-      <id>github</id>
-      <username>__github__username__</username>
-      <password>__github__pat__</password>
-    </server>
-```
+Nessie required some minor changes to Delta for full support of branching and history. These changes are currently being integrated into the [mainline repo](https://github.com/delta-io/delta). Until these have been merged we have provided custom builds in [our fork](https://github.com/projectnessie/delta) which can be downloaded from a separate maven repository. 
 
 ### Distribution
 To run:
