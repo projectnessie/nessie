@@ -145,7 +145,7 @@
     <repository>
       <id>github</id>
       <name>Nessie Delta custom Repository</name>
-      <url>https://maven.pkg.github.com/projectnessie/delta</url>
+      <url>https://storage.googleapis.com/nessie-maven</url>
     </repository>
   </repositories>
 
