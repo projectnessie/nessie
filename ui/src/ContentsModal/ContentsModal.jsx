@@ -15,20 +15,9 @@
  */
 import React, {useState, useEffect} from 'react';
 
-import {authenticationService} from '../services';
-import RecursiveTreeView from "../_old/TableSidebar/tree-view";
-import TableView from "../_old/TableSidebar/table-view";
-import {Container, Row, Col, Navbar, NavDropdown, Dropdown, DropdownButton, Nav, Badge, Card, Button, ListGroup, ListGroupItem} from "react-bootstrap";
-import {config} from "../config";
-import {nestTables} from "../utils";
-import DeviceHubIcon from '@material-ui/icons/DeviceHub';
-import LocalOfferIcon from '@material-ui/icons/LocalOffer';
-import InsertDriveFileOutlinedIcon from '@material-ui/icons/InsertDriveFileOutlined';
-import FolderIcon from '@material-ui/icons/Folder';
+import {Row,Col} from "react-bootstrap";
 import createApi from "../utils/api"
-import prettyMilliseconds from "pretty-ms";
 import Modal from "react-bootstrap/Modal";
-import CreateBranch from "../_old/services/CreateBranch";
 
 function getContents(x, currentBranch, setContent) {
   if (x === undefined || (x.length === 1 && x[0] === undefined)) {
@@ -48,11 +37,19 @@ function getContents(x, currentBranch, setContent) {
 
 function image(currentContent) {
   if (currentContent.type === "ICEBERG_TABLE") {
-    return (<Row><Col xs={3}>Table type:</Col> <Col>Iceberg Table<img className="pl-2" src={"/iceberg.png"} alt={"iceberg table"} height={"50"} width={"60"}/></Col></Row>)
+    return (<Row><Col xs={3}>Table type:</Col> <Col>Iceberg Table<img className="pl-2" src={"/iceberg.png"}
+                                                                      alt={"iceberg table"} height={"50"} width={"60"}/></Col></Row>)
   } else if (currentContent.type === "DELTA_LAKE_TABLE") {
-    return (<Row><Col xs={3}>Table type:</Col> <Col>Delta Lake Table<img className="pl-4" src={"/delta.png"} alt={"iceberg table"} height={"50"} width={"50"}/></Col></Row>)
+    return (<Row><Col xs={3}>Table type:</Col> <Col>Delta Lake Table<img className="pl-4" src={"/delta.png"}
+                                                                         alt={"iceberg table"} height={"50"}
+                                                                         width={"50"}/></Col></Row>)
   } else if (currentContent.type === "HIVE_TABLE" || currentContent.type === "HIVE_DATABASE") {
-    return (<Row><Col xs={3}>Table type:</Col> <Col>Hive {(currentContent.type ==="HIVE_DATABASE") ? "Database" : "Table"}<img className="pl-4" src={"/hive.png"} alt={"iceberg table"} height={"50"} width={"50"}/></Col></Row>)
+    return (<Row><Col xs={3}>Table type:</Col>
+      <Col>Hive {(currentContent.type === "HIVE_DATABASE") ? "Database" : "Table"}<img className="pl-4"
+                                                                                       src={"/hive.png"}
+                                                                                       alt={"iceberg table"}
+                                                                                       height={"50"}
+                                                                                       width={"50"}/></Col></Row>)
   } else {
     return (<span>{currentContent.type}</span>)
   }
@@ -77,6 +74,7 @@ function ContentsModal(props) {
   const [currentContent, setContent] = useState([]);
   useEffect(() => {
     getContents(name, props.currentBranch, setContent);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.currentKey])
 
   return (
@@ -92,4 +90,4 @@ function ContentsModal(props) {
   )
 }
 
-export { ContentsModal };
+export {ContentsModal};

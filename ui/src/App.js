@@ -15,7 +15,7 @@
  */
 import React from 'react';
 import './App.css';
-import {Navbar, Nav, Button, DropdownButton, Dropdown} from "react-bootstrap";
+import {Navbar, Nav} from "react-bootstrap";
 import {Router, Route} from 'react-router-dom';
 import {history} from './utils';
 import {authenticationService} from './services';
@@ -97,16 +97,16 @@ class App extends React.Component {
   render() {
     this.getBranches();
 
-    const handleClose = () => {
-      this.setState({show: false, branches:[]});
-      this.getBranches();
-    }
-    const handleShow = () => this.setState({show: true});
-    const handleMergeClose = () => {
-      this.setState({mergeShow: false});
-      this.fetchTables();
-    }
-    const handleMergeShow = () => this.setState({mergeShow: true});
+    //const handleClose = () => {
+    //  this.setState({show: false, branches:[]});
+    //  this.getBranches();
+    //}
+    //const handleShow = () => this.setState({show: true});
+    //const handleMergeClose = () => {
+    //  this.setState({mergeShow: false});
+    //  this.fetchTables();
+    //}
+    //const handleMergeShow = () => this.setState({mergeShow: true});
     return (
       <Router history={history}>
         <div className="App">

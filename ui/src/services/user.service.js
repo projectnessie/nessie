@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { config } from '../config';
-import { authHeader, handleResponse } from '../utils';
+import {config} from '../config';
+import {authHeader, handleResponse} from '../utils';
 
 export const userService = {
   getAll
 };
 
 function getAll() {
-  const requestOptions = { method: 'GET', headers: authHeader() };
+  const requestOptions = {method: 'GET', headers: authHeader()};
   return fetch(`${config.apiUrl}/users`, requestOptions).then(handleResponse);
 }
