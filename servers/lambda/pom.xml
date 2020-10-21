@@ -34,6 +34,13 @@
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-quarkus</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <!-- we don't serve openapi via the lambda -->
+        <exclusion>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-smallrye-openapi</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
