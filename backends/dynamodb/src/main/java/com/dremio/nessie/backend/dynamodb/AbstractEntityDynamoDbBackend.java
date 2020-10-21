@@ -16,6 +16,7 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +29,6 @@ import com.dremio.nessie.backend.VersionedWrapper;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Timer;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -93,7 +93,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public VersionedWrapper<M> get(String name) {
     Span span = tracer.buildSpan("dynamo-get").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         ExceptionFreeAutoClosable mc = getMetrics.start()) {
+         Timer mc = getMetrics.start()) {
       Map<String, AttributeValue> key = new HashMap<>();
       key.put("uuid", AttributeValue.builder().s(name).build());
       GetItemRequest request = GetItemRequest.builder()
@@ -116,7 +116,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public List<VersionedWrapper<M>> getAll(boolean includeDeleted) {
     Span span = tracer.buildSpan("dynamo-get-all").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         ExceptionFreeAutoClosable mc = getAllMetrics.start()) {
+         Timer mc = getAllMetrics.start()) {
       ScanRequest request = ScanRequest.builder()
                                        .tableName(tableName)
                                        .consistentRead(true)
@@ -137,7 +137,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public VersionedWrapper<M> update(String name, VersionedWrapper<M> obj) {
     Span span = tracer.buildSpan("dynamo-put").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         ExceptionFreeAutoClosable mc = putMetrics.start()) {
+         Timer mc = putMetrics.start()) {
       Map<String, AttributeValue> item = toDynamoDB(obj);
       Builder builder = PutItemRequest.builder()
                                       .tableName(tableName);
@@ -172,7 +172,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public void updateAll(Map<String, VersionedWrapper<M>> transaction) {
     Span span = tracer.buildSpan("dynamo-put-all").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         ExceptionFreeAutoClosable mc = putAllMetrics.start()) {
+         Timer mc = putAllMetrics.start()) {
       Map<String, List<WriteRequest>> items = new HashMap<>();
       List<WriteRequest> writeRequests =
           transaction.values()
@@ -198,7 +198,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public void remove(String name) {
     Span span = tracer.buildSpan("dynamo-remove").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         ExceptionFreeAutoClosable mc = deleteMetrics.start()) {
+         Timer mc = deleteMetrics.start()) {
       Map<String, AttributeValue> key = new HashMap<>();
       key.put("uuid", AttributeValue.builder().s(name).build());
       DeleteItemRequest request = DeleteItemRequest.builder()
@@ -219,10 +219,10 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
 
   private static class DynamoMetrics {
     private final Counter counter;
-    private final Timer timer;
+    private final io.micrometer.core.instrument.Timer timer;
 
     private DynamoMetrics(String name) {
-      timer = Timer.builder("dynamodb-function")
+      timer = io.micrometer.core.instrument.Timer.builder("dynamodb-function")
                    .tag("timer", name)
                    //.publishPercentiles(0.5, 0.95) // median and 95th percentile
                    .publishPercentileHistogram()
@@ -233,7 +233,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
       counter = Metrics.counter("dynamodb-function", "counter", name);
     }
 
-    ExceptionFreeAutoClosable start() {
+    Timer start() {
       long start = System.nanoTime();
       return () -> {
         counter.increment();
@@ -245,7 +245,8 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   /**
    * used to avoid having to catch Exception that can't be thrown in close method.
    */
-  private interface ExceptionFreeAutoClosable extends AutoCloseable {
+  @FunctionalInterface
+  private interface Timer extends Closeable {
     @Override
     void close();
   }
