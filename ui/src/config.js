@@ -17,4 +17,4 @@ const config = {
   'apiUrl': '/api/v1'
 }
 
-export { config }
+export {config}

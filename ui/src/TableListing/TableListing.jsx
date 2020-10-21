@@ -16,7 +16,7 @@
 import React, {useState, useEffect} from 'react';
 
 import {authenticationService} from '../services';
-import {Row, Card, Button, ListGroup, ListGroupItem} from "react-bootstrap";
+import {Card, Button, ListGroup, ListGroupItem} from "react-bootstrap";
 import {nestTables} from "../utils";
 import InsertDriveFileOutlinedIcon from '@material-ui/icons/InsertDriveFileOutlined';
 import FolderIcon from '@material-ui/icons/Folder';
@@ -25,7 +25,7 @@ import prettyMilliseconds from "pretty-ms";
 import {ContentsModal} from "../ContentsModal";
 
 function fetchLog(currentUser, currentBranch, setCurrentLog) {
-  createApi({'cors':true}).getCommitLog({'ref': currentBranch.name})
+  createApi({'cors': true}).getCommitLog({'ref': currentBranch.name})
     .then(res => {
       return res.json();
     })
@@ -57,7 +57,8 @@ function formatHeader(currentLog) {
     </span>
     <span className={"float-right"}>
       <span className="font-italic">{currentLog[0].hash}</span>
-      <span className={"pl-3"}>{prettyMilliseconds(new Date().getTime() - currentLog[0].commitTime, {compact:true})}</span>
+      <span
+        className={"pl-3"}>{prettyMilliseconds(new Date().getTime() - currentLog[0].commitTime, {compact: true})}</span>
     </span>
   </Card.Header>)
 }
@@ -106,6 +107,7 @@ function TableListing(props) {
   useEffect(() => {
     fetchLog(currentUser, currentBranch, setCurrentLog);
     fetchKeys(currentUser, currentBranch, setKeys)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentBranch])
 
   return (
@@ -117,10 +119,11 @@ function TableListing(props) {
           setContentsModalState(true);
         })}
       </Card>
-      <ContentsModal show={contentsModalState} handleClose={() => setContentsModalState(false)} currentUser={currentUser} currentBranch={currentBranch} currentKey={contentsSelected}/>
+      <ContentsModal show={contentsModalState} handleClose={() => setContentsModalState(false)}
+                     currentUser={currentUser} currentBranch={currentBranch} currentKey={contentsSelected}/>
     </div>
 
   );
 }
 
-export { TableListing };
+export {TableListing};
