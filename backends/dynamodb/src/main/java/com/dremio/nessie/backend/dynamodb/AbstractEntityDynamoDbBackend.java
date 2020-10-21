@@ -16,7 +16,6 @@
 
 package com.dremio.nessie.backend.dynamodb;
 
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -93,7 +92,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public VersionedWrapper<M> get(String name) {
     Span span = tracer.buildSpan("dynamo-get").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         Timer mc = getMetrics.start()) {
+         Closeable mc = getMetrics.start()) {
       Map<String, AttributeValue> key = new HashMap<>();
       key.put("uuid", AttributeValue.builder().s(name).build());
       GetItemRequest request = GetItemRequest.builder()
@@ -116,7 +115,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public List<VersionedWrapper<M>> getAll(boolean includeDeleted) {
     Span span = tracer.buildSpan("dynamo-get-all").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         Timer mc = getAllMetrics.start()) {
+         Closeable mc = getAllMetrics.start()) {
       ScanRequest request = ScanRequest.builder()
                                        .tableName(tableName)
                                        .consistentRead(true)
@@ -137,7 +136,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public VersionedWrapper<M> update(String name, VersionedWrapper<M> obj) {
     Span span = tracer.buildSpan("dynamo-put").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         Timer mc = putMetrics.start()) {
+         Closeable mc = putMetrics.start()) {
       Map<String, AttributeValue> item = toDynamoDB(obj);
       Builder builder = PutItemRequest.builder()
                                       .tableName(tableName);
@@ -172,7 +171,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public void updateAll(Map<String, VersionedWrapper<M>> transaction) {
     Span span = tracer.buildSpan("dynamo-put-all").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         Timer mc = putAllMetrics.start()) {
+         Closeable mc = putAllMetrics.start()) {
       Map<String, List<WriteRequest>> items = new HashMap<>();
       List<WriteRequest> writeRequests =
           transaction.values()
@@ -198,7 +197,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public void remove(String name) {
     Span span = tracer.buildSpan("dynamo-remove").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         Timer mc = deleteMetrics.start()) {
+         Closeable mc = deleteMetrics.start()) {
       Map<String, AttributeValue> key = new HashMap<>();
       key.put("uuid", AttributeValue.builder().s(name).build());
       DeleteItemRequest request = DeleteItemRequest.builder()
@@ -233,7 +232,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
       counter = Metrics.counter("dynamodb-function", "counter", name);
     }
 
-    Timer start() {
+    Closeable start() {
       long start = System.nanoTime();
       return () -> {
         counter.increment();
@@ -246,7 +245,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
    * used to avoid having to catch Exception that can't be thrown in close method.
    */
   @FunctionalInterface
-  private interface Timer extends Closeable {
+  private interface Closeable extends AutoCloseable {
     @Override
     void close();
   }
