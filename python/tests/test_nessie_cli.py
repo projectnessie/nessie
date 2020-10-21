@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """Tests for `pynessie` package."""
 import itertools
+import os
+from pathlib import Path
 
 import pytest
 import simplejson
@@ -121,10 +123,13 @@ def test_all_help_options() -> None:
     """Write out all help options to std out."""
     runner = CliRunner()
     args = ["", "config", "branch", "tag", "remote", "log", "merge", "cherry-pick", "contents"]
-    all_args = "\n"
+
     for i in args:
         result = runner.invoke(cli.cli, [x for x in [i] if x] + ["--help"])
         assert result.exit_code == 0
-        all_args += result.output
-        all_args += "\n\n\n"
-    print(all_args)
+        cwd = os.getcwd()
+        with open(Path(Path(cwd).parent, "docs", "{}.rst".format(i if i else "main")), "w") as f:
+            f.write(".. code-block:: bash\n\n\t")
+            for line in result.output.split("\n"):
+                f.write(line + "\n\t")
+            f.write("\n\n")

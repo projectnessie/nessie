@@ -1,5 +1,5 @@
 pynessie
-=============
+========
 
 .. toctree::
    :maxdepth: 4
