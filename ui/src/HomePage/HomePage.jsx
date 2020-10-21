@@ -17,36 +17,15 @@ import React, {useState, useEffect} from 'react';
 
 import {authenticationService} from '../services';
 import {Container, NavDropdown, Nav, Badge} from "react-bootstrap";
-import {config} from "../config";
 import DeviceHubIcon from '@material-ui/icons/DeviceHub';
 import LocalOfferIcon from '@material-ui/icons/LocalOffer';
 import {TableListing} from "../TableListing";
 import createApi from "../utils/api"
 
 
-function fetchTable(table, currentUser, currentBranch, setSelected) {
-  if (currentUser && currentBranch) {
-    const requestOptions = {
-      method: 'GET',
-      headers: {'Authorization': currentUser.token},
-      tables: null,
-      nestedTables: null
-    };
-
-    fetch(`${config.apiUrl}/objects/${currentBranch}/${table}?metadata=true`, requestOptions)
-      .then(res => {
-        return res.json();
-      })
-      .then((data) => {
-        setSelected(data);
-      })
-      .catch(console.log);
-  }
-}
-
 function fetchDefaultBranch(currentUser, setBranch, setDefaultBranch) {
   if (currentUser) {
-    createApi({'cors':true}).getDefaultBranch()
+    createApi({'cors': true}).getDefaultBranch()
       .then(res => {
         return res.json();
       })
@@ -63,15 +42,20 @@ function header(currentBranch) {
 }
 
 function item(currentBranch, defaultBranch) {
-  return (<span>{currentBranch.name} {(currentBranch.name === defaultBranch.name) ? <Badge pill className="float-right" variant={"secondary"}>default</Badge> : ""}</span>)
+  return (<span>{currentBranch.name} {(currentBranch.name === defaultBranch.name) ?
+    <Badge pill className="float-right" variant={"secondary"}>default</Badge> : ""}</span>)
 }
+
 function HomePage(props) {
   const branches = props.branches;
   const currentUser = authenticationService.currentUserValue;
 
-  const [currentBranch, setCurrentBranch] = useState({name:"main"});
-  const [defaultBranch, setDefaultBranch] = useState({name:"main"});
-  useEffect(() => {fetchDefaultBranch(currentUser, setCurrentBranch, setDefaultBranch)}, [])
+  const [currentBranch, setCurrentBranch] = useState({name: "main"});
+  const [defaultBranch, setDefaultBranch] = useState({name: "main"});
+  useEffect(() => {
+    fetchDefaultBranch(currentUser, setCurrentBranch, setDefaultBranch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div>
@@ -80,19 +64,19 @@ function HomePage(props) {
           <NavDropdown title={header(currentBranch)} id="nav-dropdown">
             <NavDropdown.Item disabled={true}>Branches</NavDropdown.Item>
             {branches.filter(x => x.type === "BRANCH").map(x => {
-              return (<NavDropdown.Item as={"button"} key={x.name} onClick={y=>{
+              return (<NavDropdown.Item as={"button"} key={x.name} onClick={y => {
                 setCurrentBranch(x);
               }}>{item(x, defaultBranch)}</NavDropdown.Item>)
             })}
-            <NavDropdown.Divider />
+            <NavDropdown.Divider/>
             <NavDropdown.Item disabled={true}>Tags</NavDropdown.Item>
             {branches.filter(x => x.type === "TAG").map(x => {
-              return (<NavDropdown.Item as={"button"} key={x.name} onClick={y=>{
+              return (<NavDropdown.Item as={"button"} key={x.name} onClick={y => {
                 setCurrentBranch(x);
               }}>{x.name}</NavDropdown.Item>)
             })}
-            <NavDropdown.Divider />
-            <NavDropdown.Item as={"button"} key={'Create Branch'} >Create Branch</NavDropdown.Item>
+            <NavDropdown.Divider/>
+            <NavDropdown.Item as={"button"} key={'Create Branch'}>Create Branch</NavDropdown.Item>
           </NavDropdown>
           <Nav.Item>
             <Nav.Link>
@@ -111,4 +95,4 @@ function HomePage(props) {
   );
 }
 
-export { HomePage };
+export {HomePage};

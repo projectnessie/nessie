@@ -34,6 +34,9 @@
   "eslintConfig": {
     "extends": "react-app"
   },
+  "eslintIgnore": [
+    "./utils/api.js"
+  ],
   "browserslist": {
     "production": [
       ">0.2%",

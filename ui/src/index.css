@@ -16,15 +16,15 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  monospace;
 }
 
 .navbar-light .navbar-nav .nav-link {
@@ -51,20 +51,20 @@ code {
 .top-box {
   border-top: solid #767676 2px;
   border-left: solid #767676 2px;
-  border-right:  solid #767676 2px;
+  border-right: solid #767676 2px;
 }
 
 .middle-box {
   border-left: solid #767676 2px;
-  border-right:  solid #767676 2px;
+  border-right: solid #767676 2px;
 }
 
 .bottom-box {
   border-bottom: solid #767676 2px;
   border-left: solid #767676 2px;
-  border-right:  solid #767676 2px;
+  border-right: solid #767676 2px;
 }
 
 .inner-brand {
-  color: rgba(0,0,0,0.9) !important;
+  color: rgba(0, 0, 0, 0.9) !important;
 }
