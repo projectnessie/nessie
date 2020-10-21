@@ -23,8 +23,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 
 import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.backend.dynamodb.DynamoDbBackend;
@@ -32,8 +30,6 @@ import com.dremio.nessie.backend.simple.InMemory;
 import com.dremio.nessie.server.config.ApplicationConfig;
 import com.dremio.nessie.server.config.converters.BackendType;
 import com.dremio.nessie.server.config.converters.JGitStoreType;
-
-import io.smallrye.metrics.MetricRegistries;
 
 /**
  * Factory to generate backend based on server config.
@@ -60,7 +56,6 @@ public class BackendProducer {
   @Singleton
   @Produces
   public Backend producer() {
-    MetricRegistry registry = MetricRegistries.get(Type.APPLICATION);
 
     if (!config.getVersionStoreJGitConfig().getJgitStoreType().equals(JGitStoreType.DYNAMO)) {
       return null;
@@ -68,7 +63,7 @@ public class BackendProducer {
     if (config.getBackendsConfig().getBackendType().equals(BackendType.INMEMORY)) {
       return new InMemory.BackendFactory().create();
     }
-    return new DynamoDbBackend.BackendFactory().create(region, endpoint.orElse(null), registry);
+    return new DynamoDbBackend.BackendFactory().create(region, endpoint.orElse(null));
   }
 
 }

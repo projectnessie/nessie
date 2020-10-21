@@ -19,7 +19,6 @@ package com.dremio.nessie.backend.dynamodb;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import com.dremio.nessie.backend.BranchControllerObject;
 import com.dremio.nessie.backend.ImmutableBranchControllerObject;
@@ -34,8 +33,8 @@ public class GitObjectDynamoDbBackend extends
                                       AbstractEntityDynamoDbBackend<BranchControllerObject> {
 
 
-  public GitObjectDynamoDbBackend(DynamoDbClient client, MetricRegistry registry) {
-    super(client, "NessieGitObjectDatabase", false, registry);
+  public GitObjectDynamoDbBackend(DynamoDbClient client) {
+    super(client, "NessieGitObjectDatabase", false);
   }
 
   @Override
