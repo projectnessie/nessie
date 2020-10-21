@@ -45,7 +45,7 @@ jobs:
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
     - name: Push Docker images
       run: |
-          echo '${{ secrets.DOCKER_TOKEN }}' | docker login https://docker.pkg.github.com -u 'nessiebuilder' --password-stdin
+          echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
           docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
           while read IMAGE_ID IMAGE_TAG; do
             docker tag "$IMAGE_ID" "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
