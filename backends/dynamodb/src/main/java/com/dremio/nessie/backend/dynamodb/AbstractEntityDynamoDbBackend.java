@@ -93,7 +93,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public VersionedWrapper<M> get(String name) {
     Span span = tracer.buildSpan("dynamo-get").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         AutoCloseable mc = getMetrics.start()) {
+         ExceptionFreeAutoClosable mc = getMetrics.start()) {
       Map<String, AttributeValue> key = new HashMap<>();
       key.put("uuid", AttributeValue.builder().s(name).build());
       GetItemRequest request = GetItemRequest.builder()
@@ -110,16 +110,13 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
         return null;
       }
       return fromDynamoDB(obj);
-    } catch (Exception e) {
-      // can't happen
-      throw new RuntimeException(e);
     }
   }
 
   public List<VersionedWrapper<M>> getAll(boolean includeDeleted) {
     Span span = tracer.buildSpan("dynamo-get-all").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         AutoCloseable mc = getAllMetrics.start()) {
+         ExceptionFreeAutoClosable mc = getAllMetrics.start()) {
       ScanRequest request = ScanRequest.builder()
                                        .tableName(tableName)
                                        .consistentRead(true)
@@ -133,9 +130,6 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
         getCounter.increment((long) Math.ceil(response.consumedCapacity().capacityUnits()));
       });
       return resultList;
-    } catch (Exception e) {
-      // can't happen
-      throw new RuntimeException(e);
     }
   }
 
@@ -143,7 +137,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public VersionedWrapper<M> update(String name, VersionedWrapper<M> obj) {
     Span span = tracer.buildSpan("dynamo-put").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         AutoCloseable mc = putMetrics.start()) {
+         ExceptionFreeAutoClosable mc = putMetrics.start()) {
       Map<String, AttributeValue> item = toDynamoDB(obj);
       Builder builder = PutItemRequest.builder()
                                       .tableName(tableName);
@@ -171,9 +165,6 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
                                                        .build());
       putCounter.increment((long) Math.ceil(response.consumedCapacity().capacityUnits()));
       return get(name);
-    } catch (Exception e) {
-      // can't happen
-      throw new RuntimeException(e);
     }
   }
 
@@ -181,7 +172,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public void updateAll(Map<String, VersionedWrapper<M>> transaction) {
     Span span = tracer.buildSpan("dynamo-put-all").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         AutoCloseable mc = putAllMetrics.start()) {
+         ExceptionFreeAutoClosable mc = putAllMetrics.start()) {
       Map<String, List<WriteRequest>> items = new HashMap<>();
       List<WriteRequest> writeRequests =
           transaction.values()
@@ -200,9 +191,6 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
                                               .stream()
                                               .mapToDouble(ConsumedCapacity::capacityUnits)
                                               .sum()));
-    } catch (Exception e) {
-      // can't happen
-      throw new RuntimeException(e);
     }
   }
 
@@ -210,7 +198,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public void remove(String name) {
     Span span = tracer.buildSpan("dynamo-remove").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         AutoCloseable mc = deleteMetrics.start()) {
+         ExceptionFreeAutoClosable mc = deleteMetrics.start()) {
       Map<String, AttributeValue> key = new HashMap<>();
       key.put("uuid", AttributeValue.builder().s(name).build());
       DeleteItemRequest request = DeleteItemRequest.builder()
@@ -221,9 +209,6 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
                                                    .build();
       DeleteItemResponse response = client.deleteItem(request);
       deleteCounter.increment((long) Math.ceil(response.consumedCapacity().capacityUnits()));
-    } catch (Exception e) {
-      // can't happen
-      throw new RuntimeException(e);
     }
   }
 
@@ -248,12 +233,20 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
       counter = Metrics.counter("dynamodb-function", "counter", name);
     }
 
-    AutoCloseable start() {
+    ExceptionFreeAutoClosable start() {
       long start = System.nanoTime();
       return () -> {
         counter.increment();
         timer.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
       };
     }
+  }
+
+  /**
+   * used to avoid having to catch Exception that can't be thrown in close method.
+   */
+  private interface ExceptionFreeAutoClosable extends AutoCloseable {
+    @Override
+    void close();
   }
 }
