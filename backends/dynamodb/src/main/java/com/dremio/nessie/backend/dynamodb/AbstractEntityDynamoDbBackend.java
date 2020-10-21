@@ -93,7 +93,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public VersionedWrapper<M> get(String name) {
     Span span = tracer.buildSpan("dynamo-get").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         MetricsCloseable mc = getMetrics.start()) {
+         AutoCloseable mc = getMetrics.start()) {
       Map<String, AttributeValue> key = new HashMap<>();
       key.put("uuid", AttributeValue.builder().s(name).build());
       GetItemRequest request = GetItemRequest.builder()
@@ -110,13 +110,16 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
         return null;
       }
       return fromDynamoDB(obj);
+    } catch (Exception e) {
+      // can't happen
+      throw new RuntimeException(e);
     }
   }
 
   public List<VersionedWrapper<M>> getAll(boolean includeDeleted) {
     Span span = tracer.buildSpan("dynamo-get-all").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         MetricsCloseable mc = getAllMetrics.start()) {
+         AutoCloseable mc = getAllMetrics.start()) {
       ScanRequest request = ScanRequest.builder()
                                        .tableName(tableName)
                                        .consistentRead(true)
@@ -130,6 +133,9 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
         getCounter.increment((long) Math.ceil(response.consumedCapacity().capacityUnits()));
       });
       return resultList;
+    } catch (Exception e) {
+      // can't happen
+      throw new RuntimeException(e);
     }
   }
 
@@ -137,7 +143,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public VersionedWrapper<M> update(String name, VersionedWrapper<M> obj) {
     Span span = tracer.buildSpan("dynamo-put").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         MetricsCloseable mc = putMetrics.start()) {
+         AutoCloseable mc = putMetrics.start()) {
       Map<String, AttributeValue> item = toDynamoDB(obj);
       Builder builder = PutItemRequest.builder()
                                       .tableName(tableName);
@@ -165,6 +171,9 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
                                                        .build());
       putCounter.increment((long) Math.ceil(response.consumedCapacity().capacityUnits()));
       return get(name);
+    } catch (Exception e) {
+      // can't happen
+      throw new RuntimeException(e);
     }
   }
 
@@ -172,7 +181,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public void updateAll(Map<String, VersionedWrapper<M>> transaction) {
     Span span = tracer.buildSpan("dynamo-put-all").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         MetricsCloseable mc = putAllMetrics.start()) {
+         AutoCloseable mc = putAllMetrics.start()) {
       Map<String, List<WriteRequest>> items = new HashMap<>();
       List<WriteRequest> writeRequests =
           transaction.values()
@@ -191,6 +200,9 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
                                               .stream()
                                               .mapToDouble(ConsumedCapacity::capacityUnits)
                                               .sum()));
+    } catch (Exception e) {
+      // can't happen
+      throw new RuntimeException(e);
     }
   }
 
@@ -198,7 +210,7 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   public void remove(String name) {
     Span span = tracer.buildSpan("dynamo-remove").start();
     try (Scope scope = tracer.scopeManager().activate(span, true);
-         MetricsCloseable mc = deleteMetrics.start()) {
+         AutoCloseable mc = deleteMetrics.start()) {
       Map<String, AttributeValue> key = new HashMap<>();
       key.put("uuid", AttributeValue.builder().s(name).build());
       DeleteItemRequest request = DeleteItemRequest.builder()
@@ -209,6 +221,9 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
                                                    .build();
       DeleteItemResponse response = client.deleteItem(request);
       deleteCounter.increment((long) Math.ceil(response.consumedCapacity().capacityUnits()));
+    } catch (Exception e) {
+      // can't happen
+      throw new RuntimeException(e);
     }
   }
 
@@ -218,44 +233,27 @@ abstract class AbstractEntityDynamoDbBackend<M> implements EntityBackend<M> {
   }
 
   private static class DynamoMetrics {
-
-    private final String name;
+    private final Counter counter;
+    private final Timer timer;
 
     private DynamoMetrics(String name) {
-      this.name = name;
-    }
-
-    MetricsCloseable start() {
-      return new MetricsCloseable(name).start();
-    }
-  }
-
-  private static class MetricsCloseable implements AutoCloseable {
-    private final Counter counter;
-    private final Timer histogram;
-    private long start;
-
-    private MetricsCloseable(String name) {
-      histogram = Timer.builder("dynamodb-function")
-                       .tag("timer", name)
-                       //.publishPercentiles(0.5, 0.95) // median and 95th percentile
-                       .publishPercentileHistogram()
-                       //.sla(Duration.ofMillis(100))
-                       //.minimumExpectedValue(Duration.ofMillis(1))
-                       //.maximumExpectedValue(Duration.ofSeconds(10))
-                       .register(Metrics.globalRegistry);
+      timer = Timer.builder("dynamodb-function")
+                   .tag("timer", name)
+                   //.publishPercentiles(0.5, 0.95) // median and 95th percentile
+                   .publishPercentileHistogram()
+                   //.sla(Duration.ofMillis(100))
+                   //.minimumExpectedValue(Duration.ofMillis(1))
+                   //.maximumExpectedValue(Duration.ofSeconds(10))
+                   .register(Metrics.globalRegistry);
       counter = Metrics.counter("dynamodb-function", "counter", name);
     }
 
-    MetricsCloseable start() {
-      start = System.nanoTime();
-      return this;
-    }
-
-    @Override
-    public void close() {
-      counter.increment();
-      histogram.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+    AutoCloseable start() {
+      long start = System.nanoTime();
+      return () -> {
+        counter.increment();
+        timer.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+      };
     }
   }
 }
