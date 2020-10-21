@@ -30,6 +30,11 @@ repositories {
   mavenCentral()
 }
 
+compileJava {
+  sourceCompatibility = '1.8'
+  targetCompatibility = '1.8'
+}
+
 dependencies {
   implementation platform('io.quarkus:quarkus-bom:1.9.0.Final')
 
