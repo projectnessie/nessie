@@ -43,7 +43,7 @@ class NessieClient:
         self._commit_id: str = cast(str, None)
 
         try:
-            self._base_branch = config["ref"].get()
+            self._base_branch = config["default_branch"].get()
         except confuse.exceptions.NotFoundError:
             self._base_branch = None
 
