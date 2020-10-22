@@ -23,7 +23,11 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.LoadOp;
+import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.MapDifference.ValueDifference;
 
@@ -191,7 +195,7 @@ class DiffFinder {
 
   }
 
-  static List<DiffFinder> getFinders(List<L1> l1Ascending, DynamoStore store) throws ReferenceNotFoundException {
+  static List<DiffFinder> getFinders(List<L1> l1Ascending, Store store) throws ReferenceNotFoundException {
     Preconditions.checkArgument(l1Ascending.size() > 1);
     L1 previous = null;
     List<DiffFinder> diffs = new ArrayList<>();

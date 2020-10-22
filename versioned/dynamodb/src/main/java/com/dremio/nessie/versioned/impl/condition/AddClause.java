@@ -17,7 +17,7 @@ package com.dremio.nessie.versioned.impl.condition;
 
 import org.immutables.value.Value.Immutable;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import com.dremio.nessie.versioned.store.Entity;
 
 /**
  * Used for adding to numbers, sets or lists.
@@ -29,7 +29,7 @@ public abstract class AddClause implements UpdateClause {
 
   public abstract Value getValue();
 
-  public static AddClause addToSetOrNumber(ExpressionPath path, AttributeValue value) {
+  public static AddClause addToSetOrNumber(ExpressionPath path, Entity value) {
     return ImmutableAddClause.builder().path(path).value(Value.of(value)).build();
   }
 

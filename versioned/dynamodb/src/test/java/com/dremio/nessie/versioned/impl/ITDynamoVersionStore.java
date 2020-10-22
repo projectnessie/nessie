@@ -54,8 +54,9 @@ import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.WithHash;
-import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.dremio.nessie.versioned.impl.InconsistentValue.InconsistentValueException;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 

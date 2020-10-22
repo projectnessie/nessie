@@ -31,20 +31,23 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.RemoveClause;
 import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
  * Stores the current state of branch.
@@ -198,17 +201,17 @@ class InternalBranch extends MemoizedId implements InternalRef {
       return saved;
     }
 
-    public AttributeValue toAttributeValue() {
-      return AttributeValue.builder().m(SCHEMA.itemToMap(this, true)).build();
+    public Entity toEntity() {
+      return Entity.m(SCHEMA.itemToMap(this, true));
     }
 
     static final SimpleSchema<Commit> SCHEMA = new SimpleSchema<Commit>(Commit.class) {
 
       @Override
-      public Commit deserialize(Map<String, AttributeValue> map) {
+      public Commit deserialize(Map<String, Entity> map) {
         if (!map.containsKey(DELTAS)) {
-          return new Commit(Id.fromAttributeValue(map.get(ID)), Id.fromAttributeValue(map.get(COMMIT)),
-              Id.fromAttributeValue(map.get(PARENT)));
+          return new Commit(Id.fromEntity(map.get(ID)), Id.fromEntity(map.get(COMMIT)),
+              Id.fromEntity(map.get(PARENT)));
         }
 
         List<UnsavedDelta> deltas = map.get(DELTAS)
@@ -217,32 +220,31 @@ class InternalBranch extends MemoizedId implements InternalRef {
             .map(av -> UnsavedDelta.SCHEMA.mapToItem(av.m()))
             .collect(Collectors.toList());
         return new Commit(
-            Id.fromAttributeValue(map.get(ID)),
-            Id.fromAttributeValue(map.get(COMMIT)),
+            Id.fromEntity(map.get(ID)),
+            Id.fromEntity(map.get(COMMIT)),
             deltas,
-            KeyMutationList.fromAttributeValue(map.get(KEY_MUTATIONS))
+            KeyMutationList.fromEntity(map.get(KEY_MUTATIONS))
             );
 
       }
 
       @Override
-      public Map<String, AttributeValue> itemToMap(Commit item, boolean ignoreNulls) {
-        ImmutableMap.Builder<String, AttributeValue> builder = ImmutableMap.builder();
+      public Map<String, Entity> itemToMap(Commit item, boolean ignoreNulls) {
+        ImmutableMap.Builder<String, Entity> builder = ImmutableMap.builder();
         builder
-          .put(ID, item.getId().toAttributeValue())
-            .put(COMMIT, item.commit.toAttributeValue());
+          .put(ID, item.getId().toEntity())
+            .put(COMMIT, item.commit.toEntity());
         if (item.saved) {
-          builder.put(PARENT, item.parent.toAttributeValue());
+          builder.put(PARENT, item.parent.toEntity());
         } else {
-          AttributeValue deltas = AttributeValue.builder().l(
+          Entity deltas = Entity.l(
               item.deltas.stream().map(
-                  d -> AttributeValue.builder().m(
+                  d -> Entity.m(
                       UnsavedDelta.SCHEMA.itemToMap(d, true)
-                      ).build()
-                  ).collect(Collectors.toList()))
-              .build();
+                      )
+                  ).collect(Collectors.toList()));
           builder.put(DELTAS, deltas);
-          builder.put(KEY_MUTATIONS, item.keyMutationList.toAttributeValue());
+          builder.put(KEY_MUTATIONS, item.keyMutationList.toEntity());
         }
         return builder.build();
       }
@@ -253,7 +255,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
    * Identify the list of intended commits that need to be completed.
    * @return
    */
-  public UpdateState getUpdateState(DynamoStore store)  {
+  public UpdateState getUpdateState(Store store)  {
     // generate sublist of important commits.
     List<Commit> unsavedCommits = new ArrayList<>();
     Commit lastSavedCommit = null;
@@ -363,7 +365,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
      * @return
      */
     @SuppressWarnings("unchecked")
-    CompletableFuture<InternalBranch> ensureAvailable(DynamoStore store, Executor executor, int attempts, boolean waitOnCollapse) {
+    CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, int attempts, boolean waitOnCollapse) {
       if (saves.isEmpty()) {
         saved = true;
         return CompletableFuture.completedFuture(initialBranch);
@@ -412,7 +414,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
      * @throws ReferenceNotFoundException when branch does not exist.
      * @throws ReferenceConflictException If attempts are depleted and operation cannot be applied due to heavy concurrency
      */
-    private static InternalBranch collapseIntentionLog(UpdateState initialState, DynamoStore store, InternalBranch branch, int attempts)
+    private static InternalBranch collapseIntentionLog(UpdateState initialState, Store store, InternalBranch branch, int attempts)
         throws ReferenceNotFoundException, ReferenceConflictException {
       try {
         for (int attempt = 0; attempt < attempts; attempt++) {
@@ -429,19 +431,19 @@ class InternalBranch extends MemoizedId implements InternalRef {
 
           for (Delete d : updateState.deletes) {
             ExpressionPath path = commits.toBuilder().position(d.position).build();
-            condition = condition.and(ExpressionFunction.equals(path.toBuilder().name(ID).build(), d.id.toAttributeValue()));
+            condition = condition.and(ExpressionFunction.equals(path.toBuilder().name(ID).build(), d.id.toEntity()));
             update = update.and(RemoveClause.of(path));
           }
 
           condition = condition.and(ExpressionFunction.equals(last.toBuilder().name(ID).build(),
-              updateState.finalL1RandomId.toAttributeValue()));
+              updateState.finalL1RandomId.toEntity()));
 
           // remove extra commits field for last commit.
           update = update
               .and(RemoveClause.of(last.toBuilder().name(Commit.DELTAS).build()))
               .and(RemoveClause.of(last.toBuilder().name(Commit.KEY_MUTATIONS).build()))
-              .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toAttributeValue()))
-              .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toAttributeValue()));
+              .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toEntity()))
+              .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
 
           Optional<InternalRef> updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition));
           if (updated.isPresent()) {
@@ -510,20 +512,20 @@ class InternalBranch extends MemoizedId implements InternalRef {
     static final SimpleSchema<UnsavedDelta> SCHEMA = new SimpleSchema<UnsavedDelta>(UnsavedDelta.class) {
 
       @Override
-      public UnsavedDelta deserialize(Map<String, AttributeValue> map) {
+      public UnsavedDelta deserialize(Map<String, Entity> map) {
         return new UnsavedDelta(
             Integer.parseInt(map.get(POSITION).n()),
-            Id.of(map.get(OLD_ID).b().asByteArray()),
-            Id.of(map.get(NEW_ID).b().asByteArray())
+            Id.of(map.get(OLD_ID).b()),
+            Id.of(map.get(NEW_ID).b())
             );
       }
 
       @Override
-      public Map<String, AttributeValue> itemToMap(UnsavedDelta item, boolean ignoreNulls) {
-        return ImmutableMap.<String, AttributeValue>builder()
-            .put(POSITION, AttributeValue.builder().n(Integer.toString(item.position)).build())
-            .put(OLD_ID, item.oldId.toAttributeValue())
-            .put(NEW_ID, item.newId.toAttributeValue())
+      public Map<String, Entity> itemToMap(UnsavedDelta item, boolean ignoreNulls) {
+        return ImmutableMap.<String, Entity>builder()
+            .put(POSITION, Entity.n(item.position))
+            .put(OLD_ID, item.oldId.toEntity())
+            .put(NEW_ID, item.newId.toEntity())
             .build();
       }
     };
@@ -537,25 +539,24 @@ class InternalBranch extends MemoizedId implements InternalRef {
   static final SimpleSchema<InternalBranch> SCHEMA = new SimpleSchema<InternalBranch>(InternalBranch.class) {
 
     @Override
-    public InternalBranch deserialize(Map<String, AttributeValue> attributeMap) {
+    public InternalBranch deserialize(Map<String, Entity> attributeMap) {
       return new InternalBranch(
-          Id.fromAttributeValue(attributeMap.get(ID)),
+          Id.fromEntity(attributeMap.get(ID)),
           attributeMap.get(NAME).s(),
-          IdMap.fromAttributeValue(attributeMap.get(TREE), L1.SIZE),
-          Id.fromAttributeValue(attributeMap.get(METADATA)),
+          IdMap.fromEntity(attributeMap.get(TREE), L1.SIZE),
+          Id.fromEntity(attributeMap.get(METADATA)),
           attributeMap.get(COMMITS).l().stream().map(av -> Commit.SCHEMA.mapToItem(av.m())).collect(Collectors.toList())
       );
     }
 
     @Override
-    public Map<String, AttributeValue> itemToMap(InternalBranch item, boolean ignoreNulls) {
-      return ImmutableMap.<String, AttributeValue>builder()
-          .put(ID, item.getId().toAttributeValue())
-          .put(NAME, AttributeValue.builder().s(item.name).build())
-          .put(METADATA, item.metadata.toAttributeValue())
-          .put(COMMITS, AttributeValue.builder().l(
-              item.commits.stream().map(Commit::toAttributeValue).collect(Collectors.toList())).build())
-          .put(TREE, item.tree.toAttributeValue())
+    public Map<String, Entity> itemToMap(InternalBranch item, boolean ignoreNulls) {
+      return ImmutableMap.<String, Entity>builder()
+          .put(ID, item.getId().toEntity())
+          .put(NAME, Entity.s(item.name))
+          .put(METADATA, item.metadata.toEntity())
+          .put(COMMITS, Entity.l(item.commits.stream().map(Commit::toEntity).collect(Collectors.toList())))
+          .put(TREE, item.tree.toEntity())
           .build();
     }
 

@@ -23,12 +23,13 @@ import java.util.stream.Collectors;
 
 import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Suppliers;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.primitives.Ints;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
  * A version of key that memoizes the id of the key according to sha256 hashing.
@@ -66,18 +67,17 @@ class InternalKey implements Comparable<InternalKey>, HasId {
     return getPosition().getL2();
   }
 
-  public AttributeValue toAttributeValue() {
-    return AttributeValue.builder().l(getElements().stream()
-        .map(s -> AttributeValue.builder().s(s).build()).collect(Collectors.toList())).build();
+  public Entity toEntity() {
+    return Entity.l(getElements().stream().map(s -> Entity.s(s)).collect(Collectors.toList()));
   }
 
   public int estimatedSize() {
     return 3 + delegate.getElements().stream().mapToInt(s -> s.length()).sum();
   }
 
-  public static InternalKey fromAttributeValue(AttributeValue value) {
+  public static InternalKey fromEntity(Entity value) {
     return new InternalKey(ImmutableKey.builder()
-        .addAllElements(value.l().stream().map(AttributeValue::s)
+        .addAllElements(value.l().stream().map(Entity::s)
         .collect(Collectors.toList())).build());
   }
 

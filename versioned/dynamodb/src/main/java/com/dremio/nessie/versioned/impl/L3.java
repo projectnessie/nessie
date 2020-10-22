@@ -25,20 +25,21 @@ import java.util.stream.Stream;
 import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-
-class L3 extends MemoizedId {
+public class L3 extends MemoizedId {
 
   private static final long HASH_SEED = 4604180344422375655L;
 
   private final TreeMap<InternalKey, PositionDelta> map;
 
-  static L3 EMPTY = new L3(new TreeMap<>());
-  static Id EMPTY_ID = EMPTY.getId();
+  public static L3 EMPTY = new L3(new TreeMap<>());
+  public static Id EMPTY_ID = EMPTY.getId();
 
   private L3(TreeMap<InternalKey, PositionDelta> keys) {
     this(null, keys);
@@ -50,7 +51,7 @@ class L3 extends MemoizedId {
     ensureConsistentId();
   }
 
-  public Id getId(InternalKey key) {
+  Id getId(InternalKey key) {
     PositionDelta delta = map.get(key);
     if (delta == null) {
       return Id.EMPTY;
@@ -108,7 +109,7 @@ class L3 extends MemoizedId {
   }
 
 
-  static final SimpleSchema<L3> SCHEMA = new SimpleSchema<L3>(L3.class) {
+  public static final SimpleSchema<L3> SCHEMA = new SimpleSchema<L3>(L3.class) {
 
     private static final String ID = "id";
     private static final String TREE = "tree";
@@ -116,36 +117,36 @@ class L3 extends MemoizedId {
     private static final String TREE_ID = "id";
 
     @Override
-    public L3 deserialize(Map<String, AttributeValue> attributeMap) {
+    public L3 deserialize(Map<String, Entity> attributeMap) {
       TreeMap<InternalKey, PositionDelta> tree = attributeMap.get(TREE).l().stream().map(av -> av.m()).collect(Collectors.toMap(
-          m -> InternalKey.fromAttributeValue(m.get(TREE_KEY)),
-          m -> PositionDelta.of(0, Id.fromAttributeValue(m.get(TREE_ID))),
+          m -> InternalKey.fromEntity(m.get(TREE_KEY)),
+          m -> PositionDelta.of(0, Id.fromEntity(m.get(TREE_ID))),
           (a,b) -> {
             throw new UnsupportedOperationException();
           },
           TreeMap::new));
 
       return new L3(
-          Id.fromAttributeValue(attributeMap.get(ID)),
+          Id.fromEntity(attributeMap.get(ID)),
           tree
       );
     }
 
     @Override
-    public Map<String, AttributeValue> itemToMap(L3 item, boolean ignoreNulls) {
-      List<AttributeValue> values = item.map.entrySet().stream()
+    public Map<String, Entity> itemToMap(L3 item, boolean ignoreNulls) {
+      List<Entity> values = item.map.entrySet().stream()
           .filter(e -> !e.getValue().getNewId().isEmpty())
           .map(e -> {
             InternalKey key = e.getKey();
             PositionDelta pm = e.getValue();
-            Map<String, AttributeValue> pmm = ImmutableMap.of(
-                TREE_KEY, key.toAttributeValue(),
-                TREE_ID, pm.getNewId().toAttributeValue());
-            return AttributeValue.builder().m(pmm).build();
+            Map<String, Entity> pmm = ImmutableMap.of(
+                TREE_KEY, key.toEntity(),
+                TREE_ID, pm.getNewId().toEntity());
+            return Entity.m(pmm);
           }).collect(Collectors.toList());
-      return ImmutableMap.<String, AttributeValue>builder()
-          .put(TREE, AttributeValue.builder().l(values).build())
-          .put(ID, item.getId().toAttributeValue())
+      return ImmutableMap.<String, Entity>builder()
+          .put(TREE, Entity.l(values))
+          .put(ID, item.getId().toEntity())
           .build();
     }
 

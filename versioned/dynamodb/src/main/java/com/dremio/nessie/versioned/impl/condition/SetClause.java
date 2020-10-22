@@ -15,7 +15,7 @@
  */
 package com.dremio.nessie.versioned.impl.condition;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import com.dremio.nessie.versioned.store.Entity;
 
 @org.immutables.value.Value.Immutable
 public abstract class SetClause implements UpdateClause {
@@ -24,7 +24,7 @@ public abstract class SetClause implements UpdateClause {
 
   public abstract Value getValue();
 
-  public static SetClause equals(ExpressionPath path, AttributeValue value) {
+  public static SetClause equals(ExpressionPath path, Entity value) {
     return ImmutableSetClause.builder().path(path).value(Value.of(value)).build();
   }
 
@@ -35,11 +35,11 @@ public abstract class SetClause implements UpdateClause {
    * @param valueToSet The value to set.
    * @return The clause
    */
-  public static SetClause ifNotExists(ExpressionPath setPath, ExpressionPath existenceCheckPath, AttributeValue valueToSet) {
+  public static SetClause ifNotExists(ExpressionPath setPath, ExpressionPath existenceCheckPath, Entity valueToSet) {
     return ImmutableSetClause.builder().path(setPath).value(ExpressionFunction.ifNotExists(existenceCheckPath, valueToSet)).build();
   }
 
-  public static SetClause appendToList(ExpressionPath path, AttributeValue value) {
+  public static SetClause appendToList(ExpressionPath path, Entity value) {
     return ImmutableSetClause.builder().path(path).value(ExpressionFunction.appendToList(path, value)).build();
   }
 

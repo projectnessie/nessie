@@ -18,10 +18,9 @@ package com.dremio.nessie.versioned.impl.condition;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class ExpressionFunction implements Value {
 
@@ -74,7 +73,7 @@ public class ExpressionFunction implements Value {
     return new ExpressionFunction(FunctionName.SIZE, ImmutableList.of(path));
   }
 
-  public static ExpressionFunction appendToList(ExpressionPath initialList, AttributeValue valueToAppend) {
+  public static ExpressionFunction appendToList(ExpressionPath initialList, Entity valueToAppend) {
     return new ExpressionFunction(FunctionName.LIST_APPEND, ImmutableList.of(initialList, Value.of(valueToAppend)));
   }
 
@@ -82,16 +81,16 @@ public class ExpressionFunction implements Value {
     return new ExpressionFunction(FunctionName.ATTRIBUTE_NOT_EXISTS, ImmutableList.of(path));
   }
 
-  public static ExpressionFunction equals(ExpressionPath path, AttributeValue value) {
+  public static ExpressionFunction equals(ExpressionPath path, Entity value) {
     return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(path, Value.of(value)));
   }
 
-  public static ExpressionFunction equals(ExpressionFunction func, AttributeValue value) {
+  public static ExpressionFunction equals(ExpressionFunction func, Entity value) {
     return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(func, Value.of(value)));
   }
 
 
-  public static ExpressionFunction ifNotExists(ExpressionPath path, AttributeValue value) {
+  public static ExpressionFunction ifNotExists(ExpressionPath path, Entity value) {
     return new ExpressionFunction(FunctionName.IF_NOT_EXISTS, ImmutableList.of(path, Value.of(value)));
   }
 

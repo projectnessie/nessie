@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.ReferenceConflictException;
+import com.dremio.nessie.versioned.store.Id;
 import com.google.common.collect.ImmutableList;
 
 /**

@@ -19,12 +19,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
-
-import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
  * A base implementation of a opaque byte object stored in the VersionStore. Used for both for commit metadata and values.
@@ -90,16 +90,15 @@ abstract class WrappedValueBean extends MemoizedId {
     }
 
     @Override
-    public T deserialize(Map<String, AttributeValue> attributeMap) {
-      return deserializer.apply(Id.fromAttributeValue(attributeMap.get(ID)),
-          ByteString.copyFrom(attributeMap.get(VALUE).b().asByteArray()));
+    public T deserialize(Map<String, Entity> attributeMap) {
+      return deserializer.apply(Id.fromEntity(attributeMap.get(ID)), attributeMap.get(VALUE).b());
     }
 
     @Override
-    public Map<String, AttributeValue> itemToMap(T item, boolean ignoreNulls) {
-      return ImmutableMap.<String, AttributeValue>builder()
-          .put(ID, item.getId().toAttributeValue())
-          .put(VALUE, AttributeValue.builder().b(SdkBytes.fromByteBuffer(item.getBytes().asReadOnlyByteBuffer())).build())
+    public Map<String, Entity> itemToMap(T item, boolean ignoreNulls) {
+      return ImmutableMap.<String, Entity>builder()
+          .put(ID, item.getId().toEntity())
+          .put(VALUE, Entity.b(item.getBytes()))
           .build();
     }
   }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.impl.InternalRef;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hasher;
@@ -34,10 +35,7 @@ import com.google.protobuf.ByteOutput;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 
-import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-
-final class Id implements InternalRef {
+public final class Id implements InternalRef {
 
   public static final int LENGTH = 20;
   public static final Id EMPTY = new Id(ByteString.copyFrom(new byte[LENGTH]));
@@ -67,6 +65,12 @@ final class Id implements InternalRef {
     return new Id(bytes);
   }
 
+  /**
+   * Create an Id based on a VersionStore Hash.
+   * @param hash The hash the id should use.
+   * @return The Id object
+   * @throws ReferenceNotFoundException Thrown if the hash can't be a valid Id.
+   */
   public static Id of(Hash hash) throws ReferenceNotFoundException {
     ByteString bytes = hash.asBytes();
     if (bytes.size() != LENGTH) {
@@ -75,12 +79,22 @@ final class Id implements InternalRef {
     return Id.of(bytes);
   }
 
+  /**
+   * Create an Id based on a collection of arbitrary bytes.
+   * @param bytes The bytes to hash.
+   * @return The generated id.
+   */
   public static Id build(ByteBuffer bytes) {
     return build(hasher -> {
       hasher.putBytes(bytes);
     });
   }
 
+  /**
+   * Create a Id by hashing the lower case value of the provided string.
+   * @param string The string to hash
+   * @return The generated Id object.
+   */
   public static Id build(String string) {
     return build(hasher -> {
       hasher.putString(string.toLowerCase(Locale.US), StandardCharsets.UTF_8);
@@ -91,6 +105,11 @@ final class Id implements InternalRef {
     return build(hasher -> hashByteString(bytes, hasher));
   }
 
+  /**
+   * Create an id by using a provided hasher.
+   * @param consumer The lambda that contains the require hashing.
+   * @return The generated Id.
+   */
   public static Id build(Consumer<Hasher> consumer) {
     Hasher hasher = Hashing.sha256().newHasher();
     consumer.accept(hasher);
@@ -124,6 +143,10 @@ final class Id implements InternalRef {
     return Objects.equals(getValue(), other.getValue());
   }
 
+  /**
+   * Generate a random valid Id.
+   * @return The generated Id.
+   */
   public static Id generateRandom() {
     byte[] bytes = new byte[LENGTH];
     ThreadLocalRandom.current().nextBytes(bytes);
@@ -168,8 +191,8 @@ final class Id implements InternalRef {
     }
   }
 
-  public AttributeValue toAttributeValue() {
-    return AttributeValue.builder().b(SdkBytes.fromByteArray(getValue().toByteArray())).build();
+  public Entity toEntity() {
+    return Entity.b(getValue());
   }
 
   public void addToHash(Hasher hasher) {
@@ -180,12 +203,12 @@ final class Id implements InternalRef {
     return Hash.of(getValue());
   }
 
-  public Map<String, AttributeValue> toKeyMap() {
-    return ImmutableMap.of(DynamoStore.KEY_NAME, this.toAttributeValue());
+  public Map<String, Entity> toKeyMap() {
+    return ImmutableMap.of(Store.KEY_NAME, this.toEntity());
   }
 
-  public static Id fromAttributeValue(AttributeValue value) {
-    return Id.of(ByteString.copyFrom(value.b().asByteBuffer()));
+  public static Id fromEntity(Entity value) {
+    return Id.of(value.b());
   }
 
   @Override

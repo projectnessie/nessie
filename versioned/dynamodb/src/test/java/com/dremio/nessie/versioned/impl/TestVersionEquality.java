@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
+import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 
 class TestVersionEquality {
 

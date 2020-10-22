@@ -36,6 +36,7 @@ import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
+import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 
 import software.amazon.awssdk.regions.Region;
 
@@ -90,7 +91,7 @@ public class DynamoStoreFixture implements VersionStore<String, String>, AutoClo
   public DynamoStoreFixture() {
     store = new DynamoStore(STORE_CONFIG);
     store.start();
-    impl = new DynamoVersionStore<>(WORKER, store, true);
+    impl = new TieredVersionStore<>(WORKER, store, true);
   }
 
   public DynamoStore getStore() {

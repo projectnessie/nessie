@@ -18,7 +18,7 @@ package com.dremio.nessie.versioned.impl.condition;
 
 import org.immutables.value.Value.Immutable;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import com.dremio.nessie.versioned.store.Entity;
 
 /**
  * Remove items from a set.
@@ -36,7 +36,7 @@ public abstract class DeleteClause implements UpdateClause {
    * @param setToRemove The actual values to remove. Must be a set of values of the same type as those stored at the path above.
    * @return The constructed DeleteClause.
    */
-  public static DeleteClause deleteFromSet(ExpressionPath path, AttributeValue setToRemove) {
+  public static DeleteClause deleteFromSet(ExpressionPath path, Entity setToRemove) {
     return ImmutableDeleteClause.builder().path(path).setToRemove(Value.of(setToRemove)).build();
   }
 

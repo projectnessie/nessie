@@ -17,17 +17,18 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.Map;
 
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.collect.ImmutableMap;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-
-class L2 extends MemoizedId {
+public class L2 extends MemoizedId {
 
   private static final long HASH_SEED = -6352836103271505167L;
 
-  static final int SIZE = 199;
-  static L2 EMPTY = new L2(null, new IdMap(SIZE, L3.EMPTY_ID));
-  static Id EMPTY_ID = EMPTY.getId();
+  public static final int SIZE = 199;
+  public static L2 EMPTY = new L2(null, new IdMap(SIZE, L3.EMPTY_ID));
+  public static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap map;
 
@@ -58,24 +59,24 @@ class L2 extends MemoizedId {
     });
   }
 
-  static final SimpleSchema<L2> SCHEMA = new SimpleSchema<L2>(L2.class) {
+  public static final SimpleSchema<L2> SCHEMA = new SimpleSchema<L2>(L2.class) {
 
     private static final String ID = "id";
     private static final String TREE = "tree";
 
     @Override
-    public L2 deserialize(Map<String, AttributeValue> attributeMap) {
+    public L2 deserialize(Map<String, Entity> attributeMap) {
       return new L2(
-          Id.fromAttributeValue(attributeMap.get(ID)),
-          IdMap.fromAttributeValue(attributeMap.get(TREE), SIZE)
+          Id.fromEntity(attributeMap.get(ID)),
+          IdMap.fromEntity(attributeMap.get(TREE), SIZE)
       );
     }
 
     @Override
-    public Map<String, AttributeValue> itemToMap(L2 item, boolean ignoreNulls) {
-      return ImmutableMap.<String, AttributeValue>builder()
-          .put(TREE, item.map.toAttributeValue())
-          .put(ID, item.getId().toAttributeValue())
+    public Map<String, Entity> itemToMap(L2 item, boolean ignoreNulls) {
+      return ImmutableMap.<String, Entity>builder()
+          .put(TREE, item.map.toEntity())
+          .put(ID, item.getId().toEntity())
           .build();
     }
 

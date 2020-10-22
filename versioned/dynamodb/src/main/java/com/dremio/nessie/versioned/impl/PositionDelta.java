@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import org.immutables.value.Value;
 
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
+import com.dremio.nessie.versioned.store.Id;
 
 /**
  * Describes the current and previous state of the value.
