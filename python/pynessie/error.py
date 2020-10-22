@@ -6,9 +6,7 @@ import requests
 class NessieException(Exception):
     """Base Nessie exception."""
 
-    def __init__(
-        self: "NessieException", msg: str, original_exception: Exception, response: requests.models.Response = None
-    ) -> None:
+    def __init__(self: "NessieException", msg: str, original_exception: Exception, response: requests.models.Response = None) -> None:
         """Construct base Nessie Exception."""
         super(NessieException, self).__init__(msg + (": %s" % original_exception))
         self.original_exception = original_exception

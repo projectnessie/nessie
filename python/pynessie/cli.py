@@ -5,8 +5,8 @@ import sys
 from collections import defaultdict
 from typing import Any
 from typing import Dict
+from typing import Generator
 from typing import List
-from typing import Optional
 from typing import Tuple
 
 import attr
@@ -21,16 +21,26 @@ from ._log import show_log
 from ._ref import handle_branch_tag
 from .conf import build_config
 from .conf import process
+from .error import NessieNotFoundException
 from .model import CommitMeta
 from .model import CommitMetaSchema
+from .model import Contents
+from .model import ContentsSchema
+from .model import Delete
 from .model import Entries
 from .model import Entry
 from .model import EntrySchema
+from .model import MultiContents
+from .model import Put
+from .nessie_client import _contents_key
+from .nessie_client import _format_key
 from .nessie_client import NessieClient
 
 
 @attr.s
 class ContextObject(object):
+    """Click context object."""
+
     nessie = attr.ib(NessieClient)
     verbose = attr.ib(bool)
     json = attr.ib(bool)
@@ -58,8 +68,7 @@ class MutuallyExclusiveOption(Option):
         """Ensure mutually exclusive options are not used together."""
         if self.mutually_exclusive.intersection(opts) and self.name in opts:
             raise UsageError(
-                "Illegal usage: `{}` is mutually exclusive with "
-                "arguments `{}`.".format(self.name, ", ".join(self.mutually_exclusive))
+                "Illegal usage: `{}` is mutually exclusive with " "arguments `{}`.".format(self.name, ", ".join(self.mutually_exclusive))
             )
 
         return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
@@ -110,12 +119,8 @@ def remote(ctx: ContextObject) -> None:
 
 
 @cli.command(cls=DefaultHelp)
-@click.option(
-    "--get", cls=MutuallyExclusiveOption, help="get config parameter", mutually_exclusive=["set", "list", "unset"]
-)
-@click.option(
-    "--add", cls=MutuallyExclusiveOption, help="set config parameter", mutually_exclusive=["get", "list", "unset"]
-)
+@click.option("--get", cls=MutuallyExclusiveOption, help="get config parameter", mutually_exclusive=["set", "list", "unset"])
+@click.option("--add", cls=MutuallyExclusiveOption, help="set config parameter", mutually_exclusive=["get", "list", "unset"])
 @click.option(
     "-l",
     "--list",
@@ -124,9 +129,7 @@ def remote(ctx: ContextObject) -> None:
     help="list config parameters",
     mutually_exclusive=["set", "get", "unset"],
 )
-@click.option(
-    "--unset", cls=MutuallyExclusiveOption, help="unset config parameter", mutually_exclusive=["get", "list", "set"]
-)
+@click.option("--unset", cls=MutuallyExclusiveOption, help="unset config parameter", mutually_exclusive=["get", "list", "set"])
 @click.option("--type", help="type to interpret config value to set or get. Allowed options: bool, int")
 @click.argument("key", nargs=1, required=False)
 @pass_client
@@ -175,9 +178,7 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 @click.argument("revision_range", nargs=1, required=False)
 @click.argument("paths", nargs=-1, type=click.Path(exists=False), required=False)
 @pass_client
-def log(
-    ctx: ContextObject, number: int, since: str, until: str, author: str, revision_range: str, paths: Tuple[click.Path],
-) -> None:
+def log(ctx: ContextObject, number: int, since: str, until: str, author: str, revision_range: str, paths: Tuple[click.Path]) -> None:
     """Show commit log.
 
     REVISION_RANGE optional branch, tag or hash to start viewing log from. If of the form <hash>..<hash> only show log
@@ -216,21 +217,21 @@ def _format_time(epoch: int) -> str:
 
 
 @cli.command(name="branch")
-@click.option(
-    "-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"]
-)
-@click.option(
-    "-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branch", mutually_exclusive=["list"]
-)
+@click.option("-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
+@click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branch", mutually_exclusive=["list"])
 @click.option("-f", "--force", is_flag=True, help="force branch assignment")
-@click.option(
-    "-c", "--condition", help="Conditional Hash. Only perform the action if branch currently points to condition."
-)
+@click.option("-c", "--condition", help="Conditional Hash. Only perform the action if branch currently points to condition.")
 @click.argument("branch", nargs=1, required=False)
 @click.argument("new_branch", nargs=1, required=False)
 @pass_client
 def branch_(
-    ctx: ContextObject, list: bool, force: bool, delete: bool, branch: str, new_branch: str, condition: str,
+    ctx: ContextObject,
+    list: bool,
+    force: bool,
+    delete: bool,
+    branch: str,
+    new_branch: str,
+    condition: str,
 ) -> None:
     """Branch operations.
 
@@ -255,9 +256,7 @@ def branch_(
         nessie branch -f main test -> assign main to head of test
 
     """
-    results = handle_branch_tag(
-        ctx.nessie, list, delete, branch, new_branch, True, ctx.json, force, ctx.verbose, condition
-    )
+    results = handle_branch_tag(ctx.nessie, list, delete, branch, new_branch, True, ctx.json, force, ctx.verbose, condition)
     if ctx.json:
         click.echo(results)
     else:
@@ -265,22 +264,14 @@ def branch_(
 
 
 @cli.command()
-@click.option(
-    "-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"]
-)
-@click.option(
-    "-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branches", mutually_exclusive=["list"]
-)
+@click.option("-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
+@click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branches", mutually_exclusive=["list"])
 @click.option("-f", "--force", is_flag=True, help="force branch assignment")
-@click.option(
-    "-c", "--condition", help="Conditional Hash. Only perform the action if branch currently points to condition."
-)
+@click.option("-c", "--condition", help="Conditional Hash. Only perform the action if branch currently points to condition.")
 @click.argument("tag_name", nargs=1, required=False)
 @click.argument("new_tag", nargs=1, required=False)
 @pass_client
-def tag(
-    ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str, new_tag: str, condition: str,
-) -> None:
+def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str, new_tag: str, condition: str) -> None:
     """Tag operations.
 
     TAG_NAME name of branch to list or create/assign
@@ -304,9 +295,7 @@ def tag(
         nessie tag -f main test -> assign xxx to head of test
 
     """
-    results = handle_branch_tag(
-        ctx.nessie, list, delete, tag_name, new_tag, False, ctx.json, force, ctx.verbose, condition
-    )
+    results = handle_branch_tag(ctx.nessie, list, delete, tag_name, new_tag, False, ctx.json, force, ctx.verbose, condition)
     if ctx.json:
         click.echo(results)
     else:
@@ -314,9 +303,7 @@ def tag(
 
 
 @cli.command()
-@click.option(
-    "-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used"
-)
+@click.option("-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used")
 @click.argument("merge_branch", nargs=1, required=False)
 @click.option(
     "-f",
@@ -346,9 +333,7 @@ def merge(ctx: ContextObject, branch: str, force: bool, condition: str, merge_br
 
 
 @cli.command()
-@click.option(
-    "-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used"
-)
+@click.option("-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used")
 @click.option(
     "-f",
     "--force",
@@ -384,7 +369,7 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
     cls=MutuallyExclusiveOption,
     is_flag=True,
     help="list tables",
-    mutually_exclusive=["delete", "message"],
+    mutually_exclusive=["delete", "set"],
 )
 @click.option(
     "-d",
@@ -392,43 +377,106 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
     cls=MutuallyExclusiveOption,
     is_flag=True,
     help="delete a table",
-    mutually_exclusive=["list", "message"],
+    mutually_exclusive=["list", "set"],
+)
+@click.option(
+    "-s",
+    "--set",
+    cls=MutuallyExclusiveOption,
+    is_flag=True,
+    help="modify a table",
+    mutually_exclusive=["list", "delete"],
+)
+@click.option(
+    "-c",
+    "--condition",
+    help="Conditional Hash. Only perform the action if branch currently points to condition.",
 )
 @click.option("-r", "--ref", help="branch to list from. If not supplied the default branch from config is used")
-@click.option("-m", "--message", help="commit message", mutually_exclusive=["delete", "list"])
-@click.argument("key", nargs=1, required=False)
+@click.option("-m", "--message", help="commit message")
+@click.argument("key", nargs=-1, required=False)
 @pass_client
-def contents(ctx: ContextObject, list: bool, delete: bool, key: str, ref: str, message: str) -> None:
+def contents(ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[str], ref: str, message: str, condition: str) -> None:
     """Contents operations.
 
     KEY name of object to view, delete. If listing the key will limit by namespace what is included.
     """
     if list:
         keys = ctx.nessie.list_keys(ref if ref else ctx.nessie.get_default_branch())
-        results = EntrySchema().dumps(_format_keys_json(keys, key), many=True) if ctx.json else _format_keys(keys, key)
+        results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
-        raise NotImplementedError("performing delete from the command line is not yet implemented.")
+        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, *key), reason=_get_message(message), old_hash=condition)
+        results = ""
+    elif set:
+        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, *key), reason=_get_message(message), old_hash=condition)
+        results = ""
     else:
-        raise NotImplementedError("performing gets from the command line is not yet implemented.")
-        # content = nessie.get_values(branch if branch else nessie.get_default_branch(), key)
-        # results = ContentSchema().dumps(_format_keys_json(keys, key), many=True) if json else _format_keys(keys, key)
-    if ctx.json:
+
+        def content(x: str) -> Generator[Contents, Any, None]:
+            return ctx.nessie.get_values(ref if ref else ctx.nessie.get_default_branch(), *x)
+
+        results = ContentsSchema().dumps(content(*key), many=True) if ctx.json else (i.pretty_print() for i in content(*key))
+    if ctx.json or not results:
         click.echo(results)
     else:
         click.echo_via_pager(results)
 
 
-def _format_keys_json(keys: Entries, key: Optional[str]) -> List[Entry]:
+def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: str) -> MultiContents:
+    contents_altered = list()
+    for raw_key in keys:
+        key = _format_key(raw_key)
+        try:
+            content = nessie.get_values(ref, key)
+            content_json = ContentsSchema().dumps(content.__next__())
+        except NessieNotFoundException:
+            content_json = ""
+
+        MARKER = "# Everything below is ignored\n"
+        if delete:
+            message = "\n\n" + MARKER
+        else:
+            message = click.edit(
+                content_json
+                + "\n\n"
+                + MARKER
+                + "Edit the content above to commit changes."
+                + " Closing without change will result in a no-op."
+                + " Removing the content results in a delete"
+            )
+        if message is not None:
+            message_altered = message.split(MARKER, 1)[0].strip("\n")
+            if message_altered:
+                contents_altered.append(Put(_contents_key(raw_key), ContentsSchema().loads(message_altered)))
+            else:
+                contents_altered.append(Delete(_contents_key(raw_key)))
+    return MultiContents(contents_altered)
+
+
+def _get_commit_message(*keys: str) -> str:
+    MARKER = "# Everything below is ignored\n"
+    message = click.edit("\n\n" + MARKER + "\n".join(keys))
+    if message is not None:
+        return message.split(MARKER, 1)[0].rstrip("\n")
+
+
+def _get_message(message: str, *keys: str) -> str:
+    if message:
+        return message
+    return _get_commit_message(*keys)
+
+
+def _format_keys_json(keys: Entries, *expected_keys: str) -> List[Entry]:
     results = list()
     for k in keys.entries:
         value = ['"{}"'.format(i) if "." in i else i for i in k.name.elements]
-        if key and key not in value:
+        if expected_keys and all(key for key in expected_keys if key not in value):
             continue
         results.append(k)
     return results
 
 
-def _format_keys(keys: Entries, key: Optional[str]) -> str:
+def _format_keys(keys: Entries, *key: str) -> str:
     results = defaultdict(list)
     result_str = ""
     for k in keys.entries:
@@ -437,7 +485,7 @@ def _format_keys(keys: Entries, key: Optional[str]) -> str:
         result_str += k + ":\n"
         for v in results[k]:
             value = ['"{}"'.format(i) if "." in i else i for i in v.elements]
-            if key and key not in value:
+            if key and all(k for k in key if k not in value):
                 continue
             result_str += "\t{}\n".format(".".join(value))
     return result_str

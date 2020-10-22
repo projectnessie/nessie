@@ -2,6 +2,7 @@
 """Direct API operations on Nessie with requests."""
 from typing import Any
 from typing import cast
+from typing import Optional
 from typing import Tuple
 from typing import Union
 
@@ -27,9 +28,7 @@ def _get(url: str, details: str = "", ssl_verify: bool = True, params: dict = No
     return _check_error(r, details)
 
 
-def _post(
-    url: str, json: dict = None, details: str = "", ssl_verify: bool = True, params: dict = None
-) -> Union[str, dict, list]:
+def _post(url: str, json: dict = None, details: str = "", ssl_verify: bool = True, params: dict = None) -> Union[str, dict, list]:
     if isinstance(json, str):
         json = jsonlib.loads(json)
     r = requests.post(url, headers=_get_headers(), verify=ssl_verify, json=json, params=params)
@@ -41,7 +40,7 @@ def _delete(url: str, details: str = "", ssl_verify: bool = True, params: dict =
     return _check_error(r, details)
 
 
-def _put(url: str, json: dict = None, details: str = "", ssl_verify: bool = True, params: dict = None) -> Any:
+def _put(url: str, json: Union[str, dict] = None, details: str = "", ssl_verify: bool = True, params: dict = None) -> Any:
     if isinstance(json, str):
         json = jsonlib.loads(json)
     r = requests.put(url, headers=_get_headers(), verify=ssl_verify, json=json, params=params)
@@ -261,3 +260,24 @@ def merge(base_url: str, branch: str, merge_branch: str, expected_hash: str, ssl
     url = "/trees/merge"
     merge_obj = dict(to={"hash": expected_hash, "name": branch}, fromHash=merge_branch)
     _put(base_url + url, json=merge_obj, ssl_verify=ssl_verify)
+
+
+def commit(
+    base_url: str,
+    branch: str,
+    operations: str,
+    reason: Optional[str],
+    expected_hash: Optional[str],
+    ssl_verify: bool = True,
+) -> None:
+    """Commit a set of operations to a branch.
+
+    :param base_url: base Nessie url
+    :param branch: name of branch to merge onto
+    :param operations: json object of operations
+    :param reason: commit message
+    :param expected_hash: expected hash of HEAD of branch
+    :param ssl_verify: ignore ssl errors if False
+    """
+    url = "/trees/multi/{}/{}".format(branch, expected_hash)
+    _put(base_url + url, json=operations, ssl_verify=ssl_verify, params={"message": reason})

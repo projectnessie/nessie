@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Main module."""
+import re
 from typing import Any
 from typing import cast
 from typing import Generator
@@ -12,6 +13,7 @@ from ._endpoints import all_references
 from ._endpoints import assign_branch
 from ._endpoints import assign_tag
 from ._endpoints import cherry_pick
+from ._endpoints import commit
 from ._endpoints import create_branch
 from ._endpoints import create_tag
 from ._endpoints import delete_branch
@@ -24,16 +26,21 @@ from ._endpoints import list_tables
 from ._endpoints import merge
 from .model import CommitMeta
 from .model import Contents
+from .model import ContentsKey
 from .model import ContentsSchema
 from .model import Entries
 from .model import EntriesSchema
 from .model import LogResponse
 from .model import LogResponseSchema
+from .model import MultiContents
+from .model import MultiContentsSchema
 from .model import Reference
 from .model import ReferenceSchema
 
+_dot_regex = re.compile('\\.(?=([^"]*"[^"]*")*[^"]*$)')
 
-class NessieClient:
+
+class NessieClient(object):
     """Base Nessie Client."""
 
     def __init__(self: "NessieClient", config: confuse.Configuration) -> None:
@@ -61,11 +68,7 @@ class NessieClient:
         :param ref: name of ref to fetch
         :return: json Nessie reference
         """
-        ref_obj = (
-            get_reference(self._base_url, ref, self._ssl_verify)
-            if ref
-            else get_default_branch(self._base_url, self._ssl_verify)
-        )
+        ref_obj = get_reference(self._base_url, ref, self._ssl_verify) if ref else get_default_branch(self._base_url, self._ssl_verify)
         branch_obj = ReferenceSchema().load(ref_obj)
         return branch_obj
 
@@ -109,27 +112,25 @@ class NessieClient:
         """
         return EntriesSchema().load(list_tables(self._base_url, ref, self._ssl_verify))
 
-    def get_values(self: "NessieClient", ref: str, *tables: str) -> List[Contents]:
+    def get_values(self: "NessieClient", ref: str, *tables: str) -> Generator[Contents, Any, None]:
         """Fetch a table from a known ref.
 
         :param ref: name of ref
         :param tables: tables to fetch
         :return: Nessie Table
         """
-        fetched_tables = [get_table(self._base_url, ref, i, self._ssl_verify) for i in tables]
-        return [ContentsSchema().load(i) for i in fetched_tables]
+        return (ContentsSchema().load(get_table(self._base_url, ref, _format_key(i), self._ssl_verify)) for i in tables)
 
-    def create_table(self: "NessieClient", branch: str, table: Contents, reason: str = None) -> None:
-        """Create a Nessie table."""
-        raise NotImplementedError("Create table has not been implemented")
-
-    def delete_table(self: "NessieClient", branch: str, table: str, reason: str = None) -> None:
-        """Delete a Nessie table."""
-        raise NotImplementedError("Delete table has not been implemented")
-
-    def commit(self: "NessieClient", branch: str, *args: Contents, reason: str = None) -> None:
+    def commit(
+        self: "NessieClient",
+        branch: str,
+        args: MultiContents,
+        reason: Optional[str] = None,
+        old_hash: Optional[str] = None,
+    ) -> None:
         """Modify a set of Nessie tables."""
-        raise NotImplementedError("Commit tables has not been implemented")
+        print(args)
+        commit(self._base_url, branch, MultiContentsSchema().dumps(args), reason, old_hash)
 
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a branch."""
@@ -189,3 +190,13 @@ class NessieClient:
     def get_default_branch(self: "NessieClient") -> str:
         """Fetch default branch either from config if specified or from the server."""
         return self._base_branch if self._base_branch else self.get_reference(None).name
+
+
+def _format_key(raw_key: str) -> str:
+    elements = _dot_regex.split(raw_key)
+    return ".".join(i.replace(".", "\0") for i in elements if i)
+
+
+def _contents_key(raw_key: str) -> ContentsKey:
+    elements = _dot_regex.split(raw_key)
+    return ContentsKey([i for i in elements if i])
