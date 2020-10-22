@@ -1,5 +1,5 @@
 [tool.black]
-line-length = 120
+line-length = 140
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -26,4 +26,4 @@ omit = ["pynessie/auth/*.py"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 70
+fail_under = 65

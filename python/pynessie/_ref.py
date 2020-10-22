@@ -4,6 +4,7 @@ from typing import Optional
 import click
 
 from . import NessieClient
+from .error import NessieNotFoundException
 from .model import ReferenceSchema
 
 
@@ -28,8 +29,12 @@ def handle_branch_tag(
     elif branch and not new_branch:
         getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch)
     elif branch and new_branch and not force:
-        create_on = nessie.get_reference(new_branch).hash_
-        getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch, create_on)
+
+        try:
+            getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, new_branch, old_hash)
+        except NessieNotFoundException:
+            create_on = nessie.get_reference(new_branch).hash_
+            getattr(nessie, "create_{}".format("branch" if is_branch else "tag"))(branch, create_on)
     else:
         getattr(nessie, "assign_{}".format("branch" if is_branch else "tag"))(branch, new_branch, old_hash)
     return ""
