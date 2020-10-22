@@ -17,9 +17,11 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,6 +35,10 @@ class LoadStep {
 
   private Collection<LoadOp<?>> ops;
   private Supplier<Optional<LoadStep>> next;
+
+  public LoadStep(Collection<LoadOp<?>> ops) {
+    this(ops, () -> Optional.empty());
+  }
 
   public LoadStep(Collection<LoadOp<?>> ops, Supplier<Optional<LoadStep>> next) {
     this.ops = consolidate(ops);
@@ -77,5 +83,37 @@ class LoadStep {
 
   public static LoadStep of(LoadOp<?>...ops) {
     return new LoadStep(Arrays.asList(ops), () -> Optional.empty());
+  }
+
+  public static Collector<LoadStep, StepCollectorState, LoadStep> toLoadStep() {
+    return COLLECTOR;
+  }
+
+  private static final Collector<LoadStep, StepCollectorState, LoadStep> COLLECTOR = Collector.of(
+      StepCollectorState::new,
+      (o1, l1) -> o1.plus(l1),
+      (o1, o2) -> o1.plus(o2),
+      StepCollectorState::getStep
+      );
+
+  private static class StepCollectorState {
+
+    private LoadStep step = new LoadStep(Collections.emptyList());
+
+    private StepCollectorState() {
+    }
+
+    public LoadStep getStep() {
+      return step;
+    }
+
+    public StepCollectorState plus(StepCollectorState s) {
+      plus(s.step);
+      return this;
+    }
+
+    public void plus(LoadStep s) {
+      step = step.combine(s);
+    }
   }
 }

@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
 
@@ -29,7 +30,9 @@ class TestVersionEquality {
   @Test
   void internalBranchL1IdEqualsEmpty() {
     InternalBranch b = new InternalBranch("n/a");
-    UpdateState us = b.getUpdateState();
+    DynamoStore store = Mockito.mock(DynamoStore.class);
+    Mockito.when(store.loadSingle(Mockito.any(), Mockito.any())).thenReturn(L1.EMPTY);
+    UpdateState us = b.getUpdateState(store);
     us.ensureAvailable(null, null, 1, true);
     assertEquals(L1.EMPTY_ID, us.getL1().getId());
   }

@@ -22,10 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -41,6 +45,7 @@ import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.ImmutablePut;
 import com.dremio.nessie.versioned.ImmutableTagName;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.Operation;
 import com.dremio.nessie.versioned.Put;
 import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
@@ -81,6 +86,54 @@ class ITDynamoVersionStore {
     assertEquals("world", fixture.getValue(branch, Key.of("no")));
   }
 
+  @Test
+  void mergeToEmpty() throws Exception {
+    BranchName branch1 = BranchName.of("b1");
+    BranchName branch2 = BranchName.of("b2");
+    fixture.create(branch1, Optional.empty());
+    fixture.create(branch2, Optional.empty());
+    fixture.commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"),
+        Put.of(Key.of("no"), "world")));
+    fixture.merge(fixture.toHash(branch2), branch1, Optional.of(fixture.toHash(branch1)));
+  }
+
+  @Test
+  void mergeNoConflict() throws Exception {
+    BranchName branch1 = BranchName.of("b1");
+    BranchName branch2 = BranchName.of("b2");
+    fixture.create(branch1, Optional.empty());
+    fixture.commit(branch1, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("foo"), "world1"),
+        Put.of(Key.of("bar"), "world2")));
+
+    fixture.create(branch2, Optional.empty());
+    fixture.commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world3"),
+        Put.of(Key.of("no"), "world4")));
+    fixture.merge(fixture.toHash(branch2), branch1, Optional.of(fixture.toHash(branch1)));
+
+    assertEquals("world1", fixture.getValue(branch1, Key.of("foo")));
+    assertEquals("world2", fixture.getValue(branch1, Key.of("bar")));
+    assertEquals("world3", fixture.getValue(branch1, Key.of("hi")));
+    assertEquals("world4", fixture.getValue(branch1, Key.of("no")));
+
+  }
+
+  @Test
+  void mergeConflict() throws Exception {
+    BranchName branch1 = BranchName.of("b1");
+    BranchName branch2 = BranchName.of("b2");
+    fixture.create(branch1, Optional.empty());
+    fixture.commit(branch1, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("conflictKey"), "world1")));
+
+    fixture.create(branch2, Optional.empty());
+    fixture.commit(branch2, Optional.empty(), "metadata2", ImmutableList.of(Put.of(Key.of("conflictKey"), "world2")));
+
+    ReferenceConflictException ex = assertThrows(ReferenceConflictException.class, () ->
+        fixture.merge(fixture.toHash(branch2), branch1, Optional.of(fixture.toHash(branch1))));
+    assertThat(ex.getMessage(), Matchers.containsString("conflictKey"));
+  }
 
   @Test
   void checkKeyList() throws Exception {
@@ -94,6 +147,38 @@ class ITDynamoVersionStore {
     assertEquals(0, fixture.getStore().<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
     assertThat(fixture.getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
         containsInAnyOrder("hi", "no", "mad mad"));
+  }
+
+  @Test
+  void ensureKeyCheckpointsAndMultiFragmentsWork() throws Exception {
+    BranchName branch = BranchName.of("lots-of-keys");
+    fixture.create(branch, Optional.empty());
+    Hash current = fixture.toHash(branch);
+    Random r = new Random(1234);
+    char[] longName = new char[4096];
+    Arrays.fill(longName, 'a');
+    String prefix = new String(longName);
+    List<Key> names = new LinkedList<>();
+    for (int i = 1; i < 200; i++) {
+      if (i % 5 == 0) {
+        // every so often, remove a key.
+        Key removal = names.remove(r.nextInt(names.size()));
+        fixture.commit(branch, Optional.of(current), "commit " + i, Collections.<Operation<String>>singletonList(Delete.of(removal)));
+      } else {
+        Key name = Key.of(prefix + i);
+        names.add(name);
+        fixture.commit(branch, Optional.of(current), "commit " + i, Collections.<Operation<String>>singletonList(Put.of(name, "bar")));
+      }
+      current = fixture.toHash(branch);
+    }
+
+    List<Key> keysFromStore = fixture.getKeys(branch).collect(Collectors.toList());
+
+    // ensure that our total key size is greater than a single dynamo page.
+    assertThat(keysFromStore.size() * longName.length, Matchers.greaterThan(400000));
+
+    // ensure that keys stored match those expected.
+    assertThat(keysFromStore, containsInAnyOrder(names.toArray(new Key[0])));
   }
 
   @Test

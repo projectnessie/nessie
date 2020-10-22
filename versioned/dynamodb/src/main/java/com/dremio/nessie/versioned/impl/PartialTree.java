@@ -17,22 +17,34 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
+import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
+import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.impl.InternalKey.Position;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
+import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
+import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
+import com.dremio.nessie.versioned.impl.condition.SetClause;
+import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
+
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
  * Holds the portion of the commit tree structure that is necessary to manipulate the identified key(s).
@@ -47,29 +59,36 @@ import com.google.common.collect.Streams;
 class PartialTree<V> {
 
   public static enum LoadType {
-    NO_VALUES, SELECT_VALUES, ALL_KEYS_NO_VALUES;
+    NO_VALUES, SELECT_VALUES;
   }
 
   private final Serializer<V> serializer;
   private final InternalRefId refId;
-  private InternalRef ref;
+  private InternalRef.Type refType;
   private Id rootId;
   private Pointer<L1> l1;
-  private Map<Integer, Pointer<L2>> l2s = new HashMap<>();
-  private Map<Position, Pointer<L3>> l3s = new HashMap<>();
-  private Map<InternalKey, ValueHolder<V>> values = new HashMap<>();
-  private List<InternalKey> keys = new ArrayList<>();
+  private final Map<Integer, Pointer<L2>> l2s = new HashMap<>();
+  private final Map<Position, Pointer<L3>> l3s = new HashMap<>();
+  private final Map<InternalKey, ValueHolder<V>> values = new HashMap<>();
+  private final Collection<InternalKey> keys;
 
-  public static <V> PartialTree<V> of(Serializer<V> serializer, InternalRefId id, List<InternalKey> keys) {
+  static <V> PartialTree<V> of(Serializer<V> serializer, InternalRefId id, List<InternalKey> keys) {
     return new PartialTree<V>(serializer, id, keys);
   }
 
-  private void checkMutable() {
-    Preconditions.checkArgument(ref.getType() == Type.BRANCH,
-        "You can only mutate a partial tree that references a branch. This is type %s.", ref.getType());
+  static <V> PartialTree<V> of(Serializer<V> serializer, InternalRef.Type refType, L1 l1, Collection<InternalKey> keys) {
+    PartialTree<V> tree = new PartialTree<V>(serializer, InternalRefId.ofHash(l1.getId()), keys);
+    tree.l1 = new Pointer<L1>(l1);
+    tree.refType = refType;
+    return tree;
   }
 
-  private PartialTree(Serializer<V> serializer, InternalRefId refId, List<InternalKey> keys) {
+  private void checkMutable() {
+    Preconditions.checkArgument(refType == Type.BRANCH,
+        "You can only mutate a partial tree that references a branch. This is type %s.", refType.name());
+  }
+
+  private PartialTree(Serializer<V> serializer, InternalRefId refId, Collection<InternalKey> keys) {
     super();
     this.refId = refId;
     this.serializer = serializer;
@@ -77,14 +96,18 @@ class PartialTree<V> {
   }
 
   public LoadStep getLoadChain(Function<InternalBranch, L1> l1Converter, LoadType loadType) {
-    if (refId.getType() == Type.HASH) {
+    if (refId.getType() == Type.HASH && l1 == null) {
       rootId = refId.getId();
-      ref = refId.getId();
+      refType = Type.HASH;
+      return getLoadStep1(loadType).get();
+    }
+
+    if (l1 != null) {
       return getLoadStep1(loadType).get();
     }
 
     LoadOp<InternalRef> op = new LoadOp<InternalRef>(ValueType.REF, refId.getId(), loadedRef -> {
-      ref = loadedRef;
+      refType = loadedRef.getType();
       if (loadedRef.getType() == Type.BRANCH) {
         L1 loaded = l1Converter.apply(loadedRef.getBranch());
         l1 = new Pointer<L1>(loaded);
@@ -120,17 +143,94 @@ class PartialTree<V> {
    *
    * @return
    */
-  public List<PositionDelta> getL1Mutations() {
+  public CommitOp getCommitOp(Id metadataId, Collection<InternalKey> unchangedKeys,
+      boolean includeTreeUpdates,
+      boolean includeCommitUpdates) {
     checkMutable();
-    return l1.get().getChanges();
+
+    UpdateExpression treeUpdate = UpdateExpression.initial();
+
+    // record positions that we're checking so we don't add the same positional check twice (for unchanged statements).
+    final Set<Integer> conditionPositions = new HashSet<>();
+
+    List<UnsavedDelta> deltas = new ArrayList<>();
+
+    ConditionExpression treeCondition = ConditionExpression.of(
+        ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), InternalRef.Type.BRANCH.toAttributeValue()));
+
+    // for all mutations that are dirty, create conditional and update expressions.
+    for (PositionDelta pm : l1.get().getChanges()) {
+      boolean added = conditionPositions.add(pm.getPosition());
+      assert added;
+      ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(pm.getPosition()).build();
+      if (includeTreeUpdates) {
+        treeUpdate = treeUpdate.and(SetClause.equals(p, pm.getNewId().toAttributeValue()));
+        treeCondition = treeCondition.and(ExpressionFunction.equals(p, pm.getOldId().toAttributeValue()));
+      }
+      deltas.add(pm.toUnsavedDelta());
+    }
+
+    for (InternalKey unchanged : unchangedKeys) {
+      int position = unchanged.getL1Position();
+      if (includeTreeUpdates && conditionPositions.add(position)) {
+        // this doesn't already have a condition. Add one.
+        ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(position).build();
+        treeCondition = treeCondition.and(ExpressionFunction.equals(p, getCurrentL1().getId(position).toAttributeValue()));
+      }
+    }
+
+    Commit commitIntention = null;
+    if (includeCommitUpdates) {
+      // Add the new commit
+      commitIntention = new Commit(Id.generateRandom(), metadataId, deltas,
+          KeyMutationList.of(l3s.values().stream().map(Pointer::get).flatMap(L3::getMutations).collect(Collectors.toList())));
+    }
+
+    return new CommitOp(
+        includeCommitUpdates ? commitIntention : null,
+        includeTreeUpdates ? treeUpdate : null,
+        includeTreeUpdates ? treeCondition : null);
+  }
+
+  public static class CommitOp  {
+    private final Commit commitIntention;
+    private final UpdateExpression treeUpdate;
+    private final ConditionExpression treeCondition;
+
+    public CommitOp(Commit commitIntention, UpdateExpression treeUpdate, ConditionExpression condition) {
+      super();
+      this.commitIntention = commitIntention;
+      this.treeUpdate = treeUpdate;
+      this.treeCondition = condition;
+    }
+
+    public UpdateExpression getTreeUpdate() {
+      return Preconditions.checkNotNull(treeUpdate);
+    }
+
+    public UpdateExpression getUpdateWithCommit() {
+      return getTreeUpdate().and(getCommitSet(Collections.singletonList(commitIntention)));
+    }
+
+    public Commit getCommitIntention() {
+      return Preconditions.checkNotNull(commitIntention);
+    }
+
+    public ConditionExpression getTreeCondition() {
+      return Preconditions.checkNotNull(treeCondition);
+    }
+
+    static SetClause getCommitSet(List<Commit> commits) {
+      return SetClause.appendToList(
+          ExpressionPath.builder(InternalBranch.COMMITS).build(),
+          AttributeValue.builder().l(commits.stream().map(Commit::toAttributeValue).collect(ImmutableList.toImmutableList())).build());
+    }
   }
 
   private Optional<LoadStep> getLoadStep1(LoadType loadType) {
-    final Supplier<Optional<LoadStep>> loadFunc = () ->
-        loadType == LoadType.ALL_KEYS_NO_VALUES ? getLoadStep2All() : getLoadStep2(loadType == LoadType.SELECT_VALUES);
+    final Supplier<Optional<LoadStep>> loadFunc = () -> getLoadStep2(loadType == LoadType.SELECT_VALUES);
 
-
-    if (l1 != null) { // if we loaded a branch, we were able to prepopulate the l1 information.
+    if (l1 != null) { // if we loaded a branch, we were able to pre-populate the l1 information.
       return loadFunc.get();
     }
 
@@ -138,37 +238,6 @@ class PartialTree<V> {
       l1 = new Pointer<L1>(l);
     });
     return Optional.of(new LoadStep(java.util.Collections.singleton(op), loadFunc));
-  }
-
-  private Optional<LoadStep> getLoadStep2All() {
-    final L1 l1 = this.l1.get();
-    Collection<LoadOp<?>> loads = IntStream.range(0, L1.SIZE).mapToObj(i -> {
-      Id l2Id = l1.getId(i);
-      return new LoadOp<L2>(ValueType.L2, l2Id, l -> loadL2(i, l));
-    }).collect(Collectors.toList());
-
-    return Optional.of(new LoadStep(loads, (Supplier<Optional<LoadStep>>) (() -> getLoadStep3All())));
-  }
-
-  private void loadL2(int i, L2 l2) {
-    l2s.putIfAbsent(i, new Pointer<L2>(l2));
-  }
-
-  private Optional<LoadStep> getLoadStep3All() {
-    List<LoadOp<?>> loads = new ArrayList<>(L1.SIZE * L2.SIZE);
-    for (int l1Position = 0; l1Position < L1.SIZE; l1Position++) {
-      final L2 l2 = l2s.get(l1Position).get();
-      for (int l2Position = 0; l2Position < L2.SIZE; l2Position++) {
-        Position position  = new Position(l1Position, l2Position);
-        Id l3Id = l2.getId(l2Position);
-        loads.add(new LoadOp<L3>(
-            ValueType.L3,
-            l3Id,
-            l -> l3s.putIfAbsent(position, new Pointer<L3>(l))));
-      }
-    }
-
-    return Optional.of(new LoadStep(loads, () -> Optional.empty()));
   }
 
   private Optional<LoadStep> getLoadStep2(boolean includeValues) {
@@ -225,6 +294,35 @@ class PartialTree<V> {
     }
 
     return Optional.of(vh.getValue());
+  }
+
+  /**
+   * Set operation that doesn't store values.
+   *
+   * <p>This should be used in operations like merge and
+   * cherry-pick, when we know that the values are already stored.
+   *
+   * @param key The key to set.
+   * @param id The value or empty to set.
+   */
+  public void setValueIdForKey(InternalKey key, Optional<Id> id) {
+    checkMutable();
+    final Pointer<L1> l1 = this.l1;
+    final Pointer<L2> l2 = l2s.get(key.getL1Position());
+    final Pointer<L3> l3 = l3s.get(key.getPosition());
+
+    // now we'll do the save.
+    Id valueId;
+    if (id.isPresent()) {
+      valueId = id.get();
+    } else {
+      values.remove(key);
+      valueId = Id.EMPTY;
+    }
+
+    final Id newL3Id = l3.apply(l -> l.set(key, valueId));
+    final Id newL2Id = l2.apply(l -> l.set(key.getL2Position(), newL3Id));
+    l1.apply(l -> l.set(key.getL1Position(), newL2Id));
   }
 
   public void setValueForKey(InternalKey key, Optional<V> value) {

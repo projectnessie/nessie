@@ -42,6 +42,18 @@ abstract class PositionDelta {
     return !getOldId().equals(getNewId());
   }
 
+  boolean wasAdded() {
+    return getOldId().isEmpty() && !getNewId().isEmpty();
+  }
+
+  boolean wasAddedOrRemoved() {
+    return wasAdded() || wasRemoved();
+  }
+
+  boolean wasRemoved() {
+    return !getOldId().isEmpty() && getNewId().isEmpty();
+  }
+
   final boolean isEmpty() {
     return !isDirty() && getOldId().equals(Id.EMPTY);
   }
