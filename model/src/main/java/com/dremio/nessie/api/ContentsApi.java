@@ -49,41 +49,41 @@ public interface ContentsApi {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("{key}")
-  @Operation(summary = "Fetch details of a table endpoint")
+  @Operation(summary = "Get object content associated with key")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Information for table"),
       @APIResponse(responseCode = "404", description = "Table not found on ref")
     })
   Contents getContents(
       @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
-      @Parameter(description = "Name of ref to read from. Default branch if not provided.") @QueryParam("ref") String ref
+      @Parameter(description = "Reference to use. Defaults to default branch if not provided.") @QueryParam("ref") String ref
       ) throws NessieNotFoundException;
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Get multiple contents on default branch")
+  @Operation(summary = "Get multiple objects' content")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Retrieved successfully."),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")})
   public MultiGetContentsResponse getMultipleContents(
-      @Parameter(description = "Ref to use.") @QueryParam("ref") String ref,
+      @Parameter(description = "Reference to use. Defaults to default branch if not provided.") @QueryParam("ref") String ref,
       @NotNull @RequestBody(description = "Keys to retrieve.") MultiGetContentsRequest request)
       throws NessieNotFoundException;
 
   /**
-   * create/update a table on a specific ref.
+   * create/update an object on a specific ref.
    */
   @POST
   @Path("{key}")
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "update contents for path")
+  @Operation(summary = "Update object content associated with key")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Contents updated successfully."),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")})
   public void setContents(
       @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
-      @Parameter(description = "Branch to change, defaults to default branch.") @QueryParam("branch") String branch,
+      @Parameter(description = "Branch to change. Defaults to default branch.") @QueryParam("branch") String branch,
       @NotNull @Parameter(description = "Expected hash of branch.") @QueryParam("hash") String hash,
       @Parameter(description = "Commit message") @QueryParam("message") String message,
       @NotNull @RequestBody(description = "Contents to be upserted") Contents contents)
@@ -94,16 +94,16 @@ public interface ContentsApi {
    */
   @DELETE
   @Path("{key}")
-  @Operation(summary = "delete object on ref endpoint")
+  @Operation(summary = "Delete object content associated with key")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Deleted successfully."),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
-      @APIResponse(responseCode = "412", description = "Update conflict"),
+      @APIResponse(responseCode = "412", description = "Delete conflict"),
       }
   )
   public void deleteContents(
       @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
-      @Parameter(description = "Branch to delete from, defaults to default branch.") @QueryParam("branch") String branch,
+      @Parameter(description = "Branch to delete from. Defaults to default branch.") @QueryParam("branch") String branch,
       @Parameter(description = "Expected hash of branch.") @QueryParam("hash") String hash,
       @Parameter(description = "Commit message") @QueryParam("message") String message
       ) throws NessieNotFoundException, NessieConflictException;
