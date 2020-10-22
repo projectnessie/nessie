@@ -1,5 +1,5 @@
 [tool.black]
-line-length = 120
+line-length = 140
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -22,7 +22,8 @@ source = ["src", "*/site-packages"]
 [tool.coverage.run]
 branch = true
 source = ["pynessie"]
+omit = ["pynessie/auth/*.py"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 50
+fail_under = 65

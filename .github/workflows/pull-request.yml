@@ -20,7 +20,7 @@ jobs:
         version: '8'
         targets: 'JDK8_HOME'
     - name: Set up Maven toolchains.xml
-      run: | 
+      run: |
           cat << 'EOT' > ${HOME}/.m2/toolchains.xml
           <?xml version="1.0" encoding="UTF8"?>
           <toolchains>
@@ -118,6 +118,9 @@ jobs:
     - name: Test with tox
       run: tox
       working-directory: ${{env.working-directory}}
+    - uses: codecov/codecov-action@v1
+      with:
+        flags: python
 
   site:
     name: Build Website

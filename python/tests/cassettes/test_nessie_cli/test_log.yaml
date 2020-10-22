@@ -1,0 +1,137 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
+        1dc971b5bdbb9c240f8c8703d4551c594eeb94664c97741f63e87b6fcfbb8cd6\"\n}"
+    headers:
+      Content-Length:
+      - '121'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/main/log
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
+        \ [ {\n    \"hash\" : \"1dc971b5bdbb9c240f8c8703d4551c594eeb94664c97741f63e87b6fcfbb8cd6\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"iceberg\
+        \ commit\\nspark.app.id= local-1603130221945\",\n    \"commitTime\" : 1603130395921\n\
+        \  }, {\n    \"hash\" : \"a8e1c2b99026bc7c1bdf409f1ce538bbde7f898443ef7aed5c999e9769b68689\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"iceberg\
+        \ commit\\nspark.app.id= local-1603130221945\",\n    \"commitTime\" : 1603130395081\n\
+        \  }, {\n    \"hash\" : \"f5bd419dc54585d38082123120b0b268361f97efff5d64ddb1cc707282e2c63b\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"iceberg\
+        \ commit\\nspark.app.id= local-1603130221945\",\n    \"commitTime\" : 1603130394960\n\
+        \  }, {\n    \"hash\" : \"817dcd0c3a79e347e93413cab9db09bd00574116ea411265c354e7b2b12ce324\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"iceberg\
+        \ commit\\nspark.app.id= local-1603130221945\",\n    \"commitTime\" : 1603130389531\n\
+        \  } ]\n}"
+    headers:
+      Content-Length:
+      - '986'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/a8e1c2b99026bc7c1bdf409f1ce538bbde7f898443ef7aed5c999e9769b68689/log
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
+        \ [ {\n    \"hash\" : \"a8e1c2b99026bc7c1bdf409f1ce538bbde7f898443ef7aed5c999e9769b68689\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"iceberg\
+        \ commit\\nspark.app.id= local-1603130221945\",\n    \"commitTime\" : 1603130395081\n\
+        \  }, {\n    \"hash\" : \"f5bd419dc54585d38082123120b0b268361f97efff5d64ddb1cc707282e2c63b\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"iceberg\
+        \ commit\\nspark.app.id= local-1603130221945\",\n    \"commitTime\" : 1603130394960\n\
+        \  }, {\n    \"hash\" : \"817dcd0c3a79e347e93413cab9db09bd00574116ea411265c354e7b2b12ce324\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"iceberg\
+        \ commit\\nspark.app.id= local-1603130221945\",\n    \"commitTime\" : 1603130389531\n\
+        \  } ]\n}"
+    headers:
+      Content-Length:
+      - '755'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/f5bd419dc54585d38082123120b0b268361f97efff5d64ddb1cc707282e2c63b/log
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
+        \ [ {\n    \"hash\" : \"f5bd419dc54585d38082123120b0b268361f97efff5d64ddb1cc707282e2c63b\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"iceberg\
+        \ commit\\nspark.app.id= local-1603130221945\",\n    \"commitTime\" : 1603130394960\n\
+        \  }, {\n    \"hash\" : \"817dcd0c3a79e347e93413cab9db09bd00574116ea411265c354e7b2b12ce324\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"iceberg\
+        \ commit\\nspark.app.id= local-1603130221945\",\n    \"commitTime\" : 1603130389531\n\
+        \  } ]\n}"
+    headers:
+      Content-Length:
+      - '524'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+version: 1
