@@ -49,7 +49,7 @@ public class QuarkusApp implements AutoCloseable {
   private static final String MOJO_CONFIG_SOURCE_CLASSNAME = "com.dremio.nessie.quarkus.maven.MojoConfigSource";
   private final RunningQuarkusApplication runningApp;
 
-  private QuarkusApp(RunningQuarkusApplication runningApp) {
+  protected QuarkusApp(RunningQuarkusApplication runningApp) {
     this.runningApp = runningApp;
   }
 
@@ -89,7 +89,7 @@ public class QuarkusApp implements AutoCloseable {
           "Failed to resolve application model " + appArtifact + " dependencies", e);
     }
 
-    return newApplication(appModel, appArtifact, project.getBasedir().toPath(), Paths.get(project.getBuild().getDirectory()),
+    return newApplication(appModel, project.getBasedir().toPath(), Paths.get(project.getBuild().getDirectory()),
         applicationProperties);
   }
 
@@ -101,21 +101,41 @@ public class QuarkusApp implements AutoCloseable {
    * classloader.
    *
    * @param appModel              the application model
-   * @param appArtifact           the quarkus application artifact id
    * @param projectRoot           the current project directory
    * @param targetDirectory       the target directory
    * @param applicationProperties the extra application properties
    * @return a quarkus app instance
    * @throws MojoExecutionException if an error occurs during execution
    */
-  public static QuarkusApp newApplication(AppModel appModel, AppArtifact appArtifact,
+  public static QuarkusApp newApplication(AppModel appModel,
       Path projectRoot, Path targetDirectory, Properties applicationProperties)
+      throws MojoExecutionException {
+    return newApplication(appModel, projectRoot, targetDirectory, applicationProperties, QuarkusApp.class.getClassLoader());
+  }
+
+  /**
+   * Instantiate and start a quarkus application.
+   *
+   * <p>Instantiates and start a quarkus application using Quarkus bootstrap
+   * framework. Only one application can be started at a time in the same
+   * classloader.
+   *
+   * @param appModel              the application model
+   * @param projectRoot           the current project directory
+   * @param targetDirectory       the target directory
+   * @param applicationProperties the extra application properties
+   * @param classLoader           the classloader to use when starting the application
+   * @return a quarkus app instance
+   * @throws MojoExecutionException if an error occurs during execution
+   */
+  public static QuarkusApp newApplication(AppModel appModel,
+      Path projectRoot, Path targetDirectory, Properties applicationProperties, ClassLoader classLoader)
       throws MojoExecutionException {
     final AdditionalDependency mojoConfigSourceDependency = findMojoConfigSourceDependency();
 
     final QuarkusBootstrap bootstrap = QuarkusBootstrap.builder()
         .setAppArtifact(appModel.getAppArtifact())
-        .setBaseClassLoader(QuarkusApp.class.getClassLoader()).setExistingModel(appModel)
+        .setBaseClassLoader(classLoader).setExistingModel(appModel)
         .setProjectRoot(projectRoot).setTargetDirectory(targetDirectory).setIsolateDeployment(true)
         .setMode(Mode.TEST).addAdditionalApplicationArchive(mojoConfigSourceDependency).build();
 

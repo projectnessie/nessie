@@ -829,6 +829,7 @@ limitations under the License.
             <exclude>**/*.gz</exclude>
             <exclude>**/*.xls</exclude>
             <exclude>**/META-INF/services/**</exclude>
+            <exclude>**/META-INF/gradle-plugins/**</exclude>
             <exclude>**/*.md</exclude>
             <exclude>**/*.xls</exclude>
             <exclude>**/*.doc</exclude>
@@ -878,6 +879,7 @@ limitations under the License.
             <exclude>**/q</exclude>
             <exclude>**/c.java</exclude>
             <exclude>**/swagger-ui/**</exclude>
+            <exclude>**/gradlew</exclude>
 
             <!-- by directory name -->
             <exclude>**/node_modules/**</exclude>

@@ -46,3 +46,11 @@ node_modules/
 .project
 .settings
 .checkstyle
+.gradle
+build
+
+# gradle
+gradle/
+out
+gradle/wrapper/gradle-wrapper.jar
+version.txt

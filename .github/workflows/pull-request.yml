@@ -63,6 +63,12 @@ jobs:
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
+    - name: Cache Gradle packages
+      uses: actions/cache@v2
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: ${{ runner.os }}-gradle
     - name: Build with Maven
       run: mvn -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests
     - name: Capture test results
@@ -75,6 +81,12 @@ jobs:
     - uses: codecov/codecov-action@v1
       with:
         flags: java
+    - name: Populate version from maven
+      run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file ../pom.xml > version.txt
+      working-directory: ./tools/apprunner-gradle-plugin
+    - name: Build with Gradle
+      run: ./gradlew build
+      working-directory: ./tools/apprunner-gradle-plugin
 
   python:
     name: Python

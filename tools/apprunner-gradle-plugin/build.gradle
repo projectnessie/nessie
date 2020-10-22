@@ -1,0 +1,62 @@
+plugins {
+  id 'java-gradle-plugin'
+  id 'maven-publish'
+  id 'com.gradle.plugin-publish' version '0.12.0'
+}
+
+version = file('version.txt').text.trim()
+
+allprojects {
+  group = "org.projectnessie"
+  version = version
+  repositories {
+    mavenCentral()
+    mavenLocal()
+  }
+}
+
+gradlePlugin {
+  plugins {
+    simplePlugin {
+      id = 'org.projectnessie'
+      implementationClass = 'com.dremio.nessie.quarkus.gradle.QuarkusAppPlugin'
+      displayName = 'Quarkus App Runner'
+      description = 'Start and stop a quarkus app as gradle tasks for integration testing'
+    }
+  }
+}
+
+repositories {
+  mavenCentral()
+}
+
+compileJava {
+  sourceCompatibility = '1.8'
+  targetCompatibility = '1.8'
+}
+
+dependencies {
+  implementation platform('io.quarkus:quarkus-bom:1.9.0.Final')
+
+  compile "io.quarkus:quarkus-bootstrap-core"
+  compile "org.projectnessie:nessie-apprunner-maven-plugin:$version"
+  compile "org.eclipse.microprofile.config:microprofile-config-api"
+}
+
+pluginBundle {
+  website = 'https://projectnessie.org'
+  vcsUrl = 'https://github.com/projectnessie/nessie'
+  tags = ['test', 'integration', 'quarkus']
+}
+
+publishing {
+  publications {
+    maven(MavenPublication) {
+      groupId = 'org.projectnessie'
+      artifactId = 'nessie-apprunner-gradle-plugin'
+      version = version
+
+      from components.java
+    }
+  }
+}
