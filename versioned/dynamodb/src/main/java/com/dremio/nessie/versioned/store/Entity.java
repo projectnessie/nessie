@@ -15,10 +15,12 @@
  */
 package com.dremio.nessie.versioned.store;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableList;
@@ -42,6 +44,9 @@ public abstract class Entity {
   public abstract boolean equals(Object other);
 
   public abstract EntityType getType();
+
+  @Override
+  public abstract String toString();
 
   public String getString() {
     throw new IllegalStateException("Not a string.");
@@ -132,6 +137,7 @@ public abstract class Entity {
       this.str = s;
     }
 
+    @Override
     public String getString() {
       return str;
     }
@@ -144,6 +150,11 @@ public abstract class Entity {
     @Override
     public int hashCode() {
       return Objects.hash(str);
+    }
+
+    @Override
+    public String toString() {
+      return "\"" + str + "\"";
     }
 
     @Override
@@ -176,6 +187,11 @@ public abstract class Entity {
     @Override
     public EntityType getType() {
       return EntityType.BINARY;
+    }
+
+    @Override
+    public String toString() {
+      return "b:" + Base64.getEncoder().encodeToString(binary.toByteArray());
     }
 
     @Override
@@ -221,6 +237,12 @@ public abstract class Entity {
     }
 
     @Override
+    public String toString() {
+      return "{" + map.entrySet().stream().map(e -> String.format("%s: %s", e.getKey(), e.getValue()))
+          .collect(Collectors.joining(", ")) + "}";
+    }
+
+    @Override
     public boolean equals(Object obj) {
       if (this == obj) {
         return true;
@@ -258,6 +280,11 @@ public abstract class Entity {
     }
 
     @Override
+    public String toString() {
+      return "[" + list.stream().map(Entity::toString).collect(Collectors.joining(", ")) + "]";
+    }
+
+    @Override
     public boolean equals(Object obj) {
       if (this == obj) {
         return true;
@@ -287,6 +314,11 @@ public abstract class Entity {
     @Override
     public EntityType getType() {
       return EntityType.STRING_SET;
+    }
+
+    @Override
+    public String toString() {
+      return "set[" + strings.stream().collect(Collectors.joining(", ")) + "]";
     }
 
     @Override
@@ -331,6 +363,11 @@ public abstract class Entity {
     }
 
     @Override
+    public String toString() {
+      return "n" + number;
+    }
+
+    @Override
     public boolean equals(Object obj) {
       if (this == obj) {
         return true;
@@ -365,6 +402,11 @@ public abstract class Entity {
     @Override
     public int hashCode() {
       return Objects.hash(bool);
+    }
+
+    @Override
+    public String toString() {
+      return Boolean.toString(bool);
     }
 
     @Override
