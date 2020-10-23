@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 import org.immutables.value.Value.Immutable;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import com.dremio.nessie.versioned.store.Entity;
 
 @Immutable
 abstract class KeyMutationList {
@@ -31,13 +31,13 @@ abstract class KeyMutationList {
     return ImmutableKeyMutationList.builder().mutations(mutations).build();
   }
 
-  public AttributeValue toAttributeValue() {
-    return AttributeValue.builder().l(getMutations().stream().map(KeyMutation::toAttributeValue).collect(Collectors.toList())).build();
+  public Entity toEntity() {
+    return Entity.ofList(getMutations().stream().map(KeyMutation::toEntity).collect(Collectors.toList()));
   }
 
-  public static KeyMutationList fromAttributeValue(AttributeValue value) {
+  public static KeyMutationList fromEntity(Entity value) {
     return ImmutableKeyMutationList.builder().addAllMutations(
-        value.l().stream().map(KeyMutation::fromAttributeValue).collect(Collectors.toList()))
+        value.getList().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
         .build();
   }
 

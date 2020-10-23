@@ -17,9 +17,10 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.Map;
 
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.collect.ImmutableMap;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class InternalTag extends MemoizedId implements InternalRef {
 
@@ -49,28 +50,28 @@ class InternalTag extends MemoizedId implements InternalRef {
     return commit;
   }
 
-  public Map<String, AttributeValue> conditionMap() {
-    return ImmutableMap.of(COMMIT, commit.toAttributeValue());
+  public Map<String, Entity> conditionMap() {
+    return ImmutableMap.of(COMMIT, commit.toEntity());
   }
 
   static final SimpleSchema<InternalTag> SCHEMA = new SimpleSchema<InternalTag>(InternalTag.class) {
 
 
     @Override
-    public InternalTag deserialize(Map<String, AttributeValue> attributeMap) {
+    public InternalTag deserialize(Map<String, Entity> attributeMap) {
       return new InternalTag(
-          Id.fromAttributeValue(attributeMap.get(ID)),
-          attributeMap.get(NAME).s(),
-          Id.fromAttributeValue(attributeMap.get(COMMIT))
+          Id.fromEntity(attributeMap.get(ID)),
+          attributeMap.get(NAME).getString(),
+          Id.fromEntity(attributeMap.get(COMMIT))
           );
     }
 
     @Override
-    public Map<String, AttributeValue> itemToMap(InternalTag item, boolean ignoreNulls) {
-      return ImmutableMap.<String, AttributeValue>builder()
-          .put(ID, item.getId().toAttributeValue())
-          .put(COMMIT, item.commit.toAttributeValue())
-          .put(NAME, AttributeValue.builder().s(item.name).build())
+    public Map<String, Entity> itemToMap(InternalTag item, boolean ignoreNulls) {
+      return ImmutableMap.<String, Entity>builder()
+          .put(ID, item.getId().toEntity())
+          .put(COMMIT, item.commit.toEntity())
+          .put(NAME, Entity.ofString(item.name))
           .build();
     }
 

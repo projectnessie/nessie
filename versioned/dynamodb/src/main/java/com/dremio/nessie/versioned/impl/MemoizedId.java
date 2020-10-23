@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.Id;
+
 abstract class MemoizedId implements HasId {
 
   //unchanging but only generated once needed.

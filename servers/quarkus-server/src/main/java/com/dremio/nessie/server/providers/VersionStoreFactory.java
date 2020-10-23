@@ -45,12 +45,12 @@ import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.impl.DynamoStore;
 import com.dremio.nessie.versioned.impl.DynamoStoreConfig;
-import com.dremio.nessie.versioned.impl.DynamoVersionStore;
 import com.dremio.nessie.versioned.impl.JGitVersionStore;
+import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.impl.experimental.NessieRepository;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
+import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 
 import software.amazon.awssdk.regions.Region;
 
@@ -101,7 +101,7 @@ public class VersionStoreFactory {
     switch (config.getVersionStoreConfig().getVersionStoreType()) {
       case DYNAMO:
         LOGGER.info("Using Dyanmo Version store");
-        return new DynamoVersionStore<>(storeWorker, dyanamo(), false);
+        return new TieredVersionStore<>(storeWorker, createDynamoConnection(), false);
       case JGIT:
         LOGGER.info("Using JGit Version Store");
         return new JGitVersionStore<>(repository, storeWorker);
@@ -119,7 +119,7 @@ public class VersionStoreFactory {
   /**
    * create a dynamo store based on config.
    */
-  private DynamoStore dyanamo() {
+  private DynamoStore createDynamoConnection() {
     if (!config.getVersionStoreConfig().getVersionStoreType().equals(VersionStoreType.DYNAMO)) {
       return null;
     }

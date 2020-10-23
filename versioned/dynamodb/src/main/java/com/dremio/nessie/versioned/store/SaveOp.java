@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store;
 
 import java.util.Map;
 import java.util.Objects;
 
-import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-
-class SaveOp<V extends HasId> {
+public class SaveOp<V extends HasId> {
   private final ValueType type;
   private final V value;
 
@@ -39,7 +35,7 @@ class SaveOp<V extends HasId> {
     return value;
   }
 
-  public Map<String, AttributeValue> toAttributeValues() {
+  public Map<String, Entity> toEntity() {
     SimpleSchema<V> schema = type.getSchema();
     return type.addType(schema.itemToMap(value, true));
   }

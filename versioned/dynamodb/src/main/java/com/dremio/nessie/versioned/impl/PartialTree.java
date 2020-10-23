@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.Serializer;
-import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.impl.InternalKey.Position;
@@ -40,11 +39,14 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.LoadOp;
+import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
  * Holds the portion of the commit tree structure that is necessary to manipulate the identified key(s).
@@ -156,7 +158,7 @@ class PartialTree<V> {
     List<UnsavedDelta> deltas = new ArrayList<>();
 
     ConditionExpression treeCondition = ConditionExpression.of(
-        ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), InternalRef.Type.BRANCH.toAttributeValue()));
+        ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), InternalRef.Type.BRANCH.toEntity()));
 
     // for all mutations that are dirty, create conditional and update expressions.
     for (PositionDelta pm : l1.get().getChanges()) {
@@ -164,8 +166,8 @@ class PartialTree<V> {
       assert added;
       ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(pm.getPosition()).build();
       if (includeTreeUpdates) {
-        treeUpdate = treeUpdate.and(SetClause.equals(p, pm.getNewId().toAttributeValue()));
-        treeCondition = treeCondition.and(ExpressionFunction.equals(p, pm.getOldId().toAttributeValue()));
+        treeUpdate = treeUpdate.and(SetClause.equals(p, pm.getNewId().toEntity()));
+        treeCondition = treeCondition.and(ExpressionFunction.equals(p, pm.getOldId().toEntity()));
       }
       deltas.add(pm.toUnsavedDelta());
     }
@@ -175,7 +177,7 @@ class PartialTree<V> {
       if (includeTreeUpdates && conditionPositions.add(position)) {
         // this doesn't already have a condition. Add one.
         ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(position).build();
-        treeCondition = treeCondition.and(ExpressionFunction.equals(p, getCurrentL1().getId(position).toAttributeValue()));
+        treeCondition = treeCondition.and(ExpressionFunction.equals(p, getCurrentL1().getId(position).toEntity()));
       }
     }
 
@@ -223,7 +225,7 @@ class PartialTree<V> {
     static SetClause getCommitSet(List<Commit> commits) {
       return SetClause.appendToList(
           ExpressionPath.builder(InternalBranch.COMMITS).build(),
-          AttributeValue.builder().l(commits.stream().map(Commit::toAttributeValue).collect(ImmutableList.toImmutableList())).build());
+          Entity.ofList(commits.stream().map(Commit::toEntity)));
     }
   }
 

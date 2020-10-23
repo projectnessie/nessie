@@ -16,16 +16,15 @@
 package com.dremio.nessie.versioned.impl.condition;
 
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import com.dremio.nessie.versioned.store.Entity;
 
 /**
  * A marker interface that is exposes a value type in DynamoDB's expression language.
  */
 public interface Value extends Aliasable<Value> {
 
-  static Value of(AttributeValue value) {
-    return new ValueOfAttributeValue(value);
+  static Value of(Entity value) {
+    return new ValueOfEntity(value);
   }
 
   @Override
@@ -43,7 +42,7 @@ public interface Value extends Aliasable<Value> {
    */
   Type getType();
 
-  default AttributeValue getValue() {
+  default Entity getValue() {
     throw new IllegalArgumentException();
   }
 
@@ -59,10 +58,10 @@ public interface Value extends Aliasable<Value> {
     VALUE, PATH, FUNCTION;
   }
 
-  static class ValueOfAttributeValue implements Value {
-    private final AttributeValue value;
+  static class ValueOfEntity implements Value {
+    private final Entity value;
 
-    public ValueOfAttributeValue(AttributeValue value) {
+    public ValueOfEntity(Entity value) {
       this.value = value;
     }
 

@@ -13,16 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store;
 
-class DynamoGeneralReadFailure extends RuntimeException {
-
-  public DynamoGeneralReadFailure(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public DynamoGeneralReadFailure(String message) {
-    super(message);
-  }
-
+public interface HasId {
+  Id getId();
 }

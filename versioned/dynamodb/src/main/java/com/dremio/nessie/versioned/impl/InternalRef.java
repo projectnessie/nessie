@@ -20,14 +20,16 @@ import java.util.Map;
 
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.collect.Maps;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
  * Generic class for reading a reference.
  */
-interface InternalRef extends HasId {
+public interface InternalRef extends HasId {
 
   static final String TYPE = "type";
 
@@ -37,17 +39,21 @@ interface InternalRef extends HasId {
     HASH(null),
     UNKNOWN(null);
 
-    private final AttributeValue value;
+    private final Entity value;
 
     Type(String identifier) {
-      this.value = AttributeValue.builder().s(identifier).build();
+      this.value = Entity.ofString(identifier);
     }
 
     public ExpressionFunction typeVerification() {
-      return ExpressionFunction.equals(ExpressionPath.builder(TYPE).build(), toAttributeValue());
+      return ExpressionFunction.equals(ExpressionPath.builder(TYPE).build(), toEntity());
     }
 
-    public AttributeValue toAttributeValue() {
+    /**
+     * Convert the type to it's entity type tag.
+     * @return A Entity holding the type tag.
+     */
+    public Entity toEntity() {
       if (this == HASH) {
         throw new IllegalStateException("You should not try to retrieve the identifier for a hash "
             + "type since they are not saveable as searchable refs.");
@@ -55,6 +61,11 @@ interface InternalRef extends HasId {
       return value;
     }
 
+    /**
+     * Get the type associated with this type tag.
+     * @param identifier The type tag to classify.
+     * @return The type classified.
+     */
     public static Type getType(String identifier) {
       if (identifier.equals("b")) {
         return BRANCH;
@@ -85,9 +96,9 @@ interface InternalRef extends HasId {
   static final SimpleSchema<InternalRef> SCHEMA = new SimpleSchema<InternalRef>(InternalRef.class) {
 
     @Override
-    public InternalRef deserialize(Map<String, AttributeValue> attributeMap) {
-      Type type = Type.getType(attributeMap.get(TYPE).s());
-      Map<String, AttributeValue> filtered = Maps.filterEntries(attributeMap, e -> !e.getKey().equals(TYPE));
+    public InternalRef deserialize(Map<String, Entity> attributeMap) {
+      Type type = Type.getType(attributeMap.get(TYPE).getString());
+      Map<String, Entity> filtered = Maps.filterEntries(attributeMap, e -> !e.getKey().equals(TYPE));
       switch (type) {
         case BRANCH: return InternalBranch.SCHEMA.mapToItem(filtered);
         case TAG: return InternalTag.SCHEMA.mapToItem(filtered);
@@ -97,9 +108,9 @@ interface InternalRef extends HasId {
     }
 
     @Override
-    public Map<String, AttributeValue> itemToMap(InternalRef item, boolean ignoreNulls) {
-      Map<String, AttributeValue> map = new HashMap<>();
-      map.put(TYPE, item.getType().toAttributeValue());
+    public Map<String, Entity> itemToMap(InternalRef item, boolean ignoreNulls) {
+      Map<String, Entity> map = new HashMap<>();
+      map.put(TYPE, item.getType().toEntity());
 
       switch (item.getType()) {
         case BRANCH:

@@ -30,7 +30,11 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.LoadOp;
+import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 
@@ -42,11 +46,11 @@ class HistoryRetriever {
   private final boolean retrieveL1;
   private final boolean retrieveCommit;
   private final boolean includeEndEmpty;
-  private final DynamoStore store;
+  private final Store store;
   private final L1 start;
   private final Id end;
 
-  public HistoryRetriever(DynamoStore store, L1 start, Id end, boolean retrieveL1, boolean retrieveCommit, boolean includeEndEmpty) {
+  public HistoryRetriever(Store store, L1 start, Id end, boolean retrieveL1, boolean retrieveCommit, boolean includeEndEmpty) {
     super();
     this.store = store;
     this.start = start;
@@ -184,7 +188,7 @@ class HistoryRetriever {
 
   }
 
-  public static Id findCommonParent(DynamoStore store, L1 head1, L1 head2, int maxDepth) {
+  public static Id findCommonParent(Store store, L1 head1, L1 head2, int maxDepth) {
     System.out.println(new HistoryRetriever(store, head1, Id.EMPTY, false, false, true).getStream().collect(Collectors.toList()));
     System.out.println(new HistoryRetriever(store, head2, Id.EMPTY, false, false, true).getStream().collect(Collectors.toList()));
     Iterator<Id> r1 = new HistoryRetriever(store, head1, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();

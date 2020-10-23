@@ -20,10 +20,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
  * Maintains a map of positions to ids. The map is immutable. Each operation, generates a new map. All maps keep track
@@ -88,8 +89,8 @@ class IdMap implements Iterable<Id> {
     return Arrays.stream(deltas).filter(PositionDelta::isDirty).collect(Collectors.toList());
   }
 
-  AttributeValue toAttributeValue() {
-    return AttributeValue.builder().l(Arrays.stream(deltas).map(p -> p.getNewId().toAttributeValue()).collect(Collectors.toList())).build();
+  Entity toEntity() {
+    return Entity.ofList(Arrays.stream(deltas).map(p -> p.getNewId().toEntity()).collect(ImmutableList.toImmutableList()));
   }
 
   /**
@@ -98,14 +99,14 @@ class IdMap implements Iterable<Id> {
    * @param size The expected size of the map to be loaded.
    * @return The deserialized map.
    */
-  public static IdMap fromAttributeValue(AttributeValue value, int size) {
+  public static IdMap fromEntity(Entity value, int size) {
     PositionDelta[] deltas = new PositionDelta[size];
-    List<AttributeValue> items = value.l();
+    List<Entity> items = value.getList();
     Preconditions.checkArgument(items.size() == size, "Expected size %s but actual size was %s.", size, items.size());
 
     int i = 0;
-    for (AttributeValue v : items) {
-      deltas[i] = PositionDelta.of(i, Id.fromAttributeValue(v));
+    for (Entity v : items) {
+      deltas[i] = PositionDelta.of(i, Id.fromEntity(v));
       i++;
     }
 

@@ -19,9 +19,8 @@ import java.util.Map;
 
 import org.immutables.value.Value.Immutable;
 
+import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableMap;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 abstract class KeyMutation {
 
@@ -67,16 +66,16 @@ abstract class KeyMutation {
 
   }
 
-  AttributeValue toAttributeValue() {
-    return AttributeValue.builder().m(ImmutableMap.<String, AttributeValue>of(getType().field, getKey().toAttributeValue())).build();
+  Entity toEntity() {
+    return Entity.ofMap(ImmutableMap.<String, Entity>of(getType().field, getKey().toEntity()));
   }
 
-  public static KeyMutation fromAttributeValue(AttributeValue value) {
-    Map<String, AttributeValue> mp = value.m();
+  public static KeyMutation fromEntity(Entity value) {
+    Map<String, Entity> mp = value.getMap();
     if (mp.containsKey(MutationType.ADDITION.field)) {
-      return KeyAddition.of(InternalKey.fromAttributeValue(mp.get(MutationType.ADDITION.field)));
+      return KeyAddition.of(InternalKey.fromEntity(mp.get(MutationType.ADDITION.field)));
     } else if (mp.containsKey(MutationType.REMOVAL.field)) {
-      return KeyRemoval.of(InternalKey.fromAttributeValue(mp.get(MutationType.REMOVAL.field)));
+      return KeyRemoval.of(InternalKey.fromEntity(mp.get(MutationType.REMOVAL.field)));
     } else {
       throw new UnsupportedOperationException();
     }

@@ -21,6 +21,8 @@ import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.impl.InternalRef.Type;
+import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.Id;
 
 class InternalRefId implements HasId {
 

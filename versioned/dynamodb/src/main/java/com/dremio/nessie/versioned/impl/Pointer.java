@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.Id;
+
 class Pointer<T extends HasId> {
   private T value;
   private boolean dirty = false;

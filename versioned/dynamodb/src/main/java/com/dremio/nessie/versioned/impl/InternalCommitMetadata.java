@@ -15,9 +15,11 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.protobuf.ByteString;
 
-class InternalCommitMetadata extends WrappedValueBean {
+public class InternalCommitMetadata extends WrappedValueBean {
 
   private InternalCommitMetadata(Id id, ByteString value) {
     super(id, value);

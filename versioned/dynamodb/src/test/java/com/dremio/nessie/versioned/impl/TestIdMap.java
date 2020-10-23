@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.versioned.store.Id;
+
 public class TestIdMap {
 
   private final Id id1 = Id.generateRandom();
@@ -86,7 +88,7 @@ public class TestIdMap {
       map1 = map1.withId(i, Id.generateRandom());
     }
 
-    IdMap map2 = IdMap.fromAttributeValue(map1.toAttributeValue(), 15);
+    IdMap map2 = IdMap.fromEntity(map1.toEntity(), 15);
 
     assertEquals(map1, map2);
     assertEquals(map1.hashCode(), map2.hashCode());
@@ -96,7 +98,7 @@ public class TestIdMap {
   @Test
   void failOnWrongDeserialization() {
     IdMap map1 = new IdMap(15);
-    assertThrows(IllegalArgumentException.class, () -> IdMap.fromAttributeValue(map1.toAttributeValue(), 14));
+    assertThrows(IllegalArgumentException.class, () -> IdMap.fromEntity(map1.toEntity(), 14));
   }
 
 

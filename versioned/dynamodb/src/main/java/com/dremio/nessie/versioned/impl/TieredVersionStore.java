@@ -48,7 +48,6 @@ import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
 import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
-import com.dremio.nessie.versioned.impl.DynamoStore.ValueType;
 import com.dremio.nessie.versioned.impl.HistoryRetriever.HistoryItem;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
@@ -59,18 +58,27 @@ import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.SetClause;
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.LoadOp;
+import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 
-public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA> {
+/**
+ * A version store that uses a tree of levels to store version information.
+ */
+public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DynamoVersionStore.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(TieredVersionStore.class);
 
   private static final int MAX_MERGE_DEPTH = 200;
 
@@ -78,7 +86,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   private final Serializer<METADATA> metadataSerializer;
   private final StoreWorker<DATA,METADATA> storeWorker;
   private final ExecutorService executor;
-  private DynamoStore store;
+  private Store store;
   private final int commitRetryCount = 5;
   private final int p2commitRetry = 5;
   private final boolean waitOnCollapse;
@@ -86,7 +94,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   /**
    * Construct a Dynamo VersionStore.
    */
-  public DynamoVersionStore(StoreWorker<DATA,METADATA> storeWorker, DynamoStore store, boolean waitOnCollapse) {
+  public TieredVersionStore(StoreWorker<DATA,METADATA> storeWorker, Store store, boolean waitOnCollapse) {
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
@@ -170,7 +178,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     ConditionExpression c = ConditionExpression.of(id.getType().typeVerification());
     if (iref.getType() == Type.TAG) {
       if (hash.isPresent()) {
-        c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(), Id.of(hash.get()).toAttributeValue()));
+        c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(), Id.of(hash.get()).toEntity()));
       }
 
       if (!store.delete(ValueType.REF, iref.getTag().getId(), Optional.of(c))) {
@@ -184,9 +192,9 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       // to the desired hash.
       if (hash.isPresent()) {
         c = c.and(ExpressionFunction.equals(
-            ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toAttributeValue()));
+            ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toEntity()));
         c = c.and(ExpressionFunction.equals(
-            ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), AttributeValue.builder().n("1").build()));
+            ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), Entity.ofNumber("1")));
       }
 
       if (!store.delete(ValueType.REF,  iref.getBranch().getId(), Optional.of(c))) {
@@ -361,7 +369,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     ConditionExpression condition = ConditionExpression.of(
         ExpressionFunction.equals(
             ExpressionPath.builder(InternalRef.TYPE).build(),
-            type.toAttributeValue())
+            type.toEntity())
         );
 
     final InternalRef toSave;
@@ -369,7 +377,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     if (isTag) {
       if (currentTarget.isPresent()) {
         condition = condition.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(),
-            expectedId.toAttributeValue()));
+            expectedId.toEntity()));
       }
       toSave = new InternalTag(refId, namedRef.getName(), newId);
     } else {
@@ -377,7 +385,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         condition = condition.and(
             ExpressionFunction.equals(
                 ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(),
-                expectedId.toAttributeValue()));
+                expectedId.toEntity()));
       }
       toSave = new InternalBranch(name, l1);
     }
@@ -648,7 +656,7 @@ public class DynamoVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     }
 
     public LoadStep getLoad() {
-      return tree.getLoadChain(DynamoVersionStore.this::ensureValidL1, LoadType.NO_VALUES);
+      return tree.getLoadChain(TieredVersionStore.this::ensureValidL1, LoadType.NO_VALUES);
     }
 
     /**

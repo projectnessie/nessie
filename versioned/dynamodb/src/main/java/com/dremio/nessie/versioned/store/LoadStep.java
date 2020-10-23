@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,13 +25,13 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.versioned.impl.LoadOp.LoadOpKey;
+import com.dremio.nessie.versioned.store.LoadOp.LoadOpKey;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Streams;
 
-class LoadStep {
+public class LoadStep {
 
   private Collection<LoadOp<?>> ops;
   private Supplier<Optional<LoadStep>> next;
@@ -55,12 +55,18 @@ class LoadStep {
     return consolidated;
   }
 
-  Stream<LoadOp<?>> getOps() {
+  public Stream<LoadOp<?>> getOps() {
     return ops.stream();
   }
 
-  public LoadStep combine(final LoadStep b) {
+  /**
+   * Merge the current LoadStep with another to create a new compound LoadStep.
+   * @param other The second LoadStep to combine with this.
+   * @return A newly created combined LoadStep
+   */
+  public LoadStep combine(final LoadStep other) {
     final LoadStep a = this;
+    final LoadStep b = other;
     Collection<LoadOp<?>> newOps = Streams.concat(ops.stream(), b.ops.stream()).collect(Collectors.toList());
     return new LoadStep(newOps, () -> {
       Optional<LoadStep> nextA = a.next.get();

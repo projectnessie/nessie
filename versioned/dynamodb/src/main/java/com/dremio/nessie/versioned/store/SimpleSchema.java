@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store;
 
 import java.util.Collection;
 import java.util.Map;
@@ -22,45 +22,43 @@ import java.util.Set;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-
 /**
- * Abstract class for converting to/from an object to a Map&gt;String, AttributeValue&lt;.
+ * Abstract class for converting to/from an object to a Map&gt;String, Entity&lt;.
  *
  * <p>Inspired by Dynamo's extended library and originally extended from it.
  * @param <T> The value type to be serialized/deserialized.
  */
-abstract class SimpleSchema<T> {
+public abstract class SimpleSchema<T> {
 
   public SimpleSchema(Class<T> clazz) {
   }
 
-  public Map<String, AttributeValue> itemToMap(T item, Collection<String> attributes) {
+  public Map<String, Entity> itemToMap(T item, Collection<String> attributes) {
     Set<String> include = ImmutableSet.copyOf(attributes);
     return Maps.filterKeys(itemToMap(item, true), k -> include.contains(k));
   }
 
-  public abstract Map<String, AttributeValue> itemToMap(T item, boolean ignoreNulls);
+  public abstract Map<String, Entity> itemToMap(T item, boolean ignoreNulls);
 
-  public final T mapToItem(Map<String, AttributeValue> attributeMap) {
+  public final T mapToItem(Map<String, Entity> attributeMap) {
     return deserialize(new NullAlertingMap(attributeMap));
   }
 
-  protected abstract T deserialize(Map<String, AttributeValue> attributeMap);
+  protected abstract T deserialize(Map<String, Entity> attributeMap);
 
 
-  public AttributeValue attributeValue(T item, String key) {
+  public Entity entity(T item, String key) {
     return itemToMap(item, true).get(key);
   }
 
   /**
    * A map which throws if a requested value is missing rather than returning null.
    */
-  private static class NullAlertingMap implements Map<String, AttributeValue> {
+  private static class NullAlertingMap implements Map<String, Entity> {
 
-    private final Map<String, AttributeValue> delegate;
+    private final Map<String, Entity> delegate;
 
-    public NullAlertingMap(Map<String, AttributeValue> delegate) {
+    public NullAlertingMap(Map<String, Entity> delegate) {
       this.delegate = delegate;
     }
 
@@ -85,8 +83,8 @@ abstract class SimpleSchema<T> {
     }
 
     @Override
-    public AttributeValue get(Object key) {
-      AttributeValue value = delegate.get(key);
+    public Entity get(Object key) {
+      Entity value = delegate.get(key);
       if (value == null) {
         throw new NullPointerException(String.format("Unable to find '%s' in: %s.", key, this));
       }
@@ -94,17 +92,17 @@ abstract class SimpleSchema<T> {
     }
 
     @Override
-    public AttributeValue put(String key, AttributeValue value) {
+    public Entity put(String key, Entity value) {
       return delegate.put(key, value);
     }
 
     @Override
-    public AttributeValue remove(Object key) {
+    public Entity remove(Object key) {
       return delegate.remove(key);
     }
 
     @Override
-    public void putAll(Map<? extends String, ? extends AttributeValue> m) {
+    public void putAll(Map<? extends String, ? extends Entity> m) {
       delegate.putAll(m);
     }
 
@@ -119,12 +117,12 @@ abstract class SimpleSchema<T> {
     }
 
     @Override
-    public Collection<AttributeValue> values() {
+    public Collection<Entity> values() {
       return delegate.values();
     }
 
     @Override
-    public Set<Entry<String, AttributeValue>> entrySet() {
+    public Set<Entry<String, Entity>> entrySet() {
       return delegate.entrySet();
     }
 
