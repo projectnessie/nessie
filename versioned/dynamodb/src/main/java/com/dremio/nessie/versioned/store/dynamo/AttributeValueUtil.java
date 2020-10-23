@@ -39,19 +39,19 @@ public class AttributeValueUtil {
    */
   public static Entity toEntity(AttributeValue av) {
     if (av.hasL()) {
-      return Entity.l(av.l().stream().map(AttributeValueUtil::toEntity).collect(ImmutableList.toImmutableList()));
+      return Entity.ofList(av.l().stream().map(AttributeValueUtil::toEntity).collect(ImmutableList.toImmutableList()));
     } else if (av.hasM()) {
-      return Entity.m(Maps.transformValues(av.m(), AttributeValueUtil::toEntity));
+      return Entity.ofMap(Maps.transformValues(av.m(), AttributeValueUtil::toEntity));
     } else if (av.s() != null) {
-      return Entity.s(av.s());
+      return Entity.ofString(av.s());
     } else if (av.bool() != null) {
-      return Entity.bl(av.bool());
+      return Entity.ofBoolean(av.bool());
     } else if (av.n() != null) {
-      return Entity.n(av.n());
+      return Entity.ofNumber(av.n());
     } else if (av.b() != null) {
-      return Entity.b(UnsafeByteOperations.unsafeWrap(av.b().asByteArray()));
+      return Entity.ofBinary(UnsafeByteOperations.unsafeWrap(av.b().asByteArray()));
     } else if (av.hasSs()) {
-      return Entity.ss(av.ss().stream().collect(ImmutableSet.toImmutableSet()));
+      return Entity.ofStringSet(av.ss().stream().collect(ImmutableSet.toImmutableSet()));
     } else {
       throw new UnsupportedOperationException("Unable to convert: " + av.toString());
     }
@@ -73,20 +73,20 @@ public class AttributeValueUtil {
   public static AttributeValue fromEntity(Entity e) {
     switch (e.getType()) {
       case BINARY:
-        return AttributeValue.builder().b(SdkBytes.fromByteBuffer(e.b().asReadOnlyByteBuffer())).build();
+        return AttributeValue.builder().b(SdkBytes.fromByteBuffer(e.getBinary().asReadOnlyByteBuffer())).build();
       case BOOLEAN:
-        return AttributeValue.builder().bool(e.bl()).build();
+        return AttributeValue.builder().bool(e.getBoolean()).build();
       case LIST:
-        return AttributeValue.builder().l(e.l().stream().map(AttributeValueUtil::fromEntity)
+        return AttributeValue.builder().l(e.getList().stream().map(AttributeValueUtil::fromEntity)
             .collect(ImmutableList.toImmutableList())).build();
       case MAP:
-        return AttributeValue.builder().m(fromEntity(e.m())).build();
+        return AttributeValue.builder().m(fromEntity(e.getMap())).build();
       case NUMBER:
-        return AttributeValue.builder().n(e.n()).build();
+        return AttributeValue.builder().n(e.getNumber()).build();
       case STRING:
-        return AttributeValue.builder().s(e.s()).build();
+        return AttributeValue.builder().s(e.getString()).build();
       case STRING_SET:
-        return AttributeValue.builder().ss(e.ss()).build();
+        return AttributeValue.builder().ss(e.getStringSet()).build();
       default:
         throw new UnsupportedOperationException("Unable to convert type " + e);
     }

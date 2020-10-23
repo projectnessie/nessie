@@ -192,7 +192,7 @@ public final class Id implements InternalRef {
   }
 
   public Entity toEntity() {
-    return Entity.b(getValue());
+    return Entity.ofBinary(getValue());
   }
 
   public void addToHash(Hasher hasher) {
@@ -208,7 +208,7 @@ public final class Id implements InternalRef {
   }
 
   public static Id fromEntity(Entity value) {
-    return Id.of(value.b());
+    return Id.of(value.getBinary());
   }
 
   @Override

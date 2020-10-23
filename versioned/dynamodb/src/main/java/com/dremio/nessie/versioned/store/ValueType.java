@@ -56,7 +56,7 @@ public enum ValueType {
     this.objectClass = objectClass;
     this.schema = schema;
     this.immutable = immutable;
-    this.type = Entity.s(valueName);
+    this.type = Entity.ofString(valueName);
   }
 
   public Class<?> getObjectClass() {
@@ -84,7 +84,7 @@ public enum ValueType {
     Id id = Id.fromEntity(map.get(Store.KEY_NAME));
     Preconditions.checkNotNull(loadedType, "Missing type tag for schema for id %s.", id.getHash());
     Preconditions.checkArgument(type.equals(loadedType),
-        "Expected schema for id %s to be of type '%s' but is actually '%s'.", id.getHash(), type.s(), loadedType.s());
+        "Expected schema for id %s to be of type '%s' but is actually '%s'.", id.getHash(), type.getString(), loadedType.getString());
     return map;
   }
 

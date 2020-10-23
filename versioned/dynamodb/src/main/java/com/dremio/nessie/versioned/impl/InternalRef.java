@@ -42,7 +42,7 @@ public interface InternalRef extends HasId {
     private final Entity value;
 
     Type(String identifier) {
-      this.value = Entity.s(identifier);
+      this.value = Entity.ofString(identifier);
     }
 
     public ExpressionFunction typeVerification() {
@@ -97,7 +97,7 @@ public interface InternalRef extends HasId {
 
     @Override
     public InternalRef deserialize(Map<String, Entity> attributeMap) {
-      Type type = Type.getType(attributeMap.get(TYPE).s());
+      Type type = Type.getType(attributeMap.get(TYPE).getString());
       Map<String, Entity> filtered = Maps.filterEntries(attributeMap, e -> !e.getKey().equals(TYPE));
       switch (type) {
         case BRANCH: return InternalBranch.SCHEMA.mapToItem(filtered);

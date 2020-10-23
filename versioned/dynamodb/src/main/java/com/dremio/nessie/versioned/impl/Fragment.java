@@ -51,7 +51,7 @@ public class Fragment extends MemoizedId {
 
     @Override
     public Fragment deserialize(Map<String, Entity> attributeMap) {
-      List<InternalKey> keys = attributeMap.get(KEYS).l().stream().map(InternalKey::fromEntity).collect(Collectors.toList());
+      List<InternalKey> keys = attributeMap.get(KEYS).getList().stream().map(InternalKey::fromEntity).collect(Collectors.toList());
       return new Fragment(keys);
     }
 
@@ -59,7 +59,7 @@ public class Fragment extends MemoizedId {
     public Map<String, Entity> itemToMap(Fragment item, boolean ignoreNulls) {
       return ImmutableMap.<String, Entity>builder()
           .put(ID, item.getId().toEntity())
-          .put(KEYS, Entity.l(item.getKeys().stream().map(InternalKey::toEntity).collect(ImmutableList.toImmutableList())))
+          .put(KEYS, Entity.ofList(item.getKeys().stream().map(InternalKey::toEntity).collect(ImmutableList.toImmutableList())))
           .build();
     }
 

@@ -68,7 +68,7 @@ class InternalKey implements Comparable<InternalKey>, HasId {
   }
 
   public Entity toEntity() {
-    return Entity.l(getElements().stream().map(s -> Entity.s(s)).collect(Collectors.toList()));
+    return Entity.ofList(getElements().stream().map(s -> Entity.ofString(s)).collect(Collectors.toList()));
   }
 
   public int estimatedSize() {
@@ -77,7 +77,7 @@ class InternalKey implements Comparable<InternalKey>, HasId {
 
   public static InternalKey fromEntity(Entity value) {
     return new InternalKey(ImmutableKey.builder()
-        .addAllElements(value.l().stream().map(Entity::s)
+        .addAllElements(value.getList().stream().map(Entity::getString)
         .collect(Collectors.toList())).build());
   }
 

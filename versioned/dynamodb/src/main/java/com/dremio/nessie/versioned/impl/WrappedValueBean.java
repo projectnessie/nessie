@@ -91,14 +91,14 @@ abstract class WrappedValueBean extends MemoizedId {
 
     @Override
     public T deserialize(Map<String, Entity> attributeMap) {
-      return deserializer.apply(Id.fromEntity(attributeMap.get(ID)), attributeMap.get(VALUE).b());
+      return deserializer.apply(Id.fromEntity(attributeMap.get(ID)), attributeMap.get(VALUE).getBinary());
     }
 
     @Override
     public Map<String, Entity> itemToMap(T item, boolean ignoreNulls) {
       return ImmutableMap.<String, Entity>builder()
           .put(ID, item.getId().toEntity())
-          .put(VALUE, Entity.b(item.getBytes()))
+          .put(VALUE, Entity.ofBinary(item.getBytes()))
           .build();
     }
   }

@@ -26,10 +26,10 @@ import com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil;
 
 class TestExpressions {
 
-  private final Entity av0 = Entity.bl(true);
-  private final Entity av1 = Entity.bl(false);
-  private final Entity av2 = Entity.s("mystr");
-  private final Entity set1 = Entity.ss("foo", "bar");
+  private final Entity av0 = Entity.ofBoolean(true);
+  private final Entity av1 = Entity.ofBoolean(false);
+  private final Entity av2 = Entity.ofString("mystr");
+  private final Entity set1 = Entity.ofStringSet("foo", "bar");
 
   private final ExpressionPath p0 = ExpressionPath.builder("p0").build();
   private final ExpressionPath p1 = ExpressionPath.builder("p1").build();
@@ -94,7 +94,7 @@ class TestExpressions {
 
   @Test
   void listAppend() {
-    Value v0 = ExpressionFunction.appendToList(ExpressionPath.builder("p0").build(), Entity.l(av0));
+    Value v0 = ExpressionFunction.appendToList(ExpressionPath.builder("p0").build(), Entity.ofList(av0));
     AliasCollectorImpl c = new AliasCollectorImpl();
     Value v0p = v0.alias(c);
     assertEquals("list_append(p0, :v0)", v0p.asString());
@@ -130,7 +130,7 @@ class TestExpressions {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
         SetClause.equals(p0, av0),
         SetClause.ifNotExists(p1, p0, av1),
-        SetClause.appendToList(p1, Entity.l(av1))
+        SetClause.appendToList(p1, Entity.ofList(av1))
         ).build();
     AliasCollectorImpl c = new AliasCollectorImpl();
     UpdateExpression e0p = e0.alias(c);

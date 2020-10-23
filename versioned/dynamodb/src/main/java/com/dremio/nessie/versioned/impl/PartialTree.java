@@ -225,7 +225,7 @@ class PartialTree<V> {
     static SetClause getCommitSet(List<Commit> commits) {
       return SetClause.appendToList(
           ExpressionPath.builder(InternalBranch.COMMITS).build(),
-          Entity.l(commits.stream().map(Commit::toEntity)));
+          Entity.ofList(commits.stream().map(Commit::toEntity)));
     }
   }
 

@@ -118,7 +118,7 @@ public class L3 extends MemoizedId {
 
     @Override
     public L3 deserialize(Map<String, Entity> attributeMap) {
-      TreeMap<InternalKey, PositionDelta> tree = attributeMap.get(TREE).l().stream().map(av -> av.m()).collect(Collectors.toMap(
+      TreeMap<InternalKey, PositionDelta> tree = attributeMap.get(TREE).getList().stream().map(av -> av.getMap()).collect(Collectors.toMap(
           m -> InternalKey.fromEntity(m.get(TREE_KEY)),
           m -> PositionDelta.of(0, Id.fromEntity(m.get(TREE_ID))),
           (a,b) -> {
@@ -142,10 +142,10 @@ public class L3 extends MemoizedId {
             Map<String, Entity> pmm = ImmutableMap.of(
                 TREE_KEY, key.toEntity(),
                 TREE_ID, pm.getNewId().toEntity());
-            return Entity.m(pmm);
+            return Entity.ofMap(pmm);
           }).collect(Collectors.toList());
       return ImmutableMap.<String, Entity>builder()
-          .put(TREE, Entity.l(values))
+          .put(TREE, Entity.ofList(values))
           .put(ID, item.getId().toEntity())
           .build();
     }

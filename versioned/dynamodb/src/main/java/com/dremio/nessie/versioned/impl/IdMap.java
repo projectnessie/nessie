@@ -90,7 +90,7 @@ class IdMap implements Iterable<Id> {
   }
 
   Entity toEntity() {
-    return Entity.l(Arrays.stream(deltas).map(p -> p.getNewId().toEntity()).collect(ImmutableList.toImmutableList()));
+    return Entity.ofList(Arrays.stream(deltas).map(p -> p.getNewId().toEntity()).collect(ImmutableList.toImmutableList()));
   }
 
   /**
@@ -101,7 +101,7 @@ class IdMap implements Iterable<Id> {
    */
   public static IdMap fromEntity(Entity value, int size) {
     PositionDelta[] deltas = new PositionDelta[size];
-    List<Entity> items = value.l();
+    List<Entity> items = value.getList();
     Preconditions.checkArgument(items.size() == size, "Expected size %s but actual size was %s.", size, items.size());
 
     int i = 0;

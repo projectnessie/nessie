@@ -101,7 +101,7 @@ public class VersionStoreFactory {
     switch (config.getVersionStoreConfig().getVersionStoreType()) {
       case DYNAMO:
         LOGGER.info("Using Dyanmo Version store");
-        return new TieredVersionStore<>(storeWorker, dyanamo(), false);
+        return new TieredVersionStore<>(storeWorker, createDynamoConnection(), false);
       case JGIT:
         LOGGER.info("Using JGit Version Store");
         return new JGitVersionStore<>(repository, storeWorker);
@@ -119,7 +119,7 @@ public class VersionStoreFactory {
   /**
    * create a dynamo store based on config.
    */
-  private DynamoStore dyanamo() {
+  private DynamoStore createDynamoConnection() {
     if (!config.getVersionStoreConfig().getVersionStoreType().equals(VersionStoreType.DYNAMO)) {
       return null;
     }

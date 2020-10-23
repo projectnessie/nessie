@@ -32,12 +32,12 @@ abstract class KeyMutationList {
   }
 
   public Entity toEntity() {
-    return Entity.l(getMutations().stream().map(KeyMutation::toEntity).collect(Collectors.toList()));
+    return Entity.ofList(getMutations().stream().map(KeyMutation::toEntity).collect(Collectors.toList()));
   }
 
   public static KeyMutationList fromEntity(Entity value) {
     return ImmutableKeyMutationList.builder().addAllMutations(
-        value.l().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
+        value.getList().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
         .build();
   }
 

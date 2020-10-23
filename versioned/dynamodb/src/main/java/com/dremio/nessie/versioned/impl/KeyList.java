@@ -78,10 +78,10 @@ abstract class KeyList {
   abstract Entity toEntity();
 
   static KeyList fromEntity(Entity value) {
-    if (value.m().get(IS_CHECKPOINT).bl()) {
-      return CompleteList.fromEntity(value.m());
+    if (value.getMap().get(IS_CHECKPOINT).getBoolean()) {
+      return CompleteList.fromEntity(value.getMap());
     } else {
-      return IncrementalList.fromEntity(value.m());
+      return IncrementalList.fromEntity(value.getMap());
     }
   }
 
@@ -212,11 +212,11 @@ abstract class KeyList {
 
     @Override
     public Entity toEntity() {
-      return Entity.m(ImmutableMap.<String, Entity>of(
-            IS_CHECKPOINT, Entity.bl(false),
-            MUTATIONS, Entity.l(getMutations().stream().map(KeyMutation::toEntity)),
+      return Entity.ofMap(ImmutableMap.<String, Entity>of(
+            IS_CHECKPOINT, Entity.ofBoolean(false),
+            MUTATIONS, Entity.ofList(getMutations().stream().map(KeyMutation::toEntity)),
             ORIGIN, getPreviousCheckpoint().toEntity(),
-            DISTANCE, Entity.n(getDistanceFromCheckpointCommits())
+            DISTANCE, Entity.ofNumber(getDistanceFromCheckpointCommits())
             ));
     }
 
@@ -227,9 +227,9 @@ abstract class KeyList {
 
     static KeyList fromEntity(Map<String, Entity> value) {
       return ImmutableIncrementalList.builder()
-          .addAllMutations(value.get(MUTATIONS).l().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
+          .addAllMutations(value.get(MUTATIONS).getList().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
           .previousCheckpoint(Id.fromEntity(value.get(ORIGIN)))
-          .distanceFromCheckpointCommits(Integer.parseInt(value.get(DISTANCE).n()))
+          .distanceFromCheckpointCommits(Integer.parseInt(value.get(DISTANCE).getNumber()))
           .build();
     }
 
@@ -304,20 +304,20 @@ abstract class KeyList {
 
     @Override
     public Entity toEntity() {
-      return Entity.m(ImmutableMap.<String, Entity>of(
+      return Entity.ofMap(ImmutableMap.<String, Entity>of(
             IS_CHECKPOINT,
-            Entity.bl(true),
+            Entity.ofBoolean(true),
             FRAGMENTS,
-            Entity.l(fragmentIds.stream().map(Id::toEntity).collect(ImmutableList.toImmutableList())),
+            Entity.ofList(fragmentIds.stream().map(Id::toEntity).collect(ImmutableList.toImmutableList())),
             MUTATIONS,
-            Entity.l(mutations.stream().map(KeyMutation::toEntity))
+            Entity.ofList(mutations.stream().map(KeyMutation::toEntity))
             ));
     }
 
     static KeyList fromEntity(Map<String, Entity> value) {
       return new CompleteList(
-          value.get(FRAGMENTS).l().stream().map(Id::fromEntity).collect(ImmutableList.toImmutableList()),
-          value.get(MUTATIONS).l().stream().map(KeyMutation::fromEntity).collect(ImmutableList.toImmutableList()));
+          value.get(FRAGMENTS).getList().stream().map(Id::fromEntity).collect(ImmutableList.toImmutableList()),
+          value.get(MUTATIONS).getList().stream().map(KeyMutation::fromEntity).collect(ImmutableList.toImmutableList()));
     }
 
     @Override

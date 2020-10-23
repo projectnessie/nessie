@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 
-@SuppressWarnings("checkstyle:MethodName")
 public abstract class Entity {
 
   public static enum EntityType {
@@ -44,89 +43,88 @@ public abstract class Entity {
 
   public abstract EntityType getType();
 
-  public String s() {
+  public String getString() {
     throw new IllegalStateException("Not a string.");
   }
 
-  public static Entity s(String str) {
+  public static Entity ofString(String str) {
     return new StringEntity(str);
   }
 
-  public Set<String> ss() {
+  public Set<String> getStringSet() {
     throw new IllegalStateException("Not a string set.");
   }
 
-  public static Entity ss(String... str) {
+  public static Entity ofStringSet(String... str) {
     return new StringSetEntity(ImmutableSet.<String>builder().add(str).build());
   }
 
-  public static Entity ss(Set<String> strings) {
+  public static Entity ofStringSet(Set<String> strings) {
     return new StringSetEntity(strings);
   }
 
-  public ByteString b() {
+  public ByteString getBinary() {
     throw new IllegalStateException("Not a binary value.");
   }
 
-  public static Entity b(ByteString bytes) {
+  public static Entity ofBinary(ByteString bytes) {
     return new BinaryEntity(bytes);
   }
 
-  public static Entity b(byte[] bytes) {
+  public static Entity ofBinary(byte[] bytes) {
     return new BinaryEntity(ByteString.copyFrom(bytes));
   }
 
-  public List<Entity> l() {
+  public List<Entity> getList() {
     throw new IllegalStateException("Not a list.");
   }
 
-  public static Entity l(List<Entity> list) {
+  public static Entity ofList(List<Entity> list) {
     return new ListEntity(list);
   }
 
-  public static Entity l(Entity... entities) {
+  public static Entity ofList(Entity... entities) {
     return new ListEntity(ImmutableList.<Entity>builder().add(entities).build());
   }
 
-
-  public static Entity l(Stream<Entity> entities) {
+  public static Entity ofList(Stream<Entity> entities) {
     return new ListEntity(entities.collect(ImmutableList.toImmutableList()));
   }
 
 
-  public Map<String, Entity> m() {
+  public Map<String, Entity> getMap() {
     throw new IllegalStateException("Not a map.");
   }
 
-  public static Entity m(Map<String, Entity> map) {
+  public static Entity ofMap(Map<String, Entity> map) {
     return new MapEntity(map);
   }
 
-  public String n() {
+  public String getNumber() {
     throw new IllegalStateException("Not a number.");
   }
 
-  public static Entity n(String number) {
+  public static Entity ofNumber(String number) {
     return new NumberEntity(number);
   }
 
-  public static Entity n(int number) {
+  public static Entity ofNumber(int number) {
     return new NumberEntity(Integer.toString(number));
   }
 
-  public static Entity n(long number) {
+  public static Entity ofNumber(long number) {
     return new NumberEntity(Long.toString(number));
   }
 
-  public boolean bl() {
+  public boolean getBoolean() {
     throw new IllegalStateException("Not a boolean value.");
   }
 
-  public static Entity bl(boolean bool) {
+  public static Entity ofBoolean(boolean bool) {
     return new BooleanEntity(bool);
   }
 
-  private static class StringEntity extends Entity {
+  private static final class StringEntity extends Entity {
 
     private final String str;
 
@@ -134,7 +132,7 @@ public abstract class Entity {
       this.str = s;
     }
 
-    public String s() {
+    public String getString() {
       return str;
     }
 
@@ -162,7 +160,7 @@ public abstract class Entity {
 
   }
 
-  private static class BinaryEntity extends Entity {
+  private static final class BinaryEntity extends Entity {
 
     private final ByteString binary;
 
@@ -171,7 +169,7 @@ public abstract class Entity {
     }
 
     @Override
-    public ByteString b() {
+    public ByteString getBinary() {
       return binary;
     }
 
@@ -199,7 +197,7 @@ public abstract class Entity {
 
   }
 
-  private static class MapEntity extends Entity {
+  private static final class MapEntity extends Entity {
 
     private final ImmutableMap<String, Entity> map;
 
@@ -208,7 +206,7 @@ public abstract class Entity {
     }
 
     @Override
-    public Map<String, Entity> m() {
+    public Map<String, Entity> getMap() {
       return map;
     }
 
@@ -236,7 +234,7 @@ public abstract class Entity {
 
   }
 
-  private static class ListEntity extends Entity {
+  private static final class ListEntity extends Entity {
 
     private final ImmutableList<Entity> list;
 
@@ -245,7 +243,7 @@ public abstract class Entity {
     }
 
     @Override
-    public List<Entity> l() {
+    public List<Entity> getList() {
       return list;
     }
 
@@ -273,7 +271,7 @@ public abstract class Entity {
 
   }
 
-  private static class StringSetEntity extends Entity {
+  private static final class StringSetEntity extends Entity {
 
     private final ImmutableSet<String> strings;
 
@@ -282,7 +280,7 @@ public abstract class Entity {
     }
 
     @Override
-    public Set<String> ss() {
+    public Set<String> getStringSet() {
       return strings;
     }
 
@@ -310,7 +308,7 @@ public abstract class Entity {
 
   }
 
-  private static class NumberEntity extends Entity {
+  private static final class NumberEntity extends Entity {
 
     private final String number;
 
@@ -318,7 +316,7 @@ public abstract class Entity {
       this.number = number;
     }
 
-    public String n() {
+    public String getNumber() {
       return number;
     }
 
@@ -346,7 +344,7 @@ public abstract class Entity {
 
   }
 
-  private static class BooleanEntity extends Entity {
+  private static final class BooleanEntity extends Entity {
 
     private final boolean bool;
 
@@ -355,7 +353,7 @@ public abstract class Entity {
     }
 
     @Override
-    public boolean bl() {
+    public boolean getBoolean() {
       return bool;
     }
 

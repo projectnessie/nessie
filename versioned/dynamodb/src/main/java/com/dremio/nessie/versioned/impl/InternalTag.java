@@ -61,7 +61,7 @@ class InternalTag extends MemoizedId implements InternalRef {
     public InternalTag deserialize(Map<String, Entity> attributeMap) {
       return new InternalTag(
           Id.fromEntity(attributeMap.get(ID)),
-          attributeMap.get(NAME).s(),
+          attributeMap.get(NAME).getString(),
           Id.fromEntity(attributeMap.get(COMMIT))
           );
     }
@@ -71,7 +71,7 @@ class InternalTag extends MemoizedId implements InternalRef {
       return ImmutableMap.<String, Entity>builder()
           .put(ID, item.getId().toEntity())
           .put(COMMIT, item.commit.toEntity())
-          .put(NAME, Entity.s(item.name))
+          .put(NAME, Entity.ofString(item.name))
           .build();
     }
 

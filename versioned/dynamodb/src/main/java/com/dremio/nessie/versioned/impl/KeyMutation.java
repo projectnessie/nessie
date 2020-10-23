@@ -67,11 +67,11 @@ abstract class KeyMutation {
   }
 
   Entity toEntity() {
-    return Entity.m(ImmutableMap.<String, Entity>of(getType().field, getKey().toEntity()));
+    return Entity.ofMap(ImmutableMap.<String, Entity>of(getType().field, getKey().toEntity()));
   }
 
   public static KeyMutation fromEntity(Entity value) {
-    Map<String, Entity> mp = value.m();
+    Map<String, Entity> mp = value.getMap();
     if (mp.containsKey(MutationType.ADDITION.field)) {
       return KeyAddition.of(InternalKey.fromEntity(mp.get(MutationType.ADDITION.field)));
     } else if (mp.containsKey(MutationType.REMOVAL.field)) {

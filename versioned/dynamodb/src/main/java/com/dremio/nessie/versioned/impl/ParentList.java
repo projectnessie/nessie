@@ -52,11 +52,11 @@ abstract class ParentList {
   }
 
   public Entity toEntity() {
-    return Entity.l(getParents().stream().map(Id::toEntity));
+    return Entity.ofList(getParents().stream().map(Id::toEntity));
   }
 
   public static ParentList fromEntity(Entity value) {
-    return ImmutableParentList.builder().addAllParents(value.l().stream().map(Id::fromEntity).collect(Collectors.toList())).build();
+    return ImmutableParentList.builder().addAllParents(value.getList().stream().map(Id::fromEntity).collect(Collectors.toList())).build();
   }
 
 }

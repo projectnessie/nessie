@@ -202,7 +202,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
     }
 
     public Entity toEntity() {
-      return Entity.m(SCHEMA.itemToMap(this, true));
+      return Entity.ofMap(SCHEMA.itemToMap(this, true));
     }
 
     static final SimpleSchema<Commit> SCHEMA = new SimpleSchema<Commit>(Commit.class) {
@@ -215,9 +215,9 @@ class InternalBranch extends MemoizedId implements InternalRef {
         }
 
         List<UnsavedDelta> deltas = map.get(DELTAS)
-            .l()
+            .getList()
             .stream()
-            .map(av -> UnsavedDelta.SCHEMA.mapToItem(av.m()))
+            .map(av -> UnsavedDelta.SCHEMA.mapToItem(av.getMap()))
             .collect(Collectors.toList());
         return new Commit(
             Id.fromEntity(map.get(ID)),
@@ -237,9 +237,9 @@ class InternalBranch extends MemoizedId implements InternalRef {
         if (item.saved) {
           builder.put(PARENT, item.parent.toEntity());
         } else {
-          Entity deltas = Entity.l(
+          Entity deltas = Entity.ofList(
               item.deltas.stream().map(
-                  d -> Entity.m(
+                  d -> Entity.ofMap(
                       UnsavedDelta.SCHEMA.itemToMap(d, true)
                       )
                   ).collect(Collectors.toList()));
@@ -514,16 +514,16 @@ class InternalBranch extends MemoizedId implements InternalRef {
       @Override
       public UnsavedDelta deserialize(Map<String, Entity> map) {
         return new UnsavedDelta(
-            Integer.parseInt(map.get(POSITION).n()),
-            Id.of(map.get(OLD_ID).b()),
-            Id.of(map.get(NEW_ID).b())
+            Integer.parseInt(map.get(POSITION).getNumber()),
+            Id.of(map.get(OLD_ID).getBinary()),
+            Id.of(map.get(NEW_ID).getBinary())
             );
       }
 
       @Override
       public Map<String, Entity> itemToMap(UnsavedDelta item, boolean ignoreNulls) {
         return ImmutableMap.<String, Entity>builder()
-            .put(POSITION, Entity.n(item.position))
+            .put(POSITION, Entity.ofNumber(item.position))
             .put(OLD_ID, item.oldId.toEntity())
             .put(NEW_ID, item.newId.toEntity())
             .build();
@@ -542,10 +542,10 @@ class InternalBranch extends MemoizedId implements InternalRef {
     public InternalBranch deserialize(Map<String, Entity> attributeMap) {
       return new InternalBranch(
           Id.fromEntity(attributeMap.get(ID)),
-          attributeMap.get(NAME).s(),
+          attributeMap.get(NAME).getString(),
           IdMap.fromEntity(attributeMap.get(TREE), L1.SIZE),
           Id.fromEntity(attributeMap.get(METADATA)),
-          attributeMap.get(COMMITS).l().stream().map(av -> Commit.SCHEMA.mapToItem(av.m())).collect(Collectors.toList())
+          attributeMap.get(COMMITS).getList().stream().map(av -> Commit.SCHEMA.mapToItem(av.getMap())).collect(Collectors.toList())
       );
     }
 
@@ -553,9 +553,9 @@ class InternalBranch extends MemoizedId implements InternalRef {
     public Map<String, Entity> itemToMap(InternalBranch item, boolean ignoreNulls) {
       return ImmutableMap.<String, Entity>builder()
           .put(ID, item.getId().toEntity())
-          .put(NAME, Entity.s(item.name))
+          .put(NAME, Entity.ofString(item.name))
           .put(METADATA, item.metadata.toEntity())
-          .put(COMMITS, Entity.l(item.commits.stream().map(Commit::toEntity).collect(Collectors.toList())))
+          .put(COMMITS, Entity.ofList(item.commits.stream().map(Commit::toEntity).collect(Collectors.toList())))
           .put(TREE, item.tree.toEntity())
           .build();
     }
