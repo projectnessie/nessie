@@ -179,7 +179,7 @@ public class L3 extends MemoizedId {
   }
 
   /**
-   * Get a list of all the key -> valueId differences between two L3s.
+   * Get a list of all the key to valueId differences between two L3s.
    *
    * <p>This returns the difference between the updated (not original) state of the two L3s (if the L3s have been mutated).
    *
