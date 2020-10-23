@@ -115,7 +115,7 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
-    <awssdk.version>2.15.11</awssdk.version>
+    <awssdk.version>2.15.12</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake2.version>0.6.2-nessie-SNAPSHOT</deltalake2.version>
     <deltalake3.version>0.8.0-nessie-SNAPSHOT</deltalake3.version>
