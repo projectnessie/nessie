@@ -28,3 +28,7 @@ All endpoint options are available from this client.
 
 A common way to interact with Nessie is via Spark. You can read more about working 
 with Nessie and Spark together on our [Spark](../tools/spark.md) docs page.
+
+## API Documentation
+
+API docs are hosted on [readthedocs](https://nessie.readthedocs.io/en/latest/)
