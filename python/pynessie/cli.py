@@ -405,10 +405,10 @@ def contents(ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[
         keys = ctx.nessie.list_keys(ref if ref else ctx.nessie.get_default_branch())
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
-        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, *key), reason=_get_message(message), old_hash=condition)
+        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, *key), old_hash=condition, reason=_get_message(message))
         results = ""
     elif set:
-        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, *key), reason=_get_message(message), old_hash=condition)
+        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, *key), old_hash=condition, reason=_get_message(message))
         results = ""
     else:
 

@@ -28,7 +28,9 @@ def _get(url: str, details: str = "", ssl_verify: bool = True, params: dict = No
     return _check_error(r, details)
 
 
-def _post(url: str, json: dict = None, details: str = "", ssl_verify: bool = True, params: dict = None) -> Union[str, dict, list]:
+def _post(
+    url: str, json: Union[str, dict] = None, details: str = "", ssl_verify: bool = True, params: dict = None
+) -> Union[str, dict, list]:
     if isinstance(json, str):
         json = jsonlib.loads(json)
     r = requests.post(url, headers=_get_headers(), verify=ssl_verify, json=json, params=params)
@@ -89,7 +91,7 @@ def get_reference(base_url: str, ref: str, ssl_verify: bool = True) -> dict:
     return cast(dict, _get(base_url + "/trees/tree/{}".format(ref), ssl_verify=ssl_verify))
 
 
-def create_reference(base_url: str, ref_json: dict, ssl_verify: bool = True) -> dict:
+def create_reference(base_url: str, ref_json: dict, ssl_verify: bool = True) -> None:
     """Create a reference.
 
     :param base_url: base Nessie url
@@ -240,9 +242,7 @@ def cherry_pick(base_url: str, branch: str, transplant_json: dict, expected_hash
     :param ssl_verify: ignore ssl errors if False
     """
     url = "/trees/branch/{}/transplant".format(branch)
-    params = dict()
-    if expected_hash:
-        params["expectedHash"] = expected_hash
+    params = {"expectedHash": expected_hash}
     _post(base_url + url, json=transplant_json, ssl_verify=ssl_verify, params=params)
 
 
@@ -256,9 +256,7 @@ def merge(base_url: str, branch: str, merge_json: dict, expected_hash: str, ssl_
     :param ssl_verify: ignore ssl errors if False
     """
     url = "/trees/branch/{}/merge".format(branch)
-    params = dict()
-    if expected_hash:
-        params["expectedHash"] = expected_hash
+    params = {"expectedHash": expected_hash}
     _post(base_url + url, json=merge_json, ssl_verify=ssl_verify, params=params)
 
 
@@ -266,8 +264,8 @@ def commit(
     base_url: str,
     branch: str,
     operations: str,
+    expected_hash: str,
     reason: Optional[str],
-    expected_hash: Optional[str],
     ssl_verify: bool = True,
 ) -> None:
     """Commit a set of operations to a branch.
@@ -280,9 +278,7 @@ def commit(
     :param ssl_verify: ignore ssl errors if False
     """
     url = "/trees/branch/{}/commit".format(branch)
-    params = dict()
+    params = {"expectedHash": expected_hash}
     if reason:
         params["message"] = reason
-    if expected_hash:
-        params["expectedHash"] = expected_hash
     _post(base_url + url, json=operations, ssl_verify=ssl_verify, params=params)

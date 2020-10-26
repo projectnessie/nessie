@@ -132,16 +132,17 @@ class NessieClient(object):
         self: "NessieClient",
         branch: str,
         args: MultiContents,
+        old_hash: str,
         reason: Optional[str] = None,
-        old_hash: Optional[str] = None,
     ) -> None:
         """Modify a set of Nessie tables."""
-        commit(self._base_url, branch, MultiContentsSchema().dumps(args), reason, old_hash)
+        commit(self._base_url, branch, MultiContentsSchema().dumps(args), old_hash, reason)
 
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a branch."""
         if not old_hash:
             old_hash = self.get_reference(branch).hash_
+        assert old_hash is not None
         branch_json = ReferenceSchema().dump(Branch(branch, to_ref))
         assign_branch(self._base_url, branch, branch_json, old_hash, self._ssl_verify)
 
@@ -149,6 +150,7 @@ class NessieClient(object):
         """Assign a hash to a tag."""
         if not old_hash:
             old_hash = self.get_reference(tag).hash_
+        assert old_hash is not None
         tag_json = ReferenceSchema().dump(Tag(tag, to_ref))
         assign_tag(self._base_url, tag, tag_json, old_hash, self._ssl_verify)
 
@@ -156,7 +158,9 @@ class NessieClient(object):
         """Merge a branch into another branch."""
         if not old_hash:
             old_hash = self.get_reference(branch).hash_
+        assert old_hash is not None
         to_hash = self.get_reference(to_branch).hash_
+        assert to_hash is not None
         merge_json = MergeSchema().dump(Merge(to_hash))
         merge(self._base_url, branch, merge_json, old_hash, self._ssl_verify)
 
@@ -164,6 +168,7 @@ class NessieClient(object):
         """Cherry pick a list of hashes to a branch."""
         if not old_hash:
             old_hash = self.get_reference(branch).hash_
+        assert old_hash is not None
         transplant_json = TransplantSchema().dump(Transplant(list(hashes)))
         cherry_pick(self._base_url, branch, transplant_json, old_hash, self._ssl_verify)
 

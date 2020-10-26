@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Nessie Data objects."""
 from typing import List
+from typing import Optional
 
 import attr
 import desert
@@ -170,7 +171,7 @@ class Reference:
     """Dataclass for Nessie Reference."""
 
     name: str = desert.ib(fields.Str())
-    hash_: str = desert.ib(fields.Str(data_key="hash"))
+    hash_: Optional[str] = desert.ib(fields.Str(data_key="hash"))
 
 
 @attr.dataclass
@@ -297,7 +298,7 @@ TransplantSchema = desert.schema_class(Transplant)
 class Merge:
     """Dataclass for Merge operation."""
 
-    from_hash: bool = attr.ib(default=False, metadata=desert.metadata(fields.Str(data_key="fromHash")))
+    from_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="fromHash")))
 
 
 MergeSchema = desert.schema_class(Merge)
