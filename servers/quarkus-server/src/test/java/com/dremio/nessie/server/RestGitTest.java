@@ -32,12 +32,13 @@ import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableBranch;
 import com.dremio.nessie.model.ImmutableIcebergTable;
-import com.dremio.nessie.model.ImmutableMultiContents;
+import com.dremio.nessie.model.ImmutableOperations;
 import com.dremio.nessie.model.ImmutablePut;
 import com.dremio.nessie.model.LogResponse;
-import com.dremio.nessie.model.MultiContents;
 import com.dremio.nessie.model.Operation.Put;
+import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
+import com.dremio.nessie.model.Tag;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
@@ -60,7 +61,7 @@ public class RestGitTest {
     int preSize = rest().get("trees").then().statusCode(200).extract().as(Reference[].class).length;
 
     rest().get("trees/tree/mainx").then().statusCode(404);
-    rest().post("trees/branch/mainx").then().statusCode(204);
+    rest().body(Branch.of("mainx", null)).post("trees/tree").then().statusCode(204);
 
     Reference[] references = rest().get("trees").then().statusCode(200).extract().as(Reference[].class);
     Assertions.assertEquals(preSize + 1, references.length);
@@ -75,7 +76,7 @@ public class RestGitTest {
         .hash(reference.getHash())
         .name("test")
         .build();
-    rest().post("trees/branch/test/{hash}", reference.getHash()).then().statusCode(204);
+    rest().queryParam("expectedHash", reference.getHash()).body(Branch.of("test", null)).post("trees/tree").then().statusCode(204);
     assertEquals(newReference, rest().get("trees/tree/test").then()
            .statusCode(200).extract().as(Branch.class));
 
@@ -83,7 +84,11 @@ public class RestGitTest {
                                 .metadataLocation("/the/directory/over/there")
                                 .build();
 
-    rest().body(table).post("contents/xxx.test/{branch}/{hash}", newReference.getName(), newReference.getHash()).then().statusCode(204);
+    rest()
+      .body(table)
+      .queryParam("branch", newReference.getName()).queryParam("hash", newReference.getHash())
+      .post("contents/xxx.test")
+        .then().statusCode(204);
 
     Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
@@ -99,13 +104,14 @@ public class RestGitTest {
         .build();
 
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
-    MultiContents contents = ImmutableMultiContents.builder()
+    Operations contents = ImmutableOperations.builder()
         .addOperations(updates)
         .build();
 
-    rest().body(contents).put("trees/multi/{branch}/{hash}", branch.getName(), branch.getHash()).then().statusCode(204);
+    rest().body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
+      .then().statusCode(204);
 
-    Response res = rest().get("contents/xxx.test/test").then().extract().response();
+    Response res = rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
     table = ImmutableIcebergTable.builder()
@@ -114,28 +120,30 @@ public class RestGitTest {
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
     rest().body(table)
-           .post("contents/xxx.test/{branch}/{hash}", b2.getName(), b2.getHash()).then().statusCode(204);
+           .queryParam("branch", b2.getName()).queryParam("hash", b2.getHash())
+           .post("contents/xxx.test").then().statusCode(204);
     Contents returned = rest()
-        .get("contents/xxx.test/test").then().statusCode(200).extract().as(Contents.class);
+        .queryParam("ref", "test")
+        .get("contents/xxx.test").then().statusCode(200).extract().as(Contents.class);
     Assertions.assertEquals(table, returned);
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
-    rest().post("trees/tag/tagtest/{hash}", b3.getHash()).then().statusCode(204);
+    rest().body(Tag.of("tagtest", b3.getHash())).post("trees/tree").then().statusCode(204);
 
     rest().get("trees/tree/tagtest").then().statusCode(200).body("hash", equalTo(b3.getHash()));
 
-    rest().delete("trees/tag/tagtest/aa").then().statusCode(409);
+    rest().queryParam("expectedHash","aa").delete("trees/tag/tagtest").then().statusCode(409);
 
-    rest().delete("trees/tag/tagtest/{hash}", b3.getHash()).then().statusCode(204);
+    rest().queryParam("expectedHash", b3.getHash()).delete("trees/tag/tagtest").then().statusCode(204);
 
 
     LogResponse log = rest().get("trees/tree/test/log").then().statusCode(200).extract().as(LogResponse.class);
     Assertions.assertEquals(3, log.getOperations().size());
 
     Branch b1 = rest().get("trees/tree/test").as(Branch.class);
-    rest().delete("trees/branch/test/{hash}", b1.getHash()).then().statusCode(204);
+    rest().queryParam("expectedHash", b1.getHash()).delete("trees/branch/test").then().statusCode(204);
     Branch bx = rest().get("trees/tree/mainx").as(Branch.class);
-    rest().delete("trees/branch/mainx/{hash}", bx.getHash()).then().statusCode(204);
+    rest().queryParam("expectedHash", bx.getHash()).delete("trees/branch/mainx").then().statusCode(204);
   }
 
   private static RequestSpecification rest() {
@@ -143,7 +151,11 @@ public class RestGitTest {
   }
 
   private void commit(Branch b, String path, String metadataUrl) {
-    rest().body(IcebergTable.of(metadataUrl)).post("contents/xxx.test/{branch}/{hash}", b.getName(), b.getHash()).then().statusCode(204);
+    rest()
+      .body(IcebergTable.of(metadataUrl))
+      .queryParam("branch", b.getName()).queryParam("hash", b.getHash())
+      .post("contents/xxx.test")
+      .then().statusCode(204);
   }
 
   private Branch getBranch(String name) {
@@ -154,7 +166,7 @@ public class RestGitTest {
     Branch test = ImmutableBranch.builder()
         .name(name)
         .build();
-    rest().post("trees/branch/{name}", name).then().statusCode(204);
+    rest().body(test).post("trees/tree").then().statusCode(204);
     return test;
   }
 

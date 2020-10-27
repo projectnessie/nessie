@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Branch;
 
 class ITTestCatalogBranch extends BaseTestIceberg {
 
@@ -66,7 +67,7 @@ class ITTestCatalogBranch extends BaseTestIceberg {
     Assertions.assertEquals(initialMetadataLocation, getContent(catalog, foobaz));
 
     String mainHash = tree.getReferenceByName("main").getHash();
-    tree.assignBranch("main", mainHash, newCatalog.getHash());
+    tree.assignBranch("main", mainHash, Branch.of("main", newCatalog.getHash()));
     Assertions.assertEquals(getContent(newCatalog, foobar),
                             getContent(catalog, foobar));
     Assertions.assertEquals(getContent(newCatalog, foobaz),

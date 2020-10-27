@@ -50,10 +50,10 @@ public abstract class BaseDelegateOps extends BaseHiveOps {
     assertEquals(4, results.size());
 
     // make sure we created the database and single table object in the nessie db.
-    Contents db = client.getContentsApi().getContents(ContentsKey.of("mytestdb"));
+    Contents db = client.getContentsApi().getContents(ContentsKey.of("mytestdb"), null);
     assertNotNull(db);
     assertTrue(HiveDatabase.class.isAssignableFrom(db.getClass()));
-    Contents tbl = client.getContentsApi().getContents(ContentsKey.of("mytestdb","nessie"));
+    Contents tbl = client.getContentsApi().getContents(ContentsKey.of("mytestdb","nessie"), null);
     assertNotNull(tbl);
     assertTrue(HiveTable.class.isAssignableFrom(tbl.getClass()));
 

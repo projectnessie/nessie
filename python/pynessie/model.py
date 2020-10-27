@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Nessie Data objects."""
 from typing import List
+from typing import Optional
 
 import attr
 import desert
@@ -170,11 +171,58 @@ class Reference:
     """Dataclass for Nessie Reference."""
 
     name: str = desert.ib(fields.Str())
-    hash_: str = desert.ib(fields.Str(data_key="hash"))
-    kind: str = desert.ib(fields.Str(data_key="type"))
+    hash_: Optional[str] = desert.ib(fields.Str(data_key="hash"))
 
 
-ReferenceSchema = desert.schema_class(Reference)
+@attr.dataclass
+class Branch(Reference):
+    """Dataclass for Nessie Branch."""
+
+    pass
+
+
+BranchSchema = desert.schema_class(Branch)
+
+
+@attr.dataclass
+class Tag(Reference):
+    """Dataclass for Nessie Tag."""
+
+    pass
+
+
+TagSchema = desert.schema_class(Tag)
+
+
+@attr.dataclass
+class Hash(Reference):
+    """Dataclass for Nessie Hash."""
+
+    pass
+
+
+HashSchema = desert.schema_class(Hash)
+
+
+class ReferenceSchema(OneOfSchema):
+    """Schema for Nessie Reference."""
+
+    type_schemas = {
+        "BRANCH": BranchSchema,
+        "TAG": TagSchema,
+        "HASH": HashSchema,
+    }
+
+    def get_obj_type(self: "ReferenceSchema", obj: Reference) -> str:
+        """Returns the object type based on its class."""
+        if isinstance(obj, Branch):
+            return "BRANCH"
+        elif isinstance(obj, Tag):
+            return "TAG"
+        elif isinstance(obj, Hash):
+            return "DELETE"
+        else:
+            raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
 
 
 @attr.dataclass
@@ -234,3 +282,23 @@ class LogResponse:
 
 
 LogResponseSchema = desert.schema_class(LogResponse)
+
+
+@attr.dataclass
+class Transplant:
+    """Dataclass for Transplant operation."""
+
+    hashes_to_transplant: List[str] = attr.ib(metadata=desert.metadata(fields.List(fields.Str(), data_key="hashesToTransplant")))
+
+
+TransplantSchema = desert.schema_class(Transplant)
+
+
+@attr.dataclass
+class Merge:
+    """Dataclass for Merge operation."""
+
+    from_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="fromHash")))
+
+
+MergeSchema = desert.schema_class(Merge)

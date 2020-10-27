@@ -71,7 +71,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     if (client == null) {
       client = new NessieClient(AuthType.BASIC, path, "admin_user", "test123");
       try {
-        client.getTreeApi().createNewBranch("master", null);
+        client.getTreeApi().createReference(Branch.of("master", null));
       } catch (Exception t) {
         //pass - likely already created master
       }
@@ -164,7 +164,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     switch (method) {
       case CREATE_BRANCH: {
         return handle(() -> {
-          nessieClient().getTreeApi().createNewBranch(branch, baseBranch);
+          nessieClient().getTreeApi().createReference(Branch.of(branch, baseBranch));
           return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
         }, method);
       }

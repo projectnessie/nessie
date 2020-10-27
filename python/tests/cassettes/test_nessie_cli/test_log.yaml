@@ -3,13 +3,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -30,13 +28,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -69,13 +65,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -105,13 +99,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET

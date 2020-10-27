@@ -56,7 +56,9 @@ import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.hms.NessieTransaction.Handle;
 import com.dremio.nessie.hms.NessieTransaction.TableAndPartition;
+import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Reference;
+import com.dremio.nessie.model.Tag;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -263,21 +265,10 @@ public class NessieStoreImpl implements NessieStore {
     }
 
     try {
-      if (requestedReference == null) {
-        if (branch) {
-          client.getTreeApi().createEmptyBranch(tblName);
-        } else {
-          client.getTreeApi().createEmptyTag(tblName);
-        }
-        return;
-      }
-
-      if (branch) {
-        client.getTreeApi().createNewBranch(tblName, requestedReference.getHash());
-      } else {
-        client.getTreeApi().createNewTag(tblName, requestedReference.getHash());
-      }
-
+      Reference reference = branch
+          ? Branch.of(tblName, requestedReference.getHash())
+          : Tag.of(tblName, requestedReference.getHash());
+      client.getTreeApi().createReference(reference);
     } catch (NessieNotFoundException e) {
       throw new MetaException("Cannot find the defined reference.");
     } catch (NessieConflictException e) {

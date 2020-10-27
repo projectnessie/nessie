@@ -33,6 +33,7 @@ import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.MultiGetContentsRequest;
@@ -59,7 +60,7 @@ class TestRest {
   @Test
   void multiget() throws NessieNotFoundException, NessieConflictException {
     final String branch = "foo";
-    tree.createEmptyBranch(branch);
+    tree.createReference(Branch.of(branch, null));
     Reference r = tree.getReferenceByName(branch);
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
@@ -67,7 +68,8 @@ class TestRest {
     IcebergTable tb = IcebergTable.of("path2");
     contents.setContents(a, branch, r.getHash(), "commit 1", ta);
     contents.setContents(b, branch, r.getHash(), "commit 2", tb);
-    List<ContentsWithKey> keys = tree.getMultipleContents("foo", MultiGetContentsRequest.of(a, b, ContentsKey.of("noexist"))).getContents();
+    List<ContentsWithKey> keys =
+        contents.getMultipleContents("foo", MultiGetContentsRequest.of(a, b, ContentsKey.of("noexist"))).getContents();
     List<ContentsWithKey> expected = Arrays.asList(ContentsWithKey.of(a, ta), ContentsWithKey.of(b,  tb));
     assertThat(keys, Matchers.containsInAnyOrder(expected.toArray()));
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
@@ -76,13 +78,13 @@ class TestRest {
   @Test
   void checkSpecialCharacterRoundTrip() throws NessieNotFoundException, NessieConflictException {
     final String branch = "specialchar";
-    tree.createEmptyBranch(branch);
+    tree.createReference(Branch.of(branch, null));
     Reference r = tree.getReferenceByName(branch);
     //ContentsKey k = ContentsKey.of("/%国","国.国");
     ContentsKey k = ContentsKey.of("a.b","c.d");
     IcebergTable ta = IcebergTable.of("path1");
     contents.setContents(k, branch, r.getHash(), "commit 1", ta);
-    assertEquals(ContentsWithKey.of(k, ta), tree.getMultipleContents(branch, MultiGetContentsRequest.of(k)).getContents().get(0));
+    assertEquals(ContentsWithKey.of(k, ta), contents.getMultipleContents(branch, MultiGetContentsRequest.of(k)).getContents().get(0));
     assertEquals(ta, contents.getContents(k, branch));
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }
@@ -90,8 +92,8 @@ class TestRest {
   @Test
   void checkServerErrorPropagation() throws NessieNotFoundException, NessieConflictException {
     final String branch = "bar";
-    tree.createEmptyBranch(branch);
-    NessieConflictException e = assertThrows(NessieConflictException.class, () -> tree.createEmptyBranch(branch));
+    tree.createReference(Branch.of(branch, null));
+    NessieConflictException e = assertThrows(NessieConflictException.class, () -> tree.createReference(Branch.of(branch, null)));
     assertThat(e.getMessage(), Matchers.containsString("already exists"));
   }
 }

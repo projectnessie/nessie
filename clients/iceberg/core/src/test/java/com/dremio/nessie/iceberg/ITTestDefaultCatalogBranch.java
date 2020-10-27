@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Branch;
 
 /**
  * test tag operations with a default tag set by server.
@@ -42,7 +43,7 @@ class ITTestDefaultCatalogBranch extends BaseTestIceberg {
     createTable(foobaz, 1); //table 2
 
     catalog.refresh();
-    tree.createNewBranch("FORWARD", catalog.getHash());
+    tree.createReference(Branch.of("FORWARD", catalog.getHash()));
     hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "FORWARD");
     NessieCatalog forwardCatalog = new NessieCatalog(hadoopConfig);
     forwardCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
@@ -56,7 +57,7 @@ class ITTestDefaultCatalogBranch extends BaseTestIceberg {
     System.out.println(getContent(catalog, foobar));
 
     forwardCatalog.refresh();
-    tree.assignBranch("main", tree.getReferenceByName("main").getHash(), forwardCatalog.getHash());
+    tree.assignBranch("main", tree.getReferenceByName("main").getHash(), Branch.of("main", forwardCatalog.getHash()));
 
     catalog.refresh();
 

@@ -3,13 +3,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -28,7 +26,7 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: null
+    body: '{"name": "main", "hash": null, "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -37,62 +35,45 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '0'
+      - '48'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.24.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main
+    uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
       string: "{\n  \"message\" : \"A reference of name [main] already exists.\",\n\
         \  \"status\" : \"CONFLICT\",\n  \"serverStackTrace\" : \"com.dremio.nessie.error.NessieConflictException:\
-        \ A reference of name [main] already exists.\\n\\tat com.dremio.nessie.services.rest.TreeResource.createNewReference(TreeResource.java:256)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource.createNewBranch(TreeResource.java:139)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createNewBranch$$superaccessor10(TreeResource_Subclass.zig:2646)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass$$function$$10.apply(TreeResource_Subclass$$function$$10.zig:41)\\\
+        \ A reference of name [main] already exists.\\n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:119)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:110)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createReference$$superaccessor12(TreeResource_Subclass.zig:3105)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass$$function$$12.apply(TreeResource_Subclass$$function$$12.zig:33)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.interceptor.AbstractMethodValidationInterceptor.validateMethodInvocation(AbstractMethodValidationInterceptor.java:69)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor.validateMethodInvocation(JaxrsEndPointValidationInterceptor.java:32)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor_Bean.intercept(JaxrsEndPointValidationInterceptor_Bean.zig:341)\\\
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
-        n\\tat io.smallrye.metrics.interceptors.MeteredInterceptor.meteredCallable(MeteredInterceptor.java:94)\\\
-        n\\tat io.smallrye.metrics.interceptors.MeteredInterceptor.meteredMethod(MeteredInterceptor.java:69)\\\
-        n\\tat io.smallrye.metrics.interceptors.MeteredInterceptor_Bean.intercept(MeteredInterceptor_Bean.zig:366)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.increment(CountedInterceptor.java:51)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.countedMethod(CountedInterceptor.java:33)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor_Bean.intercept(CountedInterceptor_Bean.zig:326)\\\
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
-        n\\tat io.smallrye.metrics.interceptors.TimedInterceptor.timedCallable(TimedInterceptor.java:95)\\\
-        n\\tat io.smallrye.metrics.interceptors.TimedInterceptor.timedMethod(TimedInterceptor.java:70)\\\
-        n\\tat io.smallrye.metrics.interceptors.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:366)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.time(TimedInterceptor.java:54)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.timedMethod(TimedInterceptor.java:35)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:326)\\\
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
         n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createNewBranch(TreeResource_Subclass.zig:2583)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource.createEmptyBranch(TreeResource.java:146)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createEmptyBranch$$superaccessor3(TreeResource_Subclass.zig:1723)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass$$function$$3.apply(TreeResource_Subclass$$function$$3.zig:33)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
-        n\\tat io.quarkus.hibernate.validator.runtime.interceptor.AbstractMethodValidationInterceptor.validateMethodInvocation(AbstractMethodValidationInterceptor.java:69)\\\
-        n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor.validateMethodInvocation(JaxrsEndPointValidationInterceptor.java:32)\\\
-        n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor_Bean.intercept(JaxrsEndPointValidationInterceptor_Bean.zig:341)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
-        n\\tat io.smallrye.metrics.interceptors.MeteredInterceptor.meteredCallable(MeteredInterceptor.java:94)\\\
-        n\\tat io.smallrye.metrics.interceptors.MeteredInterceptor.meteredMethod(MeteredInterceptor.java:69)\\\
-        n\\tat io.smallrye.metrics.interceptors.MeteredInterceptor_Bean.intercept(MeteredInterceptor_Bean.zig:366)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
-        n\\tat io.smallrye.metrics.interceptors.TimedInterceptor.timedCallable(TimedInterceptor.java:95)\\\
-        n\\tat io.smallrye.metrics.interceptors.TimedInterceptor.timedMethod(TimedInterceptor.java:70)\\\
-        n\\tat io.smallrye.metrics.interceptors.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:366)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
-        n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createEmptyBranch(TreeResource_Subclass.zig:1662)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_ClientProxy.createEmptyBranch(TreeResource_ClientProxy.zig:262)\\\
-        n\\tat java.lang.reflect.Method.invoke(Method.java:566)\\n\\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:170)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createReference(TreeResource_Subclass.zig:3044)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_ClientProxy.createReference(TreeResource_ClientProxy.zig:164)\\\
+        n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native\
+        \ Method)\\n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\\\
+        n\\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\\\
+        n\\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\\n\\tat\
+        \ org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:170)\\\
         n\\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:130)\\\
         n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:643)\\\
         n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:507)\\\
@@ -112,33 +93,36 @@ interactions:
         n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.dispatch(VertxRequestHandler.java:131)\\\
         n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.access$000(VertxRequestHandler.java:37)\\\
         n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler$1.run(VertxRequestHandler.java:94)\\\
+        n\\tat io.quarkus.runtime.CleanableExecutor$CleaningRunnable.run(CleanableExecutor.java:231)\\\
+        n\\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)\\\
+        n\\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)\\\
         n\\tat org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)\\\
         n\\tat org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:2046)\\\
         n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1578)\\\
         n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1452)\\\
         n\\tat org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)\\\
         n\\tat org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)\\\
-        n\\tat java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
-        n\\tat com.oracle.svm.core.thread.JavaThreads.threadStartRoutine(JavaThreads.java:517)\\\
-        n\\tat com.oracle.svm.core.posix.thread.PosixJavaThreads.pthreadStartRoutine(PosixJavaThreads.java:192)\\\
+        n\\tat java.base/java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
         nCaused by: com.dremio.nessie.versioned.ReferenceAlreadyExistsException: branch\
-        \ 'main' already exists\\n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.lambda$create$10(InMemoryVersionStore.java:347)\\\
-        n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.lambda$compute$17(InMemoryVersionStore.java:503)\\\
-        n\\tat java.util.concurrent.ConcurrentHashMap.compute(ConcurrentHashMap.java:1932)\\\
+        \ 'main' already exists\\n\\tat com.dremio.nessie.versioned.ReferenceAlreadyExistsException.forReference(ReferenceAlreadyExistsException.java:50)\\\
+        n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.lambda$15(InMemoryVersionStore.java:347)\\\
+        n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.lambda$26(InMemoryVersionStore.java:503)\\\
+        n\\tat java.base/java.util.concurrent.ConcurrentHashMap.compute(ConcurrentHashMap.java:1932)\\\
         n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.compute(InMemoryVersionStore.java:501)\\\
         n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.create(InMemoryVersionStore.java:345)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource.createNewReference(TreeResource.java:252)\\\
-        n\\t... 74 more\\n\"\n}"
+        n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:115)\\\
+        n\\t... 57 more\\n\"\n}"
     headers:
+      Content-Length:
+      - '6884'
       Content-Type:
       - application/json
-      transfer-encoding:
-      - chunked
     status:
       code: 409
       message: Conflict
 - request:
-    body: null
+    body: '{"name": "test", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -147,13 +131,13 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '0'
+      - '110'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.24.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/test/2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
+    uri: http://localhost:19120/api/v1/trees/tree
   response:
     body:
       string: ''
@@ -165,13 +149,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -194,13 +176,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -221,20 +201,18 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/test/entries
   response:
     body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ ]\n\
+      string: "{\n  \"token\" : null,\n  \"hasMore\" : false,\n  \"entries\" : [ ]\n\
         }"
     headers:
       Content-Length:
@@ -248,19 +226,17 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
       Content-Length:
       - '0'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/test/2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
+    uri: http://localhost:19120/api/v1/trees/branch/test?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
       string: ''
@@ -272,13 +248,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
