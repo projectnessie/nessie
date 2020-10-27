@@ -181,12 +181,6 @@
               <exclude>jakarta.ws.rs:jakarta.ws.rs-api</exclude>
             </excludes>
           </artifactSet>
-          <relocations>
-            <relocation>
-              <pattern>software.amazon.awssdk</pattern>
-              <shadedPattern>nessie.software.amazon.awssdk</shadedPattern>
-            </relocation>
-          </relocations>
         </configuration>
         <executions>
           <execution>
