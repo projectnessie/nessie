@@ -3,13 +3,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -55,13 +53,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -84,13 +80,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -100,26 +94,26 @@ interactions:
       string: "{\n  \"message\" : \"Unable to find reference [etl].\",\n  \"status\"\
         \ : \"NOT_FOUND\",\n  \"serverStackTrace\" : \"com.dremio.nessie.error.NessieNotFoundException:\
         \ Unable to find reference [etl].\\n\\tat com.dremio.nessie.services.rest.TreeResource.getReferenceByName(TreeResource.java:93)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.getReferenceByName$$superaccessor13(TreeResource_Subclass.zig:3228)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass$$function$$13.apply(TreeResource_Subclass$$function$$13.zig:33)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.getReferenceByName$$superaccessor5(TreeResource_Subclass.zig:2141)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass$$function$$5.apply(TreeResource_Subclass$$function$$5.zig:33)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.interceptor.AbstractMethodValidationInterceptor.validateMethodInvocation(AbstractMethodValidationInterceptor.java:69)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor.validateMethodInvocation(JaxrsEndPointValidationInterceptor.java:32)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor_Bean.intercept(JaxrsEndPointValidationInterceptor_Bean.zig:341)\\\
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.time(TimedInterceptor.java:54)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.timedMethod(TimedInterceptor.java:35)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:326)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.increment(CountedInterceptor.java:51)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.countedMethod(CountedInterceptor.java:33)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor_Bean.intercept(CountedInterceptor_Bean.zig:326)\\\
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
+        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.time(TimedInterceptor.java:54)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.timedMethod(TimedInterceptor.java:35)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:326)\\\
+        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
         n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.getReferenceByName(TreeResource_Subclass.zig:3176)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.getReferenceByName(TreeResource_Subclass.zig:2089)\\\
         n\\tat com.dremio.nessie.services.rest.TreeResource_ClientProxy.getReferenceByName(TreeResource_ClientProxy.zig:259)\\\
         n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native\
         \ Method)\\n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\\\
@@ -164,7 +158,7 @@ interactions:
         n\\t... 56 more\\n\"\n}"
     headers:
       Content-Length:
-      - '6535'
+      - '6532'
       Content-Type:
       - application/json
     status:
@@ -174,13 +168,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -226,13 +218,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -256,13 +246,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -283,15 +271,13 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
       Content-Length:
       - '0'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
@@ -307,13 +293,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET
@@ -334,15 +318,13 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
       Content-Length:
       - '0'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
@@ -358,13 +340,11 @@ interactions:
     body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
     method: GET

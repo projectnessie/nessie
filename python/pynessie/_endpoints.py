@@ -18,8 +18,10 @@ from .error import NessiePreconidtionFailedException
 from .error import NessieUnauthorizedException
 
 
-def _get_headers() -> dict:
-    headers = {"Content-Type": "application/json"}
+def _get_headers(has_body: bool = False) -> dict:
+    headers = {"Accept": "application/json"}
+    if has_body:
+        headers = {"Content-Type": "application/json"}
     return headers
 
 
@@ -33,7 +35,7 @@ def _post(
 ) -> Union[str, dict, list]:
     if isinstance(json, str):
         json = jsonlib.loads(json)
-    r = requests.post(url, headers=_get_headers(), verify=ssl_verify, json=json, params=params)
+    r = requests.post(url, headers=_get_headers(json is not None), verify=ssl_verify, json=json, params=params)
     return _check_error(r, details)
 
 
@@ -45,7 +47,7 @@ def _delete(url: str, details: str = "", ssl_verify: bool = True, params: dict =
 def _put(url: str, json: Union[str, dict] = None, details: str = "", ssl_verify: bool = True, params: dict = None) -> Any:
     if isinstance(json, str):
         json = jsonlib.loads(json)
-    r = requests.put(url, headers=_get_headers(), verify=ssl_verify, json=json, params=params)
+    r = requests.put(url, headers=_get_headers(json is not None), verify=ssl_verify, json=json, params=params)
     return _check_error(r, details)
 
 
@@ -120,9 +122,7 @@ def delete_branch(base_url: str, branch: str, hash_: str, reason: str = None, ss
     :param hash_: branch hash
     :param ssl_verify: ignore ssl errors if False
     """
-    params = dict()
-    if hash_:
-        params["expectedHash"] = hash_
+    params = {"expectedHash": hash_}
     _delete(base_url + "/trees/branch/{}".format(branch), ssl_verify=ssl_verify, params=params)
 
 
@@ -134,9 +134,7 @@ def delete_tag(base_url: str, tag: str, hash_: str, reason: str = None, ssl_veri
     :param hash_: tag hash
     :param ssl_verify: ignore ssl errors if False
     """
-    params = dict()
-    if hash_:
-        params["expectedHash"] = hash_
+    params = {"expectedHash": hash_}
     _delete(base_url + "/trees/tag/{}".format(tag), ssl_verify=ssl_verify, params=params)
 
 
@@ -171,9 +169,7 @@ def get_table(base_url: str, ref: str, table: str, ssl_verify: bool = True) -> d
     :param ssl_verify: ignore ssl errors if False
     :return: json dict of Nessie table
     """
-    params = dict()
-    if ref:
-        params["ref"] = ref
+    params = {"ref": ref}
     return cast(dict, _get(base_url + "/contents/{}".format(table), ssl_verify=ssl_verify, params=params))
 
 
@@ -187,9 +183,7 @@ def assign_branch(base_url: str, branch: str, branch_json: dict, old_hash: str, 
     :param ssl_verify: ignore ssl errors if False
     """
     url = "/trees/branch/{}".format(branch)
-    params = dict()
-    if old_hash:
-        params["expectedHash"] = old_hash
+    params = {"expectedHash": old_hash}
     _put(base_url + url, branch_json, ssl_verify=ssl_verify, params=params)
 
 
@@ -203,9 +197,7 @@ def assign_tag(base_url: str, tag: str, tag_json: dict, old_hash: str, ssl_verif
     :param ssl_verify: ignore ssl errors if False
     """
     url = "/trees/tag/{}".format(tag)
-    params = dict()
-    if old_hash:
-        params["expectedHash"] = old_hash
+    params = {"expectedHash": old_hash}
     _put(base_url + url, tag_json, ssl_verify=ssl_verify, params=params)
 
 
