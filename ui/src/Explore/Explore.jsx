@@ -16,50 +16,11 @@
 import React, {useEffect, useState} from 'react';
 import {Card, Container} from "react-bootstrap";
 import createApi from "../utils/api"
-import {useHistory, useParams} from "react-router-dom";
+import {useParams} from "react-router-dom";
 import TableHead from "./TableHead";
 import TableListing from "./TableListing";
+import CommitLog from "./CommitHeader";
 
-
-// TODO: move this to server-side. Filter to keys relevant for this view.
-function filterKeys(path, keys) {
-  let containers = new Set();
-  let filteredKeys = keys.map(key => key.name.elements)
-    .filter(name => {
-      if (name.length <= path.length) {
-        return false;
-      }
-
-      // make sure all key values match the current path.
-      return name.slice(0, path.length).every((v, i) => v.toLowerCase() === path[i].toLowerCase());
-    })
-    .map(name => {
-      let ele = name[path.length];
-      if (name.length > path.length + 1) {
-        containers.add(ele);
-      }
-      return ele;
-    });
-
-  let distinctKeys = [...new Set(filteredKeys)];
-  let distinctObjs = distinctKeys.map(key => {
-    return {
-      name: key,
-      type: containers.has(key) ? "CONTAINER" : "TABLE"
-    };
-  })
-  return distinctObjs;
-}
-
-function fetchLog(currentBranch) {
-  return api().getCommitLog({'ref': currentBranch})
-    .then(res => {
-      return res.json();
-    })
-    .then((data) => {
-      return data.operations[0];
-    });
-}
 
 
 function api() {
@@ -67,39 +28,26 @@ function api() {
 }
 
 
-function fetchKeys(ref, path, result) {
-  return api().getEntries({'ref':ref})
-    .then(res => {
-      return res.json();
-    })
-    .then((data) => {
-      //setKeys(data.)
-      let keys = filterKeys(path, data.entries);
-      return keys;
-    });
-}
 
-function fetchDefaultBranch() {
+function fetchDefaultBranch(setDefaultBranch) {
   //const currentUser = authenticationService.currentUserValue;
   return api().getDefaultBranch()
     .then(res => {
       return res.json();
     })
     .then((data) => {
-      return data.name;
-    })
+      setDefaultBranch(data.name);
+    }).catch(t => console.log(t))
 }
 
-function loadBranchesAndTags() {
+function loadBranchesAndTags(setBranches, setTags) {
   return api().getAllReferences()
     .then(res => {
       return res.json();
     })
     .then((data) => {
-      return {
-        branches: data.filter(x => x.type === "BRANCH"),
-        tags: data.filter(x => x.type === "TAG")
-      }
+      setBranches(data.filter(x => x.type === "BRANCH"));
+      setTags(data.filter(x => x.type === "TAG"));
     });
 }
 
@@ -133,41 +81,36 @@ function parseSlug(slug, defaultBranch, branches, tags) {
   return {currentRef: sub, path: path};
 }
 
-async function updateState(slug, setDefaultBranch, setBranches, setTags, setPath, setKeys, setCurrentRef, setLog) {
-  const defaultBranch = await fetchDefaultBranch();
-  const branchesAndTags = await loadBranchesAndTags();
-  //const [defaultBranch, branchesAndTags] = Promise.all([t => fetchDefaultBranch(currentUser), loadBranchesAndTags]);
-  setDefaultBranch(defaultBranch);
-  setBranches(branchesAndTags.branches);
-  setTags(branchesAndTags.tags);
-  const {currentRef, path} = parseSlug(slug, defaultBranch, branchesAndTags.branches, branchesAndTags.tags);
-  const log = await fetchLog(currentRef);
-  setLog(log);
+function updateRef(slug, defaultBranch, branches, tags, setPath, setCurrentRef) {
+  if (!defaultBranch || !branches) {
+    return;
+  }
+
+  const {currentRef, path} = parseSlug(slug, defaultBranch, branches, tags);
   setCurrentRef(currentRef);
   setPath(path);
-  const keys = await fetchKeys(currentRef, path);
-  setKeys(keys);
 }
+
 
 function Explore(props) {
 
   let { slug } = useParams();
-  let history = useHistory();
   //const [currentRef, setCurrentRef] = useState("main");
 
   const [defaultBranch, setDefaultBranch] = useState("main");
   const [branches, setBranches] = useState([]);
   const [tags, setTags] = useState([]);
   const [path, setPath] = useState([]);
-  const [keys, setKeys] = useState([]);
-  const [log, setLog] = useState();
   const [currentRef, setCurrentRef] = useState("main");
 
   useEffect(() => {
-    updateState(slug, setDefaultBranch, setBranches, setTags, setPath, setKeys, setCurrentRef, setLog);
-  }, [slug]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchDefaultBranch(setDefaultBranch);
+    loadBranchesAndTags(setBranches, setTags);
+  }, []);
 
+  useEffect(() => {
+    updateRef(slug, defaultBranch, branches, tags, setPath, setCurrentRef);
+  }, [slug, defaultBranch, branches, tags]);
 
   return (
     <div>
@@ -180,7 +123,8 @@ function Explore(props) {
             defaultBranch={defaultBranch}
             path={path}
              />
-          <TableListing keys={keys} currentRef={currentRef} path={path} history={history} currentLog={log} />
+          <CommitLog currentRef={currentRef} />
+          <TableListing currentRef={currentRef} path={path} />
         </Card>
       </Container>
     </div>

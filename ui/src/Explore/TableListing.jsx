@@ -13,29 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, {Fragment} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Card, ListGroup, ListGroupItem} from "react-bootstrap";
 import InsertDriveFileOutlinedIcon from '@material-ui/icons/InsertDriveFileOutlined';
 import FolderIcon from '@material-ui/icons/Folder';
-import prettyMilliseconds from "pretty-ms";
 import ExploreLink from "./ExploreLink";
+import createApi from "../utils/api";
+import PropTypes from 'prop-types';
 
-function formatHeader(currentLog) {
-  if (currentLog === undefined) {
-    return (<Card.Header/>)
-  }
-  return (<Card.Header>
-    <span className={"float-left"}>
-      <span className="font-weight-bold">{currentLog.commiter}</span>
-      <span>{currentLog.message}</span>
-    </span>
-    <span className={"float-right"}>
-      <span className="font-italic">{currentLog.hash.slice(0,8)}</span>
-      <span
-        className={"pl-3"}>{prettyMilliseconds(new Date().getTime() - currentLog.commitTime, {compact: true})}</span>
-    </span>
-  </Card.Header>)
-}
 
 function groupItem(name, type, ref, path) {
   let icon = type === "CONTAINER" ? <FolderIcon/> : <InsertDriveFileOutlinedIcon/>;
@@ -49,20 +34,78 @@ function groupItem(name, type, ref, path) {
   )
 }
 
-function TableListing(props) {
-  return (
-    <Fragment>
-      {formatHeader(props.currentLog)}
-      <Card>
-        <ListGroup variant={"flush"}>
-          {props.keys.map(key => {return groupItem(key.name, key.type, props.currentRef, props.path);})}
-        </ListGroup>
-      </Card>
-      {/*<ContentsModal show={contentsModalState} handleClose={() => setContentsModalState(false)}*/}
-      {/*               currentUser={currentUser} currentBranch={currentBranch} currentKey={contentsSelected}/>*/}
-    </Fragment>
+// TODO: move this to server-side. Filter to keys relevant for this view.
+function filterKeys(path, keys) {
+  let containers = new Set();
+  let filteredKeys = keys.map(key => key.name.elements)
+    .filter(name => {
+      if (name.length <= path.length) {
+        return false;
+      }
 
+      // make sure all key values match the current path.
+      return name.slice(0, path.length).every((v, i) => v.toLowerCase() === path[i].toLowerCase());
+    })
+    .map(name => {
+      let ele = name[path.length];
+      if (name.length > path.length + 1) {
+        containers.add(ele);
+      }
+      return ele;
+    });
+
+  let distinctKeys = [...new Set(filteredKeys)];
+  let distinctObjs = distinctKeys.map(key => {
+    return {
+      name: key,
+      type: containers.has(key) ? "CONTAINER" : "TABLE"
+    };
+  })
+  return distinctObjs;
+}
+
+function fetchKeys(ref, path, setKeys) {
+  return createApi({'cors': true}).getEntries({'ref':ref})
+    .then(res => {
+      return res.json();
+    })
+    .then((data) => {
+      //setKeys(data.)
+      let keys = filterKeys(path, data.entries);
+      setKeys(keys);
+    }).catch(e => console.log(e));
+}
+
+function TableListing(props) {
+
+  const [keys, setKeys] = useState([]);
+  useEffect(() => {
+    fetchKeys(props.currentRef, props.path, setKeys);
+  }, [props.currentRef, props.path])
+
+  return (
+    <Card>
+      <ListGroup variant={"flush"}>
+        {keys.map(key => {return groupItem(key.name, key.type, props.currentRef, props.path);})}
+      </ListGroup>
+    </Card>
   );
+}
+
+TableListing.propTypes = {
+  currentRef: PropTypes.string.isRequired,
+  path: PropTypes.arrayOf(PropTypes.string).isRequired,
+  currentLog: PropTypes.shape({
+    committer: PropTypes.string.isRequired,
+    hash: PropTypes.string.isRequired,
+    message: PropTypes.string.isRequired,
+    commitTime: PropTypes.number.isRequired
+  })
+}
+
+TableListing.defaultProps = {
+  currentRef: "main",
+  path: [],
 }
 
 export default TableListing;
