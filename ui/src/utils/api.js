@@ -55,12 +55,30 @@ function createApi(options) {
           mode,
         });
     },
+    getMultipleContents(parameters) {
+      const params = typeof parameters === 'undefined' ? {} : parameters;
+      let headers = {
+
+      };
+      return fetch(endpoint + basePath + '/api/v1/contents' + '?' + buildQuery({
+          'ref': params['ref'],
+        })
+
+        , {
+          method: 'POST',
+          headers,
+          mode,
+        });
+    },
     getContents(parameters) {
       const params = typeof parameters === 'undefined' ? {} : parameters;
       let headers = {
 
       };
-      return fetch(endpoint + basePath + '/api/v1/contents/' + params['key'] + ''
+      return fetch(endpoint + basePath + '/api/v1/contents/' + params['key'] + '' + '?' + buildQuery({
+          'ref': params['ref'],
+        })
+
         , {
           method: 'GET',
           headers,
@@ -72,7 +90,9 @@ function createApi(options) {
       let headers = {
 
       };
-      return fetch(endpoint + basePath + '/api/v1/contents/' + params['key'] + '/' + params['branch'] + '/' + params['hash'] + '' + '?' + buildQuery({
+      return fetch(endpoint + basePath + '/api/v1/contents/' + params['key'] + '' + '?' + buildQuery({
+          'branch': params['branch'],
+          'hash': params['hash'],
           'message': params['message'],
         })
 
@@ -87,54 +107,14 @@ function createApi(options) {
       let headers = {
 
       };
-      return fetch(endpoint + basePath + '/api/v1/contents/' + params['key'] + '/' + params['branch'] + '/' + params['hash'] + '' + '?' + buildQuery({
+      return fetch(endpoint + basePath + '/api/v1/contents/' + params['key'] + '' + '?' + buildQuery({
+          'branch': params['branch'],
+          'hash': params['hash'],
           'message': params['message'],
         })
 
         , {
           method: 'DELETE',
-          headers,
-          mode,
-        });
-    },
-    setContents(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
-
-      };
-      return fetch(endpoint + basePath + '/api/v1/contents/' + params['key'] + '/' + params['hash'] + '' + '?' + buildQuery({
-          'message': params['message'],
-        })
-
-        , {
-          method: 'POST',
-          headers,
-          mode,
-        });
-    },
-    deleteContents(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
-
-      };
-      return fetch(endpoint + basePath + '/api/v1/contents/' + params['key'] + '/' + params['hash'] + '' + '?' + buildQuery({
-          'message': params['message'],
-        })
-
-        , {
-          method: 'DELETE',
-          headers,
-          mode,
-        });
-    },
-    getContents(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
-
-      };
-      return fetch(endpoint + basePath + '/api/v1/contents/' + params['key'] + '/' + params['ref'] + ''
-        , {
-          method: 'GET',
           headers,
           mode,
         });
@@ -151,26 +131,17 @@ function createApi(options) {
           mode,
         });
     },
-    createEmptyBranch(parameters) {
+    assignBranch(parameters) {
       const params = typeof parameters === 'undefined' ? {} : parameters;
       let headers = {
 
       };
-      return fetch(endpoint + basePath + '/api/v1/trees/branch/' + params['branchName'] + ''
-        , {
-          method: 'POST',
-          headers,
-          mode,
-        });
-    },
-    createNewBranch(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
+      return fetch(endpoint + basePath + '/api/v1/trees/branch/' + params['branchName'] + '' + '?' + buildQuery({
+          'expectedHash': params['expectedHash'],
+        })
 
-      };
-      return fetch(endpoint + basePath + '/api/v1/trees/branch/' + params['branchName'] + '/' + params['hash'] + ''
         , {
-          method: 'POST',
+          method: 'PUT',
           headers,
           mode,
         });
@@ -180,21 +151,28 @@ function createApi(options) {
       let headers = {
 
       };
-      return fetch(endpoint + basePath + '/api/v1/trees/branch/' + params['branchName'] + '/' + params['hash'] + ''
+      return fetch(endpoint + basePath + '/api/v1/trees/branch/' + params['branchName'] + '' + '?' + buildQuery({
+          'expectedHash': params['expectedHash'],
+        })
+
         , {
           method: 'DELETE',
           headers,
           mode,
         });
     },
-    assignBranch(parameters) {
+    commitMultipleOperations(parameters) {
       const params = typeof parameters === 'undefined' ? {} : parameters;
       let headers = {
 
       };
-      return fetch(endpoint + basePath + '/api/v1/trees/branch/' + params['branchName'] + '/' + params['oldHash'] + '/' + params['newHash'] + ''
+      return fetch(endpoint + basePath + '/api/v1/trees/branch/' + params['branchName'] + '/commit' + '?' + buildQuery({
+          'expectedHash': params['expectedHash'],
+          'message': params['message'],
+        })
+
         , {
-          method: 'PUT',
+          method: 'POST',
           headers,
           mode,
         });
@@ -204,99 +182,12 @@ function createApi(options) {
       let headers = {
 
       };
-      return fetch(endpoint + basePath + '/api/v1/trees/merge'
-        , {
-          method: 'PUT',
-          headers,
-          mode,
-        });
-    },
-    commitMultipleOperations(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
-
-      };
-      return fetch(endpoint + basePath + '/api/v1/trees/multi/' + params['branch'] + '/' + params['hash'] + '' + '?' + buildQuery({
-          'message': params['message'],
+      return fetch(endpoint + basePath + '/api/v1/trees/branch/' + params['branchName'] + '/merge' + '?' + buildQuery({
+          'expectedHash': params['expectedHash'],
         })
 
         , {
-          method: 'PUT',
-          headers,
-          mode,
-        });
-    },
-    commitMultipleOperations(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
-
-      };
-      return fetch(endpoint + basePath + '/api/v1/trees/multi/' + params['hash'] + '' + '?' + buildQuery({
-          'message': params['message'],
-        })
-
-        , {
-          method: 'PUT',
-          headers,
-          mode,
-        });
-    },
-    getMultipleContents(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
-
-      };
-      return fetch(endpoint + basePath + '/api/v1/trees/multi/' + params['ref'] + ''
-        , {
           method: 'POST',
-          headers,
-          mode,
-        });
-    },
-    createEmptyTag(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
-
-      };
-      return fetch(endpoint + basePath + '/api/v1/trees/tag/' + params['tagName'] + ''
-        , {
-          method: 'POST',
-          headers,
-          mode,
-        });
-    },
-    createNewTag(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
-
-      };
-      return fetch(endpoint + basePath + '/api/v1/trees/tag/' + params['tagName'] + '/' + params['hash'] + ''
-        , {
-          method: 'POST',
-          headers,
-          mode,
-        });
-    },
-    deleteTag(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
-
-      };
-      return fetch(endpoint + basePath + '/api/v1/trees/tag/' + params['tagName'] + '/' + params['hash'] + ''
-        , {
-          method: 'DELETE',
-          headers,
-          mode,
-        });
-    },
-    assignTag(parameters) {
-      const params = typeof parameters === 'undefined' ? {} : parameters;
-      let headers = {
-
-      };
-      return fetch(endpoint + basePath + '/api/v1/trees/tag/' + params['tagName'] + '/' + params['oldHash'] + '/' + params['newHash'] + ''
-        , {
-          method: 'PUT',
           headers,
           mode,
         });
@@ -306,12 +197,43 @@ function createApi(options) {
       let headers = {
 
       };
-      return fetch(endpoint + basePath + '/api/v1/trees/transplant' + '?' + buildQuery({
+      return fetch(endpoint + basePath + '/api/v1/trees/branch/' + params['branchName'] + '/transplant' + '?' + buildQuery({
+          'expectedHash': params['expectedHash'],
           'message': params['message'],
         })
 
         , {
+          method: 'POST',
+          headers,
+          mode,
+        });
+    },
+    assignTag(parameters) {
+      const params = typeof parameters === 'undefined' ? {} : parameters;
+      let headers = {
+
+      };
+      return fetch(endpoint + basePath + '/api/v1/trees/tag/' + params['tagName'] + '' + '?' + buildQuery({
+          'expectedHash': params['expectedHash'],
+        })
+
+        , {
           method: 'PUT',
+          headers,
+          mode,
+        });
+    },
+    deleteTag(parameters) {
+      const params = typeof parameters === 'undefined' ? {} : parameters;
+      let headers = {
+
+      };
+      return fetch(endpoint + basePath + '/api/v1/trees/tag/' + params['tagName'] + '' + '?' + buildQuery({
+          'expectedHash': params['expectedHash'],
+        })
+
+        , {
+          method: 'DELETE',
           headers,
           mode,
         });
@@ -324,6 +246,18 @@ function createApi(options) {
       return fetch(endpoint + basePath + '/api/v1/trees/tree'
         , {
           method: 'GET',
+          headers,
+          mode,
+        });
+    },
+    createReference(parameters) {
+      const params = typeof parameters === 'undefined' ? {} : parameters;
+      let headers = {
+
+      };
+      return fetch(endpoint + basePath + '/api/v1/trees/tree'
+        , {
+          method: 'POST',
           headers,
           mode,
         });
