@@ -23,7 +23,8 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "^3.4.3",
     "rxjs": "^6.6.0",
-    "yup": "^0.28.5"
+    "yup": "^0.28.5",
+    "prop-types": "^15.7.2"
   },
   "scripts": {
     "start": "react-scripts start",
