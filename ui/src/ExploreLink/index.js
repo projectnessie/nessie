@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export * from './tree-view';
+export * from '../Explore/ExploreLink.jsx';
