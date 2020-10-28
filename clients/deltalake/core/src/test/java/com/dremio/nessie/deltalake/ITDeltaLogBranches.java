@@ -38,6 +38,7 @@ import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.tests.AbstractSparkTest;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.DeltaLakeTable;
@@ -88,7 +89,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     // write some data to table
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     // create test at the point where there is only 1 commit
-    client.getTreeApi().createNewBranch("test", client.getTreeApi().getDefaultBranch().getHash());
+    client.getTreeApi().createReference(Branch.of("test", client.getTreeApi().getDefaultBranch().getHash()));
     // add some more data to main
     targetTable.write().format("delta").mode("append").save(tempPath.getAbsolutePath());
 
