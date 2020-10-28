@@ -30,7 +30,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "generate-api": "fetch-openapi --api-doc-url http://localhost:19120/openapi --output-file-path ./src/utils/api.js --preset es6"
   },
   "eslintConfig": {
     "extends": "react-app"
