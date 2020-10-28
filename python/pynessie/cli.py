@@ -165,9 +165,9 @@ def set_(ctx: ContextObject, endpoint: str) -> None:
 def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
     """Set current default branch. If -d is passed it will remove the default branch."""
     if delete:
-        click.echo(process(None, "default_branch", False, None, head))
-    else:
         click.echo(process(None, None, False, "default_branch", None))
+    else:
+        click.echo(process(None, "default_branch", False, None, head))
 
 
 @cli.command()
@@ -405,10 +405,10 @@ def contents(ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[
         keys = ctx.nessie.list_keys(ref if ref else ctx.nessie.get_default_branch())
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
-        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, *key), old_hash=condition, reason=_get_message(message))
+        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, delete, *key), old_hash=condition, reason=_get_message(message))
         results = ""
     elif set:
-        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, *key), old_hash=condition, reason=_get_message(message))
+        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, delete, *key), old_hash=condition, reason=_get_message(message))
         results = ""
     else:
 
@@ -430,13 +430,13 @@ def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: s
             content = nessie.get_values(ref, key)
             content_json = ContentsSchema().dumps(content.__next__())
         except NessieNotFoundException:
-            content_json = ""
+            content_json = click.get_text_stream("stdin").read()
 
         MARKER = "# Everything below is ignored\n"
         if delete:
             message = "\n\n" + MARKER
         else:
-            message = click.edit(
+            edit_message = (
                 content_json
                 + "\n\n"
                 + MARKER
@@ -444,6 +444,11 @@ def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: s
                 + " Closing without change will result in a no-op."
                 + " Removing the content results in a delete"
             )
+            try:
+                message = click.edit(edit_message)
+            except click.ClickException:
+                message = edit_message
+
         if message is not None:
             message_altered = message.split(MARKER, 1)[0].strip("\n")
             if message_altered:

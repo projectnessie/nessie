@@ -26,7 +26,114 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": null, "name": "dev", "type": "BRANCH"}'
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/dev
+  response:
+    body:
+      string: "{\n  \"message\" : \"Unable to find reference [dev].\",\n  \"status\"\
+        \ : \"NOT_FOUND\",\n  \"serverStackTrace\" : \"com.dremio.nessie.error.NessieNotFoundException:\
+        \ Unable to find reference [dev].\\n\\tat com.dremio.nessie.services.rest.TreeResource.getReferenceByName(TreeResource.java:93)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.getReferenceByName$$superaccessor6(TreeResource_Subclass.zig:2297)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass$$function$$6.apply(TreeResource_Subclass$$function$$6.zig:33)\\\
+        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
+        n\\tat io.quarkus.hibernate.validator.runtime.interceptor.AbstractMethodValidationInterceptor.validateMethodInvocation(AbstractMethodValidationInterceptor.java:69)\\\
+        n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor.validateMethodInvocation(JaxrsEndPointValidationInterceptor.java:32)\\\
+        n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor_Bean.intercept(JaxrsEndPointValidationInterceptor_Bean.zig:341)\\\
+        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
+        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.time(TimedInterceptor.java:54)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.timedMethod(TimedInterceptor.java:35)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:326)\\\
+        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
+        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.increment(CountedInterceptor.java:51)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.countedMethod(CountedInterceptor.java:33)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor_Bean.intercept(CountedInterceptor_Bean.zig:326)\\\
+        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
+        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
+        n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.getReferenceByName(TreeResource_Subclass.zig:2245)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_ClientProxy.getReferenceByName(TreeResource_ClientProxy.zig:259)\\\
+        n\\tat java.lang.reflect.Method.invoke(Method.java:566)\\n\\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:170)\\\
+        n\\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:130)\\\
+        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:643)\\\
+        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:507)\\\
+        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$2(ResourceMethodInvoker.java:457)\\\
+        n\\tat org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:364)\\\
+        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:459)\\\
+        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:419)\\\
+        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:393)\\\
+        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:68)\\\
+        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:492)\\\
+        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:261)\\\
+        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:161)\\\
+        n\\tat org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:364)\\\
+        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:164)\\\
+        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:247)\\\
+        n\\tat io.quarkus.resteasy.runtime.standalone.RequestDispatcher.service(RequestDispatcher.java:73)\\\
+        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.dispatch(VertxRequestHandler.java:131)\\\
+        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.access$000(VertxRequestHandler.java:37)\\\
+        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler$1.run(VertxRequestHandler.java:94)\\\
+        n\\tat org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)\\\
+        n\\tat org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:2046)\\\
+        n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1578)\\\
+        n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1452)\\\
+        n\\tat org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)\\\
+        n\\tat org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)\\\
+        n\\tat java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
+        n\\tat com.oracle.svm.core.thread.JavaThreads.threadStartRoutine(JavaThreads.java:517)\\\
+        n\\tat com.oracle.svm.core.posix.thread.PosixJavaThreads.pthreadStartRoutine(PosixJavaThreads.java:192)\\\
+        nCaused by: com.dremio.nessie.versioned.ReferenceNotFoundException: Ref 'dev'\
+        \ does not exist\\n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.lambda$toRef$1(InMemoryVersionStore.java:159)\\\
+        n\\tat java.util.Optional.orElseThrow(Optional.java:408)\\n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.toRef(InMemoryVersionStore.java:159)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource.getReferenceByName(TreeResource.java:91)\\\
+        n\\t... 52 more\\n\"\n}"
+    headers:
+      Content-Length:
+      - '6035'
+      Content-Type:
+      - application/json
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/main
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
+        9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\n}"
+    headers:
+      Content-Length:
+      - '121'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"hash": "9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83",
+      "name": "dev", "type": "TAG"}'
     headers:
       Accept:
       - '*/*'
@@ -35,7 +142,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '47'
+      - '106'
       Content-Type:
       - application/json
       User-Agent:
@@ -66,11 +173,11 @@ interactions:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
         \ \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\n},\
-        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\
+        \ {\n  \"type\" : \"TAG\",\n  \"name\" : \"dev\",\n  \"hash\" : \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\
         \n} ]"
     headers:
       Content-Length:
-      - '247'
+      - '244'
       Content-Type:
       - application/json
     status:
@@ -184,7 +291,7 @@ interactions:
       message: OK
 - request:
     body: '{"hash": "9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83",
-      "name": "etl", "type": "BRANCH"}'
+      "name": "etl", "type": "TAG"}'
     headers:
       Accept:
       - '*/*'
@@ -193,7 +300,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '109'
+      - '106'
       Content-Type:
       - application/json
       User-Agent:
@@ -222,14 +329,14 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" :\
-        \ \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\n},\
-        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\
-        \n}, {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\
+      string: "[ {\n  \"type\" : \"TAG\",\n  \"name\" : \"etl\",\n  \"hash\" : \"\
+        9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\n}, {\n\
+        \  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\
+        \n}, {\n  \"type\" : \"TAG\",\n  \"name\" : \"dev\",\n  \"hash\" : \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\
         \n} ]"
     headers:
       Content-Length:
-      - '369'
+      - '363'
       Content-Type:
       - application/json
     status:
@@ -250,11 +357,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/etl
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"etl\",\n  \"hash\" : \"\
-        9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\n}"
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"etl\",\n  \"hash\" : \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\
+        \n}"
     headers:
       Content-Length:
-      - '120'
+      - '117'
       Content-Type:
       - application/json
     status:
@@ -274,7 +381,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/etl?expectedHash=9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83
+    uri: http://localhost:19120/api/v1/trees/tag/etl?expectedHash=9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83
   response:
     body:
       string: ''
@@ -297,11 +404,11 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/dev
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"\
-        2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"dev\",\n  \"hash\" : \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\
+        \n}"
     headers:
       Content-Length:
-      - '120'
+      - '117'
       Content-Type:
       - application/json
     status:
@@ -321,7 +428,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
+    uri: http://localhost:19120/api/v1/trees/tag/dev?expectedHash=9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83
   response:
     body:
       string: ''

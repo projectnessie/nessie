@@ -5,13 +5,18 @@ import itertools
 import os
 from pathlib import Path
 
+import confuse
 import pytest
+import requests
 import simplejson
 from click.testing import CliRunner
 
 from pynessie import __version__
 from pynessie import cli
 from pynessie.model import Branch
+from pynessie.model import ContentsSchema
+from pynessie.model import EntrySchema
+from pynessie.model import IcebergTable
 from pynessie.model import ReferenceSchema
 
 
@@ -68,6 +73,30 @@ def test_set_unset() -> None:
     assert "123" not in result.output
 
 
+def test_remote() -> None:
+    """Test setting and viewing remote."""
+    runner = CliRunner()
+    result = runner.invoke(cli.cli, ["remote", "add", "http://test.url"])
+    assert result.exit_code == 0
+    result = runner.invoke(cli.cli, ["remote", "show"])
+    assert result.exit_code == 1
+    assert result.output == "Remote URL: http://test.url\n"
+    assert isinstance(result.exception, requests.exceptions.ConnectionError)
+    runner.invoke(cli.cli, ["remote", "add", "http://localhost:19120/api/v1"])
+    result = runner.invoke(cli.cli, ["remote", "set-head", "dev"])
+    assert result.exit_code == 0
+    result = runner.invoke(cli.cli, ["config", "default_branch"])
+    assert result.exit_code == 0
+    assert result.output == "dev\n"
+    result = runner.invoke(cli.cli, ["remote", "set-head", "dev", "-d"])
+    assert result.exit_code == 0
+    result = runner.invoke(cli.cli, ["config", "default_branch"])
+    assert result.exit_code == 1
+    assert result.output == ""
+    assert isinstance(result.exception, confuse.exceptions.ConfigTypeError)
+    runner.invoke(cli.cli, ["remote", "head", "main"])
+
+
 @pytest.mark.vcr
 def test_log() -> None:
     """Test log and log filtering."""
@@ -75,15 +104,47 @@ def test_log() -> None:
     result = runner.invoke(cli.cli, ["--json", "log"])
     assert result.exit_code == 0
     logs = simplejson.loads(result.output)
-    assert len(logs) == 4
-    result = runner.invoke(cli.cli, ["--json", "log", "a8e1c2b99026bc7c1bdf409f1ce538bbde7f898443ef7aed5c999e9769b68689"])
+    assert len(logs) == 0
+    result = runner.invoke(
+        cli.cli,
+        [
+            "contents",
+            "--set",
+            "foo.bar",
+            "--ref",
+            "main",
+            "-m",
+            "test_message",
+            "-c",
+            "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        ],
+        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+    )
+    assert result.exit_code == 0
+    result = runner.invoke(cli.cli, ["--json", "log"])
     assert result.exit_code == 0
     logs = simplejson.loads(result.output)
-    assert len(logs) == 3
-    result = runner.invoke(cli.cli, ["--json", "log", "f5bd419dc54585d38082123120b0b268361f97efff5d64ddb1cc707282e2c63b"])
+    assert len(logs) == 1
+    result = runner.invoke(cli.cli, ["--json", "log", logs[0]["hash"]])
+    assert result.exit_code == 0
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 1
+    result = runner.invoke(cli.cli, ["--json", "contents", "--list"])
+    assert result.exit_code == 0
+    entries = EntrySchema().loads(result.output, many=True)
+    assert len(entries) == 1
+    result = runner.invoke(
+        cli.cli, ["--json", "contents", "--delete", "foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]]
+    )
+    assert result.exit_code == 0
+    result = runner.invoke(cli.cli, ["--json", "log"])
     assert result.exit_code == 0
     logs = simplejson.loads(result.output)
     assert len(logs) == 2
+    result = runner.invoke(cli.cli, ["--json", "log", "{}..{}".format(logs[0]["hash"], logs[1]["hash"])])
+    assert result.exit_code == 0
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 1
 
 
 @pytest.mark.vcr
@@ -114,6 +175,36 @@ def test_ref() -> None:
     assert result.exit_code == 0
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 1
+
+
+@pytest.mark.vcr
+def test_tag() -> None:
+    """Test create and assign refs."""
+    runner = CliRunner()
+    result = runner.invoke(cli.cli, ["--json", "tag"])
+    assert result.exit_code == 0
+    references = ReferenceSchema().loads(result.output, many=True)
+    assert len(references) == 0
+    result = runner.invoke(cli.cli, ["tag", "dev", "main"])
+    assert result.exit_code == 0
+    result = runner.invoke(cli.cli, ["--json", "tag"])
+    assert result.exit_code == 0
+    references = ReferenceSchema().loads(result.output, many=True)
+    assert len(references) == 1
+    result = runner.invoke(cli.cli, ["tag", "etl", "main"])
+    assert result.exit_code == 0
+    result = runner.invoke(cli.cli, ["--json", "tag"])
+    assert result.exit_code == 0
+    references = ReferenceSchema().loads(result.output, many=True)
+    assert len(references) == 2
+    result = runner.invoke(cli.cli, ["tag", "-d", "etl"])
+    assert result.exit_code == 0
+    result = runner.invoke(cli.cli, ["tag", "-d", "dev"])
+    assert result.exit_code == 0
+    result = runner.invoke(cli.cli, ["--json", "tag"])
+    assert result.exit_code == 0
+    references = ReferenceSchema().loads(result.output, many=True)
+    assert len(references) == 0
 
 
 @pytest.mark.doc
