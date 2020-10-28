@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 import React, {useEffect, useState} from 'react';
-
-import {authenticationService} from '../services';
 import {Card, Container} from "react-bootstrap";
 import createApi from "../utils/api"
 import {useHistory, useParams} from "react-router-dom";
@@ -53,8 +51,8 @@ function filterKeys(path, keys) {
   return distinctObjs;
 }
 
-function fetchLog(currentUser, currentBranch) {
-  return createApi({'cors': true}).getCommitLog({'ref': currentBranch})
+function fetchLog(currentBranch) {
+  return api().getCommitLog({'ref': currentBranch})
     .then(res => {
       return res.json();
     })
@@ -81,7 +79,8 @@ function fetchKeys(ref, path, result) {
     });
 }
 
-function fetchDefaultBranch(currentUser) {
+function fetchDefaultBranch() {
+  //const currentUser = authenticationService.currentUserValue;
   return api().getDefaultBranch()
     .then(res => {
       return res.json();
@@ -134,15 +133,15 @@ function parseSlug(slug, defaultBranch, branches, tags) {
   return {currentRef: sub, path: path};
 }
 
-async function updateState(currentUser, slug, setDefaultBranch, setBranches, setTags, setPath, setKeys, setCurrentRef, setLog) {
-  const defaultBranch = await fetchDefaultBranch(currentUser);
+async function updateState(slug, setDefaultBranch, setBranches, setTags, setPath, setKeys, setCurrentRef, setLog) {
+  const defaultBranch = await fetchDefaultBranch();
   const branchesAndTags = await loadBranchesAndTags();
   //const [defaultBranch, branchesAndTags] = Promise.all([t => fetchDefaultBranch(currentUser), loadBranchesAndTags]);
   setDefaultBranch(defaultBranch);
   setBranches(branchesAndTags.branches);
   setTags(branchesAndTags.tags);
   const {currentRef, path} = parseSlug(slug, defaultBranch, branchesAndTags.branches, branchesAndTags.tags);
-  const log = await fetchLog(currentUser, currentRef);
+  const log = await fetchLog(currentRef);
   setLog(log);
   setCurrentRef(currentRef);
   setPath(path);
@@ -154,7 +153,6 @@ function Explore(props) {
 
   let { slug } = useParams();
   let history = useHistory();
-  const currentUser = authenticationService.currentUserValue;
   //const [currentRef, setCurrentRef] = useState("main");
 
   const [defaultBranch, setDefaultBranch] = useState("main");
@@ -166,7 +164,7 @@ function Explore(props) {
   const [currentRef, setCurrentRef] = useState("main");
 
   useEffect(() => {
-    updateState(currentUser, slug, setDefaultBranch, setBranches, setTags, setPath, setKeys, setCurrentRef, setLog);
+    updateState(slug, setDefaultBranch, setBranches, setTags, setPath, setKeys, setCurrentRef, setLog);
   }, [slug]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
 

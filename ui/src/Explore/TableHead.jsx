@@ -22,7 +22,6 @@ import ExploreLink from "./ExploreLink";
 
 function TableHead(props) {
   let additional;
-  console.log("TableHead", props);
   if (props.path.length === 0) {
     additional = (
       <Fragment>
@@ -36,7 +35,7 @@ function TableHead(props) {
         <ExploreLink currentRef={props.currentRef}>nessie</ExploreLink>
         {
           props.path.map((p, index) => {
-            return (<Fragment><span style={{"padding-left":7, "padding-right":7}}>/</span><ExploreLink currentRef={props.currentRef} path={props.path.slice(0,index+1)}>{p}</ExploreLink></Fragment>);
+            return (<Fragment><span style={{"paddingLeft":7, "paddingRight":7}}>/</span><ExploreLink currentRef={props.currentRef} path={props.path.slice(0,index+1)}>{p}</ExploreLink></Fragment>);
           })}
       </Nav.Item>
     );
@@ -44,7 +43,7 @@ function TableHead(props) {
 
   return (
     <Nav variant={"pills"} activeKey={1}>
-      <NavDropdown title={props.currentRef} id="nav-dropdown" style={{"padding-left":10}}>
+      <NavDropdown title={props.currentRef} id="nav-dropdown" style={{"paddingLeft":10}}>
 
         <NavDropdown.Item disabled={true}>Branches</NavDropdown.Item>
         {props.branches.map(branch => {
