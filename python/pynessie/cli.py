@@ -123,12 +123,7 @@ def remote(ctx: ContextObject) -> None:
 @click.option("--get", cls=MutuallyExclusiveOption, help="get config parameter", mutually_exclusive=["set", "list", "unset"])
 @click.option("--add", cls=MutuallyExclusiveOption, help="set config parameter", mutually_exclusive=["get", "list", "unset"])
 @click.option(
-    "-l",
-    "--list",
-    cls=MutuallyExclusiveOption,
-    is_flag=True,
-    help="list config parameters",
-    mutually_exclusive=["set", "get", "unset"],
+    "-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list config parameters", mutually_exclusive=["set", "get", "unset"],
 )
 @click.option("--unset", cls=MutuallyExclusiveOption, help="unset config parameter", mutually_exclusive=["get", "list", "set"])
 @click.option("--type", help="type to interpret config value to set or get. Allowed options: bool, int")
@@ -231,15 +226,7 @@ def _format_time(epoch: int) -> str:
 @click.argument("new_branch", nargs=1, required=False)
 @pass_client
 @error_handler
-def branch_(
-    ctx: ContextObject,
-    list: bool,
-    force: bool,
-    delete: bool,
-    branch: str,
-    new_branch: str,
-    condition: str,
-) -> None:
+def branch_(ctx: ContextObject, list: bool, force: bool, delete: bool, branch: str, new_branch: str, condition: str,) -> None:
     """Branch operations.
 
     BRANCH name of branch to list or create/assign
@@ -267,7 +254,7 @@ def branch_(
     if ctx.json:
         click.echo(results)
     elif results:
-        click.echo_via_pager(results)
+        click.echo(results)
     else:
         click.echo()
 
@@ -309,7 +296,7 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
     if ctx.json:
         click.echo(results)
     elif results:
-        click.echo_via_pager(results)
+        click.echo(results)
     else:
         click.echo()
 
@@ -318,12 +305,7 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
 @click.option("-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used")
 @click.argument("merge_branch", nargs=1, required=False)
 @click.option(
-    "-f",
-    "--force",
-    cls=MutuallyExclusiveOption,
-    is_flag=True,
-    mutually_exclusive=["condition"],
-    help="force branch assignment",
+    "-f", "--force", cls=MutuallyExclusiveOption, is_flag=True, mutually_exclusive=["condition"], help="force branch assignment",
 )
 @click.option(
     "-c",
@@ -348,12 +330,7 @@ def merge(ctx: ContextObject, branch: str, force: bool, condition: str, merge_br
 @cli.command("cherry-pick")
 @click.option("-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used")
 @click.option(
-    "-f",
-    "--force",
-    cls=MutuallyExclusiveOption,
-    is_flag=True,
-    mutually_exclusive=["condition"],
-    help="force branch assignment",
+    "-f", "--force", cls=MutuallyExclusiveOption, is_flag=True, mutually_exclusive=["condition"], help="force branch assignment",
 )
 @click.option(
     "-c",
@@ -378,33 +355,16 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
 
 @cli.command("contents")
 @click.option(
-    "-l",
-    "--list",
-    cls=MutuallyExclusiveOption,
-    is_flag=True,
-    help="list tables",
-    mutually_exclusive=["delete", "set"],
+    "-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list tables", mutually_exclusive=["delete", "set"],
 )
 @click.option(
-    "-d",
-    "--delete",
-    cls=MutuallyExclusiveOption,
-    is_flag=True,
-    help="delete a table",
-    mutually_exclusive=["list", "set"],
+    "-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a table", mutually_exclusive=["list", "set"],
 )
 @click.option(
-    "-s",
-    "--set",
-    cls=MutuallyExclusiveOption,
-    is_flag=True,
-    help="modify a table",
-    mutually_exclusive=["list", "delete"],
+    "-s", "--set", cls=MutuallyExclusiveOption, is_flag=True, help="modify a table", mutually_exclusive=["list", "delete"],
 )
 @click.option(
-    "-c",
-    "--condition",
-    help="Conditional Hash. Only perform the action if branch currently points to condition.",
+    "-c", "--condition", help="Conditional Hash. Only perform the action if branch currently points to condition.",
 )
 @click.option("-r", "--ref", help="branch to list from. If not supplied the default branch from config is used")
 @click.option("-m", "--message", help="commit message")
@@ -434,7 +394,7 @@ def contents(ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[
     if ctx.json or not results:
         click.echo(results)
     else:
-        click.echo_via_pager(results)
+        click.echo(results)
 
 
 def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: str) -> MultiContents:
