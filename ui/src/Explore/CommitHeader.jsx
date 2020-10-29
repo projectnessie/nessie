@@ -18,10 +18,10 @@ import {Card} from "react-bootstrap";
 import prettyMilliseconds from "pretty-ms";
 import React, {useEffect, useState} from "react";
 import PropTypes from "prop-types";
-import createApi from "../utils/api";
+import {api} from "../utils";
 
 function fetchLog(currentRef, setLog) {
-  return createApi({'cors': true}).getCommitLog({'ref': currentRef})
+  return api().getCommitLog({'ref': currentRef})
     .then(res => {
       return res.json();
     })

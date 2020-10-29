@@ -19,10 +19,10 @@ import {Link} from "react-router-dom";
 
 function ExploreLink(props) {
   const path = props.path || [];
-  const currentRef = props.currentRef;
+  const currentRef = props.toRef;
   const prefix = props.type === "CONTAINER" ? "/tree/" : "/contents/"
   return (
-    <Link to={prefix + currentRef + "/" + path.join("/")} className={props.className}>
+    <Link to={ `${prefix}${currentRef}/${path.join("/")}` } className={props.className} children={props.children}>
       {props.children}
     </Link>
   );
@@ -30,13 +30,12 @@ function ExploreLink(props) {
 
 ExploreLink.propTypes = {
   type: PropTypes.oneOf(["CONTAINER", "OBJECT"]),
-  currentRef: PropTypes.string.isRequired,
+  toRef: PropTypes.string.isRequired,
   path: PropTypes.arrayOf(PropTypes.string).isRequired
 }
 
 ExploreLink.defaultProps = {
   type: "CONTAINER",
-  currentRef: "main",
   path: []
 }
 

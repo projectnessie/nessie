@@ -15,18 +15,11 @@
  */
 import React, {useEffect, useState} from 'react';
 import {Card, Container} from "react-bootstrap";
-import createApi from "../utils/api"
 import {useParams} from "react-router-dom";
 import TableHead from "./TableHead";
 import TableListing from "./TableListing";
 import CommitLog from "./CommitHeader";
-
-
-
-function api() {
-  return createApi({'cors': true});
-}
-
+import {api} from "../utils";
 
 
 function fetchDefaultBranch(setDefaultBranch) {
@@ -40,12 +33,25 @@ function fetchDefaultBranch(setDefaultBranch) {
     }).catch(t => console.log(t))
 }
 
+function btCompare(a, b) {
+  if (a.name < b.name) {
+    return -1;
+  }
+  if (a.name > b.name) {
+    return 1;
+  }
+
+  return 0;
+}
+
 function loadBranchesAndTags(setBranches, setTags) {
   return api().getAllReferences()
     .then(res => {
-      return res.json();
+      let data = res.json();
+      return data;
     })
     .then((data) => {
+      data = data.sort(btCompare);
       setBranches(data.filter(x => x.type === "BRANCH"));
       setTags(data.filter(x => x.type === "TAG"));
     });
@@ -91,17 +97,14 @@ function updateRef(slug, defaultBranch, branches, tags, setPath, setCurrentRef) 
   setPath(path);
 }
 
-
 function Explore(props) {
 
   let { slug } = useParams();
-  //const [currentRef, setCurrentRef] = useState("main");
-
   const [defaultBranch, setDefaultBranch] = useState("main");
   const [branches, setBranches] = useState([]);
   const [tags, setTags] = useState([]);
   const [path, setPath] = useState([]);
-  const [currentRef, setCurrentRef] = useState("main");
+  const [currentRef, setCurrentRef] = useState();
 
   useEffect(() => {
     fetchDefaultBranch(setDefaultBranch);

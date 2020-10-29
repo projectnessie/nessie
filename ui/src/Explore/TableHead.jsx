@@ -21,21 +21,29 @@ import LocalOfferIcon from "@material-ui/icons/LocalOffer";
 import ExploreLink from "./ExploreLink";
 
 function TableHead(props) {
+  if (!props.currentRef) {
+    return (<div />);
+  }
+
   let additional;
   if (props.path.length === 0) {
     additional = (
-      <Fragment>
-        <Nav.Item><Nav.Link><DeviceHubIcon/> {props.branches.length}</Nav.Link></Nav.Item>
-        <Nav.Item><Nav.Link><LocalOfferIcon/> {props.tags.length}</Nav.Link></Nav.Item>
+      <Fragment key="icons">
+        <Nav.Item><Nav.Link><DeviceHubIcon/>{props.branches.length}</Nav.Link></Nav.Item>
+        <Nav.Item><Nav.Link><LocalOfferIcon/>{props.tags.length}</Nav.Link></Nav.Item>
       </Fragment>
   );
   } else {
     additional = (
       <Nav.Item className="nav-link">
-        <ExploreLink currentRef={props.currentRef}>nessie</ExploreLink>
+        <ExploreLink toRef={props.currentRef}>nessie</ExploreLink>
         {
           props.path.map((p, index) => {
-            return (<Fragment><span style={{"paddingLeft":7, "paddingRight":7}}>/</span><ExploreLink currentRef={props.currentRef} path={props.path.slice(0,index+1)}>{p}</ExploreLink></Fragment>);
+            return (
+              <Fragment key={"path" + index}>
+                <span style={{"paddingLeft":"0.5em", "paddingRight":"0.5em"}}>/</span>
+                <ExploreLink key={index} toRef={props.currentRef} path={props.path.slice(0,index+1)}>{p}</ExploreLink>
+              </Fragment>);
           })}
       </Nav.Item>
     );
@@ -43,24 +51,31 @@ function TableHead(props) {
 
   return (
     <Nav variant={"pills"} activeKey={1}>
-      <NavDropdown title={props.currentRef} id="nav-dropdown" style={{"paddingLeft":10}}>
+      <NavDropdown title={props.currentRef} id="nav-dropdown" style={{"paddingLeft":"1em"}}>
 
         <NavDropdown.Item disabled={true}>Branches</NavDropdown.Item>
+
         {props.branches.map(branch => {
-          return (<ExploreLink currentRef={branch.name} path={props.path} type="CONTAINER"><NavDropdown.Item as={"button"} key={branch.name}>
-            {branch.name}
-            <span>
-              {(branch.name === props.defaultBranch) ? <Badge pill className="float-right" variant={"secondary"}>default</Badge> : ""}
-          </span>
-          </NavDropdown.Item></ExploreLink>)
+          return (
+            <ExploreLink toRef={branch.name} path={props.path} type="CONTAINER" key={branch.name}>
+              <NavDropdown.Item as={"button"} key={branch.name}>
+                {branch.name}
+                <span>
+                  {(branch.name === props.defaultBranch) ? <Badge pill className="float-right" variant={"secondary"}>default</Badge> : ""}
+                </span>
+              </NavDropdown.Item>
+            </ExploreLink>
+          )
         })}
         <NavDropdown.Divider/>
         <NavDropdown.Item disabled={true}>Tags</NavDropdown.Item>
         {props.tags.map(tag => {
-          return (<NavDropdown.Item as={"button"} key={tag.name}><ExploreLink currentRef={tag} path={props.path} type="CONTAINER">{tag}</ExploreLink></NavDropdown.Item>)
+          return (
+            <ExploreLink toRef={tag.name} path={props.path} type="CONTAINER" key={tag.name}>
+              <NavDropdown.Item as={"button"} key={tag.name}>{tag.name}</NavDropdown.Item>
+            </ExploreLink>
+            )
         })}
-        {/*<NavDropdown.Divider/>*/}
-        {/*<NavDropdown.Item as={"button"} key={'Create Branch'}>Create Branch</NavDropdown.Item>*/}
       </NavDropdown>
       {additional}
     </Nav>
@@ -80,4 +95,9 @@ TableHead.propTypes = {
   defaultBranch: PropTypes.string.isRequired
 }
 
+TableHead.defaultProps = {
+  currentRef: "main"
+}
+
 export default TableHead;
+

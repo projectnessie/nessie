@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*.App {*/
-/*  text-align: center;*/
-/*}*/
 
 .App-logo {
   height: 40vmin;
@@ -54,5 +51,5 @@
 
 .modal-90w {
   width: 90%;
-  max-width: none!important;
+  max-width: none !important;
 }

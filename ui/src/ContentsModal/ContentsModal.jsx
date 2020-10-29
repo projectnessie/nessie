@@ -80,7 +80,7 @@ function ContentsModal(props) {
   return (
     <Modal show={props.show} onHide={props.handleClose} dialogClassName="modal-90w" size="large">
       <Modal.Header closeButton>
-        <Modal.Title>{name.join(".") + " on " + props.currentBranch.name} </Modal.Title>
+        <Modal.Title>{ `${name.join(".")} on ${props.currentBranch.name} `}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         {image(currentContent)}

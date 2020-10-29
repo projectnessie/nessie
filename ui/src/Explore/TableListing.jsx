@@ -18,20 +18,31 @@ import {Card, ListGroup, ListGroupItem} from "react-bootstrap";
 import InsertDriveFileOutlinedIcon from '@material-ui/icons/InsertDriveFileOutlined';
 import FolderIcon from '@material-ui/icons/Folder';
 import ExploreLink from "./ExploreLink";
-import createApi from "../utils/api";
 import PropTypes from 'prop-types';
+import {api} from "../utils";
 
 
 function groupItem(name, type, ref, path) {
   let icon = type === "CONTAINER" ? <FolderIcon/> : <InsertDriveFileOutlinedIcon/>;
   return (
     <ListGroupItem key={name}>
-      {/*{item}*/}
-      <ExploreLink currentRef={ref} path={path.concat(name)} type={type === "CONTAINER" ? "CONTAINER" : "OBJECT"}>
+      <ExploreLink toRef={ref} path={path.concat(name)} type={type === "CONTAINER" ? "CONTAINER" : "OBJECT"}>
         {icon}{name}
       </ExploreLink>
     </ListGroupItem>
   )
+}
+
+function fetchKeys(ref, path, setKeys) {
+  return api().getEntries({'ref':ref})
+    .then(res => {
+      return res.json();
+    })
+    .then((data) => {
+      //setKeys(data.)
+      let keys = filterKeys(path, data.entries);
+      setKeys(keys);
+    }).catch(e => console.log(e));
 }
 
 // TODO: move this to server-side. Filter to keys relevant for this view.
@@ -64,20 +75,7 @@ function filterKeys(path, keys) {
   return distinctObjs;
 }
 
-function fetchKeys(ref, path, setKeys) {
-  return createApi({'cors': true}).getEntries({'ref':ref})
-    .then(res => {
-      return res.json();
-    })
-    .then((data) => {
-      //setKeys(data.)
-      let keys = filterKeys(path, data.entries);
-      setKeys(keys);
-    }).catch(e => console.log(e));
-}
-
 function TableListing(props) {
-
   const [keys, setKeys] = useState([]);
   useEffect(() => {
     fetchKeys(props.currentRef, props.path, setKeys);
