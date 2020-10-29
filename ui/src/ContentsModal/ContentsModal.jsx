@@ -15,7 +15,7 @@
  */
 import React, {useState, useEffect} from 'react';
 
-import {Row,Col} from "react-bootstrap";
+import {Row, Col} from "react-bootstrap";
 import createApi from "../utils/api"
 import Modal from "react-bootstrap/Modal";
 
@@ -37,19 +37,26 @@ function getContents(x, currentBranch, setContent) {
 
 function image(currentContent) {
   if (currentContent.type === "ICEBERG_TABLE") {
-    return (<Row><Col xs={3}>Table type:</Col> <Col>Iceberg Table<img className="pl-2" src={"/iceberg.png"}
-                                                                      alt={"iceberg table"} height={"50"} width={"60"}/></Col></Row>)
+    return (
+      <Row>
+        <Col xs={3}>Table type:</Col>
+        <Col>Iceberg Table<img className="pl-2" src={"/iceberg.png"} alt={"iceberg table"} height={"50"} width={"60"}/></Col>
+      </Row>)
   } else if (currentContent.type === "DELTA_LAKE_TABLE") {
-    return (<Row><Col xs={3}>Table type:</Col> <Col>Delta Lake Table<img className="pl-4" src={"/delta.png"}
-                                                                         alt={"iceberg table"} height={"50"}
-                                                                         width={"50"}/></Col></Row>)
+    return (
+      <Row>
+        <Col xs={3}>Table type:</Col>
+        <Col>Delta Lake Table<img className="pl-4" src={"/delta.png"} alt={"iceberg table"} height={"50"} width={"50"}/></Col>
+      </Row>)
   } else if (currentContent.type === "HIVE_TABLE" || currentContent.type === "HIVE_DATABASE") {
-    return (<Row><Col xs={3}>Table type:</Col>
-      <Col>Hive {(currentContent.type === "HIVE_DATABASE") ? "Database" : "Table"}<img className="pl-4"
-                                                                                       src={"/hive.png"}
-                                                                                       alt={"iceberg table"}
-                                                                                       height={"50"}
-                                                                                       width={"50"}/></Col></Row>)
+    return (
+      <Row>
+        <Col xs={3}>Table type:</Col>
+        <Col>
+          Hive {(currentContent.type === "HIVE_DATABASE") ? "Database" : "Table"}
+          <img className="pl-4" src={"/hive.png"} alt={"iceberg table"} height={"50"} width={"50"}/>
+        </Col>
+      </Row>)
   } else {
     return (<span>{currentContent.type}</span>)
   }

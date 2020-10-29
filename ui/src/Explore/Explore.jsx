@@ -23,7 +23,6 @@ import {api} from "../utils";
 
 
 function fetchDefaultBranch(setDefaultBranch) {
-  //const currentUser = authenticationService.currentUserValue;
   return api().getDefaultBranch()
     .then(res => {
       return res.json();
@@ -125,7 +124,7 @@ function Explore(props) {
             currentRef={currentRef}
             defaultBranch={defaultBranch}
             path={path}
-             />
+          />
           <CommitLog currentRef={currentRef} />
           <TableListing currentRef={currentRef} path={path} />
         </Card>

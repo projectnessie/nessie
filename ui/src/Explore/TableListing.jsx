@@ -39,7 +39,6 @@ function fetchKeys(ref, path, setKeys) {
       return res.json();
     })
     .then((data) => {
-      //setKeys(data.)
       let keys = filterKeys(path, data.entries);
       setKeys(keys);
     }).catch(e => console.log(e));
