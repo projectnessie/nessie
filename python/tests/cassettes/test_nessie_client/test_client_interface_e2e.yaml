@@ -15,7 +15,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\n}\
+        \ \"0ec96c3e435092c3f0bf00546e114683866e1d7127377f8023538490282d32d3\"\n}\
         \ ]"
     headers:
       Content-Length:
@@ -115,7 +115,7 @@ interactions:
       code: 409
       message: Conflict
 - request:
-    body: '{"hash": "9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83",
+    body: '{"hash": "0ec96c3e435092c3f0bf00546e114683866e1d7127377f8023538490282d32d3",
       "name": "test", "type": "BRANCH"}'
     headers:
       Accept:
@@ -155,8 +155,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\n},\
-        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\
+        \ \"0ec96c3e435092c3f0bf00546e114683866e1d7127377f8023538490282d32d3\"\n},\
+        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"0ec96c3e435092c3f0bf00546e114683866e1d7127377f8023538490282d32d3\"\
         \n} ]"
     headers:
       Content-Length:
@@ -182,7 +182,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"\
-        9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\n}"
+        0ec96c3e435092c3f0bf00546e114683866e1d7127377f8023538490282d32d3\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -230,7 +230,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/test?expectedHash=9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83
+    uri: http://localhost:19120/api/v1/trees/branch/test?expectedHash=0ec96c3e435092c3f0bf00546e114683866e1d7127377f8023538490282d32d3
   response:
     body:
       string: ''
@@ -254,7 +254,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\n}\
+        \ \"0ec96c3e435092c3f0bf00546e114683866e1d7127377f8023538490282d32d3\"\n}\
         \ ]"
     headers:
       Content-Length:

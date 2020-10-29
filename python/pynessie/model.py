@@ -220,7 +220,7 @@ class ReferenceSchema(OneOfSchema):
         elif isinstance(obj, Tag):
             return "TAG"
         elif isinstance(obj, Hash):
-            return "DELETE"
+            return "HASH"
         else:
             raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
 

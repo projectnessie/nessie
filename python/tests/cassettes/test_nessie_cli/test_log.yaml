@@ -11,31 +11,6 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
-        2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
-    headers:
-      Content-Length:
-      - '121'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.24.0
-    method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main/log
   response:
     body:
@@ -159,14 +134,14 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree
+    uri: http://localhost:19120/api/v1/contents/foo.bar?ref=main
   response:
     body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
-        1f75b83b1816101f622696a0a9e4d86632b44f60975e4630b3359c82e8f0c379\"\n}"
+      string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"metadataLocation\" : \"/a/b/c\"\
+        \n}"
     headers:
       Content-Length:
-      - '121'
+      - '63'
       Content-Type:
       - application/json
     status:
@@ -188,9 +163,9 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
-        \ [ {\n    \"hash\" : \"1f75b83b1816101f622696a0a9e4d86632b44f60975e4630b3359c82e8f0c379\"\
+        \ [ {\n    \"hash\" : \"a4258cffb6837020771b1ec814e45245f5213fbd736d82ff9d32c6a9ab9925f5\"\
         ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
-        ,\n    \"commitTime\" : 1603906917926\n  } ]\n}"
+        ,\n    \"commitTime\" : 1603988957173\n  } ]\n}"
     headers:
       Content-Length:
       - '256'
@@ -211,41 +186,16 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/1f75b83b1816101f622696a0a9e4d86632b44f60975e4630b3359c82e8f0c379/log
+    uri: http://localhost:19120/api/v1/trees/tree/a4258cffb6837020771b1ec814e45245f5213fbd736d82ff9d32c6a9ab9925f5/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
-        \ [ {\n    \"hash\" : \"1f75b83b1816101f622696a0a9e4d86632b44f60975e4630b3359c82e8f0c379\"\
+        \ [ {\n    \"hash\" : \"a4258cffb6837020771b1ec814e45245f5213fbd736d82ff9d32c6a9ab9925f5\"\
         ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
-        ,\n    \"commitTime\" : 1603906917926\n  } ]\n}"
+        ,\n    \"commitTime\" : 1603988957173\n  } ]\n}"
     headers:
       Content-Length:
       - '256'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.24.0
-    method: GET
-    uri: http://localhost:19120/api/v1/trees/tree
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
-        1f75b83b1816101f622696a0a9e4d86632b44f60975e4630b3359c82e8f0c379\"\n}"
-    headers:
-      Content-Length:
-      - '121'
       Content-Type:
       - application/json
     status:
@@ -318,7 +268,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=1f75b83b1816101f622696a0a9e4d86632b44f60975e4630b3359c82e8f0c379&message=delete_message
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=a4258cffb6837020771b1ec814e45245f5213fbd736d82ff9d32c6a9ab9925f5&message=delete_message
   response:
     body:
       string: ''
@@ -338,40 +288,15 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
-        9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\n}"
-    headers:
-      Content-Length:
-      - '121'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.24.0
-    method: GET
     uri: http://localhost:19120/api/v1/trees/tree/main/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
-        \ [ {\n    \"hash\" : \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\
+        \ [ {\n    \"hash\" : \"0912a13397b09bac1590782d783b6a823fbf509f451aa2b453b3a7b79bb4d152\"\
         ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"delete_message\"\
-        ,\n    \"commitTime\" : 1603906918015\n  }, {\n    \"hash\" : \"1f75b83b1816101f622696a0a9e4d86632b44f60975e4630b3359c82e8f0c379\"\
+        ,\n    \"commitTime\" : 1603988957328\n  }, {\n    \"hash\" : \"a4258cffb6837020771b1ec814e45245f5213fbd736d82ff9d32c6a9ab9925f5\"\
         ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
-        ,\n    \"commitTime\" : 1603906917926\n  } ]\n}"
+        ,\n    \"commitTime\" : 1603988957173\n  } ]\n}"
     headers:
       Content-Length:
       - '452'
@@ -392,15 +317,15 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83/log
+    uri: http://localhost:19120/api/v1/trees/tree/0912a13397b09bac1590782d783b6a823fbf509f451aa2b453b3a7b79bb4d152/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
-        \ [ {\n    \"hash\" : \"9d5adf6b60c7e26326dcda80f7895471a05bed7eb3c3a122facb761373701a83\"\
+        \ [ {\n    \"hash\" : \"0912a13397b09bac1590782d783b6a823fbf509f451aa2b453b3a7b79bb4d152\"\
         ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"delete_message\"\
-        ,\n    \"commitTime\" : 1603906918015\n  }, {\n    \"hash\" : \"1f75b83b1816101f622696a0a9e4d86632b44f60975e4630b3359c82e8f0c379\"\
+        ,\n    \"commitTime\" : 1603988957328\n  }, {\n    \"hash\" : \"a4258cffb6837020771b1ec814e45245f5213fbd736d82ff9d32c6a9ab9925f5\"\
         ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
-        ,\n    \"commitTime\" : 1603906917926\n  } ]\n}"
+        ,\n    \"commitTime\" : 1603988957173\n  } ]\n}"
     headers:
       Content-Length:
       - '452'

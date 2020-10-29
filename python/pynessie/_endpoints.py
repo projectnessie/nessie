@@ -15,6 +15,7 @@ from .error import NessieException
 from .error import NessieNotFoundException
 from .error import NessiePermissionException
 from .error import NessiePreconidtionFailedException
+from .error import NessieServerException
 from .error import NessieUnauthorizedException
 
 
@@ -69,6 +70,8 @@ def _check_error(r: requests.models.Response, details: str = "") -> Union[str, d
         raise NessieNotFoundException("No entity exists at " + details, error, r)
     if code == 409:
         raise NessieConflictException("Entity already exists at " + details, error, r)
+    if code == 500:
+        raise NessieServerException("Server error at " + details, error, r)
     raise NessieException("unknown error", error)
 
 

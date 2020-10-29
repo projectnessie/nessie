@@ -1,6 +1,18 @@
 # -*- coding: utf-8 -*-
 """Nessie Exceptions."""
+import sys
+import traceback
+from typing import Any
+from typing import Callable
+from typing import cast
+
+import click
 import requests
+import simplejson as json
+
+_REMEDIES = {
+    "Cannot create an unassigned tag reference": "set a valid reference on which to create this tag. eg `nessie tag tag_name main`"
+}
 
 
 class NessieException(Exception):
@@ -10,7 +22,28 @@ class NessieException(Exception):
         """Construct base Nessie Exception."""
         super(NessieException, self).__init__(msg + (": %s" % original_exception))
         self.original_exception = original_exception
-        self.response = response
+        try:
+            parsed_response = cast(requests.models.Response, response).json()
+            self.status_code = cast(requests.models.Response, response).status_code
+        except:  # NOQA
+            parsed_response = dict()
+            self.status_code = 500
+        self.server_message = parsed_response.get("message")
+        self.server_status = parsed_response.get("status")
+        self.server_stack_trace = parsed_response.get("serverStackTrace")
+
+    def json(self: "NessieException") -> str:
+        """Dump this exception as a json object."""
+        return json.dumps(
+            dict(
+                server_message=self.server_message,
+                server_status=self.server_status,
+                server_stack_trace=self.server_stack_trace,
+                status_code=self.status_code,
+                original_exception=traceback.format_tb(self.original_exception.__traceback__),
+                msg=" ".join(self.args),
+            )
+        )
 
 
 class NessieUnauthorizedException(NessieException):
@@ -41,3 +74,35 @@ class NessieConflictException(NessieException):
     """Nessie exception for conflict error 408."""
 
     pass
+
+
+class NessieServerException(NessieException):
+    """Nessie exception for server errors 5xx."""
+
+    pass
+
+
+def error_handler(f: Callable) -> Callable:
+    """Wrap a click method to catch and pretty print errors."""
+
+    def wrapper(*args: Any, **kwargs: Any) -> None:
+        """Wrapper object."""
+        try:
+            f(*args, **kwargs)
+        except NessieException as e:
+            if args[0].json:
+                click.echo(e.json())
+            click.echo(_format_error(e))
+            sys.exit(1)
+
+    return wrapper
+
+
+def _format_error(e: NessieException) -> str:
+    fmt = "{} is {} with status code: {}.\n".format(click.style("Nessie Exception", fg="red"), e, e.status_code)
+    if e.server_message in _REMEDIES:
+        fmt += "{} {}\n".format(click.style("FIX:", fg="green"), _REMEDIES[e.server_message])
+    fmt += "{} {}\n".format(click.style("Server status:", fg="yellow"), e.server_status)
+    fmt += "{} {}\n".format(click.style("Server message:", fg="yellow"), e.server_message)
+    fmt += "{} {}\n".format(click.style("Server traceback:", fg="yellow"), e.server_stack_trace)
+    return fmt
