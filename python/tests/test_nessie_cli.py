@@ -4,32 +4,41 @@
 import itertools
 import os
 from pathlib import Path
+from typing import List
+from typing import Optional
 
+import confuse
 import pytest
 import simplejson
 from click.testing import CliRunner
+from click.testing import Result
 
 from pynessie import __version__
 from pynessie import cli
 from pynessie.model import Branch
+from pynessie.model import ContentsSchema
+from pynessie.model import EntrySchema
+from pynessie.model import IcebergTable
 from pynessie.model import ReferenceSchema
+
+
+def _run(runner: CliRunner, args: List[str], input: Optional[str] = None, ret_val: int = 0) -> Result:
+    result = runner.invoke(cli.cli, args, input=input)
+    assert result.exit_code == ret_val
+    return result
 
 
 @pytest.mark.vcr
 def test_command_line_interface() -> None:
     """Test the CLI."""
     runner = CliRunner()
-    result = runner.invoke(cli.cli)
-    assert result.exit_code == 0
+    result = _run(runner, list())
     assert "Usage: cli" in result.output
-    help_result = runner.invoke(cli.cli, ["--help"])
-    assert help_result.exit_code == 0
+    help_result = _run(runner, ["--help"])
     assert "Usage: cli" in help_result.output
-    help_result = runner.invoke(cli.cli, ["--version"])
-    assert help_result.exit_code == 0
+    help_result = _run(runner, ["--version"])
     assert __version__ in help_result.output
-    help_result = runner.invoke(cli.cli, ["--json", "branch", "-l"])
-    assert help_result.exit_code == 0
+    help_result = _run(runner, ["--json", "branch", "-l"])
     references = ReferenceSchema().loads(help_result.output, many=True)
     assert len(references) == 1
     assert references[0].name == "main"
@@ -40,80 +49,172 @@ def test_command_line_interface() -> None:
 def test_config_options() -> None:
     """Ensure config cli option is consistent."""
     runner = CliRunner()
-    result = runner.invoke(cli.cli, ["config"])
-    assert result.exit_code == 0
+    result = _run(runner, ["config"])
     assert "Usage: cli" in result.output
     vars = ["--add x", "--get x", "--list", "--unset x"]
     for i in itertools.permutations(vars, 2):
-        result = runner.invoke(cli.cli, ["config"] + [*i[0].split(" "), *i[1].split(" ")])
-        assert result.exit_code == 2
+        result = _run(runner, ["config"] + [*i[0].split(" "), *i[1].split(" ")], ret_val=2)
         assert "Error: Illegal usage: " in result.output
 
-    result = runner.invoke(cli.cli, ["config", "x", "--add", "x"])
-    assert result.exit_code == 0
+    _run(runner, ["config", "x", "--add", "x"])
 
 
 def test_set_unset() -> None:
     """Test config set/unset/list."""
     runner = CliRunner()
-    result = runner.invoke(cli.cli, ["config", "--add", "test.data", "123", "--type", "int"])
-    assert result.exit_code == 0
-    result = runner.invoke(cli.cli, ["config", "test.data", "--type", "int"])
-    assert result.exit_code == 0
+    _run(runner, ["config", "--add", "test.data", "123", "--type", "int"])
+    result = _run(runner, ["config", "test.data", "--type", "int"])
     assert result.output == "123\n"
-    result = runner.invoke(cli.cli, ["config", "--unset", "test.data"])
-    assert result.exit_code == 0
-    result = runner.invoke(cli.cli, ["config", "--list"])
-    assert result.exit_code == 0
+    _run(runner, ["config", "--unset", "test.data"])
+    result = _run(runner, ["config", "--list"])
     assert "123" not in result.output
+
+
+@pytest.mark.vcr
+def test_remote() -> None:
+    """Test setting and viewing remote."""
+    runner = CliRunner()
+    _run(runner, ["remote", "add", "http://test.url"])
+    _run(runner, ["remote", "add", "http://localhost:19120/api/v1"])
+    result = _run(runner, ["--json", "remote", "show"])
+    assert "main" in result.output
+    _run(runner, ["remote", "set-head", "dev"])
+    result = _run(runner, ["config", "default_branch"])
+    assert result.output == "dev\n"
+    _run(runner, ["remote", "set-head", "dev", "-d"])
+    result = _run(runner, ["config", "default_branch"], ret_val=1)
+    assert result.output == ""
+    assert isinstance(result.exception, confuse.exceptions.ConfigTypeError)
+    _run(runner, ["remote", "set-head", "main"])
 
 
 @pytest.mark.vcr
 def test_log() -> None:
     """Test log and log filtering."""
     runner = CliRunner()
-    result = runner.invoke(cli.cli, ["--json", "log"])
-    assert result.exit_code == 0
+    result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
-    assert len(logs) == 4
-    result = runner.invoke(cli.cli, ["--json", "log", "a8e1c2b99026bc7c1bdf409f1ce538bbde7f898443ef7aed5c999e9769b68689"])
-    assert result.exit_code == 0
+    assert len(logs) == 0
+    _run(
+        runner,
+        [
+            "contents",
+            "--set",
+            "foo.bar",
+            "--ref",
+            "main",
+            "-m",
+            "test_message",
+            "-c",
+            "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        ],
+        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+    )
+    result = _run(runner, ["--json", "contents", "foo.bar"])
+    tables = ContentsSchema().loads(result.output, many=True)
+    assert len(tables) == 1
+    assert tables[0] == IcebergTable("/a/b/c")
+    result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
-    assert len(logs) == 3
-    result = runner.invoke(cli.cli, ["--json", "log", "f5bd419dc54585d38082123120b0b268361f97efff5d64ddb1cc707282e2c63b"])
-    assert result.exit_code == 0
+    assert len(logs) == 1
+    result = _run(runner, ["--json", "log", logs[0]["hash"]])
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 1
+    result = _run(runner, ["--json", "contents", "--list"])
+    entries = EntrySchema().loads(result.output, many=True)
+    assert len(entries) == 1
+    _run(runner, ["--json", "contents", "--delete", "foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
+    result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 2
+    result = _run(runner, ["--json", "log", "{}..{}".format(logs[0]["hash"], logs[1]["hash"])])
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 1
 
 
 @pytest.mark.vcr
 def test_ref() -> None:
     """Test create and assign refs."""
     runner = CliRunner()
-    result = runner.invoke(cli.cli, ["--json", "branch"])
-    assert result.exit_code == 0
+    result = _run(runner, ["--json", "branch"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 1
-    result = runner.invoke(cli.cli, ["branch", "dev"])
-    assert result.exit_code == 0
-    result = runner.invoke(cli.cli, ["--json", "branch"])
-    assert result.exit_code == 0
+    _run(runner, ["branch", "dev"])
+    result = _run(runner, ["--json", "branch"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 2
-    result = runner.invoke(cli.cli, ["branch", "etl", "main"])
-    assert result.exit_code == 0
-    result = runner.invoke(cli.cli, ["--json", "branch"])
-    assert result.exit_code == 0
+    _run(runner, ["branch", "etl", "main"])
+    result = _run(runner, ["--json", "branch"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 3
-    result = runner.invoke(cli.cli, ["branch", "-d", "etl"])
-    assert result.exit_code == 0
-    result = runner.invoke(cli.cli, ["branch", "-d", "dev"])
-    assert result.exit_code == 0
-    result = runner.invoke(cli.cli, ["--json", "branch"])
-    assert result.exit_code == 0
+    _run(runner, ["branch", "-d", "etl"])
+    _run(runner, ["branch", "-d", "dev"])
+    result = _run(runner, ["--json", "branch"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 1
+
+
+@pytest.mark.vcr
+def test_tag() -> None:
+    """Test create and assign refs."""
+    runner = CliRunner()
+    result = _run(runner, ["--json", "tag"])
+    references = ReferenceSchema().loads(result.output, many=True)
+    assert len(references) == 0
+    _run(runner, ["tag", "dev", "main"])
+    result = _run(runner, ["--json", "tag"])
+    references = ReferenceSchema().loads(result.output, many=True)
+    assert len(references) == 1
+    _run(runner, ["tag", "etl", "main"])
+    result = _run(runner, ["--json", "tag"])
+    references = ReferenceSchema().loads(result.output, many=True)
+    assert len(references) == 2
+    _run(runner, ["tag", "-d", "etl"])
+    _run(runner, ["tag", "-d", "dev"])
+    result = _run(runner, ["--json", "tag"])
+    references = ReferenceSchema().loads(result.output, many=True)
+    assert len(references) == 0
+    _run(runner, ["tag", "v1.0"], ret_val=1)
+
+
+@pytest.mark.vcr
+def test_assign() -> None:
+    """Test assign operation."""
+    runner = CliRunner()
+    _run(runner, ["branch", "dev"])
+    _run(
+        runner,
+        [
+            "contents",
+            "--set",
+            "foo.bar",
+            "--ref",
+            "dev",
+            "-m",
+            "test_message",
+            "-c",
+            "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+        ],
+        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+    )
+    _run(runner, ["branch", "main", "dev", "--force"])
+    result = _run(runner, ["--json", "branch"])
+    branches = ReferenceSchema().loads(result.output, many=True)
+    refs = {i.name: i.hash_ for i in branches}
+    assert refs["main"] == refs["dev"]
+    _run(runner, ["tag", "v1.0", "main"])
+    result = _run(runner, ["--json", "tag"])
+    tags = {i.name: i.hash_ for i in ReferenceSchema().loads(result.output, many=True)}
+    assert tags["v1.0"] == refs["main"]
+    _run(runner, ["tag", "v1.0", "dev", "--force"])
+    result = _run(runner, ["--json", "tag"])
+    tags = {i.name: i.hash_ for i in ReferenceSchema().loads(result.output, many=True)}
+    assert tags["v1.0"] == refs["dev"]
+    _run(runner, ["branch", "dev", "--delete"])
+    _run(runner, ["tag", "v1.0", "--delete"])
+    result = _run(runner, ["--json", "log"])
+    logs = simplejson.loads(result.output)
+    _run(runner, ["--json", "contents", "--delete", "foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
 
 
 @pytest.mark.doc
@@ -123,8 +224,7 @@ def test_all_help_options() -> None:
     args = ["", "config", "branch", "tag", "remote", "log", "merge", "cherry-pick", "contents"]
 
     for i in args:
-        result = runner.invoke(cli.cli, [x for x in [i] if x] + ["--help"])
-        assert result.exit_code == 0
+        result = _run(runner, [x for x in [i] if x] + ["--help"])
         cwd = os.getcwd()
         with open(Path(Path(cwd), "docs", "{}.rst".format(i if i else "main")), "w") as f:
             f.write(".. code-block:: bash\n\n\t")

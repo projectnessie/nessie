@@ -37,7 +37,7 @@ def show_log(
             if before and _is_before(before, i.commitTime):
                 continue
             if end and i.hash_ == end:
-                raise StopIteration
+                break
             yield i
 
     return generator()

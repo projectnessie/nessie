@@ -21,6 +21,7 @@ from ._log import show_log
 from ._ref import handle_branch_tag
 from .conf import build_config
 from .conf import process
+from .error import error_handler
 from .error import NessieNotFoundException
 from .model import CommitMeta
 from .model import CommitMetaSchema
@@ -118,7 +119,7 @@ def remote(ctx: ContextObject) -> None:
     pass
 
 
-@cli.command(cls=DefaultHelp)
+@cli.command("config", cls=DefaultHelp)
 @click.option("--get", cls=MutuallyExclusiveOption, help="get config parameter", mutually_exclusive=["set", "list", "unset"])
 @click.option("--add", cls=MutuallyExclusiveOption, help="set config parameter", mutually_exclusive=["get", "list", "unset"])
 @click.option(
@@ -133,14 +134,16 @@ def remote(ctx: ContextObject) -> None:
 @click.option("--type", help="type to interpret config value to set or get. Allowed options: bool, int")
 @click.argument("key", nargs=1, required=False)
 @pass_client
+@error_handler
 def config(ctx: ContextObject, get: str, add: str, list: bool, unset: str, type: str, key: str) -> None:
     """Set and view config."""
     res = process(get, add, list, unset, key, type)
     click.echo(res)
 
 
-@remote.command()
+@remote.command("show")
 @pass_client
+@error_handler
 def show(ctx: ContextObject) -> None:
     """Show current remote."""
     click.echo("Remote URL: " + ctx.nessie._base_url)
@@ -153,24 +156,26 @@ def show(ctx: ContextObject) -> None:
 @remote.command(name="add")
 @click.argument("endpoint", nargs=1, required=True)
 @pass_client
+@error_handler
 def set_(ctx: ContextObject, endpoint: str) -> None:
     """Set current remote."""
     click.echo(process(None, "endpoint", False, None, endpoint))
 
 
-@remote.command()
+@remote.command("set-head")
 @click.argument("head", nargs=1, required=True)
 @click.option("-d", "--delete", is_flag=True, help="delete the default branch")
 @pass_client
+@error_handler
 def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
     """Set current default branch. If -d is passed it will remove the default branch."""
     if delete:
-        click.echo(process(None, "default_branch", False, None, head))
-    else:
         click.echo(process(None, None, False, "default_branch", None))
+    else:
+        click.echo(process(None, "default_branch", False, None, head))
 
 
-@cli.command()
+@cli.command("log")
 @click.option("-n", "--number", help="number of log entries to return", type=int, default=-1)
 @click.option("--since", "--after", help="Commits more recent than specific date")
 @click.option("--until", "--before", help="Commits older than specific date")
@@ -178,6 +183,7 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 @click.argument("revision_range", nargs=1, required=False)
 @click.argument("paths", nargs=-1, type=click.Path(exists=False), required=False)
 @pass_client
+@error_handler
 def log(ctx: ContextObject, number: int, since: str, until: str, author: str, revision_range: str, paths: Tuple[click.Path]) -> None:
     """Show commit log.
 
@@ -224,6 +230,7 @@ def _format_time(epoch: int) -> str:
 @click.argument("branch", nargs=1, required=False)
 @click.argument("new_branch", nargs=1, required=False)
 @pass_client
+@error_handler
 def branch_(
     ctx: ContextObject,
     list: bool,
@@ -259,11 +266,13 @@ def branch_(
     results = handle_branch_tag(ctx.nessie, list, delete, branch, new_branch, True, ctx.json, force, ctx.verbose, condition)
     if ctx.json:
         click.echo(results)
+    elif results:
+        click.echo(results)
     else:
-        click.echo_via_pager(results)
+        click.echo()
 
 
-@cli.command()
+@cli.command("tag")
 @click.option("-l", "--list", cls=MutuallyExclusiveOption, is_flag=True, help="list branches", mutually_exclusive=["delete"])
 @click.option("-d", "--delete", cls=MutuallyExclusiveOption, is_flag=True, help="delete a branches", mutually_exclusive=["list"])
 @click.option("-f", "--force", is_flag=True, help="force branch assignment")
@@ -271,6 +280,7 @@ def branch_(
 @click.argument("tag_name", nargs=1, required=False)
 @click.argument("new_tag", nargs=1, required=False)
 @pass_client
+@error_handler
 def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str, new_tag: str, condition: str) -> None:
     """Tag operations.
 
@@ -298,11 +308,13 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
     results = handle_branch_tag(ctx.nessie, list, delete, tag_name, new_tag, False, ctx.json, force, ctx.verbose, condition)
     if ctx.json:
         click.echo(results)
+    elif results:
+        click.echo(results)
     else:
-        click.echo_via_pager(results)
+        click.echo()
 
 
-@cli.command()
+@cli.command("merge")
 @click.option("-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used")
 @click.argument("merge_branch", nargs=1, required=False)
 @click.option(
@@ -321,6 +333,7 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
     help="Conditional Hash. Only perform the action if branch currently points to condition.",
 )
 @pass_client
+@error_handler
 def merge(ctx: ContextObject, branch: str, force: bool, condition: str, merge_branch: str) -> None:
     """Merge BRANCH into current branch. BRANCH can be a hash or branch."""
     if not force and not condition:
@@ -332,7 +345,7 @@ def merge(ctx: ContextObject, branch: str, force: bool, condition: str, merge_br
     click.echo()
 
 
-@cli.command()
+@cli.command("cherry-pick")
 @click.option("-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used")
 @click.option(
     "-f",
@@ -351,6 +364,7 @@ def merge(ctx: ContextObject, branch: str, force: bool, condition: str, merge_br
 )
 @click.argument("hashes", nargs=-1, required=False)
 @pass_client
+@error_handler
 def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, hashes: Tuple[str]) -> None:
     """Transplant HASHES onto current branch."""
     if not force and not condition:
@@ -362,7 +376,7 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
     click.echo()
 
 
-@cli.command()
+@cli.command("contents")
 @click.option(
     "-l",
     "--list",
@@ -396,6 +410,7 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
 @click.option("-m", "--message", help="commit message")
 @click.argument("key", nargs=-1, required=False)
 @pass_client
+@error_handler
 def contents(ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[str], ref: str, message: str, condition: str) -> None:
     """Contents operations.
 
@@ -405,21 +420,21 @@ def contents(ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[
         keys = ctx.nessie.list_keys(ref if ref else ctx.nessie.get_default_branch())
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
-        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, *key), old_hash=condition, reason=_get_message(message))
+        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, delete, *key), old_hash=condition, reason=_get_message(message))
         results = ""
     elif set:
-        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, *key), old_hash=condition, reason=_get_message(message))
+        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, delete, *key), old_hash=condition, reason=_get_message(message))
         results = ""
     else:
 
-        def content(x: str) -> Generator[Contents, Any, None]:
+        def content(*x: str) -> Generator[Contents, Any, None]:
             return ctx.nessie.get_values(ref if ref else ctx.nessie.get_default_branch(), *x)
 
         results = ContentsSchema().dumps(content(*key), many=True) if ctx.json else (i.pretty_print() for i in content(*key))
     if ctx.json or not results:
         click.echo(results)
     else:
-        click.echo_via_pager(results)
+        click.echo(results)
 
 
 def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: str) -> MultiContents:
@@ -430,13 +445,13 @@ def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: s
             content = nessie.get_values(ref, key)
             content_json = ContentsSchema().dumps(content.__next__())
         except NessieNotFoundException:
-            content_json = ""
+            content_json = click.get_text_stream("stdin").read()
 
         MARKER = "# Everything below is ignored\n"
         if delete:
             message = "\n\n" + MARKER
         else:
-            message = click.edit(
+            edit_message = (
                 content_json
                 + "\n\n"
                 + MARKER
@@ -444,6 +459,11 @@ def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: s
                 + " Closing without change will result in a no-op."
                 + " Removing the content results in a delete"
             )
+            try:
+                message = click.edit(edit_message)
+            except click.ClickException:
+                message = edit_message
+
         if message is not None:
             message_altered = message.split(MARKER, 1)[0].strip("\n")
             if message_altered:

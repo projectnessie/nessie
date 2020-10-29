@@ -15,7 +15,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}\
+        \ \"d7ccac9f544e0da892002523f3c52d17f4d471488f525ec83ee719e7ee6a0197\"\n}\
         \ ]"
     headers:
       Content-Length:
@@ -48,32 +48,28 @@ interactions:
         \  \"status\" : \"CONFLICT\",\n  \"serverStackTrace\" : \"com.dremio.nessie.error.NessieConflictException:\
         \ A reference of name [main] already exists.\\n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:119)\\\
         n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:110)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createReference$$superaccessor12(TreeResource_Subclass.zig:3105)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass$$function$$12.apply(TreeResource_Subclass$$function$$12.zig:33)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createReference$$superaccessor9(TreeResource_Subclass.zig:2684)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass$$function$$9.apply(TreeResource_Subclass$$function$$9.zig:33)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.interceptor.AbstractMethodValidationInterceptor.validateMethodInvocation(AbstractMethodValidationInterceptor.java:69)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor.validateMethodInvocation(JaxrsEndPointValidationInterceptor.java:32)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor_Bean.intercept(JaxrsEndPointValidationInterceptor_Bean.zig:341)\\\
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.increment(CountedInterceptor.java:51)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.countedMethod(CountedInterceptor.java:33)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor_Bean.intercept(CountedInterceptor_Bean.zig:326)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.time(TimedInterceptor.java:54)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.timedMethod(TimedInterceptor.java:35)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:326)\\\
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
+        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.increment(CountedInterceptor.java:51)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.countedMethod(CountedInterceptor.java:33)\\\
+        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor_Bean.intercept(CountedInterceptor_Bean.zig:326)\\\
+        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
         n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createReference(TreeResource_Subclass.zig:3044)\\\
+        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createReference(TreeResource_Subclass.zig:2623)\\\
         n\\tat com.dremio.nessie.services.rest.TreeResource_ClientProxy.createReference(TreeResource_ClientProxy.zig:164)\\\
-        n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native\
-        \ Method)\\n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\\\
-        n\\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\\\
-        n\\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\\n\\tat\
-        \ org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:170)\\\
+        n\\tat java.lang.reflect.Method.invoke(Method.java:566)\\n\\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:170)\\\
         n\\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:130)\\\
         n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:643)\\\
         n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:507)\\\
@@ -93,35 +89,33 @@ interactions:
         n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.dispatch(VertxRequestHandler.java:131)\\\
         n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.access$000(VertxRequestHandler.java:37)\\\
         n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler$1.run(VertxRequestHandler.java:94)\\\
-        n\\tat io.quarkus.runtime.CleanableExecutor$CleaningRunnable.run(CleanableExecutor.java:231)\\\
-        n\\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)\\\
-        n\\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)\\\
         n\\tat org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)\\\
         n\\tat org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:2046)\\\
         n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1578)\\\
         n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1452)\\\
         n\\tat org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)\\\
         n\\tat org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)\\\
-        n\\tat java.base/java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
+        n\\tat java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
+        n\\tat com.oracle.svm.core.thread.JavaThreads.threadStartRoutine(JavaThreads.java:517)\\\
+        n\\tat com.oracle.svm.core.posix.thread.PosixJavaThreads.pthreadStartRoutine(PosixJavaThreads.java:192)\\\
         nCaused by: com.dremio.nessie.versioned.ReferenceAlreadyExistsException: branch\
-        \ 'main' already exists\\n\\tat com.dremio.nessie.versioned.ReferenceAlreadyExistsException.forReference(ReferenceAlreadyExistsException.java:50)\\\
-        n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.lambda$15(InMemoryVersionStore.java:347)\\\
-        n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.lambda$26(InMemoryVersionStore.java:503)\\\
-        n\\tat java.base/java.util.concurrent.ConcurrentHashMap.compute(ConcurrentHashMap.java:1932)\\\
+        \ 'main' already exists\\n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.lambda$create$10(InMemoryVersionStore.java:347)\\\
+        n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.lambda$compute$17(InMemoryVersionStore.java:503)\\\
+        n\\tat java.util.concurrent.ConcurrentHashMap.compute(ConcurrentHashMap.java:1932)\\\
         n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.compute(InMemoryVersionStore.java:501)\\\
         n\\tat com.dremio.nessie.versioned.memory.InMemoryVersionStore.create(InMemoryVersionStore.java:345)\\\
         n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:115)\\\
-        n\\t... 57 more\\n\"\n}"
+        n\\t... 53 more\\n\"\n}"
     headers:
       Content-Length:
-      - '6884'
+      - '6383'
       Content-Type:
       - application/json
     status:
       code: 409
       message: Conflict
 - request:
-    body: '{"name": "test", "hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+    body: '{"name": "test", "hash": "d7ccac9f544e0da892002523f3c52d17f4d471488f525ec83ee719e7ee6a0197",
       "type": "BRANCH"}'
     headers:
       Accept:
@@ -161,8 +155,8 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n},\
-        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\
+        \ \"d7ccac9f544e0da892002523f3c52d17f4d471488f525ec83ee719e7ee6a0197\"\n},\
+        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"d7ccac9f544e0da892002523f3c52d17f4d471488f525ec83ee719e7ee6a0197\"\
         \n} ]"
     headers:
       Content-Length:
@@ -188,7 +182,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"\
-        2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
+        d7ccac9f544e0da892002523f3c52d17f4d471488f525ec83ee719e7ee6a0197\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -212,7 +206,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/test/entries
   response:
     body:
-      string: "{\n  \"token\" : null,\n  \"hasMore\" : false,\n  \"entries\" : [ ]\n\
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ ]\n\
         }"
     headers:
       Content-Length:
@@ -236,7 +230,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/test?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
+    uri: http://localhost:19120/api/v1/trees/branch/test?expectedHash=d7ccac9f544e0da892002523f3c52d17f4d471488f525ec83ee719e7ee6a0197
   response:
     body:
       string: ''
@@ -260,7 +254,7 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}\
+        \ \"d7ccac9f544e0da892002523f3c52d17f4d471488f525ec83ee719e7ee6a0197\"\n}\
         \ ]"
     headers:
       Content-Length:

@@ -143,7 +143,7 @@ class NessieClient(object):
         if not old_hash:
             old_hash = self.get_reference(branch).hash_
         assert old_hash is not None
-        branch_json = ReferenceSchema().dump(Branch(branch, to_ref))
+        branch_json = ReferenceSchema().dumps(Branch(branch, self.get_reference(to_ref).hash_))
         assign_branch(self._base_url, branch, branch_json, old_hash, self._ssl_verify)
 
     def assign_tag(self: "NessieClient", tag: str, to_ref: str, old_hash: Optional[str] = None) -> None:
@@ -151,7 +151,7 @@ class NessieClient(object):
         if not old_hash:
             old_hash = self.get_reference(tag).hash_
         assert old_hash is not None
-        tag_json = ReferenceSchema().dump(Tag(tag, to_ref))
+        tag_json = ReferenceSchema().dumps(Tag(tag, self.get_reference(to_ref).hash_))
         assign_tag(self._base_url, tag, tag_json, old_hash, self._ssl_verify)
 
     def merge(self: "NessieClient", branch: str, to_branch: str, old_hash: Optional[str] = None) -> None:
