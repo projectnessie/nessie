@@ -13,16 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React, {Component} from 'react';
-
-class TableList extends Component {
-
-  componentDidMount() {
-    fetch('${config.apiUrl}/tables')
-      .then(res => res.json())
-      .then((data) => {
-        this.setState({tables:data})
-      })
-      .catch(console.log);
-  }
-}
+export * from './Explore.jsx';

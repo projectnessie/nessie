@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export * from './UsersPage';
+export * from '../Explore/ExploreLink.jsx';

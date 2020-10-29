@@ -24,7 +24,7 @@ export const authenticationService = {
   login,
   logout,
   currentUser: currentUserSubject.asObservable(),
-  get currentUserValue () { return currentUserSubject.value }
+  get currentUserValue () { return {token: "xxx"} /*currentUserSubject.value*/ }
 };
 
 function login(username, password) {

@@ -16,4 +16,5 @@
 export * from './auth-header';
 export * from './handle-response';
 export * from './history';
-export * from './nest-tables';
+export * from './api';
+export * from './api-wrapper';

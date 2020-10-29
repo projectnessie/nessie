@@ -24,7 +24,6 @@ class LoginPage extends React.Component {
     super(props);
 
     // redirect to home if already logged in
-    console.log(authenticationService.currentUserValue);
     if (authenticationService.currentUserValue) {
       this.props.history.push('/');
     }
