@@ -1,6 +1,6 @@
 interactions:
 - request:
-    body: '{"hash": null, "name": "dev", "type": "BRANCH"}'
+    body: '{"name": "dev", "hash": null, "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -137,7 +137,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
-        0912a13397b09bac1590782d783b6a823fbf509f451aa2b453b3a7b79bb4d152\"\n}"
+        b8da0d016b0934a35cc13657adc8aa08a3271d506130f3fec6bddbcf2887a178\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -162,7 +162,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"\
-        4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb\"\n}"
+        73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -172,8 +172,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb",
-      "name": "dev", "type": "BRANCH"}'
+    body: '{"name": "main", "hash": "73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed",
+      "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -182,13 +182,13 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '109'
+      - '110'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.24.0
     method: PUT
-    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=0912a13397b09bac1590782d783b6a823fbf509f451aa2b453b3a7b79bb4d152
+    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=b8da0d016b0934a35cc13657adc8aa08a3271d506130f3fec6bddbcf2887a178
   response:
     body:
       string: ''
@@ -196,6 +196,33 @@ interactions:
     status:
       code: 204
       message: No Content
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
+        \ \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\n},\
+        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\
+        \n} ]"
+    headers:
+      Content-Length:
+      - '247'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
 - request:
     body: null
     headers:
@@ -293,7 +320,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
-        4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb\"\n}"
+        73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\n}"
     headers:
       Content-Length:
       - '121'
@@ -303,8 +330,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb",
-      "name": "v1.0", "type": "TAG"}'
+    body: '{"name": "v1.0", "hash": "73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed",
+      "type": "TAG"}'
     headers:
       Accept:
       - '*/*'
@@ -339,10 +366,38 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
+        \ \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\n},\
+        \ {\n  \"type\" : \"TAG\",\n  \"name\" : \"v1.0\",\n  \"hash\" : \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\
+        \n}, {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\
+        \n} ]"
+    headers:
+      Content-Length:
+      - '367'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
     uri: http://localhost:19120/api/v1/trees/tree/v1.0
   response:
     body:
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"v1.0\",\n  \"hash\" : \"4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb\"\
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"v1.0\",\n  \"hash\" : \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\
         \n}"
     headers:
       Content-Length:
@@ -368,7 +423,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"\
-        4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb\"\n}"
+        73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -378,8 +433,8 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"hash": "4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb",
-      "name": "dev", "type": "BRANCH"}'
+    body: '{"name": "v1.0", "hash": "73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed",
+      "type": "TAG"}'
     headers:
       Accept:
       - '*/*'
@@ -388,76 +443,48 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '109'
+      - '107'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.24.0
     method: PUT
-    uri: http://localhost:19120/api/v1/trees/tag/v1.0?expectedHash=4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb
+    uri: http://localhost:19120/api/v1/trees/tag/v1.0?expectedHash=73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed
   response:
     body:
-      string: "{\n  \"message\" : \"Could not resolve type id 'BRANCH' as a subtype\
-        \ of `com.dremio.nessie.model.Tag`: Class `com.dremio.nessie.model.Branch`\
-        \ not subtype of `com.dremio.nessie.model.Tag`\\n at [Source: (io.quarkus.vertx.http.runtime.VertxInputStream);\
-        \ line: 1, column: 101]\",\n  \"status\" : \"BAD_REQUEST\",\n  \"serverStackTrace\"\
-        \ : \"com.fasterxml.jackson.databind.exc.InvalidTypeIdException: Could not\
-        \ resolve type id 'BRANCH' as a subtype of `com.dremio.nessie.model.Tag`:\
-        \ Class `com.dremio.nessie.model.Branch` not subtype of `com.dremio.nessie.model.Tag`\\\
-        n at [Source: (io.quarkus.vertx.http.runtime.VertxInputStream); line: 1, column:\
-        \ 101]\\n\\tat com.fasterxml.jackson.databind.DeserializationContext.invalidTypeIdException(DeserializationContext.java:1784)\\\
-        n\\tat com.fasterxml.jackson.databind.jsontype.impl.TypeDeserializerBase._findDeserializer(TypeDeserializerBase.java:194)\\\
-        n\\tat com.fasterxml.jackson.databind.jsontype.impl.AsPropertyTypeDeserializer._deserializeTypedForId(AsPropertyTypeDeserializer.java:115)\\\
-        n\\tat com.fasterxml.jackson.databind.jsontype.impl.AsPropertyTypeDeserializer.deserializeTypedFromObject(AsPropertyTypeDeserializer.java:99)\\\
-        n\\tat com.fasterxml.jackson.databind.deser.BeanDeserializerBase.deserializeWithType(BeanDeserializerBase.java:1209)\\\
-        n\\tat com.fasterxml.jackson.databind.deser.impl.TypeWrappedDeserializer.deserialize(TypeWrappedDeserializer.java:68)\\\
-        n\\tat com.fasterxml.jackson.databind.ObjectReader._bind(ObjectReader.java:2042)\\\
-        n\\tat com.fasterxml.jackson.databind.ObjectReader.readValue(ObjectReader.java:1201)\\\
-        n\\tat org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider.readFrom(ResteasyJackson2Provider.java:191)\\\
-        n\\tat org.jboss.resteasy.core.interception.jaxrs.AbstractReaderInterceptorContext.readFrom(AbstractReaderInterceptorContext.java:101)\\\
-        n\\tat org.jboss.resteasy.core.interception.jaxrs.ServerReaderInterceptorContext.readFrom(ServerReaderInterceptorContext.java:63)\\\
-        n\\tat org.jboss.resteasy.core.interception.jaxrs.AbstractReaderInterceptorContext.proceed(AbstractReaderInterceptorContext.java:80)\\\
-        n\\tat org.jboss.resteasy.plugins.interceptors.GZIPDecodingInterceptor.aroundReadFrom(GZIPDecodingInterceptor.java:123)\\\
-        n\\tat org.jboss.resteasy.core.interception.jaxrs.AbstractReaderInterceptorContext.proceed(AbstractReaderInterceptorContext.java:88)\\\
-        n\\tat org.jboss.resteasy.core.MessageBodyParameterInjector.inject(MessageBodyParameterInjector.java:213)\\\
-        n\\tat org.jboss.resteasy.core.MethodInjectorImpl.injectArguments(MethodInjectorImpl.java:95)\\\
-        n\\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:128)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:643)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:507)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$2(ResourceMethodInvoker.java:457)\\\
-        n\\tat org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:364)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:459)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:419)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:393)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:68)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:492)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:261)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:161)\\\
-        n\\tat org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:364)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:164)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:247)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.RequestDispatcher.service(RequestDispatcher.java:73)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.dispatch(VertxRequestHandler.java:131)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.access$000(VertxRequestHandler.java:37)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler$1.run(VertxRequestHandler.java:94)\\\
-        n\\tat org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:2046)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1578)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1452)\\\
-        n\\tat org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)\\\
-        n\\tat org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)\\\
-        n\\tat java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
-        n\\tat com.oracle.svm.core.thread.JavaThreads.threadStartRoutine(JavaThreads.java:517)\\\
-        n\\tat com.oracle.svm.core.posix.thread.PosixJavaThreads.pthreadStartRoutine(PosixJavaThreads.java:192)\\\
-        n\"\n}"
+      string: ''
+    headers: {}
+    status:
+      code: 204
+      message: No Content
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
+        \ \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\n},\
+        \ {\n  \"type\" : \"TAG\",\n  \"name\" : \"v1.0\",\n  \"hash\" : \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\
+        \n}, {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\
+        \n} ]"
     headers:
       Content-Length:
-      - '5294'
+      - '367'
       Content-Type:
       - application/json
     status:
-      code: 400
-      message: Bad Request
+      code: 200
+      message: OK
 - request:
     body: null
     headers:
@@ -474,7 +501,7 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"\
-        4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb\"\n}"
+        73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\n}"
     headers:
       Content-Length:
       - '120'
@@ -497,7 +524,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb
+    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed
   response:
     body:
       string: ''
@@ -520,7 +547,7 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/tree/v1.0
   response:
     body:
-      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"v1.0\",\n  \"hash\" : \"4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb\"\
+      string: "{\n  \"type\" : \"TAG\",\n  \"name\" : \"v1.0\",\n  \"hash\" : \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\
         \n}"
     headers:
       Content-Length:
@@ -544,7 +571,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/tag/v1.0?expectedHash=4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb
+    uri: http://localhost:19120/api/v1/trees/tag/v1.0?expectedHash=73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed
   response:
     body:
       string: ''
@@ -568,9 +595,9 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
-        \ [ {\n    \"hash\" : \"4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb\"\
+        \ [ {\n    \"hash\" : \"73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed\"\
         ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
-        ,\n    \"commitTime\" : 1603988959560\n  } ]\n}"
+        ,\n    \"commitTime\" : 1603990063320\n  } ]\n}"
     headers:
       Content-Length:
       - '256'
@@ -620,7 +647,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=4483df17a9942731d00c7a62015bb2da677ff2705552c9af6a4c0a47d2631bfb&message=delete_message
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=73b0f74b594408f77173ce968252f6d7e4174f8579ef283cc5d2c32d5d683fed&message=delete_message
   response:
     body:
       string: ''

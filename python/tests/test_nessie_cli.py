@@ -198,8 +198,18 @@ def test_assign() -> None:
         input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
     )
     _run(runner, ["branch", "main", "dev", "--force"])
+    result = _run(runner, ["--json", "branch"])
+    branches = ReferenceSchema().loads(result.output, many=True)
+    refs = {i.name: i.hash_ for i in branches}
+    assert refs["main"] == refs["dev"]
     _run(runner, ["tag", "v1.0", "main"])
-    _run(runner, ["tag", "v1.0", "dev", "--force"], ret_val=1)  # todo fix tag reassign
+    result = _run(runner, ["--json", "tag"])
+    tags = {i.name: i.hash_ for i in ReferenceSchema().loads(result.output, many=True)}
+    assert tags["v1.0"] == refs["main"]
+    _run(runner, ["tag", "v1.0", "dev", "--force"])
+    result = _run(runner, ["--json", "tag"])
+    tags = {i.name: i.hash_ for i in ReferenceSchema().loads(result.output, many=True)}
+    assert tags["v1.0"] == refs["dev"]
     _run(runner, ["branch", "dev", "--delete"])
     _run(runner, ["tag", "v1.0", "--delete"])
     result = _run(runner, ["--json", "log"])
