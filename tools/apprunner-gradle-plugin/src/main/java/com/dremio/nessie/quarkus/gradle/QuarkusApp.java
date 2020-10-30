@@ -123,15 +123,15 @@ public class QuarkusApp extends com.dremio.nessie.quarkus.maven.QuarkusApp {
     deploy.getResolvedConfiguration().getResolvedArtifacts().stream()
       .map(QuarkusApp::toDependency).forEach(deployDeps::add);
 
-
-    // find the path of the base app artifact
-    Optional<String> path = configuration.getFiles().stream().map(File::getAbsolutePath)
-      .filter(x->x.contains(appArtifact.getArtifactId()))
-      .filter(x->x.contains(appArtifact.getGroupId().replace(".", File.separator)) || x.contains(appArtifact.getGroupId()))
-      .filter(x->x.contains(appArtifact.getVersion()))
-      .findFirst();
-    appArtifact.setPath(Paths.get(path.orElseThrow(() ->
-      new UnsupportedOperationException(String.format("Unknown path for app artifact %s", appArtifact)))));
+    // find the path of the base app artifact. We want the direct dependency only so we do a difference between all
+    // files and the the files we know from indirect dependencies. The leftovers are the files we want.
+    Set<File> files = configuration.getFiles();
+    Set<File> userDepFiles = userDeps.stream().map(x -> x.getArtifact().getPaths().getSinglePath().toFile()).collect(Collectors.toSet());
+    files.removeAll(userDepFiles);
+    if (files.size() != 1) {
+      throw new UnsupportedOperationException(String.format("Unknown path for app artifact %s", appArtifact));
+    }
+    appArtifact.setPath(files.iterator().next().toPath());
 
     // combine user and deploy deps and build app model
     List<AppDependency> allDeps = new ArrayList<>(userDeps);
