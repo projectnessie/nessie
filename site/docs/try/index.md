@@ -45,7 +45,7 @@ the following:
 ```bash
 # create a branch pointing to the same hash as
 # the current default branch (typically the main branch)
-$ nessie create-branch my_branch
+$ nessie branch my_branch
 ```
 
 From there, you can use one of the three main Nessie integrations of:

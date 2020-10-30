@@ -23,8 +23,8 @@ google_analytics:
   - auto
 extra:
   versions:
-    java: 0.1.0
-    python: v0.1.1
+    java: 0.2.1
+    python: v0.2.1
   social:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/projectnessie
