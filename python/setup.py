@@ -18,7 +18,7 @@ setup_requirements = ["pytest-runner", "pip"]
 
 setup(
     author="Ryan Murray",
-    author_email="rymurr@dremio.com",
+    author_email="nessie-release-builder@dremio.com",
     python_requires=">=3.5",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
