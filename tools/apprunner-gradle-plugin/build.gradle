@@ -36,10 +36,10 @@ compileJava {
 }
 
 dependencies {
-  implementation platform('io.quarkus:quarkus-bom:1.9.0.Final')
+  implementation platform('io.quarkus:quarkus-bom:1.9.1.Final')
 
   compile "io.quarkus:quarkus-bootstrap-core"
-  compile "org.projectnessie:nessie-apprunner-maven-plugin:$version"
+  compile "org.projectnessie:nessie-apprunner-maven-plugin:0.2.0"
   compile "org.eclipse.microprofile.config:microprofile-config-api"
 }
 

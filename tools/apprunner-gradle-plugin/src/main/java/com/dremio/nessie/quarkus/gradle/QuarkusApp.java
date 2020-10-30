@@ -127,7 +127,7 @@ public class QuarkusApp extends com.dremio.nessie.quarkus.maven.QuarkusApp {
     // find the path of the base app artifact
     Optional<String> path = configuration.getFiles().stream().map(File::getAbsolutePath)
       .filter(x->x.contains(appArtifact.getArtifactId()))
-      .filter(x->x.contains(appArtifact.getGroupId().replace(".", File.separator)))
+      .filter(x->x.contains(appArtifact.getGroupId().replace(".", File.separator)) || x.contains(appArtifact.getGroupId()))
       .filter(x->x.contains(appArtifact.getVersion()))
       .findFirst();
     appArtifact.setPath(Paths.get(path.orElseThrow(() ->
