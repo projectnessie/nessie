@@ -33,9 +33,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -49,6 +49,7 @@ import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.MoreCollectors;
 
 import io.quarkus.bootstrap.BootstrapConstants;
 import io.quarkus.bootstrap.app.RunningQuarkusApplication;
@@ -125,13 +126,15 @@ public class QuarkusApp extends com.dremio.nessie.quarkus.maven.QuarkusApp {
 
     // find the path of the base app artifact. We want the direct dependency only so we do a difference between all
     // files and the the files we know from indirect dependencies. The leftovers are the files we want.
-    Set<File> files = configuration.getFiles();
-    Set<File> userDepFiles = userDeps.stream().map(x -> x.getArtifact().getPaths().getSinglePath().toFile()).collect(Collectors.toSet());
-    files.removeAll(userDepFiles);
-    if (files.size() != 1) {
-      throw new UnsupportedOperationException(String.format("Unknown path for app artifact %s", appArtifact));
-    }
-    appArtifact.setPath(files.iterator().next().toPath());
+    final Set<File> userDepFiles = userDeps.stream().map(x -> x.getArtifact().getPaths().getSinglePath().toFile()).collect(Collectors.toSet());
+    final Path path = configuration.getFiles()
+      .stream()
+      .filter(((Predicate<File>) userDepFiles::contains).negate())
+      .map(File::toPath)
+      .findFirst()
+      .orElseThrow(() -> new UnsupportedOperationException(String.format("Unknown path for app artifact %s", appArtifact)));
+
+    appArtifact.setPath(path);
 
     // combine user and deploy deps and build app model
     List<AppDependency> allDeps = new ArrayList<>(userDeps);
