@@ -14,5 +14,5 @@ labels: kind/bug
 **How to reproduce it (as minimally and precisely as possible)**:
 
 **Details**:
-- Nessie server version and type (docker/built from source):
-- Nessie client version (pynessie):
+- Nessie server type (docker/built from source) and version:
+- Client type (Ex: UI/Spark/pynessie ...) and version:
