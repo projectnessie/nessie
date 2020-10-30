@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-iceberg</artifactId>
-    <version>0.2.1</version>
+    <version>0.2.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-iceberg-spark2</artifactId>
