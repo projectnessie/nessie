@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-hms-parent</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.0</version>
   </parent>
 
   <artifactId>nessie-hms-hive3</artifactId>
@@ -264,7 +264,7 @@
           <classpathScope>test</classpathScope>
           <arguments>
             <argument>-classpath</argument>
-            <classpath/>
+            <classpath />
             <argument>com.dremio.nessie.hms.CodeGenerator</argument>
             <argument>-m=HIVE3</argument>
             <argument>-o=${project.build.directory}/generated-sources/generator</argument>
