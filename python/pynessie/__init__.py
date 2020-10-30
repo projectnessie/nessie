@@ -9,7 +9,7 @@ from .nessie_client import NessieClient
 
 __author__ = """Project Nessie"""
 __email__ = "rymurr@dremio.com"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 
 def get_config(config_dir: str = None, args: dict = None) -> confuse.Configuration:
