@@ -2,10 +2,10 @@
 History
 =======
 
-0.1.1 (2020-10-01)
+0.2.1 (2020-10-30)
 ------------------
 
-* First release on PyPI.
+* fix install requirements in setup.py
 
 0.2.0 (2020-10-30)
 ------------------
@@ -14,7 +14,7 @@ History
 * more complete coverage of REST endpoints
 * better testing
 
-0.2.1 (2020-10-30)
+0.1.1 (2020-10-01)
 ------------------
 
-* fix install requirements in setup.py
+* First release on PyPI.
