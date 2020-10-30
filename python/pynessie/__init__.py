@@ -8,7 +8,7 @@ from .conf import build_config
 from .nessie_client import NessieClient
 
 __author__ = """Project Nessie"""
-__email__ = "rymurr@dremio.com"
+__email__ = "nessie-release-builder@dremio.com"
 __version__ = "0.2.1"
 
 
