@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug encountered while using nessie
+about: Report a bug encountered while using Nessie
 labels: kind/bug
 ---
 
