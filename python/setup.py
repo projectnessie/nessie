@@ -11,10 +11,8 @@ with open("README.rst") as readme_file:
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
-requirements = [
-    "Click>=7.0", "requests", "simplejson", "confuse", "desert", "marshmallow",
-    "marshmallow_oneofschema", "attrs"
-]
+with open("requirements.txt") as fp:
+    requirements = fp.read()
 
 setup_requirements = ["pytest-runner", "pip"]
 
