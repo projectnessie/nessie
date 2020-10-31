@@ -17,6 +17,8 @@ theme:
     - navigation.tabs
     - navigation.expand
     - navigation.instant
+extra_css:
+  - stylesheets/extra.css
 
 google_analytics:
   - UA-177850801-1
