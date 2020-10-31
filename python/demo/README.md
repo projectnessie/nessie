@@ -2,6 +2,8 @@
 
 ## Installation
 
+_Supported python versions: 3.5 - 3.8_
+
 * create virtualenv `python -m venv venv`
 * activate venv `source venv/bin/activate`
 * install dependencies `pip install -r requirements.txt`
