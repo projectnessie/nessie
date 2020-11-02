@@ -6,11 +6,21 @@
     "@material-ui/core": "^4.11.0",
     "@material-ui/icons": "^4.9.1",
     "@material-ui/lab": "^4.0.0-alpha.56",
+    "@openapitools/openapi-generator-cli": "^2.0.3",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
+    "@types/bootstrap": "^5.0.0",
+    "@types/history": "^4.7.8",
+    "@types/http-proxy-middleware": "^0.19.3",
+    "@types/material-ui": "^0.21.8",
+    "@types/ramda": "^0.27.32",
+    "@types/react": "^16.9.55",
+    "@types/react-bootstrap": "^0.32.24",
+    "@types/react-dom": "^16.9.9",
+    "@types/react-router-dom": "^5.1.6",
+    "@types/yup": "^0.29.9",
     "bootstrap": "^4.5.0",
-    "fetch-openapi": "^7.0.1",
     "formik": "^2.1.4",
     "history": "^4.10.1",
     "http-proxy-middleware": "^1.0.4",
@@ -23,15 +33,15 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "^3.4.3",
     "rxjs": "^6.6.0",
-    "yup": "^0.28.5",
-    "prop-types": "^15.7.2"
+    "typescript": "^4.0.5",
+    "yup": "^0.28.5"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "generate-api": "fetch-openapi --api-doc-url http://localhost:19120/openapi --output-file-path ./src/utils/api.js --preset es6"
+    "generate-api": "openapi-generator-cli generate -g typescript-fetch -i http://localhost:19120/openapi -o ./src/utils/api --skip-validate-spec --additional-properties=supportsES6=true"
   },
   "eslintConfig": {
     "extends": "react-app"
