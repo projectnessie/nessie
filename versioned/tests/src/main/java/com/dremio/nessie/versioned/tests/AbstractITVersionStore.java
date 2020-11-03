@@ -604,6 +604,72 @@ public abstract class AbstractITVersionStore {
     ));
   }
 
+  @Test
+  protected void merge() throws VersionStoreException {
+    final BranchName branch = BranchName.of("foo");
+    store().create(branch, Optional.empty());
+
+    final Hash initialHash = store().toHash(branch);
+
+    addCommit(branch, "First Commit", Put.of(Key.of("t1"), "v1_1"), Put.of(Key.of("t2"), "v2_1"), Put.of(Key.of("t3"), "v3_1"));
+    addCommit(branch, "Second Commit", Put.of(Key.of("t1"), "v1_2"), Delete.of(Key.of("t2")), Delete.of(Key.of("t3")),
+              Put.of(Key.of("t4"), "v4_1"));
+    final Hash thirdCommit = addCommit(branch, "Third Commit", Put.of(Key.of("t2"), "v2_2"), Unchanged.of(Key.of("t4")));
+
+    {
+      final BranchName newBranch = BranchName.of("bar_1");
+      store().create(newBranch, Optional.empty());
+
+      store().merge(thirdCommit, newBranch, Optional.of(initialHash));
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))),
+                 contains(
+                   Optional.of("v1_2"),
+                   Optional.of("v2_2"),
+                   Optional.empty(),
+                   Optional.of("v4_1")
+                 ));
+    }
+
+    {
+      final BranchName newBranch = BranchName.of("bar_2");
+      store().create(newBranch, Optional.empty());
+      addCommit(newBranch, "Unrelated commit", Put.of(Key.of("t5"), "v5_1"));
+
+      store().merge(thirdCommit, newBranch, Optional.empty());
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))),
+                 contains(
+                   Optional.of("v1_2"),
+                   Optional.of("v2_2"),
+                   Optional.empty(),
+                   Optional.of("v4_1"),
+                   Optional.of("v5_1")
+                 ));
+    }
+
+    {
+      final BranchName newBranch = BranchName.of("bar_3");
+      store().create(newBranch, Optional.empty());
+      addCommit(newBranch, "Another commit", Put.of(Key.of("t1"), "v1_4"));
+
+      assertThrows(ReferenceConflictException.class,
+                   () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
+    }
+
+    {
+      final BranchName newBranch = BranchName.of("bar_5");
+      assertThrows(ReferenceNotFoundException.class,
+                   () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
+    }
+
+    {
+      final BranchName newBranch = BranchName.of("bar_6");
+      store().create(newBranch, Optional.empty());
+      assertThrows(ReferenceNotFoundException.class,
+                   () -> store().merge(Hash.of("1234567890abcdef"), newBranch, Optional.of(initialHash)));
+    }
+
+  }
+
   @Nested
   @DisplayName("when transplanting")
   protected class WhenTransplanting {

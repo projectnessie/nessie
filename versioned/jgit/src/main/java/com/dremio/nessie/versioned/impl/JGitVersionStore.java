@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import static java.lang.String.format;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -27,11 +29,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -44,18 +44,12 @@ import javax.inject.Inject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.LogCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.dircache.DirCache;
-import org.eclipse.jgit.dircache.DirCacheBuilder;
-import org.eclipse.jgit.dircache.DirCacheEntry;
 import org.eclipse.jgit.errors.AmbiguousObjectException;
-import org.eclipse.jgit.errors.CheckoutConflictException;
 import org.eclipse.jgit.errors.ConfigInvalidException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.InvalidObjectIdException;
-import org.eclipse.jgit.errors.UnmergedPathException;
 import org.eclipse.jgit.lib.CommitBuilder;
 import org.eclipse.jgit.lib.Constants;
-import org.eclipse.jgit.lib.FileMode;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectInserter;
 import org.eclipse.jgit.lib.ObjectLoader;
@@ -65,11 +59,8 @@ import org.eclipse.jgit.lib.RefUpdate.Result;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.TreeFormatter;
 import org.eclipse.jgit.lib.UserConfig;
-import org.eclipse.jgit.merge.ThreeWayMerger;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.treewalk.AbstractTreeIterator;
-import org.eclipse.jgit.treewalk.NameConflictTreeWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.util.SystemReader;
@@ -97,6 +88,7 @@ import com.google.protobuf.ByteString;
  * VersionStore interface for JGit backend.
  */
 public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, METADATA> {
+
   private static final Logger logger = LoggerFactory.getLogger(JGitVersionStore.class);
   private static final String SLASH = "/";
 
@@ -187,41 +179,72 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       ObjectId commits = TreeBuilder.commitObjects(operations, repository, storeWorker.getValueSerializer(), emptyObject);
       ObjectId treeId = repository.resolve(expectedHash.map(Hash::asString).orElse(branch.getName()) + "^{tree}");
       if (treeId == null) {
-        throw ReferenceNotFoundException.forReference(expectedHash.map(x -> (Ref)x).orElse(branch));
+        throw ReferenceNotFoundException.forReference(expectedHash.map(x -> (Ref) x).orElse(branch));
       }
       ObjectId newTree = TreeBuilder.merge(treeId, commits, repository);
-      try {
-        commitTree(branch, newTree, expectedHash, metadata, false);
-      } catch (ReferenceConflictException e) {
-        if (operations.stream().anyMatch(x -> x instanceof Unchanged) && !operations.stream().allMatch(x -> x instanceof Unchanged)) {
-          throw e;
-        }
-        Set<String> paths = operations.stream()
-                                       .filter(Operation::shouldMatchHash)
-                                       .map(Operation::getKey)
-                                       .map(JGitVersionStore::stringFromKey)
-                                       .collect(Collectors.toSet());
-        ObjectId currentTreeId = repository.resolve(branch.getName() + "^{tree}");
-        ObjectId currentCommitId = repository.resolve(branch.getName() + "^{commit}");
-        Optional<ObjectId> mergedTree = tryTwoWayMerge(currentTreeId,
-                                                       newTree,
-                                                       repository.newObjectInserter(),
-                                                       fromHash(branch, expectedHash).orElseThrow(() -> e),
-                                                       paths);
-        commitTree(branch,
-                   mergedTree.orElseThrow(() -> e),
-                   Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of),
-                   metadata,
-                   ObjectId.isEqual(currentTreeId, mergedTree.get()));
-      }
+
+      List<String> unchanged = operations.stream()
+                                         .filter(e -> e instanceof Unchanged)
+                                         .map(Operation::getKey)
+                                         .map(JGitVersionStore::stringFromKey)
+                                         .collect(Collectors.toList());
+      commitTreeWithTwoWayMerge(branch, expectedHash, newTree, metadata, unchanged);
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
+    }
+  }
+
+  private void commitTreeWithTwoWayMerge(BranchName branch, Optional<Hash> expectedHash, ObjectId newTree, METADATA metadata,
+                                         List<String> unchanged) throws ReferenceConflictException, IOException {
+    ObjectId currentTreeId = repository.resolve(branch.getName() + "^{tree}");
+    ObjectId currentCommitId = repository.resolve(branch.getName() + "^{commit}");
+    ObjectId expectedId = repository.resolve(expectedHash.map(Hash::asString).orElse(currentTreeId.name()) + "^{tree}");
+    Optional<ObjectId> mergedTree = tryTwoWayMerge(currentTreeId,
+                                                   newTree,
+                                                   repository.newObjectInserter(),
+                                                   expectedId,
+                                                   unchanged);
+    commitTree(branch,
+               mergedTree.orElseThrow(() -> ReferenceConflictException.forReference(branch, expectedHash, Optional.of(currentCommitId)
+                                                                                                                  .map(ObjectId::name)
+                                                                                                                  .map(Hash::of))),
+               Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of),
+               metadata,
+               ObjectId.isEqual(currentTreeId, mergedTree.get()));
+  }
+
+  private void testLinearTransplantList(List<Hash> sequenceToTransplant) throws ReferenceNotFoundException {
+    try (RevWalk rw = new RevWalk(repository)) {
+      RevCommit start = null;
+      for (Hash hash : sequenceToTransplant) {
+        RevCommit commit;
+        try {
+          ObjectId obj = repository.resolve(hash.asString() + "^{commit}");
+          commit = rw.parseCommit(obj);
+        } catch (IOException | NullPointerException e) {
+          throw ReferenceNotFoundException.forReference(hash);
+        }
+        if (start == null) {
+          start = commit;
+          continue;
+        }
+        try {
+          if (!rw.isMergedInto(start, commit)) {
+            throw new IllegalArgumentException(format("Hash %s is not the ancestor for commit %s", start, hash));
+          } else {
+            start = commit;
+          }
+        } catch (IOException e) {
+          throw new IllegalArgumentException(format("Hash %s is not the ancestor for commit %s", start, hash));
+        }
+      }
     }
   }
 
   @Override
   public void transplant(BranchName targetBranch, Optional<Hash> expectedHash,
                          List<Hash> sequenceToTransplant) throws ReferenceNotFoundException, ReferenceConflictException {
+    testLinearTransplantList(sequenceToTransplant);
     try {
       ObjectId targetTreeId = repository.resolve(targetBranch.getName() + "^{tree}");
       if (targetTreeId == null) {
@@ -236,7 +259,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
           newTree = TreeBuilder.merge(newTree, transplantTree, repository);
         }
       }
-      commitTree(targetBranch, newTree, Optional.empty(), null, true);
+      commitTreeWithTwoWayMerge(targetBranch, expectedHash, newTree, null, Collections.emptyList());
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
@@ -251,127 +274,42 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         throw ReferenceNotFoundException.forReference(expectedHash.map(x -> (Ref) x).orElse(toBranch));
       }
       ObjectId newCommitId = repository.resolve(fromHash.asString() + "^{commit}");
-      RevCommit newCommit = RevCommit.parse(repository.getObjectDatabase()
-                                                      .open(newCommitId)
-                                                      .getBytes());
-      RevWalk walk = new RevWalk(repository);
-      ObjectId headId = ref.getObjectId();
-      String headName = ref.getName();
-      RevCommit headCommit = walk.lookupCommit(headId);
-      RevCommit upstream = walk.lookupCommit(newCommit.getId());
+      if (newCommitId == null) {
+        throw ReferenceNotFoundException.forReference(fromHash);
+      }
+      RevCommit newCommit = RevCommit.parse(repository.getObjectDatabase().open(newCommitId).getBytes());
+      try (RevWalk walk = new RevWalk(repository)) {
+        ObjectId headId = ref.getObjectId();
+        String headName = ref.getName();
+        RevCommit headCommit = walk.lookupCommit(headId);
+        RevCommit upstream = walk.lookupCommit(newCommit.getId());
 
-      if (walk.isMergedInto(upstream, headCommit)) {
-        return;
-      } else if (walk.isMergedInto(headCommit, upstream)) {
-        RefUpdate rup = repository.updateRef(headName);
-        rup.setNewObjectId(newCommit);
-        expectedHash.map(Hash::asString).map(ObjectId::fromString).ifPresent(rup::setExpectedOldObjectId);
-        Result res = rup.forceUpdate();
-        switch (res) {
-          case FAST_FORWARD:
-          case FORCED:
-          case NO_CHANGE:
-            break;
-          default:
-            throw new IOException("failed update");
+        if (walk.isMergedInto(upstream, headCommit)) {
+          return;
+        } else if (walk.isMergedInto(headCommit, upstream)) {
+          RefUpdate rup = repository.updateRef(headName);
+          rup.setNewObjectId(newCommit);
+          expectedHash.map(Hash::asString).map(ObjectId::fromString).ifPresent(rup::setExpectedOldObjectId);
+          Result res = rup.forceUpdate();
+          switch (res) {
+            case FAST_FORWARD:
+            case FORCED:
+            case NO_CHANGE:
+              return;
+            default:
+              throw new IOException("failed update");
+          }
         }
+        List<RevCommit> pickList = calculatePickList(newCommit, headCommit);
+        transplant(toBranch, expectedHash, pickList.stream().map(RevCommit::name).map(Hash::of).collect(Collectors.toList()));
       }
-      List<RevCommit> pickList = calculatePickList(newCommit, headCommit);
-      for (RevCommit step : pickList) {
-        //currently this will attempt to merge entire database.
-        cherryPickCommitFlattening(toBranch, expectedHash, step, ref);
-      }
-      return;
-//      throw ReferenceConflictException.forReference(toBranch, expectedHash, Optional.empty());
-
-//      ObjectId target = ObjectId.fromString(fromHash.asString());
-//      RefUpdate updateBranch = repository.updateRef(Constants.R_HEADS + toBranch.getName());
-//      updateBranch.setNewObjectId(target);
-//      fromHash(toBranch, expectedHash).ifPresent(updateBranch::setExpectedOldObjectId);
-//      Result result = updateBranch.update();
-//      if (result != Result.FAST_FORWARD) {
-//        ObjectId currentTreeId = repository.resolve(toBranch.getName() + "^{tree}");
-//        Optional<ObjectId> mergedTree = tryTwoWayMerge(currentTreeId,
-//                                                       target,
-//                                                       repository.newObjectInserter(),
-//                                                       fromHash(toBranch, expectedHash).orElseThrow(() -> ReferenceConflictException.forReference(toBranch, expectedHash, Optional.empty())),
-//                                                       new HashSet<>());
-//        updateBranch = repository.updateRef(Constants.R_HEADS + toBranch.getName());
-//        updateBranch.setNewObjectId(target);
-//        mergedTree.ifPresent(updateBranch::setExpectedOldObjectId);
-//        result = updateBranch.update();
-//        if (result != Result.FAST_FORWARD) {
-//          throw ReferenceConflictException.forReference(toBranch, expectedHash, Optional.empty());
-//        }
-//      }
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
   }
-  private void cherryPickCommitFlattening(BranchName branch,
-                                            Optional<Hash> expectedHash,
-                                            RevCommit commitToPick,
-                                            org.eclipse.jgit.lib.Ref head) throws IOException, ReferenceConflictException {
-    RevCommit newHead = tryFastForward(commitToPick, head);
-    boolean lastStepWasForward = newHead != null;
-    if (lastStepWasForward) {
-      updateRef(branch, newHead.getId(), expectedHash, false);
-    }
-    RevWalk revWalk = new RevWalk(repository);
-    Merger merger = new Merger(repository, new HashSet<>());
-    newHead = revWalk.parseCommit(head.getObjectId());
-    boolean ok = merger.merge(commitToPick, newHead);
-    if (ok) {
-      ObjectId newTree = merger.getResultTreeId();
-      commitTree(branch, newTree, expectedHash, null, false);
-    } else {
-      throw new ReferenceConflictException("xxx");
-    }
-  }
 
-  private RevCommit tryFastForward(RevCommit newCommit, org.eclipse.jgit.lib.Ref head) throws IOException, ReferenceConflictException {
-    RevWalk walk = new RevWalk(repository);
-    ObjectId headId = head.getObjectId();
-    RevCommit headCommit = walk.lookupCommit(headId);
-    if (walk.isMergedInto(newCommit, headCommit)) {
-      return newCommit;
-    }
-    String headName = head.getObjectId().name();
-    boolean tryRebase = false;
-    for (RevCommit parentCommit : newCommit.getParents()) {
-      if (parentCommit.equals(headCommit)) {
-        tryRebase = true;
-        break;
-      }
-    }
-    if (!tryRebase) {
-      return null;
-    }
-
-    try {
-      if (headName.startsWith(Constants.R_HEADS)) {
-        RefUpdate rup = repository.updateRef(headName);
-        rup.setExpectedOldObjectId(headCommit);
-        rup.setNewObjectId(newCommit);
-        rup.setRefLogMessage("Fast-forward from " + headCommit.name()
-                             + " to " + newCommit.name(), false);
-        Result res = rup.update(walk);
-        switch (res) {
-          case FAST_FORWARD:
-          case NO_CHANGE:
-          case FORCED:
-            break;
-          default:
-            throw new ReferenceConflictException("Could not fast-forward");
-        }
-      }
-      return newCommit;
-    } catch (CheckoutConflictException e) {
-      throw new ReferenceConflictException("Could not fast-forward");
-    }
-  }
   private List<RevCommit> calculatePickList(RevCommit headCommit, RevCommit upstreamCommit)
-    throws IOException {
+      throws IOException {
     Iterable<RevCommit> commitsToUse;
     try (Git git = new Git(repository)) {
       LogCommand cmd = git.log().addRange(upstreamCommit, headCommit);
@@ -424,7 +362,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         ObjectInserter inserter = repository.newObjectInserter();
         ObjectId newTreeId = inserter.insert(formatter);
         inserter.flush();
-        commitTree((BranchName)ref, newTreeId, Optional.empty(), null, false);
+        commitTree((BranchName) ref, newTreeId, Optional.empty(), null, false);
       } else {
         ObjectId target = repository.resolve(targetHash.get().asString());
         RefUpdate createBranch = repository.updateRef((ref instanceof TagName ? Constants.R_TAGS : Constants.R_HEADS) + ref.getName());
@@ -472,10 +410,10 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
                                                       .map(r -> WithHash.of(Hash.of(r.getObjectId().name()),
                                                                             BranchName.of(r.getName().replace(Constants.R_HEADS, ""))));
       Stream<WithHash<NamedRef>> tags = repository.getRefDatabase()
-                       .getRefsByPrefix(Constants.R_TAGS)
-                       .stream()
-                       .map(r -> WithHash.of(Hash.of(r.getObjectId().name()),
-                                             TagName.of(r.getName().replace(Constants.R_TAGS, ""))));
+                                                  .getRefsByPrefix(Constants.R_TAGS)
+                                                  .stream()
+                                                  .map(r -> WithHash.of(Hash.of(r.getObjectId().name()),
+                                                                        TagName.of(r.getName().replace(Constants.R_TAGS, ""))));
       return Stream.concat(branches, tags);
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
@@ -602,16 +540,15 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     fromHash(ref, expectedHash).ifPresent(updateBranch::setExpectedOldObjectId);
     Result result = force ? updateBranch.forceUpdate() : updateBranch.update();
     if (!result.equals(Result.NEW) && !result.equals(Result.FAST_FORWARD) && !result.equals(Result.FORCED)) {
-      throw new ReferenceConflictException(String.format("result did not complete for create branch on %s with state %s", ref, result));
+      throw new ReferenceConflictException(String.format("result did not complete for update ref on %s with state %s", ref, result));
     }
   }
 
   private Optional<ObjectId> tryTwoWayMerge(ObjectId treeId, ObjectId newTreeId, ObjectInserter inserter, ObjectId version,
-                                            Set<String> paths)
-      throws IOException {
+                                            List<String> unchanged) throws IOException {
     inserter.flush();
 
-    Merger merger = new Merger(repository, paths);
+    TwoWayMerger merger = new TwoWayMerger(repository, unchanged);
     merger.setBase(version);
     boolean ok = merger.merge(treeId, newTreeId);
     return ok ? Optional.of(merger.getResultTreeId()) : Optional.empty();
@@ -732,124 +669,4 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     return loader.getBytes();
   }
 
-  /**
-   * Simple merge of two potentially conflicting branches.
-   * <p>
-   *   If no file level conflicts exist the merge will succeed. Any file level merges will result in failure.
-   * </p>
-   */
-  private static class Merger extends ThreeWayMerger {
-
-    private static final int T_BASE = 0;
-
-    private static final int T_OURS = 1;
-
-    private static final int T_THEIRS = 2;
-
-    private final NameConflictTreeWalk tw;
-    private final Set<String> paths;
-
-    private final DirCache cache;
-
-    private DirCacheBuilder builder;
-
-    private ObjectId resultTree;
-
-    Merger(Repository local, Set<String> paths) {
-      super(local);
-      tw = new NameConflictTreeWalk(local, reader);
-      this.paths = paths;
-      cache = DirCache.newInCore();
-    }
-
-    @Override
-    protected boolean mergeImpl() throws IOException {
-      tw.addTree(mergeBase());
-      tw.addTree(sourceTrees[0]);
-      tw.addTree(sourceTrees[1]);
-
-      boolean hasConflict = false;
-      builder = cache.builder();
-      while (tw.next()) {
-        final int modeO = tw.getRawMode(T_OURS);
-        final int modeT = tw.getRawMode(T_THEIRS);
-        if (modeO == modeT && tw.idEqual(T_OURS, T_THEIRS) && !ObjectId.isEqual(tw.getObjectId(T_OURS), ObjectId.zeroId())) {
-          add(T_OURS, DirCacheEntry.STAGE_0);
-          continue;
-        }
-
-        final int modeB = tw.getRawMode(T_BASE);
-        if (modeB == modeO && tw.idEqual(T_BASE, T_OURS)) {
-          add(T_THEIRS, DirCacheEntry.STAGE_0);
-        } else if (modeB == modeT && tw.idEqual(T_BASE, T_THEIRS)) {
-          if (!ObjectId.isEqual(tw.getObjectId(T_BASE), ObjectId.zeroId())) {
-            add(T_OURS, DirCacheEntry.STAGE_0); // only add if object has changed. If it was null before and now ignore it.
-          } else {
-            add(T_THEIRS, DirCacheEntry.STAGE_3);
-            hasConflict = true;
-          }
-        } else {
-          if (nonTree(modeB)) {
-            add(T_BASE, DirCacheEntry.STAGE_1);
-            hasConflict = true;
-          }
-          if (nonTree(modeO)) {
-            add(T_OURS, DirCacheEntry.STAGE_2);
-            hasConflict = true;
-          }
-          if (nonTree(modeT)) {
-            add(T_THEIRS, DirCacheEntry.STAGE_3);
-            hasConflict = true;
-          }
-          if (tw.isSubtree()) {
-            tw.enterSubtree();
-          }
-        }
-      }
-      builder.finish();
-      builder = null;
-
-      if (hasConflict) {
-        return false;
-      }
-      try {
-        ObjectInserter odi = getObjectInserter();
-        resultTree = cache.writeTree(odi);
-        odi.flush();
-        return true;
-      } catch (UnmergedPathException upe) {
-        resultTree = null;
-        return false;
-      }
-    }
-
-    private static boolean nonTree(int mode) {
-      return mode != 0 && !FileMode.TREE.equals(mode);
-    }
-
-    private void add(int tree, int stage) throws IOException {
-      final AbstractTreeIterator i = getTree(tree);
-      if (i != null) {
-        if (FileMode.TREE.equals(tw.getRawMode(tree))) {
-          builder.addTree(tw.getRawPath(), stage, reader, tw.getObjectId(tree));
-        } else {
-          final DirCacheEntry e;
-
-          e = new DirCacheEntry(tw.getRawPath(), stage);
-          e.setObjectIdFromRaw(i.idBuffer(), i.idOffset());
-          e.setFileMode(tw.getFileMode(tree));
-          builder.add(e);
-        }
-      }
-    }
-
-    private AbstractTreeIterator getTree(int tree) {
-      return tw.getTree(tree, AbstractTreeIterator.class);
-    }
-
-    @Override
-    public ObjectId getResultTreeId() {
-      return resultTree;
-    }
-  }
 }

@@ -363,10 +363,8 @@ class TestJGitVersionStore {
     //first hash.
     Hash originalHash = impl.getCommits(branch).findFirst().get().getHash();
 
-    //second commit.
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
-
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    //second commit. Ensure first hasn't changed
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world"), Unchanged.of(Key.of("hi"))));
 
     //attempt commit using first hash which has conflicting key change.
     assertThrows(ReferenceConflictException.class, () -> impl.commit(branch, Optional.of(originalHash),
@@ -493,4 +491,3 @@ class TestJGitVersionStore {
     }
   }
 }
-
