@@ -82,6 +82,7 @@ import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 
 /**
@@ -171,11 +172,22 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     }
   }
 
+  private void testExpectedHash(BranchName branch, Optional<Hash> expectedHash) throws ReferenceNotFoundException {
+    if (expectedHash.isPresent()) {
+      try {
+        testLinearTransplantList(ImmutableList.of(expectedHash.get(), toHash(branch)));
+      } catch (IllegalArgumentException e) {
+        throw ReferenceNotFoundException.forReference(expectedHash.get());
+      }
+    }
+  }
+
   @Override
   public void commit(BranchName branch, Optional<Hash> expectedHash, METADATA metadata,
                      List<Operation<TABLE>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     toHash(branch);
     try {
+      testExpectedHash(branch, expectedHash);
       ObjectId commits = TreeBuilder.commitObjects(operations, repository, storeWorker.getValueSerializer(), emptyObject);
       ObjectId treeId = repository.resolve(expectedHash.map(Hash::asString).orElse(branch.getName()) + "^{tree}");
       if (treeId == null) {
@@ -250,6 +262,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
       if (targetTreeId == null) {
         throw ReferenceNotFoundException.forReference(expectedHash.map(x -> (Ref) x).orElse(targetBranch));
       }
+      testExpectedHash(targetBranch, expectedHash);
       ObjectId newTree = null;
       for (Hash hash: sequenceToTransplant) {
         ObjectId transplantTree = TreeBuilder.transplant(hash, repository);
