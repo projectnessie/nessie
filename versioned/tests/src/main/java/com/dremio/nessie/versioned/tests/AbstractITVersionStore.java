@@ -739,11 +739,11 @@ public abstract class AbstractITVersionStore {
         Put.of(Key.of("t3"), "v3_1")
         );
 
-      final BranchName newBranch = BranchName.of("bar_1");
-      store().create(newBranch, Optional.empty());
+    final BranchName newBranch = BranchName.of("bar_1");
+    store().create(newBranch, Optional.empty());
 
-      assertThrows(ReferenceNotFoundException.class,
-          () -> store().transplant(newBranch, Optional.of(unrelatedCommit), Arrays.asList(firstCommit, secondCommit, thirdCommit)));
+    assertThrows(ReferenceNotFoundException.class,
+        () -> store().transplant(newBranch, Optional.of(unrelatedCommit), Arrays.asList(firstCommit, secondCommit, thirdCommit)));
   }
 
   @Test

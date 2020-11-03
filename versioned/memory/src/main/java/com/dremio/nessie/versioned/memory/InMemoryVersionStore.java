@@ -147,9 +147,9 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
       return;
     }
     final Optional<Hash> foundHash = Streams.stream(new CommitsIterator<ValueT, MetadataT>(commits::get, currentBranchHash))
-      .map(WithHash::getHash)
-      .filter(hash -> hash.equals(referenceHash))
-      .collect(MoreCollectors.toOptional());
+        .map(WithHash::getHash)
+        .filter(hash -> hash.equals(referenceHash))
+        .collect(MoreCollectors.toOptional());
 
     foundHash.orElseThrow(() -> new ReferenceNotFoundException(format("'%s' hash is not a valid commit from branch '%s'(%s)",
         referenceHash, branch, currentBranchHash)));
