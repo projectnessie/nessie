@@ -27,10 +27,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
+import com.dremio.nessie.versioned.ReferenceConflictException;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
+import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
 
 public class ITJGitOnDiskVersionStore extends AbstractITVersionStore {
@@ -78,8 +82,22 @@ public class ITJGitOnDiskVersionStore extends AbstractITVersionStore {
     return store;
   }
 
+  @Override
   @Disabled
-  protected void transplant() {
+  protected void transplant() throws VersionStoreException {
+    super.transplant();
   }
 
+  @Disabled
+  @Override
+  public void transplantInvalidReference() throws VersionStoreException {
+    super.transplantInvalidReference();
+  }
+
+  @Disabled
+  @Override
+  public void commitWithInvalidReference() throws ReferenceNotFoundException,
+      ReferenceConflictException, ReferenceAlreadyExistsException {
+    super.commitWithInvalidReference();
+  }
 }

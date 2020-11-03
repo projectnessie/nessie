@@ -505,12 +505,34 @@ public abstract class AbstractITVersionStore {
    * - Check that store throws RNFE if reference hash doesn't exist
    */
   @Test
-  public void commitWithInvalidReference() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+  public void commitWithUnknownReference() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
 
     assertThrows(ReferenceNotFoundException.class,
         () -> store().commit(branch, Optional.of(Hash.of("1234567890abcdef")), "New commit", Collections.emptyList()));
+  }
+
+  /*
+   * Test:
+   * - Check that store throws IllegalArgumentException if reference hash is not in branch ancestry
+   */
+  @Test
+  public void commitWithInvalidReference() throws ReferenceNotFoundException, ReferenceConflictException, ReferenceAlreadyExistsException {
+    final BranchName branch = BranchName.of("foo");
+    store().create(branch, Optional.empty());
+
+
+    final Hash initialHash = store().toHash(branch);
+    store().commit(branch, Optional.of(initialHash), "Some commit", Collections.emptyList());
+
+    final Hash commitHash = store().toHash(branch);
+
+    final BranchName branch2 = BranchName.of("bar");
+    store().create(branch2, Optional.empty());
+
+    assertThrows(ReferenceNotFoundException.class,
+        () -> store().commit(branch2, Optional.of(commitHash), "Another commit", Collections.emptyList()));
   }
 
   @Test
@@ -684,6 +706,44 @@ public abstract class AbstractITVersionStore {
       assertThrows(IllegalArgumentException.class,
           () -> store().transplant(newBranch, Optional.empty(), Arrays.asList(secondCommit, firstCommit, thirdCommit)));
     }
+  }
+
+  @Test
+  protected void transplantInvalidReference() throws VersionStoreException {
+    final BranchName branch = BranchName.of("foo");
+    store().create(branch, Optional.empty());
+
+    final Hash initialHash = store().toHash(branch);
+
+    final Hash firstCommit = addCommit(branch, "First Commit",
+        Put.of(Key.of("t1"), "v1_1"),
+        Put.of(Key.of("t2"), "v2_1"),
+        Put.of(Key.of("t3"), "v3_1")
+        );
+    final Hash secondCommit = addCommit(branch, "Second Commit",
+        Put.of(Key.of("t1"), "v1_2"),
+        Delete.of(Key.of("t2")),
+        Delete.of(Key.of("t3")),
+        Put.of(Key.of("t4"), "v4_1")
+        );
+    final Hash thirdCommit = addCommit(branch, "Third Commit",
+        Put.of(Key.of("t2"), "v2_2"),
+        Unchanged.of(Key.of("t4"))
+        );
+
+    final BranchName anotherBranch = BranchName.of("bar");
+    store().create(anotherBranch, Optional.empty());
+    final Hash unrelatedCommit = addCommit(anotherBranch, "Another Commit",
+        Put.of(Key.of("t1"), "v1_1"),
+        Put.of(Key.of("t2"), "v2_1"),
+        Put.of(Key.of("t3"), "v3_1")
+        );
+
+      final BranchName newBranch = BranchName.of("bar_1");
+      store().create(newBranch, Optional.empty());
+
+      assertThrows(ReferenceNotFoundException.class,
+          () -> store().transplant(newBranch, Optional.of(unrelatedCommit), Arrays.asList(firstCommit, secondCommit, thirdCommit)));
   }
 
   @Test

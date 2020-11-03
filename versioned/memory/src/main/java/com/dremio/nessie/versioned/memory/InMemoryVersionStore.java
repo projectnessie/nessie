@@ -57,6 +57,7 @@ import com.dremio.nessie.versioned.WithHash;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.MoreCollectors;
 import com.google.common.collect.Streams;
 
 /**
@@ -97,7 +98,6 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
 
       return new InMemoryVersionStore<>(this);
     }
-
   }
 
   private InMemoryVersionStore(Builder<ValueT, MetadataT> builder) {
@@ -141,6 +141,20 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     throw new IllegalArgumentException(format("Unsupported reference type for ref %s", ref));
   }
 
+  private void checkValidReferenceHash(BranchName branch, Hash currentBranchHash, Hash referenceHash)
+      throws ReferenceNotFoundException {
+    if (referenceHash.equals(NO_ANCESTOR)) {
+      return;
+    }
+    final Optional<Hash> foundHash = Streams.stream(new CommitsIterator<ValueT, MetadataT>(commits::get, currentBranchHash))
+      .map(WithHash::getHash)
+      .filter(hash -> hash.equals(referenceHash))
+      .collect(MoreCollectors.toOptional());
+
+    foundHash.orElseThrow(() -> new ReferenceNotFoundException(format("'%s' hash is not a valid commit from branch '%s'(%s)",
+        referenceHash, branch, currentBranchHash)));
+  }
+
   @Override
   public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
     requireNonNull(refOfUnknownType);
@@ -163,10 +177,12 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   public void commit(BranchName branch, Optional<Hash> referenceHash,
       MetadataT metadata, List<Operation<ValueT>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     final Hash currentHash = toHash(branch);
-
     // Validate commit
     try {
       ifPresent(referenceHash, hash -> {
+        // Check that reference hash is present in branch
+        checkValidReferenceHash(branch, currentHash, hash);
+
         // Get the list of keys mentioned by operations
         List<Key> keys = operations.stream().map(Operation::getKey).distinct().collect(Collectors.toList());
 
@@ -247,6 +263,8 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     // Validate commit
     try {
       ifPresent(referenceHash, hash -> {
+        checkValidReferenceHash(targetBranch, currentHash, hash);
+
         List<Key> keyList = new ArrayList<>(keys.size());
         keyList.addAll(keys);
 
