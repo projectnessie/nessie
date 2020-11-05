@@ -654,6 +654,35 @@ public abstract class AbstractITVersionStore {
     }
 
     @Test
+    protected void transplantBasic() throws VersionStoreException {
+      final BranchName branch = BranchName.of("foo");
+      store().create(branch, Optional.empty());
+
+      final Hash initialHash = store().toHash(branch);
+
+      final Hash firstCommit = addCommit(branch, "First Commit",
+                                         Put.of(Key.of("t1"), "v1_1")
+      );
+      final Hash secondCommit = addCommit(branch, "Second Commit",
+                                          Put.of(Key.of("t4"), "v4_1")
+      );
+
+      {
+        final BranchName newBranch = BranchName.of("bar_2");
+        store().create(newBranch, Optional.empty());
+        addCommit(newBranch, "Unrelated commit", Put.of(Key.of("t5"), "v5_1"));
+
+        store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit));
+        assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))),
+                   contains(
+                     Optional.of("v1_1"),
+                     Optional.of("v4_1"),
+                     Optional.of("v5_1")
+                   ));
+      }
+    }
+
+    @Test
     protected void checkTransplantWithPreviousCommit() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_2");
       store().create(newBranch, Optional.empty());
