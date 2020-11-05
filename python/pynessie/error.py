@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """Nessie Exceptions."""
+import functools
 import sys
 import traceback
 from typing import Any
 from typing import Callable
-from typing import cast
 
 import click
 import requests
@@ -18,19 +18,21 @@ _REMEDIES = {
 class NessieException(Exception):
     """Base Nessie exception."""
 
-    def __init__(self: "NessieException", msg: str, original_exception: Exception, response: requests.models.Response = None) -> None:
+    def __init__(self: "NessieException", msg: str, original_exception: Exception, response: requests.models.Response) -> None:
         """Construct base Nessie Exception."""
         super(NessieException, self).__init__(msg + (": %s" % original_exception))
         self.original_exception = original_exception
         try:
-            parsed_response = cast(requests.models.Response, response).json()
-            self.status_code = cast(requests.models.Response, response).status_code
+            parsed_response = response.json()
+
         except:  # NOQA
             parsed_response = dict()
-            self.status_code = 500
-        self.server_message = parsed_response.get("message")
+
+        self.status_code = response.status_code
+        self.server_message = parsed_response.get("message", response.text)
         self.server_status = parsed_response.get("status")
         self.server_stack_trace = parsed_response.get("serverStackTrace")
+        self.url = response.url
 
     def json(self: "NessieException") -> str:
         """Dump this exception as a json object."""
@@ -40,6 +42,7 @@ class NessieException(Exception):
                 server_status=self.server_status,
                 server_stack_trace=self.server_stack_trace,
                 status_code=self.status_code,
+                url=self.url,
                 original_exception=traceback.format_tb(self.original_exception.__traceback__),
                 msg=" ".join(self.args),
             )
@@ -85,6 +88,7 @@ class NessieServerException(NessieException):
 def error_handler(f: Callable) -> Callable:
     """Wrap a click method to catch and pretty print errors."""
 
+    @functools.wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> None:
         """Wrapper object."""
         try:
@@ -102,6 +106,7 @@ def _format_error(e: NessieException) -> str:
     fmt = "{} is {} with status code: {}.\n".format(click.style("Nessie Exception", fg="red"), e, e.status_code)
     if e.server_message in _REMEDIES:
         fmt += "{} {}\n".format(click.style("FIX:", fg="green"), _REMEDIES[e.server_message])
+    fmt += "{} {}\n".format(click.style("Original URL:", fg="yellow"), e.url)
     fmt += "{} {}\n".format(click.style("Server status:", fg="yellow"), e.server_status)
     fmt += "{} {}\n".format(click.style("Server message:", fg="yellow"), e.server_message)
     fmt += "{} {}\n".format(click.style("Server traceback:", fg="yellow"), e.server_stack_trace)

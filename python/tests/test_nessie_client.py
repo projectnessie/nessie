@@ -23,8 +23,8 @@ def test_client_interface_e2e() -> None:
     client.create_branch("test", main_commit)
     references = client.list_references()
     assert len(references) == 2
-    assert references[0] == Branch("main", main_commit)
-    assert references[1] == Branch("test", main_commit)
+    assert next(i for i in references if i.name == "main") == Branch("main", main_commit)
+    assert next(i for i in references if i.name == "test") == Branch("test", main_commit)
     reference = client.get_reference("test")
     tables = client.list_keys(reference.name)
     assert isinstance(tables, Entries)

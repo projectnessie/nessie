@@ -72,7 +72,7 @@ def _check_error(r: requests.models.Response, details: str = "") -> Union[str, d
         raise NessieConflictException("Entity already exists at " + details, error, r)
     if code == 500:
         raise NessieServerException("Server error at " + details, error, r)
-    raise NessieException("unknown error", error)
+    raise NessieException("unknown error", error, r)
 
 
 def all_references(base_url: str, ssl_verify: bool = True) -> list:

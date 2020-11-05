@@ -315,7 +315,7 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
 
 
 @cli.command("merge")
-@click.option("-b", "--branch", help="branch to cherry-pick onto. If not supplied the default branch from config is used")
+@click.option("-b", "--branch", help="branch to merge onto. If not supplied the default branch from config is used")
 @click.argument("merge_branch", nargs=1, required=False)
 @click.option(
     "-f",
