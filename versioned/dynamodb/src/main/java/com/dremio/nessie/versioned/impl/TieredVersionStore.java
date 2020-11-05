@@ -471,7 +471,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           // first we need to validate that the actual history matches the provided sequence.
           Stream<L1> historyStream = new HistoryRetriever(store, from, null, true, false, true).getStream().map(HistoryItem::getL1);
           List<L1> l1s = Lists.reverse(takeUntilNext(historyStream, endTarget).collect(ImmutableList.toImmutableList()));
-          List<Hash> hashes = l1s.stream().map(L1::getId).filter(x -> !x.equals(commonParent)).map(Id::toHash).collect(Collectors.toList());
+          List<Hash> hashes = l1s.stream().map(L1::getId).map(Id::toHash).skip(1).collect(Collectors.toList());
           if (!hashes.equals(sequenceToTransplant)) {
             throw new IllegalArgumentException("Provided are not sequential and consistent with history.");
           }
