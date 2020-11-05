@@ -82,4 +82,7 @@ public class ITJGitOnDiskVersionStore extends AbstractITVersionStore {
   protected void transplant() {
   }
 
+  @Disabled
+  protected void transplantBasic() {
+  }
 }

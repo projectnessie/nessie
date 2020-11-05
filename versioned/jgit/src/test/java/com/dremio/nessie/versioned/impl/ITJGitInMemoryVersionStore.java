@@ -78,4 +78,7 @@ public class ITJGitInMemoryVersionStore extends AbstractITVersionStore {
   protected void transplant() {
   }
 
+  @Disabled
+  protected void transplantBasic() {
+  }
 }
