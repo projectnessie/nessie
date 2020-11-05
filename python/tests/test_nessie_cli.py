@@ -24,6 +24,8 @@ from pynessie.model import ReferenceSchema
 
 def _run(runner: CliRunner, args: List[str], input: Optional[str] = None, ret_val: int = 0) -> Result:
     result = runner.invoke(cli.cli, args, input=input)
+    if result.exit_code != ret_val:
+        print(result.output)
     assert result.exit_code == ret_val
     return result
 
@@ -43,7 +45,6 @@ def test_command_line_interface() -> None:
     assert len(references) == 1
     assert references[0].name == "main"
     assert isinstance(references[0], Branch)
-    assert references[0].hash_ == "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d"
 
 
 def test_config_options() -> None:
@@ -95,6 +96,8 @@ def test_log() -> None:
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 0
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "main"]).output, many=True)
+    empty_hash = refs[0].hash_
     _run(
         runner,
         [
@@ -106,7 +109,7 @@ def test_log() -> None:
             "-m",
             "test_message",
             "-c",
-            "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+            empty_hash,
         ],
         input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
     )
@@ -182,6 +185,8 @@ def test_assign() -> None:
     """Test assign operation."""
     runner = CliRunner()
     _run(runner, ["branch", "dev"])
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "dev"]).output, many=True)
+    empty_hash = refs[0].hash_
     _run(
         runner,
         [
@@ -193,7 +198,7 @@ def test_assign() -> None:
             "-m",
             "test_message",
             "-c",
-            "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+            empty_hash,
         ],
         input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
     )
@@ -215,6 +220,113 @@ def test_assign() -> None:
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
     _run(runner, ["--json", "contents", "--delete", "foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
+    _run(runner, ["branch", "main", "--delete"])
+    _run(runner, ["branch", "main"])
+
+
+@pytest.mark.vcr
+def test_merge() -> None:
+    """Test merge operation."""
+    runner = CliRunner()
+    _run(runner, ["branch", "dev"])
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "dev"]).output, many=True)
+    empty_hash = next(i.hash_ for i in refs if i.name == "dev")
+    _run(
+        runner,
+        [
+            "contents",
+            "--set",
+            "foo.bar",
+            "--ref",
+            "dev",
+            "-m",
+            "test_message",
+            "-c",
+            empty_hash,
+        ],
+        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+    )
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "main"]).output, many=True)
+    main_hash = next(i.hash_ for i in refs if i.name == "main")
+    _run(runner, ["merge", "dev", "-c", main_hash])
+    result = _run(runner, ["--json", "branch"])
+    branches = ReferenceSchema().loads(result.output, many=True)
+    refs = {i.name: i.hash_ for i in branches}
+    assert refs["main"] == refs["dev"]
+    _run(runner, ["branch", "dev", "--delete"])
+    result = _run(runner, ["--json", "log"])
+    logs = simplejson.loads(result.output)
+    _run(runner, ["--json", "contents", "--delete", "foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
+    _run(runner, ["branch", "main", "--delete"])
+    _run(runner, ["branch", "main"])
+
+
+@pytest.mark.vcr
+def test_transplant() -> None:
+    """Test transplant operation."""
+    runner = CliRunner()
+    _run(runner, ["branch", "dev"])
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "dev"]).output, many=True)
+    empty_hash = next(i.hash_ for i in refs if i.name == "dev")
+    _run(
+        runner,
+        [
+            "contents",
+            "--set",
+            "foo.bar",
+            "--ref",
+            "dev",
+            "-m",
+            "test_message",
+            "-c",
+            empty_hash,
+        ],
+        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+    )
+    _run(
+        runner,
+        [
+            "contents",
+            "--set",
+            "bar.bar",
+            "--ref",
+            "dev",
+            "-m",
+            "test_message2",
+            "-c",
+            empty_hash,
+        ],
+        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+    )
+    _run(
+        runner,
+        [
+            "contents",
+            "--set",
+            "foo.baz",
+            "--ref",
+            "main",
+            "-m",
+            "test_message3",
+            "-c",
+            empty_hash,
+        ],
+        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+    )
+    refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l"]).output, many=True)
+    main_hash = next(i.hash_ for i in refs if i.name == "main")
+    result = _run(runner, ["--json", "log", "dev"])
+    logs = simplejson.loads(result.output)
+    first_hash = [i["hash"] for i in logs]
+    _run(runner, ["cherry-pick", "-c", main_hash, first_hash[1], first_hash[0]])
+
+    result = _run(runner, ["--json", "log"])
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 3
+    _run(runner, ["--json", "contents", "--delete", "foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
+    _run(runner, ["branch", "dev", "--delete"])
+    _run(runner, ["branch", "main", "--delete"])
+    _run(runner, ["branch", "main"])
 
 
 @pytest.mark.doc

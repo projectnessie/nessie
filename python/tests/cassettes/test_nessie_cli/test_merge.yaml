@@ -1,5 +1,29 @@
 interactions:
 - request:
+    body: '{"hash": null, "name": "dev", "type": "BRANCH"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '47'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.24.0
+    method: POST
+    uri: http://localhost:19120/api/v1/trees/tree
+  response:
+    body:
+      string: ''
+    headers: {}
+    status:
+      code: 204
+      message: No Content
+- request:
     body: null
     headers:
       Accept:
@@ -15,46 +39,39 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n} ]"
+        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n}, {\n  \"type\" : \"BRANCH\"\
+        ,\n  \"name\" : \"dev\",\n  \"hash\" : \"e0b41c30f0710277532f51242994e10acfdc46bf\"\
+        \n} ]"
     headers:
       Content-Length:
-      - '101'
+      - '199'
       Content-Type:
       - application/json
     status:
       code: 200
       message: OK
 - request:
-    body: '{"hash": null, "name": "main", "type": "BRANCH"}'
+    body: null
     headers:
       Accept:
-      - '*/*'
+      - application/json
       Accept-Encoding:
       - gzip, deflate
       Connection:
       - keep-alive
-      Content-Length:
-      - '48'
-      Content-Type:
-      - application/json
       User-Agent:
       - python-requests/2.24.0
-    method: POST
-    uri: http://localhost:19120/api/v1/trees/tree
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/foo.bar?ref=dev
   response:
     body:
-      string: "{\n  \"message\" : \"A reference of name [main] already exists.\",\n\
-        \  \"status\" : \"CONFLICT\",\n  \"serverStackTrace\" : \"com.dremio.nessie.error.NessieConflictException:\
-        \ A reference of name [main] already exists.\\n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:119)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:110)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createReference$$superaccessor6(TreeResource_Subclass.zig:2283)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass$$function$$6.apply(TreeResource_Subclass$$function$$6.zig:33)\\\
+      string: "{\n  \"message\" : \"Requested contents do not exist for specified\
+        \ reference.\",\n  \"status\" : \"NOT_FOUND\",\n  \"serverStackTrace\" : \"\
+        com.dremio.nessie.error.NessieNotFoundException: Requested contents do not\
+        \ exist for specified reference.\\n\\tat com.dremio.nessie.services.rest.ContentsResource.getContents(ContentsResource.java:72)\\\
+        n\\tat com.dremio.nessie.services.rest.ContentsResource_Subclass.getContents$$superaccessor2(ContentsResource_Subclass.zig:766)\\\
+        n\\tat com.dremio.nessie.services.rest.ContentsResource_Subclass$$function$$2.apply(ContentsResource_Subclass$$function$$2.zig:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
-        n\\tat io.quarkus.hibernate.validator.runtime.interceptor.AbstractMethodValidationInterceptor.validateMethodInvocation(AbstractMethodValidationInterceptor.java:69)\\\
-        n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor.validateMethodInvocation(JaxrsEndPointValidationInterceptor.java:32)\\\
-        n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor_Bean.intercept(JaxrsEndPointValidationInterceptor_Bean.zig:341)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.time(TimedInterceptor.java:54)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.timedMethod(TimedInterceptor.java:35)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:326)\\\
@@ -66,8 +83,8 @@ interactions:
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
         n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createReference(TreeResource_Subclass.zig:2222)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_ClientProxy.createReference(TreeResource_ClientProxy.zig:164)\\\
+        n\\tat com.dremio.nessie.services.rest.ContentsResource_Subclass.getContents(ContentsResource_Subclass.zig:712)\\\
+        n\\tat com.dremio.nessie.services.rest.ContentsResource_ClientProxy.getContents(ContentsResource_ClientProxy.zig:408)\\\
         n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native\
         \ Method)\\n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\\\
         n\\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\\\
@@ -102,21 +119,18 @@ interactions:
         n\\tat org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)\\\
         n\\tat org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)\\\
         n\\tat java.base/java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
-        nCaused by: com.dremio.nessie.versioned.ReferenceAlreadyExistsException: A\
-        \ branch or tag already exists with that name.\\n\\tat com.dremio.nessie.versioned.impl.TieredVersionStore.create(TieredVersionStore.java:115)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:115)\\\
-        n\\t... 57 more\\n\"\n}"
+        n\"\n}"
     headers:
       Content-Length:
-      - '6374'
+      - '5358'
       Content-Type:
       - application/json
     status:
-      code: 409
-      message: Conflict
+      code: 404
+      message: Not Found
 - request:
-    body: '{"hash": "e0b41c30f0710277532f51242994e10acfdc46bf", "name": "test", "type":
-      "BRANCH"}'
+    body: '{"operations": [{"contents": {"metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"},
+      "key": {"elements": ["foo", "bar"]}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -125,112 +139,13 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '86'
+      - '139'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.24.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/tree
-  response:
-    body:
-      string: ''
-    headers: {}
-    status:
-      code: 204
-      message: No Content
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.24.0
-    method: GET
-    uri: http://localhost:19120/api/v1/trees
-  response:
-    body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" :\
-        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n}, {\n  \"type\" : \"BRANCH\"\
-        ,\n  \"name\" : \"main\",\n  \"hash\" : \"e0b41c30f0710277532f51242994e10acfdc46bf\"\
-        \n} ]"
-    headers:
-      Content-Length:
-      - '200'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.24.0
-    method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/test
-  response:
-    body:
-      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"\
-        e0b41c30f0710277532f51242994e10acfdc46bf\"\n}"
-    headers:
-      Content-Length:
-      - '97'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      User-Agent:
-      - python-requests/2.24.0
-    method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/test/entries
-  response:
-    body:
-      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"entries\" : [ ]\n\
-        }"
-    headers:
-      Content-Length:
-      - '60'
-      Content-Type:
-      - application/json
-    status:
-      code: 200
-      message: OK
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/json
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '0'
-      User-Agent:
-      - python-requests/2.24.0
-    method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/test?expectedHash=e0b41c30f0710277532f51242994e10acfdc46bf
+    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=e0b41c30f0710277532f51242994e10acfdc46bf&message=test_message
   response:
     body:
       string: ''
@@ -254,13 +169,285 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n} ]"
+        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n}, {\n  \"type\" : \"BRANCH\"\
+        ,\n  \"name\" : \"dev\",\n  \"hash\" : \"795df2d04c7661233b978c8a9547b00a0bb9d466\"\
+        \n} ]"
     headers:
       Content-Length:
-      - '101'
+      - '199'
       Content-Type:
       - application/json
     status:
       code: 200
       message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/dev
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"\
+        795df2d04c7661233b978c8a9547b00a0bb9d466\"\n}"
+    headers:
+      Content-Length:
+      - '96'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"fromHash": "795df2d04c7661233b978c8a9547b00a0bb9d466"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '56'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.24.0
+    method: POST
+    uri: http://localhost:19120/api/v1/trees/branch/main/merge?expectedHash=e0b41c30f0710277532f51242994e10acfdc46bf
+  response:
+    body:
+      string: ''
+    headers: {}
+    status:
+      code: 204
+      message: No Content
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees
+  response:
+    body:
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
+        \ \"795df2d04c7661233b978c8a9547b00a0bb9d466\"\n}, {\n  \"type\" : \"BRANCH\"\
+        ,\n  \"name\" : \"dev\",\n  \"hash\" : \"795df2d04c7661233b978c8a9547b00a0bb9d466\"\
+        \n} ]"
+    headers:
+      Content-Length:
+      - '199'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/dev
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"\
+        795df2d04c7661233b978c8a9547b00a0bb9d466\"\n}"
+    headers:
+      Content-Length:
+      - '96'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.24.0
+    method: DELETE
+    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=795df2d04c7661233b978c8a9547b00a0bb9d466
+  response:
+    body:
+      string: ''
+    headers: {}
+    status:
+      code: 204
+      message: No Content
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/main/log
+  response:
+    body:
+      string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
+        \ [ {\n    \"hash\" : \"795df2d04c7661233b978c8a9547b00a0bb9d466\",\n    \"\
+        commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
+        ,\n    \"commitTime\" : 1604578540327\n  } ]\n}"
+    headers:
+      Content-Length:
+      - '232'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/contents/foo.bar?ref=main
+  response:
+    body:
+      string: "{\n  \"type\" : \"ICEBERG_TABLE\",\n  \"metadataLocation\" : \"/a/b/c\"\
+        \n}"
+    headers:
+      Content-Length:
+      - '63'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "type": "DELETE"}]}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '73'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.24.0
+    method: POST
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=795df2d04c7661233b978c8a9547b00a0bb9d466&message=delete_message
+  response:
+    body:
+      string: ''
+    headers: {}
+    status:
+      code: 204
+      message: No Content
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.24.0
+    method: GET
+    uri: http://localhost:19120/api/v1/trees/tree/main
+  response:
+    body:
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
+        4711e80009d1ca8c1bc1e0899d2bd82c8e446053\"\n}"
+    headers:
+      Content-Length:
+      - '97'
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.24.0
+    method: DELETE
+    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=4711e80009d1ca8c1bc1e0899d2bd82c8e446053
+  response:
+    body:
+      string: ''
+    headers: {}
+    status:
+      code: 204
+      message: No Content
+- request:
+    body: '{"hash": null, "name": "main", "type": "BRANCH"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '48'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.24.0
+    method: POST
+    uri: http://localhost:19120/api/v1/trees/tree
+  response:
+    body:
+      string: ''
+    headers: {}
+    status:
+      code: 204
+      message: No Content
 version: 1
