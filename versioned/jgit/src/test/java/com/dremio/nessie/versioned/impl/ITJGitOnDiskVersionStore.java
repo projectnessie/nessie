@@ -25,6 +25,8 @@ import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
@@ -34,7 +36,6 @@ import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
 
 public class ITJGitOnDiskVersionStore extends AbstractITVersionStore {
@@ -82,16 +83,10 @@ public class ITJGitOnDiskVersionStore extends AbstractITVersionStore {
     return store;
   }
 
-  @Override
+  @Nested
   @Disabled
-  protected void transplant() throws VersionStoreException {
-    super.transplant();
-  }
-
-  @Disabled
-  @Override
-  public void transplantInvalidReference() throws VersionStoreException {
-    super.transplantInvalidReference();
+  @DisplayName("when transplanting")
+  class WhenTransplanting extends AbstractITVersionStore.WhenTransplanting {
   }
 
   @Disabled

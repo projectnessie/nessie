@@ -18,6 +18,8 @@ package com.dremio.nessie.versioned.impl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.dremio.nessie.backend.dynamodb.LocalDynamoDB;
@@ -55,9 +57,13 @@ public class ITDynamoDBVersionStore extends AbstractITVersionStore {
     super.commitWithInvalidReference();
   }
 
-  @Disabled
-  @Override
-  public void transplantInvalidReference() throws VersionStoreException {
-    super.transplantInvalidReference();
+  @Nested
+  @DisplayName("when transplanting")
+  class WhenTransplanting extends AbstractITVersionStore.WhenTransplanting {
+    @Disabled
+    @Override
+    protected void checkInvalidBranchHash() throws VersionStoreException {
+      super.checkInvalidBranchHash();
+    }
   }
 }
