@@ -460,15 +460,14 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   public void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
-    Id endTarget = Id.of(sequenceToTransplant.get(0));
     internalTransplant(sequenceToTransplant.get(sequenceToTransplant.size() - 1), targetBranch, currentBranchHash,
         true,
         (from, commonParent) -> {
           // first we need to validate that the actual history matches the provided sequence.
           List<L1> l1s = Lists.reverse(
-              new HistoryRetriever(store, from, endTarget, true, false, true).getStream().map(HistoryItem::getL1)
+              new HistoryRetriever(store, from, commonParent, true, false, true).getStream().map(HistoryItem::getL1)
               .collect(ImmutableList.toImmutableList()));
-          List<Hash> hashes = l1s.stream().map(L1::getId).map(Id::toHash).collect(Collectors.toList());
+          List<Hash> hashes = l1s.stream().map(L1::getId).filter(x -> !x.equals(commonParent)).map(Id::toHash).collect(Collectors.toList());
           if (!hashes.equals(sequenceToTransplant)) {
             throw new IllegalArgumentException("Provided are not sequential and consistent with history.");
           }
