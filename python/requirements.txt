@@ -1,4 +1,4 @@
-attrs==20.2.0
+attrs==20.3.0
 botocore==1.19.11
 Click==7.1.2
 confuse==1.3.0
