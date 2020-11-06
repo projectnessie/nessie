@@ -25,7 +25,12 @@ import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 
+import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
+import com.dremio.nessie.versioned.ReferenceConflictException;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.StringSerializer;
@@ -70,12 +75,21 @@ public class ITJGitInMemoryVersionStore extends AbstractITVersionStore {
     repository.close();
   }
 
-  @Override protected VersionStore<String, String> store() {
+  @Override
+  protected VersionStore<String, String> store() {
     return store;
   }
 
   @Disabled
-  protected void transplant() {
+  @Override
+  public void commitWithInvalidReference() throws ReferenceNotFoundException,
+      ReferenceConflictException, ReferenceAlreadyExistsException {
+    super.commitWithInvalidReference();
   }
 
+  @Nested
+  @Disabled
+  @DisplayName("when transplanting")
+  class WhenTransplanting extends AbstractITVersionStore.WhenTransplanting {
+  }
 }

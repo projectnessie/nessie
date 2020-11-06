@@ -57,6 +57,7 @@ import com.dremio.nessie.versioned.WithHash;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.MoreCollectors;
 import com.google.common.collect.Streams;
 
 /**
@@ -97,7 +98,6 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
 
       return new InMemoryVersionStore<>(this);
     }
-
   }
 
   private InMemoryVersionStore(Builder<ValueT, MetadataT> builder) {
@@ -141,6 +141,20 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     throw new IllegalArgumentException(format("Unsupported reference type for ref %s", ref));
   }
 
+  private void checkValidReferenceHash(BranchName branch, Hash currentBranchHash, Hash referenceHash)
+      throws ReferenceNotFoundException {
+    if (referenceHash.equals(NO_ANCESTOR)) {
+      return;
+    }
+    final Optional<Hash> foundHash = Streams.stream(new CommitsIterator<ValueT, MetadataT>(commits::get, currentBranchHash))
+        .map(WithHash::getHash)
+        .filter(hash -> hash.equals(referenceHash))
+        .collect(MoreCollectors.toOptional());
+
+    foundHash.orElseThrow(() -> new ReferenceNotFoundException(format("'%s' hash is not a valid commit from branch '%s'(%s)",
+        referenceHash, branch, currentBranchHash)));
+  }
+
   @Override
   public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
     requireNonNull(refOfUnknownType);
@@ -163,10 +177,12 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   public void commit(BranchName branch, Optional<Hash> referenceHash,
       MetadataT metadata, List<Operation<ValueT>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     final Hash currentHash = toHash(branch);
-
     // Validate commit
     try {
       ifPresent(referenceHash, hash -> {
+        // Check that reference hash is present in branch
+        checkValidReferenceHash(branch, currentHash, hash);
+
         // Get the list of keys mentioned by operations
         List<Key> keys = operations.stream().map(Operation::getKey).distinct().collect(Collectors.toList());
 
@@ -184,25 +200,19 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     }
 
     // Storing
-    try {
-      compute(namedReferences, branch, (key, hash) -> {
-        final Commit<ValueT, MetadataT> commit = Commit.of(valueSerializer, metadataSerializer, currentHash, metadata, operations);
-        final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
-        if (!previousHash.equals(currentHash)) {
-          // Concurrent modification
-          throw ReferenceConflictException.forReference(branch, referenceHash, Optional.of(previousHash));
-        }
+    compute(namedReferences, branch, (key, hash) -> {
+      final Commit<ValueT, MetadataT> commit = Commit.of(valueSerializer, metadataSerializer, currentHash, metadata, operations);
+      final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
+      if (!previousHash.equals(currentHash)) {
+        // Concurrent modification
+        throw ReferenceConflictException.forReference(branch, referenceHash, Optional.of(previousHash));
+      }
 
-        // Duplicates are very unlikely and also okay to ignore
-        final Hash commitHash = commit.getHash();
-        commits.putIfAbsent(commitHash, commit);
-        return commitHash;
-      });
-    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
-      throw e;
-    } catch (VersionStoreException e) {
-      throw new AssertionError(e);
-    }
+      // Duplicates are very unlikely and also okay to ignore
+      final Hash commitHash = commit.getHash();
+      commits.putIfAbsent(commitHash, commit);
+      return commitHash;
+    });
   }
 
   @Override
@@ -247,6 +257,8 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     // Validate commit
     try {
       ifPresent(referenceHash, hash -> {
+        checkValidReferenceHash(targetBranch, currentHash, hash);
+
         List<Key> keyList = new ArrayList<>(keys.size());
         keyList.addAll(keys);
 
@@ -264,24 +276,18 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     }
 
     // Storing
-    try {
-      compute(namedReferences, targetBranch, (key, hash) -> {
-        final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
-        if (!previousHash.equals(currentHash)) {
-          // Concurrent modification
-          throw ReferenceConflictException.forReference(targetBranch, referenceHash, Optional.of(previousHash));
-        }
+    compute(namedReferences, targetBranch, (key, hash) -> {
+      final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
+      if (!previousHash.equals(currentHash)) {
+        // Concurrent modification
+        throw ReferenceConflictException.forReference(targetBranch, referenceHash, Optional.of(previousHash));
+      }
 
-        toStore.forEach(commit -> commits.putIfAbsent(commit.getHash(), commit));
+      toStore.forEach(commit -> commits.putIfAbsent(commit.getHash(), commit));
 
-        final Commit<ValueT, MetadataT> lastCommit = Iterables.getLast(toStore);
-        return lastCommit.getHash();
-      });
-    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
-      throw e;
-    } catch (VersionStoreException e) {
-      throw new AssertionError(e);
-    }
+      final Commit<ValueT, MetadataT> lastCommit = Iterables.getLast(toStore);
+      return lastCommit.getHash();
+    });
   }
 
   @Override
@@ -298,17 +304,11 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
 
     final Hash currentHash = toHash(ref);
 
-    try {
-      ifPresent(expectedRefHash, hash -> {
-        if (!hash.equals(currentHash)) {
-          throw ReferenceConflictException.forReference(ref, expectedRefHash, Optional.of(currentHash));
-        }
-      });
-    } catch (ReferenceConflictException e) {
-      throw e;
-    } catch (VersionStoreException e) {
-      throw new AssertionError(e);
-    }
+    ifPresent(expectedRefHash, hash -> {
+      if (!hash.equals(currentHash)) {
+        throw ReferenceConflictException.forReference(ref, expectedRefHash, Optional.of(currentHash));
+      }
+    });
 
     // not locking as there's no support yet for garbage collecting dangling hashes
     if (!commits.containsKey(targetHash)) {
@@ -320,20 +320,14 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
 
   private void doAssign(NamedRef ref, Hash expectedHash, final Hash newHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    try {
-      compute(namedReferences, ref, (key, hash) -> {
-        final Hash previousHash = Optional.ofNullable(hash).orElse(expectedHash);
-        // Check if the previous and the new value matches
-        if (!expectedHash.equals(previousHash)) {
-          throw ReferenceConflictException.forReference(ref, Optional.of(expectedHash), Optional.of(previousHash));
-        }
-        return newHash;
-      });
-    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
-      throw e;
-    } catch (VersionStoreException e) {
-      throw new AssertionError(e);
-    }
+    compute(namedReferences, ref, (key, hash) -> {
+      final Hash previousHash = Optional.ofNullable(hash).orElse(expectedHash);
+      // Check if the previous and the new value matches
+      if (!expectedHash.equals(previousHash)) {
+        throw ReferenceConflictException.forReference(ref, Optional.of(expectedHash), Optional.of(previousHash));
+      }
+      return newHash;
+    });
   }
 
   @Override
@@ -341,19 +335,13 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     Preconditions.checkArgument(ref instanceof BranchName || targetHash.isPresent(), "Cannot create an unassigned tag reference");
 
-    try {
-      compute(namedReferences, ref, (key, currentHash) -> {
-        if (currentHash != null) {
-          throw ReferenceAlreadyExistsException.forReference(ref);
-        }
+    compute(namedReferences, ref, (key, currentHash) -> {
+      if (currentHash != null) {
+        throw ReferenceAlreadyExistsException.forReference(ref);
+      }
 
-        return targetHash.orElse(NO_ANCESTOR);
-      });
-    } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
-      throw e;
-    } catch (VersionStoreException e) {
-      throw new AssertionError(e);
-    }
+      return targetHash.orElse(NO_ANCESTOR);
+    });
   }
 
   @Override
@@ -486,43 +474,47 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   }
 
   @FunctionalInterface
-  private interface ComputeFunction<K, V> {
-    V apply(K k, V v) throws VersionStoreException;
+  private interface ComputeFunction<K, V, E extends VersionStoreException> {
+    V apply(K k, V v) throws E;
   }
 
   @FunctionalInterface
-  private interface IfPresentConsumer<V> {
-    void accept(V v) throws VersionStoreException;
+  private interface IfPresentConsumer<V, E extends VersionStoreException> {
+    void accept(V v) throws E;
   }
 
-  private static <K, V> V compute(ConcurrentMap<K, V> map, K key, ComputeFunction<K, V> doCompute)
-      throws VersionStoreException {
+  private static <K, V, E extends VersionStoreException> V compute(ConcurrentMap<K, V> map, K key, ComputeFunction<K, V, E> doCompute)
+      throws E {
     try {
       return map.compute(key, (k, v) -> {
         try {
           return doCompute.apply(k, v);
         } catch (VersionStoreException e) {
+          // e is of type E but cannot catch a generic type
           throw new VersionStoreExecutionError(e);
         }
       });
     } catch (VersionStoreExecutionError e) {
-      VersionStoreException cause = e.getCause();
+      @SuppressWarnings("unchecked")
+      E cause = (E) e.getCause();
       throw cause;
     }
   }
 
-  private static <T> void ifPresent(Optional<T> optional, IfPresentConsumer<? super T> consumer)
-      throws VersionStoreException {
+  private static <T, E extends VersionStoreException> void ifPresent(Optional<T> optional, IfPresentConsumer<? super T, E> consumer)
+      throws E {
     try {
       optional.ifPresent(value -> {
         try {
           consumer.accept(value);
         } catch (VersionStoreException e) {
+          // e is of type E but cannot catch a generic type
           throw new VersionStoreExecutionError(e);
         }
       });
     } catch (VersionStoreExecutionError e) {
-      VersionStoreException cause = e.getCause();
+      @SuppressWarnings("unchecked")
+      E cause = (E) e.getCause();
       throw cause;
     }
   }

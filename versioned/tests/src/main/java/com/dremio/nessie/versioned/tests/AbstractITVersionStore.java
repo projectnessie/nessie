@@ -30,6 +30,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.versioned.BranchName;
@@ -37,7 +40,6 @@ import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.NamedRef;
-import com.dremio.nessie.versioned.Operation;
 import com.dremio.nessie.versioned.Put;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
@@ -74,7 +76,7 @@ public abstract class AbstractITVersionStore {
 
     final BranchName anotherBranch = BranchName.of("bar");
     store().create(anotherBranch, Optional.of(hash));
-    final Hash commitHash = addCommit(anotherBranch, "Some Commit");
+    final Hash commitHash = commit("Some Commit").toBranch(anotherBranch);
 
     final BranchName anotherAnotherBranch = BranchName.of("baz");
     store().create(anotherAnotherBranch, Optional.of(commitHash));
@@ -119,7 +121,7 @@ public abstract class AbstractITVersionStore {
     store().create(branch, Optional.empty());
 
     final Hash initialHash = store().toHash(branch);
-    final Hash commitHash = addCommit(branch, "Some commit");
+    final Hash commitHash = commit("Some commit").toBranch(branch);
 
     final TagName tag = TagName.of("tag");
     store().create(tag, Optional.of(initialHash));
@@ -200,21 +202,23 @@ public abstract class AbstractITVersionStore {
 
     store().create(branch, Optional.empty());
 
-    final Hash initialCommit = addCommit(branch, "Initial Commit",
-        Put.of(Key.of("t1"), "v1_1"),
-        Put.of(Key.of("t2"), "v2_1"),
-        Put.of(Key.of("t3"), "v3_1")
-        );
-    final Hash secondCommit = addCommit(branch, "Second Commit",
-        Put.of(Key.of("t1"), "v1_2"),
-        Delete.of(Key.of("t2")),
-        Delete.of(Key.of("t3")),
-        Put.of(Key.of("t4"), "v4_1")
-        );
-    final Hash thirdCommit = addCommit(branch, "Third Commit",
-        Put.of(Key.of("t2"), "v2_2"),
-        Unchanged.of(Key.of("t4"))
-        );
+    final Hash initialCommit = commit("Initial Commit")
+        .put("t1", "v1_1")
+        .put("t2", "v2_1")
+        .put("t3", "v3_1")
+        .toBranch(branch);
+
+    final Hash secondCommit = commit("Second Commit")
+        .put("t1", "v1_2")
+        .delete("t2")
+        .delete("t3")
+        .put("t4", "v4_1")
+        .toBranch(branch);
+
+    final Hash thirdCommit = commit("Third Commit")
+        .put("t2", "v2_2")
+        .unchanged("t4")
+        .toBranch(branch);
 
     assertThat(store().getCommits(branch).collect(Collectors.toList()), contains(
         WithHash.of(thirdCommit, "Third Commit"),
@@ -296,17 +300,17 @@ public abstract class AbstractITVersionStore {
 
     store().create(branch, Optional.empty());
 
-    final Hash initialCommit = addCommit(branch, "Initial Commit",
-        Put.of(Key.of("t1"), "v1_1"),
-        Put.of(Key.of("t2"), "v2_1"),
-        Put.of(Key.of("t3"), "v3_1")
-        );
+    final Hash initialCommit = commit("Initial Commit")
+        .put("t1", "v1_1")
+        .put("t2", "v2_1")
+        .put("t3", "v3_1")
+        .toBranch(branch);
 
-    final Hash t1Commit = addCommit(branch, initialCommit, "T1 Commit", Put.of(Key.of("t1"), "v1_2"));
-    final Hash t2Commit = addCommit(branch, initialCommit, "T2 Commit", Delete.of(Key.of("t2")));
-    final Hash t3Commit = addCommit(branch, initialCommit, "T3 Commit", Unchanged.of(Key.of("t3")));
-    final Hash extraCommit = addCommit(branch, t1Commit, "Extra Commit", Put.of(Key.of("t1"), "v1_3"), Put.of(Key.of("t3"), "v3_2"));
-    final Hash newT2Commit = addCommit(branch, t2Commit, "New T2 Commit", Put.of(Key.of("t2"), "new_v2_1"));
+    final Hash t1Commit = commit("T1 Commit").fromReference(initialCommit).put("t1", "v1_2").toBranch(branch);
+    final Hash t2Commit = commit("T2 Commit").fromReference(initialCommit).delete("t2").toBranch(branch);
+    final Hash t3Commit = commit("T3 Commit").fromReference(initialCommit).unchanged("t3").toBranch(branch);
+    final Hash extraCommit = commit("Extra Commit").fromReference(t1Commit).put("t1", "v1_3").put("t3", "v3_2").toBranch(branch);
+    final Hash newT2Commit = commit("New T2 Commit").fromReference(t2Commit).put("t2", "new_v2_1").toBranch(branch);
 
     assertThat(store().getCommits(branch).collect(Collectors.toList()), contains(
         WithHash.of(newT2Commit, "New T2 Commit"),
@@ -382,30 +386,30 @@ public abstract class AbstractITVersionStore {
 
     store().create(branch, Optional.empty());
 
-    final Hash initialCommit = addCommit(branch, "Initial Commit",
-        Put.of(Key.of("t1"), "v1_1"),
-        Put.of(Key.of("t2"), "v2_1")
-        );
+    final Hash initialCommit = commit("Initial Commit")
+        .put("t1", "v1_1")
+        .put("t2", "v2_1")
+        .toBranch(branch);
 
-    final Hash secondCommit = addCommit(branch, "Second Commit",
-        Put.of(Key.of("t1"), "v1_2"),
-        Delete.of(Key.of("t2")),
-        Put.of(Key.of("t3"), "v3_1")
-        );
-
-    assertThrows(ReferenceConflictException.class,
-        () -> addCommit(branch, initialCommit, "Conflicting Commit", Put.of(Key.of("t1"), "v1_3")));
-    assertThrows(ReferenceConflictException.class,
-        () -> addCommit(branch, initialCommit, "Conflicting Commit", Put.of(Key.of("t2"), "v2_2")));
-    assertThrows(ReferenceConflictException.class,
-        () -> addCommit(branch, initialCommit, "Conflicting Commit", Put.of(Key.of("t3"), "v3_2")));
+    final Hash secondCommit = commit("Second Commit")
+        .put("t1", "v1_2")
+        .delete("t2")
+        .put("t3", "v3_1")
+        .toBranch(branch);
 
     assertThrows(ReferenceConflictException.class,
-        () -> addCommit(branch, initialCommit, "Conflicting Commit", Delete.of(Key.of("t1"))));
+        () -> commit("Conflicting Commit").fromReference(initialCommit).put("t1", "v1_3").toBranch(branch));
     assertThrows(ReferenceConflictException.class,
-        () -> addCommit(branch, initialCommit, "Conflicting Commit", Delete.of(Key.of("t2"))));
+        () -> commit("Conflicting Commit").fromReference(initialCommit).put("t2", "v2_2").toBranch(branch));
     assertThrows(ReferenceConflictException.class,
-        () -> addCommit(branch, initialCommit, "Conflicting Commit", Delete.of(Key.of("t3"))));
+        () -> commit("Conflicting Commit").fromReference(initialCommit).put("t3", "v3_2").toBranch(branch));
+
+    assertThrows(ReferenceConflictException.class,
+        () -> commit("Conflicting Commit").fromReference(initialCommit).delete("t1").toBranch(branch));
+    assertThrows(ReferenceConflictException.class,
+        () -> commit("Conflicting Commit").fromReference(initialCommit).delete("t2").toBranch(branch));
+    assertThrows(ReferenceConflictException.class,
+        () -> commit("Conflicting Commit").fromReference(initialCommit).delete("t3").toBranch(branch));
 
     // Checking the state hasn't changed
     assertThat(store().toHash(branch), is(secondCommit));
@@ -428,20 +432,23 @@ public abstract class AbstractITVersionStore {
 
     store().create(branch, Optional.empty());
 
-    final Hash initialCommit = addCommit(branch, "Initial Commit",
-        Put.of(Key.of("t1"), "v1_1"),
-        Put.of(Key.of("t2"), "v2_1")
-        );
+    commit("Initial Commit")
+        .put("t1", "v1_1")
+        .put("t2", "v2_1")
+        .toBranch(branch);
 
-    final Hash secondCommit = addCommit(branch, "Second Commit",
-        Put.of(Key.of("t1"), "v1_2"),
-        Delete.of(Key.of("t2")),
-        Put.of(Key.of("t3"), "v3_1")
-        );
+    commit("Second Commit")
+        .put("t1", "v1_2")
+        .delete("t2")
+        .put("t3", "v3_1")
+        .toBranch(branch);
 
-    final Hash putCommit = forceCommit(branch, "Conflicting Commit",
-            Put.of(Key.of("t1"), "v1_3"), Put.of(Key.of("t2"), "v2_2"),
-            Put.of(Key.of("t3"), "v3_2"));
+    final Hash putCommit = forceCommit("Conflicting Commit")
+        .put("t1", "v1_3")
+        .put("t2", "v2_2")
+        .put("t3", "v3_2")
+        .toBranch(branch);
+
     assertThat(store().toHash(branch), is(putCommit));
     assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
         contains(
@@ -450,8 +457,11 @@ public abstract class AbstractITVersionStore {
             Optional.of("v3_2")
         ));
 
-    final Hash unchangedCommit = forceCommit(branch, "Conflicting Commit",
-        Unchanged.of(Key.of("t1")), Unchanged.of(Key.of("t2")), Unchanged.of(Key.of("t3")));
+    final Hash unchangedCommit = commit("Conflicting Commit")
+        .unchanged("t1")
+        .unchanged("t2")
+        .unchanged("t3")
+        .toBranch(branch);
     assertThat(store().toHash(branch), is(unchangedCommit));
     assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
         contains(
@@ -460,8 +470,11 @@ public abstract class AbstractITVersionStore {
             Optional.of("v3_2")
         ));
 
-    final Hash deleteCommit = forceCommit(branch, "Conflicting Commit", Delete.of(Key.of("t1")),
-        Delete.of(Key.of("t2")), Delete.of(Key.of("t3")));
+    final Hash deleteCommit = commit("Conflicting Commit")
+        .delete("t1")
+        .delete("t2")
+        .delete("t3")
+        .toBranch(branch);
     assertThat(store().toHash(branch), is(deleteCommit));
     assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
         contains(
@@ -480,8 +493,8 @@ public abstract class AbstractITVersionStore {
     BranchName branch = BranchName.of("dupe-values");
     store().create(branch, Optional.empty());
     store().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("keyA"), "foo"),
-        Put.of(Key.of("keyB"), "foo"))
+        put("keyA", "foo"),
+        put("keyB", "foo"))
     );
 
     assertThat(store().getValue(branch, Key.of("keyA")), is("foo"));
@@ -505,12 +518,34 @@ public abstract class AbstractITVersionStore {
    * - Check that store throws RNFE if reference hash doesn't exist
    */
   @Test
-  public void commitWithInvalidReference() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+  public void commitWithUnknownReference() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
 
     assertThrows(ReferenceNotFoundException.class,
         () -> store().commit(branch, Optional.of(Hash.of("1234567890abcdef")), "New commit", Collections.emptyList()));
+  }
+
+  /*
+   * Test:
+   * - Check that store throws IllegalArgumentException if reference hash is not in branch ancestry
+   */
+  @Test
+  public void commitWithInvalidReference() throws ReferenceNotFoundException, ReferenceConflictException, ReferenceAlreadyExistsException {
+    final BranchName branch = BranchName.of("foo");
+    store().create(branch, Optional.empty());
+
+
+    final Hash initialHash = store().toHash(branch);
+    store().commit(branch, Optional.of(initialHash), "Some commit", Collections.emptyList());
+
+    final Hash commitHash = store().toHash(branch);
+
+    final BranchName branch2 = BranchName.of("bar");
+    store().create(branch2, Optional.empty());
+
+    assertThrows(ReferenceNotFoundException.class,
+        () -> store().commit(branch2, Optional.of(commitHash), "Another commit", Collections.emptyList()));
   }
 
   @Test
@@ -528,13 +563,13 @@ public abstract class AbstractITVersionStore {
     store().create(branch, Optional.empty());
     final Hash initialHash = store().toHash(branch);
 
-    final Hash commit = addCommit(branch, "Some commit");
+    final Hash commit = commit("Some commit").toBranch(branch);
     store().create(BranchName.of("bar"), Optional.of(commit));
     store().create(TagName.of("tag1"),  Optional.of(commit));
     store().create(TagName.of("tag2"),  Optional.of(commit));
     store().create(TagName.of("tag3"),  Optional.of(commit));
 
-    final Hash anotherCommit = addCommit(branch, "Another commit");
+    final Hash anotherCommit = commit("Another commit").toBranch(branch);
     store().assign(TagName.of("tag2"), Optional.of(commit), anotherCommit);
     store().assign(TagName.of("tag3"), Optional.empty(), anotherCommit);
 
@@ -569,30 +604,42 @@ public abstract class AbstractITVersionStore {
     ));
   }
 
-  @Test
-  protected void transplant() throws VersionStoreException {
-    final BranchName branch = BranchName.of("foo");
-    store().create(branch, Optional.empty());
+  @Nested
+  @DisplayName("when transplanting")
+  protected class WhenTransplanting {
+    private Hash initialHash;
+    private Hash firstCommit;
+    private Hash secondCommit;
+    private Hash thirdCommit;
 
-    final Hash initialHash = store().toHash(branch);
+    @BeforeEach
+    protected void setupCommits() throws VersionStoreException {
+      final BranchName branch = BranchName.of("foo");
+      store().create(branch, Optional.empty());
 
-    final Hash firstCommit = addCommit(branch, "First Commit",
-        Put.of(Key.of("t1"), "v1_1"),
-        Put.of(Key.of("t2"), "v2_1"),
-        Put.of(Key.of("t3"), "v3_1")
-        );
-    final Hash secondCommit = addCommit(branch, "Second Commit",
-        Put.of(Key.of("t1"), "v1_2"),
-        Delete.of(Key.of("t2")),
-        Delete.of(Key.of("t3")),
-        Put.of(Key.of("t4"), "v4_1")
-        );
-    final Hash thirdCommit = addCommit(branch, "Third Commit",
-        Put.of(Key.of("t2"), "v2_2"),
-        Unchanged.of(Key.of("t4"))
-        );
+      initialHash = store().toHash(branch);
 
-    {
+      firstCommit = commit("Initial Commit")
+          .put("t1", "v1_1")
+          .put("t2", "v2_1")
+          .put("t3", "v3_1")
+          .toBranch(branch);
+
+      secondCommit = commit("Second Commit")
+          .put("t1", "v1_2")
+          .delete("t2")
+          .delete("t3")
+          .put("t4", "v4_1")
+          .toBranch(branch);
+
+      thirdCommit = commit("Third Commit")
+          .put("t2", "v2_2")
+          .unchanged("t4")
+          .toBranch(branch);
+    }
+
+    @Test
+    protected void checkTransplantOnEmptyBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_1");
       store().create(newBranch, Optional.empty());
 
@@ -606,10 +653,11 @@ public abstract class AbstractITVersionStore {
       ));
     }
 
-    {
+    @Test
+    protected void checkTransplantWithPreviousCommit() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_2");
       store().create(newBranch, Optional.empty());
-      addCommit(newBranch, "Unrelated commit", Put.of(Key.of("t5"), "v5_1"));
+      commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
       store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit, thirdCommit));
       assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))),
@@ -622,20 +670,22 @@ public abstract class AbstractITVersionStore {
       ));
     }
 
-    {
+    @Test
+    protected void checkTransplantWitConflictingCommit() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_3");
       store().create(newBranch, Optional.empty());
-      addCommit(newBranch, "Another commit", Put.of(Key.of("t1"), "v1_4"));
+      commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
 
       assertThrows(ReferenceConflictException.class,
           () -> store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit, thirdCommit)));
     }
 
-    {
+    @Test
+    protected void checkTransplantWithDelete() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_4");
       store().create(newBranch, Optional.empty());
-      addCommit(newBranch, "Another commit", Put.of(Key.of("t1"), "v1_4"));
-      addCommit(newBranch, "Another commit", Delete.of(Key.of("t1")));
+      commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
+      commit("Another commit").delete("t1").toBranch(newBranch);
 
       store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit, thirdCommit));
       assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))),
@@ -647,24 +697,27 @@ public abstract class AbstractITVersionStore {
       ));
     }
 
-    {
+    @Test
+    protected void checkTransplantOnNonExistingBranch() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_5");
       assertThrows(ReferenceNotFoundException.class,
           () -> store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit, thirdCommit)));
     }
 
-    {
+    @Test
+    protected void checkTransplantWithNonExistingCommit() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_6");
       store().create(newBranch, Optional.empty());
       assertThrows(ReferenceNotFoundException.class,
           () -> store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(Hash.of("1234567890abcdef"))));
     }
 
-    {
+    @Test
+    protected void checkTransplantWithNoExpectedHash() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_7");
       store().create(newBranch, Optional.empty());
-      addCommit(newBranch, "Another commit", Put.of(Key.of("t5"), "v5_1"));
-      addCommit(newBranch, "Another commit", Put.of(Key.of("t1"), "v1_4"));
+      commit("Another commit").put("t5", "v5_1").toBranch(newBranch);
+      commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
 
       store().transplant(newBranch, Optional.empty(), Arrays.asList(firstCommit, secondCommit, thirdCommit));
       assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))),
@@ -677,12 +730,30 @@ public abstract class AbstractITVersionStore {
       ));
     }
 
-    {
+    @Test
+    protected void checkTransplantWithCommitsInWrongOrder() throws VersionStoreException {
       final BranchName newBranch = BranchName.of("bar_8");
       store().create(newBranch, Optional.empty());
 
       assertThrows(IllegalArgumentException.class,
           () -> store().transplant(newBranch, Optional.empty(), Arrays.asList(secondCommit, firstCommit, thirdCommit)));
+    }
+
+    @Test
+    protected void checkInvalidBranchHash() throws VersionStoreException {
+      final BranchName anotherBranch = BranchName.of("bar");
+      store().create(anotherBranch, Optional.empty());
+      final Hash unrelatedCommit = commit("Another Commit")
+          .put("t1", "v1_1")
+          .put("t2", "v2_1")
+          .put("t3", "v3_1")
+          .toBranch(anotherBranch);
+
+      final BranchName newBranch = BranchName.of("bar_1");
+      store().create(newBranch, Optional.empty());
+
+      assertThrows(ReferenceNotFoundException.class,
+          () -> store().transplant(newBranch, Optional.of(unrelatedCommit), Arrays.asList(firstCommit, secondCommit, thirdCommit)));
     }
   }
 
@@ -690,11 +761,11 @@ public abstract class AbstractITVersionStore {
   void toRef() throws VersionStoreException {
     final BranchName branch = BranchName.of("main");
     store().create(branch, Optional.empty());
-    final Hash initialCommit = store().toHash(branch);
+    store().toHash(branch);
 
-    final Hash firstCommit = addCommit(branch, "First Commit");
-    final Hash secondCommit = addCommit(branch, "Second Commit");
-    final Hash thirdCommit = addCommit(branch, "Third Commit");
+    final Hash firstCommit = commit("First Commit").toBranch(branch);
+    final Hash secondCommit = commit("Second Commit").toBranch(branch);
+    final Hash thirdCommit = commit("Third Commit").toBranch(branch);
 
     store().create(BranchName.of(thirdCommit.asString()), Optional.of(firstCommit));
     store().create(TagName.of(secondCommit.asString()), Optional.of(firstCommit));
@@ -708,24 +779,23 @@ public abstract class AbstractITVersionStore {
     assertThrows(ReferenceNotFoundException.class, () -> store().toRef("1234567890abcdef"));
   }
 
-  @SuppressWarnings("unchecked")
-  protected Hash addCommit(BranchName branch, String message, Operation<String>... operations)
-      throws ReferenceConflictException, ReferenceNotFoundException {
-    final Hash commit = store().toHash(branch);
-    return addCommit(branch, commit, message, operations);
+  protected CommitBuilder<String, String> forceCommit(String message) {
+    return new CommitBuilder<>(store()).withMetadata(message);
   }
 
-  @SuppressWarnings("unchecked")
-  protected Hash addCommit(BranchName branch, Hash referenceCommit, String message, Operation<String>... operations)
-      throws ReferenceConflictException, ReferenceNotFoundException {
-    store().commit(branch, Optional.of(referenceCommit), message, Arrays.asList(operations));
-    return store().toHash(branch);
+  protected CommitBuilder<String, String> commit(String message) {
+    return new CommitBuilder<>(store()).withMetadata(message).fromLatest();
   }
 
-  @SuppressWarnings("unchecked")
-  protected Hash forceCommit(BranchName branch, String message, Operation<String>... operations)
-      throws ReferenceConflictException, ReferenceNotFoundException {
-    store().commit(branch, Optional.empty(), message, Arrays.asList(operations));
-    return store().toHash(branch);
+  protected Put<String> put(String key, String value) {
+    return Put.of(Key.of(key), value);
+  }
+
+  protected Delete<String> delete(String key) {
+    return Delete.of(Key.of(key));
+  }
+
+  protected Unchanged<String> unchanged(String key) {
+    return Unchanged.of(Key.of(key));
   }
 }

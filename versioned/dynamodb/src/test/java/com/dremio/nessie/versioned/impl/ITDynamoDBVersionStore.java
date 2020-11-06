@@ -17,10 +17,17 @@ package com.dremio.nessie.versioned.impl;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.dremio.nessie.backend.dynamodb.LocalDynamoDB;
+import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
+import com.dremio.nessie.versioned.ReferenceConflictException;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.VersionStore;
+import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
 
 @ExtendWith(LocalDynamoDB.class)
@@ -43,4 +50,20 @@ public class ITDynamoDBVersionStore extends AbstractITVersionStore {
     return fixture;
   }
 
+  @Disabled
+  @Override
+  public void commitWithInvalidReference() throws ReferenceNotFoundException,
+      ReferenceConflictException, ReferenceAlreadyExistsException {
+    super.commitWithInvalidReference();
+  }
+
+  @Nested
+  @DisplayName("when transplanting")
+  class WhenTransplanting extends AbstractITVersionStore.WhenTransplanting {
+    @Disabled
+    @Override
+    protected void checkInvalidBranchHash() throws VersionStoreException {
+      super.checkInvalidBranchHash();
+    }
+  }
 }
