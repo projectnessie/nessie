@@ -39,6 +39,10 @@ public class LocalDynamoDB extends TypeBasedParameterResolver<DynamoDbClient> im
 
   @Override
   public void beforeAll(ExtensionContext context) throws Exception {
+    Holder holder = getHolder(context, true);
+    if (holder != null) {
+      return;
+    }
     getStore(context).put(DYNAMODB_CLIENT, new Holder());
   }
 
@@ -68,23 +72,37 @@ public class LocalDynamoDB extends TypeBasedParameterResolver<DynamoDbClient> im
 
   @Override
   public void afterAll(ExtensionContext context) throws Exception {
-    Holder h = getHolder(context);
+    Holder h = getHolder(context, false);
     if (h != null) {
       h.stop();
     }
   }
 
   private Store getStore(ExtensionContext context) {
-    return context.getStore(Namespace.create(getClass(), context.getRoot()));
+    return context.getStore(Namespace.create(getClass(), context));
   }
 
-  private Holder getHolder(ExtensionContext context) {
-    return (Holder) getStore(context).get(DYNAMODB_CLIENT);
+  private Holder getHolder(ExtensionContext context, boolean recursive) {
+    ExtensionContext c = context;
+    do {
+      Holder holder = (Holder) getStore(c).get(DYNAMODB_CLIENT);
+      if (holder != null) {
+        return holder;
+      }
+
+      if (!recursive) {
+        break;
+      }
+
+      c = c.getParent().orElse(null);
+    } while (c != null);
+
+    return null;
   }
 
   @Override
   public DynamoDbClient resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
-    return getHolder(extensionContext).client;
+    return getHolder(extensionContext, true).client;
   }
 
 }

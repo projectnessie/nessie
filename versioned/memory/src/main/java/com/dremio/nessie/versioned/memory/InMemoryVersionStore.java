@@ -177,27 +177,10 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   public void commit(BranchName branch, Optional<Hash> referenceHash,
       MetadataT metadata, List<Operation<ValueT>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     final Hash currentHash = toHash(branch);
+
     // Validate commit
-    try {
-      ifPresent(referenceHash, hash -> {
-        // Check that reference hash is present in branch
-        checkValidReferenceHash(branch, currentHash, hash);
-
-        // Get the list of keys mentioned by operations
-        List<Key> keys = operations.stream().map(Operation::getKey).distinct().collect(Collectors.toList());
-
-        List<Optional<ValueT>> referenceValues = getValues(hash, keys);
-        List<Optional<ValueT>> currentValues = getValues(currentHash, keys);
-
-        if (!referenceValues.equals(currentValues)) {
-          throw ReferenceConflictException.forReference(branch, referenceHash, Optional.of(currentHash));
-        }
-      });
-    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
-      throw e;
-    } catch (VersionStoreException e) {
-      throw new AssertionError(e);
-    }
+    final List<Key> keys = operations.stream().map(Operation::getKey).distinct().collect(Collectors.toList());
+    checkConcurrentModification(branch, currentHash, referenceHash, keys);
 
     // Storing
     compute(namedReferences, branch, (key, hash) -> {
@@ -234,7 +217,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     Hash ancestor = null;
     Hash newAncestor = currentHash;
 
-    for (Hash hash: sequenceToTransplant) {
+    for (final Hash hash: sequenceToTransplant) {
       final Commit<ValueT, MetadataT> commit = commits.get(hash);
       if (commit == null) {
         throw ReferenceNotFoundException.forReference(hash);
@@ -255,25 +238,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     }
 
     // Validate commit
-    try {
-      ifPresent(referenceHash, hash -> {
-        checkValidReferenceHash(targetBranch, currentHash, hash);
-
-        List<Key> keyList = new ArrayList<>(keys.size());
-        keyList.addAll(keys);
-
-        List<Optional<ValueT>> referenceValues = getValues(hash, keyList);
-        List<Optional<ValueT>> currentValues = getValues(currentHash, keyList);
-
-        if (!referenceValues.equals(currentValues)) {
-          throw ReferenceConflictException.forReference(targetBranch, referenceHash, Optional.of(currentHash));
-        }
-      });
-    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
-      throw e;
-    } catch (VersionStoreException e) {
-      throw new AssertionError(e);
-    }
+    checkConcurrentModification(targetBranch, currentHash, referenceHash, new ArrayList<>(keys));
 
     // Storing
     compute(namedReferences, targetBranch, (key, hash) -> {
@@ -290,10 +255,83 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     });
   }
 
+  private void checkConcurrentModification(final BranchName targetBranch, final Hash currentHash, final Optional<Hash> referenceHash,
+      final List<Key> keyList) throws ReferenceNotFoundException, ReferenceConflictException {
+    // Validate commit
+    try {
+      ifPresent(referenceHash, hash -> {
+        checkValidReferenceHash(targetBranch, currentHash, hash);
+
+        final List<Optional<ValueT>> referenceValues = getValues(hash, keyList);
+        final List<Optional<ValueT>> currentValues = getValues(currentHash, keyList);
+
+        if (!referenceValues.equals(currentValues)) {
+          throw ReferenceConflictException.forReference(targetBranch, referenceHash, Optional.of(currentHash));
+        }
+      });
+    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+      throw e;
+    } catch (VersionStoreException e) {
+      throw new AssertionError(e);
+    }
+  }
+
   @Override
-  public void merge(Hash fromHash, BranchName toBranch,
-      Optional<Hash> expectedBranchHash) {
-    throw new UnsupportedOperationException();
+  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
+      throws ReferenceNotFoundException, ReferenceConflictException {
+    requireNonNull(fromHash);
+    requireNonNull(toBranch);
+    if (!commits.containsKey(fromHash)) {
+      throw ReferenceNotFoundException.forReference(fromHash);
+    }
+    final Hash currentHash = toHash(toBranch);
+
+    final Hash referenceHash = expectedBranchHash.orElse(currentHash);
+
+    // Find the common ancestor between toBranch and fromHash
+    final Set<Hash> toBranchHashes = Streams.stream(new CommitsIterator<>(commits::get, referenceHash))
+        .map(WithHash::getHash)
+        .collect(Collectors.toSet());
+
+    final Set<Key> keys = new HashSet<>();
+    final List<Commit<ValueT, MetadataT>> toMerge = new ArrayList<>();
+    Hash commonAncestor = null;
+    for (final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator = new CommitsIterator<ValueT, MetadataT>(
+        commits::get, fromHash); iterator.hasNext();) {
+      final WithHash<Commit<ValueT, MetadataT>> commit = iterator.next();
+      if (toBranchHashes.contains(commit.getHash())) {
+        commonAncestor = commit.getHash();
+        break;
+      }
+
+      toMerge.add(commit.getValue());
+      commit.getValue().getOperations().forEach(op -> keys.add(op.getKey()));
+    }
+
+    checkConcurrentModification(toBranch, currentHash, expectedBranchHash, new ArrayList<>(keys));
+
+    // Create new commits
+    final List<Commit<ValueT, MetadataT>> toStore = new ArrayList<>(toMerge.size());
+    Hash newAncestor = currentHash;
+    for (final Commit<ValueT, MetadataT> commit : Lists.reverse(toMerge)) {
+      final Commit<ValueT, MetadataT> newCommit = Commit.of(valueSerializer, metadataSerializer,
+          newAncestor, commit.getMetadata(), commit.getOperations());
+      toStore.add(newCommit);
+      newAncestor = newCommit.getHash();
+    }
+
+    // Storing
+    compute(namedReferences, toBranch, (key, hash) -> {
+      final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
+      if (!previousHash.equals(currentHash)) {
+        // Concurrent modification
+        throw ReferenceConflictException.forReference(toBranch, expectedBranchHash, Optional.of(previousHash));
+      }
+
+      toStore.forEach(commit -> commits.putIfAbsent(commit.getHash(), commit));
+      final Commit<ValueT, MetadataT> lastCommit = Iterables.getLast(toStore);
+      return lastCommit.getHash();
+    });
   }
 
   @Override
