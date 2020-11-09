@@ -611,10 +611,23 @@ public abstract class AbstractITVersionStore {
 
     final Hash initialHash = store().toHash(branch);
 
-    addCommit(branch, "First Commit", Put.of(Key.of("t1"), "v1_1"), Put.of(Key.of("t2"), "v2_1"), Put.of(Key.of("t3"), "v3_1"));
-    addCommit(branch, "Second Commit", Put.of(Key.of("t1"), "v1_2"), Delete.of(Key.of("t2")), Delete.of(Key.of("t3")),
-              Put.of(Key.of("t4"), "v4_1"));
-    final Hash thirdCommit = addCommit(branch, "Third Commit", Put.of(Key.of("t2"), "v2_2"), Unchanged.of(Key.of("t4")));
+    commit("Initial Commit")
+        .put("t1", "v1_1")
+        .put("t2", "v2_1")
+        .put("t3", "v3_1")
+        .toBranch(branch);
+
+    commit("Second Commit")
+        .put("t1", "v1_2")
+        .delete("t2")
+        .delete("t3")
+        .put("t4", "v4_1")
+        .toBranch(branch);
+
+    Hash thirdCommit = commit("Third Commit")
+        .put("t2", "v2_2")
+        .unchanged("t4")
+        .toBranch(branch);
 
     {
       final BranchName newBranch = BranchName.of("bar_1");
@@ -633,7 +646,9 @@ public abstract class AbstractITVersionStore {
     {
       final BranchName newBranch = BranchName.of("bar_2");
       store().create(newBranch, Optional.empty());
-      addCommit(newBranch, "Unrelated commit", Put.of(Key.of("t5"), "v5_1"));
+      commit("Unrelated commit")
+          .put("t5", "v5_1")
+          .toBranch(newBranch);
 
       store().merge(thirdCommit, newBranch, Optional.empty());
       assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))),
@@ -649,23 +664,25 @@ public abstract class AbstractITVersionStore {
     {
       final BranchName newBranch = BranchName.of("bar_3");
       store().create(newBranch, Optional.empty());
-      addCommit(newBranch, "Another commit", Put.of(Key.of("t1"), "v1_4"));
+      commit("Another commit")
+          .put("t1", "v1_4")
+          .toBranch(newBranch);
 
       assertThrows(ReferenceConflictException.class,
-                   () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
+          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
     }
 
     {
       final BranchName newBranch = BranchName.of("bar_5");
       assertThrows(ReferenceNotFoundException.class,
-                   () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
+          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
     }
 
     {
       final BranchName newBranch = BranchName.of("bar_6");
       store().create(newBranch, Optional.empty());
       assertThrows(ReferenceNotFoundException.class,
-                   () -> store().merge(Hash.of("1234567890abcdef"), newBranch, Optional.of(initialHash)));
+          () -> store().merge(Hash.of("1234567890abcdef"), newBranch, Optional.of(initialHash)));
     }
 
   }
