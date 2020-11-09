@@ -92,4 +92,9 @@ public class ITJGitInMemoryVersionStore extends AbstractITVersionStore {
   @DisplayName("when transplanting")
   class WhenTransplanting extends AbstractITVersionStore.WhenTransplanting {
   }
+
+  @Nested
+  @Disabled
+  class WhenMerging extends AbstractITVersionStore.WhenMerging {
+  }
 }

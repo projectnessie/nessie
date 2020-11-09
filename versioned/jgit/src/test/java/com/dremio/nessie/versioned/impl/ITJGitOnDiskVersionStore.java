@@ -89,6 +89,11 @@ public class ITJGitOnDiskVersionStore extends AbstractITVersionStore {
   class WhenTransplanting extends AbstractITVersionStore.WhenTransplanting {
   }
 
+  @Nested
+  @Disabled
+  class WhenMerging extends AbstractITVersionStore.WhenMerging {
+  }
+
   @Disabled
   @Override
   public void commitWithInvalidReference() throws ReferenceNotFoundException,

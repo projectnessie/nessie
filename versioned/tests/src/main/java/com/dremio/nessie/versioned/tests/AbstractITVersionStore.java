@@ -757,6 +757,117 @@ public abstract class AbstractITVersionStore {
     }
   }
 
+  @Nested
+  protected class WhenMerging {
+    private Hash initialHash;
+    private Hash firstCommit;
+    private Hash secondCommit;
+    private Hash thirdCommit;
+
+    @BeforeEach
+    protected void setupCommits() throws VersionStoreException {
+      final BranchName branch = BranchName.of("foo");
+      store().create(branch, Optional.empty());
+
+      initialHash = store().toHash(branch);
+
+      firstCommit = commit("First Commit").put("t1", "v1_1").put("t2", "v2_1").put("t3", "v3_1").toBranch(branch);
+      secondCommit = commit("Second Commit").put("t1", "v1_2").delete("t2").delete("t3").put("t4", "v4_1").toBranch(branch);
+      thirdCommit = commit("Third Commit").put("t2", "v2_2").unchanged("t4").toBranch(branch);
+    }
+
+    @Test
+    protected void mergeIntoEmptyBranch() throws VersionStoreException {
+      final BranchName newBranch = BranchName.of("bar_1");
+      store().create(newBranch, Optional.empty());
+
+      store().merge(thirdCommit, newBranch, Optional.of(initialHash));
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))),
+                 contains(
+                   Optional.of("v1_2"),
+                   Optional.of("v2_2"),
+                   Optional.empty(),
+                   Optional.of("v4_1")
+                 ));
+
+      assertThat(store().toHash(newBranch), is(thirdCommit));
+    }
+
+    @Test
+    protected void mergeIntoNonConflictingBranch() throws VersionStoreException {
+      final BranchName newBranch = BranchName.of("bar_2");
+      store().create(newBranch, Optional.empty());
+      final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
+
+      store().merge(thirdCommit, newBranch, Optional.empty());
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))),
+                 contains(
+                   Optional.of("v1_2"),
+                   Optional.of("v2_2"),
+                   Optional.empty(),
+                   Optional.of("v4_1"),
+                   Optional.of("v5_1")
+                 ));
+
+      final List<WithHash<String>> commits = store().getCommits(newBranch).collect(Collectors.toList());
+      assertThat(commits.size(), is(4));
+      assertThat(commits.get(3).getHash(), is(newCommit));
+      assertThat(commits.get(2).getValue(), is("First Commit"));
+      assertThat(commits.get(1).getValue(), is("Second Commit"));
+      assertThat(commits.get(0).getValue(), is("Third Commit"));
+    }
+
+    @Test
+    protected void mergeWithCommonAncestor() throws VersionStoreException {
+      final BranchName newBranch = BranchName.of("bar_2");
+      store().create(newBranch, Optional.of(firstCommit));
+
+      final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
+
+      store().merge(thirdCommit, newBranch, Optional.empty());
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))),
+                 contains(
+                   Optional.of("v1_2"),
+                   Optional.of("v2_2"),
+                   Optional.empty(),
+                   Optional.of("v4_1"),
+                   Optional.of("v5_1")
+                 ));
+
+      final List<WithHash<String>> commits = store().getCommits(newBranch).collect(Collectors.toList());
+      assertThat(commits.size(), is(4));
+      assertThat(commits.get(3).getHash(), is(firstCommit));
+      assertThat(commits.get(2).getHash(), is(newCommit));
+      assertThat(commits.get(1).getValue(), is("Second Commit"));
+      assertThat(commits.get(0).getValue(), is("Third Commit"));
+    }
+
+    @Test
+    protected void mergeIntoConflictingBranch() throws VersionStoreException {
+      final BranchName newBranch = BranchName.of("bar_3");
+      store().create(newBranch, Optional.empty());
+      commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
+
+      assertThrows(ReferenceConflictException.class,
+          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
+    }
+
+    @Test
+    protected void mergeIntoNonExistingBranch() throws VersionStoreException {
+      final BranchName newBranch = BranchName.of("bar_5");
+      assertThrows(ReferenceNotFoundException.class,
+          () -> store().merge(thirdCommit, newBranch, Optional.of(initialHash)));
+    }
+
+    @Test
+    protected void mergeIntoNonExistingReference() throws VersionStoreException {
+      final BranchName newBranch = BranchName.of("bar_6");
+      store().create(newBranch, Optional.empty());
+      assertThrows(ReferenceNotFoundException.class,
+          () -> store().merge(Hash.of("1234567890abcdef"), newBranch, Optional.of(initialHash)));
+    }
+  }
+
   @Test
   void toRef() throws VersionStoreException {
     final BranchName branch = BranchName.of("main");
