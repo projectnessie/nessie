@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -189,8 +188,6 @@ class HistoryRetriever {
   }
 
   public static Id findCommonParent(Store store, L1 head1, L1 head2, int maxDepth) {
-    System.out.println(new HistoryRetriever(store, head1, Id.EMPTY, false, false, true).getStream().collect(Collectors.toList()));
-    System.out.println(new HistoryRetriever(store, head2, Id.EMPTY, false, false, true).getStream().collect(Collectors.toList()));
     Iterator<Id> r1 = new HistoryRetriever(store, head1, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();
     Iterator<Id> r2 = new HistoryRetriever(store, head2, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();
     Set<Id> r1Set = new LinkedHashSet<>();
