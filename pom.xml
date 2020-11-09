@@ -911,6 +911,8 @@ limitations under the License.
             <svg>XML_STYLE</svg>
             <mvnw>SCRIPT_STYLE</mvnw>
             <jsx>SLASHSTAR_STYLE</jsx>
+            <tsx>SLASHSTAR_STYLE</tsx>
+            <ts>SLASHSTAR_STYLE</ts>
             <jmx>XML_STYLE</jmx>
           </mapping>
         </configuration>

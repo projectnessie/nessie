@@ -67,6 +67,7 @@
             <exclude>coverage/**</exclude>
             <exclude>.nyc_output/**</exclude>
             <exclude>**/*.pattern</exclude>
+            <exclude>src/utils/api/**</exclude>
           </excludes>
           <mapping>
             <!-- full file names -->
