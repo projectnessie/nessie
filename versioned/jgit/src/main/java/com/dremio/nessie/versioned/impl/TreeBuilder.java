@@ -155,11 +155,12 @@ public class TreeBuilder {
           dce.setFileMode(treeWalk.getFileMode(0));
           builder.add(dce);
         } else if (ObjectId.isEqual(current, ObjectId.zeroId()) || !treeWalk.idEqual(0, 1)) {
-          if (treeWalk.getFileMode(1).equals(FileMode.GITLINK)) {
-            continue; //deleted dont add
-          }
           DirCacheEntry dce = new DirCacheEntry(treeWalk.getRawPath());
-          dce.setObjectId(treeWalk.getObjectId(1));
+          if (treeWalk.getFileMode(1).equals(FileMode.GITLINK)) {
+            dce.setObjectId(ObjectId.zeroId());
+          } else {
+            dce.setObjectId(treeWalk.getObjectId(1));
+          }
           dce.setFileMode(treeWalk.getFileMode(1));
           builder.add(dce);
         }

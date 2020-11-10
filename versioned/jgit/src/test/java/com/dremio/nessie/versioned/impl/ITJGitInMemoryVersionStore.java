@@ -16,53 +16,12 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
-import org.eclipse.jgit.lib.Repository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 
-import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
-import com.dremio.nessie.versioned.ReferenceConflictException;
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.Serializer;
-import com.dremio.nessie.versioned.StoreWorker;
-import com.dremio.nessie.versioned.StringSerializer;
-import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
-
-public class ITJGitInMemoryVersionStore extends AbstractITVersionStore {
-  private Repository repository;
-  private VersionStore<String, String> store;
-
-  private static final StoreWorker<String, String> WORKER = new StoreWorker<String, String>() {
-
-    @Override
-    public Serializer<String> getValueSerializer() {
-      return StringSerializer.getInstance();
-    }
-
-    @Override
-    public Serializer<String> getMetadataSerializer() {
-      return StringSerializer.getInstance();
-    }
-
-    @Override
-    public Stream<AssetKey> getAssetKeys(String value) {
-      return Stream.of();
-    }
-
-    @Override
-    public CompletableFuture<Void> deleteAsset(AssetKey key) {
-      throw new UnsupportedOperationException();
-    }
-  };
+public class ITJGitInMemoryVersionStore extends AbstractITJGitVersionStore {
 
   @BeforeEach
   void setUp() throws IOException {
@@ -70,31 +29,4 @@ public class ITJGitInMemoryVersionStore extends AbstractITVersionStore {
     store = new JGitVersionStore<>(repository, WORKER);
   }
 
-  @AfterEach
-  void tearDown() {
-    repository.close();
-  }
-
-  @Override
-  protected VersionStore<String, String> store() {
-    return store;
-  }
-
-  @Disabled
-  @Override
-  public void commitWithInvalidReference() throws ReferenceNotFoundException,
-      ReferenceConflictException, ReferenceAlreadyExistsException {
-    super.commitWithInvalidReference();
-  }
-
-  @Nested
-  @Disabled
-  @DisplayName("when transplanting")
-  class WhenTransplanting extends AbstractITVersionStore.WhenTransplanting {
-  }
-
-  @Nested
-  @Disabled
-  class WhenMerging extends AbstractITVersionStore.WhenMerging {
-  }
 }

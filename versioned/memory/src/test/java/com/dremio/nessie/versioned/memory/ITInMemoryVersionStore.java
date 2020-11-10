@@ -43,4 +43,5 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
   protected void afterEach() {
     this.store = null;
   }
+
 }

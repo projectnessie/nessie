@@ -88,6 +88,9 @@ class TestTreeBuilder {
     Map<String, String> results = new HashMap<>();
     Set<String> expected = ImmutableSet.of("a/b/c.txt", "a/g/h.txt", "a/f.txt", "a/i/j.txt", "k/l.txt", "m/n/o.txt");
     while (tw.next()) {
+      if (ObjectId.zeroId().equals(tw.getObjectId(0))) {
+        continue;
+      }
       String value = serializer.fromBytes(ByteString.copyFrom(repository.newObjectReader().open(tw.getObjectId(0)).getBytes()));
       results.put(tw.getPathString(), value);
     }
