@@ -200,29 +200,35 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
                                          .map(Operation::getKey)
                                          .map(JGitVersionStore::stringFromKey)
                                          .collect(Collectors.toList());
-      commitTreeWithTwoWayMerge(branch, expectedHash, newTree, metadata, unchanged);
+      Optional<ObjectId> mergedTree = commitTreeWithTwoWayMerge(branch, expectedHash, newTree, unchanged);
+      ObjectId currentCommitId = repository.resolve(branch.getName() + "^{commit}");
+      ObjectId currentTreeId = repository.resolve(branch.getName() + "^{tree}");
+      ObjectId mergedHash = mergedTree.orElseThrow(() -> ReferenceConflictException.forReference(branch,
+                                                                                                 expectedHash,
+                                                                                                 Optional.of(currentCommitId)
+                                                                                                         .map(ObjectId::name)
+                                                                                                         .map(Hash::of)));
+      commitTree(branch,
+                 mergedHash,
+                 Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of),
+                 metadata,
+                 ObjectId.isEqual(currentTreeId, mergedHash));
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
   }
 
-  private void commitTreeWithTwoWayMerge(BranchName branch, Optional<Hash> expectedHash, ObjectId newTree, METADATA metadata,
-                                         List<String> unchanged) throws ReferenceConflictException, IOException {
+  private Optional<ObjectId> commitTreeWithTwoWayMerge(BranchName branch, Optional<Hash> expectedHash, ObjectId newTree,
+                                                       List<String> unchanged) throws IOException {
     ObjectId currentTreeId = repository.resolve(branch.getName() + "^{tree}");
-    ObjectId currentCommitId = repository.resolve(branch.getName() + "^{commit}");
     ObjectId expectedId = repository.resolve(expectedHash.map(Hash::asString).orElse(currentTreeId.name()) + "^{tree}");
     Optional<ObjectId> mergedTree = tryTwoWayMerge(currentTreeId,
                                                    newTree,
                                                    repository.newObjectInserter(),
                                                    expectedId,
                                                    unchanged);
-    commitTree(branch,
-               mergedTree.orElseThrow(() -> ReferenceConflictException.forReference(branch, expectedHash, Optional.of(currentCommitId)
-                                                                                                                  .map(ObjectId::name)
-                                                                                                                  .map(Hash::of))),
-               Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of),
-               metadata,
-               ObjectId.isEqual(currentTreeId, mergedTree.get()));
+
+    return mergedTree;
   }
 
   private void testLinearTransplantList(List<Hash> sequenceToTransplant) throws ReferenceNotFoundException {
@@ -272,7 +278,24 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
           newTree = TreeBuilder.merge(newTree, transplantTree, repository);
         }
       }
-      commitTreeWithTwoWayMerge(targetBranch, expectedHash, newTree, null, Collections.emptyList());
+      Optional<ObjectId> mergeTree = commitTreeWithTwoWayMerge(targetBranch, expectedHash, newTree, Collections.emptyList());
+      ObjectId currentCommitId = repository.resolve(targetBranch.getName() + "^{commit}");
+      ObjectId currentTreeId = repository.resolve(targetBranch.getName() + "^{tree}");
+      if (!mergeTree.isPresent()) {
+        throw ReferenceConflictException.forReference(targetBranch,
+                                                      expectedHash,
+                                                      Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of));
+      }
+      for (Hash hash: sequenceToTransplant) {
+        ObjectId transplantTree = TreeBuilder.merge(currentTreeId, TreeBuilder.transplant(hash, repository), repository);
+        commitTree(targetBranch,
+                   transplantTree,
+                   Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of),
+                   getCommit(hash),
+                   false);
+        currentCommitId = repository.resolve(targetBranch.getName() + "^{commit}");
+        currentTreeId = repository.resolve(targetBranch.getName() + "^{tree}");
+      }
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
@@ -454,6 +477,13 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
+  }
+
+  private METADATA getCommit(Hash hash) throws IOException {
+    RevCommit r = repository.parseCommit(ObjectId.fromString(hash.asString()));
+    Serializer<METADATA> serializer = storeWorker.getMetadataSerializer();
+    METADATA metadata = serializer.fromBytes(ByteString.copyFrom(r.getFullMessage(), StandardCharsets.UTF_8));
+    return metadata;
   }
 
   @Override

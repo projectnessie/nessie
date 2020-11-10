@@ -15,15 +15,11 @@
  */
 package com.dremio.nessie.versioned.memory;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
 
 public class ITInMemoryVersionStore extends AbstractITVersionStore {
@@ -48,9 +44,4 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
     this.store = null;
   }
 
-  @Test
-  protected void merge() throws VersionStoreException {
-    // TODO: implement merge.
-    assertThrows(UnsupportedOperationException.class, () -> super.merge());
-  }
 }
