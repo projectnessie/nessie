@@ -604,37 +604,6 @@ public abstract class AbstractITVersionStore {
     ));
   }
 
-  @Test
-  protected void transplantBasic() throws VersionStoreException {
-    final BranchName branch = BranchName.of("foo");
-    store().create(branch, Optional.empty());
-
-    final Hash initialHash = store().toHash(branch);
-
-    Hash firstCommit = commit("Initial Commit")
-        .put("t1", "v1_1")
-        .toBranch(branch);
-
-    Hash secondCommit = commit("Second Commit")
-        .put("t4", "v4_1")
-        .toBranch(branch);
-
-
-    {
-      final BranchName newBranch = BranchName.of("bar_2");
-      store().create(newBranch, Optional.empty());
-      commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
-
-      store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit));
-      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))),
-                 contains(
-                   Optional.of("v1_1"),
-                   Optional.of("v4_1"),
-                   Optional.of("v5_1")
-                 ));
-    }
-  }
-
   @Nested
   @DisplayName("when transplanting")
   protected class WhenTransplanting {
