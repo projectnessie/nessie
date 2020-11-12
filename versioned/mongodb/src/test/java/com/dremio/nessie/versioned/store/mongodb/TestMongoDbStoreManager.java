@@ -17,23 +17,35 @@ package com.dremio.nessie.versioned.store.mongodb;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import com.mongodb.client.MongoDatabase;
+
 public class TestMongoDbStoreManager {
+  final String testDatabaseName = "mydb";
+  final String connectionString = "localhost:27018";
+
   @Test
   public void closeMongoDBClientThatDoesNotExist() {
-    MongoDbStoreManager mongoDbStoreManager = new MongoDbStoreManager();
+    MongoDbStoreManager mongoDbStoreManager = new MongoDbStoreManager(connectionString, testDatabaseName);
     assertNull(mongoDbStoreManager.mongoClient);
     mongoDbStoreManager.close();
   }
 
+  /**
+   * A test to open and close a connection to the database via the Mongo Client.
+   * The test ensures that the database name set up can be retrieved.
+   */
   @Test
   public void createAndCloseClient() {
-    MongoDbStoreManager mongoDbStoreManager = new MongoDbStoreManager();
+    MongoDbStoreManager mongoDbStoreManager = new MongoDbStoreManager(connectionString, testDatabaseName);
     assertNull(mongoDbStoreManager.mongoClient);
     mongoDbStoreManager.start();
     assertNotNull(mongoDbStoreManager.mongoClient);
+    MongoDatabase mongoDatabase = mongoDbStoreManager.mongoClient.getDatabase(testDatabaseName);
+    assertTrue(mongoDatabase.getName().equals(testDatabaseName));
     mongoDbStoreManager.close();
     assertNull(mongoDbStoreManager.mongoClient);
   }
