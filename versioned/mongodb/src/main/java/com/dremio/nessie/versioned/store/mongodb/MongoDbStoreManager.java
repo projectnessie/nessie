@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
@@ -31,15 +34,51 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ListMultimap;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoDatabase;
 
-
+/**
+ * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
+ * Git like behaviour.
+ * The MongoDbStoreManager connects to an external MongoDB server.
+ */
 public class MongoDbStoreManager implements Store {
-  @Override
-  public void start() {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbStoreManager.class);
+
+  //TODO make the server URL configurable since this will currently connected to localhost:27018.
+  // The client that connects to the MongoDB server.
+  protected MongoClient mongoClient;
+  // The database hosted by the MongoDB server.
+  private MongoDatabase mongoDatabase;
+
+  public MongoDbStoreManager() {
   }
 
+  /**
+   * Creates a connection to an existing database or creates the database if it does not exist.
+   * Since MongoDB creates databases and tables if they do not exist, there is no need to validate the presence of
+   * either before they are used.
+   */
+  @Override
+  public void start() {
+    mongoClient = MongoClients.create();
+    //TODO get this from a builder object, so it can be passed in on construction.
+    mongoDatabase = mongoClient.getDatabase("mydb");
+  }
+
+  /**
+   * Closes the connection this manager creates to a database. If the connection is already closed this method has
+   * no effect.
+   */
   @Override
   public void close() {
+    if (mongoClient != null) {
+      mongoClient.close();
+      mongoClient = null;
+    } else {
+      LOGGER.error("Attempt to close connection to MongoDB when no connection exists");
+    }
   }
 
   @Override
