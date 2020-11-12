@@ -37,6 +37,7 @@ import com.google.common.collect.ListMultimap;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.CreateCollectionOptions;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
@@ -46,25 +47,29 @@ import com.mongodb.client.MongoDatabase;
 public class MongoDbStoreManager implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbStoreManager.class);
 
+  private final String connectionString;
+  private final String databaseName;
+
   //TODO make the server URL configurable since this will currently connected to localhost:27018.
   // The client that connects to the MongoDB server.
   protected MongoClient mongoClient;
   // The database hosted by the MongoDB server.
   private MongoDatabase mongoDatabase;
 
-  public MongoDbStoreManager() {
+  public MongoDbStoreManager(String connectionString, String databaseName) {
+    this.connectionString = connectionString;
+    this.databaseName = databaseName;
   }
 
   /**
    * Creates a connection to an existing database or creates the database if it does not exist.
-   * Since MongoDB creates databases and tables if they do not exist, there is no need to validate the presence of
+   * Since MongoDB creates databases and collections if they do not exist, there is no need to validate the presence of
    * either before they are used.
    */
   @Override
   public void start() {
     mongoClient = MongoClients.create();
-    //TODO get this from a builder object, so it can be passed in on construction.
-    mongoDatabase = mongoClient.getDatabase("mydb");
+    mongoDatabase = mongoClient.getDatabase(databaseName);
   }
 
   /**
@@ -76,8 +81,6 @@ public class MongoDbStoreManager implements Store {
     if (mongoClient != null) {
       mongoClient.close();
       mongoClient = null;
-    } else {
-      LOGGER.error("Attempt to close connection to MongoDB when no connection exists");
     }
   }
 
@@ -98,6 +101,8 @@ public class MongoDbStoreManager implements Store {
   @Override
   @SuppressWarnings("unchecked")
   public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
+    // TODO ensure that calls to mongoDatabase.createCollection etc are surrounded with try-catch to detect
+    //  com.mongodb.MongoSocketOpenException
   }
 
   @Override
