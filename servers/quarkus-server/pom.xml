@@ -198,26 +198,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>unpack</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>unpack-dependencies</goal>
-            </goals>
-            <configuration>
-              <includes>**/*</includes>
-              <excludes>META-INF/*,META-INF/**/*,META-INF</excludes>
-              <includeGroupIds>org.projectnessie</includeGroupIds>
-              <includeArtifactIds>nessie-ui</includeArtifactIds>
-              <outputDirectory>${project.build.directory}/classes/META-INF/resources</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.xolstice.maven.plugins</groupId>
         <artifactId>protobuf-maven-plugin</artifactId>
         <version>0.6.1</version>
