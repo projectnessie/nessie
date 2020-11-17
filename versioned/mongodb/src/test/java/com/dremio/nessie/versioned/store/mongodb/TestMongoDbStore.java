@@ -20,18 +20,22 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.mongodb.client.MongoDatabase;
 
-public class TestMongoDbStoreManager {
+public class TestMongoDbStore {
+  private static final Logger LOGGER = LoggerFactory.getLogger(TestMongoDbStore.class);
+
   final String testDatabaseName = "mydb";
-  final String connectionString = "localhost:27018";
+  final String connectionString = "mongodb://localhost:27017";
 
   @Test
   public void closeMongoDBClientThatDoesNotExist() {
-    MongoDbStoreManager mongoDbStoreManager = new MongoDbStoreManager(connectionString, testDatabaseName);
-    assertNull(mongoDbStoreManager.mongoClient);
-    mongoDbStoreManager.close();
+    MongoDbStore mongoDbStore = new MongoDbStore(connectionString, testDatabaseName);
+    assertNull(mongoDbStore.mongoClient);
+    mongoDbStore.close();
   }
 
   /**
@@ -40,13 +44,13 @@ public class TestMongoDbStoreManager {
    */
   @Test
   public void createAndCloseClient() {
-    MongoDbStoreManager mongoDbStoreManager = new MongoDbStoreManager(connectionString, testDatabaseName);
-    assertNull(mongoDbStoreManager.mongoClient);
-    mongoDbStoreManager.start();
-    assertNotNull(mongoDbStoreManager.mongoClient);
-    MongoDatabase mongoDatabase = mongoDbStoreManager.mongoClient.getDatabase(testDatabaseName);
+    MongoDbStore mongoDbStore = new MongoDbStore(connectionString, testDatabaseName);
+    assertNull(mongoDbStore.mongoClient);
+    mongoDbStore.start();
+    assertNotNull(mongoDbStore.mongoClient);
+    MongoDatabase mongoDatabase = mongoDbStore.mongoClient.getDatabase(testDatabaseName);
     assertTrue(mongoDatabase.getName().equals(testDatabaseName));
-    mongoDbStoreManager.close();
-    assertNull(mongoDbStoreManager.mongoClient);
+    mongoDbStore.close();
+    assertNull(mongoDbStore.mongoClient);
   }
 }

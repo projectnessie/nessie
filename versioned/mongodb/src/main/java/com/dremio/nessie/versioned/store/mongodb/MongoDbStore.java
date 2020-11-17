@@ -37,26 +37,29 @@ import com.google.common.collect.ListMultimap;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.CreateCollectionOptions;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
  * Git like behaviour.
- * The MongoDbStoreManager connects to an external MongoDB server.
+ * The MongoDbStore connects to an external MongoDB server.
  */
-public class MongoDbStoreManager implements Store {
-  private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbStoreManager.class);
+public class MongoDbStore implements Store {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbStore.class);
 
   private final String connectionString;
   private final String databaseName;
 
-  //TODO make the server URL configurable since this will currently connected to localhost:27018.
   // The client that connects to the MongoDB server.
   protected MongoClient mongoClient;
   // The database hosted by the MongoDB server.
   private MongoDatabase mongoDatabase;
 
-  public MongoDbStoreManager(String connectionString, String databaseName) {
+  /**
+   * Creates a store ready for connection to a MongoDB instance.
+   * @param connectionString the URL of the database with which to connect. Eg mongodb://localhost:27017.
+   * @param databaseName the name of the database to retrieve
+   */
+  public MongoDbStore(String connectionString, String databaseName) {
     this.connectionString = connectionString;
     this.databaseName = databaseName;
   }
@@ -68,7 +71,7 @@ public class MongoDbStoreManager implements Store {
    */
   @Override
   public void start() {
-    mongoClient = MongoClients.create();
+    mongoClient = MongoClients.create(connectionString);
     mongoDatabase = mongoClient.getDatabase(databaseName);
   }
 
