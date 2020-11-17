@@ -19,23 +19,38 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.nessie.versioned.impl.L2;
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.mongodb.client.MongoDatabase;
 
 public class TestMongoDbStore {
   private static final Logger LOGGER = LoggerFactory.getLogger(TestMongoDbStore.class);
 
   final String testDatabaseName = "mydb";
-  final String connectionString = "mongodb://localhost:27017";
+  final String connectionString = "localhost";
+  MongoDbStore mongoDbStore;
 
-  @Test
-  public void closeMongoDBClientThatDoesNotExist() {
-    MongoDbStore mongoDbStore = new MongoDbStore(connectionString, testDatabaseName);
+  @BeforeEach
+  public void setUp() {
+    mongoDbStore = new MongoDbStore(connectionString, testDatabaseName);
     assertNull(mongoDbStore.mongoClient);
+  }
+
+  @AfterEach
+  public void teardown() {
     mongoDbStore.close();
+    assertNull(mongoDbStore.mongoClient);
   }
 
   /**
@@ -43,14 +58,36 @@ public class TestMongoDbStore {
    * The test ensures that the database name set up can be retrieved.
    */
   @Test
-  public void createAndCloseClient() {
-    MongoDbStore mongoDbStore = new MongoDbStore(connectionString, testDatabaseName);
-    assertNull(mongoDbStore.mongoClient);
+  public void createClient() {
     mongoDbStore.start();
     assertNotNull(mongoDbStore.mongoClient);
     MongoDatabase mongoDatabase = mongoDbStore.mongoClient.getDatabase(testDatabaseName);
     assertTrue(mongoDatabase.getName().equals(testDatabaseName));
-    mongoDbStore.close();
-    assertNull(mongoDbStore.mongoClient);
+  }
+
+  @Disabled
+  @Test
+  public void putValue() {
+    Map<String, Entity> attributeMap = new HashMap<>();
+    L2 l2 = L2.SCHEMA.mapToItem(attributeMap);
+
+    //    mongoDbStore.start();
+    //    assertNotNull(mongoDbStore.mongoClient);
+    MongoDatabase mongoDatabase = mongoDbStore.mongoClient.getDatabase(testDatabaseName);
+    assertTrue(mongoDatabase.getName().equals(testDatabaseName));
+    //
+    //    // mongoDbStore.put(ValueType.VALUE, InternalValue.of(ByteString.copyFromUtf8(new String("This is a test"))), null);
+    //    int SIZE = 151;
+    //    L1 l1Sample = new L1(Id.EMPTY, new IdMap(SIZE, L2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
+    //
+    mongoDbStore.put(ValueType.L2, l2, null);
+    //    Consumer<L1> printBlock = new Consumer<L1>() {
+    //      @Override
+    //      public void accept(final L1 l1) {
+    //        LOGGER.info(l1.toString());
+    //      }
+    //    };
+    //    mongoDbStore.l1MongoCollection.find().forEach(printBlock);
+    //
   }
 }

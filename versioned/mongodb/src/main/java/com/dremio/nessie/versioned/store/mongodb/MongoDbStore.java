@@ -16,6 +16,7 @@
 package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -24,7 +25,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.impl.Fragment;
+import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
+import com.dremio.nessie.versioned.impl.InternalValue;
+import com.dremio.nessie.versioned.impl.L1;
+import com.dremio.nessie.versioned.impl.L2;
+import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Id;
@@ -34,8 +41,11 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ListMultimap;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 /**
@@ -46,33 +56,62 @@ import com.mongodb.client.MongoDatabase;
 public class MongoDbStore implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbStore.class);
 
-  private final String connectionString;
+  private final int mongoPort = 27017;
+  private final String serverName;
   private final String databaseName;
+
+  // The names of the collections in the database. These relate to
+  // {@link com.dremio.nessie.versioned.store.ValueType}
+  private final String l1Collection = "l1";
+  private final String l2Collection = "l2";
+  private final String l3Collection = "l3";
+  private final String refCollection = "r";
+  private final String valueCollection = "v";
+  private final String keyFragmentCollection = "k";
+  private final String commitMetadataCollection = "m";
 
   // The client that connects to the MongoDB server.
   protected MongoClient mongoClient;
   // The database hosted by the MongoDB server.
   private MongoDatabase mongoDatabase;
+  protected MongoCollection<InternalValue> valueMongoCollection;
+  protected MongoCollection<L1> l1MongoCollection;
+  protected MongoCollection<L2> l2MongoCollection;
+  protected MongoCollection<L3> l3MongoCollection;
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
-   * @param connectionString the URL of the database with which to connect. Eg mongodb://localhost:27017.
+   * @param serverName the server on which the MongoDB instance is hosted. Eg localhost.
    * @param databaseName the name of the database to retrieve
    */
-  public MongoDbStore(String connectionString, String databaseName) {
-    this.connectionString = connectionString;
+  public MongoDbStore(String serverName, String databaseName) {
+    this.serverName = serverName;
     this.databaseName = databaseName;
   }
 
   /**
    * Creates a connection to an existing database or creates the database if it does not exist.
    * Since MongoDB creates databases and collections if they do not exist, there is no need to validate the presence of
-   * either before they are used.
+   * either before they are used. This creates or retrieves references collections that map 1:1 to the enumerates in
+   * {@link com.dremio.nessie.versioned.store.ValueType}
    */
   @Override
   public void start() {
-    mongoClient = MongoClients.create(connectionString);
+    mongoClient = MongoClients.create(MongoClientSettings.builder()
+      .applyToClusterSettings(builder ->
+        builder.hosts(Arrays.asList(new ServerAddress(serverName, mongoPort))))
+      .build());
     mongoDatabase = mongoClient.getDatabase(databaseName);
+
+    //Initialise collections for each ValueType.
+    l1MongoCollection = mongoDatabase.getCollection(l1Collection, L1.class);
+    l2MongoCollection = mongoDatabase.getCollection(l2Collection, L2.class);
+    l3MongoCollection = mongoDatabase.getCollection(l3Collection, L3.class);
+    MongoCollection<InternalRef> refMongoCollection = mongoDatabase.getCollection(refCollection, InternalRef.class);
+    valueMongoCollection = mongoDatabase.getCollection(valueCollection, InternalValue.class);
+    MongoCollection<Fragment> keyFragmentMongoCollection = mongoDatabase.getCollection(keyFragmentCollection, Fragment.class);
+    MongoCollection<InternalCommitMetadata> commitMetadataMongoCollection =
+        mongoDatabase.getCollection(commitMetadataCollection, InternalCommitMetadata.class);
   }
 
   /**
@@ -106,6 +145,13 @@ public class MongoDbStore implements Store {
   public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
     // TODO ensure that calls to mongoDatabase.createCollection etc are surrounded with try-catch to detect
     //  com.mongodb.MongoSocketOpenException
+    LOGGER.info("Connected to ", mongoDatabase.toString());
+    LOGGER.info("ValueType: " + type.toString() + " Value: " + ((L2)value).toString());
+    if (type.equals(ValueType.L2)) {
+      LOGGER.info("About to insert value");
+      l2MongoCollection.insertOne((L2)value);
+      LOGGER.info("Inserted value");
+    }
   }
 
   @Override
