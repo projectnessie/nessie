@@ -42,7 +42,7 @@ class UpdateableReference {
     try {
       reference = client.getReferenceByName(reference.getName());
     } catch (NessieNotFoundException e) {
-      throw new NotFoundException("Failure refreshing data, table no longer exists.", e);
+      throw new NotFoundException(e, "Failure refreshing data, table no longer exists.");
     }
     return !oldReference.equals(reference);
   }
@@ -51,6 +51,7 @@ class UpdateableReference {
     return reference instanceof Branch;
   }
 
+  @Override
   public UpdateableReference clone() {
     return new UpdateableReference(reference, client);
   }

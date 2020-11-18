@@ -131,7 +131,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
   }
 
   @Override
-  protected String name() {
+  public String name() {
     return name;
   }
 
@@ -260,11 +260,11 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
 
     IcebergTable existingFromTable = table(from);
     if (existingFromTable == null) {
-      throw new NoSuchTableException(String.format("table %s doesn't exists", from.name()));
+      throw new NoSuchTableException("table %s doesn't exists", from.name());
     }
     IcebergTable existingToTable = table(to);
     if (existingToTable != null) {
-      throw new AlreadyExistsException("table {} already exists", to.name());
+      throw new AlreadyExistsException("table %s already exists", to.name());
     }
 
     Operations c = ImmutableOperations.builder()
