@@ -212,7 +212,8 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
                  mergedHash,
                  Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of),
                  metadata,
-                 ObjectId.isEqual(currentTreeId, mergedHash));
+                 ObjectId.isEqual(currentTreeId, mergedHash),
+                 false);
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
@@ -292,6 +293,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
                    transplantTree,
                    Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of),
                    getCommit(hash),
+                   false,
                    false);
         currentCommitId = repository.resolve(targetBranch.getName() + "^{commit}");
         currentTreeId = repository.resolve(targetBranch.getName() + "^{tree}");
@@ -398,7 +400,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         ObjectInserter inserter = repository.newObjectInserter();
         ObjectId newTreeId = inserter.insert(formatter);
         inserter.flush();
-        commitTree((BranchName) ref, newTreeId, Optional.empty(), null, false);
+        commitTree((BranchName) ref, newTreeId, Optional.empty(), null, false, true);
       } else {
         ObjectId target = repository.resolve(targetHash.get().asString());
         RefUpdate createBranch = repository.updateRef((ref instanceof TagName ? Constants.R_TAGS : Constants.R_HEADS) + ref.getName());
@@ -553,10 +555,10 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     throw new IllegalStateException("Not yet implemented.");
   }
 
-  private void commitTree(BranchName branch, ObjectId newTree, Optional<Hash> expectedHash, METADATA metadata, boolean force)
+  private void commitTree(BranchName branch, ObjectId newTree, Optional<Hash> expectedHash, METADATA metadata, boolean force, boolean empty)
       throws IOException, ReferenceConflictException {
     ObjectInserter inserter = repository.newObjectInserter();
-    CommitBuilder commitBuilder = fromUser(metadata);
+    CommitBuilder commitBuilder = fromUser(metadata, empty);
     commitBuilder.setTreeId(newTree);
     ObjectId parentId = fromHash(branch, expectedHash).orElse(repository.resolve(Constants.R_HEADS + branch.getName()));
     if (parentId != null) {
@@ -597,9 +599,9 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     return ok ? Optional.of(merger.getResultTreeId()) : Optional.empty();
   }
 
-  private CommitBuilder fromUser(METADATA commitMeta) {
+  private CommitBuilder fromUser(METADATA commitMeta, boolean empty) {
     CommitBuilder commitBuilder = new CommitBuilder();
-    long updateTime = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
+    long updateTime = empty ? 0L : ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
     PersonIdent person;
     try {
       UserConfig config = SystemReader.getInstance().getUserConfig().get(UserConfig.KEY);
