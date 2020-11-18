@@ -19,7 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
@@ -68,26 +70,18 @@ public class TestMongoDbStore {
   @Disabled
   @Test
   public void putValue() {
-    Map<String, Entity> attributeMap = new HashMap<>();
-    L2 l2 = L2.SCHEMA.mapToItem(attributeMap);
-
-    //    mongoDbStore.start();
-    //    assertNotNull(mongoDbStore.mongoClient);
+    L2 l2 = TestValueTypeUtility.getSampleL2();
+    mongoDbStore.start();
     MongoDatabase mongoDatabase = mongoDbStore.mongoClient.getDatabase(testDatabaseName);
     assertTrue(mongoDatabase.getName().equals(testDatabaseName));
-    //
-    //    // mongoDbStore.put(ValueType.VALUE, InternalValue.of(ByteString.copyFromUtf8(new String("This is a test"))), null);
-    //    int SIZE = 151;
-    //    L1 l1Sample = new L1(Id.EMPTY, new IdMap(SIZE, L2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
-    //
     mongoDbStore.put(ValueType.L2, l2, null);
-    //    Consumer<L1> printBlock = new Consumer<L1>() {
+    //    Consumer<L1> printConsumer = new Consumer<L1>() {
     //      @Override
     //      public void accept(final L1 l1) {
     //        LOGGER.info(l1.toString());
     //      }
     //    };
-    //    mongoDbStore.l1MongoCollection.find().forEach(printBlock);
+    //    mongoDbStore.l1MongoCollection.find().forEach(printConsumer);
     //
   }
 }
