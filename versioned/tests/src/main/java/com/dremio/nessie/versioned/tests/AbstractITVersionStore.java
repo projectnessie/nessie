@@ -755,6 +755,22 @@ public abstract class AbstractITVersionStore {
       assertThrows(ReferenceNotFoundException.class,
           () -> store().transplant(newBranch, Optional.of(unrelatedCommit), Arrays.asList(firstCommit, secondCommit, thirdCommit)));
     }
+
+    @Test
+    protected void transplantBasic() throws VersionStoreException {
+      final BranchName newBranch = BranchName.of("bar_2");
+      store().create(newBranch, Optional.empty());
+      commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
+
+      store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit));
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))),
+                 contains(
+                   Optional.of("v1_2"),
+                   Optional.of("v4_1"),
+                   Optional.of("v5_1")
+                 ));
+
+    }
   }
 
   @Nested
