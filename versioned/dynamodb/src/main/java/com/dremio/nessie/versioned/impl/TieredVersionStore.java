@@ -20,10 +20,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -465,16 +469,33 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         true,
         (from, commonParent) -> {
           // first we need to validate that the actual history matches the provided sequence.
-          List<L1> l1s = Lists.reverse(
-              new HistoryRetriever(store, from, endTarget, true, false, true).getStream().map(HistoryItem::getL1)
-              .collect(ImmutableList.toImmutableList()));
-          List<Hash> hashes = l1s.stream().map(L1::getId).map(Id::toHash).collect(Collectors.toList());
+          Stream<L1> historyStream = new HistoryRetriever(store, from, null, true, false, true).getStream().map(HistoryItem::getL1);
+          List<L1> l1s = Lists.reverse(takeUntilNext(historyStream, endTarget).collect(ImmutableList.toImmutableList()));
+          List<Hash> hashes = l1s.stream().map(L1::getId).map(Id::toHash).skip(1).collect(Collectors.toList());
           if (!hashes.equals(sequenceToTransplant)) {
             throw new IllegalArgumentException("Provided are not sequential and consistent with history.");
           }
 
           return l1s;
         });
+  }
+
+  private static Stream<L1> takeUntilNext(Stream<L1> stream, Id endTarget) {
+    Spliterator<L1> iter = stream.spliterator();
+
+    return StreamSupport.stream(new AbstractSpliterator<L1>(iter.estimateSize(), 0) {
+      boolean found = false;
+      boolean delivered = false;
+      @Override
+      public boolean tryAdvance(Consumer<? super L1> consumer) {
+        boolean hasNext = iter.tryAdvance(l1 -> {
+          delivered = found;
+          found = l1.getId().equals(endTarget);
+          consumer.accept(l1);
+        });
+        return !delivered && hasNext;
+      }
+    }, false);
   }
 
   @Override
