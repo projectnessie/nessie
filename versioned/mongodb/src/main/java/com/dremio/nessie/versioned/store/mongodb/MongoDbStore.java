@@ -15,12 +15,17 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
+import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.PojoCodecProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +83,8 @@ public class MongoDbStore implements Store {
   protected MongoCollection<L1> l1MongoCollection;
   protected MongoCollection<L2> l2MongoCollection;
   protected MongoCollection<L3> l3MongoCollection;
+  CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
+    fromProviders(PojoCodecProvider.builder().automatic(true).build()));
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
@@ -100,6 +107,7 @@ public class MongoDbStore implements Store {
     mongoClient = MongoClients.create(MongoClientSettings.builder()
       .applyToClusterSettings(builder ->
         builder.hosts(Arrays.asList(new ServerAddress(serverName, mongoPort))))
+      .codecRegistry(pojoCodecRegistry)
       .build());
     mongoDatabase = mongoClient.getDatabase(databaseName);
 
