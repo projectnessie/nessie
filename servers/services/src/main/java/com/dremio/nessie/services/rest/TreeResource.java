@@ -24,9 +24,6 @@ import java.util.stream.Collectors;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Timed;
-
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
@@ -76,15 +73,11 @@ public class TreeResource extends BaseResource implements TreeApi {
     super(config, principal, store);
   }
 
-  @Metered
-  @Timed(name = "timed-tree-all")
   @Override
   public List<Reference> getAllReferences() {
     return getStore().getNamedRefs().map(TreeResource::makeNamedRef).collect(Collectors.toList());
   }
 
-  @Metered
-  @Timed(name = "timed-tree-get-byname")
   @Override
   public Reference getReferenceByName(String refName) throws NessieNotFoundException {
     try {
@@ -94,8 +87,6 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  @Metered
-  @Timed(name = "timed-tree-create")
   @Override
   public void createReference(Reference reference)
       throws NessieNotFoundException, NessieConflictException {
@@ -120,8 +111,6 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  @Metered
-  @Timed(name = "timed-tree-get-defaultbranch")
   @Override
   public Branch getDefaultBranch() throws NessieNotFoundException {
     Reference r = getReferenceByName(getConfig().getDefaultBranch());
@@ -131,38 +120,28 @@ public class TreeResource extends BaseResource implements TreeApi {
     return (Branch) r;
   }
 
-  @Metered
-  @Timed(name = "timed-assign-tag")
   @Override
   public void assignTag(String tagName, String expectedHash, Tag tag)
       throws NessieNotFoundException, NessieConflictException {
     assignReference(TagName.of(tagName), expectedHash, tag.getHash());
   }
 
-  @Metered
-  @Timed(name = "timed-delete-tag")
   @Override
   public void deleteTag(String tagName, String hash) throws NessieConflictException, NessieNotFoundException {
     deleteReference(TagName.of(tagName), hash);
   }
 
-  @Metered
-  @Timed(name = "timed-assign-branch")
   @Override
   public void assignBranch(String branchName, String expectedHash, Branch branch)
       throws NessieNotFoundException, NessieConflictException {
     assignReference(BranchName.of(branchName), expectedHash, branch.getHash());
   }
 
-  @Metered
-  @Timed(name = "timed-delete-branch")
   @Override
   public void deleteBranch(String branchName, String hash) throws NessieConflictException, NessieNotFoundException {
     deleteReference(BranchName.of(branchName), hash);
   }
 
-  @Metered
-  @Timed(name = "timed-tree-log")
   @Override
   public LogResponse getCommitLog(String ref) throws NessieNotFoundException {
     // TODO: pagination.
@@ -176,8 +155,6 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  @Metered
-  @Timed(name = "timed-tree-transplant")
   @Override
   public void transplantCommitsIntoBranch(String branchName, String hash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
@@ -194,8 +171,6 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  @Metered
-  @Timed(name = "timed-tree-merge")
   @Override
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge) throws NessieNotFoundException, NessieConflictException {
     try {
@@ -208,8 +183,6 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  @Metered
-  @Timed(name = "timed-tree-names")
   @Override
   public EntriesResponse getEntries(String refName) throws NessieNotFoundException {
     final Hash hash = getHashOrThrow(refName);
@@ -223,8 +196,6 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  @Metered
-  @Timed(name = "timed-contents-multi")
   @Override
   public void commitMultipleOperations(String branch, String hash, String message, Operations operations)
       throws NessieNotFoundException, NessieConflictException {

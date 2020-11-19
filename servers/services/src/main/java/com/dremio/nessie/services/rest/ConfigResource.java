@@ -18,18 +18,7 @@ package com.dremio.nessie.services.rest;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
 
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Timed;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +31,6 @@ import com.dremio.nessie.services.config.ServerConfig;
 /**
  * REST endpoint to retrieve server settings.
  */
-@Path("config")
 @RequestScoped
 public class ConfigResource implements ConfigApi {
 
@@ -54,19 +42,7 @@ public class ConfigResource implements ConfigApi {
     this.config = config;
   }
 
-  @GET
-  @Metered
-  @Timed(name = "timed-readall")
-  @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "List all configuration settings")
-
-  @APIResponses({
-        @APIResponse(
-          description = "Configuration settings",
-          content = @Content(mediaType = "application/json",
-            schema = @Schema(implementation = NessieConfiguration.class))),
-        @APIResponse(responseCode = "400", description = "Unknown Error")}
-  )
+  @Override
   public NessieConfiguration getConfig() {
     return ImmutableNessieConfiguration.builder()
                                        .defaultBranch(this.config.getDefaultBranch()).build();

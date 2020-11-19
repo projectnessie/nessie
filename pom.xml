@@ -119,7 +119,6 @@
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
-    <microprofile-metrics.version>2.3.2</microprofile-metrics.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
     <guava.version>29.0-jre</guava.version>
@@ -199,11 +198,6 @@
             <artifactId>commons-logging</artifactId>
           </exclusion>
         </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.microprofile.metrics</groupId>
-        <artifactId>microprofile-metrics-api</artifactId>
-        <version>${microprofile-metrics.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>

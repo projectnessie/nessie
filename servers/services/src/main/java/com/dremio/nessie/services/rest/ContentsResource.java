@@ -26,9 +26,6 @@ import java.util.stream.Collectors;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.Timed;
-
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
@@ -59,8 +56,6 @@ public class ContentsResource extends BaseResource implements ContentsApi {
     super(config, principal, store);
   }
 
-  @Metered
-  @Timed(name = "timed-contents-get")
   @Override
   public Contents getContents(ContentsKey key, String incomingRef) throws NessieNotFoundException {
     Hash ref = getHashOrThrow(incomingRef);
@@ -97,16 +92,12 @@ public class ContentsResource extends BaseResource implements ContentsApi {
     }
   }
 
-  @Metered
-  @Timed(name = "timed-contents-set")
   @Override
   public void setContents(ContentsKey key, String branch, String hash, String message, Contents contents)
       throws NessieNotFoundException, NessieConflictException {
     doOps(branch, hash, message, Arrays.asList(Put.of(toKey(key), contents)));
   }
 
-  @Metered
-  @Timed(name = "timed-contents-delete")
   @Override
   public void deleteContents(ContentsKey key, String branch, String hash, String message)
       throws NessieNotFoundException, NessieConflictException {
