@@ -45,6 +45,7 @@ import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ListMultimap;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ServerAddress;
@@ -61,9 +62,11 @@ import com.mongodb.client.MongoDatabase;
 public class MongoDbStore implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbStore.class);
 
-  private final int mongoPort = 27017;
+  public final int mongoPort = 27017;
   private final String serverName;
   private final String databaseName;
+  private MongoClientSettings mongoClientSettings;
+  public CodecRegistry pojoCodecRegistry;
 
   // The names of the collections in the database. These relate to
   // {@link com.dremio.nessie.versioned.store.ValueType}
@@ -75,16 +78,12 @@ public class MongoDbStore implements Store {
   private final String keyFragmentCollection = "k";
   private final String commitMetadataCollection = "m";
 
-  // The client that connects to the MongoDB server.
-  protected MongoClient mongoClient;
   // The database hosted by the MongoDB server.
   private MongoDatabase mongoDatabase;
   protected MongoCollection<InternalValue> valueMongoCollection;
   protected MongoCollection<L1> l1MongoCollection;
   protected MongoCollection<L2> l2MongoCollection;
   protected MongoCollection<L3> l3MongoCollection;
-  CodecRegistry pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
-    fromProviders(PojoCodecProvider.builder().automatic(true).build()));
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
@@ -94,6 +93,13 @@ public class MongoDbStore implements Store {
   public MongoDbStore(String serverName, String databaseName) {
     this.serverName = serverName;
     this.databaseName = databaseName;
+    this.pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
+      fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+    this.mongoClientSettings = MongoClientSettings.builder()
+      .applyToClusterSettings(builder ->
+        builder.hosts(Arrays.asList(new ServerAddress(serverName, mongoPort))))
+      .codecRegistry(pojoCodecRegistry)
+      .build();
   }
 
   /**
@@ -104,13 +110,9 @@ public class MongoDbStore implements Store {
    */
   @Override
   public void start() {
-    mongoClient = MongoClients.create(MongoClientSettings.builder()
-      .applyToClusterSettings(builder ->
-        builder.hosts(Arrays.asList(new ServerAddress(serverName, mongoPort))))
-      .codecRegistry(pojoCodecRegistry)
-      .build());
-    mongoDatabase = mongoClient.getDatabase(databaseName);
-
+    try (MongoClient mongoClient = MongoClients.create(mongoClientSettings)) {
+      mongoDatabase = mongoClient.getDatabase(databaseName);
+    }
     //Initialise collections for each ValueType.
     l1MongoCollection = mongoDatabase.getCollection(l1Collection, L1.class);
     l2MongoCollection = mongoDatabase.getCollection(l2Collection, L2.class);
@@ -128,24 +130,21 @@ public class MongoDbStore implements Store {
    */
   @Override
   public void close() {
-    if (mongoClient != null) {
-      mongoClient.close();
-      mongoClient = null;
-    }
   }
 
   @Override
   public void load(LoadStep loadstep) throws ReferenceNotFoundException {
+    throw new UnsupportedOperationException();
   }
 
   private List<ListMultimap<String, LoadOp<?>>> paginateLoads(LoadStep loadStep, int size) {
     List<ListMultimap<String, LoadOp<?>>> paginated = new ArrayList<>();
-    return paginated;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public <V> boolean putIfAbsent(ValueType type, V value) {
-    return false;
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -164,32 +163,38 @@ public class MongoDbStore implements Store {
 
   @Override
   public boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) {
-    return false;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public void save(List<SaveOp<?>> ops) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <V> V loadSingle(ValueType valueType, Id id) {
-    return null;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
       throws ReferenceNotFoundException {
-    return Optional.empty();
+    throw new UnsupportedOperationException();
   }
 
   private final boolean tableExists(String name) {
-    return false;
+    throw new UnsupportedOperationException();
   }
 
   @Override
   public Stream<InternalRef> getRefs() {
-    return null;
+    throw new UnsupportedOperationException();
+  }
+
+  @VisibleForTesting
+  public MongoDatabase getMongoDatabase() {
+    return mongoDatabase;
   }
 }
