@@ -97,7 +97,7 @@ public class MongoDbStore implements Store {
   }
 
   /**
-   * Creates a connection to an existing database or creates the database if it does not exist.
+   * Gets a handle to an existing database or get a handle to a MongoDatabase instance if it does not exist. The new database will be lazily created.
    * Since MongoDB creates databases and collections if they do not exist, there is no need to validate the presence of
    * either before they are used. This creates or retrieves references collections that map 1:1 to the enumerates in
    * {@link com.dremio.nessie.versioned.store.ValueType}
