@@ -15,14 +15,9 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,8 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.versioned.impl.L2;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
 
 public class TestMongoDbStore {
@@ -42,17 +38,20 @@ public class TestMongoDbStore {
   final String testDatabaseName = "mydb";
   final String connectionString = "localhost";
   MongoDbStore mongoDbStore;
+  MongoClientSettings mongoClientSettings;
 
   @BeforeEach
   public void setUp() {
     mongoDbStore = new MongoDbStore(connectionString, testDatabaseName);
-    assertNull(mongoDbStore.mongoClient);
-  }
+    mongoClientSettings = MongoClientSettings.builder()
+      .applyToClusterSettings(builder ->
+        builder.hosts(Arrays.asList(new ServerAddress(connectionString, mongoDbStore.mongoPort))))
+      .codecRegistry(mongoDbStore.pojoCodecRegistry)
+      .build();  }
 
   @AfterEach
   public void teardown() {
     mongoDbStore.close();
-    assertNull(mongoDbStore.mongoClient);
   }
 
   /**
@@ -62,8 +61,7 @@ public class TestMongoDbStore {
   @Test
   public void createClient() {
     mongoDbStore.start();
-    assertNotNull(mongoDbStore.mongoClient);
-    MongoDatabase mongoDatabase = mongoDbStore.mongoClient.getDatabase(testDatabaseName);
+    MongoDatabase mongoDatabase = mongoDbStore.getMongoDatabase();
     assertTrue(mongoDatabase.getName().equals(testDatabaseName));
   }
 
@@ -72,9 +70,10 @@ public class TestMongoDbStore {
   public void putValue() {
     L2 l2 = TestValueTypeUtility.getSampleL2();
     mongoDbStore.start();
-    MongoDatabase mongoDatabase = mongoDbStore.mongoClient.getDatabase(testDatabaseName);
+    MongoDatabase mongoDatabase = mongoDbStore.getMongoDatabase();
     assertTrue(mongoDatabase.getName().equals(testDatabaseName));
     mongoDbStore.put(ValueType.L2, l2, null);
+    // TODO verify the ValueType was successfully stored.
     //    Consumer<L1> printConsumer = new Consumer<L1>() {
     //      @Override
     //      public void accept(final L1 l1) {
