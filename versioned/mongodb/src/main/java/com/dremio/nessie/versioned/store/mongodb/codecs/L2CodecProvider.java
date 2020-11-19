@@ -21,11 +21,17 @@ import org.bson.codecs.configuration.CodecRegistry;
 
 import com.dremio.nessie.versioned.impl.L2;
 
+/**
+ * Codecs provide the heart of the SerDe process to/from BSON format.
+ * The Codecs are inserted into a CodecRegistry. However they may require the CodecRegistry to do their job.
+ * This apparent two way interdependency is resolved by using a CodecProvider.
+ * The CodecProvider is a factory for Codecs.
+ */
 public class L2CodecProvider implements CodecProvider {
   @Override
   public <T> Codec<T> get(Class<T> clazz, CodecRegistry registry) {
     if (clazz == L2.class) {
-      return (Codec<T>) new L2Codec(registry);
+      return (Codec<T>) new L2Codec();
     }
 
     // CodecProvider returns null if it's not a provider for the requested Class

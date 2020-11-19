@@ -18,10 +18,10 @@ package com.dremio.nessie.versioned.store.mongodb;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
+//import java.util.function.Consumer;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +46,7 @@ public class TestMongoDbStore {
     mongoClientSettings = MongoClientSettings.builder()
       .applyToClusterSettings(builder ->
         builder.hosts(Arrays.asList(new ServerAddress(connectionString, mongoDbStore.mongoPort))))
-      .codecRegistry(mongoDbStore.pojoCodecRegistry)
+      .codecRegistry(mongoDbStore.codecRegistry)
       .build();  }
 
   @AfterEach
@@ -65,7 +65,6 @@ public class TestMongoDbStore {
     assertTrue(mongoDatabase.getName().equals(testDatabaseName));
   }
 
-  @Disabled
   @Test
   public void putValue() {
     L2 l2 = TestValueTypeUtility.getSampleL2();
@@ -73,14 +72,14 @@ public class TestMongoDbStore {
     MongoDatabase mongoDatabase = mongoDbStore.getMongoDatabase();
     assertTrue(mongoDatabase.getName().equals(testDatabaseName));
     mongoDbStore.put(ValueType.L2, l2, null);
-    // TODO verify the ValueType was successfully stored.
-    //    Consumer<L1> printConsumer = new Consumer<L1>() {
+    // TODO verify the ValueType was successfully stored. This requires the decode to work.
+    //    Consumer<L2> printConsumer = new Consumer<L2>() {
     //      @Override
-    //      public void accept(final L1 l1) {
-    //        LOGGER.info(l1.toString());
+    //      public void accept(final L2 l2) {
+    //        LOGGER.info(l2.toString());
     //      }
     //    };
-    //    mongoDbStore.l1MongoCollection.find().forEach(printConsumer);
-    //
+    //    mongoDbStore.l2MongoCollection.find().forEach(printConsumer);
+
   }
 }

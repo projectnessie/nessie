@@ -20,33 +20,46 @@ import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
-import org.bson.codecs.configuration.CodecRegistry;
 
 import com.dremio.nessie.versioned.impl.L2;
 
+/**
+ * This class is responsible for the encoding and decoding of {@link com.dremio.nessie.versioned.impl.L2} to a BSON object.
+ */
 public class L2Codec implements Codec<L2> {
-  CodecRegistry codecRegistry;
-  public L2Codec(CodecRegistry codecRegistry) {
-    this.codecRegistry = codecRegistry;
-  }
+  /**
+   * This deserializes a BSON stream to create an L2 object.
+   * @param bsonReader that provides the BSON
+   * @param decoderContext not used
+   * @return the object created from the BSON stream.
+   */
   @Override
   public L2 decode(BsonReader bsonReader, DecoderContext decoderContext) {
     bsonReader.readStartDocument();
     //TODO complete this method.
-
     bsonReader.readEndDocument();
 
     return null;
   }
 
+  /**
+   * This serializes an L2 object into a BSON stream. The serialization is delegated to
+   * {@Link com.dremio.nessie.versioned.store.mongodb.codecs.L2ToBsonConverter}
+   * @param bsonWriter that encodes each attribute to BSON
+   * @param l2 the object to encode
+   * @param encoderContext not used
+   */
   @Override
   public void encode(BsonWriter bsonWriter, L2 l2, EncoderContext encoderContext) {
     bsonWriter.writeStartDocument();
-    //TODO complete this method.
-
+    L2ToBsonConverter l2ToBsonConverter = new L2ToBsonConverter(bsonWriter);
     bsonWriter.writeEndDocument();
   }
 
+  /**
+   * A getter of the class being encoded.
+   * @return the class being encoded
+   */
   @Override
   public Class<L2> getEncoderClass() {
     return L2.class;

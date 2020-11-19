@@ -15,12 +15,14 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import static org.bson.codecs.configuration.CodecRegistries.fromCodecs;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -39,13 +41,17 @@ import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.dremio.nessie.versioned.store.mongodb.codecs.L2Codec;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ListMultimap;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ServerAddress;
@@ -66,8 +72,11 @@ public class MongoDbStore implements Store {
   private final String serverName;
   private final String databaseName;
   private MongoClientSettings mongoClientSettings;
-  public CodecRegistry pojoCodecRegistry;
+  protected CodecRegistry codecRegistry;
+  public L2Codec l2Codec;
 
+  // The client that connects to the MongoDB server.
+  protected MongoClient mongoClient;
   // The names of the collections in the database. These relate to
   // {@link com.dremio.nessie.versioned.store.ValueType}
   private final String l1Collection = "l1";
@@ -93,12 +102,14 @@ public class MongoDbStore implements Store {
   public MongoDbStore(String serverName, String databaseName) {
     this.serverName = serverName;
     this.databaseName = databaseName;
-    this.pojoCodecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
-      fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+    this.l2Codec = new L2Codec();
+    this.codecRegistry = fromRegistries(fromCodecs(l2Codec),
+      fromProviders(PojoCodecProvider.builder().automatic(true).build()),
+      MongoClientSettings.getDefaultCodecRegistry());
     this.mongoClientSettings = MongoClientSettings.builder()
       .applyToClusterSettings(builder ->
         builder.hosts(Arrays.asList(new ServerAddress(serverName, mongoPort))))
-      .codecRegistry(pojoCodecRegistry)
+      .codecRegistry(codecRegistry)
       .build();
   }
 
@@ -110,9 +121,8 @@ public class MongoDbStore implements Store {
    */
   @Override
   public void start() {
-    try (MongoClient mongoClient = MongoClients.create(mongoClientSettings)) {
-      mongoDatabase = mongoClient.getDatabase(databaseName);
-    }
+    mongoClient = MongoClients.create(mongoClientSettings);
+    mongoDatabase = mongoClient.getDatabase(databaseName);
     //Initialise collections for each ValueType.
     l1MongoCollection = mongoDatabase.getCollection(l1Collection, L1.class);
     l2MongoCollection = mongoDatabase.getCollection(l2Collection, L2.class);
@@ -150,8 +160,13 @@ public class MongoDbStore implements Store {
   @Override
   @SuppressWarnings("unchecked")
   public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
+    Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
+      "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
+    Map<String, Entity> attributes = ((SimpleSchema<V>)type.getSchema()).itemToMap(value, true);
+    LOGGER.info("Mongo attributes: " + attributes.toString());
     // TODO ensure that calls to mongoDatabase.createCollection etc are surrounded with try-catch to detect
     //  com.mongodb.MongoSocketOpenException
+    l2MongoCollection = mongoDatabase.getCollection(l2Collection, L2.class);
     LOGGER.info("Connected to ", mongoDatabase.toString());
     LOGGER.info("ValueType: " + type.toString() + " Value: " + ((L2)value).toString());
     if (type.equals(ValueType.L2)) {
