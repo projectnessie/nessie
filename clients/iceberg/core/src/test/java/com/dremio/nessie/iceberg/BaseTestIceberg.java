@@ -119,7 +119,7 @@ abstract class BaseTestIceberg {
     try {
       return catalog.createTable(tableIdentifier, schema(count));
     } catch (Throwable t) {
-      LOGGER.error("unable to do create " + tableIdentifier.toString(), t);
+      LOGGER.error("unable to do create {}", tableIdentifier, t);
       throw t;
     }
   }
