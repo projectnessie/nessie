@@ -15,9 +15,10 @@
  */
 
 import {DefaultApi} from "./api/apis";
+import {Configuration} from "./api";
 
 function api() {
-  return new DefaultApi();
+  return new DefaultApi(new Configuration({"basePath": ""}));
 }
 
 export {api};
