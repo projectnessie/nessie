@@ -168,7 +168,7 @@ public class VersionStoreFactory {
               String.format("Couldn't create file at %s", config.getVersionStoreJGitConfig().getJgitDirectory().get()));
           }
         }
-        LOGGER.info(String.format("File backend is at %s", jgitDir.getAbsolutePath()));
+        LOGGER.info("File backend is at {}", jgitDir.getAbsolutePath());
         return Git.init().setDirectory(jgitDir).call().getRepository();
       case INMEMORY:
         LOGGER.info("JGit Version store has been configured with the in memory backend");
