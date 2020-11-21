@@ -19,7 +19,7 @@ import io.quarkus.vertx.web.RouteFilter;
 import io.vertx.ext.web.RoutingContext;
 
 /**
- * Routes UI routes to http page
+ * Routes UI routes to http page.
  */
 public class SinglePageAppRoutingFilter {
 
@@ -28,7 +28,7 @@ public class SinglePageAppRoutingFilter {
   private static final String[] UI_ROUTES = {"/tree"};
 
   @RouteFilter(100)
-  void myFilter(RoutingContext rc) {
+  void rerouteUiPaths(RoutingContext rc) {
     final String path = rc.normalisedPath();
     for (String prefix : UI_ROUTES) {
       if (path.startsWith(prefix)) {
