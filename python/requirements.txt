@@ -2,7 +2,7 @@ attrs==20.3.0
 botocore==1.19.22
 Click==7.1.2
 confuse==1.3.0
-desert==2020.1.6
+desert==2020.11.18
 marshmallow==3.9.1
 marshmallow_oneofschema==2.1.0
 python-dateutil==2.8.1
