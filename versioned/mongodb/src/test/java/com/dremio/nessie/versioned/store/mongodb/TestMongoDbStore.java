@@ -15,16 +15,13 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
-//import java.util.function.Consumer;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -33,13 +30,14 @@ import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
 
 public class TestMongoDbStore {
-  private static final Logger LOGGER = LoggerFactory.getLogger(TestMongoDbStore.class);
-
   final String testDatabaseName = "mydb";
   final String connectionString = "localhost";
   MongoDbStore mongoDbStore;
   MongoClientSettings mongoClientSettings;
 
+  /**
+   * Set up the objects necessary for the tests.
+   */
   @BeforeEach
   public void setUp() {
     mongoDbStore = new MongoDbStore(connectionString, testDatabaseName);
@@ -47,7 +45,8 @@ public class TestMongoDbStore {
       .applyToClusterSettings(builder ->
         builder.hosts(Arrays.asList(new ServerAddress(connectionString, mongoDbStore.mongoPort))))
       .codecRegistry(mongoDbStore.codecRegistry)
-      .build();  }
+      .build();
+  }
 
   @AfterEach
   public void teardown() {
@@ -62,7 +61,7 @@ public class TestMongoDbStore {
   public void createClient() {
     mongoDbStore.start();
     MongoDatabase mongoDatabase = mongoDbStore.getMongoDatabase();
-    assertTrue(mongoDatabase.getName().equals(testDatabaseName));
+    assertEquals(mongoDatabase.getName(), testDatabaseName);
   }
 
   @Test
@@ -70,7 +69,7 @@ public class TestMongoDbStore {
     L2 l2 = TestValueTypeUtility.getSampleL2();
     mongoDbStore.start();
     MongoDatabase mongoDatabase = mongoDbStore.getMongoDatabase();
-    assertTrue(mongoDatabase.getName().equals(testDatabaseName));
+    assertEquals(mongoDatabase.getName(), testDatabaseName);
     mongoDbStore.put(ValueType.L2, l2, null);
     // TODO verify the ValueType was successfully stored. This requires the decode to work.
     //    Consumer<L2> printConsumer = new Consumer<L2>() {

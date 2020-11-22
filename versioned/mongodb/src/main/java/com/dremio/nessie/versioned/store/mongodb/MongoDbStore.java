@@ -46,7 +46,6 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.dremio.nessie.versioned.store.mongodb.codecs.L2Codec;
@@ -114,9 +113,10 @@ public class MongoDbStore implements Store {
   }
 
   /**
-   * Gets a handle to an existing database or get a handle to a MongoDatabase instance if it does not exist. The new database will be lazily created.
+   * Gets a handle to an existing database or get a handle to a MongoDatabase instance if it does not exist. The new
+   * database will be lazily created.
    * Since MongoDB creates databases and collections if they do not exist, there is no need to validate the presence of
-   * either before they are used. This creates or retrieves references collections that map 1:1 to the enumerates in
+   * either before they are used. This creates or retrieves collections that map 1:1 to the enumerates in
    * {@link com.dremio.nessie.versioned.store.ValueType}
    */
   @Override
@@ -161,8 +161,8 @@ public class MongoDbStore implements Store {
   @SuppressWarnings("unchecked")
   public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
-      "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
-    Map<String, Entity> attributes = ((SimpleSchema<V>)type.getSchema()).itemToMap(value, true);
+        "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
+    final Map<String, Entity> attributes = type.getSchema().itemToMap(value, true);
     LOGGER.info("Mongo attributes: " + attributes.toString());
     // TODO ensure that calls to mongoDatabase.createCollection etc are surrounded with try-catch to detect
     //  com.mongodb.MongoSocketOpenException

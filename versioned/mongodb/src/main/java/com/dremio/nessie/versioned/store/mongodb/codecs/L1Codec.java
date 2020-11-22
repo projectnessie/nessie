@@ -23,21 +23,21 @@ import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 
-import com.dremio.nessie.versioned.impl.L2;
+import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.store.Entity;
 
 /**
- * This class is responsible for the encoding and decoding of {@link com.dremio.nessie.versioned.impl.L2} to a BSON object.
+ * This class is responsible for the encoding and decoding of {@link L1} to a BSON object.
  */
-public class L2Codec implements Codec<L2> {
+public class L1Codec implements Codec<L1> {
   /**
-   * This deserializes a BSON stream to create an L2 object.
+   * This deserializes a BSON stream to create an L1 object.
    * @param bsonReader that provides the BSON
    * @param decoderContext not used
    * @return the object created from the BSON stream.
    */
   @Override
-  public L2 decode(BsonReader bsonReader, DecoderContext decoderContext) {
+  public L1 decode(BsonReader bsonReader, DecoderContext decoderContext) {
     bsonReader.readStartDocument();
     //TODO complete this method.
     bsonReader.readEndDocument();
@@ -46,15 +46,15 @@ public class L2Codec implements Codec<L2> {
   }
 
   /**
-   * This serializes an L2 object into a BSON stream. The serialization is delegated to
-   * {@link com.dremio.nessie.versioned.store.mongodb.codecs.EntityToBsonConverter}
+   * This serializes an L1 object into a BSON stream. The serialization is delegated to
+   * {@link EntityToBsonConverter}
    * @param bsonWriter that encodes each attribute to BSON
-   * @param l2 the object to encode
+   * @param l1 the object to encode
    * @param encoderContext not used
    */
   @Override
-  public void encode(BsonWriter bsonWriter, L2 l2, EncoderContext encoderContext) {
-    final Map<String, Entity> attributes = L2.SCHEMA.itemToMap(l2, true);
+  public void encode(BsonWriter bsonWriter, L1 l1, EncoderContext encoderContext) {
+    final Map<String, Entity> attributes = L1.SCHEMA.itemToMap(l1, true);
     bsonWriter.writeStartDocument();
     attributes.forEach((k, v) -> EntityToBsonConverter.writeField(bsonWriter, k, v));
     bsonWriter.writeEndDocument();
@@ -65,7 +65,7 @@ public class L2Codec implements Codec<L2> {
    * @return the class being encoded
    */
   @Override
-  public Class<L2> getEncoderClass() {
-    return L2.class;
+  public Class<L1> getEncoderClass() {
+    return L1.class;
   }
 }

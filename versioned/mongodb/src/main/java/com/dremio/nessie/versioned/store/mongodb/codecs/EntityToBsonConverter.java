@@ -15,75 +15,44 @@
  */
 package com.dremio.nessie.versioned.store.mongodb.codecs;
 
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.bson.BsonBinary;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.store.Entity;
 
 /**
  * This specifically converts an L2 object into BSON format.
  */
-public class L2ToBsonConverter {
-
-  private final BsonWriter writer;
-
-  /**
-   * Initializes the writing process to BSON.
-   * @param writer the write into which the object will be serialized.
-   */
-  public L2ToBsonConverter(BsonWriter writer) {
-    this.writer = writer;
-  }
-
-  public void write(L2 l2) {
-    final Map<String, Entity> attributes = L2.SCHEMA.itemToMap(l2, true);
-    writer.writeStartDocument();
-    attributes.forEach(this::writeField);
-    writer.writeEndDocument();
-
-  }
-
-  //TODO pull this out into a separate EntityToBsonConverter class
+public class EntityToBsonConverter {
   /**
    * This creates a single field in BSON format that represents entity.
    * @param field the name of the field as represented in BSON
    * @param value the entity that will be serialized.
    */
-  private void writeField(String field, Entity value) {
+  public static void writeField(BsonWriter writer, String field, Entity value) {
     writer.writeName(field);
-    writeSingleValue(value);
+    writeSingleValue(writer, value);
   }
 
-  //TODO pull this out into a separate EntityToBsonConverter class
-    /**
-     * Writes a single Entity to BSON.
-     * Invokes different write methods based on the underlying {@code com.dremio.nessie.versioned.store.Entity} type.
-     *
-     * @param value the value to convert to BSON.
-     */
-  private void writeSingleValue(Entity value) {
+  /**
+   * Writes a single Entity to BSON.
+   * Invokes different write methods based on the underlying {@code com.dremio.nessie.versioned.store.Entity} type.
+   *
+   * @param value the value to convert to BSON.
+   */
+  public static void writeSingleValue(BsonWriter writer, Entity value) {
     switch (value.getType()) {
       case MAP:
-        Map<String, Entity> stringMap = value.getMap();
-        writer.writeStartArray();
-        for (Map.Entry<String, Entity> entry : stringMap.entrySet()) {
-          writer.writeName(entry.getKey());
-          writeSingleValue(entry.getValue());
-        }
-        writer.writeEndArray();
+        writer.writeStartDocument();
+        value.getMap().forEach((k, v) -> {
+          writer.writeName(k);
+          writeSingleValue(writer, v);
+        });
+        writer.writeEndDocument();
         break;
       case LIST:
-        List<Entity> entityList = value.getList();
         writer.writeStartArray();
-        for (Entity listValue : entityList) {
-          writeSingleValue(listValue);
-        }
+        value.getList().forEach(v -> writeSingleValue(writer, v));
         writer.writeEndArray();
         break;
       case NUMBER:
@@ -99,10 +68,10 @@ public class L2ToBsonConverter {
         writer.writeBoolean(value.getBoolean());
         break;
       case STRING_SET:
-        Set<String> stringSet = value.getStringSet();
         writer.writeStartArray();
-        stringSet.forEach((s) -> {writer.writeString(s);});
+        value.getStringSet().forEach(writer::writeString);
         writer.writeEndArray();
+        break;
       default:
         throw new IllegalArgumentException(String.format("Unsupported field type: %s", value.getType().name()));
     }

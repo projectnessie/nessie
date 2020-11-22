@@ -16,10 +16,12 @@
 package com.dremio.nessie.versioned.store.mongodb.codecs;
 
 import org.bson.codecs.Codec;
-import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 
+import com.dremio.nessie.versioned.impl.Fragment;
+import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
+import com.dremio.nessie.versioned.impl.L3;
 
 /**
  * Codecs provide the heart of the SerDe process to/from BSON format.
@@ -27,11 +29,17 @@ import com.dremio.nessie.versioned.impl.L2;
  * This apparent two way interdependency is resolved by using a CodecProvider.
  * The CodecProvider is a factory for Codecs.
  */
-public class L2CodecProvider implements CodecProvider {
+public class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
   @Override
   public <T> Codec<T> get(Class<T> clazz, CodecRegistry registry) {
-    if (clazz == L2.class) {
+    if (clazz == L1.class) {
+      return (Codec<T>) new L1Codec();
+    } else if (clazz == L2.class) {
       return (Codec<T>) new L2Codec();
+    } else if (clazz == L3.class) {
+      return (Codec<T>) new L3Codec();
+    } else if (clazz == Fragment.class) {
+      return (Codec<T>) new FragmentCodec();
     }
 
     // CodecProvider returns null if it's not a provider for the requested Class
