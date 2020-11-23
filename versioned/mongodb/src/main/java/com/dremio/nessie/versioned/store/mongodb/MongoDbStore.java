@@ -45,12 +45,16 @@ import com.dremio.nessie.versioned.store.ValueType;
 import com.dremio.nessie.versioned.store.mongodb.codecs.CodecProvider;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.mongodb.BasicDBObject;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import static com.mongodb.client.model.Filters.eq;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
@@ -159,7 +163,13 @@ public class MongoDbStore implements Store {
 
   @Override
   public <V> V loadSingle(ValueType valueType, Id id) {
-    throw new UnsupportedOperationException();
+    final MongoCollection collection = collections.get(valueType);
+    if (null == collection) {
+      throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
+    }
+    BasicDBObject query = new BasicDBObject(Store.KEY_NAME,
+        new BasicDBObject("$eq", id));
+    return (V)Iterables.get(collection.find(query), 0);
   }
 
   @Override

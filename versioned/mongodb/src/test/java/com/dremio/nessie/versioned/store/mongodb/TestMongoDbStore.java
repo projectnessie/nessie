@@ -30,6 +30,8 @@ import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.Iterables;
 import com.mongodb.BasicDBObject;
 import com.mongodb.ConnectionString;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 public class TestMongoDbStore {
@@ -85,5 +87,13 @@ public class TestMongoDbStore {
     mongoDbStore.put(ValueType.L3, sampleL3, Optional.empty());
     final L3 readL3 = (L3)Iterables.get(mongoDbStore.collections.get(ValueType.L3).find(), 0);
     assertEquals(L3.SCHEMA.itemToMap(sampleL3, true), L3.SCHEMA.itemToMap(readL3, true));
+  }
+
+  @Test
+  public void loadSingleL1Value() {
+    final L1 sampleL1 = TestSamples.getSampleL1();
+    mongoDbStore.put(ValueType.L1, sampleL1, Optional.empty());
+    L1 readL1 = (L1)mongoDbStore.loadSingle(ValueType.L1, sampleL1.getId());
+    assertEquals(L1.SCHEMA.itemToMap(sampleL1, true), L1.SCHEMA.itemToMap(readL1, true));
   }
 }
