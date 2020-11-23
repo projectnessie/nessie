@@ -15,17 +15,14 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import static org.bson.codecs.configuration.CodecRegistries.fromCodecs;
-import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import com.dremio.nessie.versioned.store.mongodb.codecs.CodecProvider;
+import com.google.common.collect.ImmutableList;
+import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.slf4j.Logger;
@@ -41,14 +38,12 @@ import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.dremio.nessie.versioned.store.mongodb.codecs.L2Codec;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ListMultimap;
@@ -68,11 +63,8 @@ public class MongoDbStore implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbStore.class);
 
   public final int mongoPort = 27017;
-  private final String serverName;
   private final String databaseName;
-  private MongoClientSettings mongoClientSettings;
-  protected CodecRegistry codecRegistry;
-  public L2Codec l2Codec;
+  private final MongoClientSettings mongoClientSettings;
 
   // The client that connects to the MongoDB server.
   protected MongoClient mongoClient;
@@ -99,15 +91,13 @@ public class MongoDbStore implements Store {
    * @param databaseName the name of the database to retrieve
    */
   public MongoDbStore(String serverName, String databaseName) {
-    this.serverName = serverName;
     this.databaseName = databaseName;
-    this.l2Codec = new L2Codec();
-    this.codecRegistry = fromRegistries(fromCodecs(l2Codec),
-      fromProviders(PojoCodecProvider.builder().automatic(true).build()),
+    final CodecRegistry codecRegistry = CodecRegistries.fromProviders(
+      new CodecProvider(),
+      PojoCodecProvider.builder().automatic(true).build(),
       MongoClientSettings.getDefaultCodecRegistry());
     this.mongoClientSettings = MongoClientSettings.builder()
-      .applyToClusterSettings(builder ->
-        builder.hosts(Arrays.asList(new ServerAddress(serverName, mongoPort))))
+      .applyToClusterSettings(builder -> builder.hosts(ImmutableList.of(new ServerAddress(serverName, mongoPort))))
       .codecRegistry(codecRegistry)
       .build();
   }
@@ -158,21 +148,16 @@ public class MongoDbStore implements Store {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
-    final Map<String, Entity> attributes = type.getSchema().itemToMap(value, true);
-    LOGGER.info("Mongo attributes: " + attributes.toString());
-    // TODO ensure that calls to mongoDatabase.createCollection etc are surrounded with try-catch to detect
+
+    // TODO: ensure that calls to mongoDatabase.createCollection etc are surrounded with try-catch to detect
     //  com.mongodb.MongoSocketOpenException
     l2MongoCollection = mongoDatabase.getCollection(l2Collection, L2.class);
-    LOGGER.info("Connected to ", mongoDatabase.toString());
-    LOGGER.info("ValueType: " + type.toString() + " Value: " + ((L2)value).toString());
+    LOGGER.info("ValueType: {}, Value: {}", type.toString(), value.toString());
     if (type.equals(ValueType.L2)) {
-      LOGGER.info("About to insert value");
       l2MongoCollection.insertOne((L2)value);
-      LOGGER.info("Inserted value");
     }
   }
 
@@ -187,19 +172,13 @@ public class MongoDbStore implements Store {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <V> V loadSingle(ValueType valueType, Id id) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
       throws ReferenceNotFoundException {
-    throw new UnsupportedOperationException();
-  }
-
-  private final boolean tableExists(String name) {
     throw new UnsupportedOperationException();
   }
 

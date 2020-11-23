@@ -15,21 +15,33 @@
  */
 package com.dremio.nessie.versioned.store.mongodb.codecs;
 
-import java.util.Map;
-
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 
-import com.dremio.nessie.versioned.impl.L1;
-import com.dremio.nessie.versioned.store.Entity;
+import java.util.Map;
 
 /**
- * This class is responsible for the encoding and decoding of {@link L1} to a BSON object.
+ * Base codec for codecs responsible for the encoding and decoding of Entities to a BSON objects.
  */
-public class L1Codec implements Codec<L1> {
+public abstract class BaseCodec<T> implements Codec<T> {
+  private final Class<T> clazz;
+  private final SimpleSchema<T> schema;
+
+  /**
+   * Constructor.
+   * @param clazz the class type to encode/decode.
+   * @param schema the schema of the class.
+   */
+  protected BaseCodec(Class<T> clazz, SimpleSchema<T> schema) {
+    this.clazz = clazz;
+    this.schema = schema;
+  }
+
   /**
    * This deserializes a BSON stream to create an L1 object.
    * @param bsonReader that provides the BSON
@@ -37,7 +49,7 @@ public class L1Codec implements Codec<L1> {
    * @return the object created from the BSON stream.
    */
   @Override
-  public L1 decode(BsonReader bsonReader, DecoderContext decoderContext) {
+  public T decode(BsonReader bsonReader, DecoderContext decoderContext) {
     bsonReader.readStartDocument();
     //TODO complete this method.
     bsonReader.readEndDocument();
@@ -46,15 +58,15 @@ public class L1Codec implements Codec<L1> {
   }
 
   /**
-   * This serializes an L1 object into a BSON stream. The serialization is delegated to
+   * This serializes an object into a BSON stream. The serialization is delegated to
    * {@link EntityToBsonConverter}
    * @param bsonWriter that encodes each attribute to BSON
-   * @param l1 the object to encode
+   * @param obj the object to encode
    * @param encoderContext not used
    */
   @Override
-  public void encode(BsonWriter bsonWriter, L1 l1, EncoderContext encoderContext) {
-    final Map<String, Entity> attributes = L1.SCHEMA.itemToMap(l1, true);
+  public void encode(BsonWriter bsonWriter, T obj, EncoderContext encoderContext) {
+    final Map<String, Entity> attributes = schema.itemToMap(obj, true);
     bsonWriter.writeStartDocument();
     attributes.forEach((k, v) -> EntityToBsonConverter.writeField(bsonWriter, k, v));
     bsonWriter.writeEndDocument();
@@ -65,7 +77,7 @@ public class L1Codec implements Codec<L1> {
    * @return the class being encoded
    */
   @Override
-  public Class<L1> getEncoderClass() {
-    return L1.class;
+  public Class<T> getEncoderClass() {
+    return clazz;
   }
 }

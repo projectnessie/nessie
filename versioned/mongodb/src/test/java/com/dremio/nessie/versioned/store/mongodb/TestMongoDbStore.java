@@ -17,23 +17,20 @@ package com.dremio.nessie.versioned.store.mongodb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Arrays;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
+import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.mongodb.MongoClientSettings;
-import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
 
 public class TestMongoDbStore {
   final String testDatabaseName = "mydb";
   final String connectionString = "localhost";
   MongoDbStore mongoDbStore;
-  MongoClientSettings mongoClientSettings;
 
   /**
    * Set up the objects necessary for the tests.
@@ -41,11 +38,6 @@ public class TestMongoDbStore {
   @BeforeEach
   public void setUp() {
     mongoDbStore = new MongoDbStore(connectionString, testDatabaseName);
-    mongoClientSettings = MongoClientSettings.builder()
-      .applyToClusterSettings(builder ->
-        builder.hosts(Arrays.asList(new ServerAddress(connectionString, mongoDbStore.mongoPort))))
-      .codecRegistry(mongoDbStore.codecRegistry)
-      .build();
   }
 
   @AfterEach
@@ -66,7 +58,9 @@ public class TestMongoDbStore {
 
   @Test
   public void putValue() {
-    L2 l2 = TestValueTypeUtility.getSampleL2();
+    L1 l1 = TestSamples.getSampleL1();
+    L2 l2 = TestSamples.getSampleL2();
+    L3 l3 = TestSamples.getSampleL3();
     mongoDbStore.start();
     MongoDatabase mongoDatabase = mongoDbStore.getMongoDatabase();
     assertEquals(mongoDatabase.getName(), testDatabaseName);

@@ -19,6 +19,9 @@ import org.bson.codecs.Codec;
 import org.bson.codecs.configuration.CodecRegistry;
 
 import com.dremio.nessie.versioned.impl.Fragment;
+import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
+import com.dremio.nessie.versioned.impl.InternalRef;
+import com.dremio.nessie.versioned.impl.InternalValue;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
@@ -30,7 +33,50 @@ import com.dremio.nessie.versioned.impl.L3;
  * The CodecProvider is a factory for Codecs.
  */
 public class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
+  static class L1Codec extends BaseCodec<L1> {
+    L1Codec() {
+      super(L1.class, L1.SCHEMA);
+    }
+  }
+
+  static class L2Codec extends BaseCodec<L2> {
+    L2Codec() {
+      super(L2.class, L2.SCHEMA);
+    }
+  }
+
+  static class L3Codec extends BaseCodec<L3> {
+    L3Codec() {
+      super(L3.class, L3.SCHEMA);
+    }
+  }
+
+  static class FragmentCodec extends BaseCodec<Fragment> {
+    FragmentCodec() {
+      super(Fragment.class, Fragment.SCHEMA);
+    }
+  }
+
+  static class MetadataCodec extends BaseCodec<InternalCommitMetadata> {
+    MetadataCodec() {
+      super(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA);
+    }
+  }
+
+  static class RefCodec extends BaseCodec<InternalRef> {
+    RefCodec() {
+      super(InternalRef.class, InternalRef.SCHEMA);
+    }
+  }
+
+  static class ValueCodec extends BaseCodec<InternalValue> {
+    ValueCodec() {
+      super(InternalValue.class, InternalValue.SCHEMA);
+    }
+  }
+
   @Override
+  @SuppressWarnings("unchecked")
   public <T> Codec<T> get(Class<T> clazz, CodecRegistry registry) {
     if (clazz == L1.class) {
       return (Codec<T>) new L1Codec();
@@ -40,6 +86,12 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
       return (Codec<T>) new L3Codec();
     } else if (clazz == Fragment.class) {
       return (Codec<T>) new FragmentCodec();
+    } else if (clazz == InternalRef.class) {
+      return (Codec<T>) new RefCodec();
+    } else if (clazz == InternalCommitMetadata.class) {
+      return (Codec<T>) new MetadataCodec();
+    } else if (clazz == InternalValue.class) {
+      return (Codec<T>) new ValueCodec();
     }
 
     // CodecProvider returns null if it's not a provider for the requested Class
