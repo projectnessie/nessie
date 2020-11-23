@@ -128,8 +128,8 @@ public class VersionStoreFactory {
     }
 
     final MongoDbStore mongo = new MongoDbStore(
-      new ConnectionString(config.getVersionStoreMongoDbConfig().getConnectionString()),
-      config.getVersionStoreMongoDbConfig().getDatabaseName());
+        new ConnectionString(config.getVersionStoreMongoDbConfig().getConnectionString()),
+        config.getVersionStoreMongoDbConfig().getDatabaseName());
     mongo.start();
     return mongo;
   }
