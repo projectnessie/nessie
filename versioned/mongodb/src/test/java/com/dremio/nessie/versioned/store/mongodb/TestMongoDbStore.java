@@ -27,6 +27,8 @@ import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.collect.Iterables;
+import com.mongodb.BasicDBObject;
 import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoDatabase;
 
@@ -41,41 +43,47 @@ public class TestMongoDbStore {
   @BeforeEach
   public void setUp() {
     mongoDbStore = new MongoDbStore(connectionString, testDatabaseName);
-  }
-
-  @AfterEach
-  public void teardown() {
-    mongoDbStore.close();
+    mongoDbStore.start();
   }
 
   /**
-   * A test to open and close a connection to the database via the Mongo Client.
-   * The test ensures that the database name set up can be retrieved.
+   * Close the store and clean up written data.
    */
+  @AfterEach
+  public void teardown() {
+    // Clean up the collections.
+    final BasicDBObject blank = new BasicDBObject();
+    mongoDbStore.collections.forEach((k, v) -> v.deleteMany(blank));
+    mongoDbStore.close();
+  }
+
   @Test
-  public void createClient() {
-    mongoDbStore.start();
-    MongoDatabase mongoDatabase = mongoDbStore.getMongoDatabase();
+  public void testDatabaseName() {
+    final MongoDatabase mongoDatabase = mongoDbStore.getMongoDatabase();
     assertEquals(mongoDatabase.getName(), testDatabaseName);
   }
 
   @Test
-  public void putValue() {
-    L1 l1 = TestSamples.getSampleL1();
-    L2 l2 = TestSamples.getSampleL2();
-    L3 l3 = TestSamples.getSampleL3();
-    mongoDbStore.start();
-    MongoDatabase mongoDatabase = mongoDbStore.getMongoDatabase();
-    assertEquals(mongoDatabase.getName(), testDatabaseName);
-    mongoDbStore.put(ValueType.L2, l2, Optional.empty());
-    // TODO verify the ValueType was successfully stored. This requires the decode to work.
-    //    Consumer<L2> printConsumer = new Consumer<L2>() {
-    //      @Override
-    //      public void accept(final L2 l2) {
-    //        LOGGER.info(l2.toString());
-    //      }
-    //    };
-    //    mongoDbStore.l2MongoCollection.find().forEach(printConsumer);
+  public void putL1Value() {
+    final L1 sampleL1 = TestSamples.getSampleL1();
+    mongoDbStore.put(ValueType.L1, sampleL1, Optional.empty());
+    final L1 readL1 = (L1)Iterables.get(mongoDbStore.collections.get(ValueType.L1).find(), 0);
+    assertEquals(L1.SCHEMA.itemToMap(sampleL1, true), L1.SCHEMA.itemToMap(readL1, true));
+  }
 
+  @Test
+  public void putL2Value() {
+    final L2 sampleL2 = TestSamples.getSampleL2();
+    mongoDbStore.put(ValueType.L2, sampleL2, Optional.empty());
+    final L2 readL2 = (L2)Iterables.get(mongoDbStore.collections.get(ValueType.L2).find(), 0);
+    assertEquals(L2.SCHEMA.itemToMap(sampleL2, true), L2.SCHEMA.itemToMap(readL2, true));
+  }
+
+  @Test
+  public void putL3Value() {
+    final L3 sampleL3 = TestSamples.getSampleL3();
+    mongoDbStore.put(ValueType.L3, sampleL3, Optional.empty());
+    final L3 readL3 = (L3)Iterables.get(mongoDbStore.collections.get(ValueType.L3).find(), 0);
+    assertEquals(L3.SCHEMA.itemToMap(sampleL3, true), L3.SCHEMA.itemToMap(readL3, true));
   }
 }

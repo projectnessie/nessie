@@ -15,21 +15,36 @@
  */
 package com.dremio.nessie.versioned.store.mongodb.codecs;
 
+import java.util.Map;
+
 import org.bson.BsonBinary;
 import org.bson.BsonWriter;
 
 import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.mongodb.MongoDbConstants;
 
 /**
- * This specifically converts an L2 object into BSON format.
+ * Converter for serializing an Entity to BSON format.
  */
 public class EntityToBsonConverter {
   /**
+   * Write the specified Entity attributes to BSON.
+   * @param writer the BSON writer to write to.
+   * @param attributes the Entity attributes to serialize.
+   */
+  public static void write(BsonWriter writer, Map<String, Entity> attributes) {
+    writer.writeStartDocument();
+    attributes.forEach((k, v) -> EntityToBsonConverter.writeField(writer, k, v));
+    writer.writeEndDocument();
+  }
+
+  /**
    * This creates a single field in BSON format that represents entity.
+   * @param writer the BSON writer to write to.
    * @param field the name of the field as represented in BSON
    * @param value the entity that will be serialized.
    */
-  public static void writeField(BsonWriter writer, String field, Entity value) {
+  private static void writeField(BsonWriter writer, String field, Entity value) {
     writer.writeName(field);
     writeSingleValue(writer, value);
   }
@@ -38,9 +53,10 @@ public class EntityToBsonConverter {
    * Writes a single Entity to BSON.
    * Invokes different write methods based on the underlying {@code com.dremio.nessie.versioned.store.Entity} type.
    *
+   * @param writer the BSON writer to write to.
    * @param value the value to convert to BSON.
    */
-  public static void writeSingleValue(BsonWriter writer, Entity value) {
+  private static void writeSingleValue(BsonWriter writer, Entity value) {
     switch (value.getType()) {
       case MAP:
         writer.writeStartDocument();
@@ -52,14 +68,16 @@ public class EntityToBsonConverter {
         break;
       case LIST:
         writer.writeStartArray();
+        // Flag to differentiate LIST from STRING_SET.
+        writer.writeBoolean(true);
         value.getList().forEach(v -> writeSingleValue(writer, v));
         writer.writeEndArray();
         break;
       case NUMBER:
-        writer.writeString(value.getNumber());
+        writer.writeString(MongoDbConstants.NUMBER_PREFIX + value.getNumber());
         break;
       case STRING:
-        writer.writeString(value.getString());
+        writer.writeString(MongoDbConstants.STRING_PREFIX + value.getString());
         break;
       case BINARY:
         writer.writeBinaryData(new BsonBinary(value.getBinary().toByteArray()));
@@ -69,11 +87,14 @@ public class EntityToBsonConverter {
         break;
       case STRING_SET:
         writer.writeStartArray();
+        // Flag to differentiate STRING_SET from LIST.
+        writer.writeBoolean(false);
+        // Omit the NUMBER_PREFIX or STRING_PREFIX as only STRING values can be in a STRING_SET.
         value.getStringSet().forEach(writer::writeString);
         writer.writeEndArray();
         break;
       default:
-        throw new IllegalArgumentException(String.format("Unsupported field type: %s", value.getType().name()));
+        throw new UnsupportedOperationException(String.format("Unsupported field type: %s", value.getType().name()));
     }
   }
 }

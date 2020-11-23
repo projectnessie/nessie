@@ -15,8 +15,9 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -37,7 +38,6 @@ import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
@@ -45,7 +45,6 @@ import com.dremio.nessie.versioned.store.ValueType;
 import com.dremio.nessie.versioned.store.mongodb.codecs.CodecProvider;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ListMultimap;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -66,22 +65,10 @@ public class MongoDbStore implements Store {
 
   // The client that connects to the MongoDB server.
   protected MongoClient mongoClient;
-  // The names of the collections in the database. These relate to
-  // {@link com.dremio.nessie.versioned.store.ValueType}
-  private final String l1Collection = "l1";
-  private final String l2Collection = "l2";
-  private final String l3Collection = "l3";
-  private final String refCollection = "r";
-  private final String valueCollection = "v";
-  private final String keyFragmentCollection = "k";
-  private final String commitMetadataCollection = "m";
 
   // The database hosted by the MongoDB server.
   private MongoDatabase mongoDatabase;
-  protected MongoCollection<InternalValue> valueMongoCollection;
-  protected MongoCollection<L1> l1MongoCollection;
-  protected MongoCollection<L2> l2MongoCollection;
-  protected MongoCollection<L3> l3MongoCollection;
+  protected final Map<ValueType, MongoCollection<?>> collections;
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
@@ -89,6 +76,7 @@ public class MongoDbStore implements Store {
    * @param databaseName the name of the database to retrieve
    */
   public MongoDbStore(ConnectionString connectionString, String databaseName) {
+    this.collections = new HashMap<>();
     this.databaseName = databaseName;
     final CodecRegistry codecRegistry = CodecRegistries.fromProviders(
         new CodecProvider(),
@@ -111,15 +99,18 @@ public class MongoDbStore implements Store {
   public void start() {
     mongoClient = MongoClients.create(mongoClientSettings);
     mongoDatabase = mongoClient.getDatabase(databaseName);
-    //Initialise collections for each ValueType.
-    l1MongoCollection = mongoDatabase.getCollection(l1Collection, L1.class);
-    l2MongoCollection = mongoDatabase.getCollection(l2Collection, L2.class);
-    l3MongoCollection = mongoDatabase.getCollection(l3Collection, L3.class);
-    MongoCollection<InternalRef> refMongoCollection = mongoDatabase.getCollection(refCollection, InternalRef.class);
-    valueMongoCollection = mongoDatabase.getCollection(valueCollection, InternalValue.class);
-    MongoCollection<Fragment> keyFragmentMongoCollection = mongoDatabase.getCollection(keyFragmentCollection, Fragment.class);
-    MongoCollection<InternalCommitMetadata> commitMetadataMongoCollection =
-        mongoDatabase.getCollection(commitMetadataCollection, InternalCommitMetadata.class);
+
+    // Initialise collections for each ValueType.
+    collections.put(ValueType.L1, mongoDatabase.getCollection(MongoDbConstants.L1_COLLECTION, L1.class));
+    collections.put(ValueType.L2, mongoDatabase.getCollection(MongoDbConstants.L2_COLLECTION, L2.class));
+    collections.put(ValueType.L3, mongoDatabase.getCollection(MongoDbConstants.L3_COLLECTION, L3.class));
+    collections.put(ValueType.COMMIT_METADATA,
+        mongoDatabase.getCollection(MongoDbConstants.COMMIT_METADATA_COLLECTION, InternalCommitMetadata.class));
+    collections.put(ValueType.KEY_FRAGMENT,
+        mongoDatabase.getCollection(MongoDbConstants.KEY_FRAGMENT_COLLECTION, Fragment.class));
+    collections.put(ValueType.REF, mongoDatabase.getCollection(MongoDbConstants.REF_COLLECTION, InternalRef.class));
+    collections.put(ValueType.VALUE,
+        mongoDatabase.getCollection(MongoDbConstants.VALUE_COLLECTION, InternalValue.class));
   }
 
   /**
@@ -128,15 +119,13 @@ public class MongoDbStore implements Store {
    */
   @Override
   public void close() {
+    if (null != mongoClient) {
+      mongoClient.close();
+    }
   }
 
   @Override
   public void load(LoadStep loadstep) throws ReferenceNotFoundException {
-    throw new UnsupportedOperationException();
-  }
-
-  private List<ListMultimap<String, LoadOp<?>>> paginateLoads(LoadStep loadStep, int size) {
-    List<ListMultimap<String, LoadOp<?>>> paginated = new ArrayList<>();
     throw new UnsupportedOperationException();
   }
 
@@ -150,13 +139,12 @@ public class MongoDbStore implements Store {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
 
-    // TODO: ensure that calls to mongoDatabase.createCollection etc are surrounded with try-catch to detect
-    //  com.mongodb.MongoSocketOpenException
-    l2MongoCollection = mongoDatabase.getCollection(l2Collection, L2.class);
     LOGGER.info("ValueType: {}, Value: {}", type.toString(), value.toString());
-    if (type.equals(ValueType.L2)) {
-      l2MongoCollection.insertOne((L2)value);
+    final MongoCollection collection = collections.get(type);
+    if (null == collection) {
+      throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", type.name()));
     }
+    collection.insertOne(value);
   }
 
   @Override

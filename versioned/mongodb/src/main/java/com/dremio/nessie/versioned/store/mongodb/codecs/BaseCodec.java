@@ -15,15 +15,12 @@
  */
 package com.dremio.nessie.versioned.store.mongodb.codecs;
 
-import java.util.Map;
-
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 
 /**
@@ -51,11 +48,7 @@ public abstract class BaseCodec<T> implements Codec<T> {
    */
   @Override
   public T decode(BsonReader bsonReader, DecoderContext decoderContext) {
-    bsonReader.readStartDocument();
-    //TODO complete this method.
-    bsonReader.readEndDocument();
-
-    return null;
+    return schema.mapToItem(BsonToEntityConverter.read(bsonReader));
   }
 
   /**
@@ -67,10 +60,7 @@ public abstract class BaseCodec<T> implements Codec<T> {
    */
   @Override
   public void encode(BsonWriter bsonWriter, T obj, EncoderContext encoderContext) {
-    final Map<String, Entity> attributes = schema.itemToMap(obj, true);
-    bsonWriter.writeStartDocument();
-    attributes.forEach((k, v) -> EntityToBsonConverter.writeField(bsonWriter, k, v));
-    bsonWriter.writeEndDocument();
+    EntityToBsonConverter.write(bsonWriter, schema.itemToMap(obj, true));
   }
 
   /**
