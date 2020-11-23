@@ -23,7 +23,7 @@ function App() {
   return (
     <div className="App">
       <Navbar bg="dark" expand="lg" fixed="top">
-        <Navbar.Brand href="#home">
+        <Navbar.Brand href="/">
           <img
             alt=""
             src="/logo.svg"

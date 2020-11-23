@@ -103,6 +103,10 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-vertx-web</artifactId>
+    </dependency>    
+    <dependency>
+      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-micrometer</artifactId>
     </dependency>
     <dependency>
