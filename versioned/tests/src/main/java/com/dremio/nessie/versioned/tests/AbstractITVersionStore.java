@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
@@ -40,6 +41,7 @@ import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.NamedRef;
+import com.dremio.nessie.versioned.Operation;
 import com.dremio.nessie.versioned.Put;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
@@ -831,6 +833,20 @@ public abstract class AbstractITVersionStore {
       assertThat(commits.get(2).getValue(), is("First Commit"));
       assertThat(commits.get(1).getValue(), is("Second Commit"));
       assertThat(commits.get(0).getValue(), is("Third Commit"));
+    }
+
+    @Test
+    protected void nonEmptyFastForwardMerge() throws VersionStoreException {
+      final Key key = Key.of("t1");
+      final BranchName etl = BranchName.of("etl");
+      final BranchName review = BranchName.of("review");
+      store().create(etl, Optional.empty());
+      store().create(review, Optional.empty());
+      store().commit(etl, Optional.empty(), "commit 1", Arrays.<Operation<String>>asList(Put.of(key, "value1")));
+      store().merge(store().toHash(etl), review, Optional.empty());
+      store().commit(etl, Optional.empty(), "commit 2", Arrays.<Operation<String>>asList(Put.of(key, "value2")));
+      store().merge(store().toHash(etl), review, Optional.empty());
+      assertEquals(store().getValue(review, key), "value2");
     }
 
     @Test

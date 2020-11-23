@@ -567,6 +567,13 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     final List<InternalKey> fromKeyChanges;
 
     if (!cherryPick) {
+
+      // if the common parent has no children, simple fast-forward merge.
+      if (to.getId().equals(commonParent)) {
+        assign(toBranch, expectedBranchHash, fromHash);
+        return;
+      }
+
       // in the merge scenario we need to confirm that there were not changes to the master branch against the same keys
       // separately from the "from" items. This is more restrictive than a simple head to head comparison as it is possible
       // that target branch had a mutation applied and then reverted. In that situation, the merge operation will fail. This
