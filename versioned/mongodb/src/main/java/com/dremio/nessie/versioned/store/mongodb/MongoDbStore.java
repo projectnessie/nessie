@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.versioned.store.mongodb.codecs.CodecProvider;
-import com.google.common.collect.ImmutableList;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -44,11 +42,12 @@ import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.dremio.nessie.versioned.store.mongodb.codecs.CodecProvider;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ListMultimap;
+import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -62,7 +61,6 @@ import com.mongodb.client.MongoDatabase;
 public class MongoDbStore implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbStore.class);
 
-  public final int mongoPort = 27017;
   private final String databaseName;
   private final MongoClientSettings mongoClientSettings;
 
@@ -87,17 +85,17 @@ public class MongoDbStore implements Store {
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
-   * @param serverName the server on which the MongoDB instance is hosted. Eg localhost.
+   * @param connectionString the string to use to connect to MongoDB.
    * @param databaseName the name of the database to retrieve
    */
-  public MongoDbStore(String serverName, String databaseName) {
+  public MongoDbStore(ConnectionString connectionString, String databaseName) {
     this.databaseName = databaseName;
     final CodecRegistry codecRegistry = CodecRegistries.fromProviders(
-      new CodecProvider(),
-      PojoCodecProvider.builder().automatic(true).build(),
-      MongoClientSettings.getDefaultCodecRegistry());
+        new CodecProvider(),
+        PojoCodecProvider.builder().automatic(true).build(),
+        MongoClientSettings.getDefaultCodecRegistry());
     this.mongoClientSettings = MongoClientSettings.builder()
-      .applyToClusterSettings(builder -> builder.hosts(ImmutableList.of(new ServerAddress(serverName, mongoPort))))
+      .applyConnectionString(connectionString)
       .codecRegistry(codecRegistry)
       .build();
   }

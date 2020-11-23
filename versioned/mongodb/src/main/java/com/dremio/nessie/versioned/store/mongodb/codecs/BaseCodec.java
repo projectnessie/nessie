@@ -15,15 +15,16 @@
  */
 package com.dremio.nessie.versioned.store.mongodb.codecs;
 
-import com.dremio.nessie.versioned.store.Entity;
-import com.dremio.nessie.versioned.store.SimpleSchema;
+import java.util.Map;
+
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 
-import java.util.Map;
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 
 /**
  * Base codec for codecs responsible for the encoding and decoding of Entities to a BSON objects.

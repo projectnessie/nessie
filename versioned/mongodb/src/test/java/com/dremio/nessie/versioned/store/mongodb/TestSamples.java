@@ -33,9 +33,9 @@ import com.google.common.collect.ImmutableMap;
  */
 public class TestSamples {
   private static final Entity ID = Entity.ofBinary(
-    new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19});
+      new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19});
   private static final Entity ID2 = Entity.ofBinary(
-    new byte[] {19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0});
+      new byte[] {19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0});
 
   /**
    * Create a Sample L1 schema.
@@ -46,7 +46,7 @@ public class TestSamples {
     keyList.put("chk", Entity.ofBoolean(true));
     keyList.put("fragments", Entity.ofList(ID, ID2, ID));
     keyList.put("mutations", Entity.ofList(Entity.ofMap(ImmutableMap.of("a",
-      Entity.ofList(Entity.ofString("addition1"), Entity.ofString("addition2"))))));
+        Entity.ofList(Entity.ofString("addition1"), Entity.ofString("addition2"))))));
 
     final List<Entity> treeList = new ArrayList<>(L1.SIZE);
     for (int i = 0; i < L1.SIZE; i++) {
@@ -58,7 +58,7 @@ public class TestSamples {
     attributeMap.put("tree", Entity.ofList(treeList));
     // The ID is generated from the contents of the L1 object. If any of the contents change, the ID will as well.
     attributeMap.put("id", Entity.ofBinary(
-      new byte[] {110, 40, 7, 86, -103, 23, 6, -34, -102, 95, -33, 77, -87, 31, 23, 110, 67, -46, 56, -45}));
+        new byte[] {110, 40, 7, 86, -103, 23, 6, -34, -102, 95, -33, 77, -87, 31, 23, 110, 67, -46, 56, -45}));
     attributeMap.put("keys", Entity.ofMap(keyList));
     attributeMap.put("parents", Entity.ofList(ID2));
 
@@ -91,15 +91,15 @@ public class TestSamples {
     final List<Entity> treeList = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
       treeList.add(Entity.ofMap(ImmutableMap.of(
-        "key", Entity.ofList(Entity.ofString("path1"), Entity.ofString("path2"), Entity.ofString(String.valueOf(i))),
-        "id", ID2
+          "key", Entity.ofList(Entity.ofString("path1"), Entity.ofString("path2"), Entity.ofString(String.valueOf(i))),
+          "id", ID2
       )));
     }
 
     final Map<String, Entity> attributeMap = new HashMap<>();
     // The ID is generated from the contents of the L3 object. If any of the contents change, the ID will as well.
     attributeMap.put("id", Entity.ofBinary(
-      new byte[] {-42, 83, 119, 97, -12, 87, -124, 124, 7, -50, 86, 39, -101, -99, -90, 40, 62, -127, 93, 13}));
+        new byte[] {-42, 83, 119, 97, -12, 87, -124, 124, 7, -50, 86, 39, -101, -99, -90, 40, 62, -127, 93, 13}));
     attributeMap.put("tree", Entity.ofList(treeList));
 
     return L3.SCHEMA.mapToItem(attributeMap);

@@ -172,6 +172,12 @@
       <artifactId>quarkus-test-security</artifactId>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>org.projectnessie</groupId>
+          <artifactId>nessie-versioned-mongodb</artifactId>
+          <version>0.2.2-SNAPSHOT</version>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
 
   <build>

@@ -22,6 +22,7 @@ public enum VersionStoreType {
 
   DYNAMO,
   INMEMORY,
-  JGIT;
+  JGIT,
+  MONGODB;
 
 }

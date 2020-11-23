@@ -50,7 +50,10 @@ import com.dremio.nessie.versioned.impl.JGitVersionStore;
 import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.impl.experimental.NessieRepository;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
+import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
+import com.dremio.nessie.versioned.store.mongodb.MongoDbStore;
+import com.mongodb.ConnectionString;
 
 import software.amazon.awssdk.regions.Region;
 
@@ -105,6 +108,9 @@ public class VersionStoreFactory {
       case JGIT:
         LOGGER.info("Using JGit Version Store");
         return new JGitVersionStore<>(repository, storeWorker);
+      case MONGODB:
+        LOGGER.info("Using MongoDB Version store");
+        return new TieredVersionStore<>(storeWorker, createMongoDbConnection(), false);
       case INMEMORY:
         LOGGER.info("Using In Memory version store");
         return InMemoryVersionStore.<Contents, CommitMeta>builder()
@@ -114,6 +120,18 @@ public class VersionStoreFactory {
       default:
         throw new RuntimeException(String.format("unknown jgit repo type %s", config.getVersionStoreConfig().getVersionStoreType()));
     }
+  }
+
+  private Store createMongoDbConnection() {
+    if (!config.getVersionStoreConfig().getVersionStoreType().equals(VersionStoreType.MONGODB)) {
+      return null;
+    }
+
+    final MongoDbStore mongo = new MongoDbStore(
+      new ConnectionString(config.getVersionStoreMongoDbConfig().getConnectionString()),
+      config.getVersionStoreMongoDbConfig().getDatabaseName());
+    mongo.start();
+    return mongo;
   }
 
   /**
