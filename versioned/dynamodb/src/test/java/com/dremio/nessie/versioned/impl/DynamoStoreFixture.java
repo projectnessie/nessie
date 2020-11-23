@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.BranchName;
+import com.dremio.nessie.versioned.Diff;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.NamedRef;
@@ -174,6 +175,11 @@ public class DynamoStoreFixture implements VersionStore<String, String>, AutoClo
   @Override
   public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
     return impl.toRef(refOfUnknownType);
+  }
+
+  @Override
+  public Stream<Diff<String>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+    return impl.getDiffs(from, to);
   }
 
   @Override

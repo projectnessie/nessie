@@ -17,9 +17,11 @@ package com.dremio.nessie.versioned.memory;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
+import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
 
 public class ITInMemoryVersionStore extends AbstractITVersionStore {
@@ -32,6 +34,11 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
   @Override
   protected VersionStore<String, String> store() {
     return store;
+  }
+
+  @Disabled("NYI")
+  protected void checkDiff() throws VersionStoreException {
+    super.checkDiff();
   }
 
   @BeforeEach

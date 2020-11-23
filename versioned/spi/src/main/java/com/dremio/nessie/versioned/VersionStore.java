@@ -193,6 +193,15 @@ public interface VersionStore<VALUE, METADATA> {
    */
   List<Optional<VALUE>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException;
 
+
+  /**
+   * Get list of diffs between two refs.
+   * @param from The from part of the diff.
+   * @param to The to part of the diff.
+   * @return A stream of values that are different.
+   */
+  Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
+
   /**
    * Collect some garbage. Each time this is called, it collects some garbage and reports the progress of what has been collected
    * @return A collector object that must be closed if not depleted.
