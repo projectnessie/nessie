@@ -20,7 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCursor;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -37,6 +40,8 @@ import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
+import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadStep;
@@ -45,7 +50,6 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterables;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -133,7 +137,14 @@ public class MongoDbStore implements Store {
 
   @Override
   public <V> boolean putIfAbsent(ValueType type, V value) {
-    throw new UnsupportedOperationException();
+    final ConditionExpression condition =
+      ConditionExpression.of(ExpressionFunction.attributeNotExists(ExpressionPath.builder(KEY_NAME).build()));
+    try {
+      put(type, value, Optional.of(condition));
+      return true;
+    } catch (IllegalArgumentException ex) {
+      return false;
+    }
   }
 
   @Override
@@ -148,6 +159,8 @@ public class MongoDbStore implements Store {
     }
 
     // TODO: Correct this so it overwrites values if already present.
+    // TODO: Throw an IllegalArgumentException (or something) if the ConditionExpression can't be satisfied, and
+    //       ensure that putIfAbsent catch block matches what is thrown.
     collection.insertOne(value);
   }
 
@@ -168,7 +181,14 @@ public class MongoDbStore implements Store {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
     }
 
-    return (V)Iterables.get(collection.find(Filters.eq(Store.KEY_NAME, id)), 0);
+    try (MongoCursor cursor = collection.find(Filters.eq(Store.KEY_NAME, id)).iterator()) {
+      if (cursor.hasNext()) {
+        return (V)cursor.next();
+      }
+
+      // TODO: Replace with a more appropriate exception type.
+      throw new IllegalArgumentException("Unable to load item.");
+    }
   }
 
   @Override
@@ -179,7 +199,8 @@ public class MongoDbStore implements Store {
 
   @Override
   public Stream<InternalRef> getRefs() {
-    throw new UnsupportedOperationException();
+    final FindIterable iterable = collections.get(ValueType.REF).find();
+    return StreamSupport.stream(iterable.spliterator(), false);
   }
 
   @VisibleForTesting
