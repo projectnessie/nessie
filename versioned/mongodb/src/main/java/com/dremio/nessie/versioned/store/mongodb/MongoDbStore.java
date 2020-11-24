@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.impl.CodecProvider;
 import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
@@ -42,19 +43,16 @@ import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.dremio.nessie.versioned.store.mongodb.codecs.CodecProvider;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
-import com.mongodb.BasicDBObject;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import static com.mongodb.client.model.Filters.eq;
+import com.mongodb.client.model.Filters;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
@@ -77,7 +75,7 @@ public class MongoDbStore implements Store {
   /**
    * Creates a store ready for connection to a MongoDB instance.
    * @param connectionString the string to use to connect to MongoDB.
-   * @param databaseName the name of the database to retrieve
+   * @param databaseName the name of the database to retrieve.
    */
   public MongoDbStore(ConnectionString connectionString, String databaseName) {
     this.collections = new HashMap<>();
@@ -148,6 +146,8 @@ public class MongoDbStore implements Store {
     if (null == collection) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", type.name()));
     }
+
+    // TODO: Correct this so it overwrites values if already present.
     collection.insertOne(value);
   }
 
@@ -167,8 +167,8 @@ public class MongoDbStore implements Store {
     if (null == collection) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
     }
-    //TODO need to add test that collection is not empty.
-    return (V)Iterables.get(collection.find(eq(Store.KEY_NAME, id.toEntity().getBinary().toByteArray())), 0);
+
+    return (V)Iterables.get(collection.find(Filters.eq(Store.KEY_NAME, id)), 0);
   }
 
   @Override

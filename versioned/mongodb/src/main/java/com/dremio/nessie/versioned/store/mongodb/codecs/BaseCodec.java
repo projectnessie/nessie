@@ -26,16 +26,16 @@ import com.dremio.nessie.versioned.store.SimpleSchema;
 /**
  * Base codec for codecs responsible for the encoding and decoding of Entities to a BSON objects.
  */
-public abstract class BaseCodec<T> implements Codec<T> {
-  private final Class<T> clazz;
-  private final SimpleSchema<T> schema;
+public abstract class BaseCodec<C, S> implements Codec<C> {
+  private final Class<C> clazz;
+  private final SimpleSchema<S> schema;
 
   /**
    * Constructor.
    * @param clazz the class type to encode/decode.
    * @param schema the schema of the class.
    */
-  protected BaseCodec(Class<T> clazz, SimpleSchema<T> schema) {
+  protected BaseCodec(Class<C> clazz, SimpleSchema<S> schema) {
     this.clazz = clazz;
     this.schema = schema;
   }
@@ -47,8 +47,9 @@ public abstract class BaseCodec<T> implements Codec<T> {
    * @return the object created from the BSON stream.
    */
   @Override
-  public T decode(BsonReader bsonReader, DecoderContext decoderContext) {
-    return schema.mapToItem(BsonToEntityConverter.read(bsonReader));
+  @SuppressWarnings("unchecked")
+  public C decode(BsonReader bsonReader, DecoderContext decoderContext) {
+    return (C) schema.mapToItem(BsonToEntityConverter.read(bsonReader));
   }
 
   /**
@@ -59,8 +60,9 @@ public abstract class BaseCodec<T> implements Codec<T> {
    * @param encoderContext not used
    */
   @Override
-  public void encode(BsonWriter bsonWriter, T obj, EncoderContext encoderContext) {
-    EntityToBsonConverter.write(bsonWriter, schema.itemToMap(obj, true));
+  @SuppressWarnings("unchecked")
+  public void encode(BsonWriter bsonWriter, C obj, EncoderContext encoderContext) {
+    EntityToBsonConverter.write(bsonWriter, schema.itemToMap((S)obj, true));
   }
 
   /**
@@ -68,7 +70,7 @@ public abstract class BaseCodec<T> implements Codec<T> {
    * @return the class being encoded
    */
   @Override
-  public Class<T> getEncoderClass() {
+  public Class<C> getEncoderClass() {
     return clazz;
   }
 }
