@@ -108,6 +108,7 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
   }
 
   private static final Map<Class<?>, Codec<?>> CODECS = new HashMap<>();
+
   static {
     CODECS.put(L1.class, new L1Codec());
     CODECS.put(L2.class, new L2Codec());

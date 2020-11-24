@@ -20,15 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.IOException;
 import java.util.Optional;
 
-import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
-import com.dremio.nessie.versioned.impl.InternalValue;
-import com.mongodb.client.model.Filters;
-import de.flapdoodle.embed.mongo.MongodExecutable;
-import de.flapdoodle.embed.mongo.MongodStarter;
-import de.flapdoodle.embed.mongo.config.MongodConfig;
-import de.flapdoodle.embed.mongo.config.Net;
-import de.flapdoodle.embed.mongo.distribution.Version;
-import de.flapdoodle.embed.process.runtime.Network;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,7 +27,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.versioned.impl.Fragment;
+import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
+import com.dremio.nessie.versioned.impl.InternalValue;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
@@ -44,6 +37,14 @@ import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.Iterables;
 import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+
+import de.flapdoodle.embed.mongo.MongodExecutable;
+import de.flapdoodle.embed.mongo.MongodStarter;
+import de.flapdoodle.embed.mongo.config.MongodConfig;
+import de.flapdoodle.embed.mongo.config.Net;
+import de.flapdoodle.embed.mongo.distribution.Version;
+import de.flapdoodle.embed.process.runtime.Network;
 
 public class TestMongoDbStore {
   private static MongodExecutable mongoExec;
@@ -51,19 +52,26 @@ public class TestMongoDbStore {
   private static final String testDatabaseName = "mydb";
   private MongoDbStore mongoDbStore;
 
+  /**
+   * Set up the embedded flapdoodle MongoDB server for unit tests.
+   * @throws IOException if there's an issue grabbing the port or determining IP version.
+   */
   @BeforeAll
   public static void setupServer() throws IOException {
     final int port = Network.getFreeServerPort();
     final MongodConfig config = MongodConfig.builder()
-      .version(Version.Main.PRODUCTION)
-      .net(new Net(port, Network.localhostIsIPv6()))
-      .build();
+        .version(Version.Main.PRODUCTION)
+        .net(new Net(port, Network.localhostIsIPv6()))
+        .build();
 
     mongoExec = MongodStarter.getDefaultInstance().prepare(config);
     mongoExec.start();
     connectionString = new ConnectionString("mongodb://localhost:" + port);
   }
 
+  /**
+   * Shut down the embedded flapdoodle MongoDB server.
+   */
   @AfterAll
   public static void teardownServer() {
     if (null != mongoExec) {
@@ -150,10 +158,10 @@ public class TestMongoDbStore {
     final InternalCommitMetadata sample = SampleEntities.createCommitMetadata();
     mongoDbStore.put(ValueType.COMMIT_METADATA, sample, Optional.empty());
     final InternalCommitMetadata read =
-      (InternalCommitMetadata)Iterables.get(mongoDbStore.collections.get(ValueType.COMMIT_METADATA).find(), 0);
+        (InternalCommitMetadata)Iterables.get(mongoDbStore.collections.get(ValueType.COMMIT_METADATA).find(), 0);
     assertEquals(
-      InternalCommitMetadata.SCHEMA.itemToMap(sample, true),
-      InternalCommitMetadata.SCHEMA.itemToMap(read, true));
+        InternalCommitMetadata.SCHEMA.itemToMap(sample, true),
+        InternalCommitMetadata.SCHEMA.itemToMap(read, true));
   }
 
   @Test

@@ -140,26 +140,26 @@ public class SampleEntities {
     // Two commits, one with a DELTA and one without.
     final List<Entity> commitList = new ArrayList<>(2);
     commitList.add(Entity.ofMap(ImmutableMap.of(
-      "id", ID,
-      "commit", ID2,
-      "parent", ID2
+        "id", ID,
+        "commit", ID2,
+        "parent", ID2
     )));
     commitList.add(Entity.ofMap(ImmutableMap.of(
-      "id", ID,
-      "commit", ID2,
-      "deltas", Entity.ofList(Entity.ofMap(ImmutableMap.of(
-        "position", Entity.ofNumber(1),
-        "old", ID,
-        "new", ID2
-      ))),
-      "keys", Entity.ofList(Entity.ofMap(ImmutableMap.of("a",
-        Entity.ofList(Entity.ofString("addition1"), Entity.ofString("addition2")))))
+        "id", ID,
+        "commit", ID2,
+        "deltas", Entity.ofList(Entity.ofMap(ImmutableMap.of(
+            "position", Entity.ofNumber(1),
+            "old", ID,
+            "new", ID2
+        ))),
+        "keys", Entity.ofList(Entity.ofMap(ImmutableMap.of("a",
+            Entity.ofList(Entity.ofString("addition1"), Entity.ofString("addition2")))))
     )));
 
     final Map<String, Entity> attributeMap = new HashMap<>();
     attributeMap.put(InternalRef.TYPE, Entity.ofString("b"));
     attributeMap.put("id", Entity.ofBinary(
-      new byte[] {-53, 113, -70, -14, -89, 123, -56, 32, -83, -44, -7, 10, 10, -94, -88, 85, 85, 52, -19, 80}));
+        new byte[] {-53, 113, -70, -14, -89, 123, -56, 32, -83, -44, -7, 10, 10, -94, -88, 85, 85, 52, -19, 80}));
     attributeMap.put("name", Entity.ofString("branchName"));
     attributeMap.put("tree", Entity.ofList(treeList));
     attributeMap.put("metadata", ID2);
