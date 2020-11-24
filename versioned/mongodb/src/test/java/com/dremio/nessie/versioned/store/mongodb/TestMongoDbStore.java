@@ -17,12 +17,21 @@ package com.dremio.nessie.versioned.store.mongodb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.IOException;
 import java.util.Optional;
 
 import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalValue;
 import com.mongodb.client.model.Filters;
+import de.flapdoodle.embed.mongo.MongodExecutable;
+import de.flapdoodle.embed.mongo.MongodStarter;
+import de.flapdoodle.embed.mongo.config.MongodConfig;
+import de.flapdoodle.embed.mongo.config.Net;
+import de.flapdoodle.embed.mongo.distribution.Version;
+import de.flapdoodle.embed.process.runtime.Network;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,9 +46,30 @@ import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoDatabase;
 
 public class TestMongoDbStore {
-  private final ConnectionString connectionString = new ConnectionString("mongodb://localhost:27017");
-  private final String testDatabaseName = "mydb";
+  private static MongodExecutable mongoExec;
+  private static ConnectionString connectionString;
+  private static final String testDatabaseName = "mydb";
   private MongoDbStore mongoDbStore;
+
+  @BeforeAll
+  public static void setupServer() throws IOException {
+    final int port = Network.getFreeServerPort();
+    final MongodConfig config = MongodConfig.builder()
+      .version(Version.Main.PRODUCTION)
+      .net(new Net(port, Network.localhostIsIPv6()))
+      .build();
+
+    mongoExec = MongodStarter.getDefaultInstance().prepare(config);
+    mongoExec.start();
+    connectionString = new ConnectionString("mongodb://localhost:" + port);
+  }
+
+  @AfterAll
+  public static void teardownServer() {
+    if (null != mongoExec) {
+      mongoExec.stop();
+    }
+  }
 
   /**
    * Set up the objects necessary for the tests.
