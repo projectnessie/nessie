@@ -96,4 +96,20 @@ public class TestMongoDbStore {
     L1 readL1 = (L1)mongoDbStore.loadSingle(ValueType.L1, sampleL1.getId());
     assertEquals(L1.SCHEMA.itemToMap(sampleL1, true), L1.SCHEMA.itemToMap(readL1, true));
   }
+
+  @Test
+  public void loadSingleL2Value() {
+    final L2 sampleL2 = TestSamples.getSampleL2();
+    mongoDbStore.put(ValueType.L2, sampleL2, Optional.empty());
+    L2 readL2 = (L2)mongoDbStore.loadSingle(ValueType.L2, sampleL2.getId());
+    assertEquals(L2.SCHEMA.itemToMap(sampleL2, true), L2.SCHEMA.itemToMap(readL2, true));
+  }
+
+  @Test
+  public void loadSingleL3Value() {
+    final L3 sampleL3 = TestSamples.getSampleL3();
+    mongoDbStore.put(ValueType.L3, sampleL3, Optional.empty());
+    L3 readL3 = (L3)mongoDbStore.loadSingle(ValueType.L3, sampleL3.getId());
+    assertEquals(L3.SCHEMA.itemToMap(sampleL3, true), L3.SCHEMA.itemToMap(readL3, true));
+  }
 }

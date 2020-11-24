@@ -167,9 +167,8 @@ public class MongoDbStore implements Store {
     if (null == collection) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
     }
-    BasicDBObject query = new BasicDBObject(Store.KEY_NAME,
-        new BasicDBObject("$eq", id));
-    return (V)Iterables.get(collection.find(query), 0);
+    //TODO need to add test that collection is not empty.
+    return (V)Iterables.get(collection.find(eq(Store.KEY_NAME, id.toEntity().getBinary().toByteArray())), 0);
   }
 
   @Override
