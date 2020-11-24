@@ -22,8 +22,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCursor;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -52,9 +50,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 
@@ -138,7 +138,7 @@ public class MongoDbStore implements Store {
   @Override
   public <V> boolean putIfAbsent(ValueType type, V value) {
     final ConditionExpression condition =
-      ConditionExpression.of(ExpressionFunction.attributeNotExists(ExpressionPath.builder(KEY_NAME).build()));
+        ConditionExpression.of(ExpressionFunction.attributeNotExists(ExpressionPath.builder(KEY_NAME).build()));
     try {
       put(type, value, Optional.of(condition));
       return true;
@@ -204,7 +204,12 @@ public class MongoDbStore implements Store {
   }
 
   @VisibleForTesting
-  public MongoDatabase getMongoDatabase() {
+  MongoDatabase getDatabase() {
     return mongoDatabase;
+  }
+
+  @VisibleForTesting
+  Map<ValueType, MongoCollection<?>> getCollections() {
+    return collections;
   }
 }

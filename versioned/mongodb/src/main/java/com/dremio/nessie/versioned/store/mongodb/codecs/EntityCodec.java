@@ -24,9 +24,9 @@ import org.bson.codecs.EncoderContext;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 
 /**
- * Base codec for codecs responsible for the encoding and decoding of Entities to a BSON objects.
+ * Codec responsible for the encoding and decoding of Entities to a BSON objects.
  */
-public abstract class BaseCodec<C, S> implements Codec<C> {
+public class EntityCodec<C, S> implements Codec<C> {
   private final Class<C> clazz;
   private final SimpleSchema<S> schema;
 
@@ -35,7 +35,7 @@ public abstract class BaseCodec<C, S> implements Codec<C> {
    * @param clazz the class type to encode/decode.
    * @param schema the schema of the class.
    */
-  protected BaseCodec(Class<C> clazz, SimpleSchema<S> schema) {
+  public EntityCodec(Class<C> clazz, SimpleSchema<S> schema) {
     this.clazz = clazz;
     this.schema = schema;
   }

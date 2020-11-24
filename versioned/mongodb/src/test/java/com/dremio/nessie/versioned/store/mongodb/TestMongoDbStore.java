@@ -95,14 +95,14 @@ public class TestMongoDbStore {
   public void teardown() {
     // Clean up the collections.
     // TODO: Is there a better filter to use? Just need one to be true everywhere.
-    mongoDbStore.collections.forEach((k, v) -> v.deleteMany(Filters.ne("_id", "s")));
+    mongoDbStore.getCollections().forEach((k, v) -> v.deleteMany(Filters.ne("_id", "s")));
     mongoDbStore.close();
   }
 
   @Test
   public void testDatabaseName() {
-    final MongoDatabase mongoDatabase = mongoDbStore.getMongoDatabase();
-    assertEquals(mongoDatabase.getName(), testDatabaseName);
+    final MongoDatabase mongoDatabase = mongoDbStore.getDatabase();
+    assertEquals(testDatabaseName, mongoDatabase.getName());
   }
 
   @Test

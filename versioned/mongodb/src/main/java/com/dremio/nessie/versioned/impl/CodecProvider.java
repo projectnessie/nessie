@@ -27,7 +27,7 @@ import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.mongodb.codecs.BaseCodec;
+import com.dremio.nessie.versioned.store.mongodb.codecs.EntityCodec;
 
 /**
  * Codecs provide the heart of the SerDe process to/from BSON format.
@@ -35,61 +35,8 @@ import com.dremio.nessie.versioned.store.mongodb.codecs.BaseCodec;
  * This apparent two way interdependency is resolved by using a CodecProvider.
  * The CodecProvider is a factory for Codecs.
  */
+@SuppressWarnings("unchecked")
 public class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
-  static class L1Codec extends BaseCodec<L1, L1> {
-    L1Codec() {
-      super(L1.class, L1.SCHEMA);
-    }
-  }
-
-  static class L2Codec extends BaseCodec<L2, L2> {
-    L2Codec() {
-      super(L2.class, L2.SCHEMA);
-    }
-  }
-
-  static class L3Codec extends BaseCodec<L3, L3> {
-    L3Codec() {
-      super(L3.class, L3.SCHEMA);
-    }
-  }
-
-  static class FragmentCodec extends BaseCodec<Fragment, Fragment> {
-    FragmentCodec() {
-      super(Fragment.class, Fragment.SCHEMA);
-    }
-  }
-
-  static class MetadataCodec extends BaseCodec<InternalCommitMetadata, InternalCommitMetadata> {
-    MetadataCodec() {
-      super(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA);
-    }
-  }
-
-  static class RefCodec extends BaseCodec<InternalRef, InternalRef> {
-    RefCodec() {
-      super(InternalRef.class, InternalRef.SCHEMA);
-    }
-  }
-
-  static class BranchCodec extends BaseCodec<InternalBranch, InternalRef> {
-    BranchCodec() {
-      super(InternalBranch.class, InternalRef.SCHEMA);
-    }
-  }
-
-  static class TagCodec extends BaseCodec<InternalTag, InternalRef> {
-    TagCodec() {
-      super(InternalTag.class, InternalRef.SCHEMA);
-    }
-  }
-
-  static class ValueCodec extends BaseCodec<InternalValue, InternalValue> {
-    ValueCodec() {
-      super(InternalValue.class, InternalValue.SCHEMA);
-    }
-  }
-
   static class IdCodec implements Codec<Id> {
     @Override
     public Id decode(BsonReader bsonReader, DecoderContext decoderContext) {
@@ -110,16 +57,16 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
   private static final Map<Class<?>, Codec<?>> CODECS = new HashMap<>();
 
   static {
-    CODECS.put(L1.class, new L1Codec());
-    CODECS.put(L2.class, new L2Codec());
-    CODECS.put(L3.class, new L3Codec());
-    CODECS.put(Fragment.class, new FragmentCodec());
-    CODECS.put(InternalRef.class, new RefCodec());
-    CODECS.put(InternalCommitMetadata.class, new MetadataCodec());
-    CODECS.put(InternalValue.class, new ValueCodec());
+    CODECS.put(L1.class, new EntityCodec(L1.class, L1.SCHEMA));
+    CODECS.put(L2.class, new EntityCodec(L2.class, L2.SCHEMA));
+    CODECS.put(L3.class, new EntityCodec(L3.class, L3.SCHEMA));
+    CODECS.put(Fragment.class, new EntityCodec(Fragment.class, Fragment.SCHEMA));
+    CODECS.put(InternalRef.class, new EntityCodec(InternalRef.class, InternalRef.SCHEMA));
+    CODECS.put(InternalCommitMetadata.class, new EntityCodec(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA));
+    CODECS.put(InternalValue.class, new EntityCodec(InternalValue.class, InternalValue.SCHEMA));
     CODECS.put(Id.class, new IdCodec());
-    CODECS.put(InternalBranch.class, new BranchCodec());
-    CODECS.put(InternalTag.class, new TagCodec());
+    CODECS.put(InternalBranch.class, new EntityCodec(InternalBranch.class, InternalRef.SCHEMA));
+    CODECS.put(InternalTag.class, new EntityCodec(InternalTag.class, InternalRef.SCHEMA));
   }
 
   @Override

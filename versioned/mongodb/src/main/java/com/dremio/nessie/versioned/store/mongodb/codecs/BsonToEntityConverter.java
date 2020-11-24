@@ -67,14 +67,12 @@ public class BsonToEntityConverter {
       }
 
       switch (reader.getCurrentBsonType()) {
-        case DOCUMENT: {
+        case DOCUMENT:
           attributes.put(name, Entity.ofMap(readDocument(reader)));
           break;
-        }
-        case ARRAY: {
+        case ARRAY:
           attributes.put(name, readArray(reader));
           break;
-        }
         case BOOLEAN:
           attributes.put(name, Entity.ofBoolean(reader.readBoolean()));
           break;
@@ -115,14 +113,12 @@ public class BsonToEntityConverter {
 
       while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
         switch (reader.getCurrentBsonType()) {
-          case DOCUMENT: {
+          case DOCUMENT:
             entities.add(Entity.ofMap(readDocument(reader)));
             break;
-          }
-          case ARRAY: {
+          case ARRAY:
             entities.add(readArray(reader));
             break;
-          }
           case BOOLEAN:
             entities.add(Entity.ofBoolean(reader.readBoolean()));
             break;
