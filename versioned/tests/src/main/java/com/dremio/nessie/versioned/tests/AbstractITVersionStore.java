@@ -915,7 +915,7 @@ public abstract class AbstractITVersionStore {
     final Hash initial = store().toHash(branch);
 
     final Hash firstCommit = commit("First Commit").put("k1", "v1").put("k2", "v2").toBranch(branch);
-    final Hash secondCommit = commit("First Commit").put("k2", "v2a").put("k3", "v3").toBranch(branch);
+    final Hash secondCommit = commit("Second Commit").put("k2", "v2a").put("k3", "v3").toBranch(branch);
 
     List<Diff<String>> startToSecond = store().getDiffs(initial, secondCommit).collect(Collectors.toList());
     assertThat(startToSecond, containsInAnyOrder(
