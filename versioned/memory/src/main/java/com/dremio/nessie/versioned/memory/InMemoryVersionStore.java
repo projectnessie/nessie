@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
+import com.dremio.nessie.versioned.Diff;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.NamedRef;
@@ -492,6 +493,11 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     }
 
     return results;
+  }
+
+  @Override
+  public Stream<Diff<ValueT>> getDiffs(Ref from, Ref to) {
+    throw new UnsupportedOperationException("Not yet implemented.");
   }
 
   @Override

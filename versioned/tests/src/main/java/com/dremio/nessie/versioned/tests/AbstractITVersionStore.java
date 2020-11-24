@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
+import com.dremio.nessie.versioned.Diff;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.NamedRef;
@@ -920,6 +922,39 @@ public abstract class AbstractITVersionStore {
     //assertThat(store().toRef(initialCommit.asString()), is(WithHash.of(initialCommit, initialCommit)));
     assertThrows(ReferenceNotFoundException.class, () -> store().toRef("unknown-ref"));
     assertThrows(ReferenceNotFoundException.class, () -> store().toRef("1234567890abcdef"));
+  }
+
+  @Test
+  protected void checkDiff() throws VersionStoreException {
+    final BranchName branch = BranchName.of("main");
+    store().create(branch, Optional.empty());
+    final Hash initial = store().toHash(branch);
+
+    final Hash firstCommit = commit("First Commit").put("k1", "v1").put("k2", "v2").toBranch(branch);
+    final Hash secondCommit = commit("Second Commit").put("k2", "v2a").put("k3", "v3").toBranch(branch);
+
+    List<Diff<String>> startToSecond = store().getDiffs(initial, secondCommit).collect(Collectors.toList());
+    assertThat(startToSecond, containsInAnyOrder(
+        Diff.of(Key.of("k1"), Optional.empty(), Optional.of("v1")),
+        Diff.of(Key.of("k2"), Optional.empty(), Optional.of("v2a")),
+        Diff.of(Key.of("k3"), Optional.empty(), Optional.of("v3"))
+    ));
+
+    List<Diff<String>> secondToStart = store().getDiffs(secondCommit, initial).collect(Collectors.toList());
+    assertThat(secondToStart, containsInAnyOrder(
+        Diff.of(Key.of("k1"), Optional.of("v1"), Optional.empty()),
+        Diff.of(Key.of("k2"), Optional.of("v2a"), Optional.empty()),
+        Diff.of(Key.of("k3"), Optional.of("v3"), Optional.empty())
+    ));
+
+    List<Diff<String>> firstToSecond = store().getDiffs(firstCommit, secondCommit).collect(Collectors.toList());
+    assertThat(firstToSecond, containsInAnyOrder(
+        Diff.of(Key.of("k2"), Optional.of("v2"), Optional.of("v2a")),
+        Diff.of(Key.of("k3"), Optional.empty(), Optional.of("v3"))
+    ));
+
+    List<Diff<String>> firstToFirst = store().getDiffs(firstCommit, firstCommit).collect(Collectors.toList());
+    assertTrue(firstToFirst.isEmpty());
   }
 
   protected CommitBuilder<String, String> forceCommit(String message) {

@@ -68,6 +68,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.versioned.BranchName;
+import com.dremio.nessie.versioned.Diff;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.NamedRef;
@@ -712,6 +713,11 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     ObjectId objectId = treeWalk.getObjectId(id);
     ObjectLoader loader = repository.open(objectId);
     return loader.getBytes();
+  }
+
+  @Override
+  public Stream<Diff<TABLE>> getDiffs(Ref from, Ref to) {
+    throw new UnsupportedOperationException("Not yet implemented.");
   }
 
 }

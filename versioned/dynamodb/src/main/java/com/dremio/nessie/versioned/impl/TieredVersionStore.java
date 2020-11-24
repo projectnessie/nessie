@@ -17,7 +17,9 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
@@ -34,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
+import com.dremio.nessie.versioned.Diff;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.ImmutableBranchName;
 import com.dremio.nessie.versioned.ImmutableTagName;
@@ -700,6 +703,34 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     }
 
 
+  }
+
+  @Override
+  public Stream<Diff<DATA>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+    PartialTree<DATA> fromTree = PartialTree.of(serializer, InternalRefId.of(from), Collections.emptyList());
+    PartialTree<DATA> toTree = PartialTree.of(serializer, InternalRefId.of(to), Collections.emptyList());
+    store.load(fromTree.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
+        .combine(toTree.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
+
+    DiffFinder finder = new DiffFinder(fromTree.getCurrentL1(), toTree.getCurrentL1());
+    store.load(finder.getLoad());
+
+    // For now, we'll load all the values at once. In the future, we should paginate diffs.
+    Map<Id, InternalValue> values = new HashMap<>();
+    List<LoadOp<InternalValue>> loads = finder.getKeyDiffs()
+        .flatMap(k -> Stream.of(k.getFrom(), k.getTo()))
+        .distinct()
+        .filter(id -> !id.isEmpty())
+        .map(id -> new LoadOp<InternalValue>(ValueType.VALUE, id, val -> values.put(id, val)))
+        .collect(Collectors.toList());
+    store.load(LoadStep.of(loads.toArray(new LoadOp[loads.size()])));
+
+    return finder.getKeyDiffs().map(kd -> Diff.of(
+        kd.getKey().toKey(),
+        Optional.ofNullable(kd.getFrom()).map(id -> values.get(id)).map(v -> serializer.fromBytes(v.getBytes())),
+        Optional.ofNullable(kd.getTo()).map(id -> values.get(id)).map(v -> serializer.fromBytes(v.getBytes()))
+      )
+    );
   }
 
   class OperationHolder {
