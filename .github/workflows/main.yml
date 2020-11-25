@@ -26,7 +26,7 @@ jobs:
         version: '8'
         targets: 'JDK8_HOME'
     - name: Set up Maven toolchains.xml
-      run: | 
+      run: |
           cat << 'EOT' > ${HOME}/.m2/toolchains.xml
           <?xml version="1.0" encoding="UTF8"?>
           <toolchains>
@@ -114,7 +114,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
     - uses: actions/checkout@v2
