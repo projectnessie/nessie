@@ -74,7 +74,7 @@ public class MongoDbStore implements Store {
 
   // The database hosted by the MongoDB server.
   private MongoDatabase mongoDatabase;
-  protected final Map<ValueType, MongoCollection<?>> collections;
+  private final Map<ValueType, MongoCollection<?>> collections;
 
   /**
    * Creates a store ready for connection to a MongoDB instance.

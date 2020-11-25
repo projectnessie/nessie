@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.IOException;
 import java.util.Optional;
 
+import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -107,92 +109,94 @@ public class TestMongoDbStore {
 
   @Test
   public void putL1() {
-    final L1 sample = SampleEntities.createL1();
-    mongoDbStore.put(ValueType.L1, sample, Optional.empty());
-    final L1 read = (L1)Iterables.get(mongoDbStore.collections.get(ValueType.L1).find(), 0);
-    assertEquals(L1.SCHEMA.itemToMap(sample, true), L1.SCHEMA.itemToMap(read, true));
+    put(SampleEntities.createL1(), ValueType.L1, L1.SCHEMA);
   }
 
   @Test
   public void putL2() {
-    final L2 sample = SampleEntities.createL2();
-    mongoDbStore.put(ValueType.L2, sample, Optional.empty());
-    final L2 read = (L2)Iterables.get(mongoDbStore.collections.get(ValueType.L2).find(), 0);
-    assertEquals(L2.SCHEMA.itemToMap(sample, true), L2.SCHEMA.itemToMap(read, true));
+    put(SampleEntities.createL2(), ValueType.L2, L2.SCHEMA);
   }
 
   @Test
   public void putL3() {
-    final L3 sample = SampleEntities.createL3();
-    mongoDbStore.put(ValueType.L3, sample, Optional.empty());
-    final L3 read = (L3)Iterables.get(mongoDbStore.collections.get(ValueType.L3).find(), 0);
-    assertEquals(L3.SCHEMA.itemToMap(sample, true), L3.SCHEMA.itemToMap(read, true));
+    put(SampleEntities.createL3(), ValueType.L3, L3.SCHEMA);
   }
 
   @Test
   public void putFragment() {
-    final Fragment sample = SampleEntities.createFragment();
-    mongoDbStore.put(ValueType.KEY_FRAGMENT, sample, Optional.empty());
-    final Fragment read = (Fragment)Iterables.get(mongoDbStore.collections.get(ValueType.KEY_FRAGMENT).find(), 0);
-    assertEquals(Fragment.SCHEMA.itemToMap(sample, true), Fragment.SCHEMA.itemToMap(read, true));
+    put(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT, Fragment.SCHEMA);
   }
 
   @Test
   public void putBranch() {
-    final InternalRef sample = SampleEntities.createBranch();
-    mongoDbStore.put(ValueType.REF, sample, Optional.empty());
-    final InternalRef read = (InternalRef)Iterables.get(mongoDbStore.collections.get(ValueType.REF).find(), 0);
-    assertEquals(InternalRef.SCHEMA.itemToMap(sample, true), InternalRef.SCHEMA.itemToMap(read, true));
+    put(SampleEntities.createBranch(), ValueType.REF, InternalRef.SCHEMA);
   }
 
   @Test
   public void putTag() {
-    final InternalRef sample = SampleEntities.createTag();
-    mongoDbStore.put(ValueType.REF, sample, Optional.empty());
-    final InternalRef read = (InternalRef)Iterables.get(mongoDbStore.collections.get(ValueType.REF).find(), 0);
-    assertEquals(InternalRef.SCHEMA.itemToMap(sample, true), InternalRef.SCHEMA.itemToMap(read, true));
+    put(SampleEntities.createTag(), ValueType.REF, InternalRef.SCHEMA);
   }
 
   @Test
   public void putCommitMetadata() {
-    final InternalCommitMetadata sample = SampleEntities.createCommitMetadata();
-    mongoDbStore.put(ValueType.COMMIT_METADATA, sample, Optional.empty());
-    final InternalCommitMetadata read =
-        (InternalCommitMetadata)Iterables.get(mongoDbStore.collections.get(ValueType.COMMIT_METADATA).find(), 0);
-    assertEquals(
-        InternalCommitMetadata.SCHEMA.itemToMap(sample, true),
-        InternalCommitMetadata.SCHEMA.itemToMap(read, true));
+    put(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA, InternalCommitMetadata.SCHEMA);
   }
 
   @Test
   public void putValue() {
-    final InternalValue sample = SampleEntities.createValue();
-    mongoDbStore.put(ValueType.VALUE, sample, Optional.empty());
-    final InternalValue read = (InternalValue)Iterables.get(mongoDbStore.collections.get(ValueType.VALUE).find(), 0);
-    assertEquals(InternalValue.SCHEMA.itemToMap(sample, true), InternalValue.SCHEMA.itemToMap(read, true));
+    put(SampleEntities.createValue(), ValueType.VALUE, InternalValue.SCHEMA);
   }
 
   @Test
-  public void loadSingleL1Value() {
-    final L1 sampleL1 = SampleEntities.createL1();
-    mongoDbStore.put(ValueType.L1, sampleL1, Optional.empty());
-    final L1 readL1 = mongoDbStore.loadSingle(ValueType.L1, sampleL1.getId());
-    assertEquals(L1.SCHEMA.itemToMap(sampleL1, true), L1.SCHEMA.itemToMap(readL1, true));
+  public void loadSingleL1() {
+    load(SampleEntities.createL1(), ValueType.L1, L1.SCHEMA);
   }
 
   @Test
-  public void loadSingleL2Value() {
-    final L2 sampleL2 = SampleEntities.createL2();
-    mongoDbStore.put(ValueType.L2, sampleL2, Optional.empty());
-    final L2 readL2 = mongoDbStore.loadSingle(ValueType.L2, sampleL2.getId());
-    assertEquals(L2.SCHEMA.itemToMap(sampleL2, true), L2.SCHEMA.itemToMap(readL2, true));
+  public void loadSingleL2() {
+    load(SampleEntities.createL2(), ValueType.L2, L2.SCHEMA);
   }
 
   @Test
-  public void loadSingleL3Value() {
-    final L3 sampleL3 = SampleEntities.createL3();
-    mongoDbStore.put(ValueType.L3, sampleL3, Optional.empty());
-    final L3 readL3 = mongoDbStore.loadSingle(ValueType.L3, sampleL3.getId());
-    assertEquals(L3.SCHEMA.itemToMap(sampleL3, true), L3.SCHEMA.itemToMap(readL3, true));
+  public void loadSingleL3() {
+    load(SampleEntities.createL3(), ValueType.L3, L3.SCHEMA);
+  }
+
+  @Test
+  public void loadFragment() {
+    load(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT, Fragment.SCHEMA);
+  }
+
+  @Test
+  public void loadBranch() {
+    load(SampleEntities.createBranch(), ValueType.REF, InternalRef.SCHEMA);
+  }
+
+  @Test
+  public void loadTag() {
+    load(SampleEntities.createTag(), ValueType.REF, InternalRef.SCHEMA);
+  }
+
+  @Test
+  public void loadCommitMetadata() {
+    load(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA, InternalCommitMetadata.SCHEMA);
+  }
+
+  @Test
+  public void loadValue() {
+    load(SampleEntities.createValue(), ValueType.VALUE, InternalValue.SCHEMA);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> void put(T sample, ValueType type, SimpleSchema<T> schema) {
+    mongoDbStore.put(type, sample, Optional.empty());
+    final T read = (T)Iterables.get(mongoDbStore.getCollections().get(type).find(), 0);
+    assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
+  }
+
+  private <T extends HasId> void load(T sample, ValueType type, SimpleSchema<T> schema) {
+    put(sample, type, schema);
+    final T read = mongoDbStore.loadSingle(type, sample.getId());
+    assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
   }
 }
