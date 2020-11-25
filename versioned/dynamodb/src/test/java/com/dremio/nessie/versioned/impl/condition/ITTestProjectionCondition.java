@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.dremio.nessie.backend.dynamodb.LocalDynamoDB;
+import com.dremio.nessie.versioned.LocalDynamoDB;
 import com.google.common.collect.ImmutableMap;
 
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;

@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.dremio.nessie.backend.dynamodb.LocalDynamoDB;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
@@ -45,6 +44,7 @@ import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.ImmutablePut;
 import com.dremio.nessie.versioned.ImmutableTagName;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.LocalDynamoDB;
 import com.dremio.nessie.versioned.Operation;
 import com.dremio.nessie.versioned.Put;
 import com.dremio.nessie.versioned.Ref;

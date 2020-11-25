@@ -35,7 +35,6 @@ import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.io.TempDir;
@@ -45,7 +44,6 @@ import org.junit.jupiter.params.converter.ArgumentConverter;
 import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import com.dremio.nessie.backend.simple.InMemory;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
@@ -66,7 +64,6 @@ import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
-import com.dremio.nessie.versioned.impl.experimental.NessieRepository;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -74,40 +71,24 @@ import com.google.common.collect.ImmutableSet;
 class TestJGitVersionStore {
   private static final Hash EMPTY_HASH = Hash.of(ObjectId.zeroId().name());
   private static File jgitDirStatic;
-  private static InMemory backend;
   private final Random random = new Random();
 
   @TempDir
   File jgitDir;
 
   enum RepoType {
-    DYNAMO,
     INMEMORY,
     FILE
   }
 
-  @BeforeAll
-  public static void init() {
-    backend = new InMemory();
-  }
-
-  @SuppressWarnings("MissingJavadocMethod")
   @AfterEach
-  public void empty() throws IOException {
-    backend.close();
+  void empty() throws IOException {
     jgitDirStatic = null; //need to copy dir to make it accessible statically...jgit doesn't support parameterised tests with beforeeach
   }
 
   private static Repository repository(RepoType repoType) throws IOException {
     final Repository repository;
     switch (repoType) {
-      case DYNAMO:
-        DfsRepositoryDescription repoDesc = new DfsRepositoryDescription();
-        repository = new NessieRepository.Builder().setRepositoryDescription(repoDesc)
-                                                   .setBackend(backend.gitBackend())
-                                                   .setRefBackend(backend.gitRefBackend())
-                                                   .build();
-        break;
       case INMEMORY:
         try {
           repository = new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
