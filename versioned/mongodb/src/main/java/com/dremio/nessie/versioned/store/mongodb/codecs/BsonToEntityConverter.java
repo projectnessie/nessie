@@ -41,10 +41,10 @@ public class BsonToEntityConverter {
    * @return the Entity attributes.
    */
   public static Map<String, Entity> read(BsonReader reader) {
-    if (BsonType.DOCUMENT != reader.getCurrentBsonType()) {
+    final BsonType type = reader.getCurrentBsonType();
+    if ((null == type) || (BsonType.DOCUMENT != type)) {
       throw new UnsupportedOperationException(
-          String.format("BSON serialized data must be a document at the root, type is %s",
-              reader.getCurrentBsonType().name()));
+          String.format("BSON serialized data must be a document at the root, type is %s",type));
     }
 
     return readDocument(reader);
@@ -87,8 +87,6 @@ public class BsonToEntityConverter {
         }
         case BINARY:
           attributes.put(name, Entity.ofBinary(reader.readBinaryData().getData()));
-          break;
-        case END_OF_DOCUMENT:
           break;
         default:
           throw new UnsupportedOperationException(
