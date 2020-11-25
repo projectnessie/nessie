@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.backend.dynamodb;
+package com.dremio.nessie.versioned;
 
 import java.net.URI;
 

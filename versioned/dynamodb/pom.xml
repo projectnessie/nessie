@@ -37,13 +37,6 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-backends-dynamodb</artifactId>
-      <version>${project.version}</version>
-      <classifier>tests</classifier>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-tests</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
