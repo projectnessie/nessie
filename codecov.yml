@@ -14,7 +14,10 @@
 # limitations under the License.
 #
 
-codecov.notify.after_n_builds: 5
-comment.after_n_builds: 5
+codecov:
+  notify:
+    after_n_builds: 5
+comment:
+  after_n_builds: 5
 github_checks:
   annotations: false
