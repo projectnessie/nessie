@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.versioned;
 
-package com.dremio.nessie.backend;
+import java.util.Optional;
 
-import org.immutables.value.Value;
+import org.immutables.value.Value.Immutable;
 
-@Value.Immutable(prehash = true)
-public abstract class BranchControllerReference {
+@Immutable
+public interface Diff<VALUE> {
 
-  public abstract String getRefId();
+  Key getKey();
 
-  public abstract long getUpdateTime();
+  Optional<VALUE> getFromValue();
 
-  public abstract String getId();
+  Optional<VALUE> getToValue();
+
+  public static <VALUE> Diff<VALUE> of(Key key, Optional<VALUE> from, Optional<VALUE> to) {
+    return ImmutableDiff.<VALUE>builder().key(key).fromValue(from).toValue(to).build();
+  }
 
 }

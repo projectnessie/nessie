@@ -74,7 +74,6 @@
 
   <modules>
     <module>model</module>
-    <module>backends</module>
     <module>clients</module>
     <module>ui</module>
     <module>versioned</module>
@@ -115,7 +114,7 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
-    <awssdk.version>2.15.32</awssdk.version>
+    <awssdk.version>2.15.35</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
@@ -125,7 +124,7 @@
     <hadoop.version>3.3.0</hadoop.version>
     <hamcrest.version>2.2</hamcrest.version>
     <iceberg.version>0.10.0</iceberg.version>
-    <immutables.version>2.8.8</immutables.version>
+    <immutables.version>2.8.9-ea-1</immutables.version>
     <jackson.version>2.11.3</jackson.version>
     <javax.version>4.0.1</javax.version>
     <jaeger.version>1.3.2</jaeger.version>
@@ -149,7 +148,7 @@
     <spark3.jersey.version>2.30</spark3.jersey.version>
     <spark3.jackson.version>2.10.2</spark3.jackson.version>
     <sqlite.version>1.0.392</sqlite.version>
-    <quarkus.version>1.10.0.Final</quarkus.version>
+    <quarkus.version>1.10.1.Final</quarkus.version>
     <openapi.version>1.1.2</openapi.version>
     <jsr305.version>3.0.2</jsr305.version>
   </properties>
@@ -1082,6 +1081,11 @@ limitations under the License.
                   <groupId>com.google.errorprone</groupId>
                   <artifactId>error_prone_core</artifactId>
                   <version>2.4.0</version>
+                </path>
+                <path>
+                  <groupId>jp.skypencil.errorprone.slf4j</groupId>
+                  <artifactId>errorprone-slf4j</artifactId>
+                  <version>0.1.3</version>
                 </path>
               </annotationProcessorPaths>
             </configuration>

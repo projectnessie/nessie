@@ -34,7 +34,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.backend.Backend;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.server.config.ApplicationConfig;
@@ -48,7 +47,6 @@ import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.impl.DynamoStoreConfig;
 import com.dremio.nessie.versioned.impl.JGitVersionStore;
 import com.dremio.nessie.versioned.impl.TieredVersionStore;
-import com.dremio.nessie.versioned.impl.experimental.NessieRepository;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
@@ -164,18 +162,11 @@ public class VersionStoreFactory {
    * produce a git repo based on config.
    */
   @Produces
-  public Repository repository(Backend backend) throws IOException, GitAPIException {
+  public Repository repository() throws IOException, GitAPIException {
     if (!config.getVersionStoreConfig().getVersionStoreType().equals(VersionStoreType.JGIT)) {
       return null;
     }
     switch (config.getVersionStoreJGitConfig().getJgitStoreType()) {
-      case DYNAMO:
-        LOGGER.info("JGit Version store has been configured with the dynamo backend");
-        DfsRepositoryDescription repoDesc = new DfsRepositoryDescription();
-        return new NessieRepository.Builder().setRepositoryDescription(repoDesc)
-                                             .setBackend(backend.gitBackend())
-                                             .setRefBackend(backend.gitRefBackend())
-                                             .build();
       case DISK:
         LOGGER.info("JGit Version store has been configured with the file backend");
         File jgitDir = new File(config.getVersionStoreJGitConfig().getJgitDirectory()
@@ -186,7 +177,7 @@ public class VersionStoreFactory {
               String.format("Couldn't create file at %s", config.getVersionStoreJGitConfig().getJgitDirectory().get()));
           }
         }
-        LOGGER.info(String.format("File backend is at %s", jgitDir.getAbsolutePath()));
+        LOGGER.info("File backend is at {}", jgitDir.getAbsolutePath());
         return Git.init().setDirectory(jgitDir).call().getRepository();
       case INMEMORY:
         LOGGER.info("JGit Version store has been configured with the in memory backend");

@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.dremio.nessie.backend;
+package com.dremio.nessie.server;
 
-import org.immutables.value.Value;
+import static io.restassured.RestAssured.given;
 
-@Value.Immutable(prehash = true)
-public abstract class BranchControllerObject {
+import org.junit.jupiter.api.Test;
 
-  public abstract byte[] getData();
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
 
-  public abstract int getType();
+@QuarkusTest
+class TestSinglePageApplicationRouting {
 
-  public abstract long getUpdateTime();
-
-  public abstract String getId();
+  @Test
+  public void makeSureNonHomePathServesHtml() {
+    given().when().get("/tree/123").then().contentType(ContentType.HTML).statusCode(200);
+  }
 
 }
