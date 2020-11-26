@@ -39,7 +39,7 @@ you can configure Nessie to AutoTag (and auto-delete) using a timestamp based na
 When enabled, Nessie will automatically generate and maintain tags based on time 
 so that users can refer to historical data using timestamps as opposed to commits. 
 This also works hand-in-hand with the Nessie garbage collection process by ensuring 
-that older data is "referenced" and htus available for historical analysis.
+that older data is "referenced" and thus available for historical analysis.
 
 Currently there is one AutoTagging policy. By default, it creates the following tags:
 
