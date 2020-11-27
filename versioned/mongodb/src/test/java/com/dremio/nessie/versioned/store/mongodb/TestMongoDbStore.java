@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import com.dremio.nessie.versioned.store.SaveOp;
-import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,8 +35,10 @@ import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoDatabase;
@@ -196,21 +196,21 @@ public class TestMongoDbStore {
     final InternalRef branch = SampleEntities.createBranch();
     final InternalRef tag = SampleEntities.createTag();
     final List<SaveOp<?>> saveOps = ImmutableList.of(
-      new SaveOp<>(ValueType.L1, l1),
-      new SaveOp<>(ValueType.REF, branch),
-      new SaveOp<>(ValueType.REF, tag)
+        new SaveOp<>(ValueType.L1, l1),
+        new SaveOp<>(ValueType.REF, branch),
+        new SaveOp<>(ValueType.REF, tag)
     );
     mongoDbStore.save(saveOps);
 
     assertEquals(
-      L1.SCHEMA.itemToMap(l1, true),
-      L1.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.L1, l1.getId()), true));
+        L1.SCHEMA.itemToMap(l1, true),
+        L1.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.L1, l1.getId()), true));
     assertEquals(
-      InternalRef.SCHEMA.itemToMap(branch, true),
-      InternalRef.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.REF, branch.getId()), true));
+        InternalRef.SCHEMA.itemToMap(branch, true),
+        InternalRef.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.REF, branch.getId()), true));
     assertEquals(
-      InternalRef.SCHEMA.itemToMap(tag, true),
-      InternalRef.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.REF, tag.getId()), true));
+        InternalRef.SCHEMA.itemToMap(tag, true),
+        InternalRef.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.REF, tag.getId()), true));
   }
 
   @SuppressWarnings("unchecked")
