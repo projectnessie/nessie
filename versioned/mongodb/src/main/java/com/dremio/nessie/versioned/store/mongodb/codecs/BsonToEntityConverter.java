@@ -42,7 +42,7 @@ public class BsonToEntityConverter {
    */
   public static Map<String, Entity> read(BsonReader reader) {
     final BsonType type = reader.getCurrentBsonType();
-    if ((null == type) || (BsonType.DOCUMENT != type)) {
+    if (BsonType.DOCUMENT != type) {
       throw new UnsupportedOperationException(
           String.format("BSON serialized data must be a document at the root, type is %s",type));
     }

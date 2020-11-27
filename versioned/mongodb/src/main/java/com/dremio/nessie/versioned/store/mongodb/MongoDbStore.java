@@ -41,6 +41,7 @@ import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
@@ -48,15 +49,22 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimaps;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.WriteConcern;
+import com.mongodb.client.ClientSession;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.InsertOneModel;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
@@ -65,7 +73,10 @@ import com.mongodb.client.model.Filters;
  */
 public class MongoDbStore implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(MongoDbStore.class);
+  private static final BulkWriteOptions UNORDERED = new BulkWriteOptions().ordered(false);
 
+  // This should be retrievable via the API as well.
+  private final int paginationSize = 100000;
   private final String databaseName;
   private final MongoClientSettings mongoClientSettings;
 
@@ -74,7 +85,7 @@ public class MongoDbStore implements Store {
 
   // The database hosted by the MongoDB server.
   private MongoDatabase mongoDatabase;
-  private final Map<ValueType, MongoCollection<?>> collections;
+  private final Map<ValueType, MongoCollection<? extends HasId>> collections;
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
@@ -91,6 +102,7 @@ public class MongoDbStore implements Store {
     this.mongoClientSettings = MongoClientSettings.builder()
       .applyConnectionString(connectionString)
       .codecRegistry(codecRegistry)
+      .writeConcern(WriteConcern.MAJORITY)
       .build();
   }
 
@@ -171,7 +183,18 @@ public class MongoDbStore implements Store {
 
   @Override
   public void save(List<SaveOp<?>> ops) {
-    throw new UnsupportedOperationException();
+    // TODO: Should these operations be async?
+    final ListMultimap<MongoCollection<?>, SaveOp<?>> mm = Multimaps.index(ops, l -> collections.get(l.getType()));
+    final ListMultimap<MongoCollection<?>, InsertOneModel<?>> writes =
+        Multimaps.transformValues(mm, s -> new InsertOneModel<>(s.getValue()));
+
+    final ClientSession session = mongoClient.startSession();
+    session.withTransaction(() -> {
+      for (MongoCollection collection : writes.keySet()) {
+        Lists.partition(writes.get(collection), paginationSize).forEach(l -> collection.bulkWrite(l, UNORDERED));
+      }
+      return "Inserted";
+    });
   }
 
   @Override
@@ -209,7 +232,7 @@ public class MongoDbStore implements Store {
   }
 
   @VisibleForTesting
-  Map<ValueType, MongoCollection<?>> getCollections() {
+  Map<ValueType, MongoCollection<? extends HasId>> getCollections() {
     return collections;
   }
 }

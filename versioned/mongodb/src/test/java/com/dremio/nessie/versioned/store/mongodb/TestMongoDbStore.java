@@ -18,8 +18,11 @@ package com.dremio.nessie.versioned.store.mongodb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
+import com.dremio.nessie.versioned.store.SaveOp;
+import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -185,6 +188,29 @@ public class TestMongoDbStore {
   @Test
   public void loadValue() {
     load(SampleEntities.createValue(), ValueType.VALUE, InternalValue.SCHEMA);
+  }
+
+  @Test
+  public void save() {
+    final L1 l1 = SampleEntities.createL1();
+    final InternalRef branch = SampleEntities.createBranch();
+    final InternalRef tag = SampleEntities.createTag();
+    final List<SaveOp<?>> saveOps = ImmutableList.of(
+      new SaveOp<>(ValueType.L1, l1),
+      new SaveOp<>(ValueType.REF, branch),
+      new SaveOp<>(ValueType.REF, tag)
+    );
+    mongoDbStore.save(saveOps);
+
+    assertEquals(
+      L1.SCHEMA.itemToMap(l1, true),
+      L1.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.L1, l1.getId()), true));
+    assertEquals(
+      InternalRef.SCHEMA.itemToMap(branch, true),
+      InternalRef.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.REF, branch.getId()), true));
+    assertEquals(
+      InternalRef.SCHEMA.itemToMap(tag, true),
+      InternalRef.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.REF, tag.getId()), true));
   }
 
   @SuppressWarnings("unchecked")
