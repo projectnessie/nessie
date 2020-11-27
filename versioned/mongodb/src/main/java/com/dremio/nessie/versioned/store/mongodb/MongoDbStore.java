@@ -38,8 +38,6 @@ import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
-import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
-import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
@@ -65,6 +63,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.InsertOneModel;
+import com.mongodb.connection.ClusterType;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
@@ -80,11 +79,9 @@ public class MongoDbStore implements Store {
   private final String databaseName;
   private final MongoClientSettings mongoClientSettings;
 
-  // The client that connects to the MongoDB server.
-  protected MongoClient mongoClient;
-
-  // The database hosted by the MongoDB server.
+  private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
+  private boolean enableTransactions;
   private final Map<ValueType, MongoCollection<? extends HasId>> collections;
 
   /**
@@ -116,6 +113,8 @@ public class MongoDbStore implements Store {
   @Override
   public void start() {
     mongoClient = MongoClients.create(mongoClientSettings);
+    final ClusterType clusterType = mongoClient.getClusterDescription().getClusterSettings().getRequiredClusterType();
+    enableTransactions = (clusterType == ClusterType.REPLICA_SET) || (clusterType == ClusterType.SHARDED);
     mongoDatabase = mongoClient.getDatabase(databaseName);
 
     // Initialise collections for each ValueType.
@@ -149,14 +148,20 @@ public class MongoDbStore implements Store {
 
   @Override
   public <V> boolean putIfAbsent(ValueType type, V value) {
-    final ConditionExpression condition =
-        ConditionExpression.of(ExpressionFunction.attributeNotExists(ExpressionPath.builder(KEY_NAME).build()));
-    try {
-      put(type, value, Optional.of(condition));
-      return true;
-    } catch (IllegalArgumentException ex) {
-      return false;
+    final MongoCollection collection = collections.get(type);
+    if (null == collection) {
+      throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", type.name()));
     }
+
+    // TODO: Potentially rework to use updateOne with upsert and $set.
+    try (MongoCursor cursor = collection.find(Filters.eq(Store.KEY_NAME, ((HasId) value).getId())).iterator()) {
+      if (!cursor.hasNext()) {
+        collection.insertOne(value);
+        return true;
+      }
+    }
+
+    return false;
   }
 
   @Override
@@ -164,15 +169,13 @@ public class MongoDbStore implements Store {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
 
-    LOGGER.info("ValueType: {}, Value: {}", type.toString(), value.toString());
     final MongoCollection collection = collections.get(type);
     if (null == collection) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", type.name()));
     }
 
     // TODO: Correct this so it overwrites values if already present.
-    // TODO: Throw an IllegalArgumentException (or something) if the ConditionExpression can't be satisfied, and
-    //       ensure that putIfAbsent catch block matches what is thrown.
+    // TODO: Throw an IllegalArgumentException (or something) if the ConditionExpression can't be satisfied.
     collection.insertOne(value);
   }
 
@@ -188,13 +191,19 @@ public class MongoDbStore implements Store {
     final ListMultimap<MongoCollection<?>, InsertOneModel<?>> writes =
         Multimaps.transformValues(mm, s -> new InsertOneModel<>(s.getValue()));
 
-    final ClientSession session = mongoClient.startSession();
-    session.withTransaction(() -> {
+    if (enableTransactions) {
+      final ClientSession session = mongoClient.startSession();
+      session.withTransaction(() -> {
+        for (MongoCollection collection : writes.keySet()) {
+          Lists.partition(writes.get(collection), paginationSize).forEach(l -> collection.bulkWrite(session, l, UNORDERED));
+        }
+        return "Inserted";
+      });
+    } else {
       for (MongoCollection collection : writes.keySet()) {
         Lists.partition(writes.get(collection), paginationSize).forEach(l -> collection.bulkWrite(l, UNORDERED));
       }
-      return "Inserted";
-    });
+    }
   }
 
   @Override

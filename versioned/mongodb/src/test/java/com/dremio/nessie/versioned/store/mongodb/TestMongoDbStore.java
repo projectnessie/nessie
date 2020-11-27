@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -191,6 +192,46 @@ public class TestMongoDbStore {
   }
 
   @Test
+  public void putIfAbsentL1() {
+    putIfAbsent(SampleEntities.createL1(), ValueType.L1);
+  }
+
+  @Test
+  public void putIfAbsentL2() {
+    putIfAbsent(SampleEntities.createL2(), ValueType.L2);
+  }
+
+  @Test
+  public void putIfAbsentL3() {
+    putIfAbsent(SampleEntities.createL3(), ValueType.L3);
+  }
+
+  @Test
+  public void putIfAbsentFragment() {
+    putIfAbsent(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT);
+  }
+
+  @Test
+  public void putIfAbsentBranch() {
+    putIfAbsent(SampleEntities.createBranch(), ValueType.REF);
+  }
+
+  @Test
+  public void putIfAbsentTag() {
+    putIfAbsent(SampleEntities.createTag(), ValueType.REF);
+  }
+
+  @Test
+  public void putIfAbsentCommitMetadata() {
+    putIfAbsent(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA);
+  }
+
+  @Test
+  public void putIfAbsentValue() {
+    putIfAbsent(SampleEntities.createValue(), ValueType.VALUE);
+  }
+
+  @Test
   public void save() {
     final L1 l1 = SampleEntities.createL1();
     final InternalRef branch = SampleEntities.createBranch();
@@ -218,6 +259,11 @@ public class TestMongoDbStore {
     mongoDbStore.put(type, sample, Optional.empty());
     final T read = (T)Iterables.get(mongoDbStore.getCollections().get(type).find(), 0);
     assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
+  }
+
+  private <T> void putIfAbsent(T sample, ValueType type) {
+    Assertions.assertTrue(mongoDbStore.putIfAbsent(type, sample));
+    Assertions.assertFalse(mongoDbStore.putIfAbsent(type, sample));
   }
 
   private <T extends HasId> void load(T sample, ValueType type, SimpleSchema<T> schema) {
