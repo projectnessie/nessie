@@ -29,7 +29,7 @@ class TestExpressions {
   private final Entity av0 = Entity.ofBoolean(true);
   private final Entity av1 = Entity.ofBoolean(false);
   private final Entity av2 = Entity.ofString("mystr");
-  private final Entity set1 = Entity.ofStringSet("foo", "bar");
+  private final Entity set1 = Entity.ofList(Entity.ofString("foo"), Entity.ofString("bar"));
 
   private final ExpressionPath p0 = ExpressionPath.builder("p0").build();
   private final ExpressionPath p1 = ExpressionPath.builder("p1").build();

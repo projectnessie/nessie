@@ -19,19 +19,17 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.ByteString;
 
 public abstract class Entity {
 
   public static enum EntityType {
-    MAP, LIST, NUMBER, STRING, BINARY, BOOLEAN, STRING_SET
+    MAP, LIST, NUMBER, STRING, BINARY, BOOLEAN
   }
 
   private Entity() {
@@ -54,18 +52,6 @@ public abstract class Entity {
 
   public static Entity ofString(String str) {
     return new StringEntity(str);
-  }
-
-  public Set<String> getStringSet() {
-    throw new IllegalStateException("Not a string set.");
-  }
-
-  public static Entity ofStringSet(String... str) {
-    return new StringSetEntity(ImmutableSet.<String>builder().add(str).build());
-  }
-
-  public static Entity ofStringSet(Set<String> strings) {
-    return new StringSetEntity(strings);
   }
 
   public ByteString getBinary() {
@@ -294,48 +280,6 @@ public abstract class Entity {
       }
       ListEntity other = (ListEntity) obj;
       return Objects.equals(list, other.list);
-    }
-
-  }
-
-  private static final class StringSetEntity extends Entity {
-
-    private final ImmutableSet<String> strings;
-
-    public StringSetEntity(Set<String> strings) {
-      this.strings = ImmutableSet.copyOf(strings);
-    }
-
-    @Override
-    public Set<String> getStringSet() {
-      return strings;
-    }
-
-    @Override
-    public EntityType getType() {
-      return EntityType.STRING_SET;
-    }
-
-    @Override
-    public String toString() {
-      return "set[" + strings.stream().collect(Collectors.joining(", ")) + "]";
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(strings);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) {
-        return true;
-      }
-      if (!(obj instanceof StringSetEntity)) {
-        return false;
-      }
-      StringSetEntity other = (StringSetEntity) obj;
-      return Objects.equals(strings, other.strings);
     }
 
   }
