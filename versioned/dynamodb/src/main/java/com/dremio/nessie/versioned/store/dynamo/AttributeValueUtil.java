@@ -20,7 +20,6 @@ import java.util.Map;
 
 import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.protobuf.UnsafeByteOperations;
 
@@ -50,8 +49,6 @@ public class AttributeValueUtil {
       return Entity.ofNumber(av.n());
     } else if (av.b() != null) {
       return Entity.ofBinary(UnsafeByteOperations.unsafeWrap(av.b().asByteArray()));
-    } else if (av.hasSs()) {
-      return Entity.ofStringSet(av.ss().stream().collect(ImmutableSet.toImmutableSet()));
     } else {
       throw new UnsupportedOperationException("Unable to convert: " + av.toString());
     }
@@ -85,8 +82,6 @@ public class AttributeValueUtil {
         return AttributeValue.builder().n(e.getNumber()).build();
       case STRING:
         return AttributeValue.builder().s(e.getString()).build();
-      case STRING_SET:
-        return AttributeValue.builder().ss(e.getStringSet()).build();
       default:
         throw new UnsupportedOperationException("Unable to convert type " + e);
     }

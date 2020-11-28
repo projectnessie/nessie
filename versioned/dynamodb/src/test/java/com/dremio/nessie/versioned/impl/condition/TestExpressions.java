@@ -29,7 +29,6 @@ class TestExpressions {
   private final Entity av0 = Entity.ofBoolean(true);
   private final Entity av1 = Entity.ofBoolean(false);
   private final Entity av2 = Entity.ofString("mystr");
-  private final Entity set1 = Entity.ofStringSet("foo", "bar");
 
   private final ExpressionPath p0 = ExpressionPath.builder("p0").build();
   private final ExpressionPath p1 = ExpressionPath.builder("p1").build();
@@ -102,19 +101,6 @@ class TestExpressions {
   }
 
   @Test
-  void updateDeleteClause() {
-    UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
-        DeleteClause.deleteFromSet(p0, set1),
-        DeleteClause.deleteFromSet(p1, set1)
-        ).build();
-    AliasCollectorImpl c = new AliasCollectorImpl();
-    UpdateExpression e0p = e0.alias(c);
-    assertEquals(" DELETE p0 :v0, p1 :v1", e0p.toUpdateExpressionString());
-    assertEquals(AttributeValueUtil.fromEntity(set1), c.getAttributesValues().get(":v0"));
-    assertEquals(AttributeValueUtil.fromEntity(set1), c.getAttributesValues().get(":v1"));
-  }
-
-  @Test
   void updateAddClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
         AddClause.addToSetOrNumber(p0, av2)
@@ -158,17 +144,14 @@ class TestExpressions {
         SetClause.ifNotExists(p1, p0, av1),
         SetClause.appendToList(p1, av1),
         RemoveClause.of(p0),
-        RemoveClause.of(p2),
-        DeleteClause.deleteFromSet(p0, set1),
-        DeleteClause.deleteFromSet(p1, set1)
+        RemoveClause.of(p2)
         ).build();
     AliasCollectorImpl c = new AliasCollectorImpl();
     UpdateExpression e0p = e0.alias(c);
     assertEquals(" "
         + "ADD p0 :v0 "
         + "SET p0 = :v1, p1 = if_not_exists(p0, :v2), p1 = list_append(p1, :v3) "
-        + "REMOVE p0, p2[2] "
-        + "DELETE p0 :v4, p1 :v5", e0p.toUpdateExpressionString());
+        + "REMOVE p0, p2[2]", e0p.toUpdateExpressionString());
   }
 
 
