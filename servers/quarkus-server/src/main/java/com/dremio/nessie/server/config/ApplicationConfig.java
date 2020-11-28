@@ -39,7 +39,6 @@ public class ApplicationConfig {
   private final VersionStoreConfig versionStoreConfig;
   private final VersionStoreJGitConfig versionStoreJGitConfig;
   private final VersionStoreDynamoConfig versionStoreDynamoConfig;
-  private final VersionStoreMongoDbConfig versionStoreMongoDbConfig;
 
   /**
    * inject all configs form config providers.
@@ -48,14 +47,12 @@ public class ApplicationConfig {
   public ApplicationConfig(BackendsConfig backendsConfig,
                            VersionStoreConfig versionStoreConfig,
                            VersionStoreJGitConfig versionStoreJGitConfig,
-                           VersionStoreDynamoConfig versionStoreDynamoConfig,
-                           VersionStoreMongoDbConfig versionStoreMongoDbConfig) {
+                           VersionStoreDynamoConfig versionStoreDynamoConfig) {
 
     this.backendsConfig = backendsConfig;
     this.versionStoreConfig = versionStoreConfig;
     this.versionStoreJGitConfig = versionStoreJGitConfig;
     this.versionStoreDynamoConfig = versionStoreDynamoConfig;
-    this.versionStoreMongoDbConfig = versionStoreMongoDbConfig;
   }
 
 
@@ -73,10 +70,6 @@ public class ApplicationConfig {
 
   public VersionStoreDynamoConfig getVersionStoreDynamoConfig() {
     return versionStoreDynamoConfig;
-  }
-
-  public VersionStoreMongoDbConfig getVersionStoreMongoDbConfig() {
-    return versionStoreMongoDbConfig;
   }
 
   @ConfigProperties(prefix = "nessie.server")
@@ -132,15 +125,5 @@ public class ApplicationConfig {
 
     @ConfigProperty(name = "valueTableName", defaultValue = "nessie_objects")
     String getValueTableName();
-  }
-
-  @ConfigProperties(prefix = "nessie.version.store.mongodb")
-  public interface VersionStoreMongoDbConfig {
-
-    @ConfigProperty(name = "databaseName", defaultValue = "nessie")
-    String getDatabaseName();
-
-    @ConfigProperty(name = "connectionString", defaultValue = "mongodb://localhost:27017")
-    String getConnectionString();
   }
 }
