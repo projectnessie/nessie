@@ -18,30 +18,12 @@ package com.dremio.nessie.versioned.store.mongodb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.versioned.impl.Fragment;
-import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
-import com.dremio.nessie.versioned.impl.InternalRef;
-import com.dremio.nessie.versioned.impl.InternalValue;
-import com.dremio.nessie.versioned.impl.L1;
-import com.dremio.nessie.versioned.impl.L2;
-import com.dremio.nessie.versioned.impl.L3;
-import com.dremio.nessie.versioned.store.HasId;
-import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.dremio.nessie.versioned.store.ValueType;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.mongodb.ConnectionString;
+import com.dremio.nessie.versioned.impl.MongoStoreConfig;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 
@@ -52,11 +34,10 @@ import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
 
-public class TestMongoDbStore {
+class TestMongoDbStore extends TestStore<MongoDbStore> {
   private static MongodExecutable mongoExec;
-  private static ConnectionString connectionString;
+  private static String connectionString;
   private static final String testDatabaseName = "mydb";
-  private MongoDbStore mongoDbStore;
 
   /**
    * Set up the embedded flapdoodle MongoDB server for unit tests.
@@ -72,7 +53,7 @@ public class TestMongoDbStore {
 
     mongoExec = MongodStarter.getDefaultInstance().prepare(config);
     mongoExec.start();
-    connectionString = new ConnectionString("mongodb://localhost:" + port);
+    connectionString = "mongodb://localhost:" + port;
   }
 
   /**
@@ -85,190 +66,29 @@ public class TestMongoDbStore {
     }
   }
 
-  /**
-   * Set up the objects necessary for the tests.
-   */
-  @BeforeEach
-  public void setUp() {
-    mongoDbStore = new MongoDbStore(connectionString, testDatabaseName);
-    mongoDbStore.start();
+  @Override
+  protected MongoDbStore createStore() {
+    return new MongoDbStore(new MongoStoreConfig() {
+      @Override
+      public String getConnectionString() {
+        return connectionString;
+      }
+
+      @Override
+      public String getDatabaseName() {
+        return testDatabaseName;
+      }
+    });
   }
 
-  /**
-   * Close the store and clean up written data.
-   */
-  @AfterEach
-  public void teardown() {
-    // Clean up the collections.
-    // TODO: Is there a better filter to use? Just need one to be true everywhere.
-    mongoDbStore.getCollections().forEach((k, v) -> v.deleteMany(Filters.ne("_id", "s")));
-    mongoDbStore.close();
+  @Override
+  protected void resetStoreState() {
+    store.getCollections().forEach((k, v) -> v.deleteMany(Filters.ne("_id", "s")));
   }
 
   @Test
   public void testDatabaseName() {
-    final MongoDatabase mongoDatabase = mongoDbStore.getDatabase();
+    final MongoDatabase mongoDatabase = store.getDatabase();
     assertEquals(testDatabaseName, mongoDatabase.getName());
-  }
-
-  @Test
-  public void putL1() {
-    put(SampleEntities.createL1(), ValueType.L1, L1.SCHEMA);
-  }
-
-  @Test
-  public void putL2() {
-    put(SampleEntities.createL2(), ValueType.L2, L2.SCHEMA);
-  }
-
-  @Test
-  public void putL3() {
-    put(SampleEntities.createL3(), ValueType.L3, L3.SCHEMA);
-  }
-
-  @Test
-  public void putFragment() {
-    put(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT, Fragment.SCHEMA);
-  }
-
-  @Test
-  public void putBranch() {
-    put(SampleEntities.createBranch(), ValueType.REF, InternalRef.SCHEMA);
-  }
-
-  @Test
-  public void putTag() {
-    put(SampleEntities.createTag(), ValueType.REF, InternalRef.SCHEMA);
-  }
-
-  @Test
-  public void putCommitMetadata() {
-    put(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA, InternalCommitMetadata.SCHEMA);
-  }
-
-  @Test
-  public void putValue() {
-    put(SampleEntities.createValue(), ValueType.VALUE, InternalValue.SCHEMA);
-  }
-
-  @Test
-  public void loadSingleL1() {
-    load(SampleEntities.createL1(), ValueType.L1, L1.SCHEMA);
-  }
-
-  @Test
-  public void loadSingleL2() {
-    load(SampleEntities.createL2(), ValueType.L2, L2.SCHEMA);
-  }
-
-  @Test
-  public void loadSingleL3() {
-    load(SampleEntities.createL3(), ValueType.L3, L3.SCHEMA);
-  }
-
-  @Test
-  public void loadFragment() {
-    load(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT, Fragment.SCHEMA);
-  }
-
-  @Test
-  public void loadBranch() {
-    load(SampleEntities.createBranch(), ValueType.REF, InternalRef.SCHEMA);
-  }
-
-  @Test
-  public void loadTag() {
-    load(SampleEntities.createTag(), ValueType.REF, InternalRef.SCHEMA);
-  }
-
-  @Test
-  public void loadCommitMetadata() {
-    load(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA, InternalCommitMetadata.SCHEMA);
-  }
-
-  @Test
-  public void loadValue() {
-    load(SampleEntities.createValue(), ValueType.VALUE, InternalValue.SCHEMA);
-  }
-
-  @Test
-  public void putIfAbsentL1() {
-    putIfAbsent(SampleEntities.createL1(), ValueType.L1);
-  }
-
-  @Test
-  public void putIfAbsentL2() {
-    putIfAbsent(SampleEntities.createL2(), ValueType.L2);
-  }
-
-  @Test
-  public void putIfAbsentL3() {
-    putIfAbsent(SampleEntities.createL3(), ValueType.L3);
-  }
-
-  @Test
-  public void putIfAbsentFragment() {
-    putIfAbsent(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT);
-  }
-
-  @Test
-  public void putIfAbsentBranch() {
-    putIfAbsent(SampleEntities.createBranch(), ValueType.REF);
-  }
-
-  @Test
-  public void putIfAbsentTag() {
-    putIfAbsent(SampleEntities.createTag(), ValueType.REF);
-  }
-
-  @Test
-  public void putIfAbsentCommitMetadata() {
-    putIfAbsent(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA);
-  }
-
-  @Test
-  public void putIfAbsentValue() {
-    putIfAbsent(SampleEntities.createValue(), ValueType.VALUE);
-  }
-
-  @Test
-  public void save() {
-    final L1 l1 = SampleEntities.createL1();
-    final InternalRef branch = SampleEntities.createBranch();
-    final InternalRef tag = SampleEntities.createTag();
-    final List<SaveOp<?>> saveOps = ImmutableList.of(
-        new SaveOp<>(ValueType.L1, l1),
-        new SaveOp<>(ValueType.REF, branch),
-        new SaveOp<>(ValueType.REF, tag)
-    );
-    mongoDbStore.save(saveOps);
-
-    assertEquals(
-        L1.SCHEMA.itemToMap(l1, true),
-        L1.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.L1, l1.getId()), true));
-    assertEquals(
-        InternalRef.SCHEMA.itemToMap(branch, true),
-        InternalRef.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.REF, branch.getId()), true));
-    assertEquals(
-        InternalRef.SCHEMA.itemToMap(tag, true),
-        InternalRef.SCHEMA.itemToMap(mongoDbStore.loadSingle(ValueType.REF, tag.getId()), true));
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T> void put(T sample, ValueType type, SimpleSchema<T> schema) {
-    mongoDbStore.put(type, sample, Optional.empty());
-    final T read = (T)Iterables.get(mongoDbStore.getCollections().get(type).find(), 0);
-    assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
-  }
-
-  private <T> void putIfAbsent(T sample, ValueType type) {
-    Assertions.assertTrue(mongoDbStore.putIfAbsent(type, sample));
-    Assertions.assertFalse(mongoDbStore.putIfAbsent(type, sample));
-  }
-
-  private <T extends HasId> void load(T sample, ValueType type, SimpleSchema<T> schema) {
-    put(sample, type, schema);
-    final T read = mongoDbStore.loadSingle(type, sample.getId());
-    assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
   }
 }

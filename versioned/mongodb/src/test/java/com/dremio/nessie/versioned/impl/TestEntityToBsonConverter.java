@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.store.mongodb.codecs;
+package com.dremio.nessie.versioned.impl;
 
 import java.io.StringWriter;
 import java.util.Map;
@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableMap;
 
-public class TestEntityToBsonConverter {
+class TestEntityToBsonConverter {
   @Test
   public void readEmptyAttributes() {
     read(ImmutableMap.of(), "{}");
@@ -38,12 +38,12 @@ public class TestEntityToBsonConverter {
 
   @Test
   public void readNumber() {
-    read(ImmutableMap.of("value", Entity.ofNumber(5)), "{\"value\": \"n5\"}");
+    read(ImmutableMap.of("value", Entity.ofNumber(5)), "{\"value\": 5}");
   }
 
   @Test
   public void readString() {
-    read(ImmutableMap.of("value", Entity.ofString("string")), "{\"value\": \"sstring\"}");
+    read(ImmutableMap.of("value", Entity.ofString("string")), "{\"value\": \"string\"}");
   }
 
   @Test
@@ -53,23 +53,18 @@ public class TestEntityToBsonConverter {
   }
 
   @Test
-  public void readMap() {
+  public void readEmptyMap() {
     read(ImmutableMap.of("value", Entity.ofMap(ImmutableMap.of())), "{\"value\": {}}");
   }
 
   @Test
-  public void readList() {
-    read(ImmutableMap.of("value", Entity.ofList()), "{\"value\": [true]}");
-  }
-
-  @Test
-  public void readStringSet() {
-    read(ImmutableMap.of("value", Entity.ofStringSet()), "{\"value\": [false]}");
+  public void readEmptyList() {
+    read(ImmutableMap.of("value", Entity.ofList()), "{\"value\": []}");
   }
 
   private void read(Map<String, Entity> attributes, String expected) {
     final StringWriter writer = new StringWriter();
-    EntityToBsonConverter.write(new JsonWriter(writer), attributes);
+    CodecProvider.ENTITY_TO_BSON_CONVERTER.write(new JsonWriter(writer), attributes);
     Assertions.assertEquals(expected, writer.toString());
   }
 }

@@ -37,6 +37,7 @@ import com.dremio.nessie.versioned.impl.InternalValue;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
+import com.dremio.nessie.versioned.impl.MongoStoreConfig;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
@@ -53,7 +54,6 @@ import com.google.common.collect.Multimaps;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.WriteConcern;
-import com.mongodb.client.ClientSession;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -63,7 +63,6 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.InsertOneModel;
-import com.mongodb.connection.ClusterType;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
@@ -76,28 +75,26 @@ public class MongoDbStore implements Store {
 
   // This should be retrievable via the API as well.
   private final int paginationSize = 100000;
-  private final String databaseName;
+  private final MongoStoreConfig config;
   private final MongoClientSettings mongoClientSettings;
 
   private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
-  private boolean enableTransactions;
   private final Map<ValueType, MongoCollection<? extends HasId>> collections;
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
-   * @param connectionString the string to use to connect to MongoDB.
-   * @param databaseName the name of the database to retrieve.
+   * @param config the configuration for the store.
    */
-  public MongoDbStore(ConnectionString connectionString, String databaseName) {
+  public MongoDbStore(MongoStoreConfig config) {
+    this.config = config;
     this.collections = new HashMap<>();
-    this.databaseName = databaseName;
     final CodecRegistry codecRegistry = CodecRegistries.fromProviders(
         new CodecProvider(),
         PojoCodecProvider.builder().automatic(true).build(),
         MongoClientSettings.getDefaultCodecRegistry());
     this.mongoClientSettings = MongoClientSettings.builder()
-      .applyConnectionString(connectionString)
+      .applyConnectionString(new ConnectionString(config.getConnectionString()))
       .codecRegistry(codecRegistry)
       .writeConcern(WriteConcern.MAJORITY)
       .build();
@@ -113,21 +110,19 @@ public class MongoDbStore implements Store {
   @Override
   public void start() {
     mongoClient = MongoClients.create(mongoClientSettings);
-    final ClusterType clusterType = mongoClient.getClusterDescription().getClusterSettings().getRequiredClusterType();
-    enableTransactions = (clusterType == ClusterType.REPLICA_SET) || (clusterType == ClusterType.SHARDED);
-    mongoDatabase = mongoClient.getDatabase(databaseName);
+    mongoDatabase = mongoClient.getDatabase(config.getDatabaseName());
 
     // Initialise collections for each ValueType.
-    collections.put(ValueType.L1, mongoDatabase.getCollection(MongoDbConstants.L1_COLLECTION, L1.class));
-    collections.put(ValueType.L2, mongoDatabase.getCollection(MongoDbConstants.L2_COLLECTION, L2.class));
-    collections.put(ValueType.L3, mongoDatabase.getCollection(MongoDbConstants.L3_COLLECTION, L3.class));
+    collections.put(ValueType.L1, mongoDatabase.getCollection(config.getL1TableName(), L1.class));
+    collections.put(ValueType.L2, mongoDatabase.getCollection(config.getL2TableName(), L2.class));
+    collections.put(ValueType.L3, mongoDatabase.getCollection(config.getL3TableName(), L3.class));
     collections.put(ValueType.COMMIT_METADATA,
-        mongoDatabase.getCollection(MongoDbConstants.COMMIT_METADATA_COLLECTION, InternalCommitMetadata.class));
+        mongoDatabase.getCollection(config.getMetadataTableName(), InternalCommitMetadata.class));
     collections.put(ValueType.KEY_FRAGMENT,
-        mongoDatabase.getCollection(MongoDbConstants.KEY_FRAGMENT_COLLECTION, Fragment.class));
-    collections.put(ValueType.REF, mongoDatabase.getCollection(MongoDbConstants.REF_COLLECTION, InternalRef.class));
+        mongoDatabase.getCollection(config.getKeyListTableName(), Fragment.class));
+    collections.put(ValueType.REF, mongoDatabase.getCollection(config.getRefTableName(), InternalRef.class));
     collections.put(ValueType.VALUE,
-        mongoDatabase.getCollection(MongoDbConstants.VALUE_COLLECTION, InternalValue.class));
+        mongoDatabase.getCollection(config.getValueTableName(), InternalValue.class));
   }
 
   /**
@@ -148,12 +143,8 @@ public class MongoDbStore implements Store {
 
   @Override
   public <V> boolean putIfAbsent(ValueType type, V value) {
-    final MongoCollection collection = collections.get(type);
-    if (null == collection) {
-      throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", type.name()));
-    }
-
     // TODO: Potentially rework to use updateOne with upsert and $set.
+    final MongoCollection collection = getCollection(type);
     try (MongoCursor cursor = collection.find(Filters.eq(Store.KEY_NAME, ((HasId) value).getId())).iterator()) {
       if (!cursor.hasNext()) {
         collection.insertOne(value);
@@ -191,36 +182,20 @@ public class MongoDbStore implements Store {
     final ListMultimap<MongoCollection<?>, InsertOneModel<?>> writes =
         Multimaps.transformValues(mm, s -> new InsertOneModel<>(s.getValue()));
 
-    if (enableTransactions) {
-      final ClientSession session = mongoClient.startSession();
-      session.withTransaction(() -> {
-        for (MongoCollection collection : writes.keySet()) {
-          Lists.partition(writes.get(collection), paginationSize).forEach(l -> collection.bulkWrite(session, l, UNORDERED));
-        }
-        return "Inserted";
-      });
-    } else {
-      for (MongoCollection collection : writes.keySet()) {
-        Lists.partition(writes.get(collection), paginationSize).forEach(l -> collection.bulkWrite(l, UNORDERED));
-      }
+    for (MongoCollection collection : writes.keySet()) {
+      Lists.partition(writes.get(collection), paginationSize).forEach(l -> collection.bulkWrite(l, UNORDERED));
     }
   }
 
   @Override
   public <V> V loadSingle(ValueType valueType, Id id) {
-    final MongoCollection collection = collections.get(valueType);
-    if (null == collection) {
-      throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
-    }
-
-    try (MongoCursor cursor = collection.find(Filters.eq(Store.KEY_NAME, id)).iterator()) {
-      if (cursor.hasNext()) {
-        return (V)cursor.next();
-      }
-
+    final MongoCollection<V> collection = getCollection(valueType);
+    final V value = collection.find(Filters.eq(Store.KEY_NAME, id)).first();
+    if (null == value) {
       // TODO: Replace with a more appropriate exception type.
       throw new IllegalArgumentException("Unable to load item.");
     }
+    return value;
   }
 
   @Override
@@ -231,7 +206,7 @@ public class MongoDbStore implements Store {
 
   @Override
   public Stream<InternalRef> getRefs() {
-    final FindIterable iterable = collections.get(ValueType.REF).find();
+    final FindIterable<InternalRef> iterable = getCollection(ValueType.REF).find();
     return StreamSupport.stream(iterable.spliterator(), false);
   }
 
@@ -243,5 +218,13 @@ public class MongoDbStore implements Store {
   @VisibleForTesting
   Map<ValueType, MongoCollection<? extends HasId>> getCollections() {
     return collections;
+  }
+
+  private MongoCollection getCollection(ValueType valueType) {
+    final MongoCollection collection = collections.get(valueType);
+    if (null == collection) {
+      throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
+    }
+    return collection;
   }
 }

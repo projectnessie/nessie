@@ -15,19 +15,25 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.bson.BsonBinary;
 import org.bson.BsonReader;
+import org.bson.BsonType;
 import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecRegistry;
 
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.mongodb.codecs.EntityCodec;
+import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.protobuf.UnsafeByteOperations;
 
 /**
  * Codecs provide the heart of the SerDe process to/from BSON format.
@@ -35,9 +41,233 @@ import com.dremio.nessie.versioned.store.mongodb.codecs.EntityCodec;
  * This apparent two way interdependency is resolved by using a CodecProvider.
  * The CodecProvider is a factory for Codecs.
  */
-@SuppressWarnings("unchecked")
 public class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
-  static class IdCodec implements Codec<Id> {
+  static class EntityToBsonConverter {
+    /**
+     * Write the specified Entity attributes to BSON.
+     * @param writer the BSON writer to write to.
+     * @param attributes the Entity attributes to serialize.
+     */
+    void write(BsonWriter writer, Map<String, Entity> attributes) {
+      writer.writeStartDocument();
+      attributes.forEach((k, v) -> writeField(writer, k, v));
+      writer.writeEndDocument();
+    }
+
+    /**
+     * This creates a single field in BSON format that represents entity.
+     * @param writer the BSON writer to write to.
+     * @param field the name of the field as represented in BSON
+     * @param value the entity that will be serialized.
+     */
+    private void writeField(BsonWriter writer, String field, Entity value) {
+      writer.writeName(field);
+      writeSingleValue(writer, value);
+    }
+
+    /**
+     * Writes a single Entity to BSON.
+     * Invokes different write methods based on the underlying {@code com.dremio.nessie.versioned.store.Entity} type.
+     *
+     * @param writer the BSON writer to write to.
+     * @param value the value to convert to BSON.
+     */
+    private void writeSingleValue(BsonWriter writer, Entity value) {
+      switch (value.getType()) {
+        case MAP:
+          writer.writeStartDocument();
+          value.getMap().forEach((k, v) -> {
+            writer.writeName(k);
+            writeSingleValue(writer, v);
+          });
+          writer.writeEndDocument();
+          break;
+        case LIST:
+          writer.writeStartArray();
+          value.getList().forEach(v -> writeSingleValue(writer, v));
+          writer.writeEndArray();
+          break;
+        case NUMBER:
+          writer.writeInt64(Long.parseLong(value.getNumber()));
+          break;
+        case STRING:
+          writer.writeString(value.getString());
+          break;
+        case BINARY:
+          writer.writeBinaryData(new BsonBinary(value.getBinary().toByteArray()));
+          break;
+        case BOOLEAN:
+          writer.writeBoolean(value.getBoolean());
+          break;
+        default:
+          throw new UnsupportedOperationException(String.format("Unsupported field type: %s", value.getType().name()));
+      }
+    }
+  }
+
+  static class BsonToEntityConverter {
+    private static final String MONGO_ID_NAME = "_id";
+
+    /**
+     * Deserializes a Entity attributes from the BSON stream.
+     *
+     * @param reader the reader to deserialize the Entity attributes from.
+     * @return the Entity attributes.
+     */
+    Map<String, Entity> read(BsonReader reader) {
+      final BsonType type = reader.getCurrentBsonType();
+      if (BsonType.DOCUMENT != type) {
+        throw new UnsupportedOperationException(
+          String.format("BSON serialized data must be a document at the root, type is %s",type));
+      }
+
+      return readDocument(reader);
+    }
+
+    /**
+     * Read a BSON document and deserialize to associated Entity types.
+     * @param reader the reader to deserialize the Entities from.
+     * @return The deserialized collection of entities with their names.
+     */
+    private Map<String, Entity> readDocument(BsonReader reader) {
+      reader.readStartDocument();
+      final Map<String, Entity> attributes = new HashMap<>();
+
+      while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
+        final String name = reader.readName();
+        if (name.equals(MONGO_ID_NAME)) {
+          reader.skipValue();
+          continue;
+        }
+
+        switch (reader.getCurrentBsonType()) {
+          case DOCUMENT:
+            attributes.put(name, Entity.ofMap(readDocument(reader)));
+            break;
+          case ARRAY:
+            attributes.put(name, readArray(reader));
+            break;
+          case BOOLEAN:
+            attributes.put(name, Entity.ofBoolean(reader.readBoolean()));
+            break;
+          case STRING:
+            attributes.put(name, Entity.ofString(reader.readString()));
+            break;
+          case INT32:
+            attributes.put(name, Entity.ofNumber(reader.readInt32()));
+            break;
+          case INT64:
+            attributes.put(name, Entity.ofNumber(reader.readInt64()));
+            break;
+          case BINARY:
+            attributes.put(name, Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData())));
+            break;
+          default:
+            throw new UnsupportedOperationException(
+              String.format("Unsupported BSON type: %s", reader.getCurrentBsonType().name()));
+        }
+      }
+
+      reader.readEndDocument();
+      return attributes;
+    }
+
+    /**
+     * Read a BSON array and deserialize to associated Entity types.
+     * @param reader the reader to deserialize the Entities from.
+     * @return The deserialized list-type Entity, either a LIST or STRING_SET.
+     */
+    private Entity readArray(BsonReader reader) {
+      reader.readStartArray();
+      final List<Entity> entities = new ArrayList<>();
+
+      while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
+        switch (reader.getCurrentBsonType()) {
+          case DOCUMENT:
+            entities.add(Entity.ofMap(readDocument(reader)));
+            break;
+          case ARRAY:
+            entities.add(readArray(reader));
+            break;
+          case BOOLEAN:
+            entities.add(Entity.ofBoolean(reader.readBoolean()));
+            break;
+          case STRING:
+            entities.add(Entity.ofString(reader.readString()));
+            break;
+          case INT32:
+            entities.add(Entity.ofNumber(reader.readInt32()));
+            break;
+          case INT64:
+            entities.add(Entity.ofNumber(reader.readInt64()));
+            break;
+          case BINARY:
+            entities.add(Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData())));
+            break;
+          default:
+            throw new UnsupportedOperationException(
+              String.format("Unsupported BSON type: %s", reader.getCurrentBsonType().name()));
+        }
+      }
+
+      reader.readEndArray();
+      return Entity.ofList(entities);
+    }
+  }
+
+  /**
+   * Codec responsible for the encoding and decoding of Entities to a BSON objects.
+   */
+  private static class EntityCodec<C, S> implements Codec<C> {
+    private final Class<C> clazz;
+    private final SimpleSchema<S> schema;
+
+    /**
+     * Constructor.
+     * @param clazz the class type to encode/decode.
+     * @param schema the schema of the class.
+     */
+    public EntityCodec(Class<C> clazz, SimpleSchema<S> schema) {
+      this.clazz = clazz;
+      this.schema = schema;
+    }
+
+    /**
+     * This deserializes a BSON stream to create an L1 object.
+     * @param bsonReader that provides the BSON
+     * @param decoderContext not used
+     * @return the object created from the BSON stream.
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public C decode(BsonReader bsonReader, DecoderContext decoderContext) {
+      return (C) schema.mapToItem(BSON_TO_ENTITY_CONVERTER.read(bsonReader));
+    }
+
+    /**
+     * This serializes an object into a BSON stream. The serialization is delegated to
+     * {@link EntityToBsonConverter}
+     * @param bsonWriter that encodes each attribute to BSON
+     * @param obj the object to encode
+     * @param encoderContext not used
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public void encode(BsonWriter bsonWriter, C obj, EncoderContext encoderContext) {
+      ENTITY_TO_BSON_CONVERTER.write(bsonWriter, schema.itemToMap((S)obj, true));
+    }
+
+    /**
+     * A getter of the class being encoded.
+     * @return the class being encoded
+     */
+    @Override
+    public Class<C> getEncoderClass() {
+      return clazz;
+    }
+  }
+
+  private static class IdCodec implements Codec<Id> {
     @Override
     public Id decode(BsonReader bsonReader, DecoderContext decoderContext) {
       return Id.of(bsonReader.readBinaryData().getData());
@@ -54,19 +284,23 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
     }
   }
 
+  @VisibleForTesting
+  static final EntityToBsonConverter ENTITY_TO_BSON_CONVERTER = new EntityToBsonConverter();
+  @VisibleForTesting
+  static final BsonToEntityConverter BSON_TO_ENTITY_CONVERTER = new BsonToEntityConverter();
   private static final Map<Class<?>, Codec<?>> CODECS = new HashMap<>();
 
   static {
-    CODECS.put(L1.class, new EntityCodec(L1.class, L1.SCHEMA));
-    CODECS.put(L2.class, new EntityCodec(L2.class, L2.SCHEMA));
-    CODECS.put(L3.class, new EntityCodec(L3.class, L3.SCHEMA));
-    CODECS.put(Fragment.class, new EntityCodec(Fragment.class, Fragment.SCHEMA));
-    CODECS.put(InternalRef.class, new EntityCodec(InternalRef.class, InternalRef.SCHEMA));
-    CODECS.put(InternalCommitMetadata.class, new EntityCodec(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA));
-    CODECS.put(InternalValue.class, new EntityCodec(InternalValue.class, InternalValue.SCHEMA));
+    CODECS.put(L1.class, new EntityCodec<>(L1.class, L1.SCHEMA));
+    CODECS.put(L2.class, new EntityCodec<>(L2.class, L2.SCHEMA));
+    CODECS.put(L3.class, new EntityCodec<>(L3.class, L3.SCHEMA));
+    CODECS.put(Fragment.class, new EntityCodec<>(Fragment.class, Fragment.SCHEMA));
+    CODECS.put(InternalRef.class, new EntityCodec<>(InternalRef.class, InternalRef.SCHEMA));
+    CODECS.put(InternalCommitMetadata.class, new EntityCodec<>(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA));
+    CODECS.put(InternalValue.class, new EntityCodec<>(InternalValue.class, InternalValue.SCHEMA));
     CODECS.put(Id.class, new IdCodec());
-    CODECS.put(InternalBranch.class, new EntityCodec(InternalBranch.class, InternalRef.SCHEMA));
-    CODECS.put(InternalTag.class, new EntityCodec(InternalTag.class, InternalRef.SCHEMA));
+    CODECS.put(InternalBranch.class, new EntityCodec<>(InternalBranch.class, InternalRef.SCHEMA));
+    CODECS.put(InternalTag.class, new EntityCodec<>(InternalTag.class, InternalRef.SCHEMA));
   }
 
   @Override
