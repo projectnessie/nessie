@@ -39,6 +39,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Ints;
 
 /**
  * Interface and implementations related to managing the key list within Dynamo.
@@ -229,7 +230,7 @@ abstract class KeyList {
       return ImmutableIncrementalList.builder()
           .addAllMutations(value.get(MUTATIONS).getList().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
           .previousCheckpoint(Id.fromEntity(value.get(ORIGIN)))
-          .distanceFromCheckpointCommits(Integer.parseInt(value.get(DISTANCE).getNumber()))
+          .distanceFromCheckpointCommits(Ints.saturatedCast(value.get(DISTANCE).getNumber()))
           .build();
     }
 
