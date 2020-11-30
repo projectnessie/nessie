@@ -91,16 +91,20 @@ public abstract class Entity {
     return new MapEntity(map);
   }
 
-  public long getNumber() {
+  public String getNumber() {
     throw new IllegalStateException("Not a number.");
   }
 
-  public static Entity ofNumber(int number) {
+  public static Entity ofNumber(String number) {
     return new NumberEntity(number);
   }
 
+  public static Entity ofNumber(int number) {
+    return new NumberEntity(Integer.toString(number));
+  }
+
   public static Entity ofNumber(long number) {
-    return new NumberEntity(number);
+    return new NumberEntity(Long.toString(number));
   }
 
   public boolean getBoolean() {
@@ -282,13 +286,13 @@ public abstract class Entity {
 
   private static final class NumberEntity extends Entity {
 
-    private final long number;
+    private final String number;
 
-    public NumberEntity(long number) {
+    public NumberEntity(String number) {
       this.number = number;
     }
 
-    public long getNumber() {
+    public String getNumber() {
       return number;
     }
 

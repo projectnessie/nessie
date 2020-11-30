@@ -48,7 +48,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.primitives.Ints;
 
 /**
  * Stores the current state of branch.
@@ -360,7 +359,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
      *
      * @param store The store to save to.
      * @param executor The executor to do any necessary clean up of the commit log.
-     * @param attempts The number of times we'll attempt to clean up the commit log.
+     * @param int attempts The number of times we'll attempt to clean up the commit log.
      * @param waitOnCollapse Whether or not the operation should wait on the final operation of collapsing the commit log succesfully
      *        before returning/failing. If false, the final collapse will be done in a separate thread.
      * @return
@@ -515,7 +514,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
       @Override
       public UnsavedDelta deserialize(Map<String, Entity> map) {
         return new UnsavedDelta(
-            Ints.saturatedCast(map.get(POSITION).getNumber()),
+            Integer.parseInt(map.get(POSITION).getNumber()),
             Id.of(map.get(OLD_ID).getBinary()),
             Id.of(map.get(NEW_ID).getBinary())
             );
