@@ -25,6 +25,7 @@ import java.util.TreeMap;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -41,7 +42,7 @@ public class SampleEntities {
   public static L1 createL1() {
     final List<Id> fragments = ImmutableList.of(createId(), createId(), createId());
     final List<KeyMutation> mutations = ImmutableList.of(
-        KeyMutation.KeyAddition.of(new InternalKey(Key.of("a", "addition1", "addition2")))
+        KeyMutation.KeyAddition.of(new InternalKey(Key.of("a", createString(8), createString(9))))
     );
 
     final List<Entity> deltaIds = new ArrayList<>(L1.SIZE);
@@ -82,7 +83,8 @@ public class SampleEntities {
     final int size = 100;
     final TreeMap<InternalKey, PositionDelta> keys = new TreeMap<>();
     for (int i = 0; i < size; ++i) {
-      keys.put(new InternalKey(Key.of("path1", "path2", String.valueOf(i))), PositionDelta.of(i, createId()));
+      keys.put(new InternalKey(Key.of(
+          createString(5), createString(9), String.valueOf(i))), PositionDelta.of(i, createId()));
     }
     return new L3(keys);
   }
@@ -95,7 +97,8 @@ public class SampleEntities {
     final int size = 10;
     final List<Entity> keyList = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
-      keyList.add(Entity.ofList(Entity.ofString("path1"), Entity.ofString("path2"), Entity.ofString(String.valueOf(i))));
+      keyList.add(Entity.ofList(
+          createStringEntity(5), createStringEntity(8), Entity.ofString(String.valueOf(i))));
     }
 
     final Map<String, Entity> attributeMap = new HashMap<>();
@@ -131,12 +134,12 @@ public class SampleEntities {
             "new", createIdEntity()
         ))),
         "keys", Entity.ofList(Entity.ofMap(ImmutableMap.of("a",
-            Entity.ofList(Entity.ofString("addition1"), Entity.ofString("addition2")))))
+            Entity.ofList(createStringEntity(8), createStringEntity(8)))))
     )));
 
     final Map<String, Entity> attributeMap = new HashMap<>();
     attributeMap.put(InternalRef.TYPE, Entity.ofString("b"));
-    final String name = "branchName";
+    final String name = createString(10);
     attributeMap.put("name", Entity.ofString(name));
     attributeMap.put("id", Id.build(name).toEntity());
     attributeMap.put("tree", Entity.ofList(treeList));
@@ -196,5 +199,15 @@ public class SampleEntities {
     final byte[] buffer = new byte[numBytes];
     new Random().nextBytes(buffer);
     return buffer;
+  }
+
+  private static String createString(int numChars) {
+    final byte[] array = new byte[numChars];
+    new Random().nextBytes(array);
+    return new String(array, Charsets.UTF_8);
+  }
+
+  private static Entity createStringEntity(int numChars) {
+    return Entity.ofString(createString(numChars));
   }
 }
