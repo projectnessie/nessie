@@ -16,9 +16,11 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.bson.BsonBinary;
 import org.bson.BsonReader;
@@ -32,6 +34,7 @@ import org.bson.codecs.configuration.CodecRegistry;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.UnsafeByteOperations;
 
@@ -288,16 +291,13 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
   static final EntityToBsonConverter ENTITY_TO_BSON_CONVERTER = new EntityToBsonConverter();
   @VisibleForTesting
   static final BsonToEntityConverter BSON_TO_ENTITY_CONVERTER = new BsonToEntityConverter();
+
   private static final Map<Class<?>, Codec<?>> CODECS = new HashMap<>();
 
   static {
-    CODECS.put(L1.class, new EntityCodec<>(L1.class, L1.SCHEMA));
-    CODECS.put(L2.class, new EntityCodec<>(L2.class, L2.SCHEMA));
-    CODECS.put(L3.class, new EntityCodec<>(L3.class, L3.SCHEMA));
-    CODECS.put(Fragment.class, new EntityCodec<>(Fragment.class, Fragment.SCHEMA));
-    CODECS.put(InternalRef.class, new EntityCodec<>(InternalRef.class, InternalRef.SCHEMA));
-    CODECS.put(InternalCommitMetadata.class, new EntityCodec<>(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA));
-    CODECS.put(InternalValue.class, new EntityCodec<>(InternalValue.class, InternalValue.SCHEMA));
+    CODECS.putAll(Arrays.asList(ValueType.values()).stream().collect(
+        Collectors.toMap(ValueType::getObjectClass, v -> new EntityCodec<>(v.getObjectClass(), v.getSchema()))));
+    // Internal classes that are needed for encode/decode.
     CODECS.put(Id.class, new IdCodec());
     CODECS.put(InternalBranch.class, new EntityCodec<>(InternalBranch.class, InternalRef.SCHEMA));
     CODECS.put(InternalTag.class, new EntityCodec<>(InternalTag.class, InternalRef.SCHEMA));

@@ -25,13 +25,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.versioned.impl.Fragment;
-import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
-import com.dremio.nessie.versioned.impl.InternalValue;
 import com.dremio.nessie.versioned.impl.L1;
-import com.dremio.nessie.versioned.impl.L2;
-import com.dremio.nessie.versioned.impl.L3;
+import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -67,82 +63,82 @@ public abstract class TestStore<S extends Store> {
 
   @Test
   public void loadSingleL1() {
-    putThenLoad(SampleEntities.createL1(), ValueType.L1, L1.SCHEMA);
+    putThenLoad(SampleEntities.createL1(), ValueType.L1);
   }
 
   @Test
   public void loadSingleL2() {
-    putThenLoad(SampleEntities.createL2(), ValueType.L2, L2.SCHEMA);
+    putThenLoad(SampleEntities.createL2(), ValueType.L2);
   }
 
   @Test
   public void loadSingleL3() {
-    putThenLoad(SampleEntities.createL3(), ValueType.L3, L3.SCHEMA);
+    putThenLoad(SampleEntities.createL3(), ValueType.L3);
   }
 
   @Test
   public void loadFragment() {
-    putThenLoad(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT, Fragment.SCHEMA);
+    putThenLoad(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT);
   }
 
   @Test
   public void loadBranch() {
-    putThenLoad(SampleEntities.createBranch(), ValueType.REF, InternalRef.SCHEMA);
+    putThenLoad(SampleEntities.createBranch(), ValueType.REF);
   }
 
   @Test
   public void loadTag() {
-    putThenLoad(SampleEntities.createTag(), ValueType.REF, InternalRef.SCHEMA);
+    putThenLoad(SampleEntities.createTag(), ValueType.REF);
   }
 
   @Test
   public void loadCommitMetadata() {
-    putThenLoad(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA, InternalCommitMetadata.SCHEMA);
+    putThenLoad(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA);
   }
 
   @Test
   public void loadValue() {
-    putThenLoad(SampleEntities.createValue(), ValueType.VALUE, InternalValue.SCHEMA);
+    putThenLoad(SampleEntities.createValue(), ValueType.VALUE);
   }
 
   @Test
   public void putIfAbsentL1() {
-    putIfAbsent(SampleEntities.createL1(), ValueType.L1);
+    testPutIfAbsent(SampleEntities.createL1(), ValueType.L1);
   }
 
   @Test
   public void putIfAbsentL2() {
-    putIfAbsent(SampleEntities.createL2(), ValueType.L2);
+    testPutIfAbsent(SampleEntities.createL2(), ValueType.L2);
   }
 
   @Test
   public void putIfAbsentL3() {
-    putIfAbsent(SampleEntities.createL3(), ValueType.L3);
+    testPutIfAbsent(SampleEntities.createL3(), ValueType.L3);
   }
 
   @Test
   public void putIfAbsentFragment() {
-    putIfAbsent(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT);
+    testPutIfAbsent(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT);
   }
 
   @Test
   public void putIfAbsentBranch() {
-    putIfAbsent(SampleEntities.createBranch(), ValueType.REF);
+    testPutIfAbsent(SampleEntities.createBranch(), ValueType.REF);
   }
 
   @Test
   public void putIfAbsentTag() {
-    putIfAbsent(SampleEntities.createTag(), ValueType.REF);
+    testPutIfAbsent(SampleEntities.createTag(), ValueType.REF);
   }
 
   @Test
   public void putIfAbsentCommitMetadata() {
-    putIfAbsent(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA);
+    testPutIfAbsent(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA);
   }
 
   @Test
   public void putIfAbsentValue() {
-    putIfAbsent(SampleEntities.createValue(), ValueType.VALUE);
+    testPutIfAbsent(SampleEntities.createValue(), ValueType.VALUE);
   }
 
   @Test
@@ -157,25 +153,29 @@ public abstract class TestStore<S extends Store> {
     );
     store.save(saveOps);
 
-    assertEquals(
-        L1.SCHEMA.itemToMap(l1, true),
-        L1.SCHEMA.itemToMap(store.loadSingle(ValueType.L1, l1.getId()), true));
-    assertEquals(
-        InternalRef.SCHEMA.itemToMap(branch, true),
-        InternalRef.SCHEMA.itemToMap(store.loadSingle(ValueType.REF, branch.getId()), true));
-    assertEquals(
-        InternalRef.SCHEMA.itemToMap(tag, true),
-        InternalRef.SCHEMA.itemToMap(store.loadSingle(ValueType.REF, tag.getId()), true));
+    saveOps.forEach(s -> {
+      final SimpleSchema schema = s.getType().getSchema();
+      assertEquals(
+          schema.itemToMap(s.getValue(), true),
+          schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
+    });
   }
 
-  private <T> void putIfAbsent(T sample, ValueType type) {
-    Assertions.assertTrue(store.putIfAbsent(type, sample));
-    Assertions.assertFalse(store.putIfAbsent(type, sample));
-  }
-
-  private <T extends HasId> void putThenLoad(T sample, ValueType type, SimpleSchema<T> schema) {
+  private <T extends HasId> void putThenLoad(T sample, ValueType type) {
     store.put(type, sample, Optional.empty());
+    testLoad(sample, type);
+  }
+
+  private <T extends HasId> void testLoad(T sample, ValueType type) {
     final T read = store.loadSingle(type, sample.getId());
+    final SimpleSchema<T> schema = type.getSchema();
     assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
+  }
+
+  private <T extends HasId> void testPutIfAbsent(T sample, ValueType type) {
+    Assertions.assertTrue(store.putIfAbsent(type, sample));
+    testLoad(sample, type);
+    Assertions.assertFalse(store.putIfAbsent(type, sample));
+    testLoad(sample, type);
   }
 }

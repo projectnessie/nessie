@@ -39,7 +39,7 @@ public class L1 extends MemoizedId {
   private final KeyList keyList;
   private final ParentList parentList;
 
-  private L1(Id commitId, IdMap tree, Id id, KeyList keyList, ParentList parentList) {
+  L1(Id commitId, IdMap tree, Id id, KeyList keyList, ParentList parentList) {
     super(id);
     this.metadataId = commitId;
     this.parentList = parentList;

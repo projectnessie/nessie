@@ -24,8 +24,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.versioned.impl.MongoStoreConfig;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
+import com.mongodb.reactivestreams.client.MongoDatabase;
 
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodStarter;
@@ -83,7 +82,7 @@ class TestMongoDbStore extends TestStore<MongoDbStore> {
 
   @Override
   protected void resetStoreState() {
-    store.getCollections().forEach((k, v) -> v.deleteMany(Filters.ne("_id", "s")));
+    store.resetCollections();
   }
 
   @Test
