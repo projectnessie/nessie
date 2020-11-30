@@ -46,7 +46,7 @@ public class AttributeValueUtil {
     } else if (av.bool() != null) {
       return Entity.ofBoolean(av.bool());
     } else if (av.n() != null) {
-      return Entity.ofNumber(av.n());
+      return Entity.ofNumber(Long.parseLong(av.n()));
     } else if (av.b() != null) {
       return Entity.ofBinary(UnsafeByteOperations.unsafeWrap(av.b().asByteArray()));
     } else {
@@ -79,7 +79,7 @@ public class AttributeValueUtil {
       case MAP:
         return AttributeValue.builder().m(fromEntity(e.getMap())).build();
       case NUMBER:
-        return AttributeValue.builder().n(e.getNumber()).build();
+        return AttributeValue.builder().n(String.valueOf(e.getNumber())).build();
       case STRING:
         return AttributeValue.builder().s(e.getString()).build();
       default:

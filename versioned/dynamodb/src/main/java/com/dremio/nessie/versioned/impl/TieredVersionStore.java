@@ -201,7 +201,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         c = c.and(ExpressionFunction.equals(
             ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toEntity()));
         c = c.and(ExpressionFunction.equals(
-            ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), Entity.ofNumber("1")));
+            ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), Entity.ofNumber(1)));
       }
 
       if (!store.delete(ValueType.REF,  iref.getBranch().getId(), Optional.of(c))) {
