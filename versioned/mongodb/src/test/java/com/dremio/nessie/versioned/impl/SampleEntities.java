@@ -187,24 +187,34 @@ public class SampleEntities {
     return InternalValue.SCHEMA.mapToItem(attributeMap);
   }
 
+  /**
+   * Create an array of random bytes.
+   * @param numBytes the size of the array.
+   * @return the array of random bytes.
+   */
+  public static byte[] createBinary(int numBytes) {
+    final byte[] buffer = new byte[numBytes];
+    new Random().nextBytes(buffer);
+    return buffer;
+  }
+
+  /**
+   * Create a String of random characters.
+   * @param numChars the size of the String.
+   * @return the String of random characters.
+   */
+  public static String createString(int numChars) {
+    final byte[] array = new byte[numChars];
+    new Random().nextBytes(array);
+    return new String(array, Charsets.UTF_8);
+  }
+
   private static Id createId() {
     return Id.of(createBinary(20));
   }
 
   private static Entity createIdEntity() {
     return Entity.ofBinary(createBinary(20));
-  }
-
-  private static byte[] createBinary(int numBytes) {
-    final byte[] buffer = new byte[numBytes];
-    new Random().nextBytes(buffer);
-    return buffer;
-  }
-
-  private static String createString(int numChars) {
-    final byte[] array = new byte[numChars];
-    new Random().nextBytes(array);
-    return new String(array, Charsets.UTF_8);
   }
 
   private static Entity createStringEntity(int numChars) {

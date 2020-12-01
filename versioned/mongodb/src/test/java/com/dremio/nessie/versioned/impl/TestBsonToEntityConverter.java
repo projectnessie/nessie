@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import java.util.Map;
 
 import org.bson.BsonReader;
+import org.bson.internal.Base64;
 import org.bson.json.JsonReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -27,71 +28,125 @@ import com.google.common.collect.ImmutableMap;
 
 class TestBsonToEntityConverter {
   @Test
+  public void readInvalidState() {
+    // Don't read the BSON type so the state is invalid.
+    readError(new JsonReader("1"));
+  }
+
+  @Test
   public void readNoDocumentRoot() {
-    final BsonReader reader = new JsonReader("1");
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader));
+    readError(getReader("1"));
   }
 
   @Test
   public void readUnsupportedType() {
-    final BsonReader reader = new JsonReader("{\"$numberDouble\": \"1\"}");
-    reader.readBsonType();
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader));
+    readError(getReader("{\"$numberDouble\": \"1\"}"));
+  }
+
+  @Test
+  public void readUnsupportedTypeInList() {
+    readError(getReader("{\"key\": [{\"$date\": {\"$numberLong\": \"10002348235\"}}]}"));
+  }
+
+  @Test
+  public void readUnsupportedTypeInMap() {
+    readError(getReader("{\"key\": {\"mapKey\": {\"$numberDecimal\": \"1.3453\"}}}"));
+  }
+
+  @Test
+  public void readEmptyDocument() {
+    final BsonReader reader = getReader("{}");
+    final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
+    Assertions.assertTrue(entities.isEmpty());
   }
 
   @Test
   public void readBoolean() {
-    final BsonReader reader = new JsonReader("{\"value\": true}");
-    reader.readBsonType();
+    final BsonReader reader = getReader("{\"value\": true}");
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
     Assertions.assertEquals(Entity.ofBoolean(true), entities.get("value"));
   }
 
   @Test
-  public void readNumber() {
-    final BsonReader reader = new JsonReader("{\"value\": 55}");
-    reader.readBsonType();
+  public void readNumberInt32() {
+    final BsonReader reader = getReader("{\"value\": 55}");
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
     Assertions.assertEquals(Entity.ofNumber(55), entities.get("value"));
   }
 
   @Test
+  public void readNumberInt64() {
+    final BsonReader reader = getReader("{\"value\": 50817234087123405}");
+    final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
+    Assertions.assertEquals(Entity.ofNumber(50817234087123405L), entities.get("value"));
+  }
+
+  @Test
   public void readString() {
-    final BsonReader reader = new JsonReader("{\"value\": \"String\"}");
-    reader.readBsonType();
+    final BsonReader reader = getReader("{\"value\": \"String\"}");
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
     Assertions.assertEquals(Entity.ofString("String"), entities.get("value"));
   }
 
   @Test
   public void readBinary() {
-    final BsonReader reader = new JsonReader("{\"value\": {\"$binary\": {\"base64\": \"AQI=\", \"subType\": \"00\"}}}");
-    reader.readBsonType();
+    byte[] buffer = SampleEntities.createBinary(10);
+    final BsonReader reader = getReader(String.format(
+        "{\"value\": {\"$binary\": {\"base64\": \"%s\", \"subType\": \"00\"}}}", Base64.encode(buffer)));
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
-    Assertions.assertEquals(Entity.ofBinary(new byte[]{1, 2}), entities.get("value"));
+    Assertions.assertEquals(Entity.ofBinary(buffer), entities.get("value"));
   }
 
   @Test
-  public void readMap() {
-    final BsonReader reader = new JsonReader("{\"value\": {}}");
-    reader.readBsonType();
+  public void readEmptyMap() {
+    final BsonReader reader = getReader("{\"value\": {}}");
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
     Assertions.assertEquals(Entity.ofMap(ImmutableMap.of()), entities.get("value"));
   }
 
   @Test
+  public void readMap() {
+    final BsonReader reader = getReader(
+        "{\"value\": {\"key1\": \"str1\", \"key2\": false, \"key3\": []}}");
+    final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
+    Assertions.assertEquals(Entity.ofMap(ImmutableMap.of(
+        "key1", Entity.ofString("str1"),
+        "key2", Entity.ofBoolean(false),
+        "key3", Entity.ofList()
+    )), entities.get("value"));
+  }
+
+  @Test
+  public void readEmptyList() {
+    final BsonReader reader = getReader("{\"value\": []}");
+    final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
+    Assertions.assertEquals(Entity.ofList(), entities.get("value"));
+  }
+
+  @Test
   public void readList() {
-    final BsonReader reader = new JsonReader("{\"value\": [5, \"Str\", false]}");
-    reader.readBsonType();
+    final BsonReader reader = getReader("{\"value\": [5, \"Str\", false, {}]}");
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
     Assertions.assertEquals(
-        Entity.ofList(Entity.ofNumber("5"), Entity.ofString("Str"), Entity.ofBoolean(false)), entities.get("value"));
+        Entity.ofList(Entity.ofNumber("5"), Entity.ofString("Str"), Entity.ofBoolean(false), Entity.ofMap(ImmutableMap.of())),
+        entities.get("value"));
   }
 
   @Test
   public void readListUnsupportedType() {
-    final BsonReader reader = new JsonReader("{\"value\": [{\"$numberDouble\": \"1\"}]}");
+    final BsonReader reader = getReader("{\"value\": [{\"$numberDouble\": \"1\"}]}");
+    readError(reader);
+  }
+
+  private BsonReader getReader(String bson) {
+    final BsonReader reader = new JsonReader(bson);
     reader.readBsonType();
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader));
+    return reader;
+  }
+
+  private void readError(BsonReader reader) {
+    Assertions.assertThrows(
+        CodecProvider.SerializationException.class,
+        () -> CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader));
   }
 }

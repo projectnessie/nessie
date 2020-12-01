@@ -45,6 +45,16 @@ import com.google.protobuf.UnsafeByteOperations;
  * The CodecProvider is a factory for Codecs.
  */
 public class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
+  static class SerializationException extends RuntimeException {
+    public SerializationException(String message, Throwable cause) {
+      super(message, cause);
+    }
+
+    public SerializationException(String message) {
+      super(message);
+    }
+  }
+
   static class EntityToBsonConverter {
     /**
      * Write the specified Entity attributes to BSON.
@@ -103,7 +113,7 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
           writer.writeBoolean(value.getBoolean());
           break;
         default:
-          throw new UnsupportedOperationException(String.format("Unsupported field type: %s", value.getType().name()));
+          throw new SerializationException(String.format("Unsupported field type: %s", value.getType().name()));
       }
     }
   }
@@ -120,7 +130,7 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
     Map<String, Entity> read(BsonReader reader) {
       final BsonType type = reader.getCurrentBsonType();
       if (BsonType.DOCUMENT != type) {
-        throw new UnsupportedOperationException(
+        throw new SerializationException(
           String.format("BSON serialized data must be a document at the root, type is %s",type));
       }
 
@@ -166,7 +176,7 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
             attributes.put(name, Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData())));
             break;
           default:
-            throw new UnsupportedOperationException(
+            throw new SerializationException(
               String.format("Unsupported BSON type: %s", reader.getCurrentBsonType().name()));
         }
       }
@@ -208,7 +218,7 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
             entities.add(Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData())));
             break;
           default:
-            throw new UnsupportedOperationException(
+            throw new SerializationException(
               String.format("Unsupported BSON type: %s", reader.getCurrentBsonType().name()));
         }
       }

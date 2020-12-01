@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import java.io.StringWriter;
 import java.util.Map;
 
+import org.bson.internal.Base64;
 import org.bson.json.JsonWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -48,8 +49,9 @@ class TestEntityToBsonConverter {
 
   @Test
   public void readBinary() {
-    read(ImmutableMap.of("value", Entity.ofBinary(new byte[]{1, 2})),
-        "{\"value\": {\"$binary\": {\"base64\": \"AQI=\", \"subType\": \"00\"}}}");
+    byte[] buffer = SampleEntities.createBinary(10);
+    read(ImmutableMap.of("value", Entity.ofBinary(buffer)),
+        String.format("{\"value\": {\"$binary\": {\"base64\": \"%s\", \"subType\": \"00\"}}}", Base64.encode(buffer)));
   }
 
   @Test
@@ -58,8 +60,24 @@ class TestEntityToBsonConverter {
   }
 
   @Test
+  public void readMap() {
+    read(ImmutableMap.of("value", Entity.ofMap(ImmutableMap.of(
+        "key", Entity.ofNumber(5),
+        "key2", Entity.ofBoolean(false),
+        "key3", Entity.ofMap(ImmutableMap.of())
+      ))), "{\"value\": {\"key\": 5, \"key2\": false, \"key3\": {}}}");
+  }
+
+  @Test
   public void readEmptyList() {
     read(ImmutableMap.of("value", Entity.ofList()), "{\"value\": []}");
+  }
+
+  @Test
+  public void readList() {
+    read(ImmutableMap.of("value",
+        Entity.ofList(Entity.ofString("myValue"), Entity.ofNumber(999), Entity.ofMap(ImmutableMap.of()))),
+        "{\"value\": [\"myValue\", 999, {}]}");
   }
 
   private void read(Map<String, Entity> attributes, String expected) {

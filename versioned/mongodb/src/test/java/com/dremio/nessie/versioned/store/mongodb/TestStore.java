@@ -154,7 +154,7 @@ public abstract class TestStore<S extends Store> {
     store.save(saveOps);
 
     saveOps.forEach(s -> {
-      final SimpleSchema schema = s.getType().getSchema();
+      final SimpleSchema<Object> schema = s.getType().getSchema();
       assertEquals(
           schema.itemToMap(s.getValue(), true),
           schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
