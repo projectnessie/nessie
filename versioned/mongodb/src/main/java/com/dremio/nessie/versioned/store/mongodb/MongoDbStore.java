@@ -123,35 +123,35 @@ public class MongoDbStore implements Store {
       latch.countDown();
     }
 
-    public Subscription getSubscription() {
+    Subscription getSubscription() {
       return subscription;
     }
 
-    public T first() {
+    T first() {
       return received.isEmpty() ? null : received.get(0);
     }
 
-    public List<T> getReceived() {
+    List<T> getReceived() {
       return received;
     }
 
-    public Throwable getError() {
+    Throwable getError() {
       return errors.isEmpty() ? null : errors.get(0);
     }
 
-    public boolean isCompleted() {
+    boolean isCompleted() {
       return isCompleted;
     }
 
-    public List<T> get(final long timeout, final TimeUnit unit) throws Throwable {
+    List<T> get(final long timeout, final TimeUnit unit) throws Throwable {
       return await(timeout, unit).getReceived();
     }
 
-    public ObservableSubscriber<T> await() throws Throwable {
+    ObservableSubscriber<T> await() throws Throwable {
       return await(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
-    public ObservableSubscriber<T> await(final long timeout, final TimeUnit unit) throws Throwable {
+    ObservableSubscriber<T> await(final long timeout, final TimeUnit unit) throws Throwable {
       subscription.request(Integer.MAX_VALUE);
       if (!latch.await(timeout, unit)) {
         throw new MongoTimeoutException("Publisher onComplete timed out");

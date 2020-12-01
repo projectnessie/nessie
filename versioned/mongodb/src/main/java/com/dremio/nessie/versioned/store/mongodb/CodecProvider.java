@@ -44,13 +44,13 @@ import com.google.protobuf.UnsafeByteOperations;
  * This apparent two way interdependency is resolved by using a CodecProvider.
  * The CodecProvider is a factory for Codecs.
  */
-public class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
+class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
   static class SerializationException extends RuntimeException {
-    public SerializationException(String message, Throwable cause) {
+    SerializationException(String message, Throwable cause) {
       super(message, cause);
     }
 
-    public SerializationException(String message) {
+    SerializationException(String message) {
       super(message);
     }
   }
@@ -237,7 +237,7 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
      * @param clazz the class type to encode/decode.
      * @param schema the schema of the class.
      */
-    public EntityCodec(Class<C> clazz, SimpleSchema<S> schema) {
+    EntityCodec(Class<C> clazz, SimpleSchema<S> schema) {
       this.clazz = clazz;
       this.schema = schema;
     }
