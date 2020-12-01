@@ -16,18 +16,35 @@
 package com.dremio.nessie.versioned.store.mongodb;
 
 import java.io.IOException;
+import java.util.Set;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
+import com.dremio.nessie.versioned.impl.Fragment;
+import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
+import com.dremio.nessie.versioned.impl.InternalRef;
+import com.dremio.nessie.versioned.impl.InternalValue;
+import com.dremio.nessie.versioned.impl.L1;
+import com.dremio.nessie.versioned.impl.L2;
+import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.tests.AbstractTestStore;
+import com.google.common.collect.ImmutableSet;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.reactivestreams.client.MongoClient;
+import com.mongodb.reactivestreams.client.MongoClients;
+import com.mongodb.reactivestreams.client.MongoCollection;
+import com.mongodb.reactivestreams.client.MongoDatabase;
 
 /**
  * A test class that contains MongoDB specific tests.
  */
 class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
-  private static String connectionString;
-  protected static final String testDatabaseName = "mydb";
+  private MongoStoreConfig mongoStoreConfig;
+  private MongoDbStore mongoDbStore;
+  private static final String testDatabaseName = "mydb";
+  private static final String adminDatabaseName = "admin";
 
   /**
    * Set up the embedded flapdoodle MongoDB server for unit tests.
@@ -35,7 +52,7 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
    */
   @BeforeAll
   public static void setupServer() throws IOException {
-    FlapDoodleStore.setupServer();
+    LocalMongo.setupServer();
   }
 
   /**
@@ -43,7 +60,30 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
    */
   @AfterAll
   public static void teardownServer() {
-    FlapDoodleStore.teardownServer();
+    LocalMongo.teardownServer();
+  }
+
+  /**
+   * Creates an instance of MongoDBStore on which tests are executed.
+   * @return the instance
+   */
+  @Override
+  protected MongoDbStore createStore() {
+    mongoStoreConfig = new MongoStoreConfig() {
+      @Override
+      public String getConnectionString() {
+        return LocalMongo.getConnectionString();
+      }
+
+      @Override
+      public String getDatabaseName() {
+        return testDatabaseName;
+      }
+    };
+
+    mongoDbStore = new MongoDbStore(mongoStoreConfig);
+
+    return mongoDbStore;
   }
 
   @Override
@@ -52,12 +92,28 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
   }
 
   @Override
-  protected MongoDbStore createStore() {
-    return FlapDoodleStore.createStore();
+  protected void postStartActions() {
+    MongoDatabase adminMongoDatabase = createBasicMongoDBStore(adminDatabaseName);
+    IndexManager.createIndexOnCollection(mongoDbStore.getDatabase(), adminMongoDatabase,
+        getCollections(mongoDbStore.getDatabase(), mongoStoreConfig));
   }
 
-  @Override
-  protected void postStartActions() {
-    FlapDoodleStore.postStartActions();
+  private MongoDatabase createBasicMongoDBStore(String databaseName) {
+    MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
+        .applyConnectionString(new ConnectionString(LocalMongo.getConnectionString()))
+        .build();
+    MongoClient mongoClient = MongoClients.create(mongoClientSettings);
+    return mongoClient.getDatabase(databaseName);
+  }
+
+  private static Set<MongoCollection> getCollections(MongoDatabase mongoDatabase, MongoStoreConfig config) {
+    return ImmutableSet.of(
+      mongoDatabase.getCollection(config.getL1TableName(), L1.class),
+      mongoDatabase.getCollection(config.getL2TableName(), L2.class),
+      mongoDatabase.getCollection(config.getL3TableName(), L3.class),
+      mongoDatabase.getCollection(config.getMetadataTableName(), InternalCommitMetadata.class),
+      mongoDatabase.getCollection(config.getKeyListTableName(), Fragment.class),
+      mongoDatabase.getCollection(config.getRefTableName(), InternalRef.class),
+      mongoDatabase.getCollection(config.getValueTableName(), InternalValue.class));
   }
 }

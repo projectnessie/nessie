@@ -41,21 +41,21 @@ public class IndexManager {
   public static void createIndexOnCollection(MongoDatabase adminDB, MongoDatabase db, Set<MongoCollection> mongoCollections) {
 
     // enable sharding on the database
-    Publisher<Document> resp = adminDB.runCommand(new org.bson.Document("enableSharding", db.getName()));
+    adminDB.runCommand(new org.bson.Document("enableSharding", db.getName()));
 
     for (MongoCollection collection : mongoCollections) {
-      List<String> keys = new ArrayList<String>();
+      List<String> keys = new ArrayList<>();
       keys.add("_id.id");
       Index index = new Index(keys, false, true);
-      List<Index> indexList = new ArrayList<Index>();
+      List<Index> indexList = new ArrayList<>();
       indexList.add(index);
-      final StoreMetadata metadata = new StoreMetadata(index, indexList);
+      final CollectionSharding metadata = new CollectionSharding(index, indexList);
       createIndexOnCollection(adminDB, db, collection, metadata);
     }
   }
 
   private static void createIndexOnCollection(MongoDatabase adminDB, MongoDatabase db,
-                                       MongoCollection mongoCollection, StoreMetadata indexInfo) {
+                                       MongoCollection mongoCollection, CollectionSharding indexInfo) {
     final Index shardKey = indexInfo.getShardKey();
 
     // create shard key

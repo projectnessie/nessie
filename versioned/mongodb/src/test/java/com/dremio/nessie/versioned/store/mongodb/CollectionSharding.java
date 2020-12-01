@@ -15,29 +15,29 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
- * top level class that holds all the indexing related info.
+ * A POJO representing attributes of a collection used in the sharding process.
  */
-public class IndexConfiguration {
-  //create these collections
-  private final Set<String> createSet;
-  // default index on the collections
-  private final StoreMetadata defaultIndex;
+public class CollectionSharding {
+  //shard key to be used
+  private final Index shardKey;
+  // list of indices
+  private final List<Index> compoundIndexInfo;
 
-  public IndexConfiguration(
-      List<String> createList,
-      StoreMetadata defaultIndex,
-      List<StoreMetadata> indexInfo) {
-    this.createSet = new HashSet<>(createList);
-    this.defaultIndex = defaultIndex;
+  public CollectionSharding(
+      Index shardKey,
+      List<Index> indexInfo) {
+    this.shardKey = shardKey;
+    this.compoundIndexInfo = indexInfo;
   }
 
-  public Set<String> getCreateSet() {
-    return createSet;
+  public Index getShardKey() {
+    return shardKey;
   }
 
+  public List<Index> getCompoundIndexInfo() {
+    return compoundIndexInfo;
+  }
 }
