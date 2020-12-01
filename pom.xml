@@ -125,7 +125,7 @@
     <hamcrest.version>2.2</hamcrest.version>
     <iceberg.version>0.10.0</iceberg.version>
     <immutables.version>2.8.9-ea-1</immutables.version>
-    <jackson.version>2.11.3</jackson.version>
+    <jackson.version>2.12.0</jackson.version>
     <javax.version>4.0.1</javax.version>
     <jaeger.version>1.3.2</jaeger.version>
     <jersey.version>2.31</jersey.version>
@@ -578,7 +578,7 @@
         <plugin>
           <groupId>com.github.eirslett</groupId>
           <artifactId>frontend-maven-plugin</artifactId>
-          <version>1.10.3</version>
+          <version>1.10.4</version>
           <configuration>
             <installDirectory>${project.build.directory}</installDirectory>
             <nodeVersion>v12.16.2</nodeVersion>
