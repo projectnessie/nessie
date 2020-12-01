@@ -15,28 +15,19 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.io.IOException;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.versioned.tests.AbstractTestStore;
-import com.mongodb.reactivestreams.client.MongoDatabase;
 
-import de.flapdoodle.embed.mongo.MongodExecutable;
-import de.flapdoodle.embed.mongo.MongodStarter;
-import de.flapdoodle.embed.mongo.config.MongodConfig;
-import de.flapdoodle.embed.mongo.config.Net;
-import de.flapdoodle.embed.mongo.distribution.Version;
-import de.flapdoodle.embed.process.runtime.Network;
-
+/**
+ * A test class that contains MongoDB specific tests.
+ */
 class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
-  private static MongodExecutable mongoExec;
   private static String connectionString;
-  private static final String testDatabaseName = "mydb";
+  protected static final String testDatabaseName = "mydb";
 
   /**
    * Set up the embedded flapdoodle MongoDB server for unit tests.
@@ -44,15 +35,7 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
    */
   @BeforeAll
   public static void setupServer() throws IOException {
-    final int port = Network.getFreeServerPort();
-    final MongodConfig config = MongodConfig.builder()
-        .version(Version.Main.PRODUCTION)
-        .net(new Net(port, Network.localhostIsIPv6()))
-        .build();
-
-    mongoExec = MongodStarter.getDefaultInstance().prepare(config);
-    mongoExec.start();
-    connectionString = "mongodb://localhost:" + port;
+    FlapDoodleStore.setupServer();
   }
 
   /**
@@ -60,24 +43,7 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
    */
   @AfterAll
   public static void teardownServer() {
-    if (null != mongoExec) {
-      mongoExec.stop();
-    }
-  }
-
-  @Override
-  protected MongoDbStore createStore() {
-    return new MongoDbStore(new MongoStoreConfig() {
-      @Override
-      public String getConnectionString() {
-        return connectionString;
-      }
-
-      @Override
-      public String getDatabaseName() {
-        return testDatabaseName;
-      }
-    });
+    FlapDoodleStore.teardownServer();
   }
 
   @Override
@@ -85,9 +51,13 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
     store.resetCollections();
   }
 
-  @Test
-  public void testDatabaseName() {
-    final MongoDatabase mongoDatabase = store.getDatabase();
-    assertEquals(testDatabaseName, mongoDatabase.getName());
+  @Override
+  protected MongoDbStore createStore() {
+    return FlapDoodleStore.createStore();
+  }
+
+  @Override
+  protected void postStartActions() {
+    FlapDoodleStore.postStartActions();
   }
 }
