@@ -32,7 +32,9 @@ import com.google.common.collect.ImmutableMap;
 /**
  * This utility class generates sample objects mapping to each enumerate in
  * {@link com.dremio.nessie.versioned.store.ValueType}.
- * It is intended to be a central place for test data generation used by multiple test suites.
+ * This should be moved to versioned/tests once it will not introduce a circular dependency. Currently this also relies
+ * on being in the com.dremio.nessie.versioned.impl package for visibility to create the L1, L3, and InternalBranch
+ * objects, and should be moved once possible.
  */
 public class SampleEntities {
   /**

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,10 +89,7 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
       switch (value.getType()) {
         case MAP:
           writer.writeStartDocument();
-          value.getMap().forEach((k, v) -> {
-            writer.writeName(k);
-            writeSingleValue(writer, v);
-          });
+          value.getMap().forEach((k, v) -> writeField(writer, k, v));
           writer.writeEndDocument();
           break;
         case LIST:
@@ -101,7 +98,7 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
           writer.writeEndArray();
           break;
         case NUMBER:
-          writer.writeInt64(Long.parseLong(value.getNumber()));
+          writer.writeInt64(value.getNumber());
           break;
         case STRING:
           writer.writeString(value.getString());
@@ -305,17 +302,28 @@ public class CodecProvider implements org.bson.codecs.configuration.CodecProvide
   private static final Map<Class<?>, Codec<?>> CODECS = new HashMap<>();
 
   static {
-    CODECS.putAll(Arrays.asList(ValueType.values()).stream().collect(
+    CODECS.putAll(Arrays.stream(ValueType.values()).collect(
         Collectors.toMap(ValueType::getObjectClass, v -> new EntityCodec<>(v.getObjectClass(), v.getSchema()))));
-    // Internal classes that are needed for encode/decode.
+    // Specific case where the ID is not encoded as a document, but directly as a binary value.
     CODECS.put(Id.class, new IdCodec());
-    CODECS.put(InternalBranch.class, new EntityCodec<>(InternalBranch.class, InternalRef.SCHEMA));
-    CODECS.put(InternalTag.class, new EntityCodec<>(InternalTag.class, InternalRef.SCHEMA));
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T> Codec<T> get(Class<T> clazz, CodecRegistry registry) {
-    return (Codec<T>)CODECS.get(clazz);
+    final Codec<T> codec = (Codec<T>)CODECS.get(clazz);
+    if (null != codec) {
+      return codec;
+    }
+
+    // In most cases, the codec for a class is directly entered, but also account for when there are subclasses for
+    // a registered class and get the CODEC for that.
+    for (Map.Entry<Class<?>, Codec<?>> entry : CODECS.entrySet()) {
+      if (entry.getKey().isAssignableFrom(clazz)) {
+        return (Codec<T>)entry.getValue();
+      }
+    }
+
+    return null;
   }
 }

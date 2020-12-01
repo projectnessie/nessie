@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.Map;
 
@@ -23,6 +23,7 @@ import org.bson.json.JsonReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableMap;
 
@@ -128,7 +129,7 @@ class TestBsonToEntityConverter {
     final BsonReader reader = getReader("{\"value\": [5, \"Str\", false, {}]}");
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
     Assertions.assertEquals(
-        Entity.ofList(Entity.ofNumber("5"), Entity.ofString("Str"), Entity.ofBoolean(false), Entity.ofMap(ImmutableMap.of())),
+        Entity.ofList(Entity.ofNumber(5), Entity.ofString("Str"), Entity.ofBoolean(false), Entity.ofMap(ImmutableMap.of())),
         entities.get("value"));
   }
 

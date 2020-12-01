@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.store.mongodb;
+package com.dremio.nessie.versioned.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -35,7 +35,12 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
 
-public abstract class TestStore<S extends Store> {
+/**
+ * Common class for testing public APIs of a Store.
+ * This class should be moved to the versioned/tests project when it will not introduce a circular dependency.
+ * @param <S> The type of the Store being tested.
+ */
+public abstract class AbstractTestStore<S extends Store> {
   protected S store;
 
   /**

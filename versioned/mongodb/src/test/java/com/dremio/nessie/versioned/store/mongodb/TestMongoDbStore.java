@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.versioned.impl.MongoStoreConfig;
+import com.dremio.nessie.versioned.tests.AbstractTestStore;
 import com.mongodb.reactivestreams.client.MongoDatabase;
 
 import de.flapdoodle.embed.mongo.MongodExecutable;
@@ -33,7 +34,7 @@ import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
 
-class TestMongoDbStore extends TestStore<MongoDbStore> {
+class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
   private static MongodExecutable mongoExec;
   private static String connectionString;
   private static final String testDatabaseName = "mydb";

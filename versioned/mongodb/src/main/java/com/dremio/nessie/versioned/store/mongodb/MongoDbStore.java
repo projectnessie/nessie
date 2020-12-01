@@ -38,7 +38,6 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.impl.CodecProvider;
 import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
@@ -170,7 +169,7 @@ public class MongoDbStore implements Store {
    * @param <T> the entity object type.
    */
   private static class UpdateEntityBson<T> implements Bson {
-    T value;
+    final T value;
 
     UpdateEntityBson(T value) {
       this.value = value;
@@ -299,7 +298,7 @@ public class MongoDbStore implements Store {
   @Override
   public void save(List<SaveOp<?>> ops) {
     final ListMultimap<MongoCollection<?>, SaveOp<?>> mm = Multimaps.index(ops, l -> collections.get(l.getType()));
-    final ListMultimap<MongoCollection<?>, Object> collectionWrites = Multimaps.transformValues(mm, s -> s.getValue());
+    final ListMultimap<MongoCollection<?>, Object> collectionWrites = Multimaps.transformValues(mm, SaveOp::getValue);
 
     final List<ObservableSubscriber<InsertManyResult>> subscribers = new ArrayList<>();
     for (MongoCollection collection : collectionWrites.keySet()) {
