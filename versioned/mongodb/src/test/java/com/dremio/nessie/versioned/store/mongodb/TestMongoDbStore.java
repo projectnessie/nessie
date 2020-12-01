@@ -23,7 +23,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.versioned.impl.MongoStoreConfig;
 import com.dremio.nessie.versioned.tests.AbstractTestStore;
 import com.mongodb.reactivestreams.client.MongoDatabase;
 
