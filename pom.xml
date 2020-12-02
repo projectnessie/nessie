@@ -455,16 +455,6 @@
         <artifactId>log4j-over-slf4j</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.mongodb</groupId>
-        <artifactId>mongodb-driver-sync</artifactId>
-        <version>${mongodb.version}</version>
-      </dependency>
-        <dependency>
-          <groupId>org.mongodb</groupId>
-          <artifactId>bson</artifactId>
-          <version>${mongodb.version}</version>
-        </dependency>
     </dependencies>
   </dependencyManagement>
 
