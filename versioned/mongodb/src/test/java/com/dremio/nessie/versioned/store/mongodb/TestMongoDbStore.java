@@ -42,10 +42,9 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
  */
 class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
   private MongoStoreConfig mongoStoreConfig;
-  private MongoDbStore mongoDbStore;
   private static final String testDatabaseName = "mydb";
   private static final String adminDatabaseName = "admin";
-  private static LocalMongo localMongo = LocalMongo.getInstance();
+  private static final LocalMongo localMongo = LocalMongo.getInstance();
 
   /**
    * Set up the embedded flapdoodle MongoDB server for unit tests.
@@ -82,9 +81,7 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
       }
     };
 
-    mongoDbStore = new MongoDbStore(mongoStoreConfig);
-
-    return mongoDbStore;
+    return new MongoDbStore(mongoStoreConfig);
   }
 
   @Override
@@ -95,8 +92,8 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
   @Override
   protected void postStartActions() {
     MongoDatabase adminMongoDatabase = createBasicMongoDBStore(adminDatabaseName);
-    IndexManager.getInstance().createIndexOnCollection(mongoDbStore.getDatabase(), adminMongoDatabase,
-        getCollections(mongoDbStore.getDatabase(), mongoStoreConfig));
+    IndexManager.getInstance().createIndexOnCollection(adminMongoDatabase, store.getDatabase(),
+        getCollections(store.getDatabase(), mongoStoreConfig));
   }
 
   /**

@@ -17,23 +17,31 @@ package com.dremio.nessie.versioned.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.LoadOp;
+import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * Common class for testing public APIs of a Store.
@@ -63,11 +71,64 @@ public abstract class AbstractTestStore<S extends Store> {
     resetStoreState();
   }
 
+  /**
+   * Create the store that will be tested.
+   * @return the newly created (unstarted) store.
+   */
   protected abstract S createStore();
 
+  /**
+   * Reset the state of the store to the state when it was newly created.
+   */
   protected abstract void resetStoreState();
 
-  protected abstract void postStartActions();
+  /**
+   * Perform any optional actions on the store after it has been started.
+   */
+  protected void postStartActions() {
+  }
+
+  @Test
+  public void load() throws ReferenceNotFoundException {
+    final Multimap<ValueType, HasId> objs = ImmutableMultimap.of(
+        ValueType.REF, SampleEntities.createBranch(),
+        ValueType.REF, SampleEntities.createBranch(),
+        ValueType.L1, SampleEntities.createL1(),
+        ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata());
+    objs.forEach((key, value) -> store.put(key, value, Optional.empty()));
+
+    final LoadStep loadStep = new LoadStep(
+      objs.entries().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
+          r -> assertEquals(e.getKey().getSchema().itemToMap(e.getValue(), true),
+              e.getKey().getSchema().itemToMap(r, true)))
+      ).collect(Collectors.toList())
+    );
+
+    store.load(loadStep);
+  }
+
+  @Test
+  public void loadNone() throws ReferenceNotFoundException {
+    final LoadStep loadStep = new LoadStep(ImmutableList.of());
+    store.load(loadStep);
+  }
+
+  @Test
+  public void loadInvalid() {
+    final Map<ValueType, HasId> objs = new HashMap<>();
+    objs.put(ValueType.REF, SampleEntities.createBranch());
+    objs.forEach((key, value) -> store.put(key, value, Optional.empty()));
+    objs.put(ValueType.REF, SampleEntities.createBranch());
+
+    final LoadStep loadStep = new LoadStep(
+      objs.entrySet().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
+        r -> assertEquals(e.getKey().getSchema().itemToMap(e.getValue(), true),
+          e.getKey().getSchema().itemToMap(r, true)))
+      ).collect(Collectors.toList())
+    );
+
+    Assertions.assertThrows(ReferenceNotFoundException.class, () -> store.load(loadStep));
+  }
 
   @Test
   public void loadSingleL1() {

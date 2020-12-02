@@ -22,7 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.bson.BsonDocument;
@@ -49,6 +50,7 @@ import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
@@ -192,9 +194,9 @@ public class MongoDbStore implements Store {
   private static final InsertManyOptions INSERT_UNORDERED = new InsertManyOptions().ordered(false);
   private static final UpdateOptions UPDATE_UPSERT = new UpdateOptions().upsert(true);
   private static final ReplaceOptions REPLACE_UPSERT = new ReplaceOptions().upsert(true);
+  private static final int SAVE_SIZE = 100_000;
+  private static final int LOAD_SIZE = 1_000;
 
-  // This should be retrievable via the API as well.
-  private final int paginationSize = 100000;
   private final MongoStoreConfig config;
   private final MongoClientSettings mongoClientSettings;
 
@@ -258,7 +260,41 @@ public class MongoDbStore implements Store {
 
   @Override
   public void load(LoadStep loadstep) throws ReferenceNotFoundException {
-    throw new UnsupportedOperationException();
+    for (LoadStep step = loadstep; step != null; step = step.getNext().orElse(null)) {
+      final List<ObservableSubscriber> subscribers = new ArrayList<>();
+      final List<LoadOp<?>> loadOps = step.getOps().collect(Collectors.toList());
+      final Map<Id, LoadOp<?>> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
+      final ListMultimap<MongoCollection<?>, LoadOp<?>> collectionToOps =
+          Multimaps.index(loadOps, l -> collections.get(l.getValueType()));
+
+      for (MongoCollection<?> collection : collectionToOps.keySet()) {
+        Lists.partition(collectionToOps.get(collection), LOAD_SIZE).forEach(ops -> {
+          final List<Id> idList = ops.stream().map(LoadOp::getId).collect(Collectors.toList());
+          final ObservableSubscriber<Object> subscriber = new ObservableSubscriber<>();
+          subscribers.add(subscriber);
+          collection.find(Filters.in(KEY_NAME, idList)).subscribe(subscriber);
+        });
+      }
+
+      int opsRemaining = loadOps.size();
+      for (ObservableSubscriber subscriber : subscribers) {
+        await(subscriber);
+        opsRemaining -= subscriber.getReceived().size();
+        for (Object o : subscriber.getReceived()) {
+          final LoadOp<?> loadOp = idLoadOps.get(((HasId)o).getId());
+          if (null == loadOp) {
+            throw new ReferenceNotFoundException(String.format("Object missing with ID: %s", ((HasId)o).getId()));
+          }
+          final ValueType type = loadOp.getValueType();
+          loadOp.loaded(type.addType(type.getSchema().itemToMap(o, true)));
+        }
+      }
+
+      if (0 != opsRemaining) {
+        throw new ReferenceNotFoundException(
+            String.format("[%d] object(s) missing. \n\nLoad Objects: %s", opsRemaining, loadOps));
+      }
+    }
   }
 
   @Override
@@ -268,7 +304,7 @@ public class MongoDbStore implements Store {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", type.name()));
     }
 
-    final UpdateResult result = await(() -> collection.updateOne(
+    final UpdateResult result = await(collection.updateOne(
         Filters.eq(Store.KEY_NAME, ((HasId)value).getId()),
         new UpdateEntityBson<>(value),
         UPDATE_UPSERT)).first();
@@ -286,7 +322,7 @@ public class MongoDbStore implements Store {
     }
 
     // TODO: Handle ConditionExpressions.
-    await(() -> collection.replaceOne(Filters.eq(Store.KEY_NAME, ((HasId)value).getId()), value, REPLACE_UPSERT));
+    await(collection.replaceOne(Filters.eq(Store.KEY_NAME, ((HasId)value).getId()), value, REPLACE_UPSERT));
   }
 
   @Override
@@ -301,7 +337,7 @@ public class MongoDbStore implements Store {
 
     final List<ObservableSubscriber<InsertManyResult>> subscribers = new ArrayList<>();
     for (MongoCollection collection : collectionWrites.keySet()) {
-      Lists.partition(collectionWrites.get(collection), paginationSize).forEach(l -> {
+      Lists.partition(collectionWrites.get(collection), SAVE_SIZE).forEach(l -> {
         final ObservableSubscriber<InsertManyResult> subscriber = new ObservableSubscriber<>();
         subscribers.add(subscriber);
         collection.insertMany(l, INSERT_UNORDERED).subscribe(subscriber);
@@ -309,21 +345,14 @@ public class MongoDbStore implements Store {
     }
 
     // Wait for each of the writes to have completed.
-    subscribers.forEach(s -> {
-      try {
-        s.await();
-      } catch (Throwable throwable) {
-        Throwables.throwIfUnchecked(throwable);
-        throw new RuntimeException(throwable);
-      }
-    });
+    awaitAll(subscribers);
   }
 
   @Override
   public <V> V loadSingle(ValueType valueType, Id id) {
-    final MongoCollection<V> collection = getCollection(valueType);
+    final MongoCollection<V> collection = (MongoCollection<V>) getCollection(valueType);
 
-    final V value = await(() -> collection.find(Filters.eq(Store.KEY_NAME, id))).first();
+    final V value = await(collection.find(Filters.eq(Store.KEY_NAME, id))).first();
     if (null == value) {
       throw new RuntimeException("Unable to load item with ID: " + id);
     }
@@ -338,8 +367,7 @@ public class MongoDbStore implements Store {
 
   @Override
   public Stream<InternalRef> getRefs() {
-    // TODO: Can this be optimized to not collect the elements before streaming them?
-    return await(() -> ((MongoCollection<InternalRef>)getCollection(ValueType.REF)).find()).getReceived().stream();
+    return await(((MongoCollection<InternalRef>)getCollection(ValueType.REF)).find()).getReceived().stream();
   }
 
   @VisibleForTesting
@@ -352,13 +380,18 @@ public class MongoDbStore implements Store {
    */
   @VisibleForTesting
   void resetCollections() {
-    collections.forEach((k, v) -> await(() -> v.deleteMany(Filters.ne("_id", "s"))));
+    collections.forEach((k, v) -> await(v.deleteMany(Filters.ne("_id", "s"))));
   }
 
-  private <T> ObservableSubscriber<T> await(Supplier<Publisher<T>> publisher) {
+  private <T> ObservableSubscriber<T> await(Publisher<T> publisher) {
+    final ObservableSubscriber<T> subscriber = new ObservableSubscriber<>();
+    publisher.subscribe(subscriber);
+    await(subscriber);
+    return subscriber;
+  }
+
+  private <T> ObservableSubscriber<T> await(ObservableSubscriber<T> subscriber) {
     try {
-      final ObservableSubscriber<T> subscriber = new ObservableSubscriber<>();
-      publisher.get().subscribe(subscriber);
       return subscriber.await();
     } catch (Throwable throwable) {
       Throwables.throwIfUnchecked(throwable);
@@ -366,8 +399,12 @@ public class MongoDbStore implements Store {
     }
   }
 
-  private MongoCollection getCollection(ValueType valueType) {
-    final MongoCollection collection = collections.get(valueType);
+  private <T> void awaitAll(List<ObservableSubscriber<T>> subscribers) {
+    subscribers.forEach(this::await);
+  }
+
+  private MongoCollection<? extends HasId> getCollection(ValueType valueType) {
+    final MongoCollection<? extends HasId> collection = collections.get(valueType);
     if (null == collection) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
     }

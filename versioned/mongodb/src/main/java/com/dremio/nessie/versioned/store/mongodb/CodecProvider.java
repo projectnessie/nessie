@@ -280,7 +280,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
   private static class IdCodec implements Codec<Id> {
     @Override
     public Id decode(BsonReader bsonReader, DecoderContext decoderContext) {
-      return Id.of(bsonReader.readBinaryData().getData());
+      return Id.of(UnsafeByteOperations.unsafeWrap(bsonReader.readBinaryData().getData()));
     }
 
     @Override
@@ -317,7 +317,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
     }
 
     // In most cases, the codec for a class is directly entered, but also account for when there are subclasses for
-    // a registered class and get the CODEC for that.
+    // a registered class and get the codec for that.
     for (Map.Entry<Class<?>, Codec<?>> entry : CODECS.entrySet()) {
       if (entry.getKey().isAssignableFrom(clazz)) {
         return (Codec<T>)entry.getValue();
