@@ -32,6 +32,9 @@ public class LocalMongo {
   private static MongodExecutable mongoExec;
   private static String connectionString;
 
+  // Singleton instance of this class.
+  private static LocalMongo instance = new LocalMongo();
+
   /**
    * Private constructor.
    */
@@ -39,10 +42,18 @@ public class LocalMongo {
   }
 
   /**
+   * Provides a singleton instance of this class.
+   * @return the class instance.
+   */
+  public static LocalMongo getInstance() {
+    return instance;
+  }
+
+  /**
    * Set up the embedded flapdoodle MongoDB server for unit tests.
    * @throws IOException if there's an issue grabbing the port or determining IP version.
    */
-  public static void setupServer() throws IOException {
+  public void setupServer() throws IOException {
     final int port = Network.getFreeServerPort();
     final MongodConfig config = MongodConfig.builder()
         .version(Version.Main.PRODUCTION)
@@ -57,13 +68,13 @@ public class LocalMongo {
   /**
    * Shut down the embedded flapdoodle MongoDB server.
    */
-  public static void teardownServer() {
+  public void teardownServer() {
     if (null != mongoExec) {
       mongoExec.stop();
     }
   }
 
-  static String getConnectionString() {
+  public String getConnectionString() {
     return connectionString;
   }
 }

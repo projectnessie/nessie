@@ -45,6 +45,7 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
   private MongoDbStore mongoDbStore;
   private static final String testDatabaseName = "mydb";
   private static final String adminDatabaseName = "admin";
+  private static LocalMongo localMongo = LocalMongo.getInstance();
 
   /**
    * Set up the embedded flapdoodle MongoDB server for unit tests.
@@ -52,7 +53,7 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
    */
   @BeforeAll
   public static void setupServer() throws IOException {
-    LocalMongo.setupServer();
+    localMongo.setupServer();
   }
 
   /**
@@ -60,7 +61,7 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
    */
   @AfterAll
   public static void teardownServer() {
-    LocalMongo.teardownServer();
+    localMongo.teardownServer();
   }
 
   /**
@@ -72,7 +73,7 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
     mongoStoreConfig = new MongoStoreConfig() {
       @Override
       public String getConnectionString() {
-        return LocalMongo.getConnectionString();
+        return localMongo.getConnectionString();
       }
 
       @Override
@@ -94,13 +95,18 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
   @Override
   protected void postStartActions() {
     MongoDatabase adminMongoDatabase = createBasicMongoDBStore(adminDatabaseName);
-    IndexManager.createIndexOnCollection(mongoDbStore.getDatabase(), adminMongoDatabase,
+    IndexManager.getInstance().createIndexOnCollection(mongoDbStore.getDatabase(), adminMongoDatabase,
         getCollections(mongoDbStore.getDatabase(), mongoStoreConfig));
   }
 
+  /**
+   * Creates a MongoDB database with minimum configuration.
+   * @param databaseName the database
+   * @return a database object
+   */
   private MongoDatabase createBasicMongoDBStore(String databaseName) {
     MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
-        .applyConnectionString(new ConnectionString(LocalMongo.getConnectionString()))
+        .applyConnectionString(new ConnectionString(localMongo.getConnectionString()))
         .build();
     MongoClient mongoClient = MongoClients.create(mongoClientSettings);
     return mongoClient.getDatabase(databaseName);

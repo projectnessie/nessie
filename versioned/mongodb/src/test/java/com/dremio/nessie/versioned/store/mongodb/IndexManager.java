@@ -29,8 +29,28 @@ import com.mongodb.client.model.Indexes;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
 
+/**
+ * A singleton class that establishes sharding and indexes on a set of collections.
+ */
 public class IndexManager {
   private static final Logger logger = Logger.getLogger(IndexManager.class.getName());
+
+  // Singleton instance of this class.
+  private static IndexManager instance = new IndexManager();
+
+  /**
+   * Private constructor.
+   */
+  private IndexManager() {
+  }
+
+  /**
+   * Provides a singleton instance of this class.
+   * @return the class instance.
+   */
+  public static IndexManager getInstance() {
+    return instance;
+  }
 
   /**
    * Establishes sharding and indexes on a set of collections.
@@ -38,23 +58,23 @@ public class IndexManager {
    * @param db the database containing collections to be sharded.
    * @param mongoCollections the collections to be sharded.
    */
-  public static void createIndexOnCollection(MongoDatabase adminDB, MongoDatabase db, Set<MongoCollection> mongoCollections) {
+  public void createIndexOnCollection(MongoDatabase adminDB, MongoDatabase db, Set<MongoCollection> mongoCollections) {
 
     // enable sharding on the database
     adminDB.runCommand(new org.bson.Document("enableSharding", db.getName()));
 
-    for (MongoCollection collection : mongoCollections) {
-      List<String> keys = new ArrayList<>();
-      keys.add("_id.id");
-      Index index = new Index(keys, false, true);
-      List<Index> indexList = new ArrayList<>();
-      indexList.add(index);
-      final CollectionSharding metadata = new CollectionSharding(index, indexList);
-      createIndexOnCollection(adminDB, db, collection, metadata);
-    }
+    List<String> keys = new ArrayList<>();
+    keys.add("_id.id");
+    Index index = new Index(keys, false, true);
+    List<Index> indexList = new ArrayList<>();
+    indexList.add(index);
+    final CollectionSharding metadata = new CollectionSharding(index, indexList);
+    mongoCollections.forEach(collection -> {
+      createIndexOnCollection(adminDB, collection, metadata);
+    });
   }
 
-  private static void createIndexOnCollection(MongoDatabase adminDB, MongoDatabase db,
+  private void createIndexOnCollection(MongoDatabase adminDB,
                                        MongoCollection mongoCollection, CollectionSharding indexInfo) {
     final Index shardKey = indexInfo.getShardKey();
 
@@ -62,7 +82,7 @@ public class IndexManager {
     if (shardKey != null) {
       final List<Bson> fieldKeys = new ArrayList<>();
 
-      shardKey.getKeys().forEach((entry) -> {
+      shardKey.getKeys().forEach(entry -> {
         fieldKeys.add(Indexes.ascending(entry));
       });
 
