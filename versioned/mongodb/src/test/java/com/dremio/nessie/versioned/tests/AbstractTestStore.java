@@ -51,7 +51,6 @@ public abstract class AbstractTestStore<S extends Store> {
     if (store == null) {
       this.store = createStore();
       this.store.start();
-      postStartActions();
     }
   }
 
@@ -66,8 +65,6 @@ public abstract class AbstractTestStore<S extends Store> {
   protected abstract S createStore();
 
   protected abstract void resetStoreState();
-
-  protected abstract void postStartActions();
 
   @Test
   public void loadSingleL1() {
