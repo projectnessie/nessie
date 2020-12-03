@@ -185,7 +185,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
     /**
      * Read a BSON array and deserialize to associated Entity types.
      * @param reader the reader to deserialize the Entities from.
-     * @return The deserialized list-type Entity, either a LIST or STRING_SET.
+     * @return The deserialized list-type Entity.
      */
     private Entity readArray(BsonReader reader) {
       reader.readStartArray();
