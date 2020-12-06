@@ -57,6 +57,11 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   }
 
   @Override
+  protected long getRandomSeed() {
+    return 8612341233543L;
+  }
+
+  @Override
   protected void resetStoreState() {
     store.resetCollections();
   }

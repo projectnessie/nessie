@@ -37,12 +37,10 @@ import com.google.common.collect.ImmutableMap;
 public class SampleEntities {
   /**
    * Create a Sample L1 entity.
-   * @param seed random seed for creation of elements of the entity.
+   * @param random object to use for randomization of entity creation.
    * @return sample L1 entity.
    */
-  public static L1 createL1(long seed) {
-    final Random random = new Random(seed);
-
+  public static L1 createL1(Random random) {
     final List<KeyMutation> mutations = ImmutableList.of(
         KeyMutation.KeyAddition.of(new InternalKey(Key.of("a", createString(random, 8), createString(random, 9))))
     );
@@ -60,12 +58,10 @@ public class SampleEntities {
 
   /**
    * Create a Sample L2 entity.
-   * @param seed random seed for creation of elements of the entity.
+   * @param random object to use for randomization of entity creation.
    * @return sample L2 entity.
    */
-  public static L2 createL2(long seed) {
-    final Random random = new Random(seed);
-
+  public static L2 createL2(Random random) {
     final List<Entity> treeList = new ArrayList<>(L2.SIZE);
     for (int i = 0; i < L2.SIZE; i++) {
       treeList.add(createIdEntity(random));
@@ -80,12 +76,10 @@ public class SampleEntities {
 
   /**
    * Create a Sample L3 entity.
-   * @param seed random seed for creation of elements of the entity.
+   * @param random object to use for randomization of entity creation.
    * @return sample L3 entity.
    */
-  public static L3 createL3(long seed) {
-    final Random random = new Random(seed);
-
+  public static L3 createL3(Random random) {
     final int size = 100;
     L3 l3 = L3.EMPTY;
     for (int i = 0; i < size; ++i) {
@@ -98,12 +92,10 @@ public class SampleEntities {
 
   /**
    * Create a Sample Fragment entity.
-   * @param seed random seed for creation of elements of the entity.
+   * @param random object to use for randomization of entity creation.
    * @return sample Fragment entity.
    */
-  public static Fragment createFragment(long seed) {
-    final Random random = new Random(seed);
-
+  public static Fragment createFragment(Random random) {
     final int size = 10;
     final List<Entity> keyList = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
@@ -120,12 +112,10 @@ public class SampleEntities {
 
   /**
    * Create a Sample Branch (InternalRef) entity.
-   * @param seed random seed for creation of elements of the entity.
+   * @param random object to use for randomization of entity creation.
    * @return sample Branch (InternalRef) entity.
    */
-  public static InternalRef createBranch(long seed) {
-    final Random random = new Random(seed);
-
+  public static InternalRef createBranch(Random random) {
     final List<Entity> treeList = new ArrayList<>(L1.SIZE);
     for (int i = 0; i < L1.SIZE; i++) {
       treeList.add(createIdEntity(random));
@@ -164,12 +154,10 @@ public class SampleEntities {
 
   /**
    * Create a Sample Tag (InternalRef) entity.
-   * @param seed random seed for creation of elements of the entity.
+   * @param random object to use for randomization of entity creation.
    * @return sample Tag (InternalRef) entity.
    */
-  public static InternalRef createTag(long seed) {
-    final Random random = new Random(seed);
-
+  public static InternalRef createTag(Random random) {
     final Map<String, Entity> attributeMap = new HashMap<>();
     attributeMap.put(InternalRef.TYPE, Entity.ofString("t"));
     attributeMap.put("id", createIdEntity(random));
@@ -181,12 +169,10 @@ public class SampleEntities {
 
   /**
    * Create a Sample CommitMetadata entity.
-   * @param seed random seed for creation of elements of the entity.
+   * @param random object to use for randomization of entity creation.
    * @return sample CommitMetadata entity.
    */
-  public static InternalCommitMetadata createCommitMetadata(long seed) {
-    final Random random = new Random(seed);
-
+  public static InternalCommitMetadata createCommitMetadata(Random random) {
     final Map<String, Entity> attributeMap = new HashMap<>();
     attributeMap.put("id", createIdEntity(random));
     attributeMap.put("value", Entity.ofBinary(createBinary(random, 6)));
@@ -196,12 +182,10 @@ public class SampleEntities {
 
   /**
    * Create a Sample Value entity.
-   * @param seed random seed for creation of elements of the entity.
+   * @param random object to use for randomization of entity creation.
    * @return sample Value entity.
    */
-  public static InternalValue createValue(long seed) {
-    final Random random = new Random(seed);
-
+  public static InternalValue createValue(Random random) {
     final Map<String, Entity> attributeMap = new HashMap<>();
     attributeMap.put("id", createIdEntity(random));
     attributeMap.put("value", Entity.ofBinary(createBinary(random, 7)));
@@ -211,22 +195,11 @@ public class SampleEntities {
 
   /**
    * Create an array of random bytes.
-   * @param seed random seed for creation of elements of the entity.
-   * @param numBytes the size of the array.
-   * @return the array of random bytes.
-   */
-  public static byte[] createBinary(long seed, int numBytes) {
-    final Random random = new Random(seed);
-    return createBinary(random, numBytes);
-  }
-
-  /**
-   * Create an array of random bytes.
    * @param random random number generator to use.
    * @param numBytes the size of the array.
    * @return the array of random bytes.
    */
-  private static byte[] createBinary(Random random, int numBytes) {
+  public static byte[] createBinary(Random random, int numBytes) {
     final byte[] buffer = new byte[numBytes];
     random.nextBytes(buffer);
     return buffer;
