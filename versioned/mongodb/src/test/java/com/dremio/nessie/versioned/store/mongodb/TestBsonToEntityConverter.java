@@ -16,6 +16,7 @@
 package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.Map;
+import java.util.Random;
 
 import org.bson.BsonReader;
 import org.bson.BsonSerializationException;
@@ -29,7 +30,7 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableMap;
 
 class TestBsonToEntityConverter {
-  private static final long SEED = -9082734792382L;
+  private static final Random RANDOM = new Random(-9082734792382L);
 
   @Test
   public void readInvalidState() {
@@ -94,7 +95,7 @@ class TestBsonToEntityConverter {
 
   @Test
   public void readBinary() {
-    final byte[] buffer = SampleEntities.createBinary(SEED, 10);
+    final byte[] buffer = SampleEntities.createBinary(RANDOM, 10);
     final BsonReader reader = getReader(String.format(
         "{\"value\": {\"$binary\": {\"base64\": \"%s\", \"subType\": \"00\"}}}", Base64.encode(buffer)));
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);

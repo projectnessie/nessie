@@ -17,6 +17,7 @@ package com.dremio.nessie.versioned.store.mongodb;
 
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.Random;
 
 import org.bson.internal.Base64;
 import org.bson.json.JsonWriter;
@@ -28,7 +29,7 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableMap;
 
 class TestEntityToBsonConverter {
-  private static final long SEED = 16234910234034L;
+  private static final Random RANDOM = new Random(16234910234034L);
 
   @Test
   public void readEmptyAttributes() {
@@ -52,7 +53,7 @@ class TestEntityToBsonConverter {
 
   @Test
   public void readBinary() {
-    byte[] buffer = SampleEntities.createBinary(SEED, 10);
+    byte[] buffer = SampleEntities.createBinary(RANDOM, 10);
     read(ImmutableMap.of("value", Entity.ofBinary(buffer)),
         String.format("{\"value\": {\"$binary\": {\"base64\": \"%s\", \"subType\": \"00\"}}}", Base64.encode(buffer)));
   }

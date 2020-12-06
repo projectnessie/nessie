@@ -28,7 +28,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.collect.Lists;
 import org.bson.BsonDocument;
 import org.bson.BsonDocumentWriter;
 import org.bson.codecs.Codec;
@@ -57,6 +56,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
