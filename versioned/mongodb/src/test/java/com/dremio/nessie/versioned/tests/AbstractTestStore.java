@@ -41,6 +41,7 @@ import com.google.common.collect.ImmutableList;
  * @param <S> The type of the Store being tested.
  */
 public abstract class AbstractTestStore<S extends Store> {
+  private static final long SEED = 98324523912L;
   protected S store;
 
   /**
@@ -68,89 +69,89 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @Test
   public void loadSingleL1() {
-    putThenLoad(SampleEntities.createL1(), ValueType.L1);
+    putThenLoad(SampleEntities.createL1(SEED), ValueType.L1);
   }
 
   @Test
   public void loadSingleL2() {
-    putThenLoad(SampleEntities.createL2(), ValueType.L2);
+    putThenLoad(SampleEntities.createL2(SEED), ValueType.L2);
   }
 
   @Test
   public void loadSingleL3() {
-    putThenLoad(SampleEntities.createL3(), ValueType.L3);
+    putThenLoad(SampleEntities.createL3(SEED), ValueType.L3);
   }
 
   @Test
   public void loadFragment() {
-    putThenLoad(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT);
+    putThenLoad(SampleEntities.createFragment(SEED), ValueType.KEY_FRAGMENT);
   }
 
   @Test
   public void loadBranch() {
-    putThenLoad(SampleEntities.createBranch(), ValueType.REF);
+    putThenLoad(SampleEntities.createBranch(SEED), ValueType.REF);
   }
 
   @Test
   public void loadTag() {
-    putThenLoad(SampleEntities.createTag(), ValueType.REF);
+    putThenLoad(SampleEntities.createTag(SEED), ValueType.REF);
   }
 
   @Test
   public void loadCommitMetadata() {
-    putThenLoad(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA);
+    putThenLoad(SampleEntities.createCommitMetadata(SEED), ValueType.COMMIT_METADATA);
   }
 
   @Test
   public void loadValue() {
-    putThenLoad(SampleEntities.createValue(), ValueType.VALUE);
+    putThenLoad(SampleEntities.createValue(SEED), ValueType.VALUE);
   }
 
   @Test
   public void putIfAbsentL1() {
-    testPutIfAbsent(SampleEntities.createL1(), ValueType.L1);
+    testPutIfAbsent(SampleEntities.createL1(SEED), ValueType.L1);
   }
 
   @Test
   public void putIfAbsentL2() {
-    testPutIfAbsent(SampleEntities.createL2(), ValueType.L2);
+    testPutIfAbsent(SampleEntities.createL2(SEED), ValueType.L2);
   }
 
   @Test
   public void putIfAbsentL3() {
-    testPutIfAbsent(SampleEntities.createL3(), ValueType.L3);
+    testPutIfAbsent(SampleEntities.createL3(SEED), ValueType.L3);
   }
 
   @Test
   public void putIfAbsentFragment() {
-    testPutIfAbsent(SampleEntities.createFragment(), ValueType.KEY_FRAGMENT);
+    testPutIfAbsent(SampleEntities.createFragment(SEED), ValueType.KEY_FRAGMENT);
   }
 
   @Test
   public void putIfAbsentBranch() {
-    testPutIfAbsent(SampleEntities.createBranch(), ValueType.REF);
+    testPutIfAbsent(SampleEntities.createBranch(SEED), ValueType.REF);
   }
 
   @Test
   public void putIfAbsentTag() {
-    testPutIfAbsent(SampleEntities.createTag(), ValueType.REF);
+    testPutIfAbsent(SampleEntities.createTag(SEED), ValueType.REF);
   }
 
   @Test
   public void putIfAbsentCommitMetadata() {
-    testPutIfAbsent(SampleEntities.createCommitMetadata(), ValueType.COMMIT_METADATA);
+    testPutIfAbsent(SampleEntities.createCommitMetadata(SEED), ValueType.COMMIT_METADATA);
   }
 
   @Test
   public void putIfAbsentValue() {
-    testPutIfAbsent(SampleEntities.createValue(), ValueType.VALUE);
+    testPutIfAbsent(SampleEntities.createValue(SEED), ValueType.VALUE);
   }
 
   @Test
   public void save() {
-    final L1 l1 = SampleEntities.createL1();
-    final InternalRef branch = SampleEntities.createBranch();
-    final InternalRef tag = SampleEntities.createTag();
+    final L1 l1 = SampleEntities.createL1(SEED);
+    final InternalRef branch = SampleEntities.createBranch(SEED);
+    final InternalRef tag = SampleEntities.createTag(SEED);
     final List<SaveOp<?>> saveOps = ImmutableList.of(
         new SaveOp<>(ValueType.L1, l1),
         new SaveOp<>(ValueType.REF, branch),

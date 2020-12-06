@@ -15,15 +15,11 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.bson.BsonBinary;
 import org.bson.BsonReader;
+import org.bson.BsonSerializationException;
 import org.bson.BsonType;
 import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
@@ -36,31 +32,22 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.UnsafeByteOperations;
 
 /**
- * Codecs provide the heart of the SerDe process to/from BSON format.
- * The Codecs are inserted into a CodecRegistry. However they may require the CodecRegistry to do their job.
- * This apparent two way interdependency is resolved by using a CodecProvider.
- * The CodecProvider is a factory for Codecs.
+ * Provider for codecs that encode/decode Nessie Entities.
  */
 class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
-  static class SerializationException extends RuntimeException {
-    SerializationException(String message, Throwable cause) {
-      super(message, cause);
-    }
-
-    SerializationException(String message) {
-      super(message);
-    }
-  }
-
+  @VisibleForTesting
   static class EntityToBsonConverter {
     /**
      * Write the specified Entity attributes to BSON.
      * @param writer the BSON writer to write to.
      * @param attributes the Entity attributes to serialize.
      */
+    @VisibleForTesting
     void write(BsonWriter writer, Map<String, Entity> attributes) {
       writer.writeStartDocument();
       attributes.forEach((k, v) -> writeField(writer, k, v));
@@ -110,11 +97,12 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
           writer.writeBoolean(value.getBoolean());
           break;
         default:
-          throw new SerializationException(String.format("Unsupported field type: %s", value.getType().name()));
+          throw new UnsupportedOperationException(String.format("Unsupported field type: %s", value.getType().name()));
       }
     }
   }
 
+  @VisibleForTesting
   static class BsonToEntityConverter {
     private static final String MONGO_ID_NAME = "_id";
 
@@ -124,10 +112,11 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
      * @param reader the reader to deserialize the Entity attributes from.
      * @return the Entity attributes.
      */
+    @VisibleForTesting
     Map<String, Entity> read(BsonReader reader) {
       final BsonType type = reader.getCurrentBsonType();
       if (BsonType.DOCUMENT != type) {
-        throw new SerializationException(
+        throw new BsonSerializationException(
           String.format("BSON serialized data must be a document at the root, type is %s",type));
       }
 
@@ -141,7 +130,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
      */
     private Map<String, Entity> readDocument(BsonReader reader) {
       reader.readStartDocument();
-      final Map<String, Entity> attributes = new HashMap<>();
+      final ImmutableMap.Builder<String, Entity> mapBuilder = ImmutableMap.builder();
 
       while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
         final String name = reader.readName();
@@ -152,34 +141,34 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
 
         switch (reader.getCurrentBsonType()) {
           case DOCUMENT:
-            attributes.put(name, Entity.ofMap(readDocument(reader)));
+            mapBuilder.put(name, Entity.ofMap(readDocument(reader)));
             break;
           case ARRAY:
-            attributes.put(name, readArray(reader));
+            mapBuilder.put(name, readArray(reader));
             break;
           case BOOLEAN:
-            attributes.put(name, Entity.ofBoolean(reader.readBoolean()));
+            mapBuilder.put(name, Entity.ofBoolean(reader.readBoolean()));
             break;
           case STRING:
-            attributes.put(name, Entity.ofString(reader.readString()));
+            mapBuilder.put(name, Entity.ofString(reader.readString()));
             break;
           case INT32:
-            attributes.put(name, Entity.ofNumber(reader.readInt32()));
+            mapBuilder.put(name, Entity.ofNumber(reader.readInt32()));
             break;
           case INT64:
-            attributes.put(name, Entity.ofNumber(reader.readInt64()));
+            mapBuilder.put(name, Entity.ofNumber(reader.readInt64()));
             break;
           case BINARY:
-            attributes.put(name, Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData())));
+            mapBuilder.put(name, Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData())));
             break;
           default:
-            throw new SerializationException(
+            throw new UnsupportedOperationException(
               String.format("Unsupported BSON type: %s", reader.getCurrentBsonType().name()));
         }
       }
 
       reader.readEndDocument();
-      return attributes;
+      return mapBuilder.build();
     }
 
     /**
@@ -189,55 +178,55 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
      */
     private Entity readArray(BsonReader reader) {
       reader.readStartArray();
-      final List<Entity> entities = new ArrayList<>();
+      final ImmutableList.Builder<Entity> listBuilder = ImmutableList.builder();
 
       while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
         switch (reader.getCurrentBsonType()) {
           case DOCUMENT:
-            entities.add(Entity.ofMap(readDocument(reader)));
+            listBuilder.add(Entity.ofMap(readDocument(reader)));
             break;
           case ARRAY:
-            entities.add(readArray(reader));
+            listBuilder.add(readArray(reader));
             break;
           case BOOLEAN:
-            entities.add(Entity.ofBoolean(reader.readBoolean()));
+            listBuilder.add(Entity.ofBoolean(reader.readBoolean()));
             break;
           case STRING:
-            entities.add(Entity.ofString(reader.readString()));
+            listBuilder.add(Entity.ofString(reader.readString()));
             break;
           case INT32:
-            entities.add(Entity.ofNumber(reader.readInt32()));
+            listBuilder.add(Entity.ofNumber(reader.readInt32()));
             break;
           case INT64:
-            entities.add(Entity.ofNumber(reader.readInt64()));
+            listBuilder.add(Entity.ofNumber(reader.readInt64()));
             break;
           case BINARY:
-            entities.add(Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData())));
+            listBuilder.add(Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData())));
             break;
           default:
-            throw new SerializationException(
+            throw new UnsupportedOperationException(
               String.format("Unsupported BSON type: %s", reader.getCurrentBsonType().name()));
         }
       }
 
       reader.readEndArray();
-      return Entity.ofList(entities);
+      return Entity.ofList(listBuilder.build());
     }
   }
 
   /**
    * Codec responsible for the encoding and decoding of Entities to a BSON objects.
    */
-  private static class EntityCodec<C, S> implements Codec<C> {
+  private static class EntityCodec<C> implements Codec<C> {
     private final Class<C> clazz;
-    private final SimpleSchema<S> schema;
+    private final SimpleSchema<C> schema;
 
     /**
      * Constructor.
      * @param clazz the class type to encode/decode.
      * @param schema the schema of the class.
      */
-    EntityCodec(Class<C> clazz, SimpleSchema<S> schema) {
+    EntityCodec(Class<C> clazz, SimpleSchema<C> schema) {
       this.clazz = clazz;
       this.schema = schema;
     }
@@ -249,9 +238,8 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
      * @return the object created from the BSON stream.
      */
     @Override
-    @SuppressWarnings("unchecked")
     public C decode(BsonReader bsonReader, DecoderContext decoderContext) {
-      return (C) schema.mapToItem(BSON_TO_ENTITY_CONVERTER.read(bsonReader));
+      return schema.mapToItem(BSON_TO_ENTITY_CONVERTER.read(bsonReader));
     }
 
     /**
@@ -262,9 +250,8 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
      * @param encoderContext not used
      */
     @Override
-    @SuppressWarnings("unchecked")
     public void encode(BsonWriter bsonWriter, C obj, EncoderContext encoderContext) {
-      ENTITY_TO_BSON_CONVERTER.write(bsonWriter, schema.itemToMap((S)obj, true));
+      ENTITY_TO_BSON_CONVERTER.write(bsonWriter, schema.itemToMap(obj, true));
     }
 
     /**
@@ -285,7 +272,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
 
     @Override
     public void encode(BsonWriter bsonWriter, Id id, EncoderContext encoderContext) {
-      bsonWriter.writeBinaryData(new BsonBinary(id.getValue().toByteArray()));
+      bsonWriter.writeBinaryData(new BsonBinary(id.toBytes()));
     }
 
     @Override
@@ -299,13 +286,16 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
   @VisibleForTesting
   static final BsonToEntityConverter BSON_TO_ENTITY_CONVERTER = new BsonToEntityConverter();
 
-  private static final Map<Class<?>, Codec<?>> CODECS = new HashMap<>();
+  private static final Map<Class<?>, Codec<?>> CODECS;
 
   static {
-    CODECS.putAll(Arrays.stream(ValueType.values()).collect(
-        Collectors.toMap(ValueType::getObjectClass, v -> new EntityCodec<>(v.getObjectClass(), v.getSchema()))));
+    final ImmutableMap.Builder<Class<?>, Codec<?>> builder = ImmutableMap.builder();
+    for (ValueType type : ValueType.values()) {
+      builder.put(type.getObjectClass(), new EntityCodec<>(type.getObjectClass(), type.getSchema()));
+    }
     // Specific case where the ID is not encoded as a document, but directly as a binary value.
-    CODECS.put(Id.class, new IdCodec());
+    builder.put(Id.class, new IdCodec());
+    CODECS = builder.build();
   }
 
   @Override

@@ -29,37 +29,42 @@ public abstract class MongoStoreConfig {
 
   @Default
   public String getRefTableName() {
-    return "nessie_refs";
+    return "refs";
   }
 
   @Default
   public String getL1TableName() {
-    return "nessie_l1";
+    return "l1";
   }
 
   @Default
   public String getL2TableName() {
-    return "nessie_l2";
+    return "l2";
   }
 
   @Default
   public String getL3TableName() {
-    return "nessie_l3";
+    return "l3";
   }
 
   @Default
   public String getValueTableName() {
-    return "nessie_values";
+    return "values";
   }
 
   @Default
   public String getKeyListTableName() {
-    return "nessie_keys";
+    return "keys";
   }
 
   @Default
   public String getMetadataTableName() {
-    return "nessie_commit_metadata";
+    return "commit_metadata";
+  }
+
+  @Default
+  public long getTimeoutMs() {
+    return 5000;
   }
 
   public static ImmutableMongoStoreConfig.Builder builder() {

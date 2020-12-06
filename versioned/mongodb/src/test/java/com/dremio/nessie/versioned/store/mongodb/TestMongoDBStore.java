@@ -15,49 +15,36 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.io.IOException;
-
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.dremio.nessie.versioned.tests.AbstractTestStore;
 
 /**
  * A test class that contains MongoDB specific tests.
  */
-class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
-  private MongoStoreConfig mongoStoreConfig;
-  private MongoDbStore mongoDbStore;
+@ExtendWith(LocalMongo.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   private static final String testDatabaseName = "mydb";
-  private static LocalMongo localMongo = LocalMongo.getInstance();
+  private String connectionString;
 
-  /**
-   * Set up the embedded flapdoodle MongoDB server for unit tests.
-   * @throws IOException if there's an issue grabbing the port or determining IP version.
-   */
   @BeforeAll
-  public static void setupServer() throws IOException {
-    localMongo.setupServer();
-  }
-
-  /**
-   * Shut down the embedded flapdoodle MongoDB server.
-   */
-  @AfterAll
-  public static void teardownServer() {
-    localMongo.teardownServer();
+  void init(String connectionString) {
+    this.connectionString = connectionString;
   }
 
   /**
    * Creates an instance of MongoDBStore on which tests are executed.
-   * @return the instance
+   * @return the store to test.
    */
   @Override
-  protected MongoDbStore createStore() {
-    mongoStoreConfig = new MongoStoreConfig() {
+  protected MongoDBStore createStore() {
+    final MongoStoreConfig config = new MongoStoreConfig() {
       @Override
       public String getConnectionString() {
-        return localMongo.getConnectionString();
+        return connectionString;
       }
 
       @Override
@@ -66,9 +53,7 @@ class TestMongoDbStore extends AbstractTestStore<MongoDbStore> {
       }
     };
 
-    mongoDbStore = new MongoDbStore(mongoStoreConfig);
-
-    return mongoDbStore;
+    return new MongoDBStore(config);
   }
 
   @Override
