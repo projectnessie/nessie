@@ -156,7 +156,7 @@ public class MongoDBStore implements Store {
     private final T value;
     private final Class<T> valueClass;
 
-    public <V> UpdateEntityBson(Class<T> valueClass, T value) {
+    public UpdateEntityBson(Class<T> valueClass, T value) {
       this.valueClass = valueClass;
       this.value = value;
     }
@@ -245,16 +245,16 @@ public class MongoDBStore implements Store {
   @Override
   public void load(LoadStep loadstep) throws ReferenceNotFoundException {
     for (LoadStep step = loadstep; step != null; step = step.getNext().orElse(null)) {
-      final List<ObservableSubscriber> subscribers = new ArrayList<>();
+      final List<ObservableSubscriber<HasId>> subscribers = new ArrayList<>();
       final List<LoadOp<?>> loadOps = step.getOps().collect(Collectors.toList());
       final Map<Id, LoadOp<?>> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
-      final ListMultimap<MongoCollection<?>, LoadOp<?>> collectionToOps =
+      final ListMultimap<MongoCollection<? extends HasId>, LoadOp<?>> collectionToOps =
           Multimaps.index(loadOps, l -> collections.get(l.getValueType()));
 
-      for (MongoCollection<?> collection : collectionToOps.keySet()) {
+      for (MongoCollection<? extends HasId> collection : collectionToOps.keySet()) {
         Lists.partition(collectionToOps.get(collection), LOAD_SIZE).forEach(ops -> {
           final List<Id> idList = ops.stream().map(LoadOp::getId).collect(Collectors.toList());
-          final ObservableSubscriber<Object> subscriber = new ObservableSubscriber<>();
+          final ObservableSubscriber<HasId> subscriber = new ObservableSubscriber<>();
           subscribers.add(subscriber);
           collection.find(Filters.in(KEY_NAME, idList)).subscribe(subscriber);
           subscriber.request();
@@ -262,7 +262,7 @@ public class MongoDBStore implements Store {
       }
 
       int opsRemaining = loadOps.size();
-      for (ObservableSubscriber subscriber : subscribers) {
+      for (ObservableSubscriber<HasId> subscriber : subscribers) {
         await(subscriber);
         opsRemaining -= subscriber.getReceived().size();
         for (Object o : subscriber.getReceived()) {
