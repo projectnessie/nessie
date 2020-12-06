@@ -15,7 +15,11 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.io.IOException;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.support.TypeBasedParameterResolver;
 
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodStarter;
@@ -25,56 +29,71 @@ import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
 
 /**
- * Creates and configures a flapdoodle MongoDB instance.
+ * Creates and configures a non-sharded flapdoodle MongoDB instance.
  */
-public class LocalMongo {
+class LocalMongo extends TypeBasedParameterResolver<String> implements AfterAllCallback, BeforeAllCallback {
+  private static final String MONGODB_INFO = "mongodbdb-local-info";
 
-  private static MongodExecutable mongoExec;
-  private static String connectionString;
+  private static class Holder {
+    private final MongodExecutable mongoExec;
+    private final String connectionString;
 
-  // Singleton instance of this class.
-  private static LocalMongo instance = new LocalMongo();
+    public Holder() throws Exception {
+      final int port = Network.getFreeServerPort();
+      final MongodConfig config = MongodConfig.builder()
+          .version(Version.Main.PRODUCTION)
+          .net(new Net(port, Network.localhostIsIPv6()))
+          .build();
 
-  /**
-   * Private constructor.
-   */
-  private LocalMongo() {
-  }
+      mongoExec = MongodStarter.getDefaultInstance().prepare(config);
+      mongoExec.start();
+      connectionString = "mongodb://localhost:" + port;
+    }
 
-  /**
-   * Provides a singleton instance of this class.
-   * @return the class instance.
-   */
-  public static LocalMongo getInstance() {
-    return instance;
-  }
-
-  /**
-   * Set up the embedded flapdoodle MongoDB server for unit tests.
-   * @throws IOException if there's an issue grabbing the port or determining IP version.
-   */
-  public void setupServer() throws IOException {
-    final int port = Network.getFreeServerPort();
-    final MongodConfig config = MongodConfig.builder()
-        .version(Version.Main.PRODUCTION)
-        .net(new Net(port, Network.localhostIsIPv6()))
-        .build();
-
-    mongoExec = MongodStarter.getDefaultInstance().prepare(config);
-    mongoExec.start();
-    connectionString = "mongodb://localhost:" + port;
-  }
-
-  /**
-   * Shut down the embedded flapdoodle MongoDB server.
-   */
-  public void teardownServer() {
-    if (null != mongoExec) {
+    private void stop() {
       mongoExec.stop();
     }
   }
 
-  public String getConnectionString() {
-    return connectionString;
+
+  @Override
+  public void afterAll(ExtensionContext extensionContext) {
+    final Holder h = getHolder(extensionContext, false);
+    if (h != null) {
+      h.stop();
+    }
+  }
+
+  @Override
+  public void beforeAll(ExtensionContext extensionContext) throws Exception {
+    final Holder holder = getHolder(extensionContext, true);
+    if (holder != null) {
+      return;
+    }
+    getStore(extensionContext).put(MONGODB_INFO, new Holder());
+  }
+
+  @Override
+  public String resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
+    return getHolder(extensionContext, true).connectionString;
+  }
+
+  private Holder getHolder(ExtensionContext context, boolean recursive) {
+    for (ExtensionContext c = context; c != null; c  = c.getParent().orElse(null)) {
+      final Holder holder = (Holder) getStore(c).get(MONGODB_INFO);
+      if (holder != null) {
+        return holder;
+      }
+
+      if (!recursive) {
+        break;
+      }
+    }
+
+    return null;
+  }
+
+  private ExtensionContext.Store getStore(ExtensionContext context) {
+    return context.getStore(ExtensionContext.Namespace.create(getClass(), context));
   }
 }

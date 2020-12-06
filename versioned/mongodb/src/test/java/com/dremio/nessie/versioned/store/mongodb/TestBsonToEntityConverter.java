@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.store.mongodb;
 import java.util.Map;
 
 import org.bson.BsonReader;
+import org.bson.BsonSerializationException;
 import org.bson.internal.Base64;
 import org.bson.json.JsonReader;
 import org.junit.jupiter.api.Assertions;
@@ -28,30 +29,32 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableMap;
 
 class TestBsonToEntityConverter {
+  private static final long SEED = -9082734792382L;
+
   @Test
   public void readInvalidState() {
     // Don't read the BSON type so the state is invalid.
-    readError(new JsonReader("1"));
+    readSerializationError(new JsonReader("1"));
   }
 
   @Test
   public void readNoDocumentRoot() {
-    readError(getReader("1"));
+    readSerializationError(getReader("1"));
   }
 
   @Test
   public void readUnsupportedType() {
-    readError(getReader("{\"$numberDouble\": \"1\"}"));
+    readUnsupportedError(getReader("{\"key\": {\"$numberDouble\": \"1\"}}"));
   }
 
   @Test
   public void readUnsupportedTypeInList() {
-    readError(getReader("{\"key\": [{\"$date\": {\"$numberLong\": \"10002348235\"}}]}"));
+    readUnsupportedError(getReader("{\"key\": [{\"$date\": {\"$numberLong\": \"10002348235\"}}]}"));
   }
 
   @Test
   public void readUnsupportedTypeInMap() {
-    readError(getReader("{\"key\": {\"mapKey\": {\"$numberDecimal\": \"1.3453\"}}}"));
+    readUnsupportedError(getReader("{\"key\": {\"mapKey\": {\"$numberDecimal\": \"1.3453\"}}}"));
   }
 
   @Test
@@ -91,7 +94,7 @@ class TestBsonToEntityConverter {
 
   @Test
   public void readBinary() {
-    byte[] buffer = SampleEntities.createBinary(10);
+    final byte[] buffer = SampleEntities.createBinary(SEED, 10);
     final BsonReader reader = getReader(String.format(
         "{\"value\": {\"$binary\": {\"base64\": \"%s\", \"subType\": \"00\"}}}", Base64.encode(buffer)));
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
@@ -136,7 +139,7 @@ class TestBsonToEntityConverter {
   @Test
   public void readListUnsupportedType() {
     final BsonReader reader = getReader("{\"value\": [{\"$numberDouble\": \"1\"}]}");
-    readError(reader);
+    readUnsupportedError(reader);
   }
 
   private BsonReader getReader(String bson) {
@@ -145,9 +148,15 @@ class TestBsonToEntityConverter {
     return reader;
   }
 
-  private void readError(BsonReader reader) {
+  private void readUnsupportedError(BsonReader reader) {
     Assertions.assertThrows(
-        CodecProvider.SerializationException.class,
+        UnsupportedOperationException.class,
+        () -> CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader));
+  }
+
+  private void readSerializationError(BsonReader reader) {
+    Assertions.assertThrows(
+        BsonSerializationException.class,
         () -> CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader));
   }
 }
