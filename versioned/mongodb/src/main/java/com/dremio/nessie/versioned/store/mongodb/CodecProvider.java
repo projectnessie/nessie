@@ -153,6 +153,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
             mapBuilder.put(name, Entity.ofString(reader.readString()));
             break;
           case INT32:
+            // Writing a small value as an Int64 will still be read as an Int32.
             mapBuilder.put(name, Entity.ofNumber(reader.readInt32()));
             break;
           case INT64:
