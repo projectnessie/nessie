@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import org.bson.BsonBinary;
@@ -37,7 +38,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.UnsafeByteOperations;
 
 /**
- * Provider for codecs that encode/decode Nessie Entities.
+ * Provider for codecs that encode/decode Nessie Values and ID.
  */
 class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
   @VisibleForTesting
@@ -291,10 +292,13 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
 
   static {
     final ImmutableMap.Builder<Class<?>, Codec<?>> builder = ImmutableMap.builder();
-    for (ValueType type : ValueType.values()) {
-      builder.put(type.getObjectClass(), new EntityCodec<>(type.getObjectClass(), type.getSchema()));
-    }
-    // Specific case where the ID is not encoded as a document, but directly as a binary value.
+    Arrays.stream(ValueType.values()).forEach(v ->
+        builder.put(v.getObjectClass(), new EntityCodec<>(v.getObjectClass(), v.getSchema()))
+    );
+
+    // Specific case where the ID is not encoded as a document, but directly as a binary value. Keep within this provider
+    // as Mongo appears to rely on the same provider for all related codecs, and splitting this to a separate provider
+    // results in the incorrect codec being used.
     builder.put(Id.class, new IdCodec());
     CODECS = builder.build();
   }
