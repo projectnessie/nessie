@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import org.bson.BsonBinary;
@@ -37,7 +38,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.UnsafeByteOperations;
 
 /**
- * Provider for codecs that encode/decode Nessie Entities.
+ * Provider for codecs that encode/decode Nessie Values and ID.
  */
 class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
   @VisibleForTesting
@@ -153,6 +154,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
             mapBuilder.put(name, Entity.ofString(reader.readString()));
             break;
           case INT32:
+            // Writing a small value as an Int64 will still be read as an Int32.
             mapBuilder.put(name, Entity.ofNumber(reader.readInt32()));
             break;
           case INT64:
@@ -267,7 +269,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
   private static class IdCodec implements Codec<Id> {
     @Override
     public Id decode(BsonReader bsonReader, DecoderContext decoderContext) {
-      return Id.of(UnsafeByteOperations.unsafeWrap(bsonReader.readBinaryData().getData()));
+      return Id.of(bsonReader.readBinaryData().getData());
     }
 
     @Override
@@ -290,10 +292,13 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
 
   static {
     final ImmutableMap.Builder<Class<?>, Codec<?>> builder = ImmutableMap.builder();
-    for (ValueType type : ValueType.values()) {
-      builder.put(type.getObjectClass(), new EntityCodec<>(type.getObjectClass(), type.getSchema()));
-    }
-    // Specific case where the ID is not encoded as a document, but directly as a binary value.
+    Arrays.stream(ValueType.values()).forEach(v ->
+        builder.put(v.getObjectClass(), new EntityCodec<>(v.getObjectClass(), v.getSchema()))
+    );
+
+    // Specific case where the ID is not encoded as a document, but directly as a binary value. Keep within this provider
+    // as Mongo appears to rely on the same provider for all related codecs, and splitting this to a separate provider
+    // results in the incorrect codec being used.
     builder.put(Id.class, new IdCodec());
     CODECS = builder.build();
   }
@@ -307,7 +312,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
     }
 
     // In most cases, the codec for a class is directly entered, but also account for when there are subclasses for
-    // a registered class and get the codec for that.
+    // a registered class and get the CODEC for that.
     for (Map.Entry<Class<?>, Codec<?>> entry : CODECS.entrySet()) {
       if (entry.getKey().isAssignableFrom(clazz)) {
         return (Codec<T>)entry.getValue();

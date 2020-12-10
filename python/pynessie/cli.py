@@ -32,19 +32,20 @@ from .model import Entries
 from .model import Entry
 from .model import EntrySchema
 from .model import MultiContents
+from .model import Operation
 from .model import Put
 from .nessie_client import _contents_key
 from .nessie_client import _format_key
 from .nessie_client import NessieClient
 
 
-@attr.s
+@attr.s(auto_attribs=True)
 class ContextObject(object):
     """Click context object."""
 
-    nessie = attr.ib(NessieClient)
-    verbose = attr.ib(bool)
-    json = attr.ib(bool)
+    nessie: NessieClient
+    verbose: bool
+    json: bool
 
 
 pass_client = click.make_pass_decorator(ContextObject)
@@ -63,9 +64,9 @@ class MutuallyExclusiveOption(Option):
     def __init__(self: "MutuallyExclusiveOption", *args: List, **kwargs: Dict) -> None:
         """Instantiated a mutually exclusive option."""
         self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
-        super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)
+        super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)  # type: ignore
 
-    def handle_parse_result(self: "MutuallyExclusiveOption", ctx: click.Context, opts: Dict, args: List) -> Tuple:
+    def handle_parse_result(self: "MutuallyExclusiveOption", ctx: click.Context, opts: Dict, args: List) -> Tuple[Any, List[str]]:
         """Ensure mutually exclusive options are not used together."""
         if self.mutually_exclusive.intersection(opts) and self.name in opts:
             raise UsageError(
@@ -84,7 +85,7 @@ class DefaultHelp(click.Command):
         if "help_option_names" not in context_settings:
             context_settings["help_option_names"] = ["-h", "--help"]
         self.help_flag = context_settings["help_option_names"][0]
-        super(DefaultHelp, self).__init__(*args, **kwargs)
+        super(DefaultHelp, self).__init__(*args, **kwargs)  # type: ignore
 
     def parse_args(self: "DefaultHelp", ctx: click.Context, args: List) -> List:
         """Ensure that help is shown if nothing else is selected."""
@@ -438,7 +439,7 @@ def contents(ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[
 
 
 def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: str) -> MultiContents:
-    contents_altered = list()
+    contents_altered: List[Operation] = list()
     for raw_key in keys:
         key = _format_key(raw_key)
         try:
@@ -499,8 +500,8 @@ def _format_keys_json(keys: Entries, *expected_keys: str) -> List[Entry]:
 def _format_keys(keys: Entries, *key: str) -> str:
     results = defaultdict(list)
     result_str = ""
-    for k in keys.entries:
-        results[k.kind].append(k.name)
+    for e in keys.entries:
+        results[e.kind].append(e.name)
     for k in results.keys():
         result_str += k + ":\n"
         for v in results[k]:
