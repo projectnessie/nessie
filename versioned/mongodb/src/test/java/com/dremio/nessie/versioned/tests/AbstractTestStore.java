@@ -17,11 +17,10 @@ package com.dremio.nessie.versioned.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterEach;
@@ -50,14 +49,24 @@ import com.google.common.collect.Multimap;
  * @param <S> The type of the Store being tested.
  */
 public abstract class AbstractTestStore<S extends Store> {
-  private Random random;
+  private static class CreatorPair {
+    final ValueType type;
+    final Supplier<HasId> supplier;
+
+    CreatorPair(ValueType type, Supplier<HasId> supplier) {
+      this.type = type;
+      this.supplier = supplier;
+    }
+  }
+
+  protected Random random;
   protected S store;
 
   /**
    * Create and start the store, if not already done.
    */
   @BeforeEach
-  public void setup() {
+  void setup() {
     if (store == null) {
       this.store = createStore();
       this.store.start();
@@ -69,7 +78,7 @@ public abstract class AbstractTestStore<S extends Store> {
    * Reset the state of the store.
    */
   @AfterEach
-  public void reset() {
+  void reset() {
     resetStoreState();
   }
 
@@ -84,129 +93,151 @@ public abstract class AbstractTestStore<S extends Store> {
   protected abstract void resetStoreState();
 
   @Test
-  public void load() throws ReferenceNotFoundException {
-    final Multimap<ValueType, HasId> objs = ImmutableMultimap.of(
-        ValueType.REF, SampleEntities.createBranch(random),
-        ValueType.REF, SampleEntities.createBranch(random),
-        ValueType.L1, SampleEntities.createL1(random),
-        ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
-    objs.forEach((key, value) -> store.put(key, value, Optional.empty()));
+  void load() throws ReferenceNotFoundException {
+    final ImmutableList<CreatorPair> creators = ImmutableList.<CreatorPair>builder()
+        .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createTag(random)))
+        .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createBranch(random)))
+        .add(new CreatorPair(ValueType.COMMIT_METADATA, () -> SampleEntities.createCommitMetadata(random)))
+        .add(new CreatorPair(ValueType.VALUE, () -> SampleEntities.createValue(random)))
+        .add(new CreatorPair(ValueType.L1, () -> SampleEntities.createL1(random)))
+        .add(new CreatorPair(ValueType.L2, () -> SampleEntities.createL2(random)))
+        .add(new CreatorPair(ValueType.L3, () -> SampleEntities.createL3(random)))
+        .add(new CreatorPair(ValueType.KEY_FRAGMENT, () -> SampleEntities.createFragment(random)))
+        .build();
 
-    final LoadStep loadStep = new LoadStep(
-        objs.entries().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
-            r -> assertEquals(e.getKey().getSchema().itemToMap(e.getValue(), true),
-                e.getKey().getSchema().itemToMap(r, true)))
-        ).collect(Collectors.toList())
-    );
+    final ImmutableMultimap.Builder<ValueType, HasId> builder = ImmutableMultimap.builder();
+    for (int i = 0; i < 100; ++i) {
+      final int index = i % creators.size();
+      final HasId obj = creators.get(index).supplier.get();
+      builder.put(creators.get(index).type, obj);
+    }
 
-    store.load(loadStep);
+    final Multimap<ValueType, HasId> objs = builder.build();
+    objs.forEach(this::putThenLoad);
+
+    testLoad(objs);
   }
 
   @Test
-  public void loadNone() throws ReferenceNotFoundException {
-    final LoadStep loadStep = new LoadStep(ImmutableList.of());
-    store.load(loadStep);
+  void loadSteps() throws ReferenceNotFoundException {
+    final Multimap<ValueType, HasId> objs = ImmutableMultimap.<ValueType, HasId>builder()
+        .put(ValueType.REF, SampleEntities.createBranch(random))
+        .put(ValueType.REF, SampleEntities.createBranch(random))
+        .put(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random))
+        .build();
+
+    final Multimap<ValueType, HasId> objs2 = ImmutableMultimap.<ValueType, HasId>builder()
+        .put(ValueType.L3, SampleEntities.createL3(random))
+        .put(ValueType.VALUE, SampleEntities.createValue(random))
+        .put(ValueType.VALUE, SampleEntities.createValue(random))
+        .put(ValueType.VALUE, SampleEntities.createValue(random))
+        .put(ValueType.REF, SampleEntities.createTag(random))
+        .build();
+
+    objs.forEach(this::putThenLoad);
+    objs2.forEach(this::putThenLoad);
+
+    final LoadStep step2 = createTestLoadStep(objs2);
+    final LoadStep step1 = createTestLoadStep(objs, Optional.of(step2));
+
+    store.load(step1);
   }
 
   @Test
-  public void loadInvalid() {
-    final Map<ValueType, HasId> objs = new HashMap<>();
-    objs.put(ValueType.REF, SampleEntities.createBranch(random));
-    objs.forEach((key, value) -> store.put(key, value, Optional.empty()));
-    objs.put(ValueType.REF, SampleEntities.createBranch(random));
-
-    final LoadStep loadStep = new LoadStep(
-        objs.entrySet().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
-            r -> assertEquals(e.getKey().getSchema().itemToMap(e.getValue(), true),
-                e.getKey().getSchema().itemToMap(r, true)))
-        ).collect(Collectors.toList())
-    );
-
-    Assertions.assertThrows(ReferenceNotFoundException.class, () -> store.load(loadStep));
+  void loadNone() throws ReferenceNotFoundException {
+    testLoad(ImmutableMultimap.of());
   }
 
   @Test
-  public void loadSingleL1() {
-    putThenLoad(SampleEntities.createL1(random), ValueType.L1);
+  void loadInvalid() {
+    putThenLoad(ValueType.REF, SampleEntities.createBranch(random));
+    final Multimap<ValueType, HasId> objs = ImmutableMultimap.of(ValueType.REF, SampleEntities.createBranch(random));
+
+    Assertions.assertThrows(ReferenceNotFoundException.class, () -> testLoad(objs));
   }
 
   @Test
-  public void loadSingleL2() {
-    putThenLoad(SampleEntities.createL2(random), ValueType.L2);
+  void loadSingleL1() {
+    putThenLoad(ValueType.L1, SampleEntities.createL1(random));
   }
 
   @Test
-  public void loadSingleL3() {
-    putThenLoad(SampleEntities.createL3(random), ValueType.L3);
+  void loadSingleL2() {
+    putThenLoad(ValueType.L2, SampleEntities.createL2(random));
   }
 
   @Test
-  public void loadFragment() {
-    putThenLoad(SampleEntities.createFragment(random), ValueType.KEY_FRAGMENT);
+  void loadSingleL3() {
+    putThenLoad(ValueType.L3, SampleEntities.createL3(random));
   }
 
   @Test
-  public void loadBranch() {
-    putThenLoad(SampleEntities.createBranch(random), ValueType.REF);
+  void loadFragment() {
+    putThenLoad(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random));
   }
 
   @Test
-  public void loadTag() {
-    putThenLoad(SampleEntities.createTag(random), ValueType.REF);
+  void loadBranch() {
+    putThenLoad(ValueType.REF, SampleEntities.createBranch(random));
   }
 
   @Test
-  public void loadCommitMetadata() {
-    putThenLoad(SampleEntities.createCommitMetadata(random), ValueType.COMMIT_METADATA);
+  void loadTag() {
+    putThenLoad(ValueType.REF, SampleEntities.createTag(random));
   }
 
   @Test
-  public void loadValue() {
-    putThenLoad(SampleEntities.createValue(random), ValueType.VALUE);
+  void loadCommitMetadata() {
+    putThenLoad(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
   }
 
   @Test
-  public void putIfAbsentL1() {
-    testPutIfAbsent(SampleEntities.createL1(random), ValueType.L1);
+  void loadValue() {
+    putThenLoad(ValueType.VALUE, SampleEntities.createValue(random));
   }
 
   @Test
-  public void putIfAbsentL2() {
-    testPutIfAbsent(SampleEntities.createL2(random), ValueType.L2);
+  void putIfAbsentL1() {
+    testPutIfAbsent(ValueType.L1, SampleEntities.createL1(random));
   }
 
   @Test
-  public void putIfAbsentL3() {
-    testPutIfAbsent(SampleEntities.createL3(random), ValueType.L3);
+  void putIfAbsentL2() {
+    testPutIfAbsent(ValueType.L2, SampleEntities.createL2(random));
   }
 
   @Test
-  public void putIfAbsentFragment() {
-    testPutIfAbsent(SampleEntities.createFragment(random), ValueType.KEY_FRAGMENT);
+  void putIfAbsentL3() {
+    testPutIfAbsent(ValueType.L3, SampleEntities.createL3(random));
   }
 
   @Test
-  public void putIfAbsentBranch() {
-    testPutIfAbsent(SampleEntities.createBranch(random), ValueType.REF);
+  void putIfAbsentFragment() {
+    testPutIfAbsent(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random));
   }
 
   @Test
-  public void putIfAbsentTag() {
-    testPutIfAbsent(SampleEntities.createTag(random), ValueType.REF);
+  void putIfAbsentBranch() {
+    testPutIfAbsent(ValueType.REF, SampleEntities.createBranch(random));
   }
 
   @Test
-  public void putIfAbsentCommitMetadata() {
-    testPutIfAbsent(SampleEntities.createCommitMetadata(random), ValueType.COMMIT_METADATA);
+  void putIfAbsentTag() {
+    testPutIfAbsent(ValueType.REF, SampleEntities.createTag(random));
   }
 
   @Test
-  public void putIfAbsentValue() {
-    testPutIfAbsent(SampleEntities.createValue(random), ValueType.VALUE);
+  void putIfAbsentCommitMetadata() {
+    testPutIfAbsent(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
   }
 
   @Test
-  public void save() {
+  void putIfAbsentValue() {
+    testPutIfAbsent(ValueType.VALUE, SampleEntities.createValue(random));
+  }
+
+  @Test
+  void save() {
     final L1 l1 = SampleEntities.createL1(random);
     final InternalRef branch = SampleEntities.createBranch(random);
     final InternalRef tag = SampleEntities.createTag(random);
@@ -225,21 +256,39 @@ public abstract class AbstractTestStore<S extends Store> {
     });
   }
 
-  private <T extends HasId> void putThenLoad(T sample, ValueType type) {
+  protected <T extends HasId> void putThenLoad(ValueType type, T sample) {
     store.put(type, sample, Optional.empty());
-    testLoad(sample, type);
+    testLoadSingle(type, sample);
   }
 
-  private <T extends HasId> void testLoad(T sample, ValueType type) {
+  protected void testLoad(Multimap<ValueType, HasId> objs) throws ReferenceNotFoundException {
+    store.load(createTestLoadStep(objs));
+  }
+
+  LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs) {
+    return createTestLoadStep(objs, Optional.empty());
+  }
+
+  LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs, Optional<LoadStep> next) {
+    return new LoadStep(
+        objs.entries().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
+            r -> assertEquals(e.getKey().getSchema().itemToMap(e.getValue(), true),
+                e.getKey().getSchema().itemToMap(r, true)))
+        ).collect(Collectors.toList()),
+        () -> next
+    );
+  }
+
+  protected <T extends HasId> void testLoadSingle(ValueType type, T sample) {
     final T read = store.loadSingle(type, sample.getId());
     final SimpleSchema<T> schema = type.getSchema();
     assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
   }
 
-  private <T extends HasId> void testPutIfAbsent(T sample, ValueType type) {
+  protected <T extends HasId> void testPutIfAbsent(ValueType type, T sample) {
     Assertions.assertTrue(store.putIfAbsent(type, sample));
-    testLoad(sample, type);
+    testLoadSingle(type, sample);
     Assertions.assertFalse(store.putIfAbsent(type, sample));
-    testLoad(sample, type);
+    testLoadSingle(type, sample);
   }
 }

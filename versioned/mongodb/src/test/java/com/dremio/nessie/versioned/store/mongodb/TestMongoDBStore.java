@@ -15,11 +15,19 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.impl.SampleEntities;
+import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.dremio.nessie.versioned.tests.AbstractTestStore;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * A test class that contains MongoDB specific tests.
@@ -33,6 +41,13 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   @BeforeAll
   void init(String connectionString) {
     this.connectionString = connectionString;
+  }
+
+  @AfterAll
+  void close() {
+    if (null != store) {
+      store.close();
+    }
   }
 
   /**
@@ -64,5 +79,20 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   @Override
   protected void resetStoreState() {
     store.resetCollections();
+  }
+
+  @Test
+  void loadPagination() throws ReferenceNotFoundException {
+    final ImmutableMultimap.Builder<ValueType, HasId> builder = ImmutableMultimap.builder();
+    for (int i = 0; i < (10 + MongoDBStore.LOAD_SIZE); ++i) {
+      // Only create a single type as this is meant to test the pagination within Mongo, not the variety. Variety is
+      // taken care of by a test in AbstractTestStore.
+      builder.put(ValueType.REF, SampleEntities.createTag(random));
+    }
+
+    final Multimap<ValueType, HasId> objs = builder.build();
+    objs.forEach(this::putThenLoad);
+
+    testLoad(objs);
   }
 }
