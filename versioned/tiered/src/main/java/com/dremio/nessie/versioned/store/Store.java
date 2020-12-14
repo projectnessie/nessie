@@ -75,7 +75,7 @@ public interface Store extends AutoCloseable {
    * @throws ConditionFailedException If the condition provided didn't match the current state of the value.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased);
+  <V> void put(ValueType type, V value, Optional<ConditionExpression> condition);
 
   /**
    * Delete a value.
@@ -94,6 +94,7 @@ public interface Store extends AutoCloseable {
    *
    * <p>Saves a large number of items. This has the same insert/update behavior as a single value
    * put.
+   *
    * <p>Note that that this operation is not guaranteed to be atomic. It could fail with a portion
    * of the provided input saved and a portion left unsaved.
    *
