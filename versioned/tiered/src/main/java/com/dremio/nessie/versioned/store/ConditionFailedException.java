@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.store;
 /**
  * Thrown when a conditional operation fails.
  */
+@SuppressWarnings("serial")
 public class ConditionFailedException extends StoreException {
 
   public ConditionFailedException(String message, Throwable cause) {

@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.store;
 /**
  * Thrown when an expected object does not exist.
  */
+@SuppressWarnings("serial")
 public class NotFoundException extends StoreException {
 
   public NotFoundException(String message, Throwable cause) {

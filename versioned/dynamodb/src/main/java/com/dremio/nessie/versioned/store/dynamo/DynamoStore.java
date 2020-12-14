@@ -49,6 +49,7 @@ import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
@@ -149,7 +150,7 @@ public class DynamoStore implements Store {
         putIfAbsent(ValueType.L3, L3.EMPTY);
       }
 
-    } catch (RuntimeException ex) {
+    } catch (DynamoDbException ex) {
       throw new StoreOperationException("Failure connection to Dynamo", ex);
     }
   }
@@ -317,7 +318,12 @@ public class DynamoStore implements Store {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
-      throw new StoreOperationException("Failure during save", e.getCause());
+      if (e.getCause() instanceof DynamoDbException) {
+        throw new StoreOperationException("Dynamo failure during save.", e.getCause());
+      } else {
+        Throwables.throwIfUnchecked(e.getCause());
+        throw new RuntimeException(e.getCause());
+      }
     }
   }
 

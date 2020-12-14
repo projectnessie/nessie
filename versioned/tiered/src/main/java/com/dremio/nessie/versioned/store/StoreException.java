@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.store;
 
+@SuppressWarnings("serial")
 public class StoreException extends RuntimeException {
 
   public StoreException(String message, Throwable cause) {
