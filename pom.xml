@@ -141,6 +141,7 @@
     <serverless.version>1.5</serverless.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <slf4j.version>1.7.30</slf4j.version>
+    <scala2.12.version>2.12.12</scala2.12.version>
     <spark2.version>2.4.2</spark2.version>
     <spark2.jersey.version>2.22.2</spark2.jersey.version>
     <spark2.jackson.version>2.8.8</spark2.jackson.version>
@@ -608,6 +609,17 @@
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
           <version>4.4.0</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.scala-lang</groupId>
+              <artifactId>scala-library</artifactId>
+              <version>${scala2.12.version}</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <sendJavaToScalac>false</sendJavaToScalac>
+            <scalaVersion>${scala2.12.version}</scalaVersion>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
