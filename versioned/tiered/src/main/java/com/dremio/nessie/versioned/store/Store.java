@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
@@ -62,7 +61,7 @@ public interface Store extends AutoCloseable {
    * @param update The update expression to use.
    * @param condition The optional condition to consider before applying the update.
    * @return The complete value if the update was successful, otherwise Optional.empty()
-   * @throws ReferenceNotFoundException Thrown if the underlying id doesn't have an object.
+   * @throws NotFoundException Thrown if the underlying id doesn't have an object.
    */
   <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
       throws NotFoundException, StoreOperationException;
