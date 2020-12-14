@@ -31,6 +31,7 @@
   <name>Nessie - Versioned - Parent</name>
 
   <modules>
+    <module>tiered</module>
     <module>dynamodb</module>
     <module>jgit</module>
     <module>memory</module>

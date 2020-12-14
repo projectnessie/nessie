@@ -65,10 +65,12 @@ import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.SetClause;
+import com.dremio.nessie.versioned.store.ConditionFailedException;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -76,9 +78,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
-
-import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
-import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 
 /**
  * A version store that uses a tree of levels to store version information.
@@ -129,7 +128,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     final L1 l1;
     try {
       l1 = store.loadSingle(ValueType.L1, Id.of(targetHash.get()));
-    } catch (ResourceNotFoundException ex) {
+    } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException("Unable to find target hash.", ex);
     }
 
@@ -149,7 +148,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
       Id id = ensureValidL1(ref.getBranch()).getId();
       return WithHash.of(id.toHash(), BranchName.of(ref.getBranch().getName()));
-    } catch (ResourceNotFoundException ex) {
+    } catch (NotFoundException ex) {
       // ignore. could be a hash.
     }
 
@@ -172,7 +171,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     final InternalRef iref;
     try {
       iref = store.loadSingle(ValueType.REF, id.getId());
-    } catch (ResourceNotFoundException ex) {
+    } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException(String.format("Unable to find '%s'.", ref.getName()), ex);
     }
 
@@ -227,9 +226,13 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       final PartialTree<DATA> expected = expectedHash.isPresent()
           ? PartialTree.of(serializer, InternalRefId.ofHash(expectedHash.get()), keys) : current;
 
-      // load both trees (excluding values)
-      store.load(current.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
-          .combine(expected.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
+      try {
+        // load both trees (excluding values)
+        store.load(current.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
+            .combine(expected.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
+      } catch (NotFoundException ex) {
+        throw new ReferenceNotFoundException("Unable to find requested ref.", ex);
+      }
 
       List<OperationHolder> holders = ops.stream().map(o -> new OperationHolder(current, expected, o)).collect(Collectors.toList());
       List<InconsistentValue> mismatches = holders.stream()
@@ -300,7 +303,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       HistoryRetriever hr = new HistoryRetriever(store, startingL1, Id.EMPTY, false, true, false);
       return hr.getStream().map(hi -> WithHash.of(hi.getId().toHash(), metadataSerializer.fromBytes(hi.getMetadata().getBytes())));
 
-    } catch (ResourceNotFoundException ex) {
+    } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException("Unable to find request reference.", ex);
     }
   }
@@ -340,7 +343,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       } else {
         return iref.getTag().getCommit().toHash();
       }
-    } catch (ResourceNotFoundException ex) {
+    } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException(String.format("Unable to find ref %s", ref.getName()), ex);
     }
   }
@@ -364,7 +367,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     final L1 l1;
     try {
       l1 = store.loadSingle(ValueType.L1, newId);
-    } catch (ResourceNotFoundException ex) {
+    } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException("Unable to find target hash.");
     }
 
@@ -399,9 +402,9 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     try {
       store.put(ValueType.REF, toSave, Optional.of(condition));
-    } catch (ResourceNotFoundException ex) {
+    } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException("The current tag", ex);
-    } catch (ConditionalCheckFailedException ex) {
+    } catch (ConditionFailedException ex) {
       if (currentTarget.isPresent()) {
         throw new ReferenceConflictException(
             String.format("Unable to assign ref %s. The reference has changed, doesn't "
@@ -543,7 +546,12 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         // if no expected branch hash is provided, use the head of the branch as the basis for the rebase.
         loadOps.add(new LoadOp<InternalRef>(ValueType.REF, branchId.getId(), r -> toPtr.set(ensureValidL1(r.getBranch()))));
       }
-      store.load(new LoadStep(loadOps));
+
+      try {
+        store.load(new LoadStep(loadOps));
+      } catch (NotFoundException ex) {
+        throw new ReferenceNotFoundException("Unable to find expected items.");
+      }
 
       if (expectedBranchHash.isPresent() && branch.get().getType() != Type.BRANCH) {
         // since we're doing a InternalRef load, we could get a tag value back (instead of branch). Throw if this happens.

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store.dynamo;
 
 import java.net.URI;
 import java.util.Optional;

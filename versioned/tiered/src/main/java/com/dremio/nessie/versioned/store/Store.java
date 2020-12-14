@@ -28,7 +28,7 @@ public interface Store extends AutoCloseable {
 
   String KEY_NAME = "id";
 
-  void start();
+  void start() throws StoreOperationException;
 
   @Override
   void close();
@@ -41,17 +41,18 @@ public interface Store extends AutoCloseable {
    *
    * @param loadstep The step to load
    */
-  void load(LoadStep loadstep) throws ReferenceNotFoundException;
+  void load(LoadStep loadstep) throws NotFoundException, StoreOperationException;
 
-  <V> boolean putIfAbsent(ValueType type, V value);
+  <V> boolean putIfAbsent(ValueType type, V value) throws StoreOperationException;
 
-  <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased);
+  <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased)
+      throws ConditionFailedException, StoreOperationException;
 
-  boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition);
+  boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) throws NotFoundException, StoreOperationException;
 
-  void save(List<SaveOp<?>> ops);
+  void save(List<SaveOp<?>> ops) throws StoreOperationException;
 
-  <V> V loadSingle(ValueType valueType, Id id);
+  <V> V loadSingle(ValueType valueType, Id id) throws NotFoundException;
 
   /**
    * Do a conditional update. If the condition succeeds, return the values in the object. If it fails, return a Optional.empty().
@@ -64,7 +65,7 @@ public interface Store extends AutoCloseable {
    * @throws ReferenceNotFoundException Thrown if the underlying id doesn't have an object.
    */
   <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
-      throws ReferenceNotFoundException;
+      throws NotFoundException, StoreOperationException;
 
-  Stream<InternalRef> getRefs();
+  Stream<InternalRef> getRefs() throws StoreOperationException;
 }

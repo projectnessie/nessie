@@ -25,26 +25,37 @@
     <version>0.2.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-versioned-mongodb</artifactId>
+  <artifactId>nessie-versioned-tiered</artifactId>
 
-  <name>Nessie - Versioned - MongoDB</name>
+  <name>Nessie - Versioned - TieredVersionStore</name>
 
   <dependencies>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-tiered</artifactId>
-      <version>${project.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-spi</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-tests</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.immutables</groupId>
+      <artifactId>value</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -61,40 +72,5 @@
       <artifactId>logback-core</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.mongodb</groupId>
-      <artifactId>mongodb-driver-reactivestreams</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.mongodb</groupId>
-      <artifactId>bson</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>de.flapdoodle.embed</groupId>
-      <artifactId>de.flapdoodle.embed.mongo</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.immutables</groupId>
-      <artifactId>value</artifactId>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>

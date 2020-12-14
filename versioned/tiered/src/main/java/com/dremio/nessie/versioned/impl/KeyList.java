@@ -33,6 +33,7 @@ import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.StoreException;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -71,7 +72,7 @@ abstract class KeyList {
         .mutations(mutations).build();
   }
 
-  abstract Stream<InternalKey> getKeys(L1 startingPoint, Store store);
+  abstract Stream<InternalKey> getKeys(L1 startingPoint, Store store) throws StoreException;
 
 
   abstract List<KeyMutation> getMutations();
@@ -322,7 +323,7 @@ abstract class KeyList {
     }
 
     @Override
-    Stream<InternalKey> getKeys(L1 startingPoint, Store store) {
+    Stream<InternalKey> getKeys(L1 startingPoint, Store store) throws StoreException {
       return fragmentIds.stream().flatMap(f -> {
         Fragment fragment = store.loadSingle(ValueType.KEY_FRAGMENT, f);
         return fragment.getKeys().stream();
