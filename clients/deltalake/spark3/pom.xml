@@ -188,17 +188,6 @@
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
-        <configuration>
-          <sendJavaToScalac>false</sendJavaToScalac>
-          <scalaVersion>${scala2.12.version}</scalaVersion>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-            <version>${scala2.12.version}</version>
-          </dependency>
-        </dependencies>
         <executions>
           <execution>
             <id>scala-compile-first</id>
