@@ -108,8 +108,8 @@ abstract class LocalMongoBase extends TypeBasedParameterResolver<String> impleme
   }
 
   private ServerHolder getHolder(ExtensionContext context, boolean recursive) {
-    for (ExtensionContext c = context; c != null; c  = c.getParent().orElse(null)) {
-      final ServerHolder holder = (ServerHolder) getStore(c).get(getIdentifier());
+    for (; context != null; context = context.getParent().orElse(null)) {
+      final ServerHolder holder = (ServerHolder) getStore(context).get(getIdentifier());
       if (holder != null) {
         return holder;
       }

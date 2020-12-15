@@ -57,8 +57,8 @@ import de.flapdoodle.embed.process.runtime.Network;
 class LocalMongoS extends LocalMongoBase {
   private static final String MONGODB_INFO = "mongodbS-local-info";
   private static final String REPLICA_SET_CONFIG_NAME = "config_replicas";
-  private static final String REPLICA_SET_NAME_1 = "replicas_1";
-  private static final String REPLICA_SET_NAME_2 = "replicas_2";
+  private static final String REPLICA_SET_SHARD_NAME_1 = "replicas_1";
+  private static final String REPLICA_SET_SHARD_NAME_2 = "replicas_2";
   private static final int NUM_REPLICAS = 3;
 
   private static class MongoSHolder implements ServerHolder {
@@ -96,7 +96,7 @@ class LocalMongoS extends LocalMongoBase {
         }
       }));
 
-      final Map<String, List<MongodConfig>> replicaSets = createShardSets(REPLICA_SET_NAME_1, REPLICA_SET_NAME_2);
+      final Map<String, List<MongodConfig>> replicaSets = createShardSets(REPLICA_SET_SHARD_NAME_1, REPLICA_SET_SHARD_NAME_2);
       for (Map.Entry<String, List<MongodConfig>> entry : replicaSets.entrySet()) {
         futureBuilder.add(service.submit(() -> {
           try {
