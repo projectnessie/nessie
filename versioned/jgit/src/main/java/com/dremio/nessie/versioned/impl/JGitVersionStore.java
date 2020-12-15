@@ -95,14 +95,14 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   private static final String SLASH = "/";
 
   private final Repository repository;
-  private final StoreWorker<TABLE, METADATA> storeWorker;
+  private final StoreWorker<TABLE, METADATA, ?> storeWorker;
   private final ObjectId emptyObject;
 
   /**
    * Construct a JGitVersionStore.
    */
   @Inject
-  public JGitVersionStore(Repository repository, StoreWorker<TABLE, METADATA> storeWorker) {
+  public JGitVersionStore(Repository repository, StoreWorker<TABLE, METADATA, ?> storeWorker) {
     this.storeWorker = storeWorker;
     this.repository = repository;
     ObjectId objectId;
@@ -189,7 +189,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     toHash(branch);
     try {
       testExpectedHash(branch, expectedHash);
-      ObjectId commits = TreeBuilder.commitObjects(operations, repository, storeWorker.getValueSerializer(), emptyObject);
+      ObjectId commits = TreeBuilder.commitObjects(operations, repository, storeWorker.getValueWorker(), emptyObject);
       ObjectId treeId = repository.resolve(expectedHash.map(Hash::asString).orElse(branch.getName()) + "^{tree}");
       if (treeId == null) {
         throw ReferenceNotFoundException.forReference(expectedHash.map(x -> (Ref) x).orElse(branch));
@@ -519,7 +519,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         treeWalk.setFilter(PathFilter.create(table));
         while (treeWalk.next()) {
           byte[] bytes = getTable(treeWalk, repository);
-          return storeWorker.getValueSerializer().fromBytes(ByteString.copyFrom(bytes));
+          return storeWorker.getValueWorker().fromBytes(ByteString.copyFrom(bytes));
         }
       }
       return null;
@@ -541,7 +541,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         while (treeWalk.next()) {
           if (keys.containsKey(treeWalk.getPathString())) {
             byte[] bytes = getTable(treeWalk, repository);
-            tables.put(keys.get(treeWalk.getPathString()), storeWorker.getValueSerializer().fromBytes(ByteString.copyFrom(bytes)));
+            tables.put(keys.get(treeWalk.getPathString()), storeWorker.getValueWorker().fromBytes(ByteString.copyFrom(bytes)));
           }
         }
       }

@@ -16,14 +16,12 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 
-import com.dremio.nessie.versioned.Serializer;
+import com.dremio.nessie.versioned.AssetKey.NoOpAssetKey;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
@@ -34,28 +32,8 @@ public abstract class AbstractITJGitVersionStore extends AbstractITVersionStore 
   protected Repository repository;
   protected VersionStore<String, String> store;
 
-  protected static final StoreWorker<String, String> WORKER = new StoreWorker<String, String>() {
-
-    @Override
-    public Serializer<String> getValueSerializer() {
-      return StringSerializer.getInstance();
-    }
-
-    @Override
-    public Serializer<String> getMetadataSerializer() {
-      return StringSerializer.getInstance();
-    }
-
-    @Override
-    public Stream<AssetKey> getAssetKeys(String value) {
-      return Stream.of();
-    }
-
-    @Override
-    public CompletableFuture<Void> deleteAsset(AssetKey key) {
-      throw new UnsupportedOperationException();
-    }
-  };
+  protected static final StoreWorker<String, String, NoOpAssetKey> WORKER =
+      StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
   abstract void setUp() throws IOException;
 

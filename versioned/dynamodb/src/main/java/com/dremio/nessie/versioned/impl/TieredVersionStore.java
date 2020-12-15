@@ -91,7 +91,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   private final Serializer<DATA> serializer;
   private final Serializer<METADATA> metadataSerializer;
-  private final StoreWorker<DATA,METADATA> storeWorker;
+  private final StoreWorker<DATA,METADATA,?> storeWorker;
   private final ExecutorService executor;
   private Store store;
   private final int commitRetryCount = 5;
@@ -101,8 +101,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   /**
    * Construct a Dynamo VersionStore.
    */
-  public TieredVersionStore(StoreWorker<DATA,METADATA> storeWorker, Store store, boolean waitOnCollapse) {
-    this.serializer = storeWorker.getValueSerializer();
+  public TieredVersionStore(StoreWorker<DATA,METADATA,?> storeWorker, Store store, boolean waitOnCollapse) {
+    this.serializer = storeWorker.getValueWorker();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
     this.storeWorker = storeWorker;

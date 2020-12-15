@@ -24,9 +24,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -44,6 +42,7 @@ import org.junit.jupiter.params.converter.ArgumentConverter;
 import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import com.dremio.nessie.versioned.AssetKey.NoOpAssetKey;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
@@ -57,7 +56,6 @@ import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.TagName;
@@ -431,28 +429,9 @@ class TestJGitVersionStore {
 
   }
 
-  private static final StoreWorker<String, String> WORKER = new StoreWorker<String, String>() {
+  private static final StoreWorker<String, String, NoOpAssetKey> WORKER =
+      StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
-    @Override
-    public Serializer<String> getValueSerializer() {
-      return StringSerializer.getInstance();
-    }
-
-    @Override
-    public Serializer<String> getMetadataSerializer() {
-      return StringSerializer.getInstance();
-    }
-
-    @Override
-    public Stream<AssetKey> getAssetKeys(String value) {
-      return Stream.of();
-    }
-
-    @Override
-    public CompletableFuture<Void> deleteAsset(AssetKey key) {
-      throw new UnsupportedOperationException();
-    }
-  };
 
   /**
    * convert RepoType to VersionStore for each parameterised test.

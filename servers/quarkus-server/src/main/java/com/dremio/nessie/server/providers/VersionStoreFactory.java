@@ -39,6 +39,7 @@ import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.server.config.ApplicationConfig;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.services.config.ServerConfig;
+import com.dremio.nessie.versioned.AssetKey.NoOpAssetKey;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
@@ -71,7 +72,7 @@ public class VersionStoreFactory {
 
 
   @Produces
-  public StoreWorker<Contents, CommitMeta> worker() {
+  public StoreWorker<Contents, CommitMeta, NoOpAssetKey> worker() {
     return new TableCommitMetaStoreWorker();
   }
 
@@ -107,7 +108,7 @@ public class VersionStoreFactory {
         LOGGER.info("Using In Memory version store");
         return InMemoryVersionStore.<Contents, CommitMeta>builder()
             .metadataSerializer(storeWorker.getMetadataSerializer())
-            .valueSerializer(storeWorker.getValueSerializer())
+            .valueSerializer(storeWorker.getValueWorker())
             .build();
       default:
         throw new RuntimeException(String.format("unknown jgit repo type %s", config.getVersionStoreConfig().getVersionStoreType()));
