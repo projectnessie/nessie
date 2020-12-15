@@ -42,7 +42,7 @@ import com.google.common.collect.ImmutableList;
  * @param <S> The type of the Store being tested.
  */
 public abstract class AbstractTestStore<S extends Store> {
-  private Random random;
+  protected Random random;
   protected S store;
 
   /**
@@ -171,18 +171,18 @@ public abstract class AbstractTestStore<S extends Store> {
     });
   }
 
-  private <T extends HasId> void putThenLoad(T sample, ValueType type) {
+  protected <T extends HasId> void putThenLoad(T sample, ValueType type) {
     store.put(type, sample, Optional.empty());
     testLoad(sample, type);
   }
 
-  private <T extends HasId> void testLoad(T sample, ValueType type) {
+  protected <T extends HasId> void testLoad(T sample, ValueType type) {
     final T read = store.loadSingle(type, sample.getId());
     final SimpleSchema<T> schema = type.getSchema();
     assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
   }
 
-  private <T extends HasId> void testPutIfAbsent(T sample, ValueType type) {
+  protected <T extends HasId> void testPutIfAbsent(T sample, ValueType type) {
     Assertions.assertTrue(store.putIfAbsent(type, sample));
     testLoad(sample, type);
     Assertions.assertFalse(store.putIfAbsent(type, sample));
