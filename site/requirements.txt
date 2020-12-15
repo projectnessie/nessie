@@ -4,4 +4,4 @@ mkdocs-minify-plugin==0.3.0
 mkdocs-redirects==1.0.1
 pymdown-extensions==8.0.1
 mkdocs-awesome-pages-plugin==2.4.0
-mkdocs-markdownextradata-plugin==0.1.7
+mkdocs-markdownextradata-plugin==0.1.9

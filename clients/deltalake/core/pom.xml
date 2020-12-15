@@ -42,9 +42,6 @@
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
-        <configuration>
-          <sendJavaToScalac>false</sendJavaToScalac>
-        </configuration>
         <executions>
           <execution>
             <id>scala-compile-first</id>
@@ -116,9 +113,6 @@
           <plugin>
             <groupId>net.alchim31.maven</groupId>
             <artifactId>scala-maven-plugin</artifactId>
-            <configuration>
-              <sendJavaToScalac>false</sendJavaToScalac>
-            </configuration>
             <executions>
               <execution>
                 <id>scala-compile-first</id>

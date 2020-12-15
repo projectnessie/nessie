@@ -114,7 +114,7 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
-    <awssdk.version>2.15.42</awssdk.version>
+    <awssdk.version>2.15.45</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
@@ -131,7 +131,7 @@
     <jersey.version>2.31</jersey.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jjwt.version>0.11.2</jjwt.version>
-    <jgit.version>5.9.0.202009080501-r</jgit.version>
+    <jgit.version>5.10.0.202012080955-r</jgit.version>
     <jmeter.version>5.4</jmeter.version>
     <junit.version>5.7.0</junit.version>
     <logback.version>1.2.3</logback.version>
@@ -141,6 +141,7 @@
     <serverless.version>1.5</serverless.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <slf4j.version>1.7.30</slf4j.version>
+    <scala2.12.version>2.12.12</scala2.12.version>
     <spark2.version>2.4.2</spark2.version>
     <spark2.jersey.version>2.22.2</spark2.jersey.version>
     <spark2.jackson.version>2.8.8</spark2.jackson.version>
@@ -608,6 +609,17 @@
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
           <version>4.4.0</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.scala-lang</groupId>
+              <artifactId>scala-library</artifactId>
+              <version>${scala2.12.version}</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <sendJavaToScalac>false</sendJavaToScalac>
+            <scalaVersion>${scala2.12.version}</scalaVersion>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>

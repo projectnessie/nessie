@@ -4,7 +4,7 @@ codecov==2.1.10
 coverage==5.3
 flake8==3.8.4
 pip==20.3.1
-pytest==6.1.2
+pytest==6.2.0
 pytest-cov==2.10.1
 pytest-mock==3.3.1
 pytest-mypy==0.8.0
@@ -14,5 +14,5 @@ Sphinx==3.3.1
 sphinx-autodoc-typehints==1.11.1
 tox==3.20.1
 twine==3.2.0
-watchdog==0.10.4
-wheel==0.36.1
+watchdog==1.0.1
+wheel==0.36.2
