@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.bson.BsonDocument;
@@ -47,7 +45,6 @@ import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
@@ -57,7 +54,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -79,18 +75,6 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
  * The MongoDbStore connects to an external MongoDB server.
  */
 public class MongoDBStore implements Store {
-  /**
-   * Pair for tracking a LoadOp and if it was loaded or not.
-   */
-  private static class LoadOpAndStatus {
-    final LoadOp<?> op;
-    boolean wasLoaded = false;
-
-    LoadOpAndStatus(LoadOp<?> op) {
-      this.op = op;
-    }
-  }
-
   /**
    * A Subscriber that exposes the results of the subscribed publisher as a list.
    *
@@ -208,11 +192,6 @@ public class MongoDBStore implements Store {
     }
   }
 
-  // Mongo has a 16MB limit on documents, which also pertains to the input query. Given that we use IN for loads,
-  // restrict the number of IDs to avoid going above that limit, and to take advantage of the async nature of the
-  // requests.
-  @VisibleForTesting
-  static final int LOAD_SIZE = 1_000;
   private static final Map<ValueType, Function<MongoStoreConfig, String>> typeCollections =
       ImmutableMap.<ValueType, Function<MongoStoreConfig, String>>builder()
           .put(ValueType.L1, MongoStoreConfig::getL1TableName)
@@ -281,52 +260,7 @@ public class MongoDBStore implements Store {
 
   @Override
   public void load(LoadStep loadstep) throws ReferenceNotFoundException {
-    for (LoadStep step = loadstep; step != null; step = step.getNext().orElse(null)) {
-      final List<AwaitableSubscriber<HasId>> subscribers = new ArrayList<>();
-      final Map<Id, LoadOpAndStatus> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, LoadOpAndStatus::new));
-      final ListMultimap<MongoCollection<? extends HasId>, LoadOp<?>> collectionToOps =
-          Multimaps.index(step.getOps().collect(Collectors.toList()), l -> collections.get(l.getValueType()));
-
-      for (MongoCollection<? extends HasId> collection : collectionToOps.keySet()) {
-        Lists.partition(collectionToOps.get(collection), LOAD_SIZE).forEach(ops -> {
-          final AwaitableSubscriber<HasId> subscriber = new AwaitableSubscriber<HasId>() {
-            @Override
-            public void onNext(HasId o) {
-              final LoadOpAndStatus loadOpAndStatus = idLoadOps.get(o.getId());
-              if (null == loadOpAndStatus) {
-                onError(new ReferenceNotFoundException(String.format("Retrieved unexpected object with ID: %s", o.getId())));
-              } else {
-                final ValueType type = loadOpAndStatus.op.getValueType();
-                loadOpAndStatus.op.loaded(type.addType(type.getSchema().itemToMap(o, true)));
-                loadOpAndStatus.wasLoaded = true;
-              }
-            }
-          };
-
-          // Keep track of the subscribers to ensure that we wait for all the operations to complete before
-          // exiting the function.
-          subscribers.add(subscriber);
-
-          final Collection<Id> idList = ops.stream().map(LoadOp::getId).collect(Collectors.toList());
-          collection.find(Filters.in(KEY_NAME, idList)).subscribe(subscriber);
-
-          // Trigger the actual request to Mongo.
-          subscriber.request();
-        });
-      }
-
-      // Wait for each of the operations to finish.
-      subscribers.forEach(this::await);
-
-      // Check if there were any missed ops.
-      final Collection<String> missedIds = idLoadOps.values().stream()
-          .filter(e -> !e.wasLoaded)
-          .map(e -> e.op.getId().toString())
-          .collect(Collectors.toList());
-      if (!missedIds.isEmpty()) {
-        throw new ReferenceNotFoundException(String.format("Requested object IDs missing: %s", String.join(", ", missedIds)));
-      }
-    }
+    throw new UnsupportedOperationException();
   }
 
   @Override
