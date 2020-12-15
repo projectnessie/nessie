@@ -63,7 +63,8 @@ These are set as follows in code (or through other methods as described [here](h
     //for a local spark instance
     conf.set("spark.hadoop.nessie.url", url)
         .set("spark.hadoop.nessie.ref", branch)
-        .set("spark.hadoop.nessie.auth_type", authType);
+        .set("spark.hadoop.nessie.auth_type", authType)
+        .set("spark.sql.catalog.nessie", "com.dremio.nessie.iceberg.spark.NessieIcebergSparkCatalog");
     spark = SparkSession.builder()
                         .master("local[2]")
                         .config(conf)
