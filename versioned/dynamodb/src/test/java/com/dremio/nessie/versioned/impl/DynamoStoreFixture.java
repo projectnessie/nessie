@@ -38,6 +38,7 @@ import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
+import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
 
 import software.amazon.awssdk.regions.Region;
 

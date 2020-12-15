@@ -29,8 +29,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.impl.DynamoStoreConfig;
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
@@ -39,12 +37,15 @@ import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import com.dremio.nessie.versioned.store.ConditionFailedException;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -72,6 +73,7 @@ import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
@@ -118,35 +120,39 @@ public class DynamoStore implements Store {
 
   @Override
   public void start() {
-    DynamoDbClientBuilder b1 = DynamoDbClient.builder();
-    b1.httpClient(UrlConnectionHttpClient.create());
-    DynamoDbAsyncClientBuilder b2 = DynamoDbAsyncClient.builder();
-    b2.httpClient(NettyNioAsyncHttpClient.create());
-    config.getEndpoint().ifPresent(ep -> {
-      b1.endpointOverride(ep);
-      b2.endpointOverride(ep);
-    });
+    try {
+      DynamoDbClientBuilder b1 = DynamoDbClient.builder();
+      b1.httpClient(UrlConnectionHttpClient.create());
+      DynamoDbAsyncClientBuilder b2 = DynamoDbAsyncClient.builder();
+      b2.httpClient(NettyNioAsyncHttpClient.create());
+      config.getEndpoint().ifPresent(ep -> {
+        b1.endpointOverride(ep);
+        b2.endpointOverride(ep);
+      });
 
-    config.getRegion().ifPresent(r -> {
-      b1.region(r);
-      b2.region(r);
-    });
+      config.getRegion().ifPresent(r -> {
+        b1.region(r);
+        b2.region(r);
+      });
 
-    client = b1.build();
-    async = b2.build();
+      client = b1.build();
+      async = b2.build();
 
-    if (config.initializeDatabase()) {
-      Arrays.stream(ValueType.values())
-        .map(tableNames::get)
-        .collect(Collectors.toSet())
-          .forEach(table -> createIfMissing(table));
+      if (config.initializeDatabase()) {
+        Arrays.stream(ValueType.values())
+          .map(tableNames::get)
+          .collect(Collectors.toSet())
+            .forEach(table -> createIfMissing(table));
 
-      // make sure we have an empty l1 (ignore result, doesn't matter)
-      putIfAbsent(ValueType.L1, L1.EMPTY);
-      putIfAbsent(ValueType.L2, L2.EMPTY);
-      putIfAbsent(ValueType.L3, L3.EMPTY);
+        // make sure we have an empty l1 (ignore result, doesn't matter)
+        putIfAbsent(ValueType.L1, L1.EMPTY);
+        putIfAbsent(ValueType.L2, L2.EMPTY);
+        putIfAbsent(ValueType.L3, L3.EMPTY);
+      }
+
+    } catch (DynamoDbException ex) {
+      throw new StoreOperationException("Failure connection to Dynamo", ex);
     }
-
   }
 
   @Override
@@ -155,7 +161,7 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public void load(LoadStep loadstep) throws ReferenceNotFoundException {
+  public void load(LoadStep loadstep) throws NotFoundException {
 
     while (true) { // for each load step in the chain.
       List<ListMultimap<String, LoadOp<?>>> stepPages = paginateLoads(loadstep, paginationSize);
@@ -181,10 +187,10 @@ public class DynamoStore implements Store {
           if (missingResponses != 0) {
             ValueType loadType = loadList.get(0).getValueType();
             if (loadType == ValueType.REF || loadType == ValueType.L1) {
-              throw new ReferenceNotFoundException("Unable to find requested ref.");
+              throw new NotFoundException("Unable to find requested ref.");
             }
 
-            throw new DynamoGeneralReadFailure(
+            throw new NotFoundException(
                 String.format("[%d] object(s) missing in table read [%s]. \n\nObjects expected: %s\n\nObjects Received: %s",
                 missingResponses, table, loadList, responses));
           }
@@ -225,7 +231,7 @@ public class DynamoStore implements Store {
     try {
       put(type, value, Optional.of(condition));
       return true;
-    } catch (ConditionalCheckFailedException ex) {
+    } catch (ConditionFailedException ex) {
       return false;
     }
   }
@@ -262,7 +268,13 @@ public class DynamoStore implements Store {
       c.apply(builder).conditionExpression(aliased.toConditionExpressionString());
     }
 
-    client.putItem(builder.build());
+    try {
+      client.putItem(builder.build());
+    } catch (ConditionalCheckFailedException ex) {
+      throw new ConditionFailedException("Condition failed during put operation.", ex);
+    } catch (DynamoDbException ex) {
+      throw new StoreOperationException("Failure during put.", ex);
+    }
   }
 
   @Override
@@ -282,6 +294,8 @@ public class DynamoStore implements Store {
     } catch (ConditionalCheckFailedException ex) {
       LOGGER.debug("Failure during conditional check.", ex);
       return false;
+    } catch (DynamoDbException ex) {
+      throw new StoreOperationException("Failure during delete.", ex);
     }
   }
 
@@ -304,8 +318,12 @@ public class DynamoStore implements Store {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
-      Throwables.throwIfUnchecked(e.getCause());
-      throw new RuntimeException(e.getCause());
+      if (e.getCause() instanceof DynamoDbException) {
+        throw new StoreOperationException("Dynamo failure during save.", e.getCause());
+      } else {
+        Throwables.throwIfUnchecked(e.getCause());
+        throw new RuntimeException(e.getCause());
+      }
     }
   }
 
@@ -318,7 +336,7 @@ public class DynamoStore implements Store {
         .consistentRead(true)
         .build());
     if (!response.hasItem()) {
-      throw ResourceNotFoundException.builder().message("Unable to load item.").build();
+      throw new NotFoundException("Unable to load item.");
     }
     return (V) valueType.getSchema().mapToItem(valueType.checkType(AttributeValueUtil.toEntity(response.item())));
   }
@@ -326,7 +344,7 @@ public class DynamoStore implements Store {
   @Override
   @SuppressWarnings("unchecked")
   public <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
-      throws ReferenceNotFoundException {
+      throws NotFoundException {
     try {
       AliasCollectorImpl collector = new AliasCollectorImpl();
       UpdateExpression aliased = update.alias(collector);
@@ -341,7 +359,7 @@ public class DynamoStore implements Store {
       UpdateItemResponse response = client.updateItem(builtRequest);
       return (Optional<V>) Optional.of(type.getSchema().mapToItem(AttributeValueUtil.toEntity(response.attributes())));
     } catch (ResourceNotFoundException ex) {
-      throw new ReferenceNotFoundException("Unable to find value.", ex);
+      throw new NotFoundException("Unable to find value.", ex);
     } catch (ConditionalCheckFailedException checkFailed) {
       LOGGER.debug("Conditional check failed.", checkFailed);
       return Optional.empty();

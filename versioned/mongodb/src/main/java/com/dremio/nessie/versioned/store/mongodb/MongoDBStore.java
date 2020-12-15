@@ -39,13 +39,13 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -239,7 +239,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public void load(LoadStep loadstep) throws ReferenceNotFoundException {
+  public void load(LoadStep loadstep) throws NotFoundException {
     throw new UnsupportedOperationException();
   }
 
@@ -316,7 +316,7 @@ public class MongoDBStore implements Store {
 
   @Override
   public <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
-      throws ReferenceNotFoundException {
+      throws NotFoundException {
     throw new UnsupportedOperationException();
   }
 

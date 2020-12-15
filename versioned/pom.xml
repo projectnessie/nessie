@@ -37,5 +37,6 @@
     <module>mongodb</module>
     <module>spi</module>
     <module>tests</module>
+    <module>tiered</module>
   </modules>
 </project>
