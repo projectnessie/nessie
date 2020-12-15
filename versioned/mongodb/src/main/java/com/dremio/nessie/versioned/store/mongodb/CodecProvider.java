@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.Arrays;
 import java.util.Map;
 
 import org.bson.BsonBinary;
@@ -38,7 +37,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.UnsafeByteOperations;
 
 /**
- * Provider for codecs that encode/decode Nessie Values and ID.
+ * Provider for codecs that encode/decode Nessie Entities.
  */
 class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
   @VisibleForTesting
@@ -139,34 +138,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
           reader.skipValue();
           continue;
         }
-
-        switch (reader.getCurrentBsonType()) {
-          case DOCUMENT:
-            mapBuilder.put(name, Entity.ofMap(readDocument(reader)));
-            break;
-          case ARRAY:
-            mapBuilder.put(name, readArray(reader));
-            break;
-          case BOOLEAN:
-            mapBuilder.put(name, Entity.ofBoolean(reader.readBoolean()));
-            break;
-          case STRING:
-            mapBuilder.put(name, Entity.ofString(reader.readString()));
-            break;
-          case INT32:
-            // Writing a small value as an Int64 will still be read as an Int32.
-            mapBuilder.put(name, Entity.ofNumber(reader.readInt32()));
-            break;
-          case INT64:
-            mapBuilder.put(name, Entity.ofNumber(reader.readInt64()));
-            break;
-          case BINARY:
-            mapBuilder.put(name, Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData())));
-            break;
-          default:
-            throw new UnsupportedOperationException(
-              String.format("Unsupported BSON type: %s", reader.getCurrentBsonType().name()));
-        }
+        mapBuilder.put(name, readEntity(reader));
       }
 
       reader.readEndDocument();
@@ -183,36 +155,40 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
       final ImmutableList.Builder<Entity> listBuilder = ImmutableList.builder();
 
       while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
-        switch (reader.getCurrentBsonType()) {
-          case DOCUMENT:
-            listBuilder.add(Entity.ofMap(readDocument(reader)));
-            break;
-          case ARRAY:
-            listBuilder.add(readArray(reader));
-            break;
-          case BOOLEAN:
-            listBuilder.add(Entity.ofBoolean(reader.readBoolean()));
-            break;
-          case STRING:
-            listBuilder.add(Entity.ofString(reader.readString()));
-            break;
-          case INT32:
-            listBuilder.add(Entity.ofNumber(reader.readInt32()));
-            break;
-          case INT64:
-            listBuilder.add(Entity.ofNumber(reader.readInt64()));
-            break;
-          case BINARY:
-            listBuilder.add(Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData())));
-            break;
-          default:
-            throw new UnsupportedOperationException(
-              String.format("Unsupported BSON type: %s", reader.getCurrentBsonType().name()));
-        }
+        listBuilder.add(readEntity(reader));
       }
 
       reader.readEndArray();
       return Entity.ofList(listBuilder.build());
+    }
+
+    /**
+     * Read a single Entity from the BsonReader.
+     *
+     * @param reader the reader to deserialize an Entity from.
+     * @return The deserialized Entity.
+     */
+    private Entity readEntity(BsonReader reader) {
+      switch (reader.getCurrentBsonType()) {
+        case DOCUMENT:
+          return Entity.ofMap(readDocument(reader));
+        case ARRAY:
+          return readArray(reader);
+        case BOOLEAN:
+          return Entity.ofBoolean(reader.readBoolean());
+        case STRING:
+          return Entity.ofString(reader.readString());
+        case INT32:
+          // Small written Int64 values are still read as Int32, so include the Int32 case as well.
+          return Entity.ofNumber(reader.readInt32());
+        case INT64:
+          return Entity.ofNumber(reader.readInt64());
+        case BINARY:
+          return Entity.ofBinary(UnsafeByteOperations.unsafeWrap(reader.readBinaryData().getData()));
+        default:
+          throw new UnsupportedOperationException(
+            String.format("Unsupported BSON type: %s", reader.getCurrentBsonType().name()));
+      }
     }
   }
 
@@ -292,13 +268,10 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
 
   static {
     final ImmutableMap.Builder<Class<?>, Codec<?>> builder = ImmutableMap.builder();
-    Arrays.stream(ValueType.values()).forEach(v ->
-        builder.put(v.getObjectClass(), new EntityCodec<>(v.getObjectClass(), v.getSchema()))
-    );
-
-    // Specific case where the ID is not encoded as a document, but directly as a binary value. Keep within this provider
-    // as Mongo appears to rely on the same provider for all related codecs, and splitting this to a separate provider
-    // results in the incorrect codec being used.
+    for (ValueType type : ValueType.values()) {
+      builder.put(type.getObjectClass(), new EntityCodec<>(type.getObjectClass(), type.getSchema()));
+    }
+    // Specific case where the ID is not encoded as a document, but directly as a binary value.
     builder.put(Id.class, new IdCodec());
     CODECS = builder.build();
   }

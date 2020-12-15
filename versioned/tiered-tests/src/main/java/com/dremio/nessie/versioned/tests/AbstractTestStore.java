@@ -18,8 +18,10 @@ package com.dremio.nessie.versioned.tests;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -30,12 +32,17 @@ import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.LoadOp;
+import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * Common class for testing public APIs of a Store.
@@ -71,6 +78,52 @@ public abstract class AbstractTestStore<S extends Store> {
   protected abstract long getRandomSeed();
 
   protected abstract void resetStoreState();
+
+  @Test
+  public void load() throws NotFoundException {
+    final Multimap<ValueType, HasId> objs = ImmutableMultimap.of(
+        ValueType.REF, SampleEntities.createBranch(random),
+        ValueType.REF, SampleEntities.createBranch(random),
+        ValueType.L1, SampleEntities.createL1(random),
+        ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
+    for (Map.Entry<ValueType, HasId> entry : objs.entries()) {
+      store.put(entry.getKey(), entry.getValue(), Optional.empty());
+    }
+
+    final LoadStep loadStep = new LoadStep(
+        objs.entries().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
+            r -> assertEquals(e.getKey().getSchema().itemToMap(e.getValue(), true),
+                e.getKey().getSchema().itemToMap(r, true)))
+        ).collect(Collectors.toList())
+    );
+
+    store.load(loadStep);
+  }
+
+  @Test
+  public void loadNone() throws NotFoundException {
+    final LoadStep loadStep = new LoadStep(ImmutableList.of());
+    store.load(loadStep);
+  }
+
+  @Test
+  public void loadInvalid() throws NotFoundException {
+    final Multimap<ValueType, HasId> objs = LinkedListMultimap.create();
+    objs.put(ValueType.REF, SampleEntities.createBranch(random));
+    for (Map.Entry<ValueType, HasId> entry : objs.entries()) {
+      store.put(entry.getKey(), entry.getValue(), Optional.empty());
+    }
+    objs.put(ValueType.REF, SampleEntities.createBranch(random));
+
+    final LoadStep loadStep = new LoadStep(
+        objs.entries().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
+            r -> assertEquals(e.getKey().getSchema().itemToMap(e.getValue(), true),
+                e.getKey().getSchema().itemToMap(r, true)))
+        ).collect(Collectors.toList())
+    );
+
+    Assertions.assertThrows(NotFoundException.class, () -> store.load(loadStep));
+  }
 
   @Test
   public void loadSingleL1() {
@@ -165,34 +218,22 @@ public abstract class AbstractTestStore<S extends Store> {
     store.save(saveOps);
 
     saveOps.forEach(s -> {
-      try {
-        final SimpleSchema<Object> schema = s.getType().getSchema();
-        assertEquals(
-            schema.itemToMap(s.getValue(), true),
-            schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
-      } catch (NotFoundException e) {
-        Assertions.fail(e);
-      }
+      final SimpleSchema<Object> schema = s.getType().getSchema();
+      assertEquals(
+          schema.itemToMap(s.getValue(), true),
+          schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
     });
   }
 
   private <T extends HasId> void putThenLoad(T sample, ValueType type) {
-    try {
-      store.put(type, sample, Optional.empty());
-      testLoad(sample, type);
-    } catch (NotFoundException e) {
-      Assertions.fail(e);
-    }
+    store.put(type, sample, Optional.empty());
+    testLoad(sample, type);
   }
 
   private <T extends HasId> void testLoad(T sample, ValueType type) {
-    try {
-      final T read = store.loadSingle(type, sample.getId());
-      final SimpleSchema<T> schema = type.getSchema();
-      assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
-    } catch (NotFoundException e) {
-      Assertions.fail(e);
-    }
+    final T read = store.loadSingle(type, sample.getId());
+    final SimpleSchema<T> schema = type.getSchema();
+    assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
   }
 
   private <T extends HasId> void testPutIfAbsent(T sample, ValueType type) {

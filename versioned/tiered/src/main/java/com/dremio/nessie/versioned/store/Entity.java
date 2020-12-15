@@ -28,7 +28,7 @@ import com.google.protobuf.ByteString;
 
 public abstract class Entity {
 
-  public static enum EntityType {
+  public enum EntityType {
     MAP, LIST, NUMBER, STRING, BINARY, BOOLEAN
   }
 
