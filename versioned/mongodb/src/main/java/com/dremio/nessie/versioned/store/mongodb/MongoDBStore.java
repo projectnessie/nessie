@@ -96,7 +96,8 @@ public class MongoDBStore implements Store {
    *
    * @param <T> The publishers result type.
    */
-  private static class AwaitableListSubscriber<T> extends AwaitableSubscriber<T> {
+  @VisibleForTesting
+  static class AwaitableListSubscriber<T> extends AwaitableSubscriber<T> {
     private final List<T> received;
 
     AwaitableListSubscriber() {
