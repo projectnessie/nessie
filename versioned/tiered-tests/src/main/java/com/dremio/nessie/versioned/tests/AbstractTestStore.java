@@ -30,6 +30,7 @@ import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
@@ -164,22 +165,34 @@ public abstract class AbstractTestStore<S extends Store> {
     store.save(saveOps);
 
     saveOps.forEach(s -> {
-      final SimpleSchema<Object> schema = s.getType().getSchema();
-      assertEquals(
-          schema.itemToMap(s.getValue(), true),
-          schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
+      try {
+        final SimpleSchema<Object> schema = s.getType().getSchema();
+        assertEquals(
+            schema.itemToMap(s.getValue(), true),
+            schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
+      } catch (NotFoundException e) {
+        Assertions.fail(e);
+      }
     });
   }
 
   private <T extends HasId> void putThenLoad(T sample, ValueType type) {
-    store.put(type, sample, Optional.empty());
-    testLoad(sample, type);
+    try {
+      store.put(type, sample, Optional.empty());
+      testLoad(sample, type);
+    } catch (NotFoundException e) {
+      Assertions.fail(e);
+    }
   }
 
   private <T extends HasId> void testLoad(T sample, ValueType type) {
-    final T read = store.loadSingle(type, sample.getId());
-    final SimpleSchema<T> schema = type.getSchema();
-    assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
+    try {
+      final T read = store.loadSingle(type, sample.getId());
+      final SimpleSchema<T> schema = type.getSchema();
+      assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
+    } catch (NotFoundException e) {
+      Assertions.fail(e);
+    }
   }
 
   private <T extends HasId> void testPutIfAbsent(T sample, ValueType type) {
