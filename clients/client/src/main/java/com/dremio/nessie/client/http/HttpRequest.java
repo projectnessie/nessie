@@ -99,7 +99,6 @@ public class HttpRequest {
     return getCon(Method.PUT, obj);
   }
 
-
   public HttpRequest resolveTemplate(String name, String value) {
     uriBuilder.resolveTemplate(name, value);
     return this;

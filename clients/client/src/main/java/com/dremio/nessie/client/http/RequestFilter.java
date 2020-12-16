@@ -28,5 +28,6 @@ public interface RequestFilter {
 
   void filter(HttpURLConnection con, String url, Map<String, String> headers, HttpClient.Method method, Object body);
 
-  void init(ObjectMapper mapper);
+  default void init(ObjectMapper mapper) {
+  }
 }
