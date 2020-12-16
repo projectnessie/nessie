@@ -15,16 +15,13 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.ArrayList;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,9 +34,6 @@ import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.InternalRef;
@@ -54,7 +48,7 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
@@ -66,12 +60,14 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.InsertManyOptions;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
@@ -92,95 +88,6 @@ public class MongoDBStore implements Store {
   }
 
   /**
-   * A Subscriber that exposes the results of the subscribed publisher as a list.
-   *
-   * @param <T> The publishers result type.
-   */
-  private static class AwaitableListSubscriber<T> extends AwaitableSubscriber<T> {
-    private final List<T> received;
-
-    AwaitableListSubscriber() {
-      this.received = new ArrayList<>();
-    }
-
-    @Override
-    public void onNext(final T t) {
-      received.add(t);
-    }
-
-    T first() {
-      return received.isEmpty() ? null : received.get(0);
-    }
-
-    List<T> getReceived() {
-      return received;
-    }
-  }
-
-  /**
-   * A Subscriber that can be waited on for completion.
-   *
-   * <p>Note that this class was heavily inspired by the MongoDB Tour:
-   * https://github.com/mongodb/mongo-java-driver-reactivestreams/blob/master/examples/tour/src/main/tour/SubscriberHelpers.java
-   *
-   * @param <T> The publishers result type.
-   */
-  private abstract static class AwaitableSubscriber<T> implements Subscriber<T> {
-    private final CountDownLatch latch;
-    private Throwable error;
-    private boolean hasRequested;
-    private volatile Subscription subscription;
-
-    AwaitableSubscriber() {
-      this.latch = new CountDownLatch(1);
-      this.hasRequested = false;
-    }
-
-    @Override
-    public void onSubscribe(final Subscription s) {
-      subscription = s;
-    }
-
-    @Override
-    public void onError(final Throwable t) {
-      error = t;
-      onComplete();
-    }
-
-    @Override
-    public void onComplete() {
-      latch.countDown();
-    }
-
-    void request() {
-      subscription.request(Integer.MAX_VALUE);
-      hasRequested = true;
-    }
-
-    /**
-     * Wait for the completion of the publisher this subscriber is subscribed to.
-     * @param timeoutMs The time to wait in milliseconds before timing out.
-     * @return this subscriber.
-     * @throws TimeoutException if the timeout is reached before the publisher completes.
-     * @throws InterruptedException if the wait is interrupted.
-     * @throws ExecutionException if there is an error in the publisher.
-     */
-    AwaitableSubscriber<T> await(final long timeoutMs) throws TimeoutException, InterruptedException, ExecutionException {
-      if (!hasRequested) {
-        subscription.request(Integer.MAX_VALUE);
-      }
-
-      if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
-        throw new TimeoutException("Publisher onComplete timed out");
-      }
-      if (null != error) {
-        throw new ExecutionException(error);
-      }
-      return this;
-    }
-  }
-
-  /**
    * Bson implementation for updates, to allow proper encoding of Nessie objects using codecs.
    * @param <T> the entity object type.
    */
@@ -195,7 +102,7 @@ public class MongoDBStore implements Store {
 
     @Override
     public <TDocument> BsonDocument toBsonDocument(Class<TDocument> clazz, CodecRegistry codecRegistry) {
-      // Intentionally don't use Updates.setOnInsert as that will result in issues encoding the value entity,
+      // Intentionally don't use Updates.setOnInsert() as that will result in issues encoding the value entity,
       // due to codec lookups the MongoDB driver will actually encode the fields of the basic object, not the entity.
       final BsonDocumentWriter writer = new BsonDocumentWriter(new BsonDocument());
       writer.writeStartDocument();
@@ -228,7 +135,7 @@ public class MongoDBStore implements Store {
 
   private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
-  private final long timeoutMs;
+  private final Duration timeout;
   private final Map<ValueType, MongoCollection<? extends HasId>> collections;
 
   /**
@@ -237,7 +144,7 @@ public class MongoDBStore implements Store {
    */
   public MongoDBStore(MongoStoreConfig config) {
     this.config = config;
-    this.timeoutMs = config.getTimeoutMs();
+    this.timeout = Duration.of(config.getTimeoutMs(), ChronoUnit.MILLIS);
     this.collections = new HashMap<>();
     final CodecRegistry codecRegistry = CodecRegistries.fromProviders(
         new CodecProvider(),
@@ -281,41 +188,34 @@ public class MongoDBStore implements Store {
   @Override
   public void load(LoadStep loadstep) throws ReferenceNotFoundException {
     for (LoadStep step = loadstep; step != null; step = step.getNext().orElse(null)) {
-      final List<AwaitableSubscriber<HasId>> subscribers = new ArrayList<>();
       final Map<Id, LoadOpAndStatus> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, LoadOpAndStatus::new));
+
+      // Partition the loadOps into collection -> n instances of ops list with max size LOAD_SIZE.
       final ListMultimap<MongoCollection<? extends HasId>, LoadOp<?>> collectionToOps =
           Multimaps.index(step.getOps().collect(Collectors.toList()), l -> collections.get(l.getValueType()));
+      final ListMultimap<MongoCollection<? extends HasId>, List<LoadOp<?>>> partitionedOps = ArrayListMultimap.create();
+      collectionToOps.keySet().forEach(
+          collection -> Lists.partition(collectionToOps.get(collection), LOAD_SIZE).forEach(
+              opsList -> partitionedOps.put(collection, opsList)));
 
-      for (MongoCollection<? extends HasId> collection : collectionToOps.keySet()) {
-        Lists.partition(collectionToOps.get(collection), LOAD_SIZE).forEach(ops -> {
-          final AwaitableSubscriber<HasId> subscriber = new AwaitableSubscriber<HasId>() {
-            @Override
-            public void onNext(HasId o) {
-              final LoadOpAndStatus loadOpAndStatus = idLoadOps.get(o.getId());
-              if (null == loadOpAndStatus) {
-                onError(new ReferenceNotFoundException(String.format("Retrieved unexpected object with ID: %s", o.getId())));
-              } else {
-                final ValueType type = loadOpAndStatus.op.getValueType();
-                loadOpAndStatus.op.loaded(type.addType(type.getSchema().itemToMap(o, true)));
-                loadOpAndStatus.wasLoaded = true;
-              }
-            }
-          };
-
-          // Keep track of the subscribers to ensure that we wait for all the operations to complete before
-          // exiting the function.
-          subscribers.add(subscriber);
-
-          final Collection<Id> idList = ops.stream().map(LoadOp::getId).collect(Collectors.toList());
-          collection.find(Filters.in(KEY_NAME, idList)).subscribe(subscriber);
-
-          // Trigger the actual request to Mongo.
-          subscriber.request();
-        });
-      }
-
-      // Wait for each of the operations to finish.
-      subscribers.forEach(this::await);
+      Flux.fromIterable(partitionedOps.entries())
+        .flatMap(entry -> {
+          final Collection<Id> idList = entry.getValue().stream().map(LoadOp::getId).collect(Collectors.toList());
+          return entry.getKey().find(Filters.in(KEY_NAME, idList));
+        })
+        .handle((op, sink) -> {
+          // Process each of the loaded entries.
+          final LoadOpAndStatus loadOpAndStatus = idLoadOps.get(op.getId());
+          if (null == loadOpAndStatus) {
+            sink.error(new ReferenceNotFoundException(String.format("Retrieved unexpected object with ID: %s", op.getId())));
+          } else {
+            final ValueType type = loadOpAndStatus.op.getValueType();
+            loadOpAndStatus.op.loaded(type.addType(type.getSchema().itemToMap(op, true)));
+            loadOpAndStatus.wasLoaded = true;
+            sink.next(op);
+          }
+        })
+          .blockLast(timeout);
 
       // Check if there were any missed ops.
       final Collection<String> missedIds = idLoadOps.values().stream()
@@ -334,10 +234,10 @@ public class MongoDBStore implements Store {
 
     // Use upsert so that a document is created if the filter does not match. The update operator is only $setOnInsert
     // so no action is triggered on a simple update, only on insert.
-    final UpdateResult result = await(collection.updateOne(
+    final UpdateResult result = Mono.from(collection.updateOne(
         Filters.eq(Store.KEY_NAME, ((HasId)value).getId()),
         new UpdateEntityBson<>((Class<V>)type.getObjectClass(), value),
-        new UpdateOptions().upsert(true))).first();
+        new UpdateOptions().upsert(true))).block(timeout);
     return result.getUpsertedId() != null;
   }
 
@@ -354,7 +254,8 @@ public class MongoDBStore implements Store {
     final MongoCollection<V> collection = getCollection(type);
 
     // Use upsert so that if an item does not exist, it will be insert.
-    await(collection.replaceOne(Filters.eq(Store.KEY_NAME, ((HasId)value).getId()), value, new ReplaceOptions().upsert(true)));
+    Mono.from(collection.replaceOne(Filters.eq(Store.KEY_NAME, ((HasId)value).getId()), value, new ReplaceOptions().upsert(true)))
+        .block(timeout);
   }
 
   @Override
@@ -365,34 +266,23 @@ public class MongoDBStore implements Store {
   @Override
   public void save(List<SaveOp<?>> ops) {
     final ListMultimap<MongoCollection<?>, SaveOp<?>> mm = Multimaps.index(ops, l -> collections.get(l.getType()));
-    final ListMultimap<MongoCollection<?>, Object> collectionWrites = Multimaps.transformValues(mm, SaveOp::getValue);
+    final ListMultimap<MongoCollection<?>, HasId> collectionWrites = Multimaps.transformValues(mm, SaveOp::getValue);
 
-    final List<AwaitableListSubscriber<InsertManyResult>> subscribers = new ArrayList<>();
-    for (MongoCollection collection : collectionWrites.keySet()) {
-      final AwaitableListSubscriber<InsertManyResult> subscriber = new AwaitableListSubscriber<>();
-      subscribers.add(subscriber);
+    Flux.fromIterable(Multimaps.asMap(collectionWrites).entrySet())
+      .flatMap(entry -> {
+        final MongoCollection collection = entry.getKey();
 
-      // Ordering of the inserts doesn't matter, so set to unordered to give potential performance improvements.
-      collection.insertMany(collectionWrites.get(collection), new InsertManyOptions().ordered(false)).subscribe(subscriber);
-      subscriber.request();
-    }
-
-    // Wait for each of the writes to have completed.
-    subscribers.forEach(s -> {
-      try {
-        s.await(this.timeoutMs);
-      } catch (Throwable throwable) {
-        Throwables.throwIfUnchecked(throwable);
-        throw new RuntimeException(throwable);
-      }
-    });
+        // Ordering of the inserts doesn't matter, so set to unordered to give potential performance improvements.
+        return collection.insertMany(entry.getValue(), new InsertManyOptions().ordered(false));
+      })
+        .blockLast(timeout);
   }
 
   @Override
   public <V> V loadSingle(ValueType valueType, Id id) {
     final MongoCollection<V> collection = getCollection(valueType);
 
-    final V value = await(collection.find(Filters.eq(Store.KEY_NAME, id))).first();
+    final V value = Mono.from(collection.find(Filters.eq(Store.KEY_NAME, id))).block(timeout);
     if (null == value) {
       throw new RuntimeException("Unable to load item with ID: " + id);
     }
@@ -408,7 +298,7 @@ public class MongoDBStore implements Store {
   @Override
   public Stream<InternalRef> getRefs() {
     final MongoCollection<InternalRef> collection = getCollection(ValueType.REF);
-    return await(collection.find()).getReceived().stream();
+    return Flux.from(collection.find()).toStream();
   }
 
   /**
@@ -416,31 +306,7 @@ public class MongoDBStore implements Store {
    */
   @VisibleForTesting
   void resetCollections() {
-    collections.forEach((k, v) -> await(v.deleteMany(Filters.ne("_id", "s"))));
-  }
-
-  /**
-   * Given an async publisher, wait for results to arrive and return the subscriber with the result..
-   * @param publisher the publisher to wait for results with.
-   * @param <T> the type of the result from the publisher.
-   * @return the subscriber containing the results of the publisher.
-   */
-  private <T> AwaitableListSubscriber<T> await(Publisher<T> publisher) {
-    final AwaitableListSubscriber<T> subscriber = new AwaitableListSubscriber<>();
-    publisher.subscribe(subscriber);
-    return await(subscriber);
-  }
-
-  private <T extends AwaitableSubscriber> T await(T subscriber) {
-    try {
-      return (T) subscriber.await(this.timeoutMs);
-    } catch (ExecutionException ee) {
-      Throwables.throwIfUnchecked(ee.getCause());
-      throw new RuntimeException(ee.getCause());
-    } catch (Throwable throwable) {
-      Throwables.throwIfUnchecked(throwable);
-      throw new RuntimeException(throwable);
-    }
+    collections.forEach((k, v) -> Mono.from(v.deleteMany(Filters.ne("_id", "s"))).block(timeout));
   }
 
   private <T> MongoCollection<T> getCollection(ValueType valueType) {
