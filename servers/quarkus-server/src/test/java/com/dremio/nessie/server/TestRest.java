@@ -16,7 +16,9 @@
 
 package com.dremio.nessie.server;
 
+import static com.dremio.nessie.server.ReferenceMatchers.referenceWithNameAndType;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
@@ -25,6 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,8 +63,6 @@ import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 
 import io.quarkus.test.junit.QuarkusTest;
-
-import javax.inject.Inject;
 
 @QuarkusTest
 class TestRest {
@@ -100,14 +104,16 @@ class TestRest {
     tree.createReference(Branch.of(branchName, someHash));
     tree.createReference(Branch.of(branchName2, someHash));
 
-    List<Reference> references = tree.getAllReferences();
-    Reference tagRef = references.stream().filter(r -> tagName.equals(r.getName())).findFirst().orElse(null);
-    Reference branchRef = references.stream().filter(r -> branchName.equals(r.getName())).findFirst().orElse(null);
-    Reference branchRef2 = references.stream().filter(r -> branchName2.equals(r.getName())).findFirst().orElse(null);
+    Map<String, Reference> references = tree.getAllReferences().stream().collect(Collectors.toMap(Reference::getName, r -> r));
+    assertThat(references.values(), containsInAnyOrder(
+        referenceWithNameAndType("main", Branch.class),
+        referenceWithNameAndType(tagName, Tag.class),
+        referenceWithNameAndType(branchName, Branch.class),
+        referenceWithNameAndType(branchName2, Branch.class)));
 
-    assertThat(tagRef, instanceOf(Tag.class));
-    assertThat(branchRef, instanceOf(Branch.class));
-    assertThat(branchRef2, instanceOf(Branch.class));
+    Reference tagRef = references.get(tagName);
+    Reference branchRef = references.get(branchName);
+    Reference branchRef2 = references.get(branchName2);
 
     String tagHash = tagRef.getHash();
     String branchHash = branchRef.getHash();
