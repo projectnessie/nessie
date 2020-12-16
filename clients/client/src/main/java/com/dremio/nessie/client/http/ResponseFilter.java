@@ -24,7 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public interface ResponseFilter {
 
-  void init(ObjectMapper mapper);
-
   void filter(HttpURLConnection con);
+
+  default void init(ObjectMapper mapper) {
+  }
 }

@@ -28,13 +28,12 @@ import com.fasterxml.jackson.databind.ObjectReader;
 public class HttpResponse {
 
   private final HttpURLConnection con;
-  private final int statusCode;
   private final ObjectMapper mapper;
 
   HttpResponse(HttpURLConnection con, ObjectMapper mapper) throws IOException {
     this.con = con;
     this.mapper = mapper;
-    this.statusCode = this.con.getResponseCode();
+    this.con.getResponseCode(); // ensure at this point we have completed the request
   }
 
   private <V> V readEntity(ObjectReader reader) {
