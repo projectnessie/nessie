@@ -24,7 +24,7 @@ import javax.ws.rs.core.Response.Status;
  */
 public class BaseNessieClientServerException extends IOException {
 
-  private final Status status;
+  private final int status;
   private final String serverStackTrace;
 
   /**
@@ -33,7 +33,7 @@ public class BaseNessieClientServerException extends IOException {
    * @param status HTTP status
    * @param cause The underlying cause.
    */
-  public BaseNessieClientServerException(String message, Status status, Throwable cause) {
+  public BaseNessieClientServerException(String message, int status, Throwable cause) {
     super(message, cause);
     this.status = status;
     this.serverStackTrace = null;
@@ -44,7 +44,7 @@ public class BaseNessieClientServerException extends IOException {
    * @param message Message
    * @param status HTTP status
    */
-  public BaseNessieClientServerException(String message, Status status) {
+  public BaseNessieClientServerException(String message, int status) {
     super(message);
     this.status = status;
     this.serverStackTrace = null;
@@ -60,12 +60,8 @@ public class BaseNessieClientServerException extends IOException {
     this.serverStackTrace = error.getServerStackTrace();
   }
 
-  public Status getStatus() {
+  public int getStatus() {
     return status;
-  }
-
-  public String getReason() {
-    return status.getReasonPhrase();
   }
 
   public String getServerStackTrace() {

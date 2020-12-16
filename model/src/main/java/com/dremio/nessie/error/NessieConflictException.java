@@ -15,16 +15,15 @@
  */
 package com.dremio.nessie.error;
 
-import javax.ws.rs.core.Response;
 
 public class NessieConflictException extends BaseNessieClientServerException {
 
   public NessieConflictException(String message, Throwable cause) {
-    super(message, Response.Status.CONFLICT, cause);
+    super(message, 409, cause);
   }
 
   public NessieConflictException(String message) {
-    super(message, Response.Status.CONFLICT);
+    super(message, 409);
   }
 
   public NessieConflictException(NessieError error) {

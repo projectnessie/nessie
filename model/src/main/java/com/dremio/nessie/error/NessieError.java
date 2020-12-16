@@ -18,8 +18,6 @@ package com.dremio.nessie.error;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import javax.ws.rs.core.Response.Status;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,26 +25,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class NessieError {
 
   private final String message;
-  private final Status status;
+  private final int status;
   private final String serverStackTrace;
   private final Exception clientProcessingException;
 
   @JsonCreator
   public NessieError(
-      @JsonProperty("message") String message,
-      @JsonProperty("status") Status status,
-      @JsonProperty("serverStackTrace") String serverStackTrace) {
+    @JsonProperty("message") String message,
+    @JsonProperty("status") int status,
+    @JsonProperty("serverStackTrace") String serverStackTrace) {
     this(message, status, serverStackTrace, null);
   }
 
   /**
    * Create Error.
-   * @param message Message of error.
-   * @param status Status of error.
-   * @param serverStackTrace Server stack trace, if available.
+   *
+   * @param message             Message of error.
+   * @param status              Status of error.
+   * @param serverStackTrace    Server stack trace, if available.
    * @param processingException Any processing exceptions that happened on the client.
    */
-  public NessieError(String message, Status status, String serverStackTrace, Exception processingException) {
+  public NessieError(String message, int status, String serverStackTrace, Exception processingException) {
     this.message = message;
     this.status = status;
     this.serverStackTrace = serverStackTrace;
@@ -55,15 +54,45 @@ public class NessieError {
 
   /**
    * Create Error.
-   * @param statusCode Status of error.
-   * @param serverStackTrace Server stack trace, if available.
+   *
+   * @param statusCode          Status of error.
+   * @param serverStackTrace    Server stack trace, if available.
    * @param processingException Any processing exceptions that happened on the client.
    */
   public NessieError(int statusCode, String serverStackTrace, Exception processingException) {
-    this.status = Status.fromStatusCode(statusCode);
-    this.message = status.getReasonPhrase();
+    this.status = statusCode;
+    this.message = standardMessage(status);
     this.serverStackTrace = serverStackTrace;
     this.clientProcessingException = processingException;
+  }
+
+  private String standardMessage(int status) {
+    switch (status) {
+      case 200:
+        return "OK";
+      case 201:
+        return "Created";
+      case 204:
+        return "No Content";
+      case 400:
+        return "Bad Request";
+      case 401:
+        return "Unauthorized";
+      case 403:
+        return "Forbidden";
+      case 404:
+        return "Not Found";
+      case 405:
+        return "Method Not Allowed";
+      case 409:
+        return "Conflict";
+      case 412:
+        return "Precondition Failed";
+      case 500:
+        return "Internal Server Error";
+      default:
+        throw new UnsupportedOperationException(String.format("Cannot identify given error type %d", status));
+    }
   }
 
 
@@ -71,7 +100,7 @@ public class NessieError {
     return message;
   }
 
-  public Status getStatus() {
+  public int getStatus() {
     return status;
   }
 
@@ -86,20 +115,21 @@ public class NessieError {
 
   /**
    * Get full error message.
+   *
    * @return Full error message.
    */
   @JsonIgnore
   public String getFullMessage() {
     if (serverStackTrace != null) {
-      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\nServer Stack Trace:\n%s", message,
-          status.getStatusCode(), status.getReasonPhrase(), serverStackTrace);
+      return String.format("%s\nStatus Code: %d\nServer Stack Trace:\n%s", message,
+                           status, serverStackTrace);
     }
 
     if (clientProcessingException != null) {
       StringWriter sw = new StringWriter();
       clientProcessingException.printStackTrace(new PrintWriter(sw));
-      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\nClient Processing Failure:\n%s", message,
-          status.getStatusCode(), status.getReasonPhrase(), sw.toString());
+      return String.format("%s\nStatus Code: %d\nClient Processing Failure:\n%s", message,
+                           status, sw.toString());
     }
     return message;
   }
