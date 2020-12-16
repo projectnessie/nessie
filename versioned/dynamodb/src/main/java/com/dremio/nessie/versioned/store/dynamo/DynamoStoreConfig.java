@@ -34,23 +34,33 @@ public abstract class DynamoStoreConfig {
   }
 
   @Default
-  public String getTreeTableName() {
-    return "nessie_objects";
+  public String getL1TableName() {
+    return "nessie_l1";
   }
 
   @Default
-  public String getValueTableName() {
-    return "nessie_objects";
+  public String getL2TableName() {
+    return "nessie_l2";
+  }
+
+  @Default
+  public String getL3TableName() {
+    return "nessie_l3";
   }
 
   @Default
   public String getKeyListTableName() {
-    return "nessie_objects";
+    return "nessie_keylists";
   }
 
   @Default
-  public String getMetadataTableName() {
-    return "nessie_objects";
+  public String getValueTableName() {
+    return "nessie_values";
+  }
+
+  @Default
+  public String getCommitMetaTableName() {
+    return "nessie_commitmeta";
   }
 
   @Default

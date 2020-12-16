@@ -109,13 +109,17 @@ public class DynamoStore implements Store {
     this.config = config;
     this.tableNames = ImmutableMap.<ValueType, String>builder()
         .put(ValueType.REF, config.getRefTableName())
-        .put(ValueType.L1, config.getTreeTableName())
-        .put(ValueType.L2, config.getTreeTableName())
-        .put(ValueType.L3, config.getTreeTableName())
+        .put(ValueType.L1, config.getL1TableName())
+        .put(ValueType.L2, config.getL2TableName())
+        .put(ValueType.L3, config.getL3TableName())
         .put(ValueType.VALUE, config.getValueTableName())
         .put(ValueType.KEY_FRAGMENT, config.getKeyListTableName())
-        .put(ValueType.COMMIT_METADATA, config.getMetadataTableName())
+        .put(ValueType.COMMIT_METADATA, config.getCommitMetaTableName())
         .build();
+
+    if (tableNames.size() != tableNames.values().stream().collect(Collectors.toSet()).size()) {
+      throw new IllegalArgumentException("Each Nessie dynamo table must be named distinctly.");
+    }
   }
 
   @Override
