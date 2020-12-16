@@ -201,22 +201,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.core</groupId>
-      <artifactId>jersey-client</artifactId>
-      <version>2.22.2</version>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.media</groupId>
-      <artifactId>jersey-media-json-jackson</artifactId>
-      <version>2.22.2</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>2.6.5</version>
-    </dependency>
-
 
     <dependency>
       <groupId>commons-beanutils</groupId>
@@ -250,48 +234,10 @@
               <artifactSet>
                 <includes>
                   <include>org.projectnessie</include>
-                  <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</include>
-                  <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</include>
-                  <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations</include>
-                  <include>com.fasterxml.jackson.core:jackson-annotations</include>
-                  <include>com.fasterxml.jackson.core:jackson-databind</include>
-                  <include>com.fasterxml.jackson.core:jackson-core</include>
-                  <include>javax.activation:javax.activation-api</include>
-                  <include>javax.inject</include>
-                  <include>javax.ws.rs:javax.ws.rs-api</include>
-                  <include>javax.annotation:javax.annotation</include>
-                  <include>javax.annotation:javax.annotation-api</include>
-                  <include>org.glassfish.jersey.media:jersey-media-json-jackson</include>
-                  <include>org.glassfish.jersey.core:jersey-common</include>
-                  <include>org.glassfish.jersey.ext:jersey-entity-filtering</include>
-                  <include>org.glassfish.jersey.client:jersey-client</include>
-                  <include>org.glassfish.jersey.bundles.repackaged:jersey-guava</include>
-                  <include>org.glassfish.jersey.core:jersey-client</include>
-                  <include>org.glassfish.hk2:osgi-resource-locator</include>
-                  <include>org.glassfish.hk2:hk2-api</include>
-                  <include>org.glassfish.hk2:hk2-utils</include>
-                  <include>org.glassfish.hk2.external:aopalliance-repackaged</include>
-                  <include>org.glassfish.hk2.external:javax.inject</include>
-                  <include>org.glassfish.hk2:hk2-locator</include>
                 </includes>
               </artifactSet>
-              <relocations>
-                <relocation>
-                  <pattern>org.glassfish.jersey</pattern>
-                  <shadedPattern>nessie.org.glassfish.jersey</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>javax.ws.rs</pattern>
-                  <shadedPattern>nessie.javax.ws.rs</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>com.fasterxml.jackson</pattern>
-                  <shadedPattern>nessie.com.fasterxml.jackson</shadedPattern>
-                </relocation>
-              </relocations>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
               </transformers>
             </configuration>
           </execution>

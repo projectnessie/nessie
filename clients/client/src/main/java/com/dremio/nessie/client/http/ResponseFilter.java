@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.client;
+package com.dremio.nessie.client.http;
 
+import java.net.HttpURLConnection;
 
-import com.dremio.nessie.api.ConfigApi;
-import com.dremio.nessie.client.http.HttpClient;
-import com.dremio.nessie.model.NessieConfiguration;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-class ClientConfigApi implements ConfigApi {
-  private final HttpClient client;
+/**
+ * Filter evaluated post call. The connection, its response streams and response code are available to the filter.
+ */
+public interface ResponseFilter {
 
-  ClientConfigApi(HttpClient client) {
-    this.client = client;
-  }
+  void init(ObjectMapper mapper);
 
-  @Override
-  public NessieConfiguration getConfig() {
-    return client.create().path("config").get().readEntity(NessieConfiguration.class);
-  }
+  void filter(HttpURLConnection con);
 }

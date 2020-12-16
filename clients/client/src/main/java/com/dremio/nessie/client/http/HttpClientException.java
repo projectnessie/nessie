@@ -13,22 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.client;
+package com.dremio.nessie.client.http;
 
+public class HttpClientException extends RuntimeException {
 
-import com.dremio.nessie.api.ConfigApi;
-import com.dremio.nessie.client.http.HttpClient;
-import com.dremio.nessie.model.NessieConfiguration;
-
-class ClientConfigApi implements ConfigApi {
-  private final HttpClient client;
-
-  ClientConfigApi(HttpClient client) {
-    this.client = client;
+  public HttpClientException() {
+    super();
   }
 
-  @Override
-  public NessieConfiguration getConfig() {
-    return client.create().path("config").get().readEntity(NessieConfiguration.class);
+  public HttpClientException(String message) {
+    super(message);
+  }
+
+  public HttpClientException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public HttpClientException(Throwable cause) {
+    super(cause);
+  }
+
+  protected HttpClientException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    super(message, cause, enableSuppression, writableStackTrace);
   }
 }

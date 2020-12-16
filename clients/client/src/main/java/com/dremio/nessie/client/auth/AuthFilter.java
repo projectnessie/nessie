@@ -15,31 +15,32 @@
  */
 package com.dremio.nessie.client.auth;
 
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
+import java.net.HttpURLConnection;
+import java.util.Map;
 
 import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.client.http.HttpClient.Method;
+import com.dremio.nessie.client.http.RequestFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Filter to add auth header to all outgoing requests.
  */
-public class AuthFilter implements ClientRequestFilter {
+public class AuthFilter implements RequestFilter {
 
   private final Auth auth;
 
   /**
    * construct auth filter depending on auth type.
    */
-  public AuthFilter(AuthType authType, String username, String password, WebTarget target) {
+  public AuthFilter(AuthType authType, String username, String password) {
     switch (authType) {
       case AWS:
       case NONE:
         auth = new NoAuth();
         break;
       case BASIC:
-        auth = new NoAuth();//todo
+        auth = new NoAuth(); // todo
         break;
       default:
         throw new IllegalStateException(String.format("%s does not exist", authType));
@@ -51,10 +52,16 @@ public class AuthFilter implements ClientRequestFilter {
   }
 
   @Override
-  public void filter(ClientRequestContext requestContext) {
+  public void filter(HttpURLConnection con, String url, Map<String, String> headers,
+                     Method method, Object body) {
     String header = checkKey();
     if (header != null && !header.isEmpty()) {
-      requestContext.getHeaders().putSingle(HttpHeaders.AUTHORIZATION, header);
+      headers.put("Authorization", header);
     }
+  }
+
+  @Override
+  public void init(ObjectMapper mapper) {
+
   }
 }

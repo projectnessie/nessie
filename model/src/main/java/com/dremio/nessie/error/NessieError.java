@@ -47,12 +47,25 @@ public class NessieError {
    * @param processingException Any processing exceptions that happened on the client.
    */
   public NessieError(String message, Status status, String serverStackTrace, Exception processingException) {
-    super();
     this.message = message;
     this.status = status;
     this.serverStackTrace = serverStackTrace;
     this.clientProcessingException = processingException;
   }
+
+  /**
+   * Create Error.
+   * @param statusCode Status of error.
+   * @param serverStackTrace Server stack trace, if available.
+   * @param processingException Any processing exceptions that happened on the client.
+   */
+  public NessieError(int statusCode, String serverStackTrace, Exception processingException) {
+    this.status = Status.fromStatusCode(statusCode);
+    this.message = status.getReasonPhrase();
+    this.serverStackTrace = serverStackTrace;
+    this.clientProcessingException = processingException;
+  }
+
 
   public String getMessage() {
     return message;
