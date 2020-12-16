@@ -31,9 +31,9 @@ public class NessieError {
 
   @JsonCreator
   public NessieError(
-    @JsonProperty("message") String message,
-    @JsonProperty("status") int status,
-    @JsonProperty("serverStackTrace") String serverStackTrace) {
+      @JsonProperty("message") String message,
+      @JsonProperty("status") int status,
+      @JsonProperty("serverStackTrace") String serverStackTrace) {
     this(message, status, serverStackTrace, null);
   }
 
