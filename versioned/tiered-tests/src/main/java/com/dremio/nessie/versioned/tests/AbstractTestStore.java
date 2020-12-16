@@ -17,6 +17,7 @@ package com.dremio.nessie.versioned.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -203,6 +204,27 @@ public abstract class AbstractTestStore<S extends Store> {
   @Test
   public void putIfAbsentValue() {
     testPutIfAbsent(SampleEntities.createValue(random), ValueType.VALUE);
+  }
+
+  @Test
+  public void getRefs() {
+    final List<InternalRef> expected = ImmutableList.of(SampleEntities.createTag(random), SampleEntities.createBranch(random));
+    expected.forEach(e -> putThenLoad(e, ValueType.REF));
+
+    // Ensure a consistent ordering by using a sort.
+    final List<InternalRef> actual = store.getRefs().sorted(Comparator.comparing(o -> o.getId().toString())).collect(Collectors.toList());
+
+    Assertions.assertEquals(expected.size(), actual.size());
+    for (int i = 0; i < expected.size(); ++i) {
+      assertEquals(
+          InternalRef.SCHEMA.itemToMap(expected.get(i), true),
+          InternalRef.SCHEMA.itemToMap(actual.get(i), true));
+    }
+  }
+
+  @Test
+  public void getRefsNone() {
+    Assertions.assertEquals(0, store.getRefs().count());
   }
 
   @Test

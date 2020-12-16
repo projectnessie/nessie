@@ -264,17 +264,25 @@ public class RocksDBStore implements Store {
 
     // TODO: Do we need to lock the database at all?
     final Iterable<InternalRef> iterable = () -> new AbstractIterator<InternalRef>() {
-      final Input input = new Input();
-      final RocksIterator itr = rocksDB.newIterator(columnFamilyHandle);
+      private final Input input = new Input();
+      private final RocksIterator itr = rocksDB.newIterator(columnFamilyHandle);
+      private boolean isFirst = true;
 
       @Override
       protected InternalRef computeNext() {
-        itr.next();
+        if (isFirst) {
+          itr.seekToFirst();
+          isFirst = false;
+        } else {
+          itr.next();
+        }
+
         if (itr.isValid()) {
           input.setBuffer(itr.value());
           return (InternalRef) kryo.readClassAndObject(input);
         }
 
+        itr.close();
         return endOfData();
       }
     };
