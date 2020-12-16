@@ -26,6 +26,7 @@ import com.dremio.nessie.server.config.converters.BackendType;
 import com.dremio.nessie.server.config.converters.JGitStoreType;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.services.config.ServerConfig;
+import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
 
 import io.quarkus.arc.config.ConfigProperties;
 
@@ -117,13 +118,25 @@ public class ApplicationConfig {
     @ConfigProperty(name = "initialize", defaultValue = "false")
     boolean isDynamoInitialize();
 
-    @ConfigProperty(name = "refTableName", defaultValue = "nessie_refs")
+    @ConfigProperty(defaultValue = DynamoStoreConfig.REF_TABLE)
     String getRefTableName();
 
-    @ConfigProperty(name = "treeTableName", defaultValue = "nessie_objects")
-    String getTreeTableName();
+    @ConfigProperty(defaultValue = DynamoStoreConfig.L1_TABLE)
+    String getL1TableName();
 
-    @ConfigProperty(name = "valueTableName", defaultValue = "nessie_objects")
+    @ConfigProperty(defaultValue = DynamoStoreConfig.L2_TABLE)
+    String getL2TableName();
+
+    @ConfigProperty(defaultValue = DynamoStoreConfig.L3_TABLE)
+    String getL3TableName();
+
+    @ConfigProperty(defaultValue = DynamoStoreConfig.KEY_LIST_TABLE)
+    String getKeyListTableName();
+
+    @ConfigProperty(defaultValue = DynamoStoreConfig.VALUE_TABLE)
     String getValueTableName();
+
+    @ConfigProperty(defaultValue = DynamoStoreConfig.COMMIT_META_TABLE)
+    String getCommitMetaTableName();
   }
 }
