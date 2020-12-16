@@ -378,12 +378,14 @@ public class DynamoStore implements Store {
     }
   }
 
+
+  @SuppressWarnings("unchecked")
   @Override
-  public Stream<InternalRef> getRefs() {
-    return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(ValueType.REF)).build())
+  public <V> Stream<V> getValues(Class<V> valueClass, ValueType type) {
+    return ((Stream<V>) client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
         .stream()
         .flatMap(r -> r.items().stream())
-        .map(i -> ValueType.REF.<InternalRef>getSchema().mapToItem(AttributeValueUtil.toEntity(i)));
+        .map(i -> type.<InternalRef>getSchema().mapToItem(AttributeValueUtil.toEntity(i))));
   }
 
   private final void createIfMissing(String name) {
