@@ -32,6 +32,10 @@ public class AuthFilter implements RequestFilter {
 
   /**
    * construct auth filter depending on auth type.
+   *
+   * @param authType authentication type (AWS, NONE, BASIC)
+   * @param username username (only for BASIC auth)
+   * @param password password (only for BASIC auth)
    */
   public AuthFilter(AuthType authType, String username, String password) {
     switch (authType) {

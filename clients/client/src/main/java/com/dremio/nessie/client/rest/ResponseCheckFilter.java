@@ -30,9 +30,11 @@ public class ResponseCheckFilter {
 
   /**
    * check that response had a valid return code. Throw exception if not.
+   * @param con open http connection
+   * @param mapper Jackson ObjectMapper instance for this client
    * @throws IOException Throws IOException for certain error types.
    */
-  public static void checkResponse(HttpURLConnection con,  ObjectMapper mapper) throws NessieNotFoundException, NessieConflictException {
+  public static void checkResponse(HttpURLConnection con,  ObjectMapper mapper) throws IOException {
     final int statusCode;
     final NessieError error;
     try {
