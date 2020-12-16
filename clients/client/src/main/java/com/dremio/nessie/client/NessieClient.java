@@ -23,20 +23,17 @@ import java.lang.reflect.Proxy;
 import java.util.Objects;
 import java.util.function.Function;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.ResponseProcessingException;
-import javax.ws.rs.client.WebTarget;
-
 import com.dremio.nessie.api.ConfigApi;
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.auth.AuthFilter;
-import com.dremio.nessie.client.rest.ObjectMapperContextResolver;
-import com.dremio.nessie.client.rest.ResponseCheckFilter;
+import com.dremio.nessie.client.auth.AwsAuth;
+import com.dremio.nessie.client.http.HttpClient;
+import com.dremio.nessie.client.http.HttpClientException;
+import com.dremio.nessie.client.http.RequestFilter;
+import com.dremio.nessie.client.rest.NessieHttpResponseFilter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.model.ContentsKey.NessieObjectKeyConverterProvider;
 
 public class NessieClient implements Closeable {
 
@@ -46,6 +43,7 @@ public class NessieClient implements Closeable {
   public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
   public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
   public static final String CONF_NESSIE_REF = "nessie.ref";
+  private final HttpClient client;
 
   public enum AuthType {
     AWS,
@@ -53,11 +51,6 @@ public class NessieClient implements Closeable {
     NONE
   }
 
-  static {
-    System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-  }
-
-  private final Client client;
   private final TreeApi tree;
   private final ConfigApi config;
   private final ContentsApi contents;
@@ -68,22 +61,24 @@ public class NessieClient implements Closeable {
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
    */
   public NessieClient(AuthType authType, String path, String username, String password) {
+    client = new HttpClient(path);
+    client.register(authFilter(authType, username, password));
+    client.register(new NessieHttpResponseFilter());
+    contents = wrap(ContentsApi.class, new ClientContentsApi(client));
+    tree = wrap(TreeApi.class, new ClientTreeApi(client));
+    config = wrap(ConfigApi.class, new ClientConfigApi(client));
+  }
 
-    client = ClientBuilder.newBuilder().register(ObjectMapperContextResolver.class)
-                                       .register(ResponseCheckFilter.class)
-                                       .register(NessieObjectKeyConverterProvider.class)
-                                       .build();
-    WebTarget target = client.target(path);
-    AuthFilter authFilter = new AuthFilter(authType, username, password, target);
-    client.register(authFilter);
-    contents = wrap(ContentsApi.class, new ClientContentsApi(target));
-    tree = wrap(TreeApi.class, new ClientTreeApi(target));
-    config = wrap(ConfigApi.class, new ClientConfigApi(target));
+  private RequestFilter authFilter(AuthType authType, String username, String password) {
+    if (authType.equals(AuthType.AWS)) {
+      return new AwsAuth();
+    }
+    return new AuthFilter(authType, username, password);
   }
 
   @SuppressWarnings("unchecked")
   private <T> T wrap(Class<T> iface, T delegate) {
-    return (T) Proxy.newProxyInstance(delegate.getClass().getClassLoader(), new Class[]{iface}, new ExceptionRewriter(delegate));
+    return (T) Proxy.newProxyInstance(delegate.getClass().getClassLoader(), new Class[] {iface}, new ExceptionRewriter(delegate));
   }
 
   /**
@@ -104,7 +99,7 @@ public class NessieClient implements Closeable {
         return method.invoke(delegate, args);
       } catch (InvocationTargetException ex) {
         Throwable targetException = ex.getTargetException();
-        if (targetException instanceof ResponseProcessingException) {
+        if (targetException instanceof HttpClientException) {
           if (targetException.getCause() instanceof NessieNotFoundException) {
             throw (NessieNotFoundException) targetException.getCause();
           }
@@ -138,7 +133,7 @@ public class NessieClient implements Closeable {
 
   @Override
   public void close() {
-    client.close();
+
   }
 
   public static NessieClient basic(String path, String username, String password) {

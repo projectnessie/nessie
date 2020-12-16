@@ -17,17 +17,15 @@
 package com.dremio.nessie.client.auth;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-
+import com.dremio.nessie.client.http.HttpClient;
+import com.dremio.nessie.client.http.RequestFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -37,10 +35,9 @@ import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.awssdk.regions.Region;
 
-public class AwsAuth implements ClientRequestFilter {
+public class AwsAuth implements RequestFilter {
 
-  private final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-                                                              .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+  private ObjectMapper objectMapper;
   private final Aws4Signer signer;
   private final AwsCredentialsProvider awsCredentialsProvider;
   private final Region region = Region.US_WEST_2;
@@ -50,33 +47,15 @@ public class AwsAuth implements ClientRequestFilter {
     this.signer = Aws4Signer.create();
   }
 
-  @Override
-  public void filter(ClientRequestContext clientRequestContext) throws IOException {
-    SdkHttpFullRequest modifiedRequest =
-        signer.sign(prepareRequest(clientRequestContext),
-                    Aws4SignerParams.builder()
-                                    .signingName("execute-api")
-                                    .awsCredentials(awsCredentialsProvider.resolveCredentials())
-                                    .signingRegion(region)
-                                    .build());
-    for (Map.Entry<String, List<String>> entry : modifiedRequest.toBuilder().headers().entrySet()) {
-      if (clientRequestContext.getHeaders().containsKey(entry.getKey())) {
-        continue;
-      }
-      clientRequestContext.getHeaders().put(entry.getKey(),
-                                            Arrays.asList(entry.getValue().toArray()));
-    }
-  }
-
-  private SdkHttpFullRequest prepareRequest(ClientRequestContext clientRequestContext) {
+  private SdkHttpFullRequest prepareRequest(String url, HttpClient.Method method, Object entity) {
     try {
-      URI uri = clientRequestContext.getUri();
+      URI uri = new URI(url);
       SdkHttpFullRequest.Builder builder = SdkHttpFullRequest.builder()
                                                              .uri(uri)
-                                                             .method(SdkHttpMethod.fromValue(
-                                                               clientRequestContext.getMethod()));
+                                                             .method(SdkHttpMethod.fromValue(method.name()));
+
       Arrays.stream(uri.getQuery().split("&")).map(s -> s.split("=")).forEach(s -> builder.putRawQueryParameter(s[0], s[1]));
-      Object entity = clientRequestContext.getEntity();
+
       if (entity != null) {
         try {
           byte[] bytes = objectMapper.writeValueAsBytes(entity);
@@ -89,5 +68,27 @@ public class AwsAuth implements ClientRequestFilter {
     } catch (Throwable t) {
       throw new RuntimeException(t);
     }
+  }
+
+  @Override
+  public void filter(HttpURLConnection con, String url, Map<String, String> headers, HttpClient.Method method, Object body) {
+    SdkHttpFullRequest modifiedRequest =
+        signer.sign(prepareRequest(url, method, body),
+                  Aws4SignerParams.builder()
+                                  .signingName("execute-api")
+                                  .awsCredentials(awsCredentialsProvider.resolveCredentials())
+                                  .signingRegion(region)
+                                  .build());
+    for (Map.Entry<String, List<String>> entry : modifiedRequest.toBuilder().headers().entrySet()) {
+      if (headers.containsKey(entry.getKey())) {
+        continue;
+      }
+      entry.getValue().forEach(a -> headers.put(entry.getKey(), a));
+    }
+  }
+
+  @Override
+  public void init(ObjectMapper mapper) {
+    this.objectMapper = mapper;
   }
 }
