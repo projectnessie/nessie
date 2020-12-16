@@ -39,6 +39,8 @@ import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.IcebergTable;
@@ -51,8 +53,12 @@ import com.dremio.nessie.model.MultiGetContentsResponse.ContentsWithKey;
 import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Tag;
+import com.dremio.nessie.versioned.VersionStore;
+import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 
 import io.quarkus.test.junit.QuarkusTest;
+
+import javax.inject.Inject;
 
 @QuarkusTest
 class TestRest {
@@ -61,12 +67,18 @@ class TestRest {
   private TreeApi tree;
   private ContentsApi contents;
 
+  @Inject
+  VersionStore<Contents, CommitMeta> versionStore;
+
   @BeforeEach
-  void init() throws NessieNotFoundException, NessieConflictException {
+  void init() throws Exception {
     String path = "http://localhost:19121/api/v1";
     this.client = new NessieClient(AuthType.NONE, path, null, null);
     tree = client.getTreeApi();
     contents = client.getContentsApi();
+
+    assertThat(versionStore, instanceOf(InMemoryVersionStore.class));
+    ((InMemoryVersionStore<?, ?>)versionStore).clearUnsafe();
   }
 
   @ParameterizedTest
@@ -82,80 +94,52 @@ class TestRest {
     String branchName = "branch" + refNamePart;
     String branchName2 = "branch2" + refNamePart;
 
-    String tagHash = null;
-    String branchHash;
-    String branchHash2;
-    String newHash = null;
+    String someHash = tree.getReferenceByName("main").getHash();
 
-    try {
-      String someHash = tree.getReferenceByName("main").getHash();
+    tree.createReference(Tag.of(tagName, someHash));
+    tree.createReference(Branch.of(branchName, someHash));
+    tree.createReference(Branch.of(branchName2, someHash));
 
-      tree.createReference(Tag.of(tagName, someHash));
-      tree.createReference(Branch.of(branchName, someHash));
-      tree.createReference(Branch.of(branchName2, someHash));
+    List<Reference> references = tree.getAllReferences();
+    Reference tagRef = references.stream().filter(r -> tagName.equals(r.getName())).findFirst().orElse(null);
+    Reference branchRef = references.stream().filter(r -> branchName.equals(r.getName())).findFirst().orElse(null);
+    Reference branchRef2 = references.stream().filter(r -> branchName2.equals(r.getName())).findFirst().orElse(null);
 
-      List<Reference> references = tree.getAllReferences();
-      Reference tagRef = references.stream().filter(r -> tagName.equals(r.getName())).findFirst().orElse(null);
-      Reference branchRef = references.stream().filter(r -> branchName.equals(r.getName())).findFirst().orElse(null);
-      Reference branchRef2 = references.stream().filter(r -> branchName2.equals(r.getName())).findFirst().orElse(null);
+    assertThat(tagRef, instanceOf(Tag.class));
+    assertThat(branchRef, instanceOf(Branch.class));
+    assertThat(branchRef2, instanceOf(Branch.class));
 
-      assertThat(tagRef, instanceOf(Tag.class));
-      assertThat(branchRef, instanceOf(Branch.class));
-      assertThat(branchRef2, instanceOf(Branch.class));
+    String tagHash = tagRef.getHash();
+    String branchHash = branchRef.getHash();
+    String branchHash2 = branchRef2.getHash();
 
-      tagHash = tagRef.getHash();
-      branchHash = branchRef.getHash();
-      branchHash2 = branchRef2.getHash();
+    assertThat(tree.getReferenceByName(tagName), equalTo(tagRef));
+    assertThat(tree.getReferenceByName(branchName), equalTo(branchRef));
 
-      assertThat(tree.getReferenceByName(tagName), equalTo(tagRef));
-      assertThat(tree.getReferenceByName(branchName), equalTo(branchRef));
+    EntriesResponse entries = tree.getEntries(tagName);
+    assertThat(entries, notNullValue());
+    entries = tree.getEntries(branchName);
+    assertThat(entries, notNullValue());
 
-      EntriesResponse entries = tree.getEntries(tagName);
-      assertThat(entries, notNullValue());
-      entries = tree.getEntries(branchName);
-      assertThat(entries, notNullValue());
+    LogResponse log = tree.getCommitLog(tagName);
+    assertThat(log, notNullValue());
+    log = tree.getCommitLog(branchName);
+    assertThat(log, notNullValue());
 
-      LogResponse log = tree.getCommitLog(tagName);
-      assertThat(log, notNullValue());
-      log = tree.getCommitLog(branchName);
-      assertThat(log, notNullValue());
+    // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
+    ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
+    Operations ops = ImmutableOperations.builder().addOperations(op).build();
+    tree.commitMultipleOperations(branchName, branchHash, "One dummy op", ops);
+    log = tree.getCommitLog(branchName);
+    String newHash = log.getOperations().get(0).getHash();
 
-      // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
-      ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
-      Operations ops = ImmutableOperations.builder().addOperations(op).build();
-      tree.commitMultipleOperations(branchName, branchHash, "One dummy op", ops);
-      log = tree.getCommitLog(branchName);
-      newHash = log.getOperations().get(0).getHash();
+    tree.assignTag(tagName, tagHash, Tag.of(tagName, newHash));
+    tree.assignBranch(branchName, newHash, Branch.of(branchName, newHash));
 
-      tree.assignTag(tagName, tagHash, Tag.of(tagName, newHash));
-      tree.assignBranch(branchName, newHash, Branch.of(branchName, newHash));
+    tree.mergeRefIntoBranch(branchName2, branchHash2, ImmutableMerge.builder().fromHash(newHash).build());
 
-      tree.mergeRefIntoBranch(branchName2, branchHash2, ImmutableMerge.builder().fromHash(newHash).build());
-
-      tree.deleteTag(tagName, newHash);
-      tree.deleteBranch(branchName, newHash);
-    } finally {
-      try {
-        tree.deleteBranch(branchName, null);
-      } catch (Exception ignore) {
-        // ignore cleanup exceptions
-      }
-      try {
-        tree.deleteBranch(branchName2, null);
-      } catch (Exception ignore) {
-        // ignore cleanup exceptions
-      }
-      try {
-        tree.deleteTag(tagName, tagHash);
-      } catch (Exception ignore) {
-        // ignore cleanup exceptions
-      }
-      try {
-        tree.deleteTag(tagName, newHash);
-      } catch (Exception ignore) {
-        // ignore cleanup exceptions
-      }
-    }
+    tree.deleteTag(tagName, newHash);
+    tree.deleteBranch(branchName, newHash);
   }
 
   @Test
