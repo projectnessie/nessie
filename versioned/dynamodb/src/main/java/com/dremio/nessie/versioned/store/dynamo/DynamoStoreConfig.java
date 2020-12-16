@@ -26,38 +26,56 @@ import software.amazon.awssdk.regions.Region;
 @Immutable
 public abstract class DynamoStoreConfig {
 
+  // DEFAULT TABLE NAMES
+  public static final String REF_TABLE = "nessie_refs";
+  public static final String L1_TABLE = "nessie_l1";
+  public static final String L2_TABLE = "nessie_l2";
+  public static final String L3_TABLE = "nessie_l3";
+  public static final String KEY_LIST_TABLE = "nessie_keylists";
+  public static final String VALUE_TABLE = "nessie_values";
+  public static final String COMMIT_META_TABLE = "nessie_commitmeta";
+
   public abstract Optional<URI> getEndpoint();
 
   @Default
   public String getRefTableName() {
-    return "nessie_refs";
+    return REF_TABLE;
   }
 
   @Default
-  public String getTreeTableName() {
-    return "nessie_objects";
+  public String getL1TableName() {
+    return L1_TABLE;
   }
 
   @Default
-  public String getValueTableName() {
-    return "nessie_objects";
+  public String getL2TableName() {
+    return L2_TABLE;
+  }
+
+  @Default
+  public String getL3TableName() {
+    return L3_TABLE;
   }
 
   @Default
   public String getKeyListTableName() {
-    return "nessie_objects";
+    return KEY_LIST_TABLE;
   }
 
   @Default
-  public String getMetadataTableName() {
-    return "nessie_objects";
+  public String getValueTableName() {
+    return VALUE_TABLE;
+  }
+
+  @Default
+  public String getCommitMetaTableName() {
+    return COMMIT_META_TABLE;
   }
 
   @Default
   public boolean initializeDatabase() {
     return true;
   }
-
 
   public abstract Optional<Region> getRegion();
 

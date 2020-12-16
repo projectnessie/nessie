@@ -320,10 +320,14 @@ public class MongoDBStore implements Store {
     throw new UnsupportedOperationException();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public Stream<InternalRef> getRefs() {
+  public <V> Stream<V> getValues(Class<V> valueClass, ValueType type) {
+    if (type != ValueType.REF) {
+      throw new UnsupportedOperationException();
+    }
     // TODO: Can this be optimized to not collect the elements before streaming them?
-    return await(((MongoCollection<InternalRef>)getCollection(ValueType.REF)).find()).getReceived().stream();
+    return (Stream<V>) await(((MongoCollection<InternalRef>)getCollection(ValueType.REF)).find()).getReceived().stream();
   }
 
   /**
