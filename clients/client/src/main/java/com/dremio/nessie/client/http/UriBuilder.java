@@ -71,6 +71,9 @@ class UriBuilder {
       uriBuilder.append("?");
       List<String> params = new ArrayList<>();
       for (Map.Entry<String, String> kv: query.entrySet()) {
+        if (kv.getValue() == null) {
+          continue;
+        }
         params.add(String.format("%s=%s", encode(kv.getKey()), encode(kv.getValue())));
       }
       appendTo(uriBuilder, params.iterator(), "&");
