@@ -58,7 +58,10 @@ public class NessieClient implements Closeable {
   /**
    * create new nessie client. All REST api endpoints are mapped here. This client should support any jaxrs implementation
    *
+   * @param authType authentication type (AWS, NONE, BASIC)
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
+   * @param username username (only for BASIC auth)
+   * @param password password (only for BASIC auth)
    */
   public NessieClient(AuthType authType, String path, String username, String password) {
     client = new HttpClient(path);

@@ -19,6 +19,8 @@ public interface Auth {
 
   /**
    * return authorization token for this auth scheme.
+   *
+   * @return the Authorization Header
    */
   String checkKey();
 }
