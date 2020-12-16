@@ -17,8 +17,6 @@ package com.dremio.nessie.error;
 
 import java.io.IOException;
 
-import javax.ws.rs.core.Response.Status;
-
 /**
  * A caught exception that is thrown on the server and caught in the client.
  */
