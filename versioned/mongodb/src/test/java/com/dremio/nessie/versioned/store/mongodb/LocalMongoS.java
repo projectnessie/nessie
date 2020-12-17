@@ -16,6 +16,7 @@
 package com.dremio.nessie.versioned.store.mongodb;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +51,7 @@ import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.config.Storage;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
+import reactor.core.publisher.Flux;
 
 /**
  * Creates and configures a sharded flapdoodle MongoDB instance.
@@ -219,11 +221,8 @@ class LocalMongoS extends LocalMongoBase {
       }
     }
 
-    private List<Document> runCommand(MongoDatabase mongoAdminDB, Bson command) throws Exception {
-      final MongoDBStore.AwaitableListSubscriber<Document> subscriber = new MongoDBStore.AwaitableListSubscriber<>();
-      mongoAdminDB.runCommand(command).subscribe(subscriber);
-      subscriber.await(5000);
-      return subscriber.getReceived();
+    private List<Document> runCommand(MongoDatabase mongoAdminDB, Bson command) {
+      return Flux.from(mongoAdminDB.runCommand(command)).collectList().block(Duration.ofSeconds(5));
     }
 
     private List<MongodConfig> createConfigReplicaSet(String name) throws IOException {

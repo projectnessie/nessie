@@ -135,9 +135,10 @@
     <jmeter.version>5.4</jmeter.version>
     <junit.version>5.7.0</junit.version>
     <logback.version>1.2.3</logback.version>
-    <protobuf.version>3.14.0</protobuf.version>
     <mongodb.version>4.1.1</mongodb.version>
     <prometheus.version>0.9.0</prometheus.version>
+    <protobuf.version>3.14.0</protobuf.version>
+    <reactor.version>3.4.1</reactor.version>
     <serverless.version>1.5</serverless.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <slf4j.version>1.7.30</slf4j.version>
@@ -470,6 +471,11 @@
         <groupId>de.flapdoodle.embed</groupId>
         <artifactId>de.flapdoodle.embed.mongo</artifactId>
         <version>3.0.0</version>
+      </dependency>
+      <dependency>
+        <groupId>io.projectreactor</groupId>
+        <artifactId>reactor-core</artifactId>
+        <version>${reactor.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

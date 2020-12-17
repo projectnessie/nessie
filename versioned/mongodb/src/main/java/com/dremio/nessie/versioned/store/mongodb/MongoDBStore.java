@@ -76,47 +76,22 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
  */
 public class MongoDBStore implements Store {
   /**
-   * A Subscriber that exposes the results of the subscribed publisher as a list.
+   * A Subscriber that stores the publishers results and provides a latch so can block on completion.
    *
-   * @param <T> The publishers result type.
-   */
-  @VisibleForTesting
-  static class AwaitableListSubscriber<T> extends AwaitableSubscriber<T> {
-    private final List<T> received;
-
-    AwaitableListSubscriber() {
-      this.received = new ArrayList<>();
-    }
-
-    @Override
-    public void onNext(final T t) {
-      received.add(t);
-    }
-
-    T first() {
-      return received.isEmpty() ? null : received.get(0);
-    }
-
-    List<T> getReceived() {
-      return received;
-    }
-  }
-
-  /**
-   * A Subscriber that can be waited on for completion.
-   *
-   * <p>Note that this class was heavily inspired by the MongoDB Tour:
+   * <p>Note that this class is taken from the MongoDB Tour:
    * https://github.com/mongodb/mongo-java-driver-reactivestreams/blob/master/examples/tour/src/main/tour/SubscriberHelpers.java
    *
-   * @param <T> The publishers result type.
+   * @param <T> The publishers result type
    */
-  private abstract static class AwaitableSubscriber<T> implements Subscriber<T> {
+  private static class ObservableSubscriber<T> implements Subscriber<T> {
+    private final List<T> received;
     private final CountDownLatch latch;
     private Throwable error;
     private boolean hasRequested;
     private volatile Subscription subscription;
 
-    AwaitableSubscriber() {
+    ObservableSubscriber() {
+      this.received = new ArrayList<>();
       this.latch = new CountDownLatch(1);
       this.hasRequested = false;
     }
@@ -124,6 +99,11 @@ public class MongoDBStore implements Store {
     @Override
     public void onSubscribe(final Subscription s) {
       subscription = s;
+    }
+
+    @Override
+    public void onNext(final T t) {
+      received.add(t);
     }
 
     @Override
@@ -137,25 +117,25 @@ public class MongoDBStore implements Store {
       latch.countDown();
     }
 
+    T first() {
+      return received.isEmpty() ? null : received.get(0);
+    }
+
+    List<T> getReceived() {
+      return received;
+    }
+
     void request() {
       subscription.request(Integer.MAX_VALUE);
       hasRequested = true;
     }
 
-    /**
-     * Wait for the completion of the publisher this subscriber is subscribed to.
-     * @param timeoutMs The time to wait in milliseconds before timing out.
-     * @return this subscriber.
-     * @throws TimeoutException if the timeout is reached before the publisher completes.
-     * @throws InterruptedException if the wait is interrupted.
-     * @throws ExecutionException if there is an error in the publisher.
-     */
-    AwaitableSubscriber<T> await(final long timeoutMs) throws TimeoutException, InterruptedException, ExecutionException {
+    ObservableSubscriber<T> await(final long timeout) throws Throwable {
       if (!hasRequested) {
         subscription.request(Integer.MAX_VALUE);
       }
 
-      if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+      if (!latch.await(timeout, TimeUnit.MILLISECONDS)) {
         throw new TimeoutException("Publisher onComplete timed out");
       }
       if (null != error) {
@@ -173,7 +153,7 @@ public class MongoDBStore implements Store {
     private final T value;
     private final Class<T> valueClass;
 
-    public UpdateEntityBson(Class<T> valueClass, T value) {
+    public <V> UpdateEntityBson(Class<T> valueClass, T value) {
       this.valueClass = valueClass;
       this.value = value;
     }
@@ -302,9 +282,9 @@ public class MongoDBStore implements Store {
     final ListMultimap<MongoCollection<?>, SaveOp<?>> mm = Multimaps.index(ops, l -> collections.get(l.getType()));
     final ListMultimap<MongoCollection<?>, Object> collectionWrites = Multimaps.transformValues(mm, SaveOp::getValue);
 
-    final List<AwaitableListSubscriber<InsertManyResult>> subscribers = new ArrayList<>();
+    final List<ObservableSubscriber<InsertManyResult>> subscribers = new ArrayList<>();
     for (MongoCollection collection : collectionWrites.keySet()) {
-      final AwaitableListSubscriber<InsertManyResult> subscriber = new AwaitableListSubscriber<>();
+      final ObservableSubscriber<InsertManyResult> subscriber = new ObservableSubscriber<>();
       subscribers.add(subscriber);
 
       // Ordering of the inserts doesn't matter, so set to unordered to give potential performance improvements.
@@ -342,8 +322,8 @@ public class MongoDBStore implements Store {
 
   @Override
   public Stream<InternalRef> getRefs() {
-    final MongoCollection<InternalRef> collection = getCollection(ValueType.REF);
-    return await(collection.find()).getReceived().stream();
+    // TODO: Can this be optimized to not collect the elements before streaming them?
+    return await(((MongoCollection<InternalRef>)getCollection(ValueType.REF)).find()).getReceived().stream();
   }
 
   /**
@@ -360,29 +340,22 @@ public class MongoDBStore implements Store {
    * @param <T> the type of the result from the publisher.
    * @return the subscriber containing the results of the publisher.
    */
-  private <T> AwaitableListSubscriber<T> await(Publisher<T> publisher) {
-    final AwaitableListSubscriber<T> subscriber = new AwaitableListSubscriber<>();
-    publisher.subscribe(subscriber);
-    return await(subscriber);
-  }
-
-  private <T extends AwaitableSubscriber> T await(T subscriber) {
+  private <T> ObservableSubscriber<T> await(Publisher<T> publisher) {
     try {
-      return (T) subscriber.await(this.timeoutMs);
-    } catch (ExecutionException ee) {
-      Throwables.throwIfUnchecked(ee.getCause());
-      throw new RuntimeException(ee.getCause());
+      final ObservableSubscriber<T> subscriber = new ObservableSubscriber<>();
+      publisher.subscribe(subscriber);
+      return subscriber.await(this.timeoutMs);
     } catch (Throwable throwable) {
       Throwables.throwIfUnchecked(throwable);
       throw new RuntimeException(throwable);
     }
   }
 
-  private <T> MongoCollection<T> getCollection(ValueType valueType) {
-    final MongoCollection<? extends HasId> collection = collections.get(valueType);
+  private MongoCollection getCollection(ValueType valueType) {
+    final MongoCollection collection = collections.get(valueType);
     if (null == collection) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
     }
-    return (MongoCollection<T>) collection;
+    return collection;
   }
 }
