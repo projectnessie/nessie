@@ -20,14 +20,26 @@ option java_package = "com.dremio.nessie.versioned.store.rocksdb";
 option java_outer_classname = "EntityProtos";
 option java_generate_equals_and_hash = true;
 
+message List {
+  repeated Entity value = 1;
+}
+
+message Map {
+  map<string, Entity> value = 1;
+}
+
 message Entity {
   int32 type = 1;
-  string string = 2;
-  int64 number = 3;
-  bytes binary = 4;
-  bool boolean = 5;
-  repeated Entity list = 6;
-  map<string, Entity> map = 7;
+  oneof value {
+    string string = 2;
+    int64 number = 3;
+    bytes binary = 4;
+    bool boolean = 5;
+
+    // Workaround to allow list and map as part of oneof.
+    List list = 6;
+    Map map = 7;
+  }
 }
 
 message Value {

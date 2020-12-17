@@ -65,10 +65,10 @@ class ValueSerDe {
     final Entity.EntityType type = Entity.EntityType.values()[entityType];
     switch (type) {
       case MAP:
-        return Entity.ofMap(deserialize(entity.getMapMap()));
+        return Entity.ofMap(deserialize(entity.getMap().getValueMap()));
       case LIST:
         final ImmutableList.Builder<Entity> listBuilder = ImmutableList.builder();
-        entity.getListList().forEach(e -> listBuilder.add(deserialize(e)));
+        entity.getList().getValueList().forEach(e -> listBuilder.add(deserialize(e)));
         return Entity.ofList(listBuilder.build());
       case NUMBER:
         return Entity.ofNumber(entity.getNumber());
@@ -110,10 +110,12 @@ class ValueSerDe {
     builder.setType(entity.getType().ordinal());
     switch (entity.getType()) {
       case MAP:
-        builder.putAllMap(serialize(entity.getMap()));
+        builder.setMap(EntityProtos.Map.newBuilder().putAllValue(serialize(entity.getMap())));
         break;
       case LIST:
-        entity.getList().forEach(e -> builder.addList(serialize(e)));
+        final EntityProtos.List.Builder listBuilder = EntityProtos.List.newBuilder();
+        entity.getList().forEach(e -> listBuilder.addValue(serialize(e)));
+        builder.setList(listBuilder);
         break;
       case NUMBER:
         builder.setNumber(entity.getNumber());

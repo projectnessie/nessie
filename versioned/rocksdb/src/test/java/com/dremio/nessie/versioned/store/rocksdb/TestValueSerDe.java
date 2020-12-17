@@ -86,12 +86,12 @@ class TestValueSerDe {
       case MAP:
         final ImmutableMap.Builder<String, EntityProtos.Entity> mapBuilder = ImmutableMap.builder();
         entity.getMap().forEach((k, v) -> mapBuilder.put(k, convert(v)));
-        builder.putAllMap(mapBuilder.build());
+        builder.setMap(EntityProtos.Map.newBuilder().putAllValue(mapBuilder.build()));
         break;
       case LIST:
         final ImmutableList.Builder<EntityProtos.Entity> listBuilder = ImmutableList.builder();
         entity.getList().forEach(e -> listBuilder.add(convert(e)));
-        builder.addAllList(listBuilder.build());
+        builder.setList(EntityProtos.List.newBuilder().addAllValue(listBuilder.build()));
         break;
       case NUMBER:
         builder.setNumber(entity.getNumber());
