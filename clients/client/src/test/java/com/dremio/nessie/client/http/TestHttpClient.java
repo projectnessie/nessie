@@ -144,7 +144,7 @@ public class TestHttpClient {
     };
     try (TestServer server = new TestServer(handler)) {
       ExampleBean bean = get(server.server.getAddress())
-        .queryParam("x", "y").queryParam("a", "b").get().readEntity(ExampleBean.class);
+          .queryParam("x", "y").queryParam("a", "b").get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
     } catch (Exception e) {
       Assertions.fail();
@@ -166,7 +166,7 @@ public class TestHttpClient {
     };
     try (TestServer server = new TestServer(handler)) {
       ExampleBean bean = get(server.server.getAddress())
-        .queryParam("x", null).get().readEntity(ExampleBean.class);
+          .queryParam("x", null).get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
     } catch (Exception e) {
       Assertions.fail();
@@ -201,9 +201,9 @@ public class TestHttpClient {
     };
     try (TestServer server = new TestServer("/a/b", handler)) {
       Assertions.assertThrows(HttpClientException.class,
-                              () -> get(server.server.getAddress()).path("a/{b}").get().readEntity(ExampleBean.class));
+          () -> get(server.server.getAddress()).path("a/{b}").get().readEntity(ExampleBean.class));
       Assertions.assertThrows(IllegalStateException.class,
-                              () -> get(server.server.getAddress()).path("a/b").resolveTemplate("b", "b")
+          () -> get(server.server.getAddress()).path("a/b").resolveTemplate("b", "b")
                                                                    .get().readEntity(ExampleBean.class));
     } catch (Exception e) {
       Assertions.fail();
@@ -279,6 +279,7 @@ public class TestHttpClient {
 
     public ExampleBean() {
     }
+
     public ExampleBean(String field1, int field2) {
       this.field1 = field1;
       this.field2 = field2;
