@@ -17,6 +17,7 @@ package com.dremio.nessie.error;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -132,5 +133,23 @@ public class NessieError {
                            status, sw.toString());
     }
     return message;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    NessieError error = (NessieError) o;
+    return status == error.status && Objects.equals(message, error.message) && Objects
+      .equals(serverStackTrace, error.serverStackTrace);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(message, status, serverStackTrace);
   }
 }

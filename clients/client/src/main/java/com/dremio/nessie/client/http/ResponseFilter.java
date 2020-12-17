@@ -15,8 +15,6 @@
  */
 package com.dremio.nessie.client.http;
 
-import java.net.HttpURLConnection;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -24,7 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public interface ResponseFilter {
 
-  void filter(HttpURLConnection con);
+  void filter(ResponseContext con);
 
   default void init(ObjectMapper mapper) {
   }

@@ -36,11 +36,7 @@ public class HttpRequest {
   private final List<RequestFilter> requestFilters;
   private final List<ResponseFilter> responseFilters;
 
-  HttpRequest(String base,
-                     String accept,
-                     ObjectMapper mapper,
-                     List<RequestFilter> requestFilters,
-                     List<ResponseFilter> responseFilters) {
+  HttpRequest(String base, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters, List<ResponseFilter> responseFilters) {
     this.uriBuilder = new UriBuilder(base);
     this.mapper = mapper;
     this.headers.put("Accept", accept);
@@ -68,7 +64,8 @@ public class HttpRequest {
       String uri = uriBuilder.build();
       URL url = new URL(uri);
       HttpURLConnection con = (HttpURLConnection) url.openConnection();
-      requestFilters.forEach(a -> a.filter(con, uri, headers, method, body));
+      RequestContext context = new RequestContext(headers, uri, method, body);
+      requestFilters.forEach(a -> a.filter(context));
       headers.forEach(con::setRequestProperty);
       con.setRequestMethod(method.name());
       if (body != null && (method.equals(Method.PUT) || method.equals(Method.POST))) {
@@ -76,8 +73,9 @@ public class HttpRequest {
         con.setRequestProperty("Content-Type", "application/json");
         mapper.writerFor(body.getClass()).writeValue(con.getOutputStream(), body);
       }
-      responseFilters.forEach(a -> a.filter(con));
-      return new HttpResponse(con, mapper);
+      ResponseContext responseContext = new ResponseContextImpl(con);
+      responseFilters.forEach(a -> a.filter(responseContext));
+      return new HttpResponse(context, responseContext, mapper);
     } catch (IOException e) {
       throw new HttpClientException(e);
     }
