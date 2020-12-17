@@ -16,16 +16,27 @@
 
 package com.dremio.nessie.server;
 
+import static com.dremio.nessie.server.ReferenceMatchers.referenceWithNameAndType;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
@@ -34,11 +45,22 @@ import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.IcebergTable;
+import com.dremio.nessie.model.ImmutableMerge;
+import com.dremio.nessie.model.ImmutableOperations;
+import com.dremio.nessie.model.ImmutablePut;
+import com.dremio.nessie.model.LogResponse;
 import com.dremio.nessie.model.MultiGetContentsRequest;
 import com.dremio.nessie.model.MultiGetContentsResponse.ContentsWithKey;
+import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
+import com.dremio.nessie.model.Tag;
+import com.dremio.nessie.versioned.VersionStore;
+import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -49,12 +71,80 @@ class TestRest {
   private TreeApi tree;
   private ContentsApi contents;
 
+  @Inject
+  VersionStore<Contents, CommitMeta> versionStore;
+
   @BeforeEach
-  void init() throws NessieNotFoundException, NessieConflictException {
+  void init() throws Exception {
     String path = "http://localhost:19121/api/v1";
     this.client = new NessieClient(AuthType.NONE, path, null, null);
     tree = client.getTreeApi();
     contents = client.getContentsApi();
+
+    if (versionStore instanceof InMemoryVersionStore) {
+      ((InMemoryVersionStore<?, ?>) versionStore).clearUnsafe();
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "normal",
+      "with space",
+      "slash/thing"
+  })
+  void referenceNames(String refNamePart) throws NessieNotFoundException, NessieConflictException {
+    String tagName = "tag" + refNamePart;
+    String branchName = "branch" + refNamePart;
+    String branchName2 = "branch2" + refNamePart;
+
+    String someHash = tree.getReferenceByName("main").getHash();
+
+    tree.createReference(Tag.of(tagName, someHash));
+    tree.createReference(Branch.of(branchName, someHash));
+    tree.createReference(Branch.of(branchName2, someHash));
+
+    Map<String, Reference> references = tree.getAllReferences().stream().collect(Collectors.toMap(Reference::getName, Function.identity()));
+    assertThat(references.values(), containsInAnyOrder(
+        referenceWithNameAndType("main", Branch.class),
+        referenceWithNameAndType(tagName, Tag.class),
+        referenceWithNameAndType(branchName, Branch.class),
+        referenceWithNameAndType(branchName2, Branch.class)));
+
+    Reference tagRef = references.get(tagName);
+    Reference branchRef = references.get(branchName);
+    Reference branchRef2 = references.get(branchName2);
+
+    String tagHash = tagRef.getHash();
+    String branchHash = branchRef.getHash();
+    String branchHash2 = branchRef2.getHash();
+
+    assertThat(tree.getReferenceByName(tagName), equalTo(tagRef));
+    assertThat(tree.getReferenceByName(branchName), equalTo(branchRef));
+
+    EntriesResponse entries = tree.getEntries(tagName);
+    assertThat(entries, notNullValue());
+    entries = tree.getEntries(branchName);
+    assertThat(entries, notNullValue());
+
+    LogResponse log = tree.getCommitLog(tagName);
+    assertThat(log, notNullValue());
+    log = tree.getCommitLog(branchName);
+    assertThat(log, notNullValue());
+
+    // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
+    ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
+    Operations ops = ImmutableOperations.builder().addOperations(op).build();
+    tree.commitMultipleOperations(branchName, branchHash, "One dummy op", ops);
+    log = tree.getCommitLog(branchName);
+    String newHash = log.getOperations().get(0).getHash();
+
+    tree.assignTag(tagName, tagHash, Tag.of(tagName, newHash));
+    tree.assignBranch(branchName, newHash, Branch.of(branchName, newHash));
+
+    tree.mergeRefIntoBranch(branchName2, branchHash2, ImmutableMerge.builder().fromHash(newHash).build());
+
+    tree.deleteTag(tagName, newHash);
+    tree.deleteBranch(branchName, newHash);
   }
 
   @Test
