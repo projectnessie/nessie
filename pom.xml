@@ -120,6 +120,7 @@
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
+    <flapdoodle.version>3.0.0</flapdoodle.version>
     <guava.version>29.0-jre</guava.version>
     <hadoop.version>3.3.0</hadoop.version>
     <hamcrest.version>2.2</hamcrest.version>
@@ -138,7 +139,7 @@
     <protobuf.version>3.14.0</protobuf.version>
     <mongodb.version>4.1.1</mongodb.version>
     <prometheus.version>0.9.0</prometheus.version>
-    <reactor.version>3.4.1</reactor.version>
+    <reactor.version>2020.0.2</reactor.version>
     <serverless.version>1.5</serverless.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <slf4j.version>1.7.30</slf4j.version>
@@ -469,12 +470,14 @@
       <dependency>
         <groupId>de.flapdoodle.embed</groupId>
         <artifactId>de.flapdoodle.embed.mongo</artifactId>
-        <version>3.0.0</version>
+        <version>${flapdoodle.version}</version>
       </dependency>
       <dependency>
         <groupId>io.projectreactor</groupId>
-        <artifactId>reactor-core</artifactId>
+        <artifactId>reactor-bom</artifactId>
         <version>${reactor.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>

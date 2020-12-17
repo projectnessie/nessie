@@ -50,7 +50,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -67,7 +66,6 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
@@ -205,10 +203,7 @@ public class MongoDBStore implements Store {
 
       Flux.fromStream(step.getOps())
         .groupBy(op -> collections.get(op.getValueType()))
-        .publishOn(Schedulers.boundedElastic())
-        .flatMap(entry -> Flux.fromStream(
-            Lists.partition(Lists.transform(entry.collectList().block(timeout), LoadOp::getId), LOAD_SIZE).stream()
-                .map(l -> new CollectionLoadIds(entry.key(), l))))
+        .flatMap(entry -> entry.map(LoadOp::getId).buffer(LOAD_SIZE).map(l -> new CollectionLoadIds(entry.key(), l)))
         .flatMap(entry -> entry.collection.find(Filters.in(KEY_NAME, entry.ids)))
         .handle((op, sink) -> {
           // Process each of the loaded entries.
@@ -313,7 +308,7 @@ public class MongoDBStore implements Store {
    */
   @VisibleForTesting
   void resetCollections() {
-    collections.forEach((k, v) -> Mono.from(v.deleteMany(Filters.ne("_id", "s"))).block(timeout));
+    Flux.fromIterable(collections.values()).flatMap(collection -> collection.deleteMany(Filters.ne("_id", "s"))).blockLast(timeout);
   }
 
   private <T> MongoCollection<T> getCollection(ValueType valueType) {
