@@ -208,7 +208,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @Test
   public void getRefs() {
-    final List<InternalRef> expected = ImmutableList.of(SampleEntities.createTag(random), SampleEntities.createBranch(random));
+    final List<InternalRef> expected = ImmutableList.of(SampleEntities.createBranch(random), SampleEntities.createTag(random));
     expected.forEach(e -> putThenLoad(e, ValueType.REF));
 
     // Ensure a consistent ordering by using a sort.

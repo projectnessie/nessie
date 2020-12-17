@@ -21,17 +21,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.TestInstance;
 
 import com.dremio.nessie.versioned.tests.AbstractTestStore;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
   private static final String DB_PATH = "/tmp/db";
 
-  @AfterEach
-  void tearDown() throws IOException {
-    store.close();
-    store = null;
+  @AfterAll
+  static void tearDown() throws IOException {
     final File dbFile = new File(DB_PATH);
     if (dbFile.exists()) {
       Files.walk(dbFile.toPath()).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
@@ -54,6 +54,6 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
 
   @Override
   protected void resetStoreState() {
-    // TODO
+    store.deleteAllData();
   }
 }

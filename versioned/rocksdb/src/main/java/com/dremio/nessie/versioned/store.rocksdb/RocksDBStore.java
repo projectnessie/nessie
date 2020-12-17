@@ -290,6 +290,28 @@ public class RocksDBStore implements Store {
     return StreamSupport.stream(iterable.spliterator(), false);
   }
 
+  /**
+   * Delete all the data in all column families, used for testing only.
+   */
+  @VisibleForTesting
+  void deleteAllData() {
+    for (ColumnFamilyHandle handle : valueTypeToColumnFamily.values()) {
+      final List<byte[]> keys = new ArrayList<>();
+      try (RocksIterator itr = rocksDB.newIterator(handle)) {
+        for (itr.seekToFirst(); itr.isValid(); itr.next()) {
+          keys.add(itr.key());
+        }
+      }
+      for (byte[] key : keys) {
+        try {
+          rocksDB.delete(handle, key);
+        } catch (RocksDBException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+  }
+
   private ColumnFamilyHandle getColumnFamilyHandle(ValueType valueType) {
     final ColumnFamilyHandle columnFamilyHandle = valueTypeToColumnFamily.get(valueType);
     if (null == columnFamilyHandle) {
