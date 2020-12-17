@@ -24,11 +24,21 @@ import org.hamcrest.Matcher;
 
 import com.dremio.nessie.model.Reference;
 
-public class ReferenceMatchers {
+/**
+ * Contains custom Hamcrest {@link Matcher}s.
+ * Might be handy in more complex scenarios compared to {@link org.hamcrest.Matchers#hasProperty(String, Matcher)}.
+ */
+public final class ReferenceMatchers {
+  /**
+   * Check whether {@link Reference#getName()} matches the given name.
+   */
   public static Matcher<Reference> referenceWithName(@Nonnull String refName) {
     return new ReferenceByNameMatcher(refName, null);
   }
 
+  /**
+   * Check whether {@link Reference#getName()} matches the given name and the given reference type.
+   */
   public static Matcher<Reference> referenceWithNameAndType(@Nonnull String refName, @Nonnull Class<? extends Reference> type) {
     return new ReferenceByNameMatcher(refName, type);
   }
