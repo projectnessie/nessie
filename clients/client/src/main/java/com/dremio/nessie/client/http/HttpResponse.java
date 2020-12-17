@@ -16,7 +16,6 @@
 package com.dremio.nessie.client.http;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,18 +26,20 @@ import com.fasterxml.jackson.databind.ObjectReader;
  */
 public class HttpResponse {
 
-  private final HttpURLConnection con;
+  private final RequestContext request;
+  private final ResponseContext context;
   private final ObjectMapper mapper;
 
-  HttpResponse(HttpURLConnection con, ObjectMapper mapper) throws IOException {
-    this.con = con;
+  HttpResponse(RequestContext request, ResponseContext context, ObjectMapper mapper) throws IOException {
+    this.request = request;
+    this.context = context;
     this.mapper = mapper;
-    this.con.getResponseCode(); // ensure at this point we have completed the request
+    this.context.getResponseCode(); // ensure at this point we have completed the request
   }
 
   private <V> V readEntity(ObjectReader reader) {
     try {
-      return reader.readValue(con.getInputStream());
+      return reader.readValue(context.getInputStream());
     } catch (IOException e) {
       throw new HttpClientException(e);
     }

@@ -220,11 +220,11 @@ public class TestHttpClient {
     };
     try (TestServer server = new TestServer(handler)) {
       HttpClient client = new HttpClient("http://localhost:" + server.server.getAddress().getPort());
-      client.register((con, url, headers, method, body) -> {
+      client.register((RequestFilter) context -> {
         requestFilterCalled.set(true);
-        headers.put("x", "y");
+        context.getHeaders().put("x", "y");
       });
-      client.register(con -> {
+      client.register((ResponseFilter) con -> {
         try {
           Assertions.assertEquals(200, con.getResponseCode());
           responseFilterCalled.set(true);

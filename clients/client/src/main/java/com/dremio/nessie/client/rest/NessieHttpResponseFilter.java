@@ -16,9 +16,9 @@
 package com.dremio.nessie.client.rest;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 
 import com.dremio.nessie.client.http.HttpClientException;
+import com.dremio.nessie.client.http.ResponseContext;
 import com.dremio.nessie.client.http.ResponseFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -32,7 +32,7 @@ public class NessieHttpResponseFilter implements ResponseFilter {
   }
 
   @Override
-  public void filter(HttpURLConnection con) {
+  public void filter(ResponseContext con) {
     try {
       ResponseCheckFilter.checkResponse(con, mapper);
     } catch (IOException e) {

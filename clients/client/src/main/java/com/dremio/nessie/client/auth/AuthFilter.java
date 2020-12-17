@@ -15,11 +15,8 @@
  */
 package com.dremio.nessie.client.auth;
 
-import java.net.HttpURLConnection;
-import java.util.Map;
-
 import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.client.http.HttpClient.Method;
+import com.dremio.nessie.client.http.RequestContext;
 import com.dremio.nessie.client.http.RequestFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -56,11 +53,10 @@ public class AuthFilter implements RequestFilter {
   }
 
   @Override
-  public void filter(HttpURLConnection con, String url, Map<String, String> headers,
-                     Method method, Object body) {
+  public void filter(RequestContext context) {
     String header = checkKey();
     if (header != null && !header.isEmpty()) {
-      headers.put("Authorization", header);
+      context.getHeaders().put("Authorization", header);
     }
   }
 

@@ -15,16 +15,18 @@
  */
 package com.dremio.nessie.client.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
- * Filter to be evaluated before making a request. It is too late to change the URL or method but headers can be changed or other
- * connection parameters set.
+ * Interface for the important parts of a response. This is created after executing the request.
  */
-public interface RequestFilter {
+public interface ResponseContext {
 
-  void filter(RequestContext context);
+  int getResponseCode() throws IOException;
 
-  default void init(ObjectMapper mapper) {
-  }
+  InputStream getInputStream() throws IOException;
+
+  InputStream getErrorStream() throws IOException;
+
 }

@@ -17,9 +17,9 @@ package com.dremio.nessie.client.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 
 import com.dremio.nessie.client.http.HttpClientException;
+import com.dremio.nessie.client.http.ResponseContext;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieError;
 import com.dremio.nessie.error.NessieNotFoundException;
@@ -34,7 +34,7 @@ public class ResponseCheckFilter {
    * @param mapper Jackson ObjectMapper instance for this client
    * @throws IOException Throws IOException for certain error types.
    */
-  public static void checkResponse(HttpURLConnection con,  ObjectMapper mapper) throws IOException {
+  public static void checkResponse(ResponseContext con, ObjectMapper mapper) throws IOException {
     final int statusCode;
     final NessieError error;
     try {
