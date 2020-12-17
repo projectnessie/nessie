@@ -48,7 +48,6 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
@@ -68,6 +67,7 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
@@ -84,6 +84,19 @@ public class MongoDBStore implements Store {
 
     LoadOpAndStatus(LoadOp<?> op) {
       this.op = op;
+    }
+  }
+
+  /**
+   * Pair of a collection to the set of IDs to be loaded.
+   */
+  private static class CollectionLoadIds {
+    final MongoCollection<? extends HasId> collection;
+    final List<Id> ids;
+
+    CollectionLoadIds(MongoCollection<? extends HasId> collection, List<Id> ops) {
+      this.collection = collection;
+      this.ids = ops;
     }
   }
 
@@ -190,19 +203,13 @@ public class MongoDBStore implements Store {
     for (LoadStep step = loadstep; step != null; step = step.getNext().orElse(null)) {
       final Map<Id, LoadOpAndStatus> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, LoadOpAndStatus::new));
 
-      // Partition the loadOps into collection -> n instances of ops list with max size LOAD_SIZE.
-      final ListMultimap<MongoCollection<? extends HasId>, LoadOp<?>> collectionToOps =
-          Multimaps.index(step.getOps().collect(Collectors.toList()), l -> collections.get(l.getValueType()));
-      final ListMultimap<MongoCollection<? extends HasId>, List<LoadOp<?>>> partitionedOps = ArrayListMultimap.create();
-      collectionToOps.keySet().forEach(
-          collection -> Lists.partition(collectionToOps.get(collection), LOAD_SIZE).forEach(
-              opsList -> partitionedOps.put(collection, opsList)));
-
-      Flux.fromIterable(partitionedOps.entries())
-        .flatMap(entry -> {
-          final Collection<Id> idList = entry.getValue().stream().map(LoadOp::getId).collect(Collectors.toList());
-          return entry.getKey().find(Filters.in(KEY_NAME, idList));
-        })
+      Flux.fromStream(step.getOps())
+        .groupBy(op -> collections.get(op.getValueType()))
+        .publishOn(Schedulers.boundedElastic())
+        .flatMap(entry -> Flux.fromStream(
+            Lists.partition(Lists.transform(entry.collectList().block(timeout), LoadOp::getId), LOAD_SIZE).stream()
+                .map(l -> new CollectionLoadIds(entry.key(), l))))
+        .flatMap(entry -> entry.collection.find(Filters.in(KEY_NAME, entry.ids)))
         .handle((op, sink) -> {
           // Process each of the loaded entries.
           final LoadOpAndStatus loadOpAndStatus = idLoadOps.get(op.getId());
