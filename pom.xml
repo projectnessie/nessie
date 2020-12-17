@@ -149,7 +149,7 @@
     <spark3.jersey.version>2.30</spark3.jersey.version>
     <spark3.jackson.version>2.10.2</spark3.jackson.version>
     <sqlite.version>1.0.392</sqlite.version>
-    <quarkus.version>1.10.4.Final</quarkus.version>
+    <quarkus.version>1.10.5.Final</quarkus.version>
     <openapi.version>1.1.2</openapi.version>
     <jsr305.version>3.0.2</jsr305.version>
   </properties>
