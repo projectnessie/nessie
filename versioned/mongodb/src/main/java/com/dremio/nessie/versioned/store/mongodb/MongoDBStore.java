@@ -74,18 +74,6 @@ import reactor.core.publisher.Mono;
  */
 public class MongoDBStore implements Store {
   /**
-   * Pair for tracking a LoadOp and if it was loaded or not.
-   */
-  private static class LoadOpAndStatus {
-    final LoadOp<?> op;
-    boolean wasLoaded = false;
-
-    LoadOpAndStatus(LoadOp<?> op) {
-      this.op = op;
-    }
-  }
-
-  /**
    * Pair of a collection to the set of IDs to be loaded.
    */
   private static class CollectionLoadIds {
@@ -199,7 +187,7 @@ public class MongoDBStore implements Store {
   @Override
   public void load(LoadStep loadstep) throws ReferenceNotFoundException {
     for (LoadStep step = loadstep; step != null; step = step.getNext().orElse(null)) {
-      final Map<Id, LoadOpAndStatus> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, LoadOpAndStatus::new));
+      final Map<Id, LoadOp<?>> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
 
       Flux.fromStream(step.getOps())
         .groupBy(op -> collections.get(op.getValueType()))
@@ -207,13 +195,12 @@ public class MongoDBStore implements Store {
         .flatMap(entry -> entry.collection.find(Filters.in(KEY_NAME, entry.ids)))
         .handle((op, sink) -> {
           // Process each of the loaded entries.
-          final LoadOpAndStatus loadOpAndStatus = idLoadOps.get(op.getId());
-          if (null == loadOpAndStatus) {
+          final LoadOp<?> loadOp = idLoadOps.remove(op.getId());
+          if (null == loadOp) {
             sink.error(new ReferenceNotFoundException(String.format("Retrieved unexpected object with ID: %s", op.getId())));
           } else {
-            final ValueType type = loadOpAndStatus.op.getValueType();
-            loadOpAndStatus.op.loaded(type.addType(type.getSchema().itemToMap(op, true)));
-            loadOpAndStatus.wasLoaded = true;
+            final ValueType type = loadOp.getValueType();
+            loadOp.loaded(type.addType(type.getSchema().itemToMap(op, true)));
             sink.next(op);
           }
         })
@@ -221,8 +208,7 @@ public class MongoDBStore implements Store {
 
       // Check if there were any missed ops.
       final Collection<String> missedIds = idLoadOps.values().stream()
-          .filter(e -> !e.wasLoaded)
-          .map(e -> e.op.getId().toString())
+          .map(e -> e.getId().toString())
           .collect(Collectors.toList());
       if (!missedIds.isEmpty()) {
         throw new ReferenceNotFoundException(String.format("Requested object IDs missing: %s", String.join(", ", missedIds)));
