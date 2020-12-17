@@ -53,7 +53,7 @@ abstract class LocalMongoBase extends TypeBasedParameterResolver<String> impleme
       .build();
   private static final RuntimeConfig MONGOS_RUNTIME_CONFIG = Defaults.runtimeConfigFor(Command.MongoS)
       .artifactStore(Defaults.extractedArtifactStoreFor(Command.MongoS)
-          .withTemp(DirectoryAndExecutableNaming.of(MONGO_ARTIFACT_TEMP_PATH, new NoopTempNaming()))
+          .withTemp(DirectoryAndExecutableNaming.of(MONGO_ARTIFACT_TEMP_PATH, new UUIDTempNaming()))
           .withExtraction(DirectoryAndExecutableNaming.of(MONGO_ARTIFACT_EXTRACT_PATH, new UUIDTempNaming()))
           .withDownloadConfig(Defaults.downloadConfigFor(Command.MongoS)
               .artifactStorePath(MONGO_ARTIFACT_STORE_PATH)
