@@ -15,10 +15,23 @@
  */
 package com.dremio.nessie.versioned.memory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Collections;
+import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.versioned.BranchName;
+import com.dremio.nessie.versioned.ImmutablePut;
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.VersionStoreException;
@@ -39,6 +52,23 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
   @Disabled("NYI")
   protected void checkDiff() throws VersionStoreException {
     super.checkDiff();
+  }
+
+  @Test
+  void clearUnsafe() throws Exception {
+    InMemoryVersionStore<String, String> inMemoryVersionStore = (InMemoryVersionStore<String, String>) store;
+
+    BranchName fooBranch = BranchName.of("foo");
+
+    inMemoryVersionStore.create(fooBranch, Optional.empty());
+    assertNotNull(inMemoryVersionStore.toRef("foo"));
+    inMemoryVersionStore.commit(fooBranch, Optional.empty(), "foo",
+                                Collections.singletonList(ImmutablePut.<String>builder().key(Key.of("bar")).value("baz").build()));
+    assertEquals(1L, inMemoryVersionStore.getCommits(fooBranch).count());
+
+    inMemoryVersionStore.clearUnsafe();
+    assertThrows(ReferenceNotFoundException.class, () -> assertNull(inMemoryVersionStore.toRef("foo")));
+    assertThrows(ReferenceNotFoundException.class, () -> assertNull(inMemoryVersionStore.getCommits(fooBranch)));
   }
 
   @BeforeEach
