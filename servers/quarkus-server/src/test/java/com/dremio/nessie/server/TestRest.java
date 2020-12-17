@@ -20,7 +20,6 @@ import static com.dremio.nessie.server.ReferenceMatchers.referenceWithNameAndTyp
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -81,8 +81,9 @@ class TestRest {
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 
-    assertThat(versionStore, instanceOf(InMemoryVersionStore.class));
-    ((InMemoryVersionStore<?, ?>)versionStore).clearUnsafe();
+    if (versionStore instanceof InMemoryVersionStore) {
+      ((InMemoryVersionStore<?, ?>) versionStore).clearUnsafe();
+    }
   }
 
   @ParameterizedTest
@@ -102,7 +103,7 @@ class TestRest {
     tree.createReference(Branch.of(branchName, someHash));
     tree.createReference(Branch.of(branchName2, someHash));
 
-    Map<String, Reference> references = tree.getAllReferences().stream().collect(Collectors.toMap(Reference::getName, r -> r));
+    Map<String, Reference> references = tree.getAllReferences().stream().collect(Collectors.toMap(Reference::getName, Function.identity()));
     assertThat(references.values(), containsInAnyOrder(
         referenceWithNameAndType("main", Branch.class),
         referenceWithNameAndType(tagName, Tag.class),

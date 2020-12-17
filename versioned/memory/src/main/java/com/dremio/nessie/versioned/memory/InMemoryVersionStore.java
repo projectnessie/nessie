@@ -510,11 +510,15 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
    * For testing purposes only, clears the {@link #commits} and {@link #namedReferences} maps and creates a new {@code main} branch.
    */
   @VisibleForTesting
-  public void clearUnsafe() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+  public void clearUnsafe() {
     commits.clear();
     namedReferences.clear();
     // Hint: "main" is hard-coded here
-    create(BranchName.of("main"), Optional.empty());
+    try {
+      create(BranchName.of("main"), Optional.empty());
+    } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
+      throw new RuntimeException("Failed to reset the InMemoryVersionStore for tests");
+    }
   }
 
   @SuppressWarnings("serial")
