@@ -89,9 +89,7 @@ class TestRest {
   @ValueSource(strings = {
       "normal",
       "with space",
-      "with%sign",
-      "slash/thing",
-      "all the/things%:*\u00E4\u00F6\u00FC" // some german umlauts as well
+      "slash/thing"
   })
   void referenceNames(String refNamePart) throws NessieNotFoundException, NessieConflictException {
     String tagName = "tag" + refNamePart;
