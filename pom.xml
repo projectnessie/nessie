@@ -120,7 +120,7 @@
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
-    <guava.version>29.0-jre</guava.version>
+    <guava.version>30.1-jre</guava.version>
     <hadoop.version>3.3.0</hadoop.version>
     <hamcrest.version>2.2</hamcrest.version>
     <iceberg.version>0.10.0</iceberg.version>
@@ -134,7 +134,6 @@
     <jgit.version>5.10.0.202012080955-r</jgit.version>
     <jmeter.version>5.4</jmeter.version>
     <junit.version>5.7.0</junit.version>
-    <kryo.version>5.0.2</kryo.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.14.0</protobuf.version>
     <mongodb.version>4.1.1</mongodb.version>
@@ -477,11 +476,6 @@
         <groupId>org.rocksdb</groupId>
         <artifactId>rocksdbjni</artifactId>
         <version>${rocksdb.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.esotericsoftware</groupId>
-        <artifactId>kryo</artifactId>
-        <version>${kryo.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

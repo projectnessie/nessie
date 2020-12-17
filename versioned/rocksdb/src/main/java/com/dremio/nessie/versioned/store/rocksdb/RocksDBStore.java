@@ -56,9 +56,6 @@ import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.AbstractIterator;
@@ -72,8 +69,7 @@ public class RocksDBStore implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(RocksDBStore.class);
   private static final long OPEN_SLEEP_MILLIS = 100L;
   private static final List<byte[]> COLUMN_FAMILIES;
-  @VisibleForTesting
-  static final int OUTPUT_SIZE = 8192;
+  private static final ValueSerDe VALUE_SERDE = new ValueSerDe();
 
   static {
     RocksDB.loadLibrary();
@@ -86,8 +82,6 @@ public class RocksDBStore implements Store {
   private final String dbDirectory;
   private RocksDB rocksDB;
   private Map<ValueType, ColumnFamilyHandle> valueTypeToColumnFamily;
-  private final Kryo kryo;
-  private final Output output = new Output(OUTPUT_SIZE);
 
   /**
    * Creates a store ready for connection to RocksDB.
@@ -95,7 +89,6 @@ public class RocksDBStore implements Store {
    */
   public RocksDBStore(String dbDirectory) {
     this.dbDirectory = dbDirectory;
-    this.kryo = new ValueKryo();
   }
 
   @Override
@@ -175,15 +168,13 @@ public class RocksDBStore implements Store {
         throw new NotFoundException(String.format("[%d] object(s) missing in load.", loadOps.size() - reads.size()));
       }
 
-      final Input input = new Input();
       for (Map.Entry<byte[], byte[]> entry : reads.entrySet()) {
         final LoadOp<?> loadOp = idLoadOps.get(Id.of(UnsafeByteOperations.unsafeWrap(entry.getKey())));
         if (null == loadOp) {
           throw new NotFoundException("Unable to find requested ref.");
         }
         final ValueType type = loadOp.getValueType();
-        input.setBuffer(entry.getValue());
-        loadOp.loaded(type.addType(type.getSchema().itemToMap(kryo.readClassAndObject(input), true)));
+        loadOp.loaded(type.addType(type.getSchema().itemToMap(VALUE_SERDE.deserialize(entry.getValue()), true)));
       }
     }
   }
@@ -206,10 +197,8 @@ public class RocksDBStore implements Store {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
     final HasId valueAsHasId = (HasId)value;
 
-    kryo.writeClassAndObject(output, value);
     try {
-      rocksDB.put(columnFamilyHandle, valueAsHasId.getId().toBytes(), output.getBuffer());
-      output.reset();
+      rocksDB.put(columnFamilyHandle, valueAsHasId.getId().toBytes(), VALUE_SERDE.serialize(type, value));
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
@@ -223,14 +212,12 @@ public class RocksDBStore implements Store {
   @Override
   public void save(List<SaveOp<?>> ops) {
     final ListMultimap<ColumnFamilyHandle, SaveOp<?>> mm = Multimaps.index(ops, l -> getColumnFamilyHandle(l.getType()));
-    final ListMultimap<ColumnFamilyHandle, HasId> writes = Multimaps.transformValues(mm, SaveOp::getValue);
 
     try {
       final WriteBatch batch = new WriteBatch();
-      for (Map.Entry<ColumnFamilyHandle, HasId> entry : writes.entries()) {
-        kryo.writeClassAndObject(output, entry.getValue());
-        batch.put(entry.getKey(), entry.getValue().getId().toBytes(), output.getBuffer());
-        output.reset();
+      for (Map.Entry<ColumnFamilyHandle, SaveOp<?>> entry : mm.entries()) {
+        final SaveOp<?> op = entry.getValue();
+        batch.put(entry.getKey(), op.getValue().getId().toBytes(), VALUE_SERDE.serialize(op.getType(), op.getValue()));
       }
       rocksDB.write(new WriteOptions(), batch);
     } catch (RocksDBException e) {
@@ -246,7 +233,7 @@ public class RocksDBStore implements Store {
       if (null == buffer) {
         throw new NotFoundException("Unable to load item with ID: " + id);
       }
-      return (V) kryo.readClassAndObject(new Input(buffer));
+      return VALUE_SERDE.deserialize(buffer);
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
@@ -264,7 +251,6 @@ public class RocksDBStore implements Store {
 
     // TODO: Do we need to lock the database at all?
     final Iterable<InternalRef> iterable = () -> new AbstractIterator<InternalRef>() {
-      private final Input input = new Input();
       private final RocksIterator itr = rocksDB.newIterator(columnFamilyHandle);
       private boolean isFirst = true;
 
@@ -278,8 +264,7 @@ public class RocksDBStore implements Store {
         }
 
         if (itr.isValid()) {
-          input.setBuffer(itr.value());
-          return (InternalRef) kryo.readClassAndObject(input);
+          return VALUE_SERDE.deserialize(itr.value());
         }
 
         itr.close();
@@ -310,6 +295,17 @@ public class RocksDBStore implements Store {
         }
       }
     }
+  }
+
+  /**
+   * Check if a given value is represented by the given type.
+   * @param type the type of the value.
+   * @param value the value to check.
+   * @param <V> the type of the value.
+   */
+  static <V> void typeCheck(ValueType type, V value) {
+    Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
+        "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
   }
 
   private ColumnFamilyHandle getColumnFamilyHandle(ValueType valueType) {
@@ -354,10 +350,5 @@ public class RocksDBStore implements Store {
     }
 
     return dbDirectory.getAbsolutePath();
-  }
-
-  private static <V> void typeCheck(ValueType type, V value) {
-    Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
-        "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
   }
 }
