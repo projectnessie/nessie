@@ -471,6 +471,11 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
+  public void resetStoreUnsafe(String defaultBranch) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
   public void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
 

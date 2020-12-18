@@ -32,6 +32,7 @@
 
   <modules>
     <module>client</module>
+    <module>client-test</module>
     <module>hmsbridge</module>
     <module>iceberg</module>
     <module>deltalake</module>

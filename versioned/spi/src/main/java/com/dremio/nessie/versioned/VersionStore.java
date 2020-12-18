@@ -209,6 +209,13 @@ public interface VersionStore<VALUE, METADATA> {
   Collector collectGarbage();
 
   /**
+   * Clear all the contents. This functionality is only exposed via the Nessie REST server in test execution via the
+   * {@code nessie-services-test} artifact.
+   * @param defaultBranch name of the branch to (re-)create as the default branch
+   */
+  void resetStoreUnsafe(String defaultBranch);
+
+  /**
    * A garbage collector that can be used to collect metadata.
    */
   public interface Collector extends AutoCloseable, Iterator<CollectionProgress> {}

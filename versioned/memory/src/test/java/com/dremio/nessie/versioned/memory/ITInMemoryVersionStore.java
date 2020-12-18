@@ -55,7 +55,7 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
   }
 
   @Test
-  void clearUnsafe() throws Exception {
+  void resetStoreUnsafe() throws Exception {
     InMemoryVersionStore<String, String> inMemoryVersionStore = (InMemoryVersionStore<String, String>) store;
 
     BranchName fooBranch = BranchName.of("foo");
@@ -66,7 +66,7 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
                                 Collections.singletonList(ImmutablePut.<String>builder().key(Key.of("bar")).value("baz").build()));
     assertEquals(1L, inMemoryVersionStore.getCommits(fooBranch).count());
 
-    inMemoryVersionStore.clearUnsafe();
+    inMemoryVersionStore.resetStoreUnsafe("main");
     assertThrows(ReferenceNotFoundException.class, () -> assertNull(inMemoryVersionStore.toRef("foo")));
     assertThrows(ReferenceNotFoundException.class, () -> assertNull(inMemoryVersionStore.getCommits(fooBranch)));
   }

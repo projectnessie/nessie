@@ -21,19 +21,30 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie</artifactId>
+    <artifactId>nessie-clients</artifactId>
     <version>0.2.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-server-parent</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>nessie-client-test</artifactId>
 
-  <name>Nessie - Servers - Parent</name>
+  <name>Nessie - Client</name>
 
-  <modules>
-    <module>services</module>
-    <module>services-test</module>
-    <module>quarkus-server</module>
-    <module>lambda</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-client</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-model-test</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.1.1</version>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
 </project>

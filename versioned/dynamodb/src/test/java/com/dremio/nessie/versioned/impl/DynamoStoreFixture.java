@@ -189,6 +189,11 @@ public class DynamoStoreFixture implements VersionStore<String, String>, AutoClo
   }
 
   @Override
+  public void resetStoreUnsafe(String defaultBranch) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
   public void close() {
     store.deleteTables();
     store.close();

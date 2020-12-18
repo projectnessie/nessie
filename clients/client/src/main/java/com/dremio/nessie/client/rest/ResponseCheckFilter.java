@@ -26,6 +26,7 @@ import javax.ws.rs.core.Response.Status;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieError;
 import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.error.NessieUnsupportedOperationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
@@ -62,6 +63,8 @@ public class ResponseCheckFilter implements ClientResponseFilter {
         throw new NessieForbiddenException(error);
       case INTERNAL_SERVER_ERROR:
         throw new NessieInternalServerException(error);
+      case NOT_IMPLEMENTED:
+        throw new NessieUnsupportedOperationException(error);
       default:
         throw new NessieServiceException(error);
     }

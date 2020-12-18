@@ -57,6 +57,7 @@ public class NessieClient implements Closeable {
     System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
   }
 
+  protected final WebTarget target;
   private final Client client;
   private final TreeApi tree;
   private final ConfigApi config;
@@ -73,7 +74,7 @@ public class NessieClient implements Closeable {
                                        .register(ResponseCheckFilter.class)
                                        .register(NessieObjectKeyConverterProvider.class)
                                        .build();
-    WebTarget target = client.target(path);
+    target = client.target(path);
     AuthFilter authFilter = new AuthFilter(authType, username, password, target);
     client.register(authFilter);
     contents = wrap(ContentsApi.class, new ClientContentsApi(target));
@@ -82,7 +83,7 @@ public class NessieClient implements Closeable {
   }
 
   @SuppressWarnings("unchecked")
-  private <T> T wrap(Class<T> iface, T delegate) {
+  protected <T> T wrap(Class<T> iface, T delegate) {
     return (T) Proxy.newProxyInstance(delegate.getClass().getClassLoader(), new Class[]{iface}, new ExceptionRewriter(delegate));
   }
 

@@ -25,15 +25,26 @@
     <version>0.2.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-server-parent</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>nessie-model-test</artifactId>
 
-  <name>Nessie - Servers - Parent</name>
+  <name>Nessie - API extension for tests</name>
 
-  <modules>
-    <module>services</module>
-    <module>services-test</module>
-    <module>quarkus-server</module>
-    <module>lambda</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-model</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.1.1</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.microprofile.openapi</groupId>
+      <artifactId>microprofile-openapi-api</artifactId>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
 </project>

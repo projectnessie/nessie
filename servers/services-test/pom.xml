@@ -21,19 +21,24 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie</artifactId>
+    <artifactId>nessie-server-parent</artifactId>
     <version>0.2.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-server-parent</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>nessie-services-test</artifactId>
 
-  <name>Nessie - Servers - Parent</name>
+  <name>Nessie - Services for Tests</name>
 
-  <modules>
-    <module>services</module>
-    <module>services-test</module>
-    <module>quarkus-server</module>
-    <module>lambda</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-services</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-model-test</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 </project>

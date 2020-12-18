@@ -556,6 +556,11 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     throw new IllegalStateException("Not yet implemented.");
   }
 
+  @Override
+  public void resetStoreUnsafe(String defaultBranch) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
   private void commitTree(BranchName branch, ObjectId newTree, Optional<Hash> expectedHash, METADATA metadata, boolean force, boolean empty)
       throws IOException, ReferenceConflictException {
     ObjectInserter inserter = repository.newObjectInserter();

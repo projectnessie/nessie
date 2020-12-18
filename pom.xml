@@ -74,6 +74,7 @@
 
   <modules>
     <module>model</module>
+    <module>model-test</module>
     <module>clients</module>
     <module>ui</module>
     <module>versioned</module>
