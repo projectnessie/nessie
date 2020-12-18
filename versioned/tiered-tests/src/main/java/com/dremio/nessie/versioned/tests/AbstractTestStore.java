@@ -93,6 +93,20 @@ public abstract class AbstractTestStore<S extends Store> {
   protected abstract void resetStoreState();
 
   @Test
+  void closeWithoutStart() {
+    final Store localStore = createStore();
+    localStore.close(); // This should be a no-op.
+  }
+
+  @Test
+  void closeTwice() {
+    final Store localStore = createStore();
+    localStore.start();
+    localStore.close();
+    localStore.close(); // This should be a no-op.
+  }
+
+  @Test
   void load() {
     final ImmutableList<CreatorPair> creators = ImmutableList.<CreatorPair>builder()
         .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createTag(random)))
@@ -274,11 +288,11 @@ public abstract class AbstractTestStore<S extends Store> {
     store.load(createTestLoadStep(objs));
   }
 
-  LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs) {
+  protected LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs) {
     return createTestLoadStep(objs, Optional.empty());
   }
 
-  LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs, Optional<LoadStep> next) {
+  protected LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs, Optional<LoadStep> next) {
     return new LoadStep(
         objs.entries().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
             r -> assertEquals(e.getKey().getSchema().itemToMap(e.getValue(), true),

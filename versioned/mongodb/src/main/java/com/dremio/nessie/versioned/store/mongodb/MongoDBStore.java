@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.mongodb;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +44,7 @@ import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -143,7 +143,7 @@ public class MongoDBStore implements Store {
    */
   public MongoDBStore(MongoStoreConfig config) {
     this.config = config;
-    this.timeout = Duration.of(config.getTimeoutMs(), ChronoUnit.MILLIS);
+    this.timeout = Duration.ofMillis(config.getTimeoutMs());
     this.collections = new HashMap<>();
     final CodecRegistry codecRegistry = CodecRegistries.fromProviders(
         new CodecProvider(),
@@ -190,14 +190,14 @@ public class MongoDBStore implements Store {
       final Map<Id, LoadOp<?>> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
 
       Flux.fromStream(step.getOps())
-        .groupBy(op -> collections.get(op.getValueType()))
+        .groupBy(op -> this.<HasId>getCollection(op.getValueType()))
         .flatMap(entry -> entry.map(LoadOp::getId).buffer(LOAD_SIZE).map(l -> new CollectionLoadIds(entry.key(), l)))
         .flatMap(entry -> entry.collection.find(Filters.in(KEY_NAME, entry.ids)))
         .handle((op, sink) -> {
           // Process each of the loaded entries.
           final LoadOp<?> loadOp = idLoadOps.remove(op.getId());
           if (null == loadOp) {
-            sink.error(new NotFoundException(String.format("Retrieved unexpected object with ID: %s", op.getId())));
+            sink.error(new StoreOperationException(String.format("Retrieved unexpected object with ID: %s", op.getId())));
           } else {
             final ValueType type = loadOp.getValueType();
             loadOp.loaded(type.addType(type.getSchema().itemToMap(op, true)));
@@ -253,7 +253,7 @@ public class MongoDBStore implements Store {
 
   @Override
   public void save(List<SaveOp<?>> ops) {
-    final ListMultimap<MongoCollection<?>, SaveOp<?>> mm = Multimaps.index(ops, l -> collections.get(l.getType()));
+    final ListMultimap<MongoCollection<?>, SaveOp<?>> mm = Multimaps.index(ops, l -> getCollection(l.getType()));
     final ListMultimap<MongoCollection<?>, HasId> collectionWrites = Multimaps.transformValues(mm, SaveOp::getValue);
 
     Flux.fromIterable(Multimaps.asMap(collectionWrites).entrySet())
@@ -285,8 +285,7 @@ public class MongoDBStore implements Store {
 
   @Override
   public Stream<InternalRef> getRefs() {
-    final MongoCollection<InternalRef> collection = getCollection(ValueType.REF);
-    return Flux.from(collection.find()).toStream();
+    return Flux.from(this.<InternalRef>getCollection(ValueType.REF).find()).toStream();
   }
 
   /**
@@ -297,7 +296,8 @@ public class MongoDBStore implements Store {
     Flux.fromIterable(collections.values()).flatMap(collection -> collection.deleteMany(Filters.ne("_id", "s"))).blockLast(timeout);
   }
 
-  private <T> MongoCollection<T> getCollection(ValueType valueType) {
+  @VisibleForTesting
+  <T> MongoCollection<T> getCollection(ValueType valueType) {
     final MongoCollection<? extends HasId> collection = collections.get(valueType);
     if (null == collection) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));

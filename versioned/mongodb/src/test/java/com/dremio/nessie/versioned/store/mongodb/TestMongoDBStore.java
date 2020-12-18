@@ -15,19 +15,29 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import org.bson.conversions.Bson;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+import org.reactivestreams.Subscriber;
 
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.dremio.nessie.versioned.tests.AbstractTestStore;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.mongodb.reactivestreams.client.FindPublisher;
+import com.mongodb.reactivestreams.client.MongoCollection;
 
 /**
  * A test class that contains MongoDB specific tests.
@@ -56,19 +66,7 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
    */
   @Override
   protected MongoDBStore createStore() {
-    final MongoStoreConfig config = new MongoStoreConfig() {
-      @Override
-      public String getConnectionString() {
-        return connectionString;
-      }
-
-      @Override
-      public String getDatabaseName() {
-        return testDatabaseName;
-      }
-    };
-
-    return new MongoDBStore(config);
+    return new MongoDBStore(createConfig());
   }
 
   @Override
@@ -82,7 +80,45 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   }
 
   @Test
-  void loadPagination() throws ReferenceNotFoundException {
+  void loadExtraInvalidEntity() {
+    // Create the mocks necessary to override behaviour.
+    final FindPublisher<InternalRef> mockPublisher = Mockito.mock(FindPublisher.class);
+    final ArgumentCaptor<Subscriber<InternalRef>> subCaptor = ArgumentCaptor.forClass(Subscriber.class);
+    Mockito.doNothing().when(mockPublisher).subscribe(subCaptor.capture());
+
+    final MongoCollection<InternalRef> mockCollection = Mockito.mock(MongoCollection.class);
+    Mockito.when(mockCollection.find(ArgumentMatchers.any(Bson.class))).thenReturn(mockPublisher);
+
+    // Ensure our mocked collection is returned.
+    final MongoDBStore testStore = new MongoDBStore(createConfig()) {
+      @Override
+      <T> MongoCollection<T> getCollection(ValueType valueType) {
+        return (MongoCollection<T>) mockCollection;
+      }
+    };
+
+    final InternalRef sampleBranch = SampleEntities.createBranch(random);
+    final Multimap<ValueType, HasId> objs = ImmutableMultimap.<ValueType, HasId>builder()
+        .put(ValueType.REF, sampleBranch)
+        .build();
+    objs.forEach(this::putThenLoad);
+    final LoadStep step = createTestLoadStep(objs);
+
+    // Since the operations are async, start a thread to wait a bit of time before returning the extra entity.
+    new Thread(() -> {
+      try {
+        Thread.sleep(2000);
+      } catch (InterruptedException e) {
+        Assertions.fail();
+      }
+      subCaptor.getValue().onNext(sampleBranch);
+      subCaptor.getValue().onNext(SampleEntities.createBranch(random));
+    }).start();
+    Assertions.assertThrows(StoreOperationException.class, () -> testStore.load(step));
+  }
+
+  @Test
+  void loadPagination() {
     final ImmutableMultimap.Builder<ValueType, HasId> builder = ImmutableMultimap.builder();
     for (int i = 0; i < (10 + MongoDBStore.LOAD_SIZE); ++i) {
       // Only create a single type as this is meant to test the pagination within Mongo, not the variety. Variety is
@@ -94,5 +130,19 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
     objs.forEach(this::putThenLoad);
 
     testLoad(objs);
+  }
+
+  private MongoStoreConfig createConfig() {
+    return new MongoStoreConfig() {
+      @Override
+      public String getConnectionString() {
+        return connectionString;
+      }
+
+      @Override
+      public String getDatabaseName() {
+        return testDatabaseName;
+      }
+    };
   }
 }
