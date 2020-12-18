@@ -18,11 +18,17 @@ package com.dremio.nessie.server;
 
 import static com.dremio.nessie.server.ReferenceMatchers.referenceWithNameAndType;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.wildfly.common.Assert.assertFalse;
 
 import java.util.Arrays;
 import java.util.List;
@@ -84,6 +90,43 @@ class TestRest {
     }
   }
 
+  @Test
+  void resetStoreUnsafe() throws NessieNotFoundException, NessieConflictException, NessieUnsupportedOperationException {
+    try {
+      admin.resetStoreUnsafe();
+    } catch (NessieUnsupportedOperationException e) {
+      // if the store doesn't support resetting it, there's not much we can do about that here in the test beside
+      // crossing fingers that the tests are good with no resetting it.
+      assumeTrue(false, "Store implementation does not support resetStoreUnsafe()");
+    }
+
+    String branchHash = tree.getReferenceByName("main").getHash();
+
+    String branchName = "branch-reset";
+    String tagName = "tag-reset";
+
+    tree.createReference(Tag.of(tagName, branchHash));
+    tree.createReference(Branch.of(branchName, branchHash));
+
+    ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
+    Operations ops = ImmutableOperations.builder().addOperations(op).build();
+    tree.commitMultipleOperations(branchName, branchHash, "One dummy op", ops);
+
+    assertAll(
+        () -> assertFalse(tree.getCommitLog(branchName).getOperations().isEmpty()),
+        () -> assertThat(referencesAsMap().keySet(), containsInAnyOrder("main", branchName, tagName)));
+
+    admin.resetStoreUnsafe();
+
+    assertAll(
+        () -> assertThrows(NessieNotFoundException.class, () -> tree.getCommitLog(branchName)),
+        () -> assertThat(referencesAsMap().keySet(),
+                         allOf(
+                             contains("main"),
+                             not(containsInAnyOrder(branchName, tagName)))
+    ));
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {
       "normal",
@@ -101,7 +144,7 @@ class TestRest {
     tree.createReference(Branch.of(branchName, someHash));
     tree.createReference(Branch.of(branchName2, someHash));
 
-    Map<String, Reference> references = tree.getAllReferences().stream().collect(Collectors.toMap(Reference::getName, Function.identity()));
+    Map<String, Reference> references = referencesAsMap();
     assertThat(references.values(), containsInAnyOrder(
         referenceWithNameAndType("main", Branch.class),
         referenceWithNameAndType(tagName, Tag.class),
@@ -143,6 +186,10 @@ class TestRest {
 
     tree.deleteTag(tagName, newHash);
     tree.deleteBranch(branchName, newHash);
+  }
+
+  private Map<String, Reference> referencesAsMap() {
+    return tree.getAllReferences().stream().collect(Collectors.toMap(Reference::getName, Function.identity()));
   }
 
   @Test
