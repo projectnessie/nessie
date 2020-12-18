@@ -79,10 +79,13 @@ public class ApplicationConfig {
     @Override
     String getDefaultBranch();
 
-    @ConfigProperty(name = "send-stacktrace-to-client", defaultValue = "main")
+    @ConfigProperty(name = "send-stacktrace-to-client", defaultValue = "false")
     @Override
     boolean shouldSendstackTraceToAPIClient();
 
+    @ConfigProperty(name = "allow-clear-store-operations", defaultValue = "false")
+    @Override
+    boolean allowClearStoreOperations();
   }
 
 

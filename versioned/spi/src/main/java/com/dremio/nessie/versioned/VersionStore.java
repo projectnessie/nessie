@@ -209,6 +209,14 @@ public interface VersionStore<VALUE, METADATA> {
   Collector collectGarbage();
 
   /**
+   * Clear all the contents.
+   * @param defaultBranch name of the branch to (re-)create as the default branch
+   */
+  default void resetStoreUnsafe(String defaultBranch) {
+    throw new UnsupportedOperationException();
+  }
+
+  /**
    * A garbage collector that can be used to collect metadata.
    */
   public interface Collector extends AutoCloseable, Iterator<CollectionProgress> {}

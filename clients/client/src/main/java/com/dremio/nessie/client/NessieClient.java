@@ -28,6 +28,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.ResponseProcessingException;
 import javax.ws.rs.client.WebTarget;
 
+import com.dremio.nessie.api.AdminApi;
 import com.dremio.nessie.api.ConfigApi;
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
@@ -61,6 +62,7 @@ public class NessieClient implements Closeable {
   private final TreeApi tree;
   private final ConfigApi config;
   private final ContentsApi contents;
+  private final AdminApi admin;
 
   /**
    * create new nessie client. All REST api endpoints are mapped here. This client should support any jaxrs implementation
@@ -79,6 +81,7 @@ public class NessieClient implements Closeable {
     contents = wrap(ContentsApi.class, new ClientContentsApi(target));
     tree = wrap(TreeApi.class, new ClientTreeApi(target));
     config = wrap(ConfigApi.class, new ClientConfigApi(target));
+    admin = wrap(AdminApi.class, new ClientAdminApi(target));
   }
 
   @SuppressWarnings("unchecked")
@@ -130,6 +133,10 @@ public class NessieClient implements Closeable {
 
   public ContentsApi getContentsApi() {
     return contents;
+  }
+
+  public AdminApi getAdminApi() {
+    return admin;
   }
 
   public ConfigApi getConfigApi() {

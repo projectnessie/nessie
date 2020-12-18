@@ -13,13 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.services.config;
+package com.dremio.nessie.client;
 
-public interface ServerConfig {
+import javax.ws.rs.client.WebTarget;
 
-  String getDefaultBranch();
+import com.dremio.nessie.api.AdminApi;
+import com.dremio.nessie.error.NessieUnsupportedOperationException;
 
-  boolean shouldSendstackTraceToAPIClient();
+/**
+ * Administrative interface for Nessie.
+ */
+class ClientAdminApi implements AdminApi {
+  private final WebTarget target;
 
-  boolean allowClearStoreOperations();
+  ClientAdminApi(WebTarget target) {
+    this.target = target;
+  }
+
+  @Override
+  public void resetStoreUnsafe() throws NessieUnsupportedOperationException {
+    target.path("admin/resetStoreUnsafe")
+          .request()
+          .delete();
+  }
 }

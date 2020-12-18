@@ -1,0 +1,46 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.dremio.nessie.api;
+
+import javax.ws.rs.DELETE;
+import javax.ws.rs.Path;
+
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+
+import com.dremio.nessie.error.NessieUnsupportedOperationException;
+
+/**
+ * Administrative interface for Nessie.
+ */
+@Path("admin")
+public interface AdminApi {
+
+  /**
+   * Reset the version store to the initial state, removing all data.
+   */
+  @DELETE
+  @Path("resetStoreUnsafe")
+  @Operation(summary = "Reset the contents store", description = "This operation is only available if explicitly enabled."
+                                                                  + " Only intended for testing purposes.")
+  @APIResponses({
+      @APIResponse(responseCode = "501", description = "Operation not available in the store implementation or is not enabled.")
+      }
+  )
+  void resetStoreUnsafe() throws NessieUnsupportedOperationException;
+
+}

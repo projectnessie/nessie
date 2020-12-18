@@ -30,23 +30,21 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.dremio.nessie.api.AdminApi;
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.error.NessieUnsupportedOperationException;
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.IcebergTable;
@@ -59,8 +57,6 @@ import com.dremio.nessie.model.MultiGetContentsResponse.ContentsWithKey;
 import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Tag;
-import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -70,9 +66,7 @@ class TestRest {
   private NessieClient client;
   private TreeApi tree;
   private ContentsApi contents;
-
-  @Inject
-  VersionStore<Contents, CommitMeta> versionStore;
+  private AdminApi admin;
 
   @BeforeEach
   void init() throws Exception {
@@ -80,9 +74,13 @@ class TestRest {
     this.client = new NessieClient(AuthType.NONE, path, null, null);
     tree = client.getTreeApi();
     contents = client.getContentsApi();
+    admin = client.getAdminApi();
 
-    if (versionStore instanceof InMemoryVersionStore) {
-      ((InMemoryVersionStore<?, ?>) versionStore).clearUnsafe();
+    try {
+      admin.resetStoreUnsafe();
+    } catch (NessieUnsupportedOperationException e) {
+      // if the store doesn't support resetting it, there's not much we can do about that here in the test beside
+      // crossing fingers that the tests are good with no resetting it.
     }
   }
 
