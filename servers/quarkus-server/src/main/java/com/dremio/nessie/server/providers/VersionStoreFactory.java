@@ -44,11 +44,11 @@ import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.impl.DynamoStoreConfig;
 import com.dremio.nessie.versioned.impl.JGitVersionStore;
 import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
+import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
 
 import software.amazon.awssdk.regions.Region;
 

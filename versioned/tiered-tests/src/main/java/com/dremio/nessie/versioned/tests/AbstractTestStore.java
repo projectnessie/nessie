@@ -28,13 +28,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
@@ -93,7 +93,7 @@ public abstract class AbstractTestStore<S extends Store> {
   protected abstract void resetStoreState();
 
   @Test
-  void load() throws ReferenceNotFoundException {
+  void load() {
     final ImmutableList<CreatorPair> creators = ImmutableList.<CreatorPair>builder()
         .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createTag(random)))
         .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createBranch(random)))
@@ -119,7 +119,7 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  void loadSteps() throws ReferenceNotFoundException {
+  void loadSteps() {
     final Multimap<ValueType, HasId> objs = ImmutableMultimap.<ValueType, HasId>builder()
         .put(ValueType.REF, SampleEntities.createBranch(random))
         .put(ValueType.REF, SampleEntities.createBranch(random))
@@ -144,7 +144,7 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  void loadNone() throws ReferenceNotFoundException {
+  void loadNone() {
     testLoad(ImmutableMultimap.of());
   }
 
@@ -153,7 +153,12 @@ public abstract class AbstractTestStore<S extends Store> {
     putThenLoad(ValueType.REF, SampleEntities.createBranch(random));
     final Multimap<ValueType, HasId> objs = ImmutableMultimap.of(ValueType.REF, SampleEntities.createBranch(random));
 
-    Assertions.assertThrows(ReferenceNotFoundException.class, () -> testLoad(objs));
+    Assertions.assertThrows(NotFoundException.class, () -> testLoad(objs));
+  }
+
+  @Test
+  void loadSingleInvalid() {
+    Assertions.assertThrows(NotFoundException.class, () -> store.loadSingle(ValueType.REF, SampleEntities.createId(random)));
   }
 
   @Test
@@ -249,10 +254,14 @@ public abstract class AbstractTestStore<S extends Store> {
     store.save(saveOps);
 
     saveOps.forEach(s -> {
-      final SimpleSchema<Object> schema = s.getType().getSchema();
-      assertEquals(
-          schema.itemToMap(s.getValue(), true),
-          schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
+      try {
+        final SimpleSchema<Object> schema = s.getType().getSchema();
+        assertEquals(
+            schema.itemToMap(s.getValue(), true),
+            schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
+      } catch (NotFoundException e) {
+        Assertions.fail(e);
+      }
     });
   }
 
@@ -261,7 +270,7 @@ public abstract class AbstractTestStore<S extends Store> {
     testLoadSingle(type, sample);
   }
 
-  protected void testLoad(Multimap<ValueType, HasId> objs) throws ReferenceNotFoundException {
+  protected void testLoad(Multimap<ValueType, HasId> objs) {
     store.load(createTestLoadStep(objs));
   }
 

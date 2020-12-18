@@ -57,13 +57,14 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void createReference(@NotNull Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    target.path("trees").path("tree").request()
+    target.path("trees/tree").request()
         .post(Entity.entity(reference, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
   public Reference getReferenceByName(@NotNull String refName) throws NessieNotFoundException {
-    return target.path("trees").path("tree").path(refName)
+    return target.path("trees/tree/{ref}")
+                   .resolveTemplate("ref", refName, true)
                    .request()
                    .accept(MediaType.APPLICATION_JSON_TYPE)
                    .get()
@@ -73,7 +74,8 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void assignTag(@NotNull String tagName, @NotNull String expectedHash, @NotNull Tag tag)
       throws NessieNotFoundException, NessieConflictException {
-    target.path("trees").path("tag").path(tagName)
+    target.path("trees/tag/{tagName}")
+          .resolveTemplate("tagName", tagName, true)
           .queryParam("expectedHash", expectedHash)
           .request()
           .put(Entity.entity(tag, MediaType.APPLICATION_JSON_TYPE));
@@ -81,7 +83,8 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public void deleteTag(@NotNull String tagName, @NotNull String expectedHash) throws NessieConflictException, NessieNotFoundException {
-    target.path("trees").path("tag").path(tagName)
+    target.path("trees/tag/{tagName}")
+          .resolveTemplate("tagName", tagName, true)
           .queryParam("expectedHash", expectedHash)
           .request()
           .delete();
@@ -90,7 +93,8 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void assignBranch(@NotNull String branchName, @NotNull String expectedHash,
                            @NotNull Branch branch) throws NessieNotFoundException, NessieConflictException {
-    target.path("trees").path("branch").path(branchName)
+    target.path("trees/branch/{branchName}")
+          .resolveTemplate("branchName", branchName, true)
           .queryParam("expectedHash", expectedHash)
           .request()
           .put(Entity.entity(branch, MediaType.APPLICATION_JSON_TYPE));
@@ -99,7 +103,8 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void deleteBranch(@NotNull String branchName, @NotNull String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
-    target.path("trees").path("branch").path(branchName)
+    target.path("trees/branch/{branchName}")
+          .resolveTemplate("branchName", branchName, true)
           .queryParam("expectedHash", expectedHash)
           .request()
           .delete();
@@ -107,7 +112,7 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public Branch getDefaultBranch() {
-    return target.path("trees").path("tree")
+    return target.path("trees/tree")
                  .request()
                  .accept(MediaType.APPLICATION_JSON_TYPE)
                  .get()
@@ -116,7 +121,7 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public LogResponse getCommitLog(@NotNull String ref) throws NessieNotFoundException {
-    return target.path("trees").path("tree").path(ref).path("log")
+    return target.path("trees/tree/{ref}/log").resolveTemplate("ref", ref, true)
                  .request()
                  .accept(MediaType.APPLICATION_JSON_TYPE)
                  .get()
@@ -141,12 +146,13 @@ class ClientTreeApi implements TreeApi {
           .resolveTemplate("branchName", branchName)
           .queryParam("expectedHash", expectedHash)
           .request()
-          .put(Entity.entity(merge, MediaType.APPLICATION_JSON_TYPE));
+          .post(Entity.entity(merge, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
   public EntriesResponse getEntries(@NotNull String refName) throws NessieNotFoundException {
-    return target.path("trees").path("tree").path(refName).path("entries")
+    return target.path("trees/tree/{ref}/entries")
+                 .resolveTemplate("ref", refName, true)
                  .request()
                  .accept(MediaType.APPLICATION_JSON_TYPE)
                  .get()

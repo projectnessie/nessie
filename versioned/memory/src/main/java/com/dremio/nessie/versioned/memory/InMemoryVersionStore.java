@@ -55,6 +55,7 @@ import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.WithHash;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -503,6 +504,21 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   @Override
   public Collector collectGarbage() {
     return InactiveCollector.of();
+  }
+
+  /**
+   * For testing purposes only, clears the {@link #commits} and {@link #namedReferences} maps and creates a new {@code main} branch.
+   */
+  @VisibleForTesting
+  public void clearUnsafe() {
+    commits.clear();
+    namedReferences.clear();
+    // Hint: "main" is hard-coded here
+    try {
+      create(BranchName.of("main"), Optional.empty());
+    } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
+      throw new RuntimeException("Failed to reset the InMemoryVersionStore for tests");
+    }
   }
 
   @SuppressWarnings("serial")

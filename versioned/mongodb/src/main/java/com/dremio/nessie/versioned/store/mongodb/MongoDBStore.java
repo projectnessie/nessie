@@ -35,7 +35,6 @@ import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
@@ -43,6 +42,7 @@ import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -185,7 +185,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public void load(LoadStep loadstep) throws ReferenceNotFoundException {
+  public void load(LoadStep loadstep) throws NotFoundException {
     for (LoadStep step = loadstep; step != null; step = step.getNext().orElse(null)) {
       final Map<Id, LoadOp<?>> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
 
@@ -197,7 +197,7 @@ public class MongoDBStore implements Store {
           // Process each of the loaded entries.
           final LoadOp<?> loadOp = idLoadOps.remove(op.getId());
           if (null == loadOp) {
-            sink.error(new ReferenceNotFoundException(String.format("Retrieved unexpected object with ID: %s", op.getId())));
+            sink.error(new NotFoundException(String.format("Retrieved unexpected object with ID: %s", op.getId())));
           } else {
             final ValueType type = loadOp.getValueType();
             loadOp.loaded(type.addType(type.getSchema().itemToMap(op, true)));
@@ -211,7 +211,7 @@ public class MongoDBStore implements Store {
           .map(e -> e.getId().toString())
           .collect(Collectors.toList());
       if (!missedIds.isEmpty()) {
-        throw new ReferenceNotFoundException(String.format("Requested object IDs missing: %s", String.join(", ", missedIds)));
+        throw new NotFoundException(String.format("Requested object IDs missing: %s", String.join(", ", missedIds)));
       }
     }
   }
@@ -272,14 +272,14 @@ public class MongoDBStore implements Store {
 
     final V value = Mono.from(collection.find(Filters.eq(Store.KEY_NAME, id))).block(timeout);
     if (null == value) {
-      throw new RuntimeException("Unable to load item with ID: " + id);
+      throw new NotFoundException(String.format("Unable to load item with ID: %s", id));
     }
     return value;
   }
 
   @Override
   public <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
-      throws ReferenceNotFoundException {
+      throws NotFoundException {
     throw new UnsupportedOperationException();
   }
 
