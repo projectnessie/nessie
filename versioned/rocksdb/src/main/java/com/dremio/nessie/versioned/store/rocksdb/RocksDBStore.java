@@ -60,6 +60,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.protobuf.UnsafeByteOperations;
@@ -73,10 +74,9 @@ public class RocksDBStore implements Store {
 
   static {
     RocksDB.loadLibrary();
-    COLUMN_FAMILIES = ImmutableList.<byte[]>builder()
-      .add(RocksDB.DEFAULT_COLUMN_FAMILY)
-      .addAll(Arrays.stream(ValueType.values()).map(v -> v.name().getBytes(UTF_8)).collect(Collectors.toList()))
-      .build();
+    COLUMN_FAMILIES = Stream.concat(
+      Stream.of(RocksDB.DEFAULT_COLUMN_FAMILY),
+      Arrays.stream(ValueType.values()).map(v -> v.name().getBytes(UTF_8))).collect(ImmutableList.toImmutableList());
   }
 
   private final String dbDirectory;
@@ -103,7 +103,7 @@ public class RocksDBStore implements Store {
         final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
         rocksDB = RocksDB.open(dbOptions, dbPath, columnFamilies, columnFamilyHandles);
         valueTypeToColumnFamily = IntStream.rangeClosed(1, ValueType.values().length).boxed().collect(
-            Collectors.toMap(k -> ValueType.values()[k - 1], columnFamilyHandles::get));
+            ImmutableMap.toImmutableMap(k -> ValueType.values()[k - 1], columnFamilyHandles::get));
         break;
       } catch (RocksDBException e) {
         if (e.getStatus().getCode() != Status.Code.IOError || !e.getStatus().getState().contains("While lock")) {
@@ -137,6 +137,7 @@ public class RocksDBStore implements Store {
       }
 
       rocksDB.close();
+      rocksDB = null;
     }
   }
 
@@ -157,9 +158,9 @@ public class RocksDBStore implements Store {
         keys.add(op.getId().toBytes());
       });
 
-      final Map<byte[], byte[]> reads;
+      final List<byte[]> reads;
       try {
-        reads = rocksDB.multiGet(columnFamilies, keys);
+        reads = rocksDB.multiGetAsList(columnFamilies, keys);
       } catch (RocksDBException e) {
         throw new RuntimeException(e);
       }
@@ -168,13 +169,15 @@ public class RocksDBStore implements Store {
         throw new NotFoundException(String.format("[%d] object(s) missing in load.", loadOps.size() - reads.size()));
       }
 
-      for (Map.Entry<byte[], byte[]> entry : reads.entrySet()) {
-        final LoadOp<?> loadOp = idLoadOps.get(Id.of(UnsafeByteOperations.unsafeWrap(entry.getKey())));
+      for (int i = 0; i < reads.size(); ++i) {
+        final LoadOp<?> loadOp = idLoadOps.get(Id.of(UnsafeByteOperations.unsafeWrap(keys.get(i))));
         if (null == loadOp) {
           throw new NotFoundException("Unable to find requested ref.");
+        } else if (null == reads.get(i)) {
+          throw new NotFoundException(String.format("Unable to find requested ref with ID: %s", loadOp.getId()));
         }
         final ValueType type = loadOp.getValueType();
-        loadOp.loaded(type.addType(type.getSchema().itemToMap(VALUE_SERDE.deserialize(entry.getValue()), true)));
+        loadOp.loaded(type.addType(type.getSchema().itemToMap(VALUE_SERDE.deserialize(reads.get(i)), true)));
       }
     }
   }
