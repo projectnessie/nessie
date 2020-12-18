@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -63,7 +62,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
-import com.google.protobuf.UnsafeByteOperations;
 
 public class RocksDBStore implements Store {
 
@@ -149,8 +147,6 @@ public class RocksDBStore implements Store {
         continue;
       }
 
-      final Map<Id, LoadOp<?>> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
-
       final List<ColumnFamilyHandle> columnFamilies = new ArrayList<>(loadOps.size());
       final List<byte[]> keys = new ArrayList<>(loadOps.size());
       loadOps.forEach(op -> {
@@ -170,12 +166,11 @@ public class RocksDBStore implements Store {
       }
 
       for (int i = 0; i < reads.size(); ++i) {
-        final LoadOp<?> loadOp = idLoadOps.get(Id.of(UnsafeByteOperations.unsafeWrap(keys.get(i))));
-        if (null == loadOp) {
-          throw new NotFoundException("Unable to find requested ref.");
-        } else if (null == reads.get(i)) {
+        final LoadOp<?> loadOp = loadOps.get(i);
+        if (null == reads.get(i)) {
           throw new NotFoundException(String.format("Unable to find requested ref with ID: %s", loadOp.getId()));
         }
+
         final ValueType type = loadOp.getValueType();
         loadOp.loaded(type.addType(type.getSchema().itemToMap(VALUE_SERDE.deserialize(reads.get(i)), true)));
       }
@@ -283,19 +278,17 @@ public class RocksDBStore implements Store {
    */
   @VisibleForTesting
   void deleteAllData() {
+    // RocksDB doesn't expose a way to get the min/max key for a column family, so just use the min/max possible.
+    byte[] minId = new byte[20];
+    byte[] maxId = new byte[20];
+    Arrays.fill(minId, (byte)0);
+    Arrays.fill(maxId, (byte)255);
+
     for (ColumnFamilyHandle handle : valueTypeToColumnFamily.values()) {
-      final List<byte[]> keys = new ArrayList<>();
-      try (RocksIterator itr = rocksDB.newIterator(handle)) {
-        for (itr.seekToFirst(); itr.isValid(); itr.next()) {
-          keys.add(itr.key());
-        }
-      }
-      for (byte[] key : keys) {
-        try {
-          rocksDB.delete(handle, key);
-        } catch (RocksDBException e) {
-          throw new RuntimeException(e);
-        }
+      try {
+        rocksDB.deleteRange(handle, minId, maxId);
+      } catch (RocksDBException e) {
+        throw new RuntimeException(e);
       }
     }
   }
