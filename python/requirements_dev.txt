@@ -1,6 +1,6 @@
 -r requirements.txt
 bump2version==1.0.1
-codecov==2.1.10
+codecov==2.1.11
 coverage==5.3
 flake8==3.8.4
 pip==20.3.3
