@@ -287,6 +287,8 @@ public class RocksDBStore implements Store {
     for (ColumnFamilyHandle handle : valueTypeToColumnFamily.values()) {
       try {
         rocksDB.deleteRange(handle, minId, maxId);
+        // Since RocksDB#deleteRange() is exclusive of the max key, delete it to ensure the column family is empty.
+        rocksDB.delete(maxId);
       } catch (RocksDBException e) {
         throw new RuntimeException(e);
       }

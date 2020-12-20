@@ -23,18 +23,19 @@ import java.util.Comparator;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.dremio.nessie.versioned.tests.AbstractTestStore;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
-  private static final String DB_PATH = "/tmp/db";
+  @TempDir
+  static Path DB_PATH;
 
   @AfterAll
   static void tearDown() throws IOException {
-    final File dbFile = new File(DB_PATH);
-    if (dbFile.exists()) {
-      Files.walk(dbFile.toPath()).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+    if (DB_PATH.toFile().exists()) {
+      Files.walk(DB_PATH).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
     }
   }
 
@@ -44,7 +45,7 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
    */
   @Override
   protected RocksDBStore createStore() {
-    return new RocksDBStore(DB_PATH);
+    return new RocksDBStore(DB_PATH.toString());
   }
 
   @Override

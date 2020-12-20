@@ -59,29 +59,29 @@ class TestValueSerDe {
 
   @Test
   void testDeserializeEmptyMap() {
-    testDeserialize(build(b -> b.setMap(EntityProtos.Map.newBuilder().putAllValue(ImmutableMap.of()))));
+    testDeserialize(build(b -> b.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(ImmutableMap.of()))));
   }
 
   @Test
   void testDeserializeMap() {
-    testDeserialize(build(b -> b.setMap(EntityProtos.Map.newBuilder().putAllValue(ImmutableMap.of(
+    testDeserialize(build(b -> b.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(ImmutableMap.of(
       "key", build(n -> n.setNumber(5)),
       "key2", build(n -> n.setBoolean(false)),
-      "key3", build(n -> n.setMap(EntityProtos.Map.newBuilder().putAllValue(ImmutableMap.of())))
+      "key3", build(n -> n.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(ImmutableMap.of())))
     )))));
   }
 
   @Test
   void testDeserializeEmptyList() {
-    testDeserialize(build(b -> b.setList(EntityProtos.List.newBuilder().addAllValue(ImmutableList.of()))));
+    testDeserialize(build(b -> b.setList(EntityProtos.EntityList.newBuilder().addAllValue(ImmutableList.of()))));
   }
 
   @Test
   void testDeserializeList() {
-    testDeserialize(build(b -> b.setList(EntityProtos.List.newBuilder().addAllValue(ImmutableList.of(
+    testDeserialize(build(b -> b.setList(EntityProtos.EntityList.newBuilder().addAllValue(ImmutableList.of(
       build(n -> n.setString("myValue")),
       build(n -> n.setNumber(999)),
-      build(n -> n.setMap(EntityProtos.Map.newBuilder().putAllValue(ImmutableMap.of()))))))));
+      build(n -> n.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(ImmutableMap.of()))))))));
   }
 
   @Test
@@ -134,7 +134,7 @@ class TestValueSerDe {
   }
 
   private Entity convert(EntityProtos.Entity entity) {
-    switch (Entity.EntityType.values()[entity.getType()]) {
+    switch (entity.getValueCase()) {
       case MAP:
         final ImmutableMap.Builder<String, Entity> mapBuilder = ImmutableMap.builder();
         entity.getMap().getValueMap().forEach((k, v) -> mapBuilder.put(k, convert(v)));
@@ -165,17 +165,16 @@ class TestValueSerDe {
 
   private EntityProtos.Entity convert(Entity entity) {
     final EntityProtos.Entity.Builder builder = EntityProtos.Entity.newBuilder();
-    builder.setType(entity.getType().ordinal());
     switch (entity.getType()) {
       case MAP:
         final ImmutableMap.Builder<String, EntityProtos.Entity> mapBuilder = ImmutableMap.builder();
         entity.getMap().forEach((k, v) -> mapBuilder.put(k, convert(v)));
-        builder.setMap(EntityProtos.Map.newBuilder().putAllValue(mapBuilder.build()));
+        builder.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(mapBuilder.build()));
         break;
       case LIST:
         final ImmutableList.Builder<EntityProtos.Entity> listBuilder = ImmutableList.builder();
         entity.getList().forEach(e -> listBuilder.add(convert(e)));
-        builder.setList(EntityProtos.List.newBuilder().addAllValue(listBuilder.build()));
+        builder.setList(EntityProtos.EntityList.newBuilder().addAllValue(listBuilder.build()));
         break;
       case NUMBER:
         builder.setNumber(entity.getNumber());

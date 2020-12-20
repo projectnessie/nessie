@@ -57,13 +57,7 @@ class ValueSerDe {
   }
 
   private Entity deserialize(EntityProtos.Entity entity) {
-    final int entityType = entity.getType();
-    if (entityType < 0 || entityType > Entity.EntityType.values().length) {
-      throw new IllegalArgumentException(String.format("Invalid EntityType (%d) when deserializing Entity.", entityType));
-    }
-
-    final Entity.EntityType type = Entity.EntityType.values()[entityType];
-    switch (type) {
+    switch (entity.getValueCase()) {
       case MAP:
         return Entity.ofMap(deserialize(entity.getMap().getValueMap()));
       case LIST:
@@ -79,7 +73,7 @@ class ValueSerDe {
       case BINARY:
         return Entity.ofBinary(entity.getBinary());
       default:
-        throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", type.name()));
+        throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", entity.getValueCase().name()));
     }
   }
 
@@ -107,13 +101,12 @@ class ValueSerDe {
 
   private EntityProtos.Entity serialize(Entity entity) {
     final EntityProtos.Entity.Builder builder = EntityProtos.Entity.newBuilder();
-    builder.setType(entity.getType().ordinal());
     switch (entity.getType()) {
       case MAP:
-        builder.setMap(EntityProtos.Map.newBuilder().putAllValue(serialize(entity.getMap())));
+        builder.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(serialize(entity.getMap())));
         break;
       case LIST:
-        final EntityProtos.List.Builder listBuilder = EntityProtos.List.newBuilder();
+        final EntityProtos.EntityList.Builder listBuilder = EntityProtos.EntityList.newBuilder();
         entity.getList().forEach(e -> listBuilder.addValue(serialize(e)));
         builder.setList(listBuilder);
         break;
