@@ -32,7 +32,7 @@ import de.flapdoodle.embed.process.runtime.Network;
  * Creates and configures a non-sharded flapdoodle MongoDB instance.
  */
 class LocalMongo extends TypeBasedParameterResolver<String> implements AfterAllCallback, BeforeAllCallback {
-  private static final String MONGODB_INFO = "mongodbdb-local-info";
+  private static final String MONGODB_INFO = "mongodb-local-info";
 
   private static class Holder {
     private final MongodExecutable mongoExec;
