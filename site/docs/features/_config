@@ -1,5 +1,6 @@
 title: Features
 arrange:
   - index.md
+  - intro.md
   - transactions.md
   - management.md
