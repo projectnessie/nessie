@@ -82,19 +82,15 @@ class UriBuilder {
   }
 
   private String template(String input) throws HttpClientException {
-    if (!templateValues.isEmpty() && input.contains("{")) {
-      return Arrays.stream(input.split("/"))
-                   .map(p -> (templateValues.containsKey(p)) ? templateValues.remove(p) : p)
-                   .map(UriBuilder::encode)
-                   .collect(Collectors.joining("/"));
-    } else {
-      return encode(input);
-    }
+    return Arrays.stream(input.split("/"))
+                 .map(p -> encode((templateValues.containsKey(p)) ? templateValues.remove(p) : p))
+                 .collect(Collectors.joining("/"));
   }
 
   private static String encode(String s) throws HttpClientException {
     try {
-      return URLEncoder.encode(s, "UTF-8");
+      //URLEncoder encodes space ' ' to + according to how encoding forms should work. When encoding URLs %20 should be used instead.
+      return URLEncoder.encode(s, "UTF-8").replaceAll("\\+", "%20");
     } catch (UnsupportedEncodingException e) {
       throw new HttpClientException(e);
     }

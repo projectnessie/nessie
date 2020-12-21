@@ -123,7 +123,7 @@ class ClientTreeApi implements TreeApi {
     client.create().path("trees/branch/{branchName}/merge")
           .resolveTemplate("branchName", branchName)
           .queryParam("expectedHash", expectedHash)
-          .put(merge);
+          .post(merge);
   }
 
   @Override

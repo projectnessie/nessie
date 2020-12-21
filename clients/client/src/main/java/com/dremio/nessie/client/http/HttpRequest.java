@@ -77,9 +77,10 @@ public class HttpRequest {
         con.setRequestProperty("Content-Type", "application/json");
         mapper.writerFor(body.getClass()).writeValue(con.getOutputStream(), body);
       }
+      con.connect();
       ResponseContext responseContext = new ResponseContextImpl(con);
       responseFilters.forEach(a -> a.filter(responseContext));
-      con.connect();
+
       openResponses.accept(responseContext);
       return new HttpResponse(context, responseContext, mapper);
     } catch (IOException e) {
