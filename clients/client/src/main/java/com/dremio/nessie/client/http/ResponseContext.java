@@ -21,15 +21,12 @@ import java.io.InputStream;
 /**
  * Interface for the important parts of a response. This is created after executing the request.
  */
-public interface ResponseContext extends AutoCloseable {
+public interface ResponseContext {
 
   Status getResponseCode() throws IOException;
 
   InputStream getInputStream() throws IOException;
 
   InputStream getErrorStream() throws IOException;
-
-  @Override
-  void close();
 
 }

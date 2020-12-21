@@ -72,12 +72,6 @@ public class TestResponseFilter {
   void testBadReturnNoError() {
     try {
       ResponseCheckFilter.checkResponse(new ResponseContext() {
-
-        @Override
-        public void close() {
-
-        }
-
         @Override
         public Status getResponseCode() {
           return Status.UNAUTHORIZED;
@@ -161,11 +155,6 @@ public class TestResponseFilter {
       }
       String value = MAPPER.writeValueAsString(error);
       return new StringInputStream(value);
-    }
-
-    @Override
-    public void close() {
-
     }
   }
 }

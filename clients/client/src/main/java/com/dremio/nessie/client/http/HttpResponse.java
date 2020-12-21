@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 /**
  * Simple holder for http response object.
  */
-public class HttpResponse implements AutoCloseable {
+public class HttpResponse {
 
   private final RequestContext request;
   private final ResponseContext context;
@@ -52,10 +52,5 @@ public class HttpResponse implements AutoCloseable {
 
   public <V> V readEntity(TypeReference<V> clazz) {
     return readEntity(mapper.readerFor(clazz));
-  }
-
-  @Override
-  public void close() {
-    context.close();
   }
 }
