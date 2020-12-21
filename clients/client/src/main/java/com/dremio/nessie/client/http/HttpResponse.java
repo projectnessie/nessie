@@ -30,10 +30,11 @@ public class HttpResponse implements AutoCloseable {
   private final ResponseContext context;
   private final ObjectMapper mapper;
 
-  HttpResponse(RequestContext request, ResponseContext context, ObjectMapper mapper) {
+  HttpResponse(RequestContext request, ResponseContext context, ObjectMapper mapper) throws IOException {
     this.request = request;
     this.context = context;
     this.mapper = mapper;
+    context.getResponseCode();
   }
 
   private <V> V readEntity(ObjectReader reader) {
