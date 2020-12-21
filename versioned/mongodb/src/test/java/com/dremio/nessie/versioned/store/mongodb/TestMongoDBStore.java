@@ -93,7 +93,9 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
     final LoadStep step = createTestLoadStep(objs);
 
     // Set up the mocks.
-    final TestPublisher<InternalRef> publisher = TestPublisher.create();
+    final TestPublisher<InternalRef> publisher = TestPublisher.<InternalRef>createCold()
+        .next(sampleBranch, SampleEntities.createBranch(random))
+        .complete();
     final FindPublisher<InternalRef> findPublisher = Mockito.mock(FindPublisher.class, AdditionalAnswers.delegatesTo(publisher));
     final MongoCollection<InternalRef> mockCollection = Mockito.mock(MongoCollection.class);
     Mockito.when(mockCollection.find(ArgumentMatchers.any(Bson.class))).thenReturn(findPublisher);
@@ -111,19 +113,6 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
       }
     };
 
-    // Since the operations are async, start a thread to return the extra entity.
-    new Thread(() -> {
-      while (!hasReturnedCollection.get()) {
-        try {
-          Thread.sleep(25);
-        } catch (InterruptedException e) {
-          Assertions.fail();
-        }
-      }
-
-      // Trigger return of an extra entity that was not requested.
-      publisher.next(sampleBranch, SampleEntities.createBranch(random)).complete();
-    }).start();
     Assertions.assertThrows(StoreOperationException.class, () -> testStore.load(step));
   }
 
