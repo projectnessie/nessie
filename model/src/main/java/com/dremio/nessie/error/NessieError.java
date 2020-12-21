@@ -27,6 +27,7 @@ public class NessieError {
 
   private final String message;
   private final int status;
+  private final String reason;
   private final String serverStackTrace;
   private final Exception clientProcessingException;
 
@@ -34,8 +35,9 @@ public class NessieError {
   public NessieError(
       @JsonProperty("message") String message,
       @JsonProperty("status") int status,
+      @JsonProperty("reason") String reason,
       @JsonProperty("serverStackTrace") String serverStackTrace) {
-    this(message, status, serverStackTrace, null);
+    this(message, status, reason, serverStackTrace, null);
   }
 
   /**
@@ -43,12 +45,14 @@ public class NessieError {
    *
    * @param message             Message of error.
    * @param status              Status of error.
+   * @param reason              Reason for status.
    * @param serverStackTrace    Server stack trace, if available.
    * @param processingException Any processing exceptions that happened on the client.
    */
-  public NessieError(String message, int status, String serverStackTrace, Exception processingException) {
+  public NessieError(String message, int status, String reason, String serverStackTrace, Exception processingException) {
     this.message = message;
     this.status = status;
+    this.reason = reason;
     this.serverStackTrace = serverStackTrace;
     this.clientProcessingException = processingException;
   }
@@ -57,43 +61,16 @@ public class NessieError {
    * Create Error.
    *
    * @param statusCode          Status of error.
+   * @param reason              Reason for status.
    * @param serverStackTrace    Server stack trace, if available.
    * @param processingException Any processing exceptions that happened on the client.
    */
-  public NessieError(int statusCode, String serverStackTrace, Exception processingException) {
+  public NessieError(int statusCode, String reason, String serverStackTrace, Exception processingException) {
     this.status = statusCode;
-    this.message = standardMessage(status);
+    this.message = reason;
+    this.reason = reason;
     this.serverStackTrace = serverStackTrace;
     this.clientProcessingException = processingException;
-  }
-
-  private String standardMessage(int status) {
-    switch (status) {
-      case 200:
-        return "OK";
-      case 201:
-        return "Created";
-      case 204:
-        return "No Content";
-      case 400:
-        return "Bad Request";
-      case 401:
-        return "Unauthorized";
-      case 403:
-        return "Forbidden";
-      case 404:
-        return "Not Found";
-      case 405:
-        return "Method Not Allowed";
-      case 409:
-        return "Conflict";
-      case 412:
-        return "Precondition Failed";
-      case 500:
-        return "Internal Server Error";
-      default:
-        throw new UnsupportedOperationException(String.format("Cannot identify given error type %d", status));
-    }
   }
 
 
@@ -103,6 +80,10 @@ public class NessieError {
 
   public int getStatus() {
     return status;
+  }
+
+  public String getReason() {
+    return reason;
   }
 
   public String getServerStackTrace() {
@@ -122,15 +103,15 @@ public class NessieError {
   @JsonIgnore
   public String getFullMessage() {
     if (serverStackTrace != null) {
-      return String.format("%s\nStatus Code: %d\nServer Stack Trace:\n%s", message,
-                           status, serverStackTrace);
+      return String.format("%s\nStatus Code: %d (%s)\nServer Stack Trace:\n%s", message,
+                           status, reason, serverStackTrace);
     }
 
     if (clientProcessingException != null) {
       StringWriter sw = new StringWriter();
       clientProcessingException.printStackTrace(new PrintWriter(sw));
-      return String.format("%s\nStatus Code: %d\nClient Processing Failure:\n%s", message,
-                           status, sw.toString());
+      return String.format("%s\nStatus Code: %d (%s)\nClient Processing Failure:\n%s", message,
+                           status, reason, sw.toString());
     }
     return message;
   }

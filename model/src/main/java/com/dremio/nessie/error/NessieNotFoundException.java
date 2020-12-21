@@ -18,11 +18,11 @@ package com.dremio.nessie.error;
 public class NessieNotFoundException extends BaseNessieClientServerException {
 
   public NessieNotFoundException(String message, Throwable cause) {
-    super(message, 404, cause);
+    super(message, 404, "Not Found", cause);
   }
 
   public NessieNotFoundException(String message) {
-    super(message, 404);
+    super(message, 404, "Not Found");
   }
 
   public NessieNotFoundException(NessieError error) {

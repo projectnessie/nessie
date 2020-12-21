@@ -23,6 +23,7 @@ import java.io.IOException;
 public class BaseNessieClientServerException extends IOException {
 
   private final int status;
+  private final String reason;
   private final String serverStackTrace;
 
   /**
@@ -31,9 +32,10 @@ public class BaseNessieClientServerException extends IOException {
    * @param status HTTP status
    * @param cause The underlying cause.
    */
-  public BaseNessieClientServerException(String message, int status, Throwable cause) {
+  public BaseNessieClientServerException(String message, int status, String reason, Throwable cause) {
     super(message, cause);
     this.status = status;
+    this.reason = reason;
     this.serverStackTrace = null;
   }
 
@@ -42,9 +44,10 @@ public class BaseNessieClientServerException extends IOException {
    * @param message Message
    * @param status HTTP status
    */
-  public BaseNessieClientServerException(String message, int status) {
+  public BaseNessieClientServerException(String message, int status, String reason) {
     super(message);
     this.status = status;
+    this.reason = reason;
     this.serverStackTrace = null;
   }
 
@@ -55,11 +58,16 @@ public class BaseNessieClientServerException extends IOException {
   public BaseNessieClientServerException(NessieError error) {
     super(error.getMessage());
     this.status = error.getStatus();
+    this.reason = error.getReason();
     this.serverStackTrace = error.getServerStackTrace();
   }
 
   public int getStatus() {
     return status;
+  }
+
+  public String getReason() {
+    return reason;
   }
 
   public String getServerStackTrace() {

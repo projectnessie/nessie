@@ -20,6 +20,7 @@ import java.io.InputStream;
 
 import com.dremio.nessie.client.http.HttpClientException;
 import com.dremio.nessie.client.http.ResponseContext;
+import com.dremio.nessie.client.http.Status;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieError;
 import com.dremio.nessie.error.NessieNotFoundException;
@@ -35,31 +36,32 @@ public class ResponseCheckFilter {
    * @throws IOException Throws IOException for certain error types.
    */
   public static void checkResponse(ResponseContext con, ObjectMapper mapper) throws IOException {
-    final int statusCode;
+    final Status status;
     final NessieError error;
     try {
-      statusCode = con.getResponseCode();
+      int statusCode = con.getResponseCode();
       if (statusCode > 199 && statusCode < 300) {
         return;
       }
 
-      error = decodeErrorObject(statusCode, con.getErrorStream(), mapper.readerFor(NessieError.class));
+      status = Status.fromCode(statusCode);
+      error = decodeErrorObject(status, con.getErrorStream(), mapper.readerFor(NessieError.class));
     } catch (IOException e) {
       throw new HttpClientException(e);
     }
 
-    switch (statusCode) {
-      case 404:
-        throw new NessieNotFoundException(error);
-      case 409:
-        throw new NessieConflictException(error);
-      case 400:
+    switch (status) {
+      case BAD_REQUEST:
         throw new NessieBadRequestException(error);
-      case 401:
+      case UNAUTHORIZED:
         throw new NessieNotAuthorizedException(error);
-      case 403:
+      case FORBIDDEN:
         throw new NessieForbiddenException(error);
-      case 500:
+      case NOT_FOUND:
+        throw new NessieNotFoundException(error);
+      case CONFLICT:
+        throw new NessieConflictException(error);
+      case INTERNAL_SERVER_ERROR:
         throw new NessieInternalServerException(error);
       default:
         throw new NessieServiceException(error);
@@ -67,15 +69,17 @@ public class ResponseCheckFilter {
 
   }
 
-  private static NessieError decodeErrorObject(int statusCode, InputStream inputStream, ObjectReader reader) {
+  private static NessieError decodeErrorObject(Status status, InputStream inputStream, ObjectReader reader) {
     NessieError error;
     if (inputStream == null) {
-      error = new NessieError(statusCode, null, new RuntimeException("Could not parse error object in response."));
+      error = new NessieError(status.getCode(), status.getReason(),
+                              "Could not parse error object in response.",
+                              new RuntimeException("Could not parse error object in response."));
     } else {
       try {
         error = reader.readValue(inputStream);
       } catch (IOException e) {
-        error = new NessieError(statusCode, null, e);
+        error = new NessieError(status.getCode(), status.getReason(), null, e);
       }
     }
     return error;

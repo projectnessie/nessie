@@ -26,6 +26,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import com.dremio.nessie.client.http.ResponseContext;
+import com.dremio.nessie.client.http.Status;
 import com.dremio.nessie.error.BaseNessieClientServerException;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieError;
@@ -39,10 +40,10 @@ public class TestResponseFilter {
 
   @ParameterizedTest
   @MethodSource("provider")
-  void testRepsonseFilter(int responseCode, Class<? extends Exception> clazz) {
-    final NessieError error = new NessieError(responseCode, "xxx", null);
+  void testRepsonseFilter(Status responseCode, Class<? extends Exception> clazz) {
+    final NessieError error = new NessieError(responseCode.getCode(), responseCode.getReason(), "xxx", null);
     try {
-      ResponseCheckFilter.checkResponse(new TestResponseContext(responseCode, error), MAPPER);
+      ResponseCheckFilter.checkResponse(new TestResponseContext(responseCode.getCode(), error), MAPPER);
     } catch (Exception e) {
       Assertions.assertTrue(clazz.isInstance(e));
       if (e instanceof NessieServiceException) {
@@ -57,9 +58,9 @@ public class TestResponseFilter {
 
   @Test
   void testBadReturn() {
-    final NessieError error = new NessieError("unknown", 513, "xxx", null);
+    final NessieError error = new NessieError("unknown", 415, "xxx", null);
     try {
-      ResponseCheckFilter.checkResponse(new TestResponseContext(513, error), MAPPER);
+      ResponseCheckFilter.checkResponse(new TestResponseContext(415, error), MAPPER);
     } catch (NessieServiceException e) {
       Assertions.assertEquals(error, e.getError());
     } catch (Exception e) {
@@ -73,8 +74,13 @@ public class TestResponseFilter {
       ResponseCheckFilter.checkResponse(new ResponseContext() {
 
         @Override
+        public void close() {
+
+        }
+
+        @Override
         public int getResponseCode() {
-          return 401;
+          return Status.UNAUTHORIZED.getCode();
         }
 
         @Override
@@ -89,7 +95,7 @@ public class TestResponseFilter {
         }
       }, MAPPER);
     } catch (NessieServiceException e) {
-      Assertions.assertEquals(401, e.getError().getStatus());
+      Assertions.assertEquals(Status.UNAUTHORIZED.getCode(), e.getError().getStatus());
       Assertions.assertTrue(e.getError().getClientProcessingException() instanceof IOException);
       Assertions.assertNull(e.getError().getServerStackTrace());
     } catch (Exception e) {
@@ -100,9 +106,12 @@ public class TestResponseFilter {
   @Test
   void testBadReturnBadError() {
     try {
-      ResponseCheckFilter.checkResponse(new TestResponseContext(401, null), MAPPER);
+      ResponseCheckFilter.checkResponse(new TestResponseContext(Status.UNAUTHORIZED.getCode(), null), MAPPER);
     } catch (NessieServiceException e) {
-      NessieError defaultError = new NessieError(401, null, new RuntimeException("Could not parse error object in response."));
+      NessieError defaultError = new NessieError(Status.UNAUTHORIZED.getCode(),
+                                                 Status.UNAUTHORIZED.getReason(),
+                                                 "Could not parse error object in response.",
+                                                 new RuntimeException("Could not parse error object in response."));
       Assertions.assertEquals(defaultError, e.getError());
     } catch (Exception e) {
       Assertions.fail();
@@ -116,12 +125,12 @@ public class TestResponseFilter {
 
   private static Stream<Arguments> provider() {
     return Stream.of(
-      Arguments.of(400, NessieBadRequestException.class),
-      Arguments.of(401, NessieNotAuthorizedException.class),
-      Arguments.of(403, NessieForbiddenException.class),
-      Arguments.of(404, NessieNotFoundException.class),
-      Arguments.of(409, NessieConflictException.class),
-      Arguments.of(500, NessieInternalServerException.class)
+      Arguments.of(Status.BAD_REQUEST, NessieBadRequestException.class),
+      Arguments.of(Status.UNAUTHORIZED, NessieNotAuthorizedException.class),
+      Arguments.of(Status.FORBIDDEN, NessieForbiddenException.class),
+      Arguments.of(Status.NOT_FOUND, NessieNotFoundException.class),
+      Arguments.of(Status.CONFLICT, NessieConflictException.class),
+      Arguments.of(Status.INTERNAL_SERVER_ERROR, NessieInternalServerException.class)
     );
   }
 
@@ -152,6 +161,11 @@ public class TestResponseFilter {
       }
       String value = MAPPER.writeValueAsString(error);
       return new StringInputStream(value);
+    }
+
+    @Override
+    public void close() {
+
     }
   }
 }

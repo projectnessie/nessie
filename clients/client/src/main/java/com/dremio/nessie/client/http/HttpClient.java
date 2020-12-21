@@ -15,8 +15,14 @@
  */
 package com.dremio.nessie.client.http;
 
+import java.lang.ref.PhantomReference;
+import java.lang.ref.ReferenceQueue;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -33,12 +39,15 @@ import com.fasterxml.jackson.databind.SerializationFeature;
  *   - no caching of connections. Could be slow
  * </p>
  */
-public class HttpClient {
+public class HttpClient implements AutoCloseable {
   private final ObjectMapper mapper;
   private final String base;
   private final String accept;
   private final List<RequestFilter> requestFilters = new ArrayList<>();
   private final List<ResponseFilter> responseFilters = new ArrayList<>();
+  private final Set<ResponseContext> openResponses = new HashSet<>();
+  private final ReferenceQueue<ResponseContext> referenceQueue = new ReferenceQueue<>();
+  private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
   public enum Method {
     GET,
@@ -58,6 +67,17 @@ public class HttpClient {
                                     .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     this.base = base;
     this.accept = accept;
+    executor.execute(() -> {
+      while (true) {
+        try {
+          HttpClientReference c = (HttpClientReference) referenceQueue.remove();
+          c.close();
+        } catch (InterruptedException e) {
+          break;
+        }
+      }
+    });
+
   }
 
   public HttpClient(String base) {
@@ -75,6 +95,32 @@ public class HttpClient {
   }
 
   public HttpRequest create() {
-    return new HttpRequest(base, accept, mapper, requestFilters, responseFilters);
+    return new HttpRequest(base, accept, mapper, requestFilters, responseFilters,
+        c -> new HttpClientReference(c, referenceQueue, openResponses));
+  }
+
+  @Override
+  public void close() {
+    openResponses.forEach(ResponseContext::close);
+    openResponses.clear();
+    executor.shutdown();
+  }
+
+  private static class HttpClientReference extends PhantomReference<ResponseContext> {
+    private final ResponseContext referent;
+    private final Set<ResponseContext> openResponses;
+
+    public HttpClientReference(ResponseContext referent, ReferenceQueue<? super ResponseContext> q, Set<ResponseContext> openResponses) {
+      super(referent, q);
+      this.referent = referent;
+      this.openResponses = openResponses;
+      openResponses.add(referent);
+    }
+
+    public void close() {
+      if (openResponses.remove(referent)) {
+        referent.close();
+      }
+    }
   }
 }

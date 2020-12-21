@@ -35,7 +35,7 @@ import com.sun.net.httpserver.HttpServer;
 
 public class TestHttpClient {
 
-  private static final Executor EXEC = Executors.newFixedThreadPool(1);
+  private static final Executor EXEC = Executors.newSingleThreadExecutor();
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private static HttpRequest get(InetSocketAddress address) {

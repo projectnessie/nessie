@@ -136,7 +136,7 @@ public class NessieClient implements Closeable {
 
   @Override
   public void close() {
-
+    client.close();
   }
 
   public static NessieClient basic(String path, String username, String password) {

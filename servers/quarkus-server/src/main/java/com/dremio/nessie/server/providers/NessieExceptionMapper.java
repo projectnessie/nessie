@@ -45,25 +45,30 @@ public class NessieExceptionMapper implements ExceptionMapper<Exception> {
 
     if (exception instanceof WebApplicationException) {
       Response.Status status = Status.fromStatusCode(((WebApplicationException) exception).getResponse().getStatus());
-      return exception(status.getStatusCode(), exception.getMessage(), exception);
+      return exception(status, exception.getMessage(), exception);
     } else if (exception instanceof BaseNessieClientServerException) {
       // log message at debug level so we can review stack traces if enabled.
       LOGGER.debug("Exception on server with appropriate error sent to client.", exception);
-      return exception(((BaseNessieClientServerException) exception).getStatus(), exception.getMessage(), exception);
+      BaseNessieClientServerException e = (BaseNessieClientServerException) exception;
+      return exception(e.getStatus(), e.getReason(), exception.getMessage(), exception);
     } else if (exception instanceof JsonParseException) {
-      return exception(Status.BAD_REQUEST.getStatusCode(), exception.getMessage(), exception);
+      return exception(Status.BAD_REQUEST, exception.getMessage(), exception);
     } else if (exception instanceof JsonMappingException) {
-      return exception(Status.BAD_REQUEST.getStatusCode(), exception.getMessage(), exception);
+      return exception(Status.BAD_REQUEST, exception.getMessage(), exception);
     } else {
-      return exception(Status.INTERNAL_SERVER_ERROR.getStatusCode(), exception.getMessage(), exception);
+      return exception(Status.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
     }
   }
 
-  private Response exception(int status, String message, Exception e) {
+  private Response exception(int status, String reason, String message, Exception e) {
     String stack = serverConfig.shouldSendstackTraceToAPIClient() ? Throwables.getStackTraceAsString(e) : null;
-    NessieError error = new NessieError(message, status, stack);
-    LOGGER.debug("Failure on server, propagated to client. Status: {}, Message: {}.", status, message, e);
+    NessieError error = new NessieError(message, status, reason, stack);
+    LOGGER.debug("Failure on server, propagated to client. Status: {} {}, Message: {}.", status, reason, message, e);
     return Response.status(status).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
+  }
+
+  private Response exception(Status status, String message, Exception e) {
+    return exception(status.getStatusCode(), status.getReasonPhrase(), message, e);
   }
 
 }

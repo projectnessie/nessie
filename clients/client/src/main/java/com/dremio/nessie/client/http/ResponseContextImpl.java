@@ -38,4 +38,9 @@ class ResponseContextImpl implements ResponseContext {
   public InputStream getErrorStream() {
     return connection.getErrorStream();
   }
+
+  @Override
+  public void close() {
+    connection.disconnect();
+  }
 }

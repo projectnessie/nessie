@@ -24,17 +24,16 @@ import com.fasterxml.jackson.databind.ObjectReader;
 /**
  * Simple holder for http response object.
  */
-public class HttpResponse {
+public class HttpResponse implements AutoCloseable {
 
   private final RequestContext request;
   private final ResponseContext context;
   private final ObjectMapper mapper;
 
-  HttpResponse(RequestContext request, ResponseContext context, ObjectMapper mapper) throws IOException {
+  HttpResponse(RequestContext request, ResponseContext context, ObjectMapper mapper) {
     this.request = request;
     this.context = context;
     this.mapper = mapper;
-    this.context.getResponseCode(); // ensure at this point we have completed the request
   }
 
   private <V> V readEntity(ObjectReader reader) {
@@ -53,4 +52,8 @@ public class HttpResponse {
     return readEntity(mapper.readerFor(clazz));
   }
 
+  @Override
+  public void close() {
+    context.close();
+  }
 }

@@ -19,11 +19,11 @@ package com.dremio.nessie.error;
 public class NessieConflictException extends BaseNessieClientServerException {
 
   public NessieConflictException(String message, Throwable cause) {
-    super(message, 409, cause);
+    super(message, 409, "Conflict", cause);
   }
 
   public NessieConflictException(String message) {
-    super(message, 409);
+    super(message, 409, "Conflict");
   }
 
   public NessieConflictException(NessieError error) {

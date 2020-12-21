@@ -34,6 +34,7 @@
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-client</artifactId>
       <version>${project.version}</version>
+      <classifier>distribution</classifier>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
