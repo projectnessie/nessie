@@ -39,13 +39,16 @@ public class ResponseCheckFilter {
     final Status status;
     final NessieError error;
     try {
-      int statusCode = con.getResponseCode();
-      if (statusCode > 199 && statusCode < 300) {
+      status = con.getResponseCode();
+      if (status.getCode() > 199 && status.getCode() < 300) {
         return;
       }
+    } catch (IOException e) {
+      throw new HttpClientException(e);
+    }
 
-      status = Status.fromCode(statusCode);
-      error = decodeErrorObject(status, con.getErrorStream(), mapper.readerFor(NessieError.class));
+    try (InputStream is = con.getErrorStream()) {
+      error = decodeErrorObject(status, is, mapper.readerFor(NessieError.class));
     } catch (IOException e) {
       throw new HttpClientException(e);
     }

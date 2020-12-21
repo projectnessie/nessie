@@ -196,9 +196,7 @@ public class TestHttpClient {
 
   @Test
   void testGetTemplateThrows() {
-    HttpHandler handler = h -> {
-      Assertions.fail();
-    };
+    HttpHandler handler = h -> Assertions.fail();
     try (TestServer server = new TestServer("/a/b", handler)) {
       Assertions.assertThrows(HttpClientException.class,
           () -> get(server.server.getAddress()).path("a/{b}").get().readEntity(ExampleBean.class));
@@ -226,7 +224,7 @@ public class TestHttpClient {
       });
       client.register((ResponseFilter) con -> {
         try {
-          Assertions.assertEquals(200, con.getResponseCode());
+          Assertions.assertEquals(Status.OK, con.getResponseCode());
           responseFilterCalled.set(true);
         } catch (IOException e) {
           Assertions.fail();

@@ -43,7 +43,7 @@ public class TestResponseFilter {
   void testRepsonseFilter(Status responseCode, Class<? extends Exception> clazz) {
     final NessieError error = new NessieError(responseCode.getCode(), responseCode.getReason(), "xxx", null);
     try {
-      ResponseCheckFilter.checkResponse(new TestResponseContext(responseCode.getCode(), error), MAPPER);
+      ResponseCheckFilter.checkResponse(new TestResponseContext(responseCode, error), MAPPER);
     } catch (Exception e) {
       Assertions.assertTrue(clazz.isInstance(e));
       if (e instanceof NessieServiceException) {
@@ -60,7 +60,7 @@ public class TestResponseFilter {
   void testBadReturn() {
     final NessieError error = new NessieError("unknown", 415, "xxx", null);
     try {
-      ResponseCheckFilter.checkResponse(new TestResponseContext(415, error), MAPPER);
+      ResponseCheckFilter.checkResponse(new TestResponseContext(Status.UNSUPPORTED_MEDIA_TYPE, error), MAPPER);
     } catch (NessieServiceException e) {
       Assertions.assertEquals(error, e.getError());
     } catch (Exception e) {
@@ -79,8 +79,8 @@ public class TestResponseFilter {
         }
 
         @Override
-        public int getResponseCode() {
-          return Status.UNAUTHORIZED.getCode();
+        public Status getResponseCode() {
+          return Status.UNAUTHORIZED;
         }
 
         @Override
@@ -106,7 +106,7 @@ public class TestResponseFilter {
   @Test
   void testBadReturnBadError() {
     try {
-      ResponseCheckFilter.checkResponse(new TestResponseContext(Status.UNAUTHORIZED.getCode(), null), MAPPER);
+      ResponseCheckFilter.checkResponse(new TestResponseContext(Status.UNAUTHORIZED, null), MAPPER);
     } catch (NessieServiceException e) {
       NessieError defaultError = new NessieError(Status.UNAUTHORIZED.getCode(),
                                                  Status.UNAUTHORIZED.getReason(),
@@ -120,7 +120,7 @@ public class TestResponseFilter {
 
   @Test
   void testGood() {
-    Assertions.assertDoesNotThrow(() -> ResponseCheckFilter.checkResponse(new TestResponseContext(200, null), MAPPER));
+    Assertions.assertDoesNotThrow(() -> ResponseCheckFilter.checkResponse(new TestResponseContext(Status.OK, null), MAPPER));
   }
 
   private static Stream<Arguments> provider() {
@@ -135,16 +135,16 @@ public class TestResponseFilter {
   }
 
   private static class TestResponseContext implements ResponseContext {
-    private final int code;
+    private final Status code;
     private final NessieError error;
 
-    TestResponseContext(int code, NessieError error) {
+    TestResponseContext(Status code, NessieError error) {
       this.code = code;
       this.error = error;
     }
 
     @Override
-    public int getResponseCode() throws IOException {
+    public Status getResponseCode() throws IOException {
       return code;
     }
 

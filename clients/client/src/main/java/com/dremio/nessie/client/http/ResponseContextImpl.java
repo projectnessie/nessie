@@ -27,8 +27,8 @@ class ResponseContextImpl implements ResponseContext {
     this.connection = connection;
   }
 
-  public int getResponseCode() throws IOException {
-    return connection.getResponseCode();
+  public Status getResponseCode() throws IOException {
+    return Status.fromCode(connection.getResponseCode());
   }
 
   public InputStream getInputStream() throws IOException {
@@ -42,5 +42,9 @@ class ResponseContextImpl implements ResponseContext {
   @Override
   public void close() {
     connection.disconnect();
+  }
+
+  HttpURLConnection getConnection() {
+    return connection;
   }
 }

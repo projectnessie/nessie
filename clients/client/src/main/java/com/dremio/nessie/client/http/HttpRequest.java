@@ -21,7 +21,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import com.dremio.nessie.client.http.HttpClient.Method;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,16 +32,13 @@ public class HttpRequest {
 
   private final UriBuilder uriBuilder;
   private final ObjectMapper mapper;
-  private final Consumer<ResponseContext> openResponses;
   private final Map<String, String> headers = new HashMap<>();
   private final List<RequestFilter> requestFilters;
   private final List<ResponseFilter> responseFilters;
 
-  HttpRequest(String base, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters, List<ResponseFilter> responseFilters,
-              Consumer<ResponseContext> openResponses) {
+  HttpRequest(String base, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters, List<ResponseFilter> responseFilters) {
     this.uriBuilder = new UriBuilder(base);
     this.mapper = mapper;
-    this.openResponses = openResponses;
     this.headers.put("Accept", accept);
     this.requestFilters = requestFilters;
     this.responseFilters = responseFilters;
@@ -80,8 +76,6 @@ public class HttpRequest {
       con.connect();
       ResponseContext responseContext = new ResponseContextImpl(con);
       responseFilters.forEach(a -> a.filter(responseContext));
-
-      openResponses.accept(responseContext);
       return new HttpResponse(context, responseContext, mapper);
     } catch (IOException e) {
       throw new HttpClientException(e);

@@ -23,7 +23,7 @@ import java.io.InputStream;
  */
 public interface ResponseContext extends AutoCloseable {
 
-  int getResponseCode() throws IOException;
+  Status getResponseCode() throws IOException;
 
   InputStream getInputStream() throws IOException;
 

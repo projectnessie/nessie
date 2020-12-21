@@ -16,6 +16,7 @@
 package com.dremio.nessie.client.http;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,8 +39,8 @@ public class HttpResponse implements AutoCloseable {
   }
 
   private <V> V readEntity(ObjectReader reader) {
-    try {
-      return reader.readValue(context.getInputStream());
+    try (InputStream is = context.getInputStream()) {
+      return reader.readValue(is);
     } catch (IOException e) {
       throw new HttpClientException(e);
     }
