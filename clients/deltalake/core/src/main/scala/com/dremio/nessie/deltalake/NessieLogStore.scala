@@ -21,8 +21,7 @@ import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 import java.util.regex.Pattern
 
-import com.dremio.nessie.client.NessieClient
-import com.dremio.nessie.client.NessieClient.AuthType
+import com.dremio.nessie.client.{NessieClient, NessieConfigConstants}
 import com.dremio.nessie.error.NessieNotFoundException
 import com.dremio.nessie.model.{ContentsKey, DeltaLakeTable, ImmutableDeltaLakeTable, Reference}
 import org.apache.commons.io.IOUtils
@@ -46,34 +45,23 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   val checksumFilePattern: Pattern = "\\d+-[0-9a-f]+\\.crc".r.pattern
   val checkpointFilePattern: Pattern = "\\d+-[0-9a-f]+\\.checkpoint(\\.\\d+\\.\\d+)?\\.parquet".r.pattern
 
-  val CONF_NESSIE_URL = "nessie.url"
-  val CONF_NESSIE_USERNAME = "nessie.username"
-  val CONF_NESSIE_PASSWORD = "nessie.password"
-  val CONF_NESSIE_AUTH_TYPE = "nessie.auth_type"
-  val NESSIE_AUTH_TYPE_DEFAULT = "BASIC"
-  val CONF_NESSIE_REF = "nessie.ref"
-
   var lastSnapshotUuid: Option[String] = None
 
   private val client: NessieClient = {
-    val authType = AuthType.valueOf(hadoopConf.get(CONF_NESSIE_AUTH_TYPE, NESSIE_AUTH_TYPE_DEFAULT))
-    val username = hadoopConf.get(CONF_NESSIE_USERNAME)
-    val password = hadoopConf.get(CONF_NESSIE_PASSWORD)
-    val url = hadoopConf.get(CONF_NESSIE_URL)
-    new NessieClient(authType, url, username, password)
+    NessieClient.withConfig(c => hadoopConf.get(c))
   }
 
   private def getOrCreate(): Reference = {
-    val requestedRef = hadoopConf.get(CONF_NESSIE_REF)
+    val requestedRef = hadoopConf.get(NessieConfigConstants.CONF_NESSIE_REF)
 
     try {
       Option(requestedRef).map(client.getTreeApi.getReferenceByName(_)).getOrElse(client.getTreeApi.getDefaultBranch)
     } catch {
       case ex: NessieNotFoundException =>
         if (requestedRef != null) throw new IllegalArgumentException(s"Nessie ref $requestedRef provided " +
-          s"via $CONF_NESSIE_REF does not exist. This ref must exist before creating a NessieCatalog.", ex)
+          s"via ${NessieConfigConstants.CONF_NESSIE_REF} does not exist. This ref must exist before creating a NessieCatalog.", ex)
         throw new IllegalArgumentException(s"Nessie does not have an existing default branch. Either configure " +
-          s"an alternative ref via $CONF_NESSIE_REF or create the default branch on the server.", ex)
+          s"an alternative ref via ${NessieConfigConstants.CONF_NESSIE_REF} or create the default branch on the server.", ex)
     }
   }
 

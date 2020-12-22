@@ -15,6 +15,12 @@
  */
 package com.dremio.nessie.client;
 
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_URL;
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
+import static com.dremio.nessie.client.NessieConfigConstants.NESSIE_AUTH_TYPE_DEFAULT;
+
 import java.io.Closeable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -38,12 +44,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 public class NessieClient implements Closeable {
 
-  public static final String CONF_NESSIE_URL = "nessie.url";
-  public static final String CONF_NESSIE_USERNAME = "nessie.username";
-  public static final String CONF_NESSIE_PASSWORD = "nessie.password";
-  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
-  public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
-  public static final String CONF_NESSIE_REF = "nessie.ref";
   private final HttpClient client;
   private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
                                                         .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);

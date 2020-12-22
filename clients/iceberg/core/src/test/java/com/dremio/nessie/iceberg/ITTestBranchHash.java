@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.iceberg;
 
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_REF;
+
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.types.Types;
@@ -40,7 +42,7 @@ public class ITTestBranchHash extends BaseTestIceberg {
     catalog.refresh();
     createBranch("test", catalog.getHash());
 
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "test");
+    hadoopConfig.set(CONF_NESSIE_REF, "test");
 
     NessieCatalog newCatalog = new NessieCatalog(hadoopConfig);
     String initialMetadataLocation = getContent(newCatalog, foobar);

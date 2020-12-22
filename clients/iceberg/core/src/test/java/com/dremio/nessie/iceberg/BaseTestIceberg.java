@@ -15,6 +15,11 @@
  */
 package com.dremio.nessie.iceberg;
 
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_REF;
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_URL;
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
 import java.io.File;
@@ -103,11 +108,11 @@ abstract class BaseTestIceberg {
     }
 
     hadoopConfig = new Configuration();
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_URL, NESSIE_ENDPOINT);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_USERNAME, username);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_PASSWORD, password);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, branch);
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_AUTH_TYPE, "NONE");
+    hadoopConfig.set(CONF_NESSIE_URL, NESSIE_ENDPOINT);
+    hadoopConfig.set(CONF_NESSIE_USERNAME, username);
+    hadoopConfig.set(CONF_NESSIE_PASSWORD, password);
+    hadoopConfig.set(CONF_NESSIE_REF, branch);
+    hadoopConfig.set(CONF_NESSIE_AUTH_TYPE, "NONE");
     hadoopConfig.set("fs.defaultFS", ALLEY_LOCAL_DIR.toURI().toString());
     hadoopConfig.set("fs.file.impl",
                      org.apache.hadoop.fs.LocalFileSystem.class.getName()
