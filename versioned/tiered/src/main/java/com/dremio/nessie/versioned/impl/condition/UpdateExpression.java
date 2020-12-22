@@ -83,6 +83,17 @@ public abstract class UpdateExpression implements Aliasable<UpdateExpression> {
   }
 
   /**
+   * Visit this object given the specific visitor.
+   *
+   * @param visitor the instance visiting.
+   * @param <T> The class to which UpdateExpression is converted.
+   * @return the converted class.
+   */
+  public <T> T accept(UpdateExpressionVisitor<T> visitor) {
+    return visitor.visit(this);
+  }
+
+  /**
    * Collect update expressions into a single compound update expression.
    * @return combined update.
    */

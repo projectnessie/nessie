@@ -31,8 +31,7 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Store;
 import com.google.common.collect.ImmutableMap;
 
-@SuppressWarnings("SpellCheckingInspection")
-class TestMongoDBExpressions {
+class TestConditionExpressions {
   private static final Random RANDOM = new Random(8612341233543L);
   private static final Entity ONE = Entity.ofString("one");
   private static final Entity TWO = Entity.ofString("two");
@@ -43,7 +42,7 @@ class TestMongoDBExpressions {
   private static final Entity LIST_ENTITY = Entity.ofList(ONE, TWO, THREE);
   private static final Entity MAP_ENTITY = Entity.ofMap(ImmutableMap.of("key_one", ONE, "key_two", TWO, "key_three", THREE));
 
-  private static final BsonConditionExpressionVisitor BSON_CONDITION_EXPRESSION_VISITOR = new BsonConditionExpressionVisitor();
+  private static final BsonConditionVisitor BSON_CONDITION_EXPRESSION_VISITOR = new BsonConditionVisitor();
 
   // Single ExpressionFunction equals tests
   @Test
@@ -95,7 +94,7 @@ class TestMongoDBExpressions {
     final String path = createPath();
     final Entity binaryEntity = Entity.ofBinary(SampleEntities.createBinary(RANDOM, 15));
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
-    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonValueVisitor.toMongoExpr(binaryEntity)), ex);
+    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonConditionVisitor.toMongoExpr(binaryEntity)), ex);
   }
 
   // Single ExpressionFunction array equals tests
@@ -147,7 +146,7 @@ class TestMongoDBExpressions {
     final String path = createPathPos();
     final Entity binaryEntity = Entity.ofBinary(SampleEntities.createBinary(RANDOM, 8));
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
-    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonValueVisitor.toMongoExpr(binaryEntity)), ex);
+    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonConditionVisitor.toMongoExpr(binaryEntity)), ex);
   }
 
   // Single ExpressionFunction array equals tests
@@ -200,7 +199,7 @@ class TestMongoDBExpressions {
     final String path = createPathName();
     final Entity binaryEntity = Entity.ofBinary(SampleEntities.createBinary(RANDOM, 24));
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
-    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonValueVisitor.toMongoExpr(binaryEntity)), ex);
+    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonConditionVisitor.toMongoExpr(binaryEntity)), ex);
   }
 
   // Single ExpressionFunction size tests
@@ -220,7 +219,7 @@ class TestMongoDBExpressions {
     final Entity id = SampleEntities.createIdEntity(RANDOM);
     ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), id));
     ex = ex.and(ExpressionFunction.equals(ExpressionFunction.size(ofPath(path2)), Entity.ofNumber(1)));
-    equals(String.format("{\"$and\": [{\"%s\": %s}, {\"%s\": {\"$size\": 1}}]}", path, BsonValueVisitor.toMongoExpr(id), path2), ex);
+    equals(String.format("{\"$and\": [{\"%s\": %s}, {\"%s\": {\"$size\": 1}}]}", path, BsonConditionVisitor.toMongoExpr(id), path2), ex);
   }
 
   // Multiple ExpressionFunctions
@@ -248,13 +247,6 @@ class TestMongoDBExpressions {
 
   // Negative tests
   @Test
-  void conditionIfNotExistsNotSupported() {
-    final String path = createPath();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.ifNotExists(ofPath(path), TRUE_ENTITY));
-    failsUnsupportedOperationException(ex);
-  }
-
-  @Test
   void conditionSizeNotSupported() {
     final String path = createPath();
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.size(ofPath(path)));
@@ -262,32 +254,9 @@ class TestMongoDBExpressions {
   }
 
   @Test
-  void conditionListAppendNotSupported() {
-    final String path = createPath();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.appendToList(ofPath(path), TRUE_ENTITY));
-    failsUnsupportedOperationException(ex);
-  }
-
-  @Test
   void conditionAttributeNotExistsNotSupported() {
     final String path = createPath();
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.attributeNotExists(ofPath(path)));
-    failsUnsupportedOperationException(ex);
-  }
-
-  @Test
-  void conditionNestedIfNotExistsNotSupported() {
-    final String path = createPath();
-    final ConditionExpression ex =
-        ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.ifNotExists(ofPath(path), TRUE_ENTITY), TWO));
-    failsUnsupportedOperationException(ex);
-  }
-
-  @Test
-  void conditionNestedAppendToListNotSupported() {
-    final String path = createPath();
-    final ConditionExpression ex =
-        ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.appendToList(ofPath(path), TRUE_ENTITY), TWO));
     failsUnsupportedOperationException(ex);
   }
 
@@ -303,14 +272,14 @@ class TestMongoDBExpressions {
   @Test
   void equalsExpression() {
     final ExpressionFunction expressionFunction = ExpressionFunction.equals(ExpressionPath.builder("foo").build(), TRUE_ENTITY);
-    Assertions.assertEquals("{\"foo\": true}", expressionFunction.accept(new BsonValueVisitor()));
+    Assertions.assertEquals("{\"foo\": true}", expressionFunction.accept(BsonConditionVisitor.VALUE_VISITOR));
   }
 
   @Test
   void binaryEquals() {
     final Entity id = SampleEntities.createIdEntity(RANDOM);
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ExpressionPath.builder(Store.KEY_NAME).build(), id));
-    equals(String.format("{\"$and\": [{\"id\": %s}]}", BsonValueVisitor.toMongoExpr(id)), ex);
+    equals(String.format("{\"$and\": [{\"id\": %s}]}", BsonConditionVisitor.toMongoExpr(id)), ex);
   }
 
   /**

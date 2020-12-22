@@ -15,25 +15,16 @@
  */
 package com.dremio.nessie.versioned.impl.condition;
 
-import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
-
-public interface UpdateClause extends Aliasable<UpdateClause> {
-
-  enum Type {
-    SET, REMOVE, DELETE, ADD;
-  }
-
-  Type getType();
-
-  String toClauseString();
-
+/**
+ * Classes requiring visiting rights to UpdateExpression must implement this
+ * interface as part of the Visitor design pattern.
+ * @param <T> The class to which the UpdateExpression will be converted.
+ */
+public interface UpdateExpressionVisitor<T> {
   /**
-   * Default implementation for visitation.
-   * @param visitor the visitor that will be invoked.
-   * @param <T> the type of the returned value.
-   * @return the possibly transformed value resulting from the visitation.
+   * Visit the specified expression.
+   * @param expression the UpdateExpression to visit.
+   * @return the result of the visitation.
    */
-  default <T> T accept(UpdateClauseVisitor<T> visitor) {
-    throw new IllegalArgumentException();
-  }
+  T visit(UpdateExpression expression);
 }

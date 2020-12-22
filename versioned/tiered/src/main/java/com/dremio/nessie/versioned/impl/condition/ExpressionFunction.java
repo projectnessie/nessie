@@ -26,9 +26,9 @@ public class ExpressionFunction implements Value {
 
   public enum FunctionName {
     LIST_APPEND("list_append", 2),
-    IF_NOT_EXISTS("if_not_exists", 2),
     EQUALS("="),
     // Not yet implemented below here.
+    //  IF_NOT_EXISTS("if_not_exists", 2),
     //  ATTRIBUTE_EXISTS("attribute_exists", 1),
     ATTRIBUTE_NOT_EXISTS("attribute_not_exists", 1),
     SIZE("size", 1),
@@ -91,11 +91,6 @@ public class ExpressionFunction implements Value {
 
   public static ExpressionFunction equals(ExpressionFunction func, Entity value) {
     return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(func, Value.of(value)));
-  }
-
-
-  public static ExpressionFunction ifNotExists(ExpressionPath path, Entity value) {
-    return new ExpressionFunction(FunctionName.IF_NOT_EXISTS, ImmutableList.of(path, Value.of(value)));
   }
 
   /**

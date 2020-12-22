@@ -59,8 +59,10 @@ import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.InsertManyOptions;
 import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.UpdateResult;
@@ -182,7 +184,8 @@ public class MongoDBStore implements Store {
           .put(ValueType.COMMIT_METADATA, MongoStoreConfig::getMetadataTableName)
           .put(ValueType.KEY_FRAGMENT, MongoStoreConfig::getKeyListTableName)
           .build();
-  private static final BsonConditionExpressionVisitor COND_EXPR_VISITOR = new BsonConditionExpressionVisitor();
+  private static final BsonConditionVisitor CONDITION_VISITOR = new BsonConditionVisitor();
+  private static final BsonUpdateVisitor UPDATE_VISITOR = new BsonUpdateVisitor();
 
   private final MongoStoreConfig config;
   private final MongoClientSettings mongoClientSettings;
@@ -264,7 +267,7 @@ public class MongoDBStore implements Store {
 
     Bson filter = Filters.eq(Store.KEY_NAME, ((HasId) value).getId());
     if (conditionUnAliased.isPresent()) {
-      filter = Filters.and(filter, conditionUnAliased.get().accept(COND_EXPR_VISITOR));
+      filter = Filters.and(filter, conditionUnAliased.get().accept(CONDITION_VISITOR));
     }
 
     // Use upsert so that if an item does not exist, it will be insert.
@@ -278,7 +281,7 @@ public class MongoDBStore implements Store {
 
     Bson filter = Filters.eq(Store.KEY_NAME, id.getId());
     if (condition.isPresent()) {
-      filter = Filters.and(filter, condition.get().accept(COND_EXPR_VISITOR));
+      filter = Filters.and(filter, condition.get().accept(CONDITION_VISITOR));
     }
 
     return 0 != await(collection.deleteOne(filter)).first().getDeletedCount();
@@ -324,7 +327,23 @@ public class MongoDBStore implements Store {
   @Override
   public <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
       throws NotFoundException {
-    throw new UnsupportedOperationException();
+    final MongoCollection<V> collection = getCollection(type);
+
+
+    Bson filter = Filters.eq(Store.KEY_NAME, id.getId());
+    if (condition.isPresent()) {
+      filter = Filters.and(filter, condition.get().accept(CONDITION_VISITOR));
+    }
+
+    final List<V> updated = await(collection.findOneAndUpdate(
+        filter,
+        update.accept(UPDATE_VISITOR),
+        new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER))).getReceived();
+    if (updated.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(updated.get(0));
   }
 
   @Override
