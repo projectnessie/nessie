@@ -45,16 +45,18 @@ class UriBuilder {
   }
 
   UriBuilder queryParam(String name, String value) {
+    if (value == null) {
+      return this;
+    }
+
     if (query.length() > 0) {
       query.append('&');
     }
 
-    query.append(encode(HttpUtils.checkNonNullTrim(name)));
+    query.append(encode(HttpUtils.checkNonNullTrim(name)))
+         .append('=')
+         .append(encode(HttpUtils.checkNonNullTrim(value)));
 
-    if (value != null) {
-      query.append('=');
-      query.append(encode(HttpUtils.checkNonNullTrim(value)));
-    }
     return this;
   }
 

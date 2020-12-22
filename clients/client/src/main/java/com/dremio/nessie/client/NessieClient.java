@@ -165,11 +165,15 @@ public class NessieClient implements Closeable {
   public static NessieClient withConfig(Function<String, String> configuration) {
     String url = Objects.requireNonNull(configuration.apply(CONF_NESSIE_URL));
     String authType = configuration.apply(CONF_NESSIE_AUTH_TYPE);
-    if (authType == null) {
-      authType = NESSIE_AUTH_TYPE_DEFAULT;
-    }
     String username = configuration.apply(CONF_NESSIE_USERNAME);
     String password = configuration.apply(CONF_NESSIE_PASSWORD);
+    if (authType == null) {
+      if (username != null && password != null) {
+        authType = NESSIE_AUTH_TYPE_DEFAULT;
+      } else {
+        authType = AuthType.NONE.name();
+      }
+    }
     return new NessieClient(AuthType.valueOf(authType), url, username, password);
   }
 

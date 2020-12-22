@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.client.http;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -40,7 +41,7 @@ public class TestHttpClient {
   }
 
   @Test
-  void testGet() {
+  void testGet() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1);
     HttpHandler handler = h -> {
       Assertions.assertEquals("GET", h.getRequestMethod());
@@ -53,13 +54,11 @@ public class TestHttpClient {
     try (TestServer server = new TestServer(handler)) {
       ExampleBean bean = get(server.server.getAddress()).get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testPut() {
+  void testPut() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1);
     HttpHandler handler = h -> {
       Assertions.assertEquals("PUT", h.getRequestMethod());
@@ -69,13 +68,11 @@ public class TestHttpClient {
     };
     try (TestServer server = new TestServer(handler)) {
       get(server.server.getAddress()).put(inputBean);
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testPost() {
+  void testPost() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1);
     HttpHandler handler = h -> {
       Assertions.assertEquals("POST", h.getRequestMethod());
@@ -85,26 +82,22 @@ public class TestHttpClient {
     };
     try (TestServer server = new TestServer(handler)) {
       get(server.server.getAddress()).post(inputBean);
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testDelete() {
+  void testDelete() throws Exception {
     HttpHandler handler = h -> {
       Assertions.assertEquals("DELETE", h.getRequestMethod());
       h.sendResponseHeaders(200, 0);
     };
     try (TestServer server = new TestServer(handler)) {
       get(server.server.getAddress()).delete();
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testGetQueryParam() {
+  void testGetQueryParam() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1);
     HttpHandler handler = h -> {
       Assertions.assertEquals("x=y", h.getRequestURI().getQuery());
@@ -118,13 +111,11 @@ public class TestHttpClient {
     try (TestServer server = new TestServer(handler)) {
       ExampleBean bean = get(server.server.getAddress()).queryParam("x", "y").get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testGetMultipleQueryParam() {
+  void testGetMultipleQueryParam() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1);
     HttpHandler handler = h -> {
       String[] queryParams = h.getRequestURI().getQuery().split("&");
@@ -143,18 +134,15 @@ public class TestHttpClient {
       ExampleBean bean = get(server.server.getAddress())
           .queryParam("x", "y").queryParam("a", "b").get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testGetNullQueryParam() {
+  void testGetNullQueryParam() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1);
     HttpHandler handler = h -> {
       String queryParams = h.getRequestURI().getQuery();
-      Assertions.assertEquals(1, queryParams.length());
-      Assertions.assertEquals("x", queryParams);
+      Assertions.assertNull(queryParams);
       Assertions.assertEquals("GET", h.getRequestMethod());
       String response = MAPPER.writeValueAsString(inputBean);
       h.sendResponseHeaders(200, response.getBytes().length);
@@ -166,13 +154,11 @@ public class TestHttpClient {
       ExampleBean bean = get(server.server.getAddress())
           .queryParam("x", null).get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testGetTemplate() {
+  void testGetTemplate() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1);
     HttpHandler handler = h -> {
       Assertions.assertEquals("GET", h.getRequestMethod());
@@ -187,13 +173,11 @@ public class TestHttpClient {
       Assertions.assertEquals(inputBean, bean);
       bean = get(server.server.getAddress()).path("a/{b}").resolveTemplate("b", "b").get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testGetTemplateThrows() {
+  void testGetTemplateThrows() throws Exception {
     HttpHandler handler = h -> Assertions.fail();
     try (TestServer server = new TestServer("/a/b", handler)) {
       Assertions.assertThrows(HttpClientException.class,
@@ -201,13 +185,11 @@ public class TestHttpClient {
       Assertions.assertThrows(IllegalStateException.class,
           () -> get(server.server.getAddress()).path("a/b").resolveTemplate("b", "b")
                                                                    .get().readEntity(ExampleBean.class));
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testFilters() {
+  void testFilters() throws Exception {
     AtomicBoolean requestFilterCalled = new AtomicBoolean(false);
     AtomicBoolean responseFilterCalled = new AtomicBoolean(false);
     HttpHandler handler = h -> {
@@ -225,27 +207,23 @@ public class TestHttpClient {
           Assertions.assertEquals(Status.OK, con.getResponseCode());
           responseFilterCalled.set(true);
         } catch (IOException e) {
-          Assertions.fail();
+          throw new IOError(e);
         }
       });
       client.create().get();
       Assertions.assertTrue(responseFilterCalled.get());
       Assertions.assertTrue(requestFilterCalled.get());
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testHeaders() {
+  void testHeaders() throws Exception {
     HttpHandler handler = h -> {
       Assertions.assertTrue(h.getRequestHeaders().containsKey("x"));
       h.sendResponseHeaders(200, 0);
     };
     try (TestServer server = new TestServer(handler)) {
       get(server.server.getAddress()).header("x", "y").get();
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
@@ -257,6 +235,7 @@ public class TestHttpClient {
         try {
           handler.handle(exchange);
         } catch (RuntimeException | Error e) {
+          e.printStackTrace();
           exchange.sendResponseHeaders(503, 0);
           throw e;
         }

@@ -37,8 +37,8 @@ public class BasicAuthFilter implements RequestFilter {
    * @param password password (only for BASIC auth)
    */
   public BasicAuthFilter(String username, String password) {
-    Objects.requireNonNull(username);
-    Objects.requireNonNull(password);
+    Objects.requireNonNull(username, "username for BasicAuthFilter must not be null");
+    Objects.requireNonNull(password, "password for BasicAuthFilter must not be null");
     String userPass = username + ':' + password;
     byte[] encoded = Base64.getEncoder().encode(userPass.getBytes(StandardCharsets.UTF_8));
     String encodedString = new String(encoded, StandardCharsets.UTF_8);

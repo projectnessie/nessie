@@ -101,9 +101,5 @@ class TestUriBuilder {
     builder = builder.queryParam("c", "d-more");
     assertEquals("http://localhost/foo/bar/?a=b&c=d&e=f%26%3F%20%2F&c=d-more",
                  builder.build());
-
-    builder = builder.queryParam("g", null);
-    assertEquals("http://localhost/foo/bar/?a=b&c=d&e=f%26%3F%20%2F&c=d-more&g",
-                 builder.build());
   }
 }
