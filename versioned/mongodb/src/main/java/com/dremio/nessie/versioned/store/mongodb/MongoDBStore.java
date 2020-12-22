@@ -153,7 +153,7 @@ public class MongoDBStore implements Store {
     private final T value;
     private final Class<T> valueClass;
 
-    public <V> UpdateEntityBson(Class<T> valueClass, T value) {
+    public UpdateEntityBson(Class<T> valueClass, T value) {
       this.valueClass = valueClass;
       this.value = value;
     }
@@ -182,6 +182,7 @@ public class MongoDBStore implements Store {
           .put(ValueType.COMMIT_METADATA, MongoStoreConfig::getMetadataTableName)
           .put(ValueType.KEY_FRAGMENT, MongoStoreConfig::getKeyListTableName)
           .build();
+  private static final BsonConditionExpressionVisitor COND_EXPR_VISITOR = new BsonConditionExpressionVisitor();
 
   private final MongoStoreConfig config;
   private final MongoClientSettings mongoClientSettings;
@@ -261,20 +262,26 @@ public class MongoDBStore implements Store {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
 
-    // TODO: Handle ConditionExpressions.
+    Bson filter = Filters.eq(Store.KEY_NAME, ((HasId) value).getId());
     if (conditionUnAliased.isPresent()) {
-      throw new UnsupportedOperationException("ConditionExpressions are not supported with MongoDB yet.");
+      filter = Filters.and(filter, conditionUnAliased.get().accept(COND_EXPR_VISITOR));
     }
 
-    final MongoCollection<V> collection = getCollection(type);
-
     // Use upsert so that if an item does not exist, it will be insert.
-    await(collection.replaceOne(Filters.eq(Store.KEY_NAME, ((HasId)value).getId()), value, new ReplaceOptions().upsert(true)));
+    final MongoCollection<V> collection = getCollection(type);
+    await(collection.replaceOne(filter, value, new ReplaceOptions().upsert(!conditionUnAliased.isPresent())));
   }
 
   @Override
   public boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) {
-    throw new UnsupportedOperationException();
+    final MongoCollection<?> collection = getCollection(type);
+
+    Bson filter = Filters.eq(Store.KEY_NAME, id.getId());
+    if (condition.isPresent()) {
+      filter = Filters.and(filter, condition.get().accept(COND_EXPR_VISITOR));
+    }
+
+    return 0 != await(collection.deleteOne(filter)).first().getDeletedCount();
   }
 
   @Override
@@ -309,7 +316,7 @@ public class MongoDBStore implements Store {
 
     final V value = await(collection.find(Filters.eq(Store.KEY_NAME, id))).first();
     if (null == value) {
-      throw new RuntimeException("Unable to load item with ID: " + id);
+      throw new NotFoundException("Unable to load item with ID: " + id);
     }
     return value;
   }
@@ -323,7 +330,8 @@ public class MongoDBStore implements Store {
   @Override
   public Stream<InternalRef> getRefs() {
     // TODO: Can this be optimized to not collect the elements before streaming them?
-    return await(((MongoCollection<InternalRef>)getCollection(ValueType.REF)).find()).getReceived().stream();
+    final MongoCollection<InternalRef> collection = getCollection(ValueType.REF);
+    return await(collection.find()).getReceived().stream();
   }
 
   /**
@@ -351,11 +359,11 @@ public class MongoDBStore implements Store {
     }
   }
 
-  private MongoCollection getCollection(ValueType valueType) {
-    final MongoCollection collection = collections.get(valueType);
+  private <V> MongoCollection<V> getCollection(ValueType valueType) {
+    final MongoCollection<? extends HasId> collection = collections.get(valueType);
     if (null == collection) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
     }
-    return collection;
+    return (MongoCollection<V>) collection;
   }
 }

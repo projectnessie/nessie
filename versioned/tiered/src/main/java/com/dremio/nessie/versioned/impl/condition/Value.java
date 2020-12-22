@@ -19,7 +19,7 @@ import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
 import com.dremio.nessie.versioned.store.Entity;
 
 /**
- * A marker interface that is exposes a value type in DynamoDB's expression language.
+ * A marker interface that exposes a value type in backing store interactions.
  */
 public interface Value extends Aliasable<Value> {
 
@@ -42,6 +42,16 @@ public interface Value extends Aliasable<Value> {
    */
   Type getType();
 
+  /**
+   * Default implementation for visitation.
+   * @param visitor the visitor that will be invoked.
+   * @param <T> the type of the returned value.
+   * @return the possibly transformed value resulting from the visitation.
+   */
+  default <T> T accept(ValueVisitor<T> visitor) {
+    throw new IllegalArgumentException();
+  }
+
   default Entity getValue() {
     throw new IllegalArgumentException();
   }
@@ -54,11 +64,11 @@ public interface Value extends Aliasable<Value> {
     throw new IllegalArgumentException();
   }
 
-  public static enum Type {
-    VALUE, PATH, FUNCTION;
+  enum Type {
+    VALUE, PATH, FUNCTION
   }
 
-  static class ValueOfEntity implements Value {
+  class ValueOfEntity implements Value {
     private final Entity value;
 
     public ValueOfEntity(Entity value) {
@@ -80,5 +90,13 @@ public interface Value extends Aliasable<Value> {
       return Type.VALUE;
     }
 
+    public Entity getValue() {
+      return value;
+    }
+
+    @Override
+    public <T> T accept(ValueVisitor<T> visitor) {
+      return visitor.visit(this);
+    }
   }
 }
