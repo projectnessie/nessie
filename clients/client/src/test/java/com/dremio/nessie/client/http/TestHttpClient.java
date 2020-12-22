@@ -22,8 +22,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
@@ -35,7 +33,6 @@ import com.sun.net.httpserver.HttpServer;
 
 public class TestHttpClient {
 
-  private static final Executor EXEC = Executors.newSingleThreadExecutor();
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private static HttpRequest get(InetSocketAddress address) {
@@ -156,7 +153,8 @@ public class TestHttpClient {
     ExampleBean inputBean = new ExampleBean("x", 1);
     HttpHandler handler = h -> {
       String queryParams = h.getRequestURI().getQuery();
-      Assertions.assertEquals(0, queryParams.length());
+      Assertions.assertEquals(1, queryParams.length());
+      Assertions.assertEquals("x", queryParams);
       Assertions.assertEquals("GET", h.getRequestMethod());
       String response = MAPPER.writeValueAsString(inputBean);
       h.sendResponseHeaders(200, response.getBytes().length);
@@ -255,9 +253,17 @@ public class TestHttpClient {
     private final HttpServer server;
 
     TestServer(String context, HttpHandler handler) throws IOException {
+      HttpHandler safeHandler = exchange -> {
+        try {
+          handler.handle(exchange);
+        } catch (RuntimeException | Error e) {
+          exchange.sendResponseHeaders(503, 0);
+          throw e;
+        }
+      };
       server = HttpServer.create(new InetSocketAddress("localhost",0), 0);
-      server.createContext(context, handler);
-      server.setExecutor(EXEC);
+      server.createContext(context, safeHandler);
+      server.setExecutor(null);
       server.start();
     }
 

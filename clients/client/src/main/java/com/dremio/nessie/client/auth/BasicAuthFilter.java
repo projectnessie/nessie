@@ -15,7 +15,10 @@
  */
 package com.dremio.nessie.client.auth;
 
-import com.dremio.nessie.client.NessieClient.AuthType;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Objects;
+
 import com.dremio.nessie.client.http.RequestContext;
 import com.dremio.nessie.client.http.RequestFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,41 +26,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Filter to add auth header to all outgoing requests.
  */
-public class AuthFilter implements RequestFilter {
+public class BasicAuthFilter implements RequestFilter {
 
-  private final Auth auth;
+  private final String authHeaderValue;
 
   /**
    * construct auth filter depending on auth type.
    *
-   * @param authType authentication type (AWS, NONE, BASIC)
    * @param username username (only for BASIC auth)
    * @param password password (only for BASIC auth)
    */
-  public AuthFilter(AuthType authType, String username, String password) {
-    switch (authType) {
-      case AWS:
-      case NONE:
-        auth = new NoAuth();
-        break;
-      case BASIC:
-        auth = new NoAuth(); // todo
-        break;
-      default:
-        throw new IllegalStateException(String.format("%s does not exist", authType));
-    }
-  }
-
-  private String checkKey() {
-    return auth.checkKey();
+  public BasicAuthFilter(String username, String password) {
+    Objects.requireNonNull(username);
+    Objects.requireNonNull(password);
+    String userPass = username + ':' + password;
+    byte[] encoded = Base64.getEncoder().encode(userPass.getBytes(StandardCharsets.UTF_8));
+    String encodedString = new String(encoded, StandardCharsets.UTF_8);
+    authHeaderValue = "Basic " + encodedString;
   }
 
   @Override
   public void filter(RequestContext context) {
-    String header = checkKey();
-    if (header != null && !header.isEmpty()) {
-      context.getHeaders().put("Authorization", header);
-    }
+    context.getHeaders().put("Authorization", authHeaderValue);
   }
 
   @Override

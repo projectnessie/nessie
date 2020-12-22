@@ -27,19 +27,17 @@ import com.fasterxml.jackson.databind.ObjectReader;
  */
 public class HttpResponse {
 
-  private final RequestContext request;
-  private final ResponseContext context;
+  private final ResponseContext responseContext;
   private final ObjectMapper mapper;
 
-  HttpResponse(RequestContext request, ResponseContext context, ObjectMapper mapper) throws IOException {
-    this.request = request;
-    this.context = context;
+  HttpResponse(ResponseContext context, ObjectMapper mapper) throws IOException {
+    this.responseContext = context;
     this.mapper = mapper;
     context.getResponseCode();
   }
 
   private <V> V readEntity(ObjectReader reader) {
-    try (InputStream is = context.getInputStream()) {
+    try (InputStream is = responseContext.getInputStream()) {
       return reader.readValue(is);
     } catch (IOException e) {
       throw new HttpClientException(e);

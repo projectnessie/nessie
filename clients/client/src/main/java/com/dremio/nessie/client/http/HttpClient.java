@@ -34,8 +34,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
  * </p>
  */
 public class HttpClient {
-  private final ObjectMapper mapper;
-  private final String base;
+  private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
+                                                        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+  private final String baseUri;
   private final String accept;
   private final List<RequestFilter> requestFilters = new ArrayList<>();
   private final List<ResponseFilter> responseFilters = new ArrayList<>();
@@ -50,18 +51,18 @@ public class HttpClient {
   /**
    * Construct an HTTP client with a universal Accept header.
    *
-   * @param base uri base eg https://example.com
+   * @param baseUri uri base eg https://example.com
    * @param accept Accept header eg "application/json"
    */
-  public HttpClient(String base, String accept) {
-    this.mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-                                    .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    this.base = base;
-    this.accept = accept;
+  public HttpClient(String baseUri, String accept) {
+    this.baseUri = HttpUtils.checkNonNullTrim(baseUri);
+    this.accept = HttpUtils.checkNonNullTrim(accept);
+    HttpUtils.checkArgument(baseUri.startsWith("http://") || baseUri.startsWith("https://"),
+                            "Cannot start http client. %s must be a valid http or https address", baseUri);
   }
 
-  public HttpClient(String base) {
-    this(base, "application/json");
+  public HttpClient(String baseUri) {
+    this(baseUri, "application/json");
   }
 
   public void register(RequestFilter filter) {
@@ -75,6 +76,6 @@ public class HttpClient {
   }
 
   public HttpRequest create() {
-    return new HttpRequest(base, accept, mapper, requestFilters, responseFilters);
+    return new HttpRequest(baseUri, accept, mapper, requestFilters, responseFilters);
   }
 }

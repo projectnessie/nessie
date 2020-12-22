@@ -36,8 +36,9 @@ public class HttpRequest {
   private final List<RequestFilter> requestFilters;
   private final List<ResponseFilter> responseFilters;
 
-  HttpRequest(String base, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters, List<ResponseFilter> responseFilters) {
-    this.uriBuilder = new UriBuilder(base);
+  HttpRequest(String baseUri, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters,
+              List<ResponseFilter> responseFilters) {
+    this.uriBuilder = new UriBuilder(baseUri);
     this.mapper = mapper;
     this.headers.put("Accept", accept);
     this.requestFilters = requestFilters;
@@ -59,7 +60,7 @@ public class HttpRequest {
     return this;
   }
 
-  private HttpResponse getCon(Method method, Object body) throws HttpClientException {
+  private HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
     try {
       String uri = uriBuilder.build();
       URL url = new URL(uri);
@@ -76,26 +77,26 @@ public class HttpRequest {
       con.connect();
       ResponseContext responseContext = new ResponseContextImpl(con);
       responseFilters.forEach(a -> a.filter(responseContext));
-      return new HttpResponse(context, responseContext, mapper);
+      return new HttpResponse(responseContext, mapper);
     } catch (IOException e) {
       throw new HttpClientException(e);
     }
   }
 
   public HttpResponse get() throws HttpClientException {
-    return getCon(Method.GET, null);
+    return executeRequest(Method.GET, null);
   }
 
   public HttpResponse delete() throws HttpClientException {
-    return getCon(Method.DELETE, null);
+    return executeRequest(Method.DELETE, null);
   }
 
   public HttpResponse post(Object obj) throws HttpClientException {
-    return getCon(Method.POST, obj);
+    return executeRequest(Method.POST, obj);
   }
 
   public HttpResponse put(Object obj) throws HttpClientException {
-    return getCon(Method.PUT, obj);
+    return executeRequest(Method.PUT, obj);
   }
 
   public HttpRequest resolveTemplate(String name, String value) {

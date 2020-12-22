@@ -17,11 +17,8 @@ package com.dremio.nessie.client.http;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -30,61 +27,66 @@ import java.util.stream.Collectors;
  */
 class UriBuilder {
 
-  private final String base;
-  private final List<String> uri = new ArrayList<>();
-  private final Map<String, String> query = new HashMap<>();
+  private final String baseUri;
+  private final StringBuilder uri = new StringBuilder();
+  private final StringBuilder query = new StringBuilder();
   private final Map<String, String> templateValues = new HashMap<>();
 
-  UriBuilder(String base) {
-    this.base = base;
+  UriBuilder(String baseUri) {
+    this.baseUri = HttpUtils.checkNonNullTrim(baseUri);
   }
 
   UriBuilder path(String path) {
-    uri.add(path);
+    if (uri.length() > 0) {
+      uri.append('/');
+    }
+    uri.append(HttpUtils.checkNonNullTrim(path));
     return this;
   }
 
   UriBuilder queryParam(String name, String value) {
-    query.put(name, value);
+    if (query.length() > 0) {
+      query.append('&');
+    }
+
+    query.append(encode(HttpUtils.checkNonNullTrim(name)));
+
+    if (value != null) {
+      query.append('=');
+      query.append(encode(HttpUtils.checkNonNullTrim(value)));
+    }
     return this;
   }
 
   UriBuilder resolveTemplate(String name, String value) {
-    templateValues.put(String.format("{%s}", name), value);
+    templateValues.put(String.format("{%s}", HttpUtils.checkNonNullTrim(name)), HttpUtils.checkNonNullTrim(value));
     return this;
   }
 
   String build() throws HttpClientException {
     StringBuilder uriBuilder = new StringBuilder();
-    List<String> transformedUri = new ArrayList<>();
-    transformedUri.add(base);
-    for (String s: this.uri) {
-      transformedUri.add(template(s));
+    uriBuilder.append(baseUri);
+
+    if ('/' != uriBuilder.charAt(uriBuilder.length() - 1)) {
+      uriBuilder.append('/');
     }
-    if (!templateValues.isEmpty()) {
-      String keys = String.join(";", templateValues.keySet());
+
+    Map<String, String> templates = new HashMap<>(templateValues);
+    String replaced = Arrays.stream(uri.toString().split("/"))
+                            .map(p -> encode((templates.containsKey(p)) ? templates.remove(p) : p))
+                            .collect(Collectors.joining("/"));
+    uriBuilder.append(replaced);
+
+    if (!templates.isEmpty()) {
+      String keys = String.join(";", templates.keySet());
       throw new IllegalStateException(String.format("Cannot build uri. Not all template keys (%s) were used in uri %s", keys, uri));
     }
-    appendTo(uriBuilder, transformedUri.iterator(), "/");
 
-    if (!query.isEmpty()) {
+    if (query.length() > 0) {
       uriBuilder.append("?");
-      List<String> params = new ArrayList<>();
-      for (Map.Entry<String, String> kv: query.entrySet()) {
-        if (kv.getValue() == null) {
-          continue;
-        }
-        params.add(String.format("%s=%s", encode(kv.getKey()), encode(kv.getValue())));
-      }
-      appendTo(uriBuilder, params.iterator(), "&");
+      uriBuilder.append(query);
     }
     return uriBuilder.toString();
-  }
-
-  private String template(String input) throws HttpClientException {
-    return Arrays.stream(input.split("/"))
-                 .map(p -> encode((templateValues.containsKey(p)) ? templateValues.remove(p) : p))
-                 .collect(Collectors.joining("/"));
   }
 
   private static String encode(String s) throws HttpClientException {
@@ -93,16 +95,6 @@ class UriBuilder {
       return URLEncoder.encode(s, "UTF-8").replaceAll("\\+", "%20");
     } catch (UnsupportedEncodingException e) {
       throw new HttpClientException(e);
-    }
-  }
-
-  private static void appendTo(StringBuilder appendable, Iterator<String> parts, String separator) {
-    if (parts.hasNext()) {
-      appendable.append(parts.next());
-      while (parts.hasNext()) {
-        appendable.append(separator);
-        appendable.append(parts.next());
-      }
     }
   }
 
