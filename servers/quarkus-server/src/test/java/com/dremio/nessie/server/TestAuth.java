@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.IOException;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,6 @@ import org.junit.jupiter.api.function.Executable;
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.rest.NessieForbiddenException;
 import com.dremio.nessie.client.rest.NessieNotAuthorizedException;
 import com.dremio.nessie.error.NessieConflictException;
@@ -52,9 +52,16 @@ class TestAuth {
   private TreeApi tree;
   private ContentsApi contents;
 
+  @AfterEach
+  void closeClient() {
+    if (client != null) {
+      client.close();
+      client = null;
+    }
+  }
+
   void getCatalog(String branch) throws NessieNotFoundException, NessieConflictException {
-    String path = "http://localhost:19121/api/v1";
-    this.client = new NessieClient(AuthType.NONE, path, null, null);
+    client = NessieClient.none("http://localhost:19121/api/v1");
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {

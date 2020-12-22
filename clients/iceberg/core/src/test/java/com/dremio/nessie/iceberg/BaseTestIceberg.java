@@ -16,10 +16,8 @@
 package com.dremio.nessie.iceberg;
 
 import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
-import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
 import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_REF;
 import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_URL;
-import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
 import java.io.File;
@@ -46,7 +44,6 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
@@ -93,9 +90,7 @@ abstract class BaseTestIceberg {
 
   @BeforeEach
   public void beforeEach() throws NessieConflictException, NessieNotFoundException {
-    String username = "test";
-    String password = "test123";
-    this.client = new NessieClient(AuthType.NONE, NESSIE_ENDPOINT, username, password);
+    this.client = NessieClient.none(NESSIE_ENDPOINT);
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 
@@ -109,8 +104,6 @@ abstract class BaseTestIceberg {
 
     hadoopConfig = new Configuration();
     hadoopConfig.set(CONF_NESSIE_URL, NESSIE_ENDPOINT);
-    hadoopConfig.set(CONF_NESSIE_USERNAME, username);
-    hadoopConfig.set(CONF_NESSIE_PASSWORD, password);
     hadoopConfig.set(CONF_NESSIE_REF, branch);
     hadoopConfig.set(CONF_NESSIE_AUTH_TYPE, "NONE");
     hadoopConfig.set("fs.defaultFS", ALLEY_LOCAL_DIR.toURI().toString());

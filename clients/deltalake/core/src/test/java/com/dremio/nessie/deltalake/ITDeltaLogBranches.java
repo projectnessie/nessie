@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.tests.AbstractSparkTest;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
@@ -64,8 +63,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
   @BeforeEach
   public void createClient() {
-    client = new NessieClient(AuthType.NONE, url, null, null);
-
+    client = NessieClient.none(url);
   }
 
   @AfterEach
