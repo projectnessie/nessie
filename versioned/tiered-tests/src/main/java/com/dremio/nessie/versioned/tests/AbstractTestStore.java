@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
@@ -34,6 +35,8 @@ import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
+import com.dremio.nessie.versioned.impl.condition.RemoveClause;
+import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
@@ -45,7 +48,7 @@ import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
 
 /**
- * Common class for testing public APIs of a Store.
+ * Common class for testing APIs of a Store.
  * This class should be moved to the versioned/tests project when it will not introduce a circular dependency.
  * @param <S> The type of the Store being tested.
  */
@@ -72,7 +75,7 @@ public abstract class AbstractTestStore<S extends Store> {
    * Create and start the store, if not already done.
    */
   @BeforeEach
-  public void setup() {
+  void setup() {
     if (store == null) {
       this.store = createStore();
       this.store.start();
@@ -94,7 +97,7 @@ public abstract class AbstractTestStore<S extends Store> {
    * Reset the state of the store.
    */
   @AfterEach
-  public void reset() {
+  void reset() {
     resetStoreState();
   }
 
@@ -105,87 +108,87 @@ public abstract class AbstractTestStore<S extends Store> {
   protected abstract void resetStoreState();
 
   @Test
-  public void loadSingleL1() {
+  void loadSingleL1() {
     putThenLoad(SampleEntities.createL1(random), ValueType.L1);
   }
 
   @Test
-  public void loadSingleL2() {
+  void loadSingleL2() {
     putThenLoad(SampleEntities.createL2(random), ValueType.L2);
   }
 
   @Test
-  public void loadSingleL3() {
+  void loadSingleL3() {
     putThenLoad(SampleEntities.createL3(random), ValueType.L3);
   }
 
   @Test
-  public void loadFragment() {
+  void loadFragment() {
     putThenLoad(SampleEntities.createFragment(random), ValueType.KEY_FRAGMENT);
   }
 
   @Test
-  public void loadBranch() {
+  void loadBranch() {
     putThenLoad(SampleEntities.createBranch(random), ValueType.REF);
   }
 
   @Test
-  public void loadTag() {
+  void loadTag() {
     putThenLoad(SampleEntities.createTag(random), ValueType.REF);
   }
 
   @Test
-  public void loadCommitMetadata() {
+  void loadCommitMetadata() {
     putThenLoad(SampleEntities.createCommitMetadata(random), ValueType.COMMIT_METADATA);
   }
 
   @Test
-  public void loadValue() {
+  void loadValue() {
     putThenLoad(SampleEntities.createValue(random), ValueType.VALUE);
   }
 
   @Test
-  public void putIfAbsentL1() {
+  void putIfAbsentL1() {
     testPutIfAbsent(SampleEntities.createL1(random), ValueType.L1);
   }
 
   @Test
-  public void putIfAbsentL2() {
+  void putIfAbsentL2() {
     testPutIfAbsent(SampleEntities.createL2(random), ValueType.L2);
   }
 
   @Test
-  public void putIfAbsentL3() {
+  void putIfAbsentL3() {
     testPutIfAbsent(SampleEntities.createL3(random), ValueType.L3);
   }
 
   @Test
-  public void putIfAbsentFragment() {
+  void putIfAbsentFragment() {
     testPutIfAbsent(SampleEntities.createFragment(random), ValueType.KEY_FRAGMENT);
   }
 
   @Test
-  public void putIfAbsentBranch() {
+  void putIfAbsentBranch() {
     testPutIfAbsent(SampleEntities.createBranch(random), ValueType.REF);
   }
 
   @Test
-  public void putIfAbsentTag() {
+  void putIfAbsentTag() {
     testPutIfAbsent(SampleEntities.createTag(random), ValueType.REF);
   }
 
   @Test
-  public void putIfAbsentCommitMetadata() {
+  void putIfAbsentCommitMetadata() {
     testPutIfAbsent(SampleEntities.createCommitMetadata(random), ValueType.COMMIT_METADATA);
   }
 
   @Test
-  public void putIfAbsentValue() {
+  void putIfAbsentValue() {
     testPutIfAbsent(SampleEntities.createValue(random), ValueType.VALUE);
   }
 
   @Test
-  public void save() {
+  void save() {
     final L1 l1 = SampleEntities.createL1(random);
     final InternalRef branch = SampleEntities.createBranch(random);
     final InternalRef tag = SampleEntities.createTag(random);
@@ -209,47 +212,47 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  public void putWithConditionValue() {
+  void putWithConditionValue() {
     putWithCondition(SampleEntities.createValue(random), ValueType.VALUE);
   }
 
   @Test
-  public void putWithConditionBranch() {
+  void putWithConditionBranch() {
     putWithCondition(SampleEntities.createBranch(random), ValueType.REF);
   }
 
   @Test
-  public void putWithConditionTag() {
+  void putWithConditionTag() {
     putWithCondition(SampleEntities.createTag(random), ValueType.REF);
   }
 
   @Test
-  public void putWithConditionCommitMetadata() {
+  void putWithConditionCommitMetadata() {
     putWithCondition(SampleEntities.createCommitMetadata(random), ValueType.COMMIT_METADATA);
   }
 
   @Test
-  public void putWithConditionKeyFragment() {
+  void putWithConditionKeyFragment() {
     putWithCondition(SampleEntities.createFragment(random), ValueType.KEY_FRAGMENT);
   }
 
   @Test
-  public void putWithConditionL1() {
+  void putWithConditionL1() {
     putWithCondition(SampleEntities.createL1(random), ValueType.L1);
   }
 
   @Test
-  public void putWithConditionL2() {
+  void putWithConditionL2() {
     putWithCondition(SampleEntities.createL2(random), ValueType.L2);
   }
 
   @Test
-  public void putWithConditionL3() {
+  void putWithConditionL3() {
     putWithCondition(SampleEntities.createL3(random), ValueType.L3);
   }
 
   @Test
-  public void putWithCompoundConditionTag() {
+  void putWithCompoundConditionTag() {
     final InternalRef sample = SampleEntities.createTag(random);
     putThenLoad(sample, ValueType.REF);
     final Id id = sample.getId();
@@ -262,7 +265,7 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  public void putWithFailingConditionExpression() {
+  void putWithFailingConditionExpression() {
     final InternalRef sample = SampleEntities.createBranch(random);
     final InternalRef.Type type = InternalRef.Type.BRANCH;
     final ConditionExpression condition = ConditionExpression.of(
@@ -272,7 +275,7 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  public void putToIncorrectCollection() {
+  void putToIncorrectCollection() {
     for (ValueType type : ValueType.values()) {
       for (ValueType value : ValueType.values()) {
         if (type == value) {
@@ -285,47 +288,47 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  public void deleteNoConditionValue() {
+  void deleteNoConditionValue() {
     deleteCondition(SampleEntities.createValue(random), ValueType.VALUE, true, Optional.empty());
   }
 
   @Test
-  public void deleteNoConditionL1() {
+  void deleteNoConditionL1() {
     deleteCondition(SampleEntities.createL1(random), ValueType.L1, true, Optional.empty());
   }
 
   @Test
-  public void deleteNoConditionL2() {
+  void deleteNoConditionL2() {
     deleteCondition(SampleEntities.createL2(random), ValueType.L2, true, Optional.empty());
   }
 
   @Test
-  public void deleteNoConditionL3() {
+  void deleteNoConditionL3() {
     deleteCondition(SampleEntities.createL3(random), ValueType.L3, true, Optional.empty());
   }
 
   @Test
-  public void deleteNoConditionFragment() {
+  void deleteNoConditionFragment() {
     deleteCondition(SampleEntities.createFragment(random), ValueType.KEY_FRAGMENT, true, Optional.empty());
   }
 
   @Test
-  public void deleteNoConditionBranch() {
+  void deleteNoConditionBranch() {
     deleteCondition(SampleEntities.createBranch(random), ValueType.REF, true, Optional.empty());
   }
 
   @Test
-  public void deleteNoConditionTag() {
+  void deleteNoConditionTag() {
     deleteCondition(SampleEntities.createTag(random), ValueType.REF, true, Optional.empty());
   }
 
   @Test
-  public void deleteNoConditionCommitMetadata() {
+  void deleteNoConditionCommitMetadata() {
     deleteCondition(SampleEntities.createCommitMetadata(random), ValueType.COMMIT_METADATA, true, Optional.empty());
   }
 
   @Test
-  public void deleteConditionMismatchAttributeValue() {
+  void deleteConditionMismatchAttributeValue() {
     final ExpressionFunction expressionFunction = ExpressionFunction.equals(ExpressionPath.builder("value").build(),
         SampleEntities.createStringEntity(random, random.nextInt(10) + 1));
     final ConditionExpression ex = ConditionExpression.of(expressionFunction);
@@ -333,7 +336,7 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  public void deleteConditionMismatchAttributeBranch() {
+  void deleteConditionMismatchAttributeBranch() {
     final ExpressionFunction expressionFunction = ExpressionFunction.equals(ExpressionPath.builder("commit").build(),
         SampleEntities.createStringEntity(random, random.nextInt(10) + 1));
     final ConditionExpression ex = ConditionExpression.of(expressionFunction);
@@ -341,15 +344,32 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  public void deleteBranchSizeFail() {
+  void deleteBranchSizeFail() {
     final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(COMMITS), ONE));
     deleteCondition(SampleEntities.createBranch(random), ValueType.REF, false, Optional.of(expression));
   }
 
   @Test
-  public void deleteBranchSizeSucceed() {
+  void deleteBranchSizeSucceed() {
     final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(COMMITS), TWO));
     deleteCondition(SampleEntities.createBranch(random), ValueType.REF, true, Optional.of(expression));
+  }
+
+  @Test
+  void updateRemoveNoCondition() {
+    final InternalRef tag = SampleEntities.createTag(random);
+    putThenLoad(tag, ValueType.REF);
+    final Optional<InternalRef> updated = store.update(
+        ValueType.REF,
+        tag.getId(),
+        UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("metadata").build())),
+        Optional.empty());
+    Assertions.assertTrue(updated.isPresent());
+    final Map<String, Entity> tagMap = ValueType.REF.getSchema().itemToMap(tag, true);
+    final Map<String, Entity> updatedMap = ValueType.REF.getSchema().itemToMap(updated.get(), true);
+    Assertions.assertFalse(updatedMap.containsKey("metadata"));
+    tagMap.remove("metadata");
+    Assertions.assertEquals(tagMap, updatedMap);
   }
 
   private <T extends HasId> void putWithCondition(T sample, ValueType type) {

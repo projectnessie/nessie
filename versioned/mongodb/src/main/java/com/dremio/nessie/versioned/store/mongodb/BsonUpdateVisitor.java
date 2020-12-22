@@ -76,7 +76,7 @@ class BsonUpdateVisitor implements UpdateExpressionVisitor<Bson> {
   @Override
   public Bson visit(UpdateExpression expression) {
     final ImmutableList.Builder<Bson> builder = ImmutableList.builder();
-    expression.getClauses().forEach(c -> c.accept(CLAUSE_VISITOR));
+    expression.getClauses().forEach(c -> builder.add(c.accept(CLAUSE_VISITOR)));
     return Updates.combine(builder.build());
   }
 }

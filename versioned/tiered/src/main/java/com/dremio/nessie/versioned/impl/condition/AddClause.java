@@ -25,6 +25,11 @@ import com.dremio.nessie.versioned.store.Entity;
 @Immutable
 public abstract class AddClause implements UpdateClause {
 
+  @Override
+  public <T> T accept(UpdateClauseVisitor<T> visitor) {
+    return visitor.visit(this);
+  }
+
   public abstract ExpressionPath getPath();
 
   public abstract Value getValue();
@@ -47,5 +52,4 @@ public abstract class AddClause implements UpdateClause {
   public String toClauseString() {
     return String.format("%s %s", getPath().asString(), getValue().asString());
   }
-
 }

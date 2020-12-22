@@ -24,6 +24,11 @@ public abstract class SetClause implements UpdateClause {
 
   public abstract Value getValue();
 
+  @Override
+  public <T> T accept(UpdateClauseVisitor<T> visitor) {
+    return visitor.visit(this);
+  }
+
   public static SetClause equals(ExpressionPath path, Entity value) {
     return ImmutableSetClause.builder().path(path).value(Value.of(value)).build();
   }

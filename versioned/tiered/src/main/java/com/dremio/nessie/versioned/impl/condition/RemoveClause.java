@@ -22,6 +22,11 @@ public abstract class RemoveClause implements UpdateClause {
   public abstract ExpressionPath getPath();
 
   @Override
+  public <T> T accept(UpdateClauseVisitor<T> visitor) {
+    return visitor.visit(this);
+  }
+
+  @Override
   public RemoveClause alias(AliasCollector c) {
     return ImmutableRemoveClause.builder().path(getPath().alias(c)).build();
   }
@@ -39,6 +44,4 @@ public abstract class RemoveClause implements UpdateClause {
   public String toClauseString() {
     return getPath().asString();
   }
-
-
 }

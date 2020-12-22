@@ -329,7 +329,6 @@ public class MongoDBStore implements Store {
       throws NotFoundException {
     final MongoCollection<V> collection = getCollection(type);
 
-
     Bson filter = Filters.eq(Store.KEY_NAME, id.getId());
     if (condition.isPresent()) {
       filter = Filters.and(filter, condition.get().accept(CONDITION_VISITOR));
