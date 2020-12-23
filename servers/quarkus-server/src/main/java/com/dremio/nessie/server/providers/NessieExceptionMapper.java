@@ -15,9 +15,7 @@
  */
 package com.dremio.nessie.server.providers;
 
-import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -27,48 +25,47 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.error.BaseNessieClientServerException;
-import com.dremio.nessie.error.NessieError;
-import com.dremio.nessie.services.config.ServerConfig;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.google.common.base.Throwables;
 
+/**
+ * "Default" exception mapper implementations, mostly used to serialize the
+ * {@link BaseNessieClientServerException Nessie-exceptions}  as JSON consumable by Nessie
+ * client implementations. Does also map other, non-{@link BaseNessieClientServerException}s
+ * as HTTP/503 (internal server errors) with a JSON-serialized
+ * {@link com.dremio.nessie.error.NessieError}.
+ */
 @Provider
-public class NessieExceptionMapper implements ExceptionMapper<Exception> {
+public class NessieExceptionMapper
+    extends BaseExceptionMapper
+    implements ExceptionMapper<Exception> {
   private static final Logger LOGGER = LoggerFactory.getLogger(NessieExceptionMapper.class);
-
-  @Inject
-  ServerConfig serverConfig;
 
   @Override
   public Response toResponse(Exception exception) {
+    int status;
+    String reason;
 
     if (exception instanceof WebApplicationException) {
-      Response.Status status = Status.fromStatusCode(((WebApplicationException) exception).getResponse().getStatus());
-      return exception(status, exception.getMessage(), exception);
+      WebApplicationException e = (WebApplicationException) exception;
+      Status st = Status.fromStatusCode(e.getResponse().getStatus());
+      status = st.getStatusCode();
+      reason = st.getReasonPhrase();
     } else if (exception instanceof BaseNessieClientServerException) {
       // log message at debug level so we can review stack traces if enabled.
       LOGGER.debug("Exception on server with appropriate error sent to client.", exception);
       BaseNessieClientServerException e = (BaseNessieClientServerException) exception;
-      return exception(e.getStatus(), e.getReason(), exception.getMessage(), exception);
-    } else if (exception instanceof JsonParseException) {
-      return exception(Status.BAD_REQUEST, exception.getMessage(), exception);
-    } else if (exception instanceof JsonMappingException) {
-      return exception(Status.BAD_REQUEST, exception.getMessage(), exception);
+      status = e.getStatus();
+      reason = e.getReason();
+    } else if (exception instanceof JsonParseException
+        || exception instanceof JsonMappingException) {
+      status = Status.BAD_REQUEST.getStatusCode();
+      reason = Status.BAD_REQUEST.getReasonPhrase();
     } else {
-      return exception(Status.INTERNAL_SERVER_ERROR, exception.getMessage(), exception);
+      status = Status.INTERNAL_SERVER_ERROR.getStatusCode();
+      reason = Status.INTERNAL_SERVER_ERROR.getReasonPhrase();
     }
-  }
 
-  private Response exception(int status, String reason, String message, Exception e) {
-    String stack = serverConfig.shouldSendstackTraceToAPIClient() ? Throwables.getStackTraceAsString(e) : null;
-    NessieError error = new NessieError(message, status, reason, stack);
-    LOGGER.debug("Failure on server, propagated to client. Status: {} {}, Message: {}.", status, reason, message, e);
-    return Response.status(status).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
+    return buildExceptionResponse(status, reason, exception.getMessage(), exception);
   }
-
-  private Response exception(Status status, String message, Exception e) {
-    return exception(status.getStatusCode(), status.getReasonPhrase(), message, e);
-  }
-
 }

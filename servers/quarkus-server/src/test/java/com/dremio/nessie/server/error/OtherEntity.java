@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.server.error;
 
-package com.dremio.nessie.client.rest;
+import javax.validation.constraints.NotNull;
 
-import com.dremio.nessie.error.NessieError;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * A Nessie REST API runtime exception.
+ * Just a dummy entity.
  */
-public class NessieServiceException extends RuntimeException {
+public class OtherEntity {
+  private final String foo;
 
-  private final NessieError error;
-
-  public NessieServiceException(NessieError error) {
-    super(error.getFullMessage());
-    this.error = error;
+  @JsonCreator
+  public OtherEntity(
+      @NotNull @JsonProperty("foo") String foo) {
+    this.foo = foo;
   }
 
-  public NessieError getError() {
-    return error;
+  public String getFoo() {
+    return foo;
   }
-
 }
