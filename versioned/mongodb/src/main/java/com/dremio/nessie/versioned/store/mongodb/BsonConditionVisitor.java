@@ -111,7 +111,7 @@ class BsonConditionVisitor implements ConditionExpressionVisitor<Bson> {
         return "{" + value.getMap().entrySet().stream().map(e -> String.format("\"%s\": %s", e.getKey(), toMongoExpr(e.getValue())))
           .collect(Collectors.joining(", ")) + "}";
       case LIST:
-        return "[" + value.getList().stream().map(Entity::toString).collect(Collectors.joining(", ")) + "]";
+        return "[" + value.getList().stream().map(BsonConditionVisitor::toMongoExpr).collect(Collectors.joining(", ")) + "]";
       case NUMBER:
         return String.valueOf(value.getNumber());
       case STRING:
