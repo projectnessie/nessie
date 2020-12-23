@@ -53,7 +53,6 @@ public abstract class UpdateExpression implements Aliasable<UpdateExpression> {
     Preconditions.checkArgument(!getClauses().isEmpty(), "At least one clauses must be defined.");
     ListMultimap<UpdateClause.Type, UpdateClause> clauses = Multimaps.index(getClauses(), c -> c.getType());
     StringBuilder sb = new StringBuilder();
-    addIfExist(sb, clauses.get(Type.ADD), Type.ADD);
     addIfExist(sb, clauses.get(Type.SET), Type.SET);
     addIfExist(sb, clauses.get(Type.REMOVE), Type.REMOVE);
     addIfExist(sb, clauses.get(Type.DELETE), Type.DELETE);

@@ -64,8 +64,6 @@ class BsonConditionVisitor implements ConditionExpressionVisitor<Bson> {
           }
 
           return String.format("{%s: %s}", arguments.get(0).accept(this), arguments.get(1).accept(this));
-        case LIST_APPEND:
-          return String.format("{\"$push\" {%s: %s}}", arguments.get(0).accept(this), arguments.get(1).accept(this));
         default:
           throw new UnsupportedOperationException(String.format("%s is not a supported top-level MongoDB function.", name));
       }

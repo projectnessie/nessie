@@ -22,14 +22,18 @@ import com.google.common.base.Preconditions;
  * Visitor for creating Bson valid paths from ExpressionPaths.
  */
 class BsonPathVisitor implements ExpressionPath.PathVisitor<Boolean, String, RuntimeException> {
-  static final BsonPathVisitor INSTANCE = new BsonPathVisitor();
+  static final BsonPathVisitor INSTANCE = new BsonPathVisitor(true);
+  static final BsonPathVisitor INSTANCE_NO_QUOTE = new BsonPathVisitor(false);
 
-  private BsonPathVisitor() {
+  private final boolean addQuotes;
+
+  private BsonPathVisitor(boolean addQuotes) {
+    this.addQuotes = addQuotes;
   }
 
   @Override
   public String visitName(ExpressionPath.NameSegment segment, Boolean first) throws RuntimeException {
-    if (first) {
+    if (addQuotes && first) {
       return "\"" + segment.getName() + visitChildOrEmpty(segment) + "\"";
     }
     return segment.getName() + visitChildOrEmpty(segment);

@@ -15,50 +15,93 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import org.bson.BsonDocument;
+import org.bson.BsonDocumentWriter;
+import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 
-import com.dremio.nessie.versioned.impl.condition.AddClause;
+import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.RemoveClause;
 import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.impl.condition.UpdateClauseVisitor;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpressionVisitor;
-import com.dremio.nessie.versioned.impl.condition.Value;
+import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableList;
-import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Updates;
 
 /**
  * This provides a separation of generation of BSON expressions from @{UpdateExpression} from the object itself.
  */
 class BsonUpdateVisitor implements UpdateExpressionVisitor<Bson> {
-  private static final class ClauseVisitor implements UpdateClauseVisitor<Bson> {
-    @Override
-    public Bson visit(AddClause clause) {
-      final String path = clause.getPath().getRoot().accept(BsonPathVisitor.INSTANCE, true);
-      if (isArrayPath(clause.getPath())) {
-        return Updates.push(path, clause.getValue());
-      }
+  /**
+   * Represent a BSON document for update operations.
+   * Intentionally don't use Updates.*() as that will result in issues encoding the value entity,
+   * due to codec lookups the MongoDB driver will actually encode the fields of the basic object, not the entity.
+   */
+  private static class UpdateBson implements Bson {
+    private final String operation;
+    private final String path;
+    private final Entity value;
 
-      return Updates.set(path, clause.getValue());
+    UpdateBson(String operation, String path, Entity value) {
+      this.operation = operation;
+      this.path = path;
+      this.value = value;
     }
 
     @Override
+    public <TDocument> BsonDocument toBsonDocument(Class<TDocument> clazz, CodecRegistry codecRegistry) {
+      final BsonDocumentWriter writer = new BsonDocumentWriter(new BsonDocument());
+      writer.writeStartDocument();
+      writer.writeName(operation);
+      writer.writeStartDocument();
+      CodecProvider.ENTITY_TO_BSON_CONVERTER.writeField(writer, path, value);
+      writer.writeEndDocument();
+      writer.writeEndDocument();
+      return writer.getDocument();
+    }
+  }
+
+  private static class ClauseVisitor implements UpdateClauseVisitor<Bson> {
+    @Override
     public Bson visit(RemoveClause clause) {
-      final String path = clause.getPath().getRoot().accept(BsonPathVisitor.INSTANCE, true);
+      final String path = clause.getPath().getRoot().accept(BsonPathVisitor.INSTANCE_NO_QUOTE, true);
+      if (isArrayPath(clause.getPath())) {
+        // Mongo has no way of deleting an element from an array, it by default leaves a NULL element. To remove the
+        // element in one operation, splice together the array around the index to remove.
+        throw new UnsupportedOperationException("Not yet supported.");
+        /*final int lastIndex = path.lastIndexOf(".");
+        final String arrayPath = path.substring(0, lastIndex);
+        final String arrayIndex = path.substring(lastIndex + 1);
+        return BsonDocument.parse(String.format("{$set: {%1$s: {$concatArrays: " +
+          "[{$slice:[ \"$%1$s\", %2$s]}, {$slice:[ \"$%1$s\", {$add:[1, %2$s]}, {$size:\"$%1$s\"}]}]}}}", arrayPath, arrayIndex));*/
+      }
+
       return Updates.unset(path);
     }
 
     @Override
     public Bson visit(SetClause clause) {
-      final String path = clause.getPath().getRoot().accept(BsonPathVisitor.INSTANCE, true);
+      final String path = clause.getPath().getRoot().accept(BsonPathVisitor.INSTANCE_NO_QUOTE, true);
 
-      if (Value.Type.VALUE == clause.getValue().getType()) {
-        return Updates.set(path, clause.getValue());
+      switch (clause.getValue().getType()) {
+        case VALUE:
+          return new UpdateBson("$set", path, clause.getValue().getValue());
+        case FUNCTION:
+          return handleFunction(path, clause.getValue().getFunction());
+        default:
+          throw new UnsupportedOperationException(String.format("Unsupported SetClause type: %s", clause.getValue().getType().name()));
+      }
+    }
+
+    private Bson handleFunction(String path, ExpressionFunction function) {
+      if (ExpressionFunction.FunctionName.LIST_APPEND == function.getName()) {
+        return new UpdateBson("$push", path, function.getArguments().get(1).getValue());
       }
 
-      return new BasicDBObject(path, clause.getValue().accept(BsonConditionVisitor.VALUE_VISITOR));
+      throw new UnsupportedOperationException(String.format("Unsupported Set function: %s", function.getName()));
     }
 
     private boolean isArrayPath(ExpressionPath path) {

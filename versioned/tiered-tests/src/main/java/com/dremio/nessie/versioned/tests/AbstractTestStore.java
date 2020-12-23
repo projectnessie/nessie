@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.tests;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.SampleEntities;
@@ -36,6 +38,7 @@ import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.RemoveClause;
+import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
@@ -356,20 +359,91 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  void updateRemoveNoCondition() {
+  void updateWithFailedCondition() {
     final InternalRef tag = SampleEntities.createTag(random);
     putThenLoad(tag, ValueType.REF);
+    final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(
+        ExpressionPath.builder("name").build(), Entity.ofString("badTagName")));
     final Optional<InternalRef> updated = store.update(
         ValueType.REF,
         tag.getId(),
         UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("metadata").build())),
-        Optional.empty());
+        Optional.of(expression));
+    Assertions.assertFalse(updated.isPresent());
+  }
+
+  @Test
+  void updateWithSuccessfulCondition() {
+    final InternalRef tag = SampleEntities.createTag(random);
+    putThenLoad(tag, ValueType.REF);
+    final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(
+        ExpressionPath.builder("name").build(), Entity.ofString("tagName")));
+    final Optional<InternalRef> updated = store.update(
+        ValueType.REF,
+        tag.getId(),
+        UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("metadata").build())),
+        Optional.of(expression));
     Assertions.assertTrue(updated.isPresent());
     final Map<String, Entity> tagMap = ValueType.REF.getSchema().itemToMap(tag, true);
     final Map<String, Entity> updatedMap = ValueType.REF.getSchema().itemToMap(updated.get(), true);
     Assertions.assertFalse(updatedMap.containsKey("metadata"));
     tagMap.remove("metadata");
     Assertions.assertEquals(tagMap, updatedMap);
+  }
+
+  @Test
+  void updateRemove() {
+    final Fragment fragment = SampleEntities.createFragment(random);
+    putThenLoad(fragment, ValueType.KEY_FRAGMENT);
+    final Optional<InternalRef> updated = store.update(
+        ValueType.KEY_FRAGMENT,
+        fragment.getId(),
+        UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("keys").position(0).build())),
+        Optional.empty());
+    Assertions.assertTrue(updated.isPresent());
+
+    final Map<String, Entity> oldMap = ValueType.KEY_FRAGMENT.getSchema().itemToMap(fragment, true);
+    final List<Entity> oldKeys = oldMap.get("keys").getList().subList(1, 10);
+    final Map<String, Entity> updatedMap = ValueType.KEY_FRAGMENT.getSchema().itemToMap(updated.get(), true);
+    Assertions.assertEquals(oldKeys, updatedMap.get("keys").getList());
+  }
+
+  @Test
+  void updateSetEquals() {
+    final String tagName = "myTag";
+    final InternalRef tag = SampleEntities.createTag(random);
+    putThenLoad(tag, ValueType.REF);
+    final Optional<InternalRef> updated = store.update(
+        ValueType.REF,
+        tag.getId(),
+        UpdateExpression.of(SetClause.equals(ExpressionPath.builder("name").build(), Entity.ofString(tagName))),
+        Optional.empty());
+    Assertions.assertTrue(updated.isPresent());
+    final Map<String, Entity> tagMap = ValueType.REF.getSchema().itemToMap(tag, true);
+    final Map<String, Entity> updatedMap = ValueType.REF.getSchema().itemToMap(updated.get(), true);
+    Assertions.assertEquals(tagName, updatedMap.get("name").getString());
+    updatedMap.remove("name");
+    tagMap.remove("name");
+    Assertions.assertEquals(tagMap, updatedMap);
+  }
+
+  @Test
+  void updateSetListAppend() {
+    final String key = "newKey";
+    final Fragment fragment = SampleEntities.createFragment(random);
+    putThenLoad(fragment, ValueType.KEY_FRAGMENT);
+    final Optional<InternalRef> updated = store.update(
+        ValueType.KEY_FRAGMENT,
+        fragment.getId(),
+        UpdateExpression.of(SetClause.appendToList(ExpressionPath.builder("keys").build(), Entity.ofList(Entity.ofString(key)))),
+        Optional.empty());
+    Assertions.assertTrue(updated.isPresent());
+
+    final Map<String, Entity> oldMap = ValueType.KEY_FRAGMENT.getSchema().itemToMap(fragment, true);
+    final List<Entity> oldKeys = new ArrayList<>(oldMap.get("keys").getList());
+    oldKeys.add(Entity.ofList(Entity.ofString(key)));
+    final Map<String, Entity> updatedMap = ValueType.KEY_FRAGMENT.getSchema().itemToMap(updated.get(), true);
+    Assertions.assertEquals(oldKeys, updatedMap.get("keys").getList());
   }
 
   private <T extends HasId> void putWithCondition(T sample, ValueType type) {

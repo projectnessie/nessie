@@ -61,7 +61,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
      * @param field the name of the field as represented in BSON
      * @param value the entity that will be serialized.
      */
-    private void writeField(BsonWriter writer, String field, Entity value) {
+    void writeField(BsonWriter writer, String field, Entity value) {
       writer.writeName(field);
       writeSingleValue(writer, value);
     }

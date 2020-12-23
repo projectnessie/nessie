@@ -20,7 +20,7 @@ import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
 public interface UpdateClause extends Aliasable<UpdateClause> {
 
   enum Type {
-    SET, REMOVE, DELETE, ADD;
+    SET, REMOVE, DELETE;
   }
 
   Type getType();

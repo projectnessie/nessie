@@ -28,7 +28,6 @@ class TestExpressions {
 
   private final Entity av0 = Entity.ofBoolean(true);
   private final Entity av1 = Entity.ofBoolean(false);
-  private final Entity av2 = Entity.ofString("mystr");
 
   private final ExpressionPath p0 = ExpressionPath.builder("p0").build();
   private final ExpressionPath p1 = ExpressionPath.builder("p1").build();
@@ -101,17 +100,6 @@ class TestExpressions {
   }
 
   @Test
-  void updateAddClause() {
-    UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
-        AddClause.addToSetOrNumber(p0, av2)
-        ).build();
-    AliasCollectorImpl c = new AliasCollectorImpl();
-    UpdateExpression e0p = e0.alias(c);
-    assertEquals(" ADD p0 :v0", e0p.toUpdateExpressionString());
-    assertEquals(AttributeValueUtil.fromEntity(av2), c.getAttributesValues().get(":v0"));
-  }
-
-  @Test
   void updateSetClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
         SetClause.equals(p0, av0),
@@ -138,7 +126,6 @@ class TestExpressions {
   @Test
   void updateMultiClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
-        AddClause.addToSetOrNumber(p0, av2),
         SetClause.equals(p0, av0),
         SetClause.appendToList(p1, av1),
         RemoveClause.of(p0),
@@ -147,8 +134,7 @@ class TestExpressions {
     AliasCollectorImpl c = new AliasCollectorImpl();
     UpdateExpression e0p = e0.alias(c);
     assertEquals(" "
-        + "ADD p0 :v0 "
-        + "SET p0 = :v1, p1 = list_append(p1, :v2) "
+        + "SET p0 = :v0, p1 = list_append(p1, :v1) "
         + "REMOVE p0, p2[2]", e0p.toUpdateExpressionString());
   }
 
