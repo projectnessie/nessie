@@ -72,9 +72,9 @@ public class ConstraintViolation {
 
   @Override
   public String toString() {
-    return type.name().toLowerCase(Locale.ROOT)
-           + " " + path
-           + " " + message
+    return (type != null ? type.name().toLowerCase(Locale.ROOT) : "")
+           + ((path != null && !path.isEmpty()) ? (" " + path) : "")
+           + ((message != null && !message.isEmpty()) ? (" " + message) : "")
            + (value != null && !value.isEmpty() ? " (value='" + value + "')" : "");
   }
 }
