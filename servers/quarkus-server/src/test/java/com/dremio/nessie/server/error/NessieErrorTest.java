@@ -137,7 +137,8 @@ class NessieErrorTest {
                     .request()
                     .put(Entity.entity("not really valid json", MediaType.APPLICATION_JSON_TYPE))
          ).getMessage(),
-         startsWith("Bad Request (HTTP/400): Unrecognized token 'not': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n")),
+         startsWith("Bad Request (HTTP/400): Unrecognized token 'not': was expecting (JSON String, Number, "
+                    + "Array, Object or token 'null', 'true' or 'false')\n")),
         () -> assertThat(assertThrows(NessieBadRequestException.class,
           () ->
               target.path("basicEntity")
