@@ -17,6 +17,7 @@ package com.dremio.nessie.client.http;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.dremio.nessie.client.http.HttpClient.Method;
 
@@ -25,7 +26,7 @@ import com.dremio.nessie.client.http.HttpClient.Method;
  */
 public class RequestContext {
 
-  private final Map<String, String> headers;
+  private final Map<String, Set<String>> headers;
   private final String uri;
   private final Method method;
   private final Object body;
@@ -38,15 +39,19 @@ public class RequestContext {
    * @param method verb to be used
    * @param body optional body of request
    */
-  public RequestContext(Map<String, String> headers, String uri, Method method, Object body) {
+  public RequestContext(Map<String, Set<String>> headers, String uri, Method method, Object body) {
     this.headers = headers;
     this.uri = uri;
     this.method = method;
     this.body = body;
   }
 
-  public Map<String, String> getHeaders() {
+  public Map<String, Set<String>> getHeaders() {
     return headers;
+  }
+
+  public void putHeader(String name, String value) {
+    HttpRequest.putHeader(name, value, headers);
   }
 
   public String getUri() {

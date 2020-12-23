@@ -15,16 +15,12 @@
  */
 package com.dremio.nessie.client.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
  * Filter to be evaluated before making a request. It is too late to change the URL or method but headers can be changed or other
  * connection parameters set.
  */
+@FunctionalInterface
 public interface RequestFilter {
 
   void filter(RequestContext context);
-
-  default void init(ObjectMapper mapper) {
-  }
 }

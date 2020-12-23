@@ -33,6 +33,8 @@ import com.dremio.nessie.client.http.HttpClientException;
 import com.dremio.nessie.client.rest.NessieHttpResponseFilter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 public class NessieClient implements Closeable {
 
@@ -43,6 +45,8 @@ public class NessieClient implements Closeable {
   public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
   public static final String CONF_NESSIE_REF = "nessie.ref";
   private final HttpClient client;
+  private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
+                                                        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
   public enum AuthType {
     AWS,
@@ -63,9 +67,9 @@ public class NessieClient implements Closeable {
    * @param password password (only for BASIC auth)
    */
   public NessieClient(AuthType authType, String path, String username, String password) {
-    client = new HttpClient(path);
+    client = HttpClient.builder().setBaseUri(path).setObjectMapper(mapper).build();
     authFilter(client, authType, username, password);
-    client.register(new NessieHttpResponseFilter());
+    client.register(new NessieHttpResponseFilter(mapper));
     contents = wrap(ContentsApi.class, new ClientContentsApi(client));
     tree = wrap(TreeApi.class, new ClientTreeApi(client));
     config = wrap(ConfigApi.class, new ClientConfigApi(client));
@@ -74,7 +78,7 @@ public class NessieClient implements Closeable {
   private void authFilter(HttpClient client, AuthType authType, String username, String password) {
     switch (authType) {
       case AWS:
-        client.register(new AwsAuth());
+        client.register(new AwsAuth(mapper));
         break;
       case BASIC:
         client.register(new BasicAuthFilter(username, password));

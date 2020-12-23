@@ -30,17 +30,16 @@ public class HttpResponse {
   private final ResponseContext responseContext;
   private final ObjectMapper mapper;
 
-  HttpResponse(ResponseContext context, ObjectMapper mapper) throws IOException {
+  HttpResponse(ResponseContext context, ObjectMapper mapper) {
     this.responseContext = context;
     this.mapper = mapper;
-    context.getResponseCode();
   }
 
   private <V> V readEntity(ObjectReader reader) {
     try (InputStream is = responseContext.getInputStream()) {
       return reader.readValue(is);
     } catch (IOException e) {
-      throw new HttpClientException(e);
+      throw new HttpClientException("Cannot parse request.", e);
     }
   }
 

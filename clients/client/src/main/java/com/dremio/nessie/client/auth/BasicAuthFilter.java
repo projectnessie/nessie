@@ -21,7 +21,6 @@ import java.util.Objects;
 
 import com.dremio.nessie.client.http.RequestContext;
 import com.dremio.nessie.client.http.RequestFilter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Filter to add auth header to all outgoing requests.
@@ -47,11 +46,7 @@ public class BasicAuthFilter implements RequestFilter {
 
   @Override
   public void filter(RequestContext context) {
-    context.getHeaders().put("Authorization", authHeaderValue);
+    context.putHeader("Authorization", authHeaderValue);
   }
 
-  @Override
-  public void init(ObjectMapper mapper) {
-
-  }
 }

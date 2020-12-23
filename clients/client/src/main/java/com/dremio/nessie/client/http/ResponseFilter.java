@@ -15,15 +15,12 @@
  */
 package com.dremio.nessie.client.http;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
  * Filter evaluated post call. The connection, its response streams and response code are available to the filter.
  */
+@FunctionalInterface
 public interface ResponseFilter {
 
   void filter(ResponseContext con);
 
-  default void init(ObjectMapper mapper) {
-  }
 }

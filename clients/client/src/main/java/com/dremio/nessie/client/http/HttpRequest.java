@@ -17,12 +17,22 @@ package com.dremio.nessie.client.http;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 
 import com.dremio.nessie.client.http.HttpClient.Method;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -32,17 +42,26 @@ public class HttpRequest {
 
   private final UriBuilder uriBuilder;
   private final ObjectMapper mapper;
-  private final Map<String, String> headers = new HashMap<>();
+  private final Map<String, Set<String>> headers = new HashMap<>();
   private final List<RequestFilter> requestFilters;
   private final List<ResponseFilter> responseFilters;
+  private SSLContext sslContext;
 
   HttpRequest(String baseUri, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters,
-              List<ResponseFilter> responseFilters) {
+              List<ResponseFilter> responseFilters, SSLContext context) {
     this.uriBuilder = new UriBuilder(baseUri);
     this.mapper = mapper;
-    this.headers.put("Accept", accept);
+    putHeader("Accept", accept, headers);
     this.requestFilters = requestFilters;
     this.responseFilters = responseFilters;
+    this.sslContext = context;
+  }
+
+  static void putHeader(String key, String value, Map<String, Set<String>> headers) {
+    if (!headers.containsKey(key)) {
+      headers.put(key, new HashSet<>());
+    }
+    headers.get(key).add(value);
   }
 
   public HttpRequest path(String path) {
@@ -56,7 +75,7 @@ public class HttpRequest {
   }
 
   public HttpRequest header(String name, String value) {
-    this.headers.put(name, value);
+    putHeader(name, value, headers);
     return this;
   }
 
@@ -65,9 +84,15 @@ public class HttpRequest {
       String uri = uriBuilder.build();
       URL url = new URL(uri);
       HttpURLConnection con = (HttpURLConnection) url.openConnection();
+      if (con instanceof HttpsURLConnection) {
+        ((HttpsURLConnection) con).setSSLSocketFactory(sslContext.getSocketFactory());
+      }
       RequestContext context = new RequestContext(headers, uri, method, body);
       requestFilters.forEach(a -> a.filter(context));
-      headers.forEach(con::setRequestProperty);
+      headers.entrySet()
+             .stream()
+             .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
+             .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
       con.setRequestMethod(method.name());
       if (body != null && (method.equals(Method.PUT) || method.equals(Method.POST))) {
         con.setDoOutput(true);
@@ -75,12 +100,24 @@ public class HttpRequest {
         mapper.writerFor(body.getClass()).writeValue(con.getOutputStream(), body);
       }
       con.connect();
+      con.getResponseCode(); // call to ensure http request is complete
       ResponseContext responseContext = new ResponseContextImpl(con);
       responseFilters.forEach(a -> a.filter(responseContext));
       return new HttpResponse(responseContext, mapper);
+    } catch (ProtocolException e) {
+      throw new HttpClientException(String.format("Cannot perform request. Invalid protocol %s", method), e);
+    } catch (JsonGenerationException | JsonMappingException e) {
+      throw new HttpClientException(String.format("Cannot serialize body of request. Unable to serialize %s", body.getClass()), e);
+    } catch (MalformedURLException e) {
+      throw new HttpClientException(String.format("Cannot perform request. Malformed Url for %s", uriBuilder.build()), e);
     } catch (IOException e) {
       throw new HttpClientException(e);
     }
+  }
+
+  public HttpRequest setSslContext(SSLContext context) {
+    this.sslContext = context;
+    return this;
   }
 
   public HttpResponse get() throws HttpClientException {

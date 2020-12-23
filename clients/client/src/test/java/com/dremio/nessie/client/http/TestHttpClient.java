@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,14 +31,13 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 
 public class TestHttpClient {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private static HttpRequest get(InetSocketAddress address) {
-    return new HttpClient("http://localhost:" + address.getPort()).create();
+    return HttpClient.builder().setBaseUri("http://localhost:" + address.getPort()).setObjectMapper(MAPPER).build().newRequest();
   }
 
   @Test
@@ -182,7 +182,7 @@ public class TestHttpClient {
     try (TestServer server = new TestServer("/a/b", handler)) {
       Assertions.assertThrows(HttpClientException.class,
           () -> get(server.server.getAddress()).path("a/{b}").get().readEntity(ExampleBean.class));
-      Assertions.assertThrows(IllegalStateException.class,
+      Assertions.assertThrows(HttpClientException.class,
           () -> get(server.server.getAddress()).path("a/b").resolveTemplate("b", "b")
                                                                    .get().readEntity(ExampleBean.class));
     }
@@ -197,10 +197,15 @@ public class TestHttpClient {
       h.sendResponseHeaders(200, 0);
     };
     try (TestServer server = new TestServer(handler)) {
-      HttpClient client = new HttpClient("http://localhost:" + server.server.getAddress().getPort());
+      HttpClient client = HttpClient.builder()
+                                    .setBaseUri("http://localhost:" + server.server.getAddress().getPort())
+                                    .setObjectMapper(MAPPER)
+                                    .build();
       client.register((RequestFilter) context -> {
         requestFilterCalled.set(true);
-        context.getHeaders().put("x", "y");
+        Set<String> headers = new HashSet<>();
+        headers.add("y");
+        context.getHeaders().put("x", headers);
       });
       client.register((ResponseFilter) con -> {
         try {
@@ -210,7 +215,7 @@ public class TestHttpClient {
           throw new IOError(e);
         }
       });
-      client.create().get();
+      client.newRequest().get();
       Assertions.assertTrue(responseFilterCalled.get());
       Assertions.assertTrue(requestFilterCalled.get());
     }
@@ -227,34 +232,21 @@ public class TestHttpClient {
     }
   }
 
-  private static class TestServer implements AutoCloseable {
-    private final HttpServer server;
-
-    TestServer(String context, HttpHandler handler) throws IOException {
-      HttpHandler safeHandler = exchange -> {
-        try {
-          handler.handle(exchange);
-        } catch (RuntimeException | Error e) {
-          e.printStackTrace();
-          exchange.sendResponseHeaders(503, 0);
-          throw e;
-        }
-      };
-      server = HttpServer.create(new InetSocketAddress("localhost",0), 0);
-      server.createContext(context, safeHandler);
-      server.setExecutor(null);
-      server.start();
-    }
-
-    TestServer(HttpHandler handler) throws IOException {
-      this("/", handler);
-    }
-
-    @Override
-    public void close() throws Exception {
-      server.stop(0);
+  @Test
+  void testMultiValueHeaders() throws Exception {
+    HttpHandler handler = h -> {
+      Assertions.assertTrue(h.getRequestHeaders().containsKey("x"));
+      List<String> values = h.getRequestHeaders().get("x");
+      Assertions.assertEquals(2, values.size());
+      Assertions.assertEquals("y", values.get(0));
+      Assertions.assertEquals("z", values.get(1));
+      h.sendResponseHeaders(200, 0);
+    };
+    try (TestServer server = new TestServer(handler)) {
+      get(server.server.getAddress()).header("x", "y").header("x", "z").get();
     }
   }
+
 
   public static class ExampleBean {
     private String field1;

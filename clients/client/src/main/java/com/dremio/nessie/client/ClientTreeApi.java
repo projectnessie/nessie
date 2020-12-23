@@ -46,24 +46,24 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public List<Reference> getAllReferences() {
-    return client.create().path("trees").get().readEntity(REFERENCE_LIST);
+    return client.newRequest().path("trees").get().readEntity(REFERENCE_LIST);
   }
 
   @Override
   public void createReference(@NotNull Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    client.create().path("trees/tree").post(reference);
+    client.newRequest().path("trees/tree").post(reference);
   }
 
   @Override
   public Reference getReferenceByName(@NotNull String refName) throws NessieNotFoundException {
-    return client.create().path("trees/tree/{ref}").resolveTemplate("ref", refName).get().readEntity(Reference.class);
+    return client.newRequest().path("trees/tree/{ref}").resolveTemplate("ref", refName).get().readEntity(Reference.class);
   }
 
   @Override
   public void assignTag(@NotNull String tagName, @NotNull String expectedHash, @NotNull Tag tag)
       throws NessieNotFoundException, NessieConflictException {
-    client.create().path("trees/tag/{tagName}")
+    client.newRequest().path("trees/tag/{tagName}")
           .resolveTemplate("tagName", tagName)
           .queryParam("expectedHash", expectedHash)
           .put(tag);
@@ -71,7 +71,7 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public void deleteTag(@NotNull String tagName, @NotNull String expectedHash) throws NessieConflictException, NessieNotFoundException {
-    client.create().path("trees/tag/{tagName}")
+    client.newRequest().path("trees/tag/{tagName}")
           .resolveTemplate("tagName", tagName)
           .queryParam("expectedHash", expectedHash)
           .delete();
@@ -80,7 +80,7 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void assignBranch(@NotNull String branchName, @NotNull String expectedHash,
                            @NotNull Branch branch) throws NessieNotFoundException, NessieConflictException {
-    client.create().path("trees/branch/{branchName}")
+    client.newRequest().path("trees/branch/{branchName}")
           .resolveTemplate("branchName", branchName)
           .queryParam("expectedHash", expectedHash)
           .put(branch);
@@ -89,7 +89,7 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void deleteBranch(@NotNull String branchName, @NotNull String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
-    client.create().path("trees/branch/{branchName}")
+    client.newRequest().path("trees/branch/{branchName}")
           .resolveTemplate("branchName", branchName)
           .queryParam("expectedHash", expectedHash)
           .delete();
@@ -97,12 +97,12 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public Branch getDefaultBranch() {
-    return client.create().path("trees/tree").get().readEntity(Branch.class);
+    return client.newRequest().path("trees/tree").get().readEntity(Branch.class);
   }
 
   @Override
   public LogResponse getCommitLog(@NotNull String ref) throws NessieNotFoundException {
-    return client.create().path("trees/tree/{ref}/log").resolveTemplate("ref", ref)
+    return client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref)
                  .get()
                  .readEntity(LogResponse.class);
   }
@@ -110,7 +110,7 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void transplantCommitsIntoBranch(@NotNull String branchName, @NotNull String expectedHash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    client.create().path("trees/branch/{branchName}/transplant")
+    client.newRequest().path("trees/branch/{branchName}/transplant")
           .resolveTemplate("branchName", branchName)
           .queryParam("expectedHash", expectedHash)
           .queryParam("message", message)
@@ -120,7 +120,7 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void mergeRefIntoBranch(@NotNull String branchName, @NotNull String expectedHash, @NotNull Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    client.create().path("trees/branch/{branchName}/merge")
+    client.newRequest().path("trees/branch/{branchName}/merge")
           .resolveTemplate("branchName", branchName)
           .queryParam("expectedHash", expectedHash)
           .post(merge);
@@ -128,7 +128,7 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public EntriesResponse getEntries(@NotNull String refName) throws NessieNotFoundException {
-    return client.create().path("trees/tree/{ref}/entries")
+    return client.newRequest().path("trees/tree/{ref}/entries")
                  .resolveTemplate("ref", refName)
                  .get()
                  .readEntity(EntriesResponse.class);
@@ -137,7 +137,7 @@ class ClientTreeApi implements TreeApi {
   @Override
   public void commitMultipleOperations(String branch, @NotNull String expectedHash, String message,
                                        @NotNull Operations operations) throws NessieNotFoundException, NessieConflictException {
-    client.create().path("trees/branch/{branchName}/commit")
+    client.newRequest().path("trees/branch/{branchName}/commit")
           .resolveTemplate("branchName", branch)
           .queryParam("expectedHash", expectedHash)
           .queryParam("message", message)

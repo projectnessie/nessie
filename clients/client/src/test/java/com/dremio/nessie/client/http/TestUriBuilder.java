@@ -70,7 +70,7 @@ class TestUriBuilder {
     builder = builder.resolveTemplate("no", "boo");
     UriBuilder bulder1 = builder;
     assertEquals(String.format("Cannot build uri. Not all template keys (%s) were used in uri %s", "{no}", "{my-var}/something/{in}/here"),
-        assertThrows(IllegalStateException.class, bulder1::build).getMessage());
+        assertThrows(HttpClientException.class, bulder1::build).getMessage());
   }
 
   @Test

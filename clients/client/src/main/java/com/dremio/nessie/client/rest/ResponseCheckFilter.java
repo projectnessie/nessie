@@ -18,7 +18,6 @@ package com.dremio.nessie.client.rest;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.dremio.nessie.client.http.HttpClientException;
 import com.dremio.nessie.client.http.ResponseContext;
 import com.dremio.nessie.client.http.Status;
 import com.dremio.nessie.error.NessieConflictException;
@@ -38,19 +37,15 @@ public class ResponseCheckFilter {
   public static void checkResponse(ResponseContext con, ObjectMapper mapper) throws IOException {
     final Status status;
     final NessieError error;
-    try {
-      status = con.getResponseCode();
-      if (status.getCode() > 199 && status.getCode() < 300) {
-        return;
-      }
-    } catch (IOException e) {
-      throw new HttpClientException(e);
+    // this could IOException, in which case the error will be passed up to the client as an HttpClientException
+    status = con.getResponseCode();
+    if (status.getCode() > 199 && status.getCode() < 300) {
+      return;
     }
 
+    // this could IOException, in which case the error will be passed up to the client as an HttpClientException
     try (InputStream is = con.getErrorStream()) {
       error = decodeErrorObject(status, is, mapper.readerFor(NessieError.class));
-    } catch (IOException e) {
-      throw new HttpClientException(e);
     }
 
     switch (status) {

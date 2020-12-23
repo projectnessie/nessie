@@ -36,7 +36,7 @@ class ClientContentsApi implements ContentsApi {
 
   @Override
   public Contents getContents(@NotNull ContentsKey key, String ref) throws NessieNotFoundException {
-    return client.create().path("contents").path(key.toPathString())
+    return client.newRequest().path("contents").path(key.toPathString())
                  .queryParam("ref", ref)
                  .get()
                  .readEntity(Contents.class);
@@ -45,7 +45,7 @@ class ClientContentsApi implements ContentsApi {
   @Override
   public MultiGetContentsResponse getMultipleContents(@NotNull String ref, @NotNull MultiGetContentsRequest request)
       throws NessieNotFoundException {
-    return client.create().path("contents")
+    return client.newRequest().path("contents")
                  .queryParam("ref", ref)
                  .post(request)
                  .readEntity(MultiGetContentsResponse.class);
@@ -55,7 +55,7 @@ class ClientContentsApi implements ContentsApi {
   @Override
   public void setContents(@NotNull ContentsKey key, String branch, @NotNull String hash, String message,
                           @NotNull Contents contents) throws NessieNotFoundException, NessieConflictException {
-    client.create().path("contents").path(key.toPathString())
+    client.newRequest().path("contents").path(key.toPathString())
           .queryParam("branch", branch)
           .queryParam("hash", hash)
           .queryParam("message", message)
@@ -65,7 +65,7 @@ class ClientContentsApi implements ContentsApi {
   @Override
   public void deleteContents(ContentsKey key, String branch, String hash, String message)
       throws NessieNotFoundException, NessieConflictException {
-    client.create().path("contents").path(key.toPathString())
+    client.newRequest().path("contents").path(key.toPathString())
           .queryParam("branch", branch)
           .queryParam("hash", hash)
           .queryParam("message", message)

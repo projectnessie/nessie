@@ -24,10 +24,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class NessieHttpResponseFilter implements ResponseFilter {
 
-  private ObjectMapper mapper;
+  private final ObjectMapper mapper;
 
-  @Override
-  public void init(ObjectMapper mapper) {
+  public NessieHttpResponseFilter(ObjectMapper mapper) {
     this.mapper = mapper;
   }
 
@@ -36,7 +35,7 @@ public class NessieHttpResponseFilter implements ResponseFilter {
     try {
       ResponseCheckFilter.checkResponse(con, mapper);
     } catch (IOException e) {
-      throw new HttpClientException(e);
+      throw new HttpClientException(e); // pass up invalid response exception as untyped exception
     }
   }
 }

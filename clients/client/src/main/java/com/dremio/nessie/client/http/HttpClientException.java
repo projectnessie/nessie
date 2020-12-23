@@ -32,8 +32,4 @@ public class HttpClientException extends RuntimeException {
   public HttpClientException(Throwable cause) {
     super(cause);
   }
-
-  protected HttpClientException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
-  }
 }

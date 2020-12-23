@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,10 +40,10 @@ class TestBasicAuthFilter {
   @Test
   void testEncoding() {
     BasicAuthFilter authFilter = new BasicAuthFilter("Aladdin", "OpenSesame");
-    Map<String, String> map = new HashMap<>();
+    Map<String, Set<String>> map = new HashMap<>();
     RequestContext context = new RequestContext(map, null, null, null);
     authFilter.filter(context);
 
-    assertEquals("Basic QWxhZGRpbjpPcGVuU2VzYW1l", map.get("Authorization"));
+    assertEquals("Basic QWxhZGRpbjpPcGVuU2VzYW1l", map.get("Authorization").iterator().next());
   }
 }

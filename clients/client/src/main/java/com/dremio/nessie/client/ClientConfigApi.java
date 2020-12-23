@@ -29,6 +29,6 @@ class ClientConfigApi implements ConfigApi {
 
   @Override
   public NessieConfiguration getConfig() {
-    return client.create().path("config").get().readEntity(NessieConfiguration.class);
+    return client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
   }
 }

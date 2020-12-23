@@ -57,19 +57,17 @@ public class TestResponseFilter {
   }
 
   @Test
-  void testBadReturn() {
+  void testBadReturn() throws IOException {
     final NessieError error = new NessieError("unknown", 415, "xxx", null);
     try {
       ResponseCheckFilter.checkResponse(new TestResponseContext(Status.UNSUPPORTED_MEDIA_TYPE, error), MAPPER);
     } catch (NessieServiceException e) {
       Assertions.assertEquals(error, e.getError());
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testBadReturnNoError() {
+  void testBadReturnNoError() throws IOException {
     try {
       ResponseCheckFilter.checkResponse(new ResponseContext() {
         @Override
@@ -92,13 +90,11 @@ public class TestResponseFilter {
       Assertions.assertEquals(Status.UNAUTHORIZED.getCode(), e.getError().getStatus());
       Assertions.assertTrue(e.getError().getClientProcessingException() instanceof IOException);
       Assertions.assertNull(e.getError().getServerStackTrace());
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 
   @Test
-  void testBadReturnBadError() {
+  void testBadReturnBadError() throws IOException {
     try {
       ResponseCheckFilter.checkResponse(new TestResponseContext(Status.UNAUTHORIZED, null), MAPPER);
     } catch (NessieServiceException e) {
@@ -107,8 +103,6 @@ public class TestResponseFilter {
                                                  "Could not parse error object in response.",
                                                  new RuntimeException("Could not parse error object in response."));
       Assertions.assertEquals(defaultError, e.getError());
-    } catch (Exception e) {
-      Assertions.fail();
     }
   }
 

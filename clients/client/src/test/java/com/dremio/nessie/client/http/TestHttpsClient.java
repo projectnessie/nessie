@@ -17,7 +17,6 @@ package com.dremio.nessie.client.http;
 
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -29,7 +28,6 @@ import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -54,14 +52,17 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.BaseEncoding;
 import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
 
 class TestHttpsClient {
   private static final Logger LOGGER = LoggerFactory.getLogger(TestHttpsClient.class);
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Test
   void testHttps() throws Exception {
@@ -73,21 +74,31 @@ class TestHttpsClient {
       os.write(response.getBytes());
       os.close();
     };
-    HttpsServer server = HttpsServer.create(new InetSocketAddress("localhost", 0), 0);
-    server.createContext("/", handler);
-    TrustManager[] trustManager = ssl(server);
-    server.setExecutor(null);
-    server.start();
-    try {
+    TrustManager[][] trustManager = new TrustManager[1][];
+    try (TestServer server = new TestServer("/", handler, s -> {
+      try {
+        trustManager[0] = ssl(s);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    })) {
       SSLContext sc = SSLContext.getInstance("SSL");
-      sc.init(null, trustManager, new java.security.SecureRandom());
-      HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-      HttpRequest client = new HttpClient("https://localhost:" + server.getAddress().getPort()).create();
+      sc.init(null, trustManager[0], new java.security.SecureRandom());
+      HttpRequest client = HttpClient.builder()
+                                     .setBaseUri("https://localhost:" + server.server.getAddress().getPort())
+                                     .setObjectMapper(MAPPER)
+                                     .setSslContext(sc)
+                                     .build()
+                                     .newRequest();
       client.get();
-    } catch (Exception e) {
-      Assertions.fail();
+
+      final HttpRequest insecureClient = HttpClient.builder()
+                         .setBaseUri("https://localhost:" + server.server.getAddress().getPort())
+                         .setObjectMapper(MAPPER)
+                         .build()
+                         .newRequest();
+      Assertions.assertThrows(HttpClientException.class, insecureClient::get);
     }
-    server.stop(0);
   }
 
   private static KeyPair generateKeyPair(SecureRandom random) throws Exception {
@@ -156,7 +167,7 @@ class TestHttpsClient {
     return certificate;
   }
 
-  private static TrustManager[] ssl(HttpsServer httpsServer) throws Exception {
+  private static TrustManager[] ssl(HttpServer httpsServer) throws Exception {
     SSLContext sslContext = SSLContext.getInstance("TLS");
 
     // Initialise the keystore
@@ -192,7 +203,7 @@ class TestHttpsClient {
 
     // Set up the HTTPS context and parameters
     sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-    httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+    ((HttpsServer) httpsServer).setHttpsConfigurator(new HttpsConfigurator(sslContext) {
       public void configure(HttpsParameters params) {
         try {
           // Initialise the SSL context

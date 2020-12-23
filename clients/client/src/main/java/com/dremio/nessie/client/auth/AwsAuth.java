@@ -38,14 +38,18 @@ import software.amazon.awssdk.regions.Region;
 
 public class AwsAuth implements RequestFilter {
 
-  private ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper;
   private final Aws4Signer signer;
   private final AwsCredentialsProvider awsCredentialsProvider;
   private final Region region = Region.US_WEST_2;
 
-  public AwsAuth() {
+  /**
+   * Construct AWS signer filter.
+   */
+  public AwsAuth(ObjectMapper objectMapper) {
     this.awsCredentialsProvider = DefaultCredentialsProvider.create();
     this.signer = Aws4Signer.create();
+    this.objectMapper = objectMapper;
   }
 
   private SdkHttpFullRequest prepareRequest(String url, HttpClient.Method method, Optional<Object> entity) {
@@ -84,12 +88,7 @@ public class AwsAuth implements RequestFilter {
       if (context.getHeaders().containsKey(entry.getKey())) {
         continue;
       }
-      entry.getValue().forEach(a -> context.getHeaders().put(entry.getKey(), a));
+      entry.getValue().forEach(a -> context.putHeader(entry.getKey(), a));
     }
-  }
-
-  @Override
-  public void init(ObjectMapper mapper) {
-    this.objectMapper = mapper;
   }
 }
