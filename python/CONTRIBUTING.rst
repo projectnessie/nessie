@@ -113,6 +113,9 @@ To run a subset of tests::
 
 $ pytest tests.test_pynessie
 
+To fix code style issues::
+
+$ black pynessie/ tests/
 
 Deploying
 ---------

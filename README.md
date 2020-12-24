@@ -83,3 +83,10 @@ are specified as per https://github.com/eclipse/microprofile-config/blob/master/
 ### AWS Lambda
 You can also deploy to AWS lambda function by following the steps in `servers/lambda/README.md`
  
+
+## Contributing
+
+### Code Style
+
+The Nessie project uses the Google Java Code Style, scalafmt and pep8.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for more information.
