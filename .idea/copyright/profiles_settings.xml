@@ -1,3 +1,7 @@
 <component name="CopyrightManager">
-  <settings default="Nessie-ASF" />
+  <settings default="Nessie-ASF">
+    <LanguageOptions name="__TEMPLATE__">
+      <option name="addBlankAfter" value="false" />
+    </LanguageOptions>
+  </settings>
 </component>
