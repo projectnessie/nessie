@@ -41,6 +41,9 @@ import org.reactivestreams.Subscription;
 
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
+import com.dremio.nessie.versioned.impl.condition.RemoveClause;
+import com.dremio.nessie.versioned.impl.condition.SetClause;
+import com.dremio.nessie.versioned.impl.condition.UpdateClauseVisitor;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
@@ -185,6 +188,7 @@ public class MongoDBStore implements Store {
           .put(ValueType.KEY_FRAGMENT, MongoStoreConfig::getKeyListTableName)
           .build();
   private static final BsonConditionVisitor CONDITION_VISITOR = new BsonConditionVisitor();
+  private static final AggBsonUpdateVisitor AGG_UPDATE_VISITOR = new AggBsonUpdateVisitor();
   private static final BsonUpdateVisitor UPDATE_VISITOR = new BsonUpdateVisitor();
 
   private final MongoStoreConfig config;
@@ -334,10 +338,23 @@ public class MongoDBStore implements Store {
       filter = Filters.and(filter, condition.get().accept(CONDITION_VISITOR));
     }
 
-    final List<V> updated = await(collection.findOneAndUpdate(
+    final List<V> updated;
+    if (shouldUseAggPipeline(update)) {
+      // Mongo cannot remove an element from an array in one operation, it requires two or the agg pipeline. Thus,
+      // when we detect that case use the agg pipeline instead of the normal pipeline. Note that this is likely to be
+      // slower than the normal path, but given that it's used for cleanup purposes and is not on the critical path,
+      // this should be fine.
+      updated = await(collection.findOneAndUpdate(
         filter,
-        update.accept(UPDATE_VISITOR),
+        update.accept(AGG_UPDATE_VISITOR),
         new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER))).getReceived();
+    } else {
+      updated = await(collection.findOneAndUpdate(
+          filter,
+          update.accept(UPDATE_VISITOR),
+          new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER))).getReceived();
+    }
+
     if (updated.isEmpty()) {
       return Optional.empty();
     }
@@ -383,5 +400,20 @@ public class MongoDBStore implements Store {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
     }
     return (MongoCollection<V>) collection;
+  }
+
+  private boolean shouldUseAggPipeline(UpdateExpression update) {
+    return update.accept(expression -> expression.getClauses().stream().anyMatch(e -> e.accept(new UpdateClauseVisitor<Boolean>() {
+      @Override
+      public Boolean visit(RemoveClause clause) {
+        // If there is a remove clause that operates on an array element, this must use the agg pipeline.
+        return AggBsonUpdateVisitor.isArrayPath(clause.getPath());
+      }
+
+      @Override
+      public Boolean visit(SetClause clause) {
+        return false;
+      }
+    })));
   }
 }

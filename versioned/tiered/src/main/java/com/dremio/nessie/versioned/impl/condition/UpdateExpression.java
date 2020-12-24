@@ -55,7 +55,6 @@ public abstract class UpdateExpression implements Aliasable<UpdateExpression> {
     StringBuilder sb = new StringBuilder();
     addIfExist(sb, clauses.get(Type.SET), Type.SET);
     addIfExist(sb, clauses.get(Type.REMOVE), Type.REMOVE);
-    addIfExist(sb, clauses.get(Type.DELETE), Type.DELETE);
     return sb.toString();
   }
 

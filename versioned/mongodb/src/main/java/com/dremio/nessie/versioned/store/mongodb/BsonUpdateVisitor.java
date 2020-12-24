@@ -69,14 +69,9 @@ class BsonUpdateVisitor implements UpdateExpressionVisitor<Bson> {
     public Bson visit(RemoveClause clause) {
       final String path = clause.getPath().getRoot().accept(BsonPathVisitor.INSTANCE_NO_QUOTE, true);
       if (isArrayPath(clause.getPath())) {
-        // Mongo has no way of deleting an element from an array, it by default leaves a NULL element. To remove the
-        // element in one operation, splice together the array around the index to remove.
-        throw new UnsupportedOperationException("Not yet supported.");
-        /*final int lastIndex = path.lastIndexOf(".");
-        final String arrayPath = path.substring(0, lastIndex);
-        final String arrayIndex = path.substring(lastIndex + 1);
-        return BsonDocument.parse(String.format("{$set: {%1$s: {$concatArrays: " +
-          "[{$slice:[ \"$%1$s\", %2$s]}, {$slice:[ \"$%1$s\", {$add:[1, %2$s]}, {$size:\"$%1$s\"}]}]}}}", arrayPath, arrayIndex));*/
+        // Mongo has no way of deleting an element from an array in on operation, it leaves a NULL element instead.
+        // Use the AggBsonUpdateVisitor instead of the BsonUpdateVisitor to achieve this.
+        throw new UnsupportedOperationException("Array element removal is not supported without the aggregation pipeline.");
       }
 
       return Updates.unset(path);

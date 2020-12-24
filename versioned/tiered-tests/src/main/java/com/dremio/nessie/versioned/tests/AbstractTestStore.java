@@ -389,23 +389,39 @@ public abstract class AbstractTestStore<S extends Store> {
     Assertions.assertFalse(updatedMap.containsKey("metadata"));
     tagMap.remove("metadata");
     Assertions.assertEquals(tagMap, updatedMap);
+
+    final InternalRef read = store.loadSingle(ValueType.REF, tag.getId());
+    Assertions.assertEquals(ValueType.REF.getSchema().itemToMap(read, true), updatedMap);
   }
 
   @Test
-  void updateRemove() {
-    final Fragment fragment = SampleEntities.createFragment(random);
-    putThenLoad(fragment, ValueType.KEY_FRAGMENT);
-    final Optional<InternalRef> updated = store.update(
-        ValueType.KEY_FRAGMENT,
-        fragment.getId(),
-        UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("keys").position(0).build())),
-        Optional.empty());
-    Assertions.assertTrue(updated.isPresent());
+  void updateRemoveOneArray() {
+    updateRemoveArray(UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("keys").position(0).build())), 1, 10);
+  }
 
-    final Map<String, Entity> oldMap = ValueType.KEY_FRAGMENT.getSchema().itemToMap(fragment, true);
-    final List<Entity> oldKeys = oldMap.get("keys").getList().subList(1, 10);
-    final Map<String, Entity> updatedMap = ValueType.KEY_FRAGMENT.getSchema().itemToMap(updated.get(), true);
-    Assertions.assertEquals(oldKeys, updatedMap.get("keys").getList());
+  @Test
+  void updateRemoveOneArrayEnd() {
+    updateRemoveArray(UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("keys").position(9).build())), 0, 9);
+  }
+
+  @Test
+  void updateRemoveMultipleArrayAscending() {
+    UpdateExpression update = UpdateExpression.of();
+    for (int i = 0; i < 5; ++i) {
+      update = update.and(RemoveClause.of(ExpressionPath.builder("keys").position(i).build()));
+    }
+
+    updateRemoveArray(update, 5, 10);
+  }
+
+  @Test
+  void updateRemoveMultipleArrayDescending() {
+    UpdateExpression update = UpdateExpression.of();
+    for (int i = 4; i >= 0; --i) {
+      update = update.and(RemoveClause.of(ExpressionPath.builder("keys").position(i).build()));
+    }
+
+    updateRemoveArray(update, 5, 10);
   }
 
   @Test
@@ -421,6 +437,10 @@ public abstract class AbstractTestStore<S extends Store> {
     Assertions.assertTrue(updated.isPresent());
     final Map<String, Entity> tagMap = ValueType.REF.getSchema().itemToMap(tag, true);
     final Map<String, Entity> updatedMap = ValueType.REF.getSchema().itemToMap(updated.get(), true);
+
+    final InternalRef read = store.loadSingle(ValueType.REF, tag.getId());
+    Assertions.assertEquals(ValueType.REF.getSchema().itemToMap(read, true), updatedMap);
+
     Assertions.assertEquals(tagName, updatedMap.get("name").getString());
     updatedMap.remove("name");
     tagMap.remove("name");
@@ -444,6 +464,9 @@ public abstract class AbstractTestStore<S extends Store> {
     oldKeys.add(Entity.ofList(Entity.ofString(key)));
     final Map<String, Entity> updatedMap = ValueType.KEY_FRAGMENT.getSchema().itemToMap(updated.get(), true);
     Assertions.assertEquals(oldKeys, updatedMap.get("keys").getList());
+
+    final Fragment read = store.loadSingle(ValueType.KEY_FRAGMENT, fragment.getId());
+    Assertions.assertEquals(ValueType.KEY_FRAGMENT.getSchema().itemToMap(read, true), updatedMap);
   }
 
   private <T extends HasId> void putWithCondition(T sample, ValueType type) {
@@ -514,5 +537,24 @@ public abstract class AbstractTestStore<S extends Store> {
     } catch (NotFoundException e) {
       Assertions.fail(e);
     }
+  }
+
+  private void updateRemoveArray(UpdateExpression update, int beginArrayIndex, int endArrayIndex) {
+    final Fragment fragment = SampleEntities.createFragment(random);
+    putThenLoad(fragment, ValueType.KEY_FRAGMENT);
+    final Optional<InternalRef> updated = store.update(
+        ValueType.KEY_FRAGMENT,
+        fragment.getId(),
+        update,
+        Optional.empty());
+    Assertions.assertTrue(updated.isPresent());
+
+    final Map<String, Entity> oldMap = ValueType.KEY_FRAGMENT.getSchema().itemToMap(fragment, true);
+    final List<Entity> oldKeys = oldMap.get("keys").getList().subList(beginArrayIndex, endArrayIndex);
+    final Map<String, Entity> updatedMap = ValueType.KEY_FRAGMENT.getSchema().itemToMap(updated.get(), true);
+    Assertions.assertEquals(oldKeys, updatedMap.get("keys").getList());
+
+    final Fragment read = store.loadSingle(ValueType.KEY_FRAGMENT, fragment.getId());
+    Assertions.assertEquals(ValueType.KEY_FRAGMENT.getSchema().itemToMap(read, true), updatedMap);
   }
 }
