@@ -606,16 +606,9 @@
           <version>3.0.0-M4</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>3.1.2</version>
-          <dependencies>
-            <dependency>
-              <groupId>com.puppycrawl.tools</groupId>
-              <artifactId>checkstyle</artifactId>
-              <version>8.42</version>
-            </dependency>
-          </dependencies>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>2.11.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -753,38 +746,6 @@
             <phase>initialize</phase>
             <goals>
               <goal>detect</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <configuration>
-          <!-- Specify source and test directories to not included generated source directories -->
-          <sourceDirectories>
-            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
-          </sourceDirectories>
-          <testSourceDirectories>
-            <testSourceDirectory>${project.basedir}/src/test/java</testSourceDirectory>
-          </testSourceDirectories>
-          <encoding>UTF-8</encoding>
-          <failsOnError>true</failsOnError>
-          <failOnViolation>true</failOnViolation>
-          <violationSeverity>warning</violationSeverity>
-          <consoleOutput>true</consoleOutput>
-          <includeResources>true</includeResources>
-          <includeTestResources>true</includeTestResources>
-          <resourceIncludes>**/*.properties,**/*.conf,**/*.json,**/*.xml</resourceIncludes>
-          <includeTestSourceDirectory>true</includeTestSourceDirectory>
-          <configLocation>checkstyle/checkstyle-config.xml</configLocation>
-        </configuration>
-        <executions>
-          <execution>
-            <id>checkstyle-verification</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>check</goal>
             </goals>
           </execution>
         </executions>
@@ -1005,6 +966,77 @@ limitations under the License.
           </execution>
           <execution>
             <id>verify-license-headers</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <configuration>
+          <formats>
+            <format>
+              <includes>
+                <include>.gitignore</include>
+              </includes>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
+              <indent>
+                <spaces>true</spaces>
+                <spacesPerTab>2</spacesPerTab>
+              </indent>
+            </format>
+            <format>
+              <includes>
+                <include>**/*.xml</include>
+                <include>**/*.xsd</include>
+              </includes>
+              <excludes>
+                <exclude>.idea/**</exclude>
+                <exclude>spotless/**</exclude>
+                <exclude>**/pom.xml</exclude>
+                <exclude>**/.flattened-pom.xml</exclude>
+                <exclude>**/target/**</exclude>
+                <exclude>**/build/**</exclude>
+                <exclude>**/node_modules/**</exclude>
+              </excludes>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
+              <indent>
+                <spaces>true</spaces>
+                <spacesPerTab>2</spacesPerTab>
+              </indent>
+              <eclipseWtp>
+                <type>XML</type>
+                <files>
+                  <file>${maven.multiModuleProjectDirectory}/spotless/org.eclipse.wst.xml.core.prefs</file>
+                </files>
+              </eclipseWtp>
+            </format>
+          </formats>
+          <java>
+            <google-java-format>
+              <version>1.10.0</version>
+            </google-java-format>
+            <licenseHeader>
+              <file>${maven.multiModuleProjectDirectory}/spotless/copyright-header-java.txt</file>
+              <delimiter>package </delimiter>
+            </licenseHeader>
+          </java>
+          <scala>
+            <scalafmt/>
+            <licenseHeader>
+              <file>${maven.multiModuleProjectDirectory}/spotless/copyright-header-java.txt</file>
+              <delimiter>package </delimiter>
+            </licenseHeader>
+          </scala>
+        </configuration>
+        <executions>
+          <execution>
+            <id>spotless-check</id>
             <phase>verify</phase>
             <goals>
               <goal>check</goal>
