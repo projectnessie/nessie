@@ -83,3 +83,17 @@ are specified as per https://github.com/eclipse/microprofile-config/blob/master/
 ### AWS Lambda
 You can also deploy to AWS lambda function by following the steps in `servers/lambda/README.md`
  
+
+## Contributing
+
+### Code Style
+
+The Nessie project uses the Google Java Code Style.
+Code style violations are handled by Spotless: `./mvnw spotless:check` is run automatically
+during verfication, you can use `./mvnw spotless:apply` to let Spotless fix code style issues
+automatically.
+
+### IDE support
+
+Follow the instructions for [Eclipse](https://github.com/google/google-java-format#eclipse) or
+[IntelliJ](https://github.com/google/google-java-format#intellij-android-studio-and-other-jetbrains-ides).
