@@ -42,16 +42,39 @@ The [good first issue](https://github.com/projectnessie/nessie/issues?q=is%3Aiss
 
 ### Style guide
 
-Changes must adhere to the style guide and this will be verified by the continuous integration build. Java code style is approximately 
-Google style and can be checked with Checkstyle. Python adheres to the pep8 standard.
+Changes must adhere to the style guide and this will be verified by the continuous integration build.
 
-#### Configuring the Code Formatter for Intellij IDEA
-It's possible to configure the Code Formatter used for the project based on the Checkstyle rules that are located in `checkstyle/checkstyle-config.xml`.
-First you need to make sure that you have the [Checkstyle-IDEA](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea) plugin installed.
-Under **Tools > Checkstyle** you can then add and activate the `checkstyle/checkstyle-config.xml` file.
+* Java code style is [Google style](https://google.github.io/styleguide/javaguide.html).
+* Scala code style is [scalafmt](https://scalameta.org/scalafmt/).
+* Python adheres to the pep8 standard.
 
-Once this is done, you can import the Checkstyle Formatting rules via **Editor > Codestyle > Java**.
-In that screen there is an option under **Show Scheme Actions > Import Scheme > Checkstyle Configuration** where you can select the `checkstyle/checkstyle-config.xml` and import it.
+Java and Scala code style is checked by [Spotless](https://github.com/diffplug/spotless)
+with [google-java-format](https://github.com/google/google-java-format) and
+[scalafmt](https://scalameta.org/scalafmt/) during build.
+
+Python code style is checked by flake8/black.
+
+#### Automatically fixing code style issues
+
+Java and Scala code style issues can be fixed from the command line using
+`./mvnw spotless:apply`.
+
+Python code style issues can be fixed from the command line using
+```bash
+cd python/
+
+[ ! -d venv/ ] && virtualenv venv
+. venv/bin/activate
+pip install -U -r requirements_lint.txt
+ 
+black pynessie tests
+```
+
+#### Configuring the Code Formatter for Intellij IDEA and Eclipse
+
+Follow the instructions for [Eclipse](https://github.com/google/google-java-format#eclipse) or
+[IntelliJ](https://github.com/google/google-java-format#intellij-android-studio-and-other-jetbrains-ides),
+note the required manual actions for IntelliJ.
 
 ### Submitting a pull request
 

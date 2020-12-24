@@ -633,6 +633,11 @@
           </dependencies>
         </plugin>
         <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>2.11.1</version>
+        </plugin>
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
           <version>3.2.4</version>
@@ -797,7 +802,7 @@
           <includeTestResources>true</includeTestResources>
           <resourceIncludes>**/*.properties,**/*.conf,**/*.json,**/*.xml</resourceIncludes>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
-          <configLocation>checkstyle/checkstyle-config.xml</configLocation>
+          <configLocation>codestyle/checkstyle-config.xml</configLocation>
         </configuration>
         <executions>
           <execution>
@@ -844,6 +849,8 @@ limitations under the License.
             <include>**/.mvn/**</include>
           </includes>
           <excludes>
+            <exclude>**/*.java</exclude>
+            <exclude>**/*.scala</exclude>
             <!-- default excludes (minus some items) from https://github.com/mycila/license-maven-plugin/blob/61f65ac65bfc38246a15fb84083796c5e3afb053/license-maven-plugin/src/main/java/com/mycila/maven/plugin/license/Default.java -->
             <exclude>**/*~</exclude>
             <exclude>**/000000_0</exclude>
@@ -1271,5 +1278,85 @@ limitations under the License.
           </plugins>
         </build>
       </profile>
+    <profile>
+      <id>spotless</id>
+      <activation>
+        <property>
+          <name>!skipSpotless</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <configuration>
+              <formats>
+                <format>
+                  <includes>
+                    <include>.gitignore</include>
+                  </includes>
+                  <trimTrailingWhitespace/>
+                  <endWithNewline/>
+                  <indent>
+                    <spaces>true</spaces>
+                    <spacesPerTab>2</spacesPerTab>
+                  </indent>
+                </format>
+                <format>
+                  <includes>
+                    <include>src/**/*.xml</include>
+                    <include>src/**/*.xsd</include>
+                  </includes>
+                  <excludes>
+                    <exclude>**/.idea/**</exclude>
+                    <exclude>codestyle/**</exclude>
+                    <exclude>site/**</exclude>
+                    <exclude>**/pom.xml</exclude>
+                    <exclude>**/.flattened-pom.xml</exclude>
+                    <exclude>**/.tox/**</exclude>
+                    <exclude>**/target/**</exclude>
+                    <exclude>**/build/**</exclude>
+                    <exclude>**/node_modules/**</exclude>
+                    <exclude>**/venv/**</exclude>
+                  </excludes>
+                  <eclipseWtp>
+                    <type>XML</type>
+                    <files>
+                      <file>${maven.multiModuleProjectDirectory}/codestyle/org.eclipse.wst.xml.core.prefs</file>
+                    </files>
+                  </eclipseWtp>
+                </format>
+              </formats>
+              <java>
+                <google-java-format>
+                  <version>1.10.0</version>
+                </google-java-format>
+                <licenseHeader>
+                  <file>${maven.multiModuleProjectDirectory}/codestyle/copyright-header-java.txt</file>
+                  <delimiter>package </delimiter>
+                </licenseHeader>
+              </java>
+              <scala>
+                <scalafmt/>
+                <licenseHeader>
+                  <file>${maven.multiModuleProjectDirectory}/codestyle/copyright-header-java.txt</file>
+                  <delimiter>package </delimiter>
+                </licenseHeader>
+              </scala>
+            </configuration>
+            <executions>
+              <execution>
+                <id>spotless-check</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
