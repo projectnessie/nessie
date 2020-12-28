@@ -21,8 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.util.Arrays;
-
 import javax.ws.rs.core.Response;
 
 import org.junit.jupiter.api.Test;
@@ -52,7 +50,7 @@ class TestNessieError {
                    + "foo.bar.InternalServerError\n"
                    + "\tat some.other.Class\n"
                    + "java.lang.Exception: processingException\n"
-                   + "\tat com.dremio.nessie.error.NessieErrorTest.userContructor(NessieErrorTest.java:"));
+                   + "\tat com.dremio.nessie.error.TestNessieError.userContructor(TestNessieError.java:"));
   }
 
   @Test
@@ -61,36 +59,21 @@ class TestNessieError {
         "message",
         Response.Status.INTERNAL_SERVER_ERROR,
         "foo.bar.InternalServerError\n"
-        + "\tat some.other.Class",
-        Arrays.asList(
-            new ConstraintViolation(ConstraintViolation.Type.PARAMETER, "param1.path", "param1.message", "param1.value"),
-            new ConstraintViolation(ConstraintViolation.Type.PARAMETER, "param2.path", "param2.message", null)
-        ),
-        null,
-        Arrays.asList(new ConstraintViolation(ConstraintViolation.Type.CLASS, "", "class1.message", null)),
-        Arrays.asList(new ConstraintViolation(ConstraintViolation.Type.RETURN_VALUE, "rv.path", null, "rv.value")));
+        + "\tat some.other.Class");
     assertAll(
         () -> assertEquals(
             Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase()
-            + " (HTTP/" + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode() + "): message"
-            + " / parameter param1.path param1.message (value='param1.value')"
-            + " / parameter param2.path param2.message"
-            + " / class class1.message"
-            + " / return_value rv.path (value='rv.value')\n"
+            + " (HTTP/" + Response.Status.INTERNAL_SERVER_ERROR.getStatusCode() + "): message\n"
             + "foo.bar.InternalServerError\n"
             + "\tat some.other.Class",
             e.getFullMessage()),
         () -> assertEquals(Response.Status.INTERNAL_SERVER_ERROR, e.getStatus()),
-        () -> assertEquals("message"
-                           + " / parameter param1.path param1.message (value='param1.value')"
-                           + " / parameter param2.path param2.message"
-                           + " / class class1.message"
-                           + " / return_value rv.path (value='rv.value')",
+        () -> assertEquals("message",
                            e.getMessage()),
         () -> assertEquals(
             "foo.bar.InternalServerError\n"
             + "\tat some.other.Class",
-            e.getException())
+            e.getServerStackTrace())
     );
   }
 

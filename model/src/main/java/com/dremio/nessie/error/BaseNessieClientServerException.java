@@ -57,7 +57,7 @@ public class BaseNessieClientServerException extends IOException {
   public BaseNessieClientServerException(NessieError error) {
     super(error.getMessage());
     this.status = error.getStatus();
-    this.serverStackTrace = error.getException();
+    this.serverStackTrace = error.getServerStackTrace();
   }
 
   public Status getStatus() {

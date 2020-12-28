@@ -65,7 +65,7 @@ class TestNessieError {
 
   @Test
   void nullParameterQueryGet() {
-    assertEquals("Bad Request (HTTP/400): parameter nullParameterQueryGet.hash must not be null",
+    assertEquals("Bad Request (HTTP/400): nullParameterQueryGet.hash: must not be null",
                  assertThrows(NessieBadRequestException.class,
                    () ->
                        target.path("nullParameterQueryGet")
@@ -75,7 +75,7 @@ class TestNessieError {
 
   @Test
   void nullParameterQueryPost() {
-    assertEquals("Bad Request (HTTP/400): parameter nullParameterQueryPost.hash must not be null",
+    assertEquals("Bad Request (HTTP/400): nullParameterQueryPost.hash: must not be null",
                  assertThrows(NessieBadRequestException.class,
                    () ->
                        target.path("nullParameterQueryPost")
@@ -86,13 +86,13 @@ class TestNessieError {
   @Test
   void emptyParameterQueryGet() {
     assertAll(
-        () -> assertEquals("Bad Request (HTTP/400): parameter emptyParameterQueryGet.hash must not be empty",
+        () -> assertEquals("Bad Request (HTTP/400): emptyParameterQueryGet.hash: must not be empty",
                  assertThrows(NessieBadRequestException.class,
                    () ->
                        target.path("emptyParameterQueryGet")
                              .request()
                              .get()).getMessage()),
-        () -> assertEquals("Bad Request (HTTP/400): parameter emptyParameterQueryGet.hash must not be empty",
+        () -> assertEquals("Bad Request (HTTP/400): emptyParameterQueryGet.hash: must not be empty",
                  assertThrows(NessieBadRequestException.class,
                    () ->
                        target.path("emptyParameterQueryGet")
@@ -105,20 +105,20 @@ class TestNessieError {
   @Test
   void blankParameterQueryGet() {
     assertAll(
-        () -> assertEquals("Bad Request (HTTP/400): parameter blankParameterQueryGet.hash must not be blank",
+        () -> assertEquals("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank",
                  assertThrows(NessieBadRequestException.class,
                    () ->
                        target.path("blankParameterQueryGet")
                              .request()
                              .get()).getMessage()),
-        () -> assertEquals("Bad Request (HTTP/400): parameter blankParameterQueryGet.hash must not be blank",
+        () -> assertEquals("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank",
                  assertThrows(NessieBadRequestException.class,
                    () ->
                        target.path("blankParameterQueryGet")
                              .queryParam("hash", "")
                              .request()
                              .get()).getMessage()),
-        () -> assertEquals("Bad Request (HTTP/400): parameter blankParameterQueryGet.hash must not be blank (value='   ')",
+        () -> assertEquals("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank",
                  assertThrows(NessieBadRequestException.class,
                    () ->
                        target.path("blankParameterQueryGet")
@@ -152,14 +152,14 @@ class TestNessieError {
                     .request()
                     .put(Entity.entity("{\"value\":null}", MediaType.APPLICATION_JSON_TYPE))
          ).getMessage(),
-         equalTo("Bad Request (HTTP/400): parameter basicEntity.entity.value must not be null")),
+         equalTo("Bad Request (HTTP/400): basicEntity.entity.value: must not be null")),
         () -> assertThat(assertThrows(NessieBadRequestException.class,
           () ->
               target.path("basicEntity")
                     .request()
                     .put(Entity.entity("{\"value\":1.234}", MediaType.APPLICATION_JSON_TYPE))
          ).getMessage(),
-         equalTo("Bad Request (HTTP/400): parameter basicEntity.entity.value must be greater than or equal to 3 (value='1')"))
+         equalTo("Bad Request (HTTP/400): basicEntity.entity.value: must be greater than or equal to 3"))
     );
   }
 
