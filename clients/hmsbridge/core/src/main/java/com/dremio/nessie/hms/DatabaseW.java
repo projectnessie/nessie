@@ -15,11 +15,10 @@
  */
 package com.dremio.nessie.hms;
 
-import org.apache.hadoop.hive.metastore.api.Database;
-
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.HiveDatabase;
 import com.dremio.nessie.model.ImmutableHiveDatabase;
+import org.apache.hadoop.hive.metastore.api.Database;
 
 class DatabaseW extends Item {
 
@@ -49,7 +48,6 @@ class DatabaseW extends Item {
     if (!(c instanceof HiveDatabase)) {
       throw new RuntimeException("Not a Hive datbaase.");
     }
-    return new DatabaseW(fromBytes(new Database(), ((HiveDatabase)c).getDatabaseDefinition()));
+    return new DatabaseW(fromBytes(new Database(), ((HiveDatabase) c).getDatabaseDefinition()));
   }
-
 }

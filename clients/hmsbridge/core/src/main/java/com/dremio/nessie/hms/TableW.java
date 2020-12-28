@@ -15,16 +15,14 @@
  */
 package com.dremio.nessie.hms;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.apache.hadoop.hive.metastore.api.Partition;
-import org.apache.hadoop.hive.metastore.api.Table;
-
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.HiveTable;
 import com.dremio.nessie.model.ImmutableHiveTable;
 import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.hadoop.hive.metastore.api.Table;
 
 class TableW extends Item {
 
@@ -59,17 +57,16 @@ class TableW extends Item {
     HiveTable ht = (HiveTable) c;
     return Item.wrap(
         fromBytes(new Table(), ht.getTableDefinition()),
-        ht.getPartitions().stream().map(p -> fromBytes(new Partition(), p)).collect(Collectors.toList())
-        );
+        ht.getPartitions().stream()
+            .map(p -> fromBytes(new Partition(), p))
+            .collect(Collectors.toList()));
   }
 
   @Override
   public Contents toContents() {
-    return ImmutableHiveTable.builder().tableDefinition(toBytes(table))
-        .addAllPartitions(getPartitions()
-            .stream()
-            .map(Item::toBytes)
-            .collect(Collectors.toList()))
-            .build();
+    return ImmutableHiveTable.builder()
+        .tableDefinition(toBytes(table))
+        .addAllPartitions(getPartitions().stream().map(Item::toBytes).collect(Collectors.toList()))
+        .build();
   }
 }

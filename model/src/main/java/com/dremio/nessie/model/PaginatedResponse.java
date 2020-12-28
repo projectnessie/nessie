@@ -16,7 +16,6 @@
 package com.dremio.nessie.model;
 
 import javax.annotation.Nullable;
-
 import org.immutables.value.Value.Default;
 
 public interface PaginatedResponse {

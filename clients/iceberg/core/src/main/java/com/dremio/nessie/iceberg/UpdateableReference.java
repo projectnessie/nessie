@@ -15,13 +15,12 @@
  */
 package com.dremio.nessie.iceberg;
 
-import org.apache.iceberg.exceptions.NotFoundException;
-
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Hash;
 import com.dremio.nessie.model.Reference;
+import org.apache.iceberg.exceptions.NotFoundException;
 
 class UpdateableReference {
 

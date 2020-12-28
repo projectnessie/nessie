@@ -15,15 +15,13 @@
  */
 package com.dremio.nessie.versioned.impl.condition;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import org.immutables.value.Value.Immutable;
-
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import org.immutables.value.Value.Immutable;
 
 @Immutable
 public abstract class ExpressionPath implements Value {
@@ -42,31 +40,35 @@ public abstract class ExpressionPath implements Value {
    */
   public String asString() {
     StringBuilder sb = new StringBuilder();
-    getRoot().accept(new PathVisitor<Boolean, Void, RuntimeException>() {
+    getRoot()
+        .accept(
+            new PathVisitor<Boolean, Void, RuntimeException>() {
 
-      @Override
-      public Void visitName(NameSegment segment, Boolean first) throws RuntimeException {
-        if (!first) {
-          sb.append(".");
-        }
-        sb.append(segment.getName());
-        return childOrNull(segment);
-      }
+              @Override
+              public Void visitName(NameSegment segment, Boolean first) throws RuntimeException {
+                if (!first) {
+                  sb.append(".");
+                }
+                sb.append(segment.getName());
+                return childOrNull(segment);
+              }
 
-      private Void childOrNull(PathSegment segment) {
-        segment.getChild().ifPresent(c -> c.accept(this,  false));
-        return null;
-      }
+              private Void childOrNull(PathSegment segment) {
+                segment.getChild().ifPresent(c -> c.accept(this, false));
+                return null;
+              }
 
-      @Override
-      public Void visitPosition(PositionSegment segment, Boolean first) throws RuntimeException {
-        Preconditions.checkArgument(!first);
-        sb.append("[");
-        sb.append(segment.getPosition());
-        sb.append("]");
-        return childOrNull(segment);
-      }
-    }, true);
+              @Override
+              public Void visitPosition(PositionSegment segment, Boolean first)
+                  throws RuntimeException {
+                Preconditions.checkArgument(!first);
+                sb.append("[");
+                sb.append(segment.getPosition());
+                sb.append("]");
+                return childOrNull(segment);
+              }
+            },
+            true);
     return sb.toString();
   }
 
@@ -75,7 +77,6 @@ public abstract class ExpressionPath implements Value {
     OUT visitName(NameSegment segment, IN in) throws EX;
 
     OUT visitPosition(PositionSegment segment, IN in) throws EX;
-
   }
 
   public abstract static class PathSegment implements Aliasable<PathSegment> {
@@ -86,9 +87,14 @@ public abstract class ExpressionPath implements Value {
       private final Integer position;
       private final ExpressionPath.InternalBuilder builder;
 
-      private Builder(int builderOrdinal, String path, Integer position, ExpressionPath.InternalBuilder builder) {
+      private Builder(
+          int builderOrdinal,
+          String path,
+          Integer position,
+          ExpressionPath.InternalBuilder builder) {
         super();
-        Preconditions.checkArgument((position == null && path != null) || (position != null && path == null),
+        Preconditions.checkArgument(
+            (position == null && path != null) || (position != null && path == null),
             "Only one of position or path can be non-null.");
         this.builderOrdinal = builderOrdinal;
         this.name = path;
@@ -102,28 +108,33 @@ public abstract class ExpressionPath implements Value {
 
       /**
        * Add a name segment to this path.
+       *
        * @param name The name to add.
        * @return The builder that includes this segment.
        */
       public PathSegment.Builder name(String name) {
-        PathSegment.Builder subSegment = new PathSegment.Builder(builderOrdinal + 1, name, null, builder);
+        PathSegment.Builder subSegment =
+            new PathSegment.Builder(builderOrdinal + 1, name, null, builder);
         builder.segments.add(subSegment);
         return subSegment;
       }
 
       /**
        * Add a positional segment to this path.
+       *
        * @param position The position to add.
        * @return The builder that includes this segment.
        */
       public PathSegment.Builder position(int position) {
-        PathSegment.Builder subSegment = new PathSegment.Builder(builderOrdinal + 1, null, position, builder);
+        PathSegment.Builder subSegment =
+            new PathSegment.Builder(builderOrdinal + 1, null, position, builder);
         builder.segments.add(subSegment);
         return subSegment;
       }
     }
 
-    public abstract <IN, OUT, EX extends Exception> OUT accept(PathVisitor<IN, OUT, EX> visitor, IN in) throws EX;
+    public abstract <IN, OUT, EX extends Exception> OUT accept(
+        PathVisitor<IN, OUT, EX> visitor, IN in) throws EX;
 
     public abstract Optional<PathSegment> getChild();
 
@@ -142,9 +153,7 @@ public abstract class ExpressionPath implements Value {
     public boolean isPosition() {
       return this instanceof PositionSegment;
     }
-
   }
-
 
   @Override
   public ExpressionPath alias(AliasCollector c) {
@@ -155,15 +164,17 @@ public abstract class ExpressionPath implements Value {
   public abstract static class PositionSegment extends PathSegment {
     public abstract int getPosition();
 
-
     @Override
     public PathSegment alias(AliasCollector c) {
-      return ImmutablePositionSegment.builder().position(getPosition()).child(getChild().map(p -> p.alias(c))).build();
+      return ImmutablePositionSegment.builder()
+          .position(getPosition())
+          .child(getChild().map(p -> p.alias(c)))
+          .build();
     }
 
-
     @Override
-    public <IN, OUT, EX extends Exception> OUT accept(PathVisitor<IN, OUT, EX> visitor, IN in) throws EX {
+    public <IN, OUT, EX extends Exception> OUT accept(PathVisitor<IN, OUT, EX> visitor, IN in)
+        throws EX {
       return visitor.visitPosition(this, in);
     }
   }
@@ -178,17 +189,22 @@ public abstract class ExpressionPath implements Value {
 
     @Override
     public PathSegment alias(AliasCollector c) {
-      return ImmutableNameSegment.builder().name(c.escape(getName())).child(getChild().map(p -> p.alias(c))).build();
+      return ImmutableNameSegment.builder()
+          .name(c.escape(getName()))
+          .child(getChild().map(p -> p.alias(c)))
+          .build();
     }
 
     @Override
-    public <IN, OUT, EX extends Exception> OUT accept(PathVisitor<IN, OUT, EX> visitor, IN in) throws EX {
+    public <IN, OUT, EX extends Exception> OUT accept(PathVisitor<IN, OUT, EX> visitor, IN in)
+        throws EX {
       return visitor.visitName(this, in);
     }
   }
 
   /**
    * Construct a builder that creates a complete ExpressionPath.
+   *
    * @param initialPathName The path name at the root of the path.
    * @return The builder
    */
@@ -203,8 +219,7 @@ public abstract class ExpressionPath implements Value {
 
     private final List<PathSegment.Builder> segments = new ArrayList<>();
 
-    private InternalBuilder() {
-    }
+    private InternalBuilder() {}
 
     private static PathSegment.Builder toBuilder(ExpressionPath path) {
       PathSegment seg = path.getRoot();
@@ -212,11 +227,12 @@ public abstract class ExpressionPath implements Value {
       int i = 0;
       InternalBuilder b = new InternalBuilder();
       while (seg != null) {
-        b.segments.add(new PathSegment.Builder(
-            i,
-            seg.isName() ? seg.asName().getName() : null,
-            seg.isPosition() ? seg.asPosition().getPosition() : null,
-            b));
+        b.segments.add(
+            new PathSegment.Builder(
+                i,
+                seg.isName() ? seg.asName().getName() : null,
+                seg.isPosition() ? seg.asPosition().getPosition() : null,
+                b));
         seg = seg.getChild().orElse(null);
         i++;
       }
@@ -225,15 +241,25 @@ public abstract class ExpressionPath implements Value {
     }
 
     private ExpressionPath build(int builderOrdinal) {
-      Preconditions.checkArgument(builderOrdinal == segments.size() - 1, "You can only call build on the final segment of your path.");
+      Preconditions.checkArgument(
+          builderOrdinal == segments.size() - 1,
+          "You can only call build on the final segment of your path.");
       Preconditions.checkArgument(!segments.isEmpty(), "At least one segment must be defined.");
       List<PathSegment.Builder> reversed = Lists.reverse(segments);
       PathSegment segment = null;
       for (PathSegment.Builder seg : reversed) {
         if (seg.name != null) {
-          segment = ImmutableNameSegment.builder().child(Optional.ofNullable(segment)).name(seg.name).build();
+          segment =
+              ImmutableNameSegment.builder()
+                  .child(Optional.ofNullable(segment))
+                  .name(seg.name)
+                  .build();
         } else {
-          segment = ImmutablePositionSegment.builder().child(Optional.ofNullable(segment)).position(seg.position).build();
+          segment =
+              ImmutablePositionSegment.builder()
+                  .child(Optional.ofNullable(segment))
+                  .position(seg.position)
+                  .build();
           Preconditions.checkArgument(seg.builderOrdinal != 0);
         }
       }
@@ -241,7 +267,6 @@ public abstract class ExpressionPath implements Value {
       return ImmutableExpressionPath.builder().root((NameSegment) segment).build();
     }
   }
-
 
   @Override
   public Type getType() {
@@ -252,5 +277,4 @@ public abstract class ExpressionPath implements Value {
   public ExpressionPath getPath() {
     return this;
   }
-
 }

@@ -39,16 +39,16 @@ public interface StoreWorker<VALUE, COMMIT_METADATA> {
   Stream<AssetKey> getAssetKeys(VALUE value);
 
   /**
-   * An idempotent deletion. Given the lack of consistency guarantees in deletion of external assets, Nessie may call
-   * this method multiple times on the same AssetKey.
+   * An idempotent deletion. Given the lack of consistency guarantees in deletion of external
+   * assets, Nessie may call this method multiple times on the same AssetKey.
    */
   CompletableFuture<Void> deleteAsset(AssetKey key);
 
   /**
-   * An asset is an external object that is mapped to a value. As part of garbage collection, assets will be deleted as
-   * necessary to ensure assets are not existing if their references in Nessie are removed. This key is a unique pointer
-   * to that asset that implements equality and hashcode to ensure Nessie storage can determine the unique set of asset
-   * keys that must be deleted.
+   * An asset is an external object that is mapped to a value. As part of garbage collection, assets
+   * will be deleted as necessary to ensure assets are not existing if their references in Nessie
+   * are removed. This key is a unique pointer to that asset that implements equality and hashcode
+   * to ensure Nessie storage can determine the unique set of asset keys that must be deleted.
    *
    * <p>TODO: add some kind of mechanism for allowing Nessie to use BloomFilters with these keys.
    */
@@ -59,7 +59,5 @@ public interface StoreWorker<VALUE, COMMIT_METADATA> {
 
     @Override
     int hashCode();
-
-
   }
 }

@@ -21,11 +21,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Create a matchable version of this method that has catalog name as an additional string argument. Match the value
- * against the "hive" sentinel and reject if not matching. Then call underlying version of the method.
+ * Create a matchable version of this method that has catalog name as an additional string argument.
+ * Match the value against the "hive" sentinel and reject if not matching. Then call underlying
+ * version of the method.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface CatalogExtend {
-
-}
+public @interface CatalogExtend {}

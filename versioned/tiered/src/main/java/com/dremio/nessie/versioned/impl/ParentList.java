@@ -15,19 +15,15 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.immutables.value.Value.Immutable;
-
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.immutables.value.Value.Immutable;
 
-/**
- * Describes a list of parent hashes from the current hash.
- */
+/** Describes a list of parent hashes from the current hash. */
 @Immutable
 abstract class ParentList {
 
@@ -38,12 +34,11 @@ abstract class ParentList {
   public abstract List<Id> getParents();
 
   public ParentList cloneWithAdditional(Id id) {
-    return ImmutableParentList.builder().addAllParents(
-        Stream.concat(
-            Stream.of(id),
-            getParents().stream())
-        .limit(MAX_PARENT_LIST_SIZE)
-        .collect(ImmutableList.toImmutableList()))
+    return ImmutableParentList.builder()
+        .addAllParents(
+            Stream.concat(Stream.of(id), getParents().stream())
+                .limit(MAX_PARENT_LIST_SIZE)
+                .collect(ImmutableList.toImmutableList()))
         .build();
   }
 
@@ -56,7 +51,8 @@ abstract class ParentList {
   }
 
   public static ParentList fromEntity(Entity value) {
-    return ImmutableParentList.builder().addAllParents(value.getList().stream().map(Id::fromEntity).collect(Collectors.toList())).build();
+    return ImmutableParentList.builder()
+        .addAllParents(value.getList().stream().map(Id::fromEntity).collect(Collectors.toList()))
+        .build();
   }
-
 }

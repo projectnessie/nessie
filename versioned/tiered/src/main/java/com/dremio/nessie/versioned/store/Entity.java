@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.versioned.store;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -22,18 +25,18 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.ByteString;
-
 public abstract class Entity {
 
   public static enum EntityType {
-    MAP, LIST, NUMBER, STRING, BINARY, BOOLEAN
+    MAP,
+    LIST,
+    NUMBER,
+    STRING,
+    BINARY,
+    BOOLEAN
   }
 
-  private Entity() {
-  }
+  private Entity() {}
 
   @Override
   public abstract int hashCode();
@@ -81,7 +84,6 @@ public abstract class Entity {
   public static Entity ofList(Stream<Entity> entities) {
     return new ListEntity(entities.collect(ImmutableList.toImmutableList()));
   }
-
 
   public Map<String, Entity> getMap() {
     throw new IllegalStateException("Not a map.");
@@ -150,7 +152,6 @@ public abstract class Entity {
       StringEntity other = (StringEntity) obj;
       return Objects.equals(str, other.str);
     }
-
   }
 
   private static final class BinaryEntity extends Entity {
@@ -192,7 +193,6 @@ public abstract class Entity {
       BinaryEntity other = (BinaryEntity) obj;
       return Objects.equals(binary, other.binary);
     }
-
   }
 
   private static final class MapEntity extends Entity {
@@ -220,8 +220,11 @@ public abstract class Entity {
 
     @Override
     public String toString() {
-      return "{" + map.entrySet().stream().map(e -> String.format("%s: %s", e.getKey(), e.getValue()))
-          .collect(Collectors.joining(", ")) + "}";
+      return "{"
+          + map.entrySet().stream()
+              .map(e -> String.format("%s: %s", e.getKey(), e.getValue()))
+              .collect(Collectors.joining(", "))
+          + "}";
     }
 
     @Override
@@ -235,7 +238,6 @@ public abstract class Entity {
       MapEntity other = (MapEntity) obj;
       return Objects.equals(map, other.map);
     }
-
   }
 
   private static final class ListEntity extends Entity {
@@ -277,7 +279,6 @@ public abstract class Entity {
       ListEntity other = (ListEntity) obj;
       return Objects.equals(list, other.list);
     }
-
   }
 
   private static final class NumberEntity extends Entity {
@@ -318,7 +319,6 @@ public abstract class Entity {
       NumberEntity other = (NumberEntity) obj;
       return Objects.equals(number, other.number);
     }
-
   }
 
   private static final class BooleanEntity extends Entity {
@@ -360,7 +360,5 @@ public abstract class Entity {
       BooleanEntity other = (BooleanEntity) obj;
       return bool == other.bool;
     }
-
   }
-
 }

@@ -16,12 +16,9 @@
 package com.dremio.nessie.error;
 
 import java.io.IOException;
-
 import javax.ws.rs.core.Response.Status;
 
-/**
- * A caught exception that is thrown on the server and caught in the client.
- */
+/** A caught exception that is thrown on the server and caught in the client. */
 public class BaseNessieClientServerException extends IOException {
 
   private final Status status;
@@ -29,6 +26,7 @@ public class BaseNessieClientServerException extends IOException {
 
   /**
    * Create an exception.
+   *
    * @param message Message
    * @param status HTTP status
    * @param cause The underlying cause.
@@ -41,6 +39,7 @@ public class BaseNessieClientServerException extends IOException {
 
   /**
    * Create an exception.
+   *
    * @param message Message
    * @param status HTTP status
    */
@@ -52,6 +51,7 @@ public class BaseNessieClientServerException extends IOException {
 
   /**
    * Create an exception.
+   *
    * @param error The deserialized error object from the server.
    */
   public BaseNessieClientServerException(NessieError error) {
@@ -71,5 +71,4 @@ public class BaseNessieClientServerException extends IOException {
   public String getServerStackTrace() {
     return serverStackTrace;
   }
-
 }

@@ -15,10 +15,6 @@
  */
 package com.dremio.nessie.versioned.tests;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
@@ -29,10 +25,11 @@ import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
-/**
- * Helper to generate commits against a store.
- */
+/** Helper to generate commits against a store. */
 public class CommitBuilder<ValueT, MetadataT> {
   private final List<Operation<ValueT>> operations = new ArrayList<>();
   private final VersionStore<ValueT, MetadataT> store;
@@ -46,6 +43,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Adds a put operation to the current commit.
+   *
    * @param key key's name to add
    * @param value the value associated with the key
    * @return the builder instance
@@ -56,6 +54,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Adds a put operation to the current commit.
+   *
    * @param key key to add
    * @param value the value associated with the key
    * @return the builder instance
@@ -66,6 +65,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Adds a delete operation to the current commit.
+   *
    * @param key key's name to delete
    * @return the builder instance
    */
@@ -75,6 +75,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Adds a delete operation to the current commit.
+   *
    * @param key key to delete
    * @return the builder instance
    */
@@ -84,6 +85,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Adds an unchanged operation to the current commit.
+   *
    * @param key key's name for the operation
    * @return the builder instance
    */
@@ -93,6 +95,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Adds an unchanged operation to the current commit.
+   *
    * @param key key for the operation
    * @return the builder instance
    */
@@ -102,6 +105,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Adds an operation to the current commit.
+   *
    * @param operation operation to commit
    * @return the builder instance
    */
@@ -112,6 +116,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Sets metadata for the current commit.
+   *
    * @param metadata metadata to associate with the commit
    * @return the builder instance
    */
@@ -122,6 +127,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Sets a reference to base the commit on.
+   *
    * @param reference the reference's hash
    * @return the builder instance
    */
@@ -133,6 +139,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Uses the latest remote hash as a reference to base the commit on.
+   *
    * @return the builder instance
    */
   public CommitBuilder<ValueT, MetadataT> fromLatest() {
@@ -142,6 +149,7 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Pushes the commit to the branch.
+   *
    * @param branchName the branch name
    * @return the hash associated with the commit
    */
@@ -151,10 +159,12 @@ public class CommitBuilder<ValueT, MetadataT> {
 
   /**
    * Pushes the commit to the branch.
+   *
    * @param branchName the branch
    * @return the hash associated with the commit
    */
-  Hash toBranch(BranchName branchName) throws ReferenceNotFoundException, ReferenceConflictException {
+  Hash toBranch(BranchName branchName)
+      throws ReferenceNotFoundException, ReferenceConflictException {
     Optional<Hash> reference = fromLatest ? Optional.of(store.toHash(branchName)) : referenceHash;
     store.commit(branchName, reference, metadata, operations);
     return store.toHash(branchName);

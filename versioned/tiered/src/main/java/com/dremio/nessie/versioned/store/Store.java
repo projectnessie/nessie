@@ -15,13 +15,12 @@
  */
 package com.dremio.nessie.versioned.store;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface Store extends AutoCloseable {
 
@@ -29,21 +28,20 @@ public interface Store extends AutoCloseable {
 
   /**
    * Start the store.
+   *
    * @throws StoreOperationException Thrown if Store fails to initialize.
    */
   void start();
 
-  /**
-   * Close the store and any underlying resources or connections.
-   */
+  /** Close the store and any underlying resources or connections. */
   @Override
   void close();
 
   /**
    * Load the collection of {@link LoadStep}s in order.
    *
-   * <p>This Will fail if any load within any step. Consumers are informed as the
-   * records are loaded so this load may leave inputs in a partial state.
+   * <p>This Will fail if any load within any step. Consumers are informed as the records are loaded
+   * so this load may leave inputs in a partial state.
    *
    * @param loadstep The first step of the chain to load.
    * @throws NotFoundException If one or more items are not found.
@@ -65,14 +63,15 @@ public interface Store extends AutoCloseable {
   /**
    * Put a value in the store.
    *
-   * <p>This could be an insert or an update. A condition can be optionally provided that will be validated
-   * before completing the put operation.
+   * <p>This could be an insert or an update. A condition can be optionally provided that will be
+   * validated before completing the put operation.
    *
    * @param <V> The value type.
    * @param type The {@link ValueType} to insert/update.
    * @param value The value to insert. Should match {@code ValueType.getObjectClass()}.
    * @param condition The optional condition to check before doing the put operation.
-   * @throws ConditionFailedException If the condition provided didn't match the current state of the value.
+   * @throws ConditionFailedException If the condition provided didn't match the current state of
+   *     the value.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
   <V> void put(ValueType type, V value, Optional<ConditionExpression> condition);
@@ -116,7 +115,8 @@ public interface Store extends AutoCloseable {
   <V> V loadSingle(ValueType type, Id id);
 
   /**
-   * Do a conditional update. If the condition succeeds, return the values in the object. If it fails, return a Optional.empty().
+   * Do a conditional update. If the condition succeeds, return the values in the object. If it
+   * fails, return a Optional.empty().
    *
    * @param type The type of value the store is applied to.
    * @param id The id the update operation applies to
@@ -126,7 +126,8 @@ public interface Store extends AutoCloseable {
    * @throws NotFoundException Thrown if no value is found with the provided id.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition);
+  <V> Optional<V> update(
+      ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition);
 
   /**
    * Get a list of all available refs.

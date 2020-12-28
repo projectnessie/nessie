@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.server;
 
 import static com.dremio.nessie.server.ReferenceMatchers.referenceWithNameAndType;
@@ -23,20 +22,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
@@ -61,8 +46,18 @@ import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Tag;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
-
 import io.quarkus.test.junit.QuarkusTest;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @QuarkusTest
 class TestRest {
@@ -71,8 +66,7 @@ class TestRest {
   private TreeApi tree;
   private ContentsApi contents;
 
-  @Inject
-  VersionStore<Contents, CommitMeta> versionStore;
+  @Inject VersionStore<Contents, CommitMeta> versionStore;
 
   @BeforeEach
   void init() throws Exception {
@@ -87,11 +81,7 @@ class TestRest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "normal",
-      "with space",
-      "slash/thing"
-  })
+  @ValueSource(strings = {"normal", "with space", "slash/thing"})
   void referenceNames(String refNamePart) throws NessieNotFoundException, NessieConflictException {
     String tagName = "tag" + refNamePart;
     String branchName = "branch" + refNamePart;
@@ -103,12 +93,16 @@ class TestRest {
     tree.createReference(Branch.of(branchName, someHash));
     tree.createReference(Branch.of(branchName2, someHash));
 
-    Map<String, Reference> references = tree.getAllReferences().stream().collect(Collectors.toMap(Reference::getName, Function.identity()));
-    assertThat(references.values(), containsInAnyOrder(
-        referenceWithNameAndType("main", Branch.class),
-        referenceWithNameAndType(tagName, Tag.class),
-        referenceWithNameAndType(branchName, Branch.class),
-        referenceWithNameAndType(branchName2, Branch.class)));
+    Map<String, Reference> references =
+        tree.getAllReferences().stream()
+            .collect(Collectors.toMap(Reference::getName, Function.identity()));
+    assertThat(
+        references.values(),
+        containsInAnyOrder(
+            referenceWithNameAndType("main", Branch.class),
+            referenceWithNameAndType(tagName, Tag.class),
+            referenceWithNameAndType(branchName, Branch.class),
+            referenceWithNameAndType(branchName2, Branch.class)));
 
     Reference tagRef = references.get(tagName);
     Reference branchRef = references.get(branchName);
@@ -131,8 +125,13 @@ class TestRest {
     log = tree.getCommitLog(branchName);
     assertThat(log, notNullValue());
 
-    // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
-    ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
+    // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge,
+    // delete) will fail
+    ImmutablePut op =
+        ImmutablePut.builder()
+            .key(ContentsKey.of("some-key"))
+            .contents(IcebergTable.of("foo"))
+            .build();
     Operations ops = ImmutableOperations.builder().addOperations(op).build();
     tree.commitMultipleOperations(branchName, branchHash, "One dummy op", ops);
     log = tree.getCommitLog(branchName);
@@ -141,7 +140,8 @@ class TestRest {
     tree.assignTag(tagName, tagHash, Tag.of(tagName, newHash));
     tree.assignBranch(branchName, newHash, Branch.of(branchName, newHash));
 
-    tree.mergeRefIntoBranch(branchName2, branchHash2, ImmutableMerge.builder().fromHash(newHash).build());
+    tree.mergeRefIntoBranch(
+        branchName2, branchHash2, ImmutableMerge.builder().fromHash(newHash).build());
 
     tree.deleteTag(tagName, newHash);
     tree.deleteBranch(branchName, newHash);
@@ -159,8 +159,11 @@ class TestRest {
     contents.setContents(a, branch, r.getHash(), "commit 1", ta);
     contents.setContents(b, branch, r.getHash(), "commit 2", tb);
     List<ContentsWithKey> keys =
-        contents.getMultipleContents("foo", MultiGetContentsRequest.of(a, b, ContentsKey.of("noexist"))).getContents();
-    List<ContentsWithKey> expected = Arrays.asList(ContentsWithKey.of(a, ta), ContentsWithKey.of(b,  tb));
+        contents
+            .getMultipleContents("foo", MultiGetContentsRequest.of(a, b, ContentsKey.of("noexist")))
+            .getContents();
+    List<ContentsWithKey> expected =
+        Arrays.asList(ContentsWithKey.of(a, ta), ContentsWithKey.of(b, tb));
     assertThat(keys, Matchers.containsInAnyOrder(expected.toArray()));
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }
@@ -170,11 +173,13 @@ class TestRest {
     final String branch = "specialchar";
     tree.createReference(Branch.of(branch, null));
     Reference r = tree.getReferenceByName(branch);
-    //ContentsKey k = ContentsKey.of("/%国","国.国");
-    ContentsKey k = ContentsKey.of("a.b","c.d");
+    // ContentsKey k = ContentsKey.of("/%国","国.国");
+    ContentsKey k = ContentsKey.of("a.b", "c.d");
     IcebergTable ta = IcebergTable.of("path1");
     contents.setContents(k, branch, r.getHash(), "commit 1", ta);
-    assertEquals(ContentsWithKey.of(k, ta), contents.getMultipleContents(branch, MultiGetContentsRequest.of(k)).getContents().get(0));
+    assertEquals(
+        ContentsWithKey.of(k, ta),
+        contents.getMultipleContents(branch, MultiGetContentsRequest.of(k)).getContents().get(0));
     assertEquals(ta, contents.getContents(k, branch));
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }
@@ -183,7 +188,9 @@ class TestRest {
   void checkServerErrorPropagation() throws NessieNotFoundException, NessieConflictException {
     final String branch = "bar";
     tree.createReference(Branch.of(branch, null));
-    NessieConflictException e = assertThrows(NessieConflictException.class, () -> tree.createReference(Branch.of(branch, null)));
+    NessieConflictException e =
+        assertThrows(
+            NessieConflictException.class, () -> tree.createReference(Branch.of(branch, null)));
     assertThat(e.getMessage(), Matchers.containsString("already exists"));
   }
 }

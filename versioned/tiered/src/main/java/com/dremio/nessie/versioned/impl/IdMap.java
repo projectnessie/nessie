@@ -15,20 +15,19 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Maintains a map of positions to ids. The map is immutable. Each operation, generates a new map. All maps keep track
- * of their original state so one can see what items changed over time.
+ * Maintains a map of positions to ids. The map is immutable. Each operation, generates a new map.
+ * All maps keep track of their original state so one can see what items changed over time.
  */
 class IdMap implements Iterable<Id> {
 
@@ -60,6 +59,7 @@ class IdMap implements Iterable<Id> {
 
   /**
    * Create a copy of this map that applies the given update.
+   *
    * @param position The position to update.
    * @param newId The new value to set.
    * @return A copy of this map with the mutation applied.
@@ -78,11 +78,13 @@ class IdMap implements Iterable<Id> {
 
   @Override
   public Iterator<Id> iterator() {
-    return Iterators.unmodifiableIterator(Arrays.stream(deltas).map(PositionDelta::getNewId).iterator());
+    return Iterators.unmodifiableIterator(
+        Arrays.stream(deltas).map(PositionDelta::getNewId).iterator());
   }
 
   /**
    * Get any changes that have been applied to the tree.
+   *
    * @return A list of positions that have been mutated from the base tree.
    */
   List<PositionDelta> getChanges() {
@@ -90,11 +92,15 @@ class IdMap implements Iterable<Id> {
   }
 
   Entity toEntity() {
-    return Entity.ofList(Arrays.stream(deltas).map(p -> p.getNewId().toEntity()).collect(ImmutableList.toImmutableList()));
+    return Entity.ofList(
+        Arrays.stream(deltas)
+            .map(p -> p.getNewId().toEntity())
+            .collect(ImmutableList.toImmutableList()));
   }
 
   /**
    * Deserialize a map from a given input value.
+   *
    * @param value The value to deserialize.
    * @param size The expected size of the map to be loaded.
    * @return The deserialized map.
@@ -102,7 +108,8 @@ class IdMap implements Iterable<Id> {
   public static IdMap fromEntity(Entity value, int size) {
     PositionDelta[] deltas = new PositionDelta[size];
     List<Entity> items = value.getList();
-    Preconditions.checkArgument(items.size() == size, "Expected size %s but actual size was %s.", size, items.size());
+    Preconditions.checkArgument(
+        items.size() == size, "Expected size %s but actual size was %s.", size, items.size());
 
     int i = 0;
     for (Entity v : items) {
@@ -129,5 +136,4 @@ class IdMap implements Iterable<Id> {
     IdMap other = (IdMap) obj;
     return Arrays.equals(deltas, other.deltas);
   }
-
 }

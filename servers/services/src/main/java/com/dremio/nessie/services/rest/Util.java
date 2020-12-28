@@ -15,25 +15,20 @@
  */
 package com.dremio.nessie.services.rest;
 
+import com.dremio.nessie.model.CommitMeta;
+import com.dremio.nessie.model.ImmutableCommitMeta;
 import java.security.Principal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.HttpHeaders;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.ImmutableCommitMeta;
 
 final class Util {
   private static final Logger logger = LoggerFactory.getLogger(Util.class);
 
-  private Util() {
-
-  }
+  private Util() {}
 
   static Optional<String> version(HttpHeaders headers) {
     try {
@@ -44,19 +39,15 @@ final class Util {
     }
   }
 
-  static CommitMeta meta(
-      Principal principal,
-      String message) {
+  static CommitMeta meta(Principal principal, String message) {
     return ImmutableCommitMeta.builder()
-                              .commiter(name(principal))
-                              .message(message)
-                              .commitTime(System.currentTimeMillis())
-                              .build();
+        .commiter(name(principal))
+        .message(message)
+        .commitTime(System.currentTimeMillis())
+        .build();
   }
 
   static String name(Principal principal) {
     return principal == null ? "" : principal.getName();
   }
-
-
 }

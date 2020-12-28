@@ -20,7 +20,7 @@ import com.dremio.nessie.versioned.store.Id;
 
 abstract class MemoizedId implements HasId {
 
-  //unchanging but only generated once needed.
+  // unchanging but only generated once needed.
   private Id id;
 
   MemoizedId() {

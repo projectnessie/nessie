@@ -15,22 +15,19 @@
  */
 package com.dremio.nessie.server.config;
 
-import java.util.Optional;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import com.dremio.nessie.server.config.converters.BackendType;
 import com.dremio.nessie.server.config.converters.JGitStoreType;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.services.config.ServerConfig;
-
 import io.quarkus.arc.config.ConfigProperties;
+import java.util.Optional;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * config object and subobjects. Each interface below populates 1 level of config entries in the config hierarchy.
+ * config object and subobjects. Each interface below populates 1 level of config entries in the
+ * config hierarchy.
  */
 @Singleton
 public class ApplicationConfig {
@@ -40,21 +37,19 @@ public class ApplicationConfig {
   private final VersionStoreJGitConfig versionStoreJGitConfig;
   private final VersionStoreDynamoConfig versionStoreDynamoConfig;
 
-  /**
-   * inject all configs form config providers.
-   */
+  /** inject all configs form config providers. */
   @Inject
-  public ApplicationConfig(BackendsConfig backendsConfig,
-                           VersionStoreConfig versionStoreConfig,
-                           VersionStoreJGitConfig versionStoreJGitConfig,
-                           VersionStoreDynamoConfig versionStoreDynamoConfig) {
+  public ApplicationConfig(
+      BackendsConfig backendsConfig,
+      VersionStoreConfig versionStoreConfig,
+      VersionStoreJGitConfig versionStoreJGitConfig,
+      VersionStoreDynamoConfig versionStoreDynamoConfig) {
 
     this.backendsConfig = backendsConfig;
     this.versionStoreConfig = versionStoreConfig;
     this.versionStoreJGitConfig = versionStoreJGitConfig;
     this.versionStoreDynamoConfig = versionStoreDynamoConfig;
   }
-
 
   public BackendsConfig getBackendsConfig() {
     return backendsConfig;
@@ -82,9 +77,7 @@ public class ApplicationConfig {
     @ConfigProperty(name = "send-stacktrace-to-client", defaultValue = "main")
     @Override
     boolean shouldSendstackTraceToAPIClient();
-
   }
-
 
   @ConfigProperties(prefix = "nessie.backends")
   public interface BackendsConfig {
@@ -99,7 +92,6 @@ public class ApplicationConfig {
     @ConfigProperty(name = "type", defaultValue = "INMEMORY")
     VersionStoreType getVersionStoreType();
   }
-
 
   @ConfigProperties(prefix = "nessie.version.store.jgit")
   public interface VersionStoreJGitConfig {

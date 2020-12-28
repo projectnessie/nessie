@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.iceberg.spark;
 
+import com.dremio.nessie.iceberg.NessieCatalog;
+import com.dremio.nessie.iceberg.ParsedTableIdentifier;
 import java.util.Optional;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.spark.source.IcebergSource;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 
-import com.dremio.nessie.iceberg.NessieCatalog;
-import com.dremio.nessie.iceberg.ParsedTableIdentifier;
-
-/**
- * Get a table from an Iceberg Nessie Catalog.
- */
+/** Get a table from an Iceberg Nessie Catalog. */
 public class NessieIcebergSource extends IcebergSource {
 
   @Override
@@ -38,9 +33,9 @@ public class NessieIcebergSource extends IcebergSource {
     if (!path.isPresent()) {
       throw new IllegalArgumentException("Cannot open table: path is not set");
     }
-    ParsedTableIdentifier identifier = ParsedTableIdentifier.getParsedTableIdentifier(path.get(), options.asMap());
+    ParsedTableIdentifier identifier =
+        ParsedTableIdentifier.getParsedTableIdentifier(path.get(), options.asMap());
     NessieCatalog catalog = new NessieCatalog(conf, identifier.getReference());
     return catalog.loadTable(identifier.getTableIdentifier());
   }
-
 }

@@ -15,14 +15,13 @@
  */
 package com.dremio.nessie.versioned.store;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collector;
-
-import com.google.common.base.Preconditions;
 
 public class LoadOp<V extends HasId> {
   private final ValueType type;
@@ -31,6 +30,7 @@ public class LoadOp<V extends HasId> {
 
   /**
    * Create a load op.
+   *
    * @param type The value type that will be loaded.
    * @param id The id of the value.
    * @param consumer The consumer who will consume the loaded value.
@@ -58,15 +58,10 @@ public class LoadOp<V extends HasId> {
     return COLLECTOR;
   }
 
-  /**
-   * A collector that combines loadops of the same id and valuetype.
-   */
-  private static final Collector<LoadOp<?>, OpCollectorState, LoadOp<?>> COLLECTOR = Collector.of(
-      OpCollectorState::new,
-      (o1, l1) -> o1.plus(l1),
-      (o1, o2) -> o1.plus(o2),
-      o -> o.build()
-      );
+  /** A collector that combines loadops of the same id and valuetype. */
+  private static final Collector<LoadOp<?>, OpCollectorState, LoadOp<?>> COLLECTOR =
+      Collector.of(
+          OpCollectorState::new, (o1, l1) -> o1.plus(l1), (o1, o2) -> o1.plus(o2), o -> o.build());
 
   private static class OpCollectorState {
 
@@ -106,14 +101,16 @@ public class LoadOp<V extends HasId> {
 
     @SuppressWarnings("unchecked")
     public LoadOp<?> build() {
-      return new LoadOp<HasId>(valueType, id, v -> {
-        for (Consumer<?> c : consumers) {
-          ((Consumer<Object>)c).accept(v);
-        }
-      });
+      return new LoadOp<HasId>(
+          valueType,
+          id,
+          v -> {
+            for (Consumer<?> c : consumers) {
+              ((Consumer<Object>) c).accept(v);
+            }
+          });
     }
   }
-
 
   @Override
   public String toString() {
@@ -153,7 +150,5 @@ public class LoadOp<V extends HasId> {
       LoadOpKey other = (LoadOpKey) obj;
       return Objects.equals(id, other.id) && type == other.type;
     }
-
   }
-
 }

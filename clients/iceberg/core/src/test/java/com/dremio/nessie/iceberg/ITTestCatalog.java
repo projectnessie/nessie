@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.iceberg;
 
 import java.util.List;
-
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.junit.jupiter.api.Assertions;
@@ -47,5 +45,4 @@ public class ITTestCatalog extends BaseTestIceberg {
     tables = catalog.listTables(Namespace.empty());
     Assertions.assertTrue(tables.isEmpty());
   }
-
 }

@@ -21,21 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.stream.Collectors;
-
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Hash;
@@ -59,6 +44,19 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.stream.Collectors;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(LocalDynamoDB.class)
 class ITDynamoVersionStore {
@@ -78,10 +76,11 @@ class ITDynamoVersionStore {
   void checkDuplicateValueCommit() throws Exception {
     BranchName branch = BranchName.of("dupe-values");
     fixture.create(branch, Optional.empty());
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), "world"),
-        Put.of(Key.of("no"), "world"))
-    );
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "world"), Put.of(Key.of("no"), "world")));
 
     assertEquals("world", fixture.getValue(branch, Key.of("hi")));
     assertEquals("world", fixture.getValue(branch, Key.of("no")));
@@ -93,9 +92,11 @@ class ITDynamoVersionStore {
     BranchName branch2 = BranchName.of("b2");
     fixture.create(branch1, Optional.empty());
     fixture.create(branch2, Optional.empty());
-    fixture.commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), "world"),
-        Put.of(Key.of("no"), "world")));
+    fixture.commit(
+        branch2,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "world"), Put.of(Key.of("no"), "world")));
     fixture.merge(fixture.toHash(branch2), branch1, Optional.of(fixture.toHash(branch1)));
   }
 
@@ -104,21 +105,24 @@ class ITDynamoVersionStore {
     BranchName branch1 = BranchName.of("b1");
     BranchName branch2 = BranchName.of("b2");
     fixture.create(branch1, Optional.empty());
-    fixture.commit(branch1, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("foo"), "world1"),
-        Put.of(Key.of("bar"), "world2")));
+    fixture.commit(
+        branch1,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("foo"), "world1"), Put.of(Key.of("bar"), "world2")));
 
     fixture.create(branch2, Optional.empty());
-    fixture.commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), "world3"),
-        Put.of(Key.of("no"), "world4")));
+    fixture.commit(
+        branch2,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "world3"), Put.of(Key.of("no"), "world4")));
     fixture.merge(fixture.toHash(branch2), branch1, Optional.of(fixture.toHash(branch1)));
 
     assertEquals("world1", fixture.getValue(branch1, Key.of("foo")));
     assertEquals("world2", fixture.getValue(branch1, Key.of("bar")));
     assertEquals("world3", fixture.getValue(branch1, Key.of("hi")));
     assertEquals("world4", fixture.getValue(branch1, Key.of("no")));
-
   }
 
   @Test
@@ -126,13 +130,25 @@ class ITDynamoVersionStore {
     BranchName branch1 = BranchName.of("b1");
     BranchName branch2 = BranchName.of("b2");
     fixture.create(branch1, Optional.empty());
-    fixture.commit(branch1, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("conflictKey"), "world1")));
+    fixture.commit(
+        branch1,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("conflictKey"), "world1")));
 
     fixture.create(branch2, Optional.empty());
-    fixture.commit(branch2, Optional.empty(), "metadata2", ImmutableList.of(Put.of(Key.of("conflictKey"), "world2")));
+    fixture.commit(
+        branch2,
+        Optional.empty(),
+        "metadata2",
+        ImmutableList.of(Put.of(Key.of("conflictKey"), "world2")));
 
-    ReferenceConflictException ex = assertThrows(ReferenceConflictException.class, () ->
-        fixture.merge(fixture.toHash(branch2), branch1, Optional.of(fixture.toHash(branch1))));
+    ReferenceConflictException ex =
+        assertThrows(
+            ReferenceConflictException.class,
+            () ->
+                fixture.merge(
+                    fixture.toHash(branch2), branch1, Optional.of(fixture.toHash(branch1))));
     assertThat(ex.getMessage(), Matchers.containsString("conflictKey"));
   }
 
@@ -141,12 +157,17 @@ class ITDynamoVersionStore {
     BranchName branch = BranchName.of("my-key-list");
     fixture.create(branch, Optional.empty());
     assertEquals(0, fixture.getStore().<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), "world"),
-        Put.of(Key.of("no"), "world"),
-        Put.of(Key.of("mad mad"), "world")));
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(
+            Put.of(Key.of("hi"), "world"),
+            Put.of(Key.of("no"), "world"),
+            Put.of(Key.of("mad mad"), "world")));
     assertEquals(0, fixture.getStore().<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
-    assertThat(fixture.getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
+    assertThat(
+        fixture.getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
         containsInAnyOrder("hi", "no", "mad mad"));
   }
 
@@ -164,11 +185,19 @@ class ITDynamoVersionStore {
       if (i % 5 == 0) {
         // every so often, remove a key.
         Key removal = names.remove(r.nextInt(names.size()));
-        fixture.commit(branch, Optional.of(current), "commit " + i, Collections.<Operation<String>>singletonList(Delete.of(removal)));
+        fixture.commit(
+            branch,
+            Optional.of(current),
+            "commit " + i,
+            Collections.<Operation<String>>singletonList(Delete.of(removal)));
       } else {
         Key name = Key.of(prefix + i);
         names.add(name);
-        fixture.commit(branch, Optional.of(current), "commit " + i, Collections.<Operation<String>>singletonList(Put.of(name, "bar")));
+        fixture.commit(
+            branch,
+            Optional.of(current),
+            "commit " + i,
+            Collections.<Operation<String>>singletonList(Put.of(name, "bar")));
       }
       current = fixture.toHash(branch);
     }
@@ -186,21 +215,27 @@ class ITDynamoVersionStore {
   void multiload() throws Exception {
     BranchName branch = BranchName.of("my-key-list");
     fixture.create(branch, Optional.empty());
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), "world1"),
-        Put.of(Key.of("no"), "world2"),
-        Put.of(Key.of("mad mad"), "world3")));
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(
+            Put.of(Key.of("hi"), "world1"),
+            Put.of(Key.of("no"), "world2"),
+            Put.of(Key.of("mad mad"), "world3")));
 
     assertEquals(
         Arrays.asList("world1", "world2", "world3"),
-        fixture.getValues(branch, Arrays.asList(Key.of("hi"), Key.of("no"), Key.of("mad mad")))
-          .stream()
-          .map(Optional::get)
-          .collect(Collectors.toList()));
+        fixture
+            .getValues(branch, Arrays.asList(Key.of("hi"), Key.of("no"), Key.of("mad mad")))
+            .stream()
+            .map(Optional::get)
+            .collect(Collectors.toList()));
   }
 
   @Test
-  void ensureValidEmptyBranchState() throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+  void ensureValidEmptyBranchState()
+      throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     BranchName branch = BranchName.of("empty_branch");
     fixture.create(branch, Optional.empty());
     Hash hash = fixture.toHash(branch);
@@ -212,14 +247,16 @@ class ITDynamoVersionStore {
     TagName tag = TagName.of("foo");
 
     // check that we can't assign an empty tag.
-    assertThrows(IllegalArgumentException.class, () -> fixture.create(tag,  Optional.empty()));
+    assertThrows(IllegalArgumentException.class, () -> fixture.create(tag, Optional.empty()));
 
     // create a tag using the default empty hash.
     fixture.create(tag, Optional.of(L1.EMPTY_ID.toHash()));
     assertEquals(L1.EMPTY_ID.toHash(), fixture.toHash(tag));
 
     // avoid dupe
-    assertThrows(ReferenceAlreadyExistsException.class, () -> fixture.create(tag, Optional.of(L1.EMPTY_ID.toHash())));
+    assertThrows(
+        ReferenceAlreadyExistsException.class,
+        () -> fixture.create(tag, Optional.of(L1.EMPTY_ID.toHash())));
 
     // delete without condition
     fixture.delete(tag, Optional.empty());
@@ -228,14 +265,17 @@ class ITDynamoVersionStore {
     fixture.create(tag, Optional.of(L1.EMPTY_ID.toHash()));
 
     // check that wrong id is rejected
-    assertThrows(ReferenceConflictException.class, () -> fixture.delete(tag, Optional.of(Id.EMPTY.toHash())));
+    assertThrows(
+        ReferenceConflictException.class,
+        () -> fixture.delete(tag, Optional.of(Id.EMPTY.toHash())));
 
     // delete with correct id.
     fixture.delete(tag, Optional.of(L1.EMPTY_ID.toHash()));
 
-
     // avoid create to invalid l1.
-    assertThrows(ReferenceNotFoundException.class, () -> fixture.create(tag, Optional.of(Id.generateRandom().toHash())));
+    assertThrows(
+        ReferenceNotFoundException.class,
+        () -> fixture.create(tag, Optional.of(Id.generateRandom().toHash())));
 
     // fail on delete of non-existent.
     assertThrows(ReferenceNotFoundException.class, () -> fixture.delete(tag, Optional.empty()));
@@ -256,28 +296,40 @@ class ITDynamoVersionStore {
     fixture.create(branch, Optional.empty());
 
     // avoid dupe
-    assertThrows(ReferenceAlreadyExistsException.class, () -> fixture.create(branch, Optional.empty()));
-    assertThrows(ReferenceAlreadyExistsException.class, () -> fixture.create(branch, Optional.of(L1.EMPTY_ID.toHash())));
+    assertThrows(
+        ReferenceAlreadyExistsException.class, () -> fixture.create(branch, Optional.empty()));
+    assertThrows(
+        ReferenceAlreadyExistsException.class,
+        () -> fixture.create(branch, Optional.of(L1.EMPTY_ID.toHash())));
 
     // check that wrong id is rejected for deletion (non-existing)
-    assertThrows(ReferenceConflictException.class, () -> fixture.delete(branch, Optional.of(Id.EMPTY.toHash())));
+    assertThrows(
+        ReferenceConflictException.class,
+        () -> fixture.delete(branch, Optional.of(Id.EMPTY.toHash())));
 
     // delete with correct id.
     fixture.delete(branch, Optional.of(L1.EMPTY_ID.toHash()));
 
     // avoid create to invalid l1
-    assertThrows(ReferenceNotFoundException.class, () -> fixture.create(branch, Optional.of(Id.generateRandom().toHash())));
+    assertThrows(
+        ReferenceNotFoundException.class,
+        () -> fixture.create(branch, Optional.of(Id.generateRandom().toHash())));
 
     // fail on delete of non-existent.
     assertThrows(ReferenceNotFoundException.class, () -> fixture.delete(branch, Optional.empty()));
 
     fixture.create(branch, Optional.empty());
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
+    fixture.commit(
+        branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
     // check that wrong id is rejected for deletion (valid but not matching)
-    assertThrows(ReferenceConflictException.class, () -> fixture.delete(branch, Optional.of(L1.EMPTY_ID.toHash())));
+    assertThrows(
+        ReferenceConflictException.class,
+        () -> fixture.delete(branch, Optional.of(L1.EMPTY_ID.toHash())));
 
     // can't use tag delete on branch.
-    assertThrows(ReferenceConflictException.class, () -> fixture.delete(TagName.of("foo"), Optional.empty()));
+    assertThrows(
+        ReferenceConflictException.class,
+        () -> fixture.delete(TagName.of("foo"), Optional.empty()));
   }
 
   @Test
@@ -285,20 +337,38 @@ class ITDynamoVersionStore {
     BranchName branch = BranchName.of("foo");
     fixture.create(branch, Optional.empty());
     // first commit.
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
 
-    //first hash.
+    // first hash.
     Hash originalHash = fixture.getCommits(branch).findFirst().get().getHash();
 
-    //second commit.
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    // second commit.
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
     // do an extra commit to make sure it has a different hash even though it has the same value.
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
-    //attempt commit using first hash which has conflicting key change.
-    assertThrows(InconsistentValueException.class, () -> fixture.commit(branch, Optional.of(originalHash),
-        "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+    // attempt commit using first hash which has conflicting key change.
+    assertThrows(
+        InconsistentValueException.class,
+        () ->
+            fixture.commit(
+                branch,
+                Optional.of(originalHash),
+                "metadata",
+                ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
   }
 
   @Test
@@ -307,8 +377,9 @@ class ITDynamoVersionStore {
     fixture.create(BranchName.of("b2"), Optional.empty());
     fixture.create(TagName.of("t1"), Optional.of(L1.EMPTY_ID.toHash()));
     fixture.create(TagName.of("t2"), Optional.of(L1.EMPTY_ID.toHash()));
-    assertEquals(ImmutableSet.of("b1", "b2", "t1", "t2"), fixture.getNamedRefs()
-        .map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));
+    assertEquals(
+        ImmutableSet.of("b1", "b2", "t1", "t2"),
+        fixture.getNamedRefs().map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));
   }
 
   @Test
@@ -325,7 +396,9 @@ class ITDynamoVersionStore {
     fixture.commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, v1), Put.of(k2, v2)));
     fixture.commit(branch, Optional.empty(), c2, ImmutableList.of(Put.of(k1, v1p)));
     List<WithHash<String>> commits = fixture.getCommits(branch).collect(Collectors.toList());
-    assertEquals(ImmutableList.of(c2, c1), commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
+    assertEquals(
+        ImmutableList.of(c2, c1),
+        commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
 
     // changed across commits
     assertEquals(v1, fixture.getValue(commits.get(1).getHash(), k1));
@@ -373,7 +446,6 @@ class ITDynamoVersionStore {
     // ensure branch assignment (with current) is current
     fixture.assign(b2, Optional.of(c1), c2);
     assertEquals("v2", fixture.getValue(b2, k1));
-
   }
 
   @Test
@@ -393,24 +465,47 @@ class ITDynamoVersionStore {
     BranchName branch = BranchName.of("foo");
     fixture.create(branch, Optional.empty());
     // first commit.
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
 
-    //first hash.
+    // first hash.
     Hash originalHash = fixture.getCommits(branch).findFirst().get().getHash();
 
-    //second commit.
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    // second commit.
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
 
-    //attempt commit using first hash which has conflicting key change.
-    assertThrows(InconsistentValueException.class, () -> fixture.commit(branch, Optional.of(originalHash),
-        "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+    // attempt commit using first hash which has conflicting key change.
+    assertThrows(
+        InconsistentValueException.class,
+        () ->
+            fixture.commit(
+                branch,
+                Optional.of(originalHash),
+                "metadata",
+                ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
 
     // attempt commit using first hash, put on on-conflicting key, unchanged on conflicting key.
-    assertThrows(ReferenceConflictException.class,
-        () -> fixture.commit(branch, Optional.of(originalHash), "metadata",
-            ImmutableList.of(Put.of(Key.of("bar"), "mellow"), Unchanged.of(Key.of("hi")))));
+    assertThrows(
+        ReferenceConflictException.class,
+        () ->
+            fixture.commit(
+                branch,
+                Optional.of(originalHash),
+                "metadata",
+                ImmutableList.of(Put.of(Key.of("bar"), "mellow"), Unchanged.of(Key.of("hi")))));
   }
 
   @Test
@@ -437,34 +532,30 @@ class ITDynamoVersionStore {
 
     try {
       fixture.create(branch, Optional.empty());
-      assertFalse(true, "Creating the a branch with the same name as an existing one should fail but didn't.");
+      assertFalse(
+          true,
+          "Creating the a branch with the same name as an existing one should fail but didn't.");
     } catch (ReferenceAlreadyExistsException ex) {
       // expected.
     }
 
-    fixture.commit(branch, Optional.empty(), commit1, ImmutableList.of(
-        ImmutablePut.<String>builder().key(
-            p1
-            )
-        .shouldMatchHash(false)
-        .value(v1)
-        .build()
-        )
-    );
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        commit1,
+        ImmutableList.of(
+            ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v1).build()));
 
     assertEquals(v1, fixture.getValue(branch, p1));
 
     fixture.create(tag, Optional.of(fixture.toHash(branch)));
 
-    fixture.commit(branch, Optional.empty(), commit2, ImmutableList.of(
-        ImmutablePut.<String>builder().key(
-            p1
-            )
-        .shouldMatchHash(false)
-        .value(v2)
-        .build()
-        )
-    );
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        commit2,
+        ImmutableList.of(
+            ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v2).build()));
 
     assertEquals(v2, fixture.getValue(branch, p1));
     assertEquals(v1, fixture.getValue(tag, p1));
@@ -479,7 +570,8 @@ class ITDynamoVersionStore {
     fixture.assign(tag, Optional.of(commits.get(1).getHash()), commits.get(0).getHash());
 
     assertEquals(commits, fixture.getCommits(tag).collect(Collectors.toList()));
-    assertEquals(commits, fixture.getCommits(commits.get(0).getHash()).collect(Collectors.toList()));
+    assertEquals(
+        commits, fixture.getCommits(commits.get(0).getHash()).collect(Collectors.toList()));
 
     assertEquals(2, fixture.getNamedRefs().count());
 
@@ -490,15 +582,17 @@ class ITDynamoVersionStore {
     assertEquals(2, fixture.getNamedRefs().count());
 
     assertEquals(v1, fixture.getValue(branch2, p1));
-
-
   }
 
   @Test
   void unknownRef() throws Exception {
     BranchName branch = BranchName.of("bar");
     fixture.create(branch, Optional.empty());
-    fixture.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    fixture.commit(
+        branch,
+        Optional.empty(),
+        "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
     TagName tag = TagName.of("foo");
     Hash expected = fixture.toHash(branch);
     fixture.create(tag, Optional.of(expected));
@@ -508,7 +602,8 @@ class ITDynamoVersionStore {
     testRefMatchesToRef(expected, expected, expected.asString());
   }
 
-  private void testRefMatchesToRef(Ref ref, Hash hash, String name) throws ReferenceNotFoundException {
+  private void testRefMatchesToRef(Ref ref, Hash hash, String name)
+      throws ReferenceNotFoundException {
     WithHash<Ref> val = fixture.toRef(name);
     assertEquals(ref, val.getValue());
     assertEquals(hash, val.getHash());

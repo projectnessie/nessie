@@ -18,9 +18,7 @@ package com.dremio.nessie.versioned.impl.condition;
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
 import com.dremio.nessie.versioned.store.Entity;
 
-/**
- * A marker interface that is exposes a value type in DynamoDB's expression language.
- */
+/** A marker interface that is exposes a value type in DynamoDB's expression language. */
 public interface Value extends Aliasable<Value> {
 
   static Value of(Entity value) {
@@ -32,12 +30,14 @@ public interface Value extends Aliasable<Value> {
 
   /**
    * Return the string representation of this string, if possible.
+   *
    * @return A DynamoDb expression fragment.
    */
   String asString();
 
   /**
    * Return the value type of this value.
+   *
    * @return A value type.
    */
   Type getType();
@@ -55,7 +55,9 @@ public interface Value extends Aliasable<Value> {
   }
 
   public static enum Type {
-    VALUE, PATH, FUNCTION;
+    VALUE,
+    PATH,
+    FUNCTION;
   }
 
   static class ValueOfEntity implements Value {
@@ -79,6 +81,5 @@ public interface Value extends Aliasable<Value> {
     public Type getType() {
       return Type.VALUE;
     }
-
   }
 }

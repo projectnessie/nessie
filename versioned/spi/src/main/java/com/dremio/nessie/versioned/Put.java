@@ -16,12 +16,9 @@
 package com.dremio.nessie.versioned;
 
 import javax.annotation.Nonnull;
-
 import org.immutables.value.Value;
 
-/**
- * Setting a new value. Can optionally declare whether the prior hash must match.
- */
+/** Setting a new value. Can optionally declare whether the prior hash must match. */
 @Value.Immutable
 public interface Put<V> extends Operation<V> {
 
@@ -32,9 +29,9 @@ public interface Put<V> extends Operation<V> {
    */
   V getValue();
 
-
   /**
    * Creates a put operation for the given key and value.
+   *
    * @param <V> the store value type
    * @param key the key impacted by the operation
    * @param value the new value associated with the key

@@ -15,18 +15,16 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import org.immutables.value.Value;
-
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.store.Id;
+import org.immutables.value.Value;
 
-/**
- * Describes the current and previous state of the value.
- */
+/** Describes the current and previous state of the value. */
 @Value.Immutable
 abstract class PositionDelta {
 
-  static final PositionDelta EMPTY_ZERO = PositionDelta.builder().newId(Id.EMPTY).oldId(Id.EMPTY).position(0).build();
+  static final PositionDelta EMPTY_ZERO =
+      PositionDelta.builder().newId(Id.EMPTY).oldId(Id.EMPTY).position(0).build();
 
   abstract int getPosition();
 
@@ -67,6 +65,4 @@ abstract class PositionDelta {
     UnsavedDelta delta = new UnsavedDelta(getPosition(), getOldId(), getNewId());
     return delta;
   }
-
-
 }

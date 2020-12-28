@@ -18,12 +18,12 @@ package com.dremio.nessie.versioned;
 import com.google.protobuf.ByteString;
 
 /**
- * Used to serialize &amp; deserialize the values in the store. Provided to an implementation of VersionStore on construction.
+ * Used to serialize &amp; deserialize the values in the store. Provided to an implementation of
+ * VersionStore on construction.
  */
 public interface Serializer<V> {
 
   ByteString toBytes(V value);
 
   V fromBytes(ByteString bytes);
-
 }

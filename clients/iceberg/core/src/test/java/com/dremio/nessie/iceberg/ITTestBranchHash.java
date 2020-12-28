@@ -15,14 +15,13 @@
  */
 package com.dremio.nessie.iceberg;
 
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import com.dremio.nessie.error.NessieConflictException;
-import com.dremio.nessie.error.NessieNotFoundException;
 
 public class ITTestBranchHash extends BaseTestIceberg {
 
@@ -36,7 +35,7 @@ public class ITTestBranchHash extends BaseTestIceberg {
   public void testBasicBranch() throws NessieNotFoundException, NessieConflictException {
     TableIdentifier foobar = TableIdentifier.of("foo", "bar");
 
-    Table bar = createTable(foobar, 1); //table 1
+    Table bar = createTable(foobar, 1); // table 1
     catalog.refresh();
     createBranch("test", catalog.getHash());
 
@@ -54,19 +53,20 @@ public class ITTestBranchHash extends BaseTestIceberg {
     // points to the previous metadata location
     Assertions.assertEquals(initialMetadataLocation, getContent(newCatalog, foobar));
 
-
     String mainHash = tree.getReferenceByName(BRANCH).getHash();
-    //catalog created with ref and no hash points to same catalog as above
+    // catalog created with ref and no hash points to same catalog as above
     NessieCatalog refCatalog = new NessieCatalog(hadoopConfig, "test");
     Assertions.assertEquals(getContent(newCatalog, foobar), getContent(refCatalog, foobar));
-    //catalog created with ref and hash points to 
+    // catalog created with ref and hash points to
     NessieCatalog refHashCatalog = new NessieCatalog(hadoopConfig, mainHash);
     Assertions.assertEquals(getContent(catalog, foobar), getContent(refHashCatalog, foobar));
 
     // asking for table@branch gives expected regardless of catalog
-    Assertions.assertEquals(getContent(newCatalog, foobar), getContent(catalog, TableIdentifier.of("foo", "bar@test")));
+    Assertions.assertEquals(
+        getContent(newCatalog, foobar), getContent(catalog, TableIdentifier.of("foo", "bar@test")));
     // asking for table@branch#hash gives expected regardless of catalog
-    Assertions.assertEquals(getContent(catalog, foobar), getContent(catalog, TableIdentifier.of("foo", "bar@" + mainHash)));
+    Assertions.assertEquals(
+        getContent(catalog, foobar),
+        getContent(catalog, TableIdentifier.of("foo", "bar@" + mainHash)));
   }
-
 }

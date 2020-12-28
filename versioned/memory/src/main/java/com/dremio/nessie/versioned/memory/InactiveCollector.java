@@ -15,28 +15,22 @@
  */
 package com.dremio.nessie.versioned.memory;
 
-import java.util.NoSuchElementException;
-
 import com.dremio.nessie.versioned.VersionStore.CollectionProgress;
 import com.dremio.nessie.versioned.VersionStore.Collector;
+import java.util.NoSuchElementException;
 
-/**
- * A collector implementation which does not collect.
- *
- */
+/** A collector implementation which does not collect. */
 final class InactiveCollector implements Collector {
   private static final InactiveCollector INSTANCE = new InactiveCollector();
 
-  private InactiveCollector() {
-  }
+  private InactiveCollector() {}
 
   public static Collector of() {
     return INSTANCE;
   }
 
   @Override
-  public void close() {
-  }
+  public void close() {}
 
   @Override
   public boolean hasNext() {

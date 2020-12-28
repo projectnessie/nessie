@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.server;
 
 import static io.restassured.RestAssured.given;
 
-import org.junit.jupiter.api.Test;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 class TestSinglePageApplicationRouting {
@@ -30,5 +28,4 @@ class TestSinglePageApplicationRouting {
   public void makeSureNonHomePathServesHtml() {
     given().when().get("/tree/123").then().contentType(ContentType.HTML).statusCode(200);
   }
-
 }

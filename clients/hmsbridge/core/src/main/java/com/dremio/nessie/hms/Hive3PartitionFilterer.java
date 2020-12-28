@@ -16,7 +16,6 @@
 package com.dremio.nessie.hms;
 
 import java.util.List;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.PartitionExpressionProxy;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -33,10 +32,8 @@ public class Hive3PartitionFilterer implements PartitionFilterer.PartitionFilter
 
   @Override
   public boolean filterPartitionsByExpr(
-      Configuration conf,
-      List<FieldSchema> partColumns,
-      byte[] expr,
-      List<String> partitionNames) throws MetaException {
+      Configuration conf, List<FieldSchema> partColumns, byte[] expr, List<String> partitionNames)
+      throws MetaException {
 
     String defaultPartName = MetastoreConf.getVar(conf, ConfVars.DEFAULTPARTITIONNAME);
     PartitionExpressionProxy pems = createExpressionProxy(conf);
@@ -46,12 +43,12 @@ public class Hive3PartitionFilterer implements PartitionFilterer.PartitionFilter
   private static PartitionExpressionProxy createExpressionProxy(Configuration conf) {
     String className = MetastoreConf.getVar(conf, ConfVars.EXPRESSION_PROXY_CLASS);
     try {
-      Class<? extends PartitionExpressionProxy> clazz = JavaUtils.getClass(className, PartitionExpressionProxy.class);
+      Class<? extends PartitionExpressionProxy> clazz =
+          JavaUtils.getClass(className, PartitionExpressionProxy.class);
       return JavaUtils.newInstance(clazz, new Class<?>[0], new Object[0]);
     } catch (MetaException e) {
       LOG.error("Error loading PartitionExpressionProxy", e);
       throw new RuntimeException("Error loading PartitionExpressionProxy: " + e.getMessage());
     }
   }
-
 }

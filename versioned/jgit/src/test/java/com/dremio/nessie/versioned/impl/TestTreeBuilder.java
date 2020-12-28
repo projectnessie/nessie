@@ -15,12 +15,20 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.versioned.Delete;
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.Put;
+import com.dremio.nessie.versioned.Serializer;
+import com.dremio.nessie.versioned.Unchanged;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
 import org.eclipse.jgit.lib.Constants;
@@ -31,67 +39,73 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.versioned.Delete;
-import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.Put;
-import com.dremio.nessie.versioned.Serializer;
-import com.dremio.nessie.versioned.Unchanged;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.protobuf.ByteString;
-
 class TestTreeBuilder {
-
 
   @Test
   void test() throws IOException {
     Repository repository;
     ObjectId emptyObject;
     try {
-      repository = new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
+      repository =
+          new InMemoryRepository.Builder()
+              .setRepositoryDescription(new DfsRepositoryDescription())
+              .build();
       ObjectInserter oi = repository.newObjectInserter();
       emptyObject = oi.insert(Constants.OBJ_BLOB, new byte[] {0});
       oi.flush();
     } catch (IOException e) {
       throw new RuntimeException();
     }
-    Serializer<String> serializer = new Serializer<String>() {
-      @Override
-      public ByteString toBytes(String value) {
-        return ByteString.copyFrom(value.getBytes());
-      }
+    Serializer<String> serializer =
+        new Serializer<String>() {
+          @Override
+          public ByteString toBytes(String value) {
+            return ByteString.copyFrom(value.getBytes());
+          }
 
-      @Override
-      public String fromBytes(ByteString bytes) {
-        return bytes.toStringUtf8();
-      }
-    };
-    ObjectId oid1 = TreeBuilder.commitObjects(ImmutableList.of(Put.of(Key.of("a", "b", "c.txt"), "foobar"),
-                                                               Put.of(Key.of("a", "b", "d.txt"), "foobar"),
-                                                               Put.of(Key.of("a", "i", "j.txt"), "foobar"),
-                                                               Put.of(Key.of("a", "f.txt"), "foobar1"),
-                                                               Put.of(Key.of("k", "l.txt"), "foobar")),
-                                              repository, serializer, emptyObject);
-    ObjectId oid2 = TreeBuilder.commitObjects(ImmutableList.of(Put.of(Key.of("a", "g", "h.txt"), "foobar"),
-                                                               Delete.of(Key.of("a", "b", "d.txt")),
-                                                               Put.of(Key.of("a", "f.txt"), "foobar"),
-                                                               Put.of(Key.of("a","b","p.txt"), "foobar"),
-                                                               Put.of(Key.of("m", "n", "o.txt"), "foobar"),
-                                                               Unchanged.of(Key.of("a","b","c.txt"))),
-                                              repository, serializer, emptyObject);
+          @Override
+          public String fromBytes(ByteString bytes) {
+            return bytes.toStringUtf8();
+          }
+        };
+    ObjectId oid1 =
+        TreeBuilder.commitObjects(
+            ImmutableList.of(
+                Put.of(Key.of("a", "b", "c.txt"), "foobar"),
+                Put.of(Key.of("a", "b", "d.txt"), "foobar"),
+                Put.of(Key.of("a", "i", "j.txt"), "foobar"),
+                Put.of(Key.of("a", "f.txt"), "foobar1"),
+                Put.of(Key.of("k", "l.txt"), "foobar")),
+            repository,
+            serializer,
+            emptyObject);
+    ObjectId oid2 =
+        TreeBuilder.commitObjects(
+            ImmutableList.of(
+                Put.of(Key.of("a", "g", "h.txt"), "foobar"),
+                Delete.of(Key.of("a", "b", "d.txt")),
+                Put.of(Key.of("a", "f.txt"), "foobar"),
+                Put.of(Key.of("a", "b", "p.txt"), "foobar"),
+                Put.of(Key.of("m", "n", "o.txt"), "foobar"),
+                Unchanged.of(Key.of("a", "b", "c.txt"))),
+            repository,
+            serializer,
+            emptyObject);
 
     ObjectId oid3 = TreeBuilder.merge(oid1, oid2, repository);
     TreeWalk tw = new TreeWalk(repository);
     tw.addTree(oid3);
     tw.setRecursive(true);
     Map<String, String> results = new HashMap<>();
-    Set<String> expected = ImmutableSet.of("a/b/c.txt", "a/g/h.txt", "a/f.txt", "a/i/j.txt", "k/l.txt", "m/n/o.txt");
+    Set<String> expected =
+        ImmutableSet.of("a/b/c.txt", "a/g/h.txt", "a/f.txt", "a/i/j.txt", "k/l.txt", "m/n/o.txt");
     while (tw.next()) {
       if (ObjectId.zeroId().equals(tw.getObjectId(0))) {
         continue;
       }
-      String value = serializer.fromBytes(ByteString.copyFrom(repository.newObjectReader().open(tw.getObjectId(0)).getBytes()));
+      String value =
+          serializer.fromBytes(
+              ByteString.copyFrom(repository.newObjectReader().open(tw.getObjectId(0)).getBytes()));
       results.put(tw.getPathString(), value);
     }
     Assertions.assertTrue(Sets.difference(expected, results.keySet()).isEmpty());

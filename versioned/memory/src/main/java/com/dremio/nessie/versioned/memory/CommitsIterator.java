@@ -15,14 +15,14 @@
  */
 package com.dremio.nessie.versioned.memory;
 
+import com.dremio.nessie.versioned.Hash;
+import com.dremio.nessie.versioned.WithHash;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
-import com.dremio.nessie.versioned.Hash;
-import com.dremio.nessie.versioned.WithHash;
-
-final class CommitsIterator<ValueT, MetadataT> implements Iterator<WithHash<Commit<ValueT, MetadataT>>> {
+final class CommitsIterator<ValueT, MetadataT>
+    implements Iterator<WithHash<Commit<ValueT, MetadataT>>> {
   private final Function<Hash, Commit<ValueT, MetadataT>> commitAccessor;
 
   private WithHash<Commit<ValueT, MetadataT>> current;

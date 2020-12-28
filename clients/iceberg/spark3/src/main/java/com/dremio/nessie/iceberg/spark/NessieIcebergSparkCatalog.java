@@ -15,13 +15,12 @@
  */
 package com.dremio.nessie.iceberg.spark;
 
+import com.dremio.nessie.iceberg.NessieCatalog;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.spark.SparkCatalog;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
-
-import com.dremio.nessie.iceberg.NessieCatalog;
 
 public class NessieIcebergSparkCatalog extends SparkCatalog {
 
@@ -30,5 +29,4 @@ public class NessieIcebergSparkCatalog extends SparkCatalog {
     Configuration conf = SparkSession.active().sparkContext().hadoopConfiguration();
     return new NessieCatalog(name, conf);
   }
-
 }

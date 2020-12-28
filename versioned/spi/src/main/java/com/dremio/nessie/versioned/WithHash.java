@@ -27,18 +27,21 @@ public interface WithHash<T> {
 
   /**
    * Get the value of the hash associated with this commit.
+   *
    * @return
    */
   Hash getHash();
 
   /**
    * Get the value this object wraps.
+   *
    * @return
    */
   T getValue();
 
   /**
    * Build a WithHash object of type T.
+   *
    * @param <T> The value type to hold
    * @param hash The hash this value type is connected to.
    * @param value The value held.

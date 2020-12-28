@@ -15,13 +15,10 @@
  */
 package com.dremio.nessie.versioned.impl.condition;
 
+import com.dremio.nessie.versioned.store.Entity;
 import org.immutables.value.Value.Immutable;
 
-import com.dremio.nessie.versioned.store.Entity;
-
-/**
- * Used for adding to numbers, sets or lists.
- */
+/** Used for adding to numbers, sets or lists. */
 @Immutable
 public abstract class AddClause implements UpdateClause {
 
@@ -47,5 +44,4 @@ public abstract class AddClause implements UpdateClause {
   public String toClauseString() {
     return String.format("%s %s", getPath().asString(), getValue().asString());
   }
-
 }

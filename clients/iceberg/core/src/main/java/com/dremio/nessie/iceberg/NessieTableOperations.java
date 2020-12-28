@@ -13,17 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.iceberg;
-
-import java.lang.reflect.Method;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.BaseMetastoreTableOperations;
-import org.apache.iceberg.TableMetadata;
-import org.apache.iceberg.exceptions.CommitFailedException;
-import org.apache.iceberg.hadoop.HadoopFileIO;
-import org.apache.iceberg.io.FileIO;
 
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.error.NessieConflictException;
@@ -32,10 +22,15 @@ import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.IcebergTable;
 import com.dremio.nessie.model.ImmutableIcebergTable;
+import java.lang.reflect.Method;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.BaseMetastoreTableOperations;
+import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.exceptions.CommitFailedException;
+import org.apache.iceberg.hadoop.HadoopFileIO;
+import org.apache.iceberg.io.FileIO;
 
-/**
- * Nessie implementation of Iceberg TableOperations.
- */
+/** Nessie implementation of Iceberg TableOperations. */
 public class NessieTableOperations extends BaseMetastoreTableOperations {
 
   private static Method sparkConfMethod;
@@ -49,14 +44,9 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
   private IcebergTable table;
   private HadoopFileIO fileIO;
 
-  /**
-   * Create a nessie table operations given a table identifier.
-   */
+  /** Create a nessie table operations given a table identifier. */
   public NessieTableOperations(
-      Configuration conf,
-      ContentsKey key,
-      UpdateableReference reference,
-      NessieClient client) {
+      Configuration conf, ContentsKey key, UpdateableReference reference, NessieClient client) {
     this.conf = conf;
     this.key = key;
     this.reference = reference;
@@ -67,14 +57,18 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
   protected void doRefresh() {
     // break reference with parent (to avoid cross-over refresh)
     // TODO, confirm this is correct behavior.
-    //reference = reference.clone();
+    // reference = reference.clone();
 
     reference.refresh();
     String metadataLocation = null;
     try {
       Contents c = client.getContentsApi().getContents(key, reference.getHash());
-      this.table = c.unwrap(IcebergTable.class)
-          .orElseThrow(() -> new IllegalStateException("Nessie points to a non-Iceberg object for that path."));
+      this.table =
+          c.unwrap(IcebergTable.class)
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "Nessie points to a non-Iceberg object for that path."));
       metadataLocation = table.getMetadataLocation();
     } catch (NessieNotFoundException ex) {
       this.table = null;
@@ -89,12 +83,16 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
     String newMetadataLocation = writeNewMetadata(metadata, currentVersion() + 1);
 
     try {
-      IcebergTable table = ImmutableIcebergTable.builder().metadataLocation(newMetadataLocation).build();
-      client.getContentsApi().setContents(key,
-                                          reference.getAsBranch().getName(),
-                                          reference.getHash(),
-                                          String.format("iceberg commit%s", applicationId()),
-                                          table);
+      IcebergTable table =
+          ImmutableIcebergTable.builder().metadataLocation(newMetadataLocation).build();
+      client
+          .getContentsApi()
+          .setContents(
+              key,
+              reference.getAsBranch().getName(),
+              reference.getHash(),
+              String.format("iceberg commit%s", applicationId()),
+              table);
     } catch (NessieNotFoundException | NessieConflictException ex) {
       io().deleteFile(newMetadataLocation);
       throw new CommitFailedException(ex, "failed");
@@ -116,10 +114,8 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
   /**
    * try and get a Spark application id if one exists.
    *
-   * <p>
-   *   We haven't figured out a general way to pass commit messages through to the Nessie committer yet.
-   *   This is hacky but gets the job done until we can have a more complete commit/audit log.
-   * </p>
+   * <p>We haven't figured out a general way to pass commit messages through to the Nessie committer
+   * yet. This is hacky but gets the job done until we can have a more complete commit/audit log.
    */
   private static String applicationId() {
     try {
@@ -137,5 +133,4 @@ public class NessieTableOperations extends BaseMetastoreTableOperations {
       return "";
     }
   }
-
 }

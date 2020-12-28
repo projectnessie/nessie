@@ -16,7 +16,8 @@
 package com.dremio.nessie.client.auth;
 
 /**
- * Mechanism to prevent sending Auth header. This is used when authorization is not enabled. Typically only during tests.
+ * Mechanism to prevent sending Auth header. This is used when authorization is not enabled.
+ * Typically only during tests.
  */
 public class NoAuth implements Auth {
 

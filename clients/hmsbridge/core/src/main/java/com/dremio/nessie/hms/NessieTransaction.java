@@ -15,21 +15,6 @@
  */
 package com.dremio.nessie.hms;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.hadoop.hive.metastore.api.Database;
-import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
-import org.apache.hadoop.hive.metastore.api.MetaException;
-import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
-import org.apache.hadoop.hive.metastore.api.Partition;
-import org.apache.hadoop.hive.metastore.api.Table;
-
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
@@ -38,14 +23,28 @@ import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.EntriesResponse;
 import com.dremio.nessie.model.Reference;
 import com.google.common.base.Preconditions;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.hadoop.hive.metastore.api.Database;
+import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
+import org.apache.hadoop.hive.metastore.api.MetaException;
+import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
+import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.hadoop.hive.metastore.api.Table;
 
 /**
  * Class for maintaining metastore transactionality.
  *
- * <p>When created, grabs the current hash of the provided reference. All non-qualified reads are done against this hash.
+ * <p>When created, grabs the current hash of the provided reference. All non-qualified reads are
+ * done against this hash.
  *
- * <p>Leverages TransactionStore to make sure that all reads and writes are maintained a consistent view.
+ * <p>Leverages TransactionStore to make sure that all reads and writes are maintained a consistent
+ * view.
  */
 class NessieTransaction {
 
@@ -71,9 +70,12 @@ class NessieTransaction {
       }
     } catch (NessieNotFoundException e) {
       if (ref == null) {
-        throw new RuntimeException("Cannot start transaction, unable to retrieve default branch from server.", e);
+        throw new RuntimeException(
+            "Cannot start transaction, unable to retrieve default branch from server.", e);
       }
-      throw new RuntimeException(String.format("Cannot start transaction, Provided reference [%s] does not exist.", ref), e);
+      throw new RuntimeException(
+          String.format("Cannot start transaction, Provided reference [%s] does not exist.", ref),
+          e);
     }
 
     this.store = new TransactionStore(reference, client.getContentsApi(), client.getTreeApi());
@@ -81,7 +83,6 @@ class NessieTransaction {
     this.defaultName = reference.getName();
     transactionCount++;
   }
-
 
   public void nestedOpen() {
     Preconditions.checkArgument(transactionCount >= 1);
@@ -118,11 +119,13 @@ class NessieTransaction {
     } catch (NessieNotFoundException | NessieConflictException e) {
       return false;
     }
-
   }
 
   public List<Table> getTables(String dbName, List<String> tableNames) {
-    List<RefKey> keys = tableNames.stream().map(t -> new RefKey(defaultHash, ContentsKey.of(dbName, t))).collect(Collectors.toList());
+    List<RefKey> keys =
+        tableNames.stream()
+            .map(t -> new RefKey(defaultHash, ContentsKey.of(dbName, t)))
+            .collect(Collectors.toList());
     try {
       return store.getItemsForRef(keys).stream()
           .filter(Optional::isPresent)
@@ -137,7 +140,8 @@ class NessieTransaction {
 
   Stream<ContentsKey> getTables(String database) {
     try {
-      return store.getEntriesForDefaultRef()
+      return store
+          .getEntriesForDefaultRef()
           .map(EntriesResponse.Entry::getName)
           .filter(k -> k.getElements().size() != 1)
           .filter(k -> k.getElements().get(0).equalsIgnoreCase(database));
@@ -157,7 +161,8 @@ class NessieTransaction {
 
   public Stream<String> getDatabases() {
     try {
-      return store.getEntriesForDefaultRef()
+      return store
+          .getEntriesForDefaultRef()
           .map(EntriesResponse.Entry::getName)
           .filter(k -> k.getElements().size() == 1)
           .map(k -> k.getElements().get(0));
@@ -167,7 +172,8 @@ class NessieTransaction {
     }
   }
 
-  public void addPartitions(List<Partition> p) throws MetaException, InvalidObjectException, NoSuchObjectException {
+  public void addPartitions(List<Partition> p)
+      throws MetaException, InvalidObjectException, NoSuchObjectException {
     if (p.isEmpty()) {
       return;
     }
@@ -191,7 +197,8 @@ class NessieTransaction {
       throw new MetaException("Table doesn't exist.");
     }
 
-    setItem(Item.wrap(table, oldItem.get().getPartitions()), table.getDbName(), table.getTableName());
+    setItem(
+        Item.wrap(table, oldItem.get().getPartitions()), table.getDbName(), table.getTableName());
   }
 
   public Handle handle() {
@@ -199,10 +206,13 @@ class NessieTransaction {
   }
 
   public Table getTableOnly(String dbName, String tableName) throws NoSuchObjectException {
-    return getTable(dbName, tableName).map(TableAndPartition::getTable).orElseThrow(() -> new NoSuchObjectException());
+    return getTable(dbName, tableName)
+        .map(TableAndPartition::getTable)
+        .orElseThrow(() -> new NoSuchObjectException());
   }
 
-  public Optional<TableAndPartition> getTable(String dbName, String tableName) throws NoSuchObjectException {
+  public Optional<TableAndPartition> getTable(String dbName, String tableName)
+      throws NoSuchObjectException {
 
     if (!tableName.contains("@")) {
       return getItemForRef(defaultHash, dbName, tableName)
@@ -224,20 +234,25 @@ class NessieTransaction {
           .map(i -> new TableAndPartition(i.getTable(), i.getPartitions()));
     }
 
-    return getItemForRef(ref, dbName, tName).map(i -> {
-      Table t = i.getTable();
-      t.setTableName(t.getTableName() + "@" + ref);
-      List<Partition> parts = i.getPartitions();
-      parts.forEach(p -> p.setTableName(p.getTableName() + "@" + ref));
-      return new TableAndPartition(t, parts);
-    });
+    return getItemForRef(ref, dbName, tName)
+        .map(
+            i -> {
+              Table t = i.getTable();
+              t.setTableName(t.getTableName() + "@" + ref);
+              List<Partition> parts = i.getPartitions();
+              parts.forEach(p -> p.setTableName(p.getTableName() + "@" + ref));
+              return new TableAndPartition(t, parts);
+            });
   }
 
   public void save(TableAndPartition tandp) throws MetaException {
-    setItem(Item.wrap(tandp.table, tandp.partitions), tandp.table.getDbName(), tandp.table.getTableName());
+    setItem(
+        Item.wrap(tandp.table, tandp.partitions),
+        tandp.table.getDbName(),
+        tandp.table.getTableName());
   }
 
-  private void setItem(Item item, String...keyElements) throws MetaException {
+  private void setItem(Item item, String... keyElements) throws MetaException {
     ContentsKey key = ContentsKey.of(keyElements);
     store.setItem(key, item);
   }
@@ -255,12 +270,14 @@ class NessieTransaction {
     store.deleteItem(key);
   }
 
-  public List<Partition> getPartitions(String dbName, String tableName) throws NoSuchObjectException {
+  public List<Partition> getPartitions(String dbName, String tableName)
+      throws NoSuchObjectException {
     Optional<TableAndPartition> item = getTable(dbName, tableName);
     return item.map(TableAndPartition::getPartitions).orElse(null);
   }
 
-  public void removePartition(String dbName, String tableName, List<String> partitionValues) throws MetaException, NoSuchObjectException {
+  public void removePartition(String dbName, String tableName, List<String> partitionValues)
+      throws MetaException, NoSuchObjectException {
     List<Partition> newPartitions = new ArrayList<>();
     Optional<TableAndPartition> opt = getTable(dbName, tableName);
     if (!opt.isPresent()) {
@@ -275,14 +292,14 @@ class NessieTransaction {
     }
 
     setItem(Item.wrap(opt.get().getTable(), newPartitions));
-
   }
 
   Optional<Database> getDatabase(String database) throws NoSuchObjectException {
     return getItemForRef(defaultHash, database).map(Item::getDatabase);
   }
 
-  private Optional<Item> getItemForRef(String ref, String... elements) throws NoSuchObjectException {
+  private Optional<Item> getItemForRef(String ref, String... elements)
+      throws NoSuchObjectException {
     return store.getItemForRef(ref, ContentsKey.of(elements));
   }
 
@@ -295,10 +312,7 @@ class NessieTransaction {
     return transactionCount > 0;
   }
 
-
-  public void execute(Consumer<NessieTransaction> t) {
-
-  }
+  public void execute(Consumer<NessieTransaction> t) {}
 
   public class Handle implements AutoCloseable {
 
@@ -313,7 +327,6 @@ class NessieTransaction {
         }
       }
     }
-
   }
 
   public static class TableAndPartition {

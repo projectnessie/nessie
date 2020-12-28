@@ -16,17 +16,15 @@
 package com.dremio.nessie.versioned;
 
 import javax.annotation.Nonnull;
-
 import org.immutables.value.Value;
 
-/**
- * A delete operation.
- */
+/** A delete operation. */
 @Value.Immutable
 public interface Delete<V> extends Operation<V> {
 
   /**
    * Creates a delete operation for the given key.
+   *
    * @param <V> the store value type
    * @param key the key impacted by the operation
    * @return a delete operation for the key

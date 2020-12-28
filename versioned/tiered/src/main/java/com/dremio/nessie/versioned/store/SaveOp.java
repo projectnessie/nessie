@@ -74,5 +74,4 @@ public class SaveOp<V extends HasId> {
     // otherwise, use the actual values for equality.
     return type == other.type && Objects.equals(value, other.value);
   }
-
 }

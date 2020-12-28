@@ -15,18 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.immutables.value.Value.Immutable;
-
 import com.dremio.nessie.versioned.impl.KeyMutation.MutationType;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
@@ -40,10 +28,18 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.immutables.value.Value.Immutable;
 
-/**
- * Interface and implementations related to managing the key list within Dynamo.
- */
+/** Interface and implementations related to managing the key list within Dynamo. */
 abstract class KeyList {
 
   private static final String IS_CHECKPOINT = "chk";
@@ -62,17 +58,15 @@ abstract class KeyList {
   abstract Type getType();
 
   static IncrementalList incremental(
-      Id previousCheckpointL1,
-      List<KeyMutation> mutations,
-      int distanceFromCheckpointCommits) {
+      Id previousCheckpointL1, List<KeyMutation> mutations, int distanceFromCheckpointCommits) {
     return ImmutableIncrementalList.builder()
         .previousCheckpoint(previousCheckpointL1)
         .distanceFromCheckpointCommits(distanceFromCheckpointCommits)
-        .mutations(mutations).build();
+        .mutations(mutations)
+        .build();
   }
 
   abstract Stream<InternalKey> getKeys(L1 startingPoint, Store store);
-
 
   abstract List<KeyMutation> getMutations();
 
@@ -114,7 +108,8 @@ abstract class KeyList {
       return ImmutableIncrementalList.builder()
           .addAllMutations(mutations)
           .distanceFromCheckpointCommits(getDistanceFromCheckpointCommits() + 1)
-          .previousCheckpoint(getPreviousCheckpoint()).build();
+          .previousCheckpoint(getPreviousCheckpoint())
+          .build();
     }
 
     @Override
@@ -123,10 +118,8 @@ abstract class KeyList {
         return Optional.empty();
       }
 
-
       return Optional.of(generateNewCheckpoint(startingPoint, store));
     }
-
 
     @Override
     Stream<InternalKey> getKeys(L1 startingPoint, Store store) {
@@ -153,16 +146,19 @@ abstract class KeyList {
     }
 
     private IterResult getKeysIter(L1 startingPoint, Store store) {
-      HistoryRetriever retriever = new HistoryRetriever(store, startingPoint, getPreviousCheckpoint(), true, false, true);
+      HistoryRetriever retriever =
+          new HistoryRetriever(store, startingPoint, getPreviousCheckpoint(), true, false, true);
       final CompleteList complete;
       // incrementals, from oldest to newest.
       final List<KeyList> incrementals;
 
       { // load the lists.
-        ImmutableList<KeyList> keyLists = retriever.getStream()
-            .map(h -> h.getL1().getKeyList())
-            .filter(kl -> !kl.isEmptyIncremental())
-            .collect(ImmutableList.toImmutableList());
+        ImmutableList<KeyList> keyLists =
+            retriever
+                .getStream()
+                .map(h -> h.getL1().getKeyList())
+                .filter(kl -> !kl.isEmptyIncremental())
+                .collect(ImmutableList.toImmutableList());
 
         // the very last keylist should be a completelist, given the correct stop.
         KeyList last = keyLists.get(keyLists.size() - 1);
@@ -174,31 +170,32 @@ abstract class KeyList {
       Set<InternalKey> removals = new HashSet<>();
       Set<InternalKey> adds = new HashSet<>();
 
-
-      // determine the unique list of mutations. Operations that cancel each other out are ignored for checkpoint purposes.
+      // determine the unique list of mutations. Operations that cancel each other out are ignored
+      // for checkpoint purposes.
       for (KeyList kl : incrementals) {
         Preconditions.checkArgument(kl.getType() == Type.INCREMENTAL);
         IncrementalList il = (IncrementalList) kl;
-        il.getMutations().forEach(m -> {
-          final InternalKey key = m.getKey();
-          if (m.getType() == MutationType.ADDITION) {
-            if (removals.contains(key)) {
-              removals.remove(key);
-            } else {
-              adds.add(key);
-            }
-          } else if (m.getType() == MutationType.REMOVAL) {
-            if (adds.contains(key)) {
-              adds.remove(key);
-            } else {
-              removals.add(key);
-            }
-          } else {
-            throw new IllegalStateException("Invalid mutation type: " + m.getType().name());
-          }
-        });
+        il.getMutations()
+            .forEach(
+                m -> {
+                  final InternalKey key = m.getKey();
+                  if (m.getType() == MutationType.ADDITION) {
+                    if (removals.contains(key)) {
+                      removals.remove(key);
+                    } else {
+                      adds.add(key);
+                    }
+                  } else if (m.getType() == MutationType.REMOVAL) {
+                    if (adds.contains(key)) {
+                      adds.remove(key);
+                    } else {
+                      removals.add(key);
+                    }
+                  } else {
+                    throw new IllegalStateException("Invalid mutation type: " + m.getType().name());
+                  }
+                });
       }
-
 
       if (removals.isEmpty() && adds.isEmpty()) {
         return IterResult.unchanged(complete);
@@ -213,12 +210,12 @@ abstract class KeyList {
 
     @Override
     public Entity toEntity() {
-      return Entity.ofMap(ImmutableMap.<String, Entity>of(
-            IS_CHECKPOINT, Entity.ofBoolean(false),
-            MUTATIONS, Entity.ofList(getMutations().stream().map(KeyMutation::toEntity)),
-            ORIGIN, getPreviousCheckpoint().toEntity(),
-            DISTANCE, Entity.ofNumber(getDistanceFromCheckpointCommits())
-            ));
+      return Entity.ofMap(
+          ImmutableMap.<String, Entity>of(
+              IS_CHECKPOINT, Entity.ofBoolean(false),
+              MUTATIONS, Entity.ofList(getMutations().stream().map(KeyMutation::toEntity)),
+              ORIGIN, getPreviousCheckpoint().toEntity(),
+              DISTANCE, Entity.ofNumber(getDistanceFromCheckpointCommits())));
     }
 
     @Override
@@ -228,7 +225,10 @@ abstract class KeyList {
 
     static KeyList fromEntity(Map<String, Entity> value) {
       return ImmutableIncrementalList.builder()
-          .addAllMutations(value.get(MUTATIONS).getList().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
+          .addAllMutations(
+              value.get(MUTATIONS).getList().stream()
+                  .map(KeyMutation::fromEntity)
+                  .collect(Collectors.toList()))
           .previousCheckpoint(Id.fromEntity(value.get(ORIGIN)))
           .distanceFromCheckpointCommits(Ints.saturatedCast(value.get(DISTANCE).getNumber()))
           .build();
@@ -239,7 +239,8 @@ abstract class KeyList {
       private final Stream<InternalKey> keyList;
       private final Set<Id> previousFragmentIds;
 
-      private IterResult(CompleteList list, Stream<InternalKey> keyList, Set<Id> previousFragmentIds) {
+      private IterResult(
+          CompleteList list, Stream<InternalKey> keyList, Set<Id> previousFragmentIds) {
         super();
         this.list = list;
         this.keyList = keyList;
@@ -257,19 +258,17 @@ abstract class KeyList {
       public boolean isChanged() {
         return keyList != null;
       }
-
     }
-
   }
 
-
   /**
-   * A complete list is composed as one or more fragments. Each fragment's id is generated by the hashed value of its
-   * contents.
+   * A complete list is composed as one or more fragments. Each fragment's id is generated by the
+   * hashed value of its contents.
    *
-   * <p>Fragments lists are designed to minimize Dynamo record churn. Early fragment lists have the oldest entries.
-   * Whenever a key is added, it is added to the last fragment (or a new fragment if the last fragment is oversized).
-   * As such, over time the early fragments rarely if ever get restated.
+   * <p>Fragments lists are designed to minimize Dynamo record churn. Early fragment lists have the
+   * oldest entries. Whenever a key is added, it is added to the last fragment (or a new fragment if
+   * the last fragment is oversized). As such, over time the early fragments rarely if ever get
+   * restated.
    */
   static class CompleteList extends KeyList {
     private static final String FRAGMENTS = "fragments";
@@ -305,28 +304,35 @@ abstract class KeyList {
 
     @Override
     public Entity toEntity() {
-      return Entity.ofMap(ImmutableMap.<String, Entity>of(
-            IS_CHECKPOINT,
-            Entity.ofBoolean(true),
-            FRAGMENTS,
-            Entity.ofList(fragmentIds.stream().map(Id::toEntity).collect(ImmutableList.toImmutableList())),
-            MUTATIONS,
-            Entity.ofList(mutations.stream().map(KeyMutation::toEntity))
-            ));
+      return Entity.ofMap(
+          ImmutableMap.<String, Entity>of(
+              IS_CHECKPOINT,
+              Entity.ofBoolean(true),
+              FRAGMENTS,
+              Entity.ofList(
+                  fragmentIds.stream().map(Id::toEntity).collect(ImmutableList.toImmutableList())),
+              MUTATIONS,
+              Entity.ofList(mutations.stream().map(KeyMutation::toEntity))));
     }
 
     static KeyList fromEntity(Map<String, Entity> value) {
       return new CompleteList(
-          value.get(FRAGMENTS).getList().stream().map(Id::fromEntity).collect(ImmutableList.toImmutableList()),
-          value.get(MUTATIONS).getList().stream().map(KeyMutation::fromEntity).collect(ImmutableList.toImmutableList()));
+          value.get(FRAGMENTS).getList().stream()
+              .map(Id::fromEntity)
+              .collect(ImmutableList.toImmutableList()),
+          value.get(MUTATIONS).getList().stream()
+              .map(KeyMutation::fromEntity)
+              .collect(ImmutableList.toImmutableList()));
     }
 
     @Override
     Stream<InternalKey> getKeys(L1 startingPoint, Store store) {
-      return fragmentIds.stream().flatMap(f -> {
-        Fragment fragment = store.loadSingle(ValueType.KEY_FRAGMENT, f);
-        return fragment.getKeys().stream();
-      });
+      return fragmentIds.stream()
+          .flatMap(
+              f -> {
+                Fragment fragment = store.loadSingle(ValueType.KEY_FRAGMENT, f);
+                return fragment.getKeys().stream();
+              });
     }
 
     @Override
@@ -334,7 +340,6 @@ abstract class KeyList {
       return mutations;
     }
   }
-
 
   /**
    * Accumulates keys until we have enough to fill the ~max DynamoDB record size.
@@ -370,9 +375,11 @@ abstract class KeyList {
         currentList.clear();
         currentListSize = 0;
         if (!presaved.contains(fragment.getId())) {
-          // only save if we didn't save on the last checkpoint. This could still be a dupe of an older list but since the object
+          // only save if we didn't save on the last checkpoint. This could still be a dupe of an
+          // older list but since the object
           // is hashed, the value will be a simple overwrite of the same data.
-          store.save(Collections.singletonList(new SaveOp<HasId>(ValueType.KEY_FRAGMENT, fragment)));
+          store.save(
+              Collections.singletonList(new SaveOp<HasId>(ValueType.KEY_FRAGMENT, fragment)));
           fragmentIds.add(fragment.getId());
         }
       }
@@ -395,6 +402,4 @@ abstract class KeyList {
       return new CompleteList(fragmentIds, mutations);
     }
   }
-
-
 }

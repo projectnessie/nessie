@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.server;
 
+import com.dremio.nessie.model.Reference;
 import javax.annotation.Nonnull;
-
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
-import com.dremio.nessie.model.Reference;
-
 /**
- * Contains custom Hamcrest {@link Matcher}s.
- * Might be handy in more complex scenarios compared to {@link org.hamcrest.Matchers#hasProperty(String, Matcher)}.
+ * Contains custom Hamcrest {@link Matcher}s. Might be handy in more complex scenarios compared to
+ * {@link org.hamcrest.Matchers#hasProperty(String, Matcher)}.
  */
 public final class ReferenceMatchers {
-  /**
-   * Check whether {@link Reference#getName()} matches the given name.
-   */
+  /** Check whether {@link Reference#getName()} matches the given name. */
   public static Matcher<Reference> referenceWithName(@Nonnull String refName) {
     return new ReferenceByNameMatcher(refName, null);
   }
@@ -39,7 +34,8 @@ public final class ReferenceMatchers {
   /**
    * Check whether {@link Reference#getName()} matches the given name and the given reference type.
    */
-  public static Matcher<Reference> referenceWithNameAndType(@Nonnull String refName, @Nonnull Class<? extends Reference> type) {
+  public static Matcher<Reference> referenceWithNameAndType(
+      @Nonnull String refName, @Nonnull Class<? extends Reference> type) {
     return new ReferenceByNameMatcher(refName, type);
   }
 
@@ -59,8 +55,7 @@ public final class ReferenceMatchers {
         return false;
       }
       Reference ref = (Reference) o;
-      return refName.equals(ref.getName())
-             && (type == null || type.isInstance(ref));
+      return refName.equals(ref.getName()) && (type == null || type.isInstance(ref));
     }
 
     @Override
@@ -70,6 +65,5 @@ public final class ReferenceMatchers {
         description.appendText(" and type " + type.getSimpleName());
       }
     }
-
   }
 }

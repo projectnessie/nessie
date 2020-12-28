@@ -15,6 +15,11 @@
  */
 package com.dremio.nessie.versioned.store;
 
+import com.dremio.nessie.versioned.store.LoadOp.LoadOpKey;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Streams;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,12 +29,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.dremio.nessie.versioned.store.LoadOp.LoadOpKey;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Streams;
 
 public class LoadStep {
 
@@ -46,12 +45,14 @@ public class LoadStep {
   }
 
   private static Collection<LoadOp<?>> consolidate(Collection<LoadOp<?>> ops) {
-    // dynamodb doesn't let a single request ask for the same value multiple times. We need to collapse any loadops that do this.
-    ListMultimap<LoadOpKey, LoadOp<?>> mm = Multimaps.index(ImmutableList.copyOf(ops), LoadOp::toKey);
-    List<LoadOp<?>> consolidated = mm.keySet()
-        .stream()
-        .map(key -> mm.get(key).stream().collect(LoadOp.toLoadOp()))
-        .collect(ImmutableList.toImmutableList());
+    // dynamodb doesn't let a single request ask for the same value multiple times. We need to
+    // collapse any loadops that do this.
+    ListMultimap<LoadOpKey, LoadOp<?>> mm =
+        Multimaps.index(ImmutableList.copyOf(ops), LoadOp::toKey);
+    List<LoadOp<?>> consolidated =
+        mm.keySet().stream()
+            .map(key -> mm.get(key).stream().collect(LoadOp.toLoadOp()))
+            .collect(ImmutableList.toImmutableList());
     return consolidated;
   }
 
@@ -61,33 +62,37 @@ public class LoadStep {
 
   /**
    * Merge the current LoadStep with another to create a new compound LoadStep.
+   *
    * @param other The second LoadStep to combine with this.
    * @return A newly created combined LoadStep
    */
   public LoadStep combine(final LoadStep other) {
     final LoadStep a = this;
     final LoadStep b = other;
-    Collection<LoadOp<?>> newOps = Streams.concat(ops.stream(), b.ops.stream()).collect(Collectors.toList());
-    return new LoadStep(newOps, () -> {
-      Optional<LoadStep> nextA = a.next.get();
-      Optional<LoadStep> nextB = b.next.get();
-      if (nextA.isPresent()) {
-        if (nextB.isPresent()) {
-          return Optional.of(nextA.get().combine(nextB.get()));
-        }
+    Collection<LoadOp<?>> newOps =
+        Streams.concat(ops.stream(), b.ops.stream()).collect(Collectors.toList());
+    return new LoadStep(
+        newOps,
+        () -> {
+          Optional<LoadStep> nextA = a.next.get();
+          Optional<LoadStep> nextB = b.next.get();
+          if (nextA.isPresent()) {
+            if (nextB.isPresent()) {
+              return Optional.of(nextA.get().combine(nextB.get()));
+            }
 
-        return nextA;
-      }
+            return nextA;
+          }
 
-      return nextB;
-    });
+          return nextB;
+        });
   }
 
   public Optional<LoadStep> getNext() {
     return next.get();
   }
 
-  public static LoadStep of(LoadOp<?>...ops) {
+  public static LoadStep of(LoadOp<?>... ops) {
     return new LoadStep(Arrays.asList(ops), () -> Optional.empty());
   }
 
@@ -95,19 +100,18 @@ public class LoadStep {
     return COLLECTOR;
   }
 
-  private static final Collector<LoadStep, StepCollectorState, LoadStep> COLLECTOR = Collector.of(
-      StepCollectorState::new,
-      (o1, l1) -> o1.plus(l1),
-      (o1, o2) -> o1.plus(o2),
-      StepCollectorState::getStep
-      );
+  private static final Collector<LoadStep, StepCollectorState, LoadStep> COLLECTOR =
+      Collector.of(
+          StepCollectorState::new,
+          (o1, l1) -> o1.plus(l1),
+          (o1, o2) -> o1.plus(o2),
+          StepCollectorState::getStep);
 
   private static class StepCollectorState {
 
     private LoadStep step = new LoadStep(Collections.emptyList());
 
-    private StepCollectorState() {
-    }
+    private StepCollectorState() {}
 
     public LoadStep getStep() {
       return step;

@@ -15,30 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
-import java.util.stream.Stream;
-
-import org.bson.BsonDocument;
-import org.bson.BsonDocumentWriter;
-import org.bson.codecs.Codec;
-import org.bson.codecs.EncoderContext;
-import org.bson.codecs.configuration.CodecRegistries;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
-import org.bson.conversions.Bson;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
@@ -68,15 +44,37 @@ import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import org.bson.BsonDocument;
+import org.bson.BsonDocumentWriter;
+import org.bson.codecs.Codec;
+import org.bson.codecs.EncoderContext;
+import org.bson.codecs.configuration.CodecRegistries;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.PojoCodecProvider;
+import org.bson.conversions.Bson;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 /**
- * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
- * Git like behaviour.
- * The MongoDbStore connects to an external MongoDB server.
+ * This class implements the Store interface that is used by Nessie as a backing store for
+ * versioning of it's Git like behaviour. The MongoDbStore connects to an external MongoDB server.
  */
 public class MongoDBStore implements Store {
   /**
-   * A Subscriber that stores the publishers results and provides a latch so can block on completion.
+   * A Subscriber that stores the publishers results and provides a latch so can block on
+   * completion.
    *
    * <p>Note that this class is taken from the MongoDB Tour:
    * https://github.com/mongodb/mongo-java-driver-reactivestreams/blob/master/examples/tour/src/main/tour/SubscriberHelpers.java
@@ -147,6 +145,7 @@ public class MongoDBStore implements Store {
 
   /**
    * Bson implementation for updates, to allow proper encoding of Nessie objects using codecs.
+   *
    * @param <T> the entity object type.
    */
   private static class UpdateEntityBson<T> implements Bson {
@@ -159,9 +158,12 @@ public class MongoDBStore implements Store {
     }
 
     @Override
-    public <TDocument> BsonDocument toBsonDocument(Class<TDocument> clazz, CodecRegistry codecRegistry) {
-      // Intentionally don't use Updates.setOnInsert as that will result in issues encoding the value entity,
-      // due to codec lookups the MongoDB driver will actually encode the fields of the basic object, not the entity.
+    public <TDocument> BsonDocument toBsonDocument(
+        Class<TDocument> clazz, CodecRegistry codecRegistry) {
+      // Intentionally don't use Updates.setOnInsert as that will result in issues encoding the
+      // value entity,
+      // due to codec lookups the MongoDB driver will actually encode the fields of the basic
+      // object, not the entity.
       final BsonDocumentWriter writer = new BsonDocumentWriter(new BsonDocument());
       writer.writeStartDocument();
       writer.writeName("$setOnInsert");
@@ -193,29 +195,32 @@ public class MongoDBStore implements Store {
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
+   *
    * @param config the configuration for the store.
    */
   public MongoDBStore(MongoStoreConfig config) {
     this.config = config;
     this.timeoutMs = config.getTimeoutMs();
     this.collections = new HashMap<>();
-    final CodecRegistry codecRegistry = CodecRegistries.fromProviders(
-        new CodecProvider(),
-        PojoCodecProvider.builder().automatic(true).build(),
-        MongoClientSettings.getDefaultCodecRegistry());
-    this.mongoClientSettings = MongoClientSettings.builder()
-      .applyConnectionString(new ConnectionString(config.getConnectionString()))
-      .codecRegistry(codecRegistry)
-      .writeConcern(WriteConcern.MAJORITY)
-      .build();
+    final CodecRegistry codecRegistry =
+        CodecRegistries.fromProviders(
+            new CodecProvider(),
+            PojoCodecProvider.builder().automatic(true).build(),
+            MongoClientSettings.getDefaultCodecRegistry());
+    this.mongoClientSettings =
+        MongoClientSettings.builder()
+            .applyConnectionString(new ConnectionString(config.getConnectionString()))
+            .codecRegistry(codecRegistry)
+            .writeConcern(WriteConcern.MAJORITY)
+            .build();
   }
 
   /**
-   * Gets a handle to an existing database or get a handle to a MongoDatabase instance if it does not exist. The new
-   * database will be lazily created.
-   * Since MongoDB creates databases and collections if they do not exist, there is no need to validate the presence of
-   * either before they are used. This creates or retrieves collections that map 1:1 to the enumerates in
-   * {@link com.dremio.nessie.versioned.store.ValueType}
+   * Gets a handle to an existing database or get a handle to a MongoDatabase instance if it does
+   * not exist. The new database will be lazily created. Since MongoDB creates databases and
+   * collections if they do not exist, there is no need to validate the presence of either before
+   * they are used. This creates or retrieves collections that map 1:1 to the enumerates in {@link
+   * com.dremio.nessie.versioned.store.ValueType}
    */
   @Override
   public void start() {
@@ -223,13 +228,17 @@ public class MongoDBStore implements Store {
     mongoDatabase = mongoClient.getDatabase(config.getDatabaseName());
 
     // Initialise collections for each ValueType.
-    typeCollections.forEach((k, v) ->
-        collections.put(k, (MongoCollection<? extends HasId>)mongoDatabase.getCollection(v.apply(config), k.getObjectClass())));
+    typeCollections.forEach(
+        (k, v) ->
+            collections.put(
+                k,
+                (MongoCollection<? extends HasId>)
+                    mongoDatabase.getCollection(v.apply(config), k.getObjectClass())));
   }
 
   /**
-   * Closes the connection this manager creates to a database. If the connection is already closed this method has
-   * no effect.
+   * Closes the connection this manager creates to a database. If the connection is already closed
+   * this method has no effect.
    */
   @Override
   public void close() {
@@ -247,29 +256,41 @@ public class MongoDBStore implements Store {
   public <V> boolean putIfAbsent(ValueType type, V value) {
     final MongoCollection<V> collection = getCollection(type);
 
-    // Use upsert so that a document is created if the filter does not match. The update operator is only $setOnInsert
+    // Use upsert so that a document is created if the filter does not match. The update operator is
+    // only $setOnInsert
     // so no action is triggered on a simple update, only on insert.
-    final UpdateResult result = await(collection.updateOne(
-        Filters.eq(Store.KEY_NAME, ((HasId)value).getId()),
-        new UpdateEntityBson<>((Class<V>)type.getObjectClass(), value),
-        new UpdateOptions().upsert(true))).first();
+    final UpdateResult result =
+        await(
+                collection.updateOne(
+                    Filters.eq(Store.KEY_NAME, ((HasId) value).getId()),
+                    new UpdateEntityBson<>((Class<V>) type.getObjectClass(), value),
+                    new UpdateOptions().upsert(true)))
+            .first();
     return result.getUpsertedId() != null;
   }
 
   @Override
   public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
-    Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
-        "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
+    Preconditions.checkArgument(
+        type.getObjectClass().isAssignableFrom(value.getClass()),
+        "ValueType %s doesn't extend expected type %s.",
+        value.getClass().getName(),
+        type.getObjectClass().getName());
 
     // TODO: Handle ConditionExpressions.
     if (conditionUnAliased.isPresent()) {
-      throw new UnsupportedOperationException("ConditionExpressions are not supported with MongoDB yet.");
+      throw new UnsupportedOperationException(
+          "ConditionExpressions are not supported with MongoDB yet.");
     }
 
     final MongoCollection<V> collection = getCollection(type);
 
     // Use upsert so that if an item does not exist, it will be insert.
-    await(collection.replaceOne(Filters.eq(Store.KEY_NAME, ((HasId)value).getId()), value, new ReplaceOptions().upsert(true)));
+    await(
+        collection.replaceOne(
+            Filters.eq(Store.KEY_NAME, ((HasId) value).getId()),
+            value,
+            new ReplaceOptions().upsert(true)));
   }
 
   @Override
@@ -279,28 +300,34 @@ public class MongoDBStore implements Store {
 
   @Override
   public void save(List<SaveOp<?>> ops) {
-    final ListMultimap<MongoCollection<?>, SaveOp<?>> mm = Multimaps.index(ops, l -> collections.get(l.getType()));
-    final ListMultimap<MongoCollection<?>, Object> collectionWrites = Multimaps.transformValues(mm, SaveOp::getValue);
+    final ListMultimap<MongoCollection<?>, SaveOp<?>> mm =
+        Multimaps.index(ops, l -> collections.get(l.getType()));
+    final ListMultimap<MongoCollection<?>, Object> collectionWrites =
+        Multimaps.transformValues(mm, SaveOp::getValue);
 
     final List<ObservableSubscriber<InsertManyResult>> subscribers = new ArrayList<>();
     for (MongoCollection collection : collectionWrites.keySet()) {
       final ObservableSubscriber<InsertManyResult> subscriber = new ObservableSubscriber<>();
       subscribers.add(subscriber);
 
-      // Ordering of the inserts doesn't matter, so set to unordered to give potential performance improvements.
-      collection.insertMany(collectionWrites.get(collection), new InsertManyOptions().ordered(false)).subscribe(subscriber);
+      // Ordering of the inserts doesn't matter, so set to unordered to give potential performance
+      // improvements.
+      collection
+          .insertMany(collectionWrites.get(collection), new InsertManyOptions().ordered(false))
+          .subscribe(subscriber);
       subscriber.request();
     }
 
     // Wait for each of the writes to have completed.
-    subscribers.forEach(s -> {
-      try {
-        s.await(this.timeoutMs);
-      } catch (Throwable throwable) {
-        Throwables.throwIfUnchecked(throwable);
-        throw new RuntimeException(throwable);
-      }
-    });
+    subscribers.forEach(
+        s -> {
+          try {
+            s.await(this.timeoutMs);
+          } catch (Throwable throwable) {
+            Throwables.throwIfUnchecked(throwable);
+            throw new RuntimeException(throwable);
+          }
+        });
   }
 
   @Override
@@ -315,7 +342,8 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
+  public <V> Optional<V> update(
+      ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
       throws NotFoundException {
     throw new UnsupportedOperationException();
   }
@@ -323,19 +351,21 @@ public class MongoDBStore implements Store {
   @Override
   public Stream<InternalRef> getRefs() {
     // TODO: Can this be optimized to not collect the elements before streaming them?
-    return await(((MongoCollection<InternalRef>)getCollection(ValueType.REF)).find()).getReceived().stream();
+    return await(((MongoCollection<InternalRef>) getCollection(ValueType.REF)).find())
+        .getReceived()
+        .stream();
   }
 
-  /**
-   * Clear the contents of all the Nessie collections. Only for testing purposes.
-   */
+  /** Clear the contents of all the Nessie collections. Only for testing purposes. */
   @VisibleForTesting
   void resetCollections() {
     collections.forEach((k, v) -> await(v.deleteMany(Filters.ne("_id", "s"))));
   }
 
   /**
-   * Given an async publisher, wait for results to arrive and return the subscriber with the result..
+   * Given an async publisher, wait for results to arrive and return the subscriber with the
+   * result..
+   *
    * @param publisher the publisher to wait for results with.
    * @param <T> the type of the result from the publisher.
    * @return the subscriber containing the results of the publisher.
@@ -354,7 +384,8 @@ public class MongoDBStore implements Store {
   private MongoCollection getCollection(ValueType valueType) {
     final MongoCollection collection = collections.get(valueType);
     if (null == collection) {
-      throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
+      throw new UnsupportedOperationException(
+          String.format("Unsupported Entity type: %s", valueType.name()));
     }
     return collection;
   }

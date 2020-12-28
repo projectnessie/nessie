@@ -17,15 +17,6 @@ package com.dremio.nessie.versioned.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.SampleEntities;
@@ -36,19 +27,25 @@ import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
- * Common class for testing public APIs of a Store.
- * This class should be moved to the versioned/tests project when it will not introduce a circular dependency.
+ * Common class for testing public APIs of a Store. This class should be moved to the
+ * versioned/tests project when it will not introduce a circular dependency.
+ *
  * @param <S> The type of the Store being tested.
  */
 public abstract class AbstractTestStore<S extends Store> {
   private Random random;
   protected S store;
 
-  /**
-   * Create and start the store, if not already done.
-   */
+  /** Create and start the store, if not already done. */
   @BeforeEach
   public void setup() {
     if (store == null) {
@@ -58,9 +55,7 @@ public abstract class AbstractTestStore<S extends Store> {
     }
   }
 
-  /**
-   * Reset the state of the store.
-   */
+  /** Reset the state of the store. */
   @AfterEach
   public void reset() {
     resetStoreState();
@@ -157,23 +152,24 @@ public abstract class AbstractTestStore<S extends Store> {
     final L1 l1 = SampleEntities.createL1(random);
     final InternalRef branch = SampleEntities.createBranch(random);
     final InternalRef tag = SampleEntities.createTag(random);
-    final List<SaveOp<?>> saveOps = ImmutableList.of(
-        new SaveOp<>(ValueType.L1, l1),
-        new SaveOp<>(ValueType.REF, branch),
-        new SaveOp<>(ValueType.REF, tag)
-    );
+    final List<SaveOp<?>> saveOps =
+        ImmutableList.of(
+            new SaveOp<>(ValueType.L1, l1),
+            new SaveOp<>(ValueType.REF, branch),
+            new SaveOp<>(ValueType.REF, tag));
     store.save(saveOps);
 
-    saveOps.forEach(s -> {
-      try {
-        final SimpleSchema<Object> schema = s.getType().getSchema();
-        assertEquals(
-            schema.itemToMap(s.getValue(), true),
-            schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
-      } catch (NotFoundException e) {
-        Assertions.fail(e);
-      }
-    });
+    saveOps.forEach(
+        s -> {
+          try {
+            final SimpleSchema<Object> schema = s.getType().getSchema();
+            assertEquals(
+                schema.itemToMap(s.getValue(), true),
+                schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
+          } catch (NotFoundException e) {
+            Assertions.fail(e);
+          }
+        });
   }
 
   private <T extends HasId> void putThenLoad(T sample, ValueType type) {

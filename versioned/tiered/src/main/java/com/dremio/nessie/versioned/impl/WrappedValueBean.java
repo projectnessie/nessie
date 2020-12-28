@@ -15,22 +15,21 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.BiFunction;
-
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.BiFunction;
 
 /**
- * A base implementation of a opaque byte object stored in the VersionStore. Used for both for commit metadata and values.
+ * A base implementation of a opaque byte object stored in the VersionStore. Used for both for
+ * commit metadata and values.
  *
  * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.
- *
  */
 abstract class WrappedValueBean extends MemoizedId {
 
@@ -40,7 +39,9 @@ abstract class WrappedValueBean extends MemoizedId {
   protected WrappedValueBean(Id id, ByteString value) {
     super(id);
     this.value = value;
-    Preconditions.checkArgument(value.size() < MAX_SIZE, "Values and commit metadata must be less than 256K once serialized.");
+    Preconditions.checkArgument(
+        value.size() < MAX_SIZE,
+        "Values and commit metadata must be less than 256K once serialized.");
   }
 
   public ByteString getBytes() {
@@ -49,15 +50,17 @@ abstract class WrappedValueBean extends MemoizedId {
 
   /**
    * Return a consistent hash seed for this object type to avoid accidental object hash conflicts.
+   *
    * @return A seed value that is consistent for this object type.
    */
   protected abstract long getSeed();
 
   @Override
   Id generateId() {
-    return Id.build(h -> {
-      h.putLong(getSeed()).putBytes(value.asReadOnlyByteBuffer());
-    });
+    return Id.build(
+        h -> {
+          h.putLong(getSeed()).putBytes(value.asReadOnlyByteBuffer());
+        });
   }
 
   @Override
@@ -74,8 +77,7 @@ abstract class WrappedValueBean extends MemoizedId {
       return false;
     }
     WrappedValueBean other = (WrappedValueBean) obj;
-    return Objects.equals(getSeed(),  other.getSeed())
-        && Objects.equals(value, other.value);
+    return Objects.equals(getSeed(), other.getSeed()) && Objects.equals(value, other.value);
   }
 
   protected static class WrappedValueSchema<T extends WrappedValueBean> extends SimpleSchema<T> {
@@ -91,7 +93,8 @@ abstract class WrappedValueBean extends MemoizedId {
 
     @Override
     public T deserialize(Map<String, Entity> attributeMap) {
-      return deserializer.apply(Id.fromEntity(attributeMap.get(ID)), attributeMap.get(VALUE).getBinary());
+      return deserializer.apply(
+          Id.fromEntity(attributeMap.get(ID)), attributeMap.get(VALUE).getBinary());
     }
 
     @Override

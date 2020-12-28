@@ -18,12 +18,9 @@ package com.dremio.nessie.quarkus.maven;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
-
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-/**
- * A config source to override default application when using apprunner.
- */
+/** A config source to override default application when using apprunner. */
 public class MojoConfigSource implements ConfigSource {
   private static volatile Properties properties = new Properties();
 
@@ -53,5 +50,4 @@ public class MojoConfigSource implements ConfigSource {
   public int getOrdinal() {
     return Integer.MAX_VALUE;
   }
-
 }

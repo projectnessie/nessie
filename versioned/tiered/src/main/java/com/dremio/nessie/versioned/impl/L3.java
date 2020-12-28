@@ -15,13 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
@@ -31,6 +24,12 @@ import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class L3 extends MemoizedId {
 
@@ -61,6 +60,7 @@ public class L3 extends MemoizedId {
 
   /**
    * Get the key if it exists.
+   *
    * @param id The id of the key to retrieve
    * @return If the key exists, provide. Else, provide Optional.empty()
    */
@@ -90,80 +90,87 @@ public class L3 extends MemoizedId {
     return new L3(newMap);
   }
 
-  /**
-   * An Id constructed of the key + id in sorted order.
-   */
+  /** An Id constructed of the key + id in sorted order. */
   @Override
   Id generateId() {
-    return Id.build(hasher -> {
-      hasher.putLong(HASH_SEED);
-      map.forEach((key, delta) -> {
-        if (delta.getNewId().isEmpty()) {
-          return;
-        }
+    return Id.build(
+        hasher -> {
+          hasher.putLong(HASH_SEED);
+          map.forEach(
+              (key, delta) -> {
+                if (delta.getNewId().isEmpty()) {
+                  return;
+                }
 
-        InternalKey.addToHasher(key, hasher);
-        hasher.putBytes(delta.getNewId().getValue().asReadOnlyByteBuffer());
-      });
-    });
+                InternalKey.addToHasher(key, hasher);
+                hasher.putBytes(delta.getNewId().getValue().asReadOnlyByteBuffer());
+              });
+        });
   }
 
+  public static final SimpleSchema<L3> SCHEMA =
+      new SimpleSchema<L3>(L3.class) {
 
-  public static final SimpleSchema<L3> SCHEMA = new SimpleSchema<L3>(L3.class) {
+        private static final String ID = "id";
+        private static final String TREE = "tree";
+        private static final String TREE_KEY = "key";
+        private static final String TREE_ID = "id";
 
-    private static final String ID = "id";
-    private static final String TREE = "tree";
-    private static final String TREE_KEY = "key";
-    private static final String TREE_ID = "id";
+        @Override
+        public L3 deserialize(Map<String, Entity> attributeMap) {
+          TreeMap<InternalKey, PositionDelta> tree =
+              attributeMap.get(TREE).getList().stream()
+                  .map(av -> av.getMap())
+                  .collect(
+                      Collectors.toMap(
+                          m -> InternalKey.fromEntity(m.get(TREE_KEY)),
+                          m -> PositionDelta.of(0, Id.fromEntity(m.get(TREE_ID))),
+                          (a, b) -> {
+                            throw new UnsupportedOperationException();
+                          },
+                          TreeMap::new));
 
-    @Override
-    public L3 deserialize(Map<String, Entity> attributeMap) {
-      TreeMap<InternalKey, PositionDelta> tree = attributeMap.get(TREE).getList().stream().map(av -> av.getMap()).collect(Collectors.toMap(
-          m -> InternalKey.fromEntity(m.get(TREE_KEY)),
-          m -> PositionDelta.of(0, Id.fromEntity(m.get(TREE_ID))),
-          (a,b) -> {
-            throw new UnsupportedOperationException();
-          },
-          TreeMap::new));
+          return new L3(Id.fromEntity(attributeMap.get(ID)), tree);
+        }
 
-      return new L3(
-          Id.fromEntity(attributeMap.get(ID)),
-          tree
-      );
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(L3 item, boolean ignoreNulls) {
-      List<Entity> values = item.map.entrySet().stream()
-          .filter(e -> !e.getValue().getNewId().isEmpty())
-          .map(e -> {
-            InternalKey key = e.getKey();
-            PositionDelta pm = e.getValue();
-            Map<String, Entity> pmm = ImmutableMap.of(
-                TREE_KEY, key.toEntity(),
-                TREE_ID, pm.getNewId().toEntity());
-            return Entity.ofMap(pmm);
-          }).collect(Collectors.toList());
-      return ImmutableMap.<String, Entity>builder()
-          .put(TREE, Entity.ofList(values))
-          .put(ID, item.getId().toEntity())
-          .build();
-    }
-
-  };
+        @Override
+        public Map<String, Entity> itemToMap(L3 item, boolean ignoreNulls) {
+          List<Entity> values =
+              item.map.entrySet().stream()
+                  .filter(e -> !e.getValue().getNewId().isEmpty())
+                  .map(
+                      e -> {
+                        InternalKey key = e.getKey();
+                        PositionDelta pm = e.getValue();
+                        Map<String, Entity> pmm =
+                            ImmutableMap.of(
+                                TREE_KEY, key.toEntity(),
+                                TREE_ID, pm.getNewId().toEntity());
+                        return Entity.ofMap(pmm);
+                      })
+                  .collect(Collectors.toList());
+          return ImmutableMap.<String, Entity>builder()
+              .put(TREE, Entity.ofList(values))
+              .put(ID, item.getId().toEntity())
+              .build();
+        }
+      };
 
   Stream<KeyMutation> getMutations() {
-    return map.entrySet().stream().filter(e -> e.getValue().wasAddedOrRemoved())
-        .map(e -> {
-          PositionDelta d = e.getValue();
-          if (d.wasAdded()) {
-            return KeyAddition.of(e.getKey());
-          } else if (d.wasRemoved()) {
-            return KeyRemoval.of(e.getKey());
-          } else {
-            throw new IllegalStateException("This list should have been filtered to only items that were either added or removed.");
-          }
-        });
+    return map.entrySet().stream()
+        .filter(e -> e.getValue().wasAddedOrRemoved())
+        .map(
+            e -> {
+              PositionDelta d = e.getValue();
+              if (d.wasAdded()) {
+                return KeyAddition.of(e.getKey());
+              } else if (d.wasRemoved()) {
+                return KeyRemoval.of(e.getKey());
+              } else {
+                throw new IllegalStateException(
+                    "This list should have been filtered to only items that were either added or removed.");
+              }
+            });
   }
 
   Stream<InternalKey> getKeys() {
@@ -172,6 +179,7 @@ public class L3 extends MemoizedId {
 
   /**
    * return the number of keys defined.
+   *
    * @return
    */
   int size() {
@@ -181,17 +189,18 @@ public class L3 extends MemoizedId {
   /**
    * Get a list of all the key to valueId differences between two L3s.
    *
-   * <p>This returns the difference between the updated (not original) state of the two L3s (if the L3s have been mutated).
+   * <p>This returns the difference between the updated (not original) state of the two L3s (if the
+   * L3s have been mutated).
    *
    * @param from The initial tree state.
    * @param to The final tree state.
    * @return The differences when going from initial to final state.
    */
   public static Stream<KeyDiff> compare(L3 from, L3 to) {
-    MapDifference<InternalKey, Id> difference =  Maps.difference(
-        Maps.transformValues(from.map, p -> p.getNewId()),
-        Maps.transformValues(to.map, p -> p.getNewId())
-        );
+    MapDifference<InternalKey, Id> difference =
+        Maps.difference(
+            Maps.transformValues(from.map, p -> p.getNewId()),
+            Maps.transformValues(to.map, p -> p.getNewId()));
     return Stream.concat(
         difference.entriesDiffering().entrySet().stream().map(KeyDiff::new),
         Stream.concat(

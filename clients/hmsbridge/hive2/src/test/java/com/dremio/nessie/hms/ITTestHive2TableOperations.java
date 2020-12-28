@@ -15,25 +15,26 @@
  */
 package com.dremio.nessie.hms;
 
+import com.dremio.nessie.client.NessieClient;
+import com.google.common.collect.ImmutableMap;
+import com.klarna.hiverunner.annotations.HiveProperties;
 import java.util.Map;
 import java.util.function.Function;
-
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.Hive2NessieRawStore;
 
-import com.dremio.nessie.client.NessieClient;
-import com.google.common.collect.ImmutableMap;
-import com.klarna.hiverunner.annotations.HiveProperties;
-
 public class ITTestHive2TableOperations extends BaseTableOperations {
 
   @HiveProperties
-  public static final Map<String, String> properties = ImmutableMap.<String, String>builder()
-      .put(HiveConf.ConfVars.METASTORE_RAW_STORE_IMPL.varname, Hive2NessieRawStore.class.getName())
-      .put("hive.exec.dynamic.partition.mode","nonstrict")
-      .put(NessieClient.CONF_NESSIE_URL, URL)
-      .build();
+  public static final Map<String, String> properties =
+      ImmutableMap.<String, String>builder()
+          .put(
+              HiveConf.ConfVars.METASTORE_RAW_STORE_IMPL.varname,
+              Hive2NessieRawStore.class.getName())
+          .put("hive.exec.dynamic.partition.mode", "nonstrict")
+          .put(NessieClient.CONF_NESSIE_URL, URL)
+          .build();
 
   @BeforeAll
   static void setupNessieClient() {
@@ -44,5 +45,4 @@ public class ITTestHive2TableOperations extends BaseTableOperations {
   protected Function<String, String> configFunction() {
     return properties::get;
   }
-
 }

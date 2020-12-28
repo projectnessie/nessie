@@ -19,16 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dremio.nessie.versioned.LocalDynamoDB;
+import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import com.dremio.nessie.versioned.LocalDynamoDB;
-import com.google.common.collect.ImmutableMap;
-
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
@@ -41,8 +38,11 @@ public class ITTestProjectionCondition {
 
   private void insertToy(DynamoDbClient client, TestInfo info) {
     final String tableName = info.getTestMethod().get().getName();
-    DynamoDbTable<Toy> table = DynamoDbEnhancedClient.builder().dynamoDbClient(client).build()
-        .table(tableName, TableSchema.fromBean(Toy.class));
+    DynamoDbTable<Toy> table =
+        DynamoDbEnhancedClient.builder()
+            .dynamoDbClient(client)
+            .build()
+            .table(tableName, TableSchema.fromBean(Toy.class));
     table.createTable();
     Toy t = new Toy();
     t.setStr("foo");
@@ -65,15 +65,22 @@ public class ITTestProjectionCondition {
   void projectFewFields(DynamoDbClient client, TestInfo info) {
     insertToy(client, info);
     final String tableName = info.getTestMethod().get().getName();
-    Map<String, AttributeValue> values = client.getItem(GetItemRequest.builder()
-            .tableName(tableName)
-            .projectionExpression(ProjectionExpression.builder()
-                .addPaths(ExpressionPath.builder("str").build())
-                .addPaths(ExpressionPath.builder("abort1").build())
-                .build().toProjectionExpression())
-            .key(ImmutableMap.<String, AttributeValue>of("id", AttributeValue.builder().s("1").build()))
-            .build()
-            ).item();
+    Map<String, AttributeValue> values =
+        client
+            .getItem(
+                GetItemRequest.builder()
+                    .tableName(tableName)
+                    .projectionExpression(
+                        ProjectionExpression.builder()
+                            .addPaths(ExpressionPath.builder("str").build())
+                            .addPaths(ExpressionPath.builder("abort1").build())
+                            .build()
+                            .toProjectionExpression())
+                    .key(
+                        ImmutableMap.<String, AttributeValue>of(
+                            "id", AttributeValue.builder().s("1").build()))
+                    .build())
+            .item();
     assertEquals(AttributeValue.builder().s("foo").build(), values.get("str"));
     assertEquals(null, values.get("baubles"));
   }
@@ -82,14 +89,21 @@ public class ITTestProjectionCondition {
   void projectList(DynamoDbClient client, TestInfo info) {
     insertToy(client, info);
     final String tableName = info.getTestMethod().get().getName();
-    Map<String, AttributeValue> values = client.getItem(GetItemRequest.builder()
-            .tableName(tableName)
-            .projectionExpression(ProjectionExpression.builder()
-                .addPaths(ExpressionPath.builder("baubles").build())
-                .build().toProjectionExpression())
-            .key(ImmutableMap.<String, AttributeValue>of("id", AttributeValue.builder().s("1").build()))
-            .build()
-            ).item();
+    Map<String, AttributeValue> values =
+        client
+            .getItem(
+                GetItemRequest.builder()
+                    .tableName(tableName)
+                    .projectionExpression(
+                        ProjectionExpression.builder()
+                            .addPaths(ExpressionPath.builder("baubles").build())
+                            .build()
+                            .toProjectionExpression())
+                    .key(
+                        ImmutableMap.<String, AttributeValue>of(
+                            "id", AttributeValue.builder().s("1").build()))
+                    .build())
+            .item();
     Toy toy = TableSchema.fromBean(Toy.class).mapToItem(values);
     assertNotEquals(null, toy.getBaubles());
     assertEquals(4, toy.getBaubles().size());
@@ -99,32 +113,38 @@ public class ITTestProjectionCondition {
     assertEquals("d", toy.getBaubles().get(3).getId());
   }
 
-
   @Test
   void projectSecondListItem(DynamoDbClient client, TestInfo info) {
     insertToy(client, info);
     final String tableName = info.getTestMethod().get().getName();
-    Map<String, AttributeValue> values = client.getItem(GetItemRequest.builder()
-            .tableName(tableName)
-            .projectionExpression(ProjectionExpression.builder()
-                .addPaths(ExpressionPath.builder("str").build())
-                .addPaths(ExpressionPath.builder("baubles").position(1).build())
-                .addPaths(ExpressionPath.builder("baubles").position(3).build())
-                .build().toProjectionExpression())
-            .key(ImmutableMap.<String, AttributeValue>of("id", AttributeValue.builder().s("1").build()))
+    Map<String, AttributeValue> values =
+        client
+            .getItem(
+                GetItemRequest.builder()
+                    .tableName(tableName)
+                    .projectionExpression(
+                        ProjectionExpression.builder()
+                            .addPaths(ExpressionPath.builder("str").build())
+                            .addPaths(ExpressionPath.builder("baubles").position(1).build())
+                            .addPaths(ExpressionPath.builder("baubles").position(3).build())
+                            .build()
+                            .toProjectionExpression())
+                    .key(
+                        ImmutableMap.<String, AttributeValue>of(
+                            "id", AttributeValue.builder().s("1").build()))
+                    .build())
+            .item();
+    System.out.println(
+        ProjectionExpression.builder()
+            .addPaths(ExpressionPath.builder("str").build())
+            .addPaths(ExpressionPath.builder("baubles").position(1).build())
+            .addPaths(ExpressionPath.builder("baubles").position(3).build())
             .build()
-            ).item();
-    System.out.println(ProjectionExpression.builder()
-        .addPaths(ExpressionPath.builder("str").build())
-        .addPaths(ExpressionPath.builder("baubles").position(1).build())
-        .addPaths(ExpressionPath.builder("baubles").position(3).build())
-        .build().toString());
+            .toString());
     Toy toy = TableSchema.fromBean(Toy.class).mapToItem(values);
     assertTrue(toy.getBaubles().size() == 2);
 
     assertEquals("b", toy.getBaubles().get(0).getId());
     assertEquals("d", toy.getBaubles().get(1).getId());
   }
-
-
 }

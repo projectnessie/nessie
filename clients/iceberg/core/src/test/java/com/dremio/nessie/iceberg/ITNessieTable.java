@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.iceberg;
-
 
 import static org.apache.iceberg.TableMetadataParser.getFileExtension;
 import static org.apache.iceberg.types.Types.NestedField.optional;
 import static org.apache.iceberg.types.Types.NestedField.required;
 
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.IcebergTable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -28,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.hadoop.fs.Path;
@@ -51,12 +53,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.error.NessieConflictException;
-import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.ContentsKey;
-import com.dremio.nessie.model.IcebergTable;
-
 class ITNessieTable extends BaseTestIceberg {
 
   private static final String BRANCH = "iceberg-table-test";
@@ -65,10 +61,14 @@ class ITNessieTable extends BaseTestIceberg {
   private static final String TABLE_NAME = "tbl";
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of(DB_NAME, TABLE_NAME);
   private static final ContentsKey KEY = ContentsKey.of(DB_NAME, TABLE_NAME);
-  private static final Schema schema = new Schema(Types.StructType.of(required(1, "id", Types.LongType.get())).fields());
-  private static final Schema altered = new Schema(Types.StructType.of(
-      required(1, "id", Types.LongType.get()),
-      optional(2, "data", Types.LongType.get())).fields());
+  private static final Schema schema =
+      new Schema(Types.StructType.of(required(1, "id", Types.LongType.get())).fields());
+  private static final Schema altered =
+      new Schema(
+          Types.StructType.of(
+                  required(1, "id", Types.LongType.get()),
+                  optional(2, "data", Types.LongType.get()))
+              .fields());
 
   private Path tableLocation;
 
@@ -94,10 +94,9 @@ class ITNessieTable extends BaseTestIceberg {
     super.afterEach();
   }
 
-  private com.dremio.nessie.model.IcebergTable getTable(ContentsKey key) throws NessieNotFoundException {
-    return client.getContentsApi()
-        .getContents(key, BRANCH)
-        .unwrap(IcebergTable.class).get();
+  private com.dremio.nessie.model.IcebergTable getTable(ContentsKey key)
+      throws NessieNotFoundException {
+    return client.getContentsApi().getContents(key, BRANCH).unwrap(IcebergTable.class).get();
   }
 
   @Test
@@ -110,23 +109,22 @@ class ITNessieTable extends BaseTestIceberg {
     icebergTable.updateSchema().addColumn("mother", Types.LongType.get()).commit();
     IcebergTable table = getTable(KEY);
     // check parameters are in expected state
-    Assertions.assertEquals(getTableLocation(tableName),
-                            (ALLEY_LOCAL_DIR.toURI().toString() + "iceberg/warehouse/" + DB_NAME + "/"
-                             + tableName).replace("//",
-                                                  "/"));
+    Assertions.assertEquals(
+        getTableLocation(tableName),
+        (ALLEY_LOCAL_DIR.toURI().toString() + "iceberg/warehouse/" + DB_NAME + "/" + tableName)
+            .replace("//", "/"));
 
     // Only 1 snapshotFile Should exist and no manifests should exist
     Assertions.assertEquals(2, metadataVersionFiles(tableName).size());
     Assertions.assertEquals(0, manifestFiles(tableName).size());
   }
 
-
   @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
   public void testRename() {
     String renamedTableName = "rename_table_name";
-    TableIdentifier renameTableIdentifier = TableIdentifier.of(TABLE_IDENTIFIER.namespace(),
-                                                               renamedTableName);
+    TableIdentifier renameTableIdentifier =
+        TableIdentifier.of(TABLE_IDENTIFIER.namespace(), renamedTableName);
 
     Table original = catalog.loadTable(TABLE_IDENTIFIER);
 
@@ -163,20 +161,19 @@ class ITNessieTable extends BaseTestIceberg {
     records.add(recordBuilder.set("id", 3L).build());
 
     String fileLocation = table.location().replace("file:", "") + "/data/file.avro";
-    try (FileAppender<GenericData.Record> writer = Avro.write(Files.localOutput(fileLocation))
-                                                       .schema(schema)
-                                                       .named("test")
-                                                       .build()) {
+    try (FileAppender<GenericData.Record> writer =
+        Avro.write(Files.localOutput(fileLocation)).schema(schema).named("test").build()) {
       for (GenericData.Record rec : records) {
         writer.add(rec);
       }
     }
 
-    DataFile file = DataFiles.builder(table.spec())
-                             .withRecordCount(3)
-                             .withPath(fileLocation)
-                             .withFileSizeInBytes(Files.localInput(fileLocation).getLength())
-                             .build();
+    DataFile file =
+        DataFiles.builder(table.spec())
+            .withRecordCount(3)
+            .withPath(fileLocation)
+            .withFileSizeInBytes(Files.localInput(fileLocation).getLength())
+            .build();
 
     table.newAppend().appendFile(file).commit();
 
@@ -189,7 +186,6 @@ class ITNessieTable extends BaseTestIceberg {
     Assertions.assertTrue(new File(fileLocation).exists());
     Assertions.assertTrue(new File(manifestListLocation).exists());
   }
-
 
   @SuppressWarnings("VariableDeclarationUsageDistance")
   @Test
@@ -204,36 +200,34 @@ class ITNessieTable extends BaseTestIceberg {
     records.add(recordBuilder.set("id", 3L).build());
 
     String location1 = table.location().replace("file:", "") + "/data/file1.avro";
-    try (FileAppender<GenericData.Record> writer = Avro.write(Files.localOutput(location1))
-                                                       .schema(schema)
-                                                       .named("test")
-                                                       .build()) {
+    try (FileAppender<GenericData.Record> writer =
+        Avro.write(Files.localOutput(location1)).schema(schema).named("test").build()) {
       for (GenericData.Record rec : records) {
         writer.add(rec);
       }
     }
 
     String location2 = table.location().replace("file:", "") + "/data/file2.avro";
-    try (FileAppender<GenericData.Record> writer = Avro.write(Files.localOutput(location2))
-                                                       .schema(schema)
-                                                       .named("test")
-                                                       .build()) {
+    try (FileAppender<GenericData.Record> writer =
+        Avro.write(Files.localOutput(location2)).schema(schema).named("test").build()) {
       for (GenericData.Record rec : records) {
         writer.add(rec);
       }
     }
 
-    DataFile file1 = DataFiles.builder(table.spec())
-                              .withRecordCount(3)
-                              .withPath(location1)
-                              .withFileSizeInBytes(Files.localInput(location2).getLength())
-                              .build();
+    DataFile file1 =
+        DataFiles.builder(table.spec())
+            .withRecordCount(3)
+            .withPath(location1)
+            .withFileSizeInBytes(Files.localInput(location2).getLength())
+            .build();
 
-    DataFile file2 = DataFiles.builder(table.spec())
-                              .withRecordCount(3)
-                              .withPath(location2)
-                              .withFileSizeInBytes(Files.localInput(location1).getLength())
-                              .build();
+    DataFile file2 =
+        DataFiles.builder(table.spec())
+            .withRecordCount(3)
+            .withPath(location2)
+            .withFileSizeInBytes(Files.localInput(location1).getLength())
+            .build();
 
     // add both data files
     table.newAppend().appendFile(file1).appendFile(file2).commit();
@@ -255,12 +249,14 @@ class ITNessieTable extends BaseTestIceberg {
     for (ManifestFile manifest : manifests) {
       Assertions.assertFalse(new File(manifest.path().replace("file:", "")).exists());
     }
-    Assertions.assertFalse(new File(
-        ((HasTableOperations) table).operations()
-                                  .current()
-                                  .metadataFileLocation()
-                                  .replace("file:", ""))
-                             .exists());
+    Assertions.assertFalse(
+        new File(
+                ((HasTableOperations) table)
+                    .operations()
+                    .current()
+                    .metadataFileLocation()
+                    .replace("file:", ""))
+            .exists());
   }
 
   @Test
@@ -275,7 +271,6 @@ class ITNessieTable extends BaseTestIceberg {
     Assertions.assertEquals(2, metadataVersionFiles(TABLE_NAME).size());
     Assertions.assertEquals(0, manifestFiles(TABLE_NAME).size());
     Assertions.assertEquals(altered.asStruct(), icebergTable.schema().asStruct());
-
   }
 
   @Test
@@ -283,23 +278,30 @@ class ITNessieTable extends BaseTestIceberg {
     Table icebergTable = catalog.loadTable(TABLE_IDENTIFIER);
     Branch branch = (Branch) client.getTreeApi().getReferenceByName(BRANCH);
 
-    IcebergTable table = client.getContentsApi().getContents(KEY, BRANCH).unwrap(IcebergTable.class).get();
+    IcebergTable table =
+        client.getContentsApi().getContents(KEY, BRANCH).unwrap(IcebergTable.class).get();
 
-    client.getContentsApi().setContents(KEY, branch.getName(), branch.getHash(), "", IcebergTable.of("dummytable.metadata.json"));
+    client
+        .getContentsApi()
+        .setContents(
+            KEY,
+            branch.getName(),
+            branch.getHash(),
+            "",
+            IcebergTable.of("dummytable.metadata.json"));
 
-    Assertions.assertThrows(CommitFailedException.class,
+    Assertions.assertThrows(
+        CommitFailedException.class,
         () -> icebergTable.updateSchema().addColumn("data", Types.LongType.get()).commit());
   }
 
   @Test
   public void testListTables() {
     List<TableIdentifier> tableIdents = catalog.listTables(TABLE_IDENTIFIER.namespace());
-    List<TableIdentifier> expectedIdents = tableIdents.stream()
-                                                      .filter(t -> t.namespace()
-                                                                    .level(0)
-                                                                    .equals(DB_NAME)
-                                                                   && t.name().equals(TABLE_NAME))
-                                                      .collect(Collectors.toList());
+    List<TableIdentifier> expectedIdents =
+        tableIdents.stream()
+            .filter(t -> t.namespace().level(0).equals(DB_NAME) && t.name().equals(TABLE_NAME))
+            .collect(Collectors.toList());
 
     Assertions.assertEquals(1, expectedIdents.size());
     Assertions.assertTrue(catalog.tableExists(TABLE_IDENTIFIER));
@@ -324,8 +326,8 @@ class ITNessieTable extends BaseTestIceberg {
 
   private static List<String> metadataFiles(String tableName) {
     return Arrays.stream(new File(metadataLocation(tableName)).listFiles())
-                 .map(File::getAbsolutePath)
-                 .collect(Collectors.toList());
+        .map(File::getAbsolutePath)
+        .collect(Collectors.toList());
   }
 
   protected static List<String> metadataVersionFiles(String tableName) {
@@ -337,10 +339,8 @@ class ITNessieTable extends BaseTestIceberg {
   }
 
   private static List<String> filterByExtension(String tableName, String extension) {
-    return metadataFiles(tableName)
-      .stream()
-      .filter(f -> f.endsWith(extension))
-      .collect(Collectors.toList());
+    return metadataFiles(tableName).stream()
+        .filter(f -> f.endsWith(extension))
+        .collect(Collectors.toList());
   }
-
 }

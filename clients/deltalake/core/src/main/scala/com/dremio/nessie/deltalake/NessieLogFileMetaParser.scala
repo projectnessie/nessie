@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,12 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.delta.storage.LogStore
 import org.apache.spark.sql.delta.{LogFileMeta, LogFileMetaParser}
 
-class NessieLogFileMetaParser(val logStore: LogStore) extends LogFileMetaParser(logStore = logStore) {
-  require(logStore.isInstanceOf[NessieLogStore],
-  "LogStore for NessieLogFileMetaParser must be a NessieLogStore")
+class NessieLogFileMetaParser(val logStore: LogStore)
+    extends LogFileMetaParser(logStore = logStore) {
+  require(
+    logStore.isInstanceOf[NessieLogStore],
+    "LogStore for NessieLogFileMetaParser must be a NessieLogStore"
+  )
 
   override def listFilesFrom(logPath: Path): Iterator[LogFileMeta] = {
     logStore.asInstanceOf[NessieLogStore].listFilesFrom(logPath)

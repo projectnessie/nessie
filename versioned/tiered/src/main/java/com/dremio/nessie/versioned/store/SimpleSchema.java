@@ -15,23 +15,22 @@
  */
 package com.dremio.nessie.versioned.store;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 
 /**
  * Abstract class for converting to/from an object to a Map&gt;String, Entity&lt;.
  *
  * <p>Inspired by Dynamo's extended library and originally extended from it.
+ *
  * @param <T> The value type to be serialized/deserialized.
  */
 public abstract class SimpleSchema<T> {
 
-  public SimpleSchema(Class<T> clazz) {
-  }
+  public SimpleSchema(Class<T> clazz) {}
 
   public Map<String, Entity> itemToMap(T item, Collection<String> attributes) {
     Set<String> include = ImmutableSet.copyOf(attributes);
@@ -46,14 +45,11 @@ public abstract class SimpleSchema<T> {
 
   protected abstract T deserialize(Map<String, Entity> attributeMap);
 
-
   public Entity entity(T item, String key) {
     return itemToMap(item, true).get(key);
   }
 
-  /**
-   * A map which throws if a requested value is missing rather than returning null.
-   */
+  /** A map which throws if a requested value is missing rather than returning null. */
   private static class NullAlertingMap implements Map<String, Entity> {
 
     private final Map<String, Entity> delegate;

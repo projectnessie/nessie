@@ -13,18 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.server;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.util.Arrays;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.Contents;
@@ -39,13 +32,16 @@ import com.dremio.nessie.model.Operation.Put;
 import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Tag;
-
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.util.Arrays;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 public class RestGitTest {
@@ -63,68 +59,91 @@ public class RestGitTest {
     rest().get("trees/tree/mainx").then().statusCode(404);
     rest().body(Branch.of("mainx", null)).post("trees/tree").then().statusCode(204);
 
-    Reference[] references = rest().get("trees").then().statusCode(200).extract().as(Reference[].class);
+    Reference[] references =
+        rest().get("trees").then().statusCode(200).extract().as(Reference[].class);
     Assertions.assertEquals(preSize + 1, references.length);
 
-    Reference reference = rest().get("trees/tree/mainx").then()
-                 .statusCode(200)
-                 .extract()
-                 .as(Reference.class);
+    Reference reference =
+        rest().get("trees/tree/mainx").then().statusCode(200).extract().as(Reference.class);
     assertEquals("mainx", reference.getName());
 
-    Branch newReference = ImmutableBranch.builder()
-        .hash(reference.getHash())
-        .name("test")
-        .build();
-    rest().queryParam("expectedHash", reference.getHash()).body(Branch.of("test", null)).post("trees/tree").then().statusCode(204);
-    assertEquals(newReference, rest().get("trees/tree/test").then()
-           .statusCode(200).extract().as(Branch.class));
+    Branch newReference = ImmutableBranch.builder().hash(reference.getHash()).name("test").build();
+    rest()
+        .queryParam("expectedHash", reference.getHash())
+        .body(Branch.of("test", null))
+        .post("trees/tree")
+        .then()
+        .statusCode(204);
+    assertEquals(
+        newReference,
+        rest().get("trees/tree/test").then().statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = ImmutableIcebergTable.builder()
-                                .metadataLocation("/the/directory/over/there")
-                                .build();
+    IcebergTable table =
+        ImmutableIcebergTable.builder().metadataLocation("/the/directory/over/there").build();
 
     rest()
-      .body(table)
-      .queryParam("branch", newReference.getName()).queryParam("hash", newReference.getHash())
-      .post("contents/xxx.test")
-        .then().statusCode(204);
+        .body(table)
+        .queryParam("branch", newReference.getName())
+        .queryParam("hash", newReference.getHash())
+        .post("contents/xxx.test")
+        .then()
+        .statusCode(204);
 
     Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
       updates[i] =
-          ImmutablePut.builder().key(new ContentsKey(Arrays.asList("item", Integer.toString(i))))
-          .contents(ImmutableIcebergTable.builder()
-                                 .metadataLocation("/the/directory/over/there/" + i)
-                                 .build())
-          .build();
+          ImmutablePut.builder()
+              .key(new ContentsKey(Arrays.asList("item", Integer.toString(i))))
+              .contents(
+                  ImmutableIcebergTable.builder()
+                      .metadataLocation("/the/directory/over/there/" + i)
+                      .build())
+              .build();
     }
-    updates[10] = ImmutablePut.builder().key(new ContentsKey(Arrays.asList("xxx","test")))
-        .contents(ImmutableIcebergTable.builder().metadataLocation("/the/directory/over/there/has/been/moved").build())
-        .build();
+    updates[10] =
+        ImmutablePut.builder()
+            .key(new ContentsKey(Arrays.asList("xxx", "test")))
+            .contents(
+                ImmutableIcebergTable.builder()
+                    .metadataLocation("/the/directory/over/there/has/been/moved")
+                    .build())
+            .build();
 
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
-    Operations contents = ImmutableOperations.builder()
-        .addOperations(updates)
-        .build();
+    Operations contents = ImmutableOperations.builder().addOperations(updates).build();
 
-    rest().body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
-      .then().statusCode(204);
+    rest()
+        .body(contents)
+        .queryParam("expectedHash", branch.getHash())
+        .post("trees/branch/{branch}/commit", branch.getName())
+        .then()
+        .statusCode(204);
 
-    Response res = rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
+    Response res =
+        rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
-    table = ImmutableIcebergTable.builder()
-        .metadataLocation("/the/directory/over/there/has/been/moved/again")
-        .build();
+    table =
+        ImmutableIcebergTable.builder()
+            .metadataLocation("/the/directory/over/there/has/been/moved/again")
+            .build();
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
-    rest().body(table)
-           .queryParam("branch", b2.getName()).queryParam("hash", b2.getHash())
-           .post("contents/xxx.test").then().statusCode(204);
-    Contents returned = rest()
-        .queryParam("ref", "test")
-        .get("contents/xxx.test").then().statusCode(200).extract().as(Contents.class);
+    rest()
+        .body(table)
+        .queryParam("branch", b2.getName())
+        .queryParam("hash", b2.getHash())
+        .post("contents/xxx.test")
+        .then()
+        .statusCode(204);
+    Contents returned =
+        rest()
+            .queryParam("ref", "test")
+            .get("contents/xxx.test")
+            .then()
+            .statusCode(200)
+            .extract()
+            .as(Contents.class);
     Assertions.assertEquals(table, returned);
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
@@ -132,18 +151,30 @@ public class RestGitTest {
 
     rest().get("trees/tree/tagtest").then().statusCode(200).body("hash", equalTo(b3.getHash()));
 
-    rest().queryParam("expectedHash","aa").delete("trees/tag/tagtest").then().statusCode(409);
+    rest().queryParam("expectedHash", "aa").delete("trees/tag/tagtest").then().statusCode(409);
 
-    rest().queryParam("expectedHash", b3.getHash()).delete("trees/tag/tagtest").then().statusCode(204);
+    rest()
+        .queryParam("expectedHash", b3.getHash())
+        .delete("trees/tag/tagtest")
+        .then()
+        .statusCode(204);
 
-
-    LogResponse log = rest().get("trees/tree/test/log").then().statusCode(200).extract().as(LogResponse.class);
+    LogResponse log =
+        rest().get("trees/tree/test/log").then().statusCode(200).extract().as(LogResponse.class);
     Assertions.assertEquals(3, log.getOperations().size());
 
     Branch b1 = rest().get("trees/tree/test").as(Branch.class);
-    rest().queryParam("expectedHash", b1.getHash()).delete("trees/branch/test").then().statusCode(204);
+    rest()
+        .queryParam("expectedHash", b1.getHash())
+        .delete("trees/branch/test")
+        .then()
+        .statusCode(204);
     Branch bx = rest().get("trees/tree/mainx").as(Branch.class);
-    rest().queryParam("expectedHash", bx.getHash()).delete("trees/branch/mainx").then().statusCode(204);
+    rest()
+        .queryParam("expectedHash", bx.getHash())
+        .delete("trees/branch/mainx")
+        .then()
+        .statusCode(204);
   }
 
   private static RequestSpecification rest() {
@@ -152,10 +183,12 @@ public class RestGitTest {
 
   private void commit(Branch b, String path, String metadataUrl) {
     rest()
-      .body(IcebergTable.of(metadataUrl))
-      .queryParam("branch", b.getName()).queryParam("hash", b.getHash())
-      .post("contents/xxx.test")
-      .then().statusCode(204);
+        .body(IcebergTable.of(metadataUrl))
+        .queryParam("branch", b.getName())
+        .queryParam("hash", b.getHash())
+        .post("contents/xxx.test")
+        .then()
+        .statusCode(204);
   }
 
   private Branch getBranch(String name) {
@@ -163,9 +196,7 @@ public class RestGitTest {
   }
 
   private Branch makeBranch(String name) {
-    Branch test = ImmutableBranch.builder()
-        .name(name)
-        .build();
+    Branch test = ImmutableBranch.builder().name(name).build();
     rest().body(test).post("trees/tree").then().statusCode(204);
     return test;
   }
@@ -183,5 +214,4 @@ public class RestGitTest {
     Branch b3 = getBranch("test3");
     commit(b3, "xxx.test", "/the/directory/over/there/has/been/moved/again");
   }
-
 }

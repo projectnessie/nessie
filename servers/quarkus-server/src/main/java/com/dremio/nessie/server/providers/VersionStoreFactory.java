@@ -15,25 +15,6 @@
  */
 package com.dremio.nessie.server.providers;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Optional;
-
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
-import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.server.config.ApplicationConfig;
@@ -49,7 +30,22 @@ import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
-
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Optional;
+import javax.enterprise.inject.Produces;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
+import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
 
 @Singleton
@@ -66,18 +62,16 @@ public class VersionStoreFactory {
 
   @ConfigProperty(name = "quarkus.dynamodb.aws.region")
   String region;
+
   @ConfigProperty(name = "quarkus.dynamodb.endpoint-override")
   Optional<String> endpoint;
-
 
   @Produces
   public StoreWorker<Contents, CommitMeta> worker() {
     return new TableCommitMetaStoreWorker();
   }
 
-  /**
-   * default config for lambda function.
-   */
+  /** default config for lambda function. */
   @Produces
   @Singleton
   public VersionStore<Contents, CommitMeta> configuration(
@@ -95,7 +89,8 @@ public class VersionStoreFactory {
     return store;
   }
 
-  private VersionStore<Contents, CommitMeta> getVersionStore(TableCommitMetaStoreWorker storeWorker, Repository repository) {
+  private VersionStore<Contents, CommitMeta> getVersionStore(
+      TableCommitMetaStoreWorker storeWorker, Repository repository) {
     switch (config.getVersionStoreConfig().getVersionStoreType()) {
       case DYNAMO:
         LOGGER.info("Using Dyanmo Version store");
@@ -110,39 +105,41 @@ public class VersionStoreFactory {
             .valueSerializer(storeWorker.getValueSerializer())
             .build();
       default:
-        throw new RuntimeException(String.format("unknown jgit repo type %s", config.getVersionStoreConfig().getVersionStoreType()));
+        throw new RuntimeException(
+            String.format(
+                "unknown jgit repo type %s", config.getVersionStoreConfig().getVersionStoreType()));
     }
   }
 
-  /**
-   * create a dynamo store based on config.
-   */
+  /** create a dynamo store based on config. */
   private DynamoStore createDynamoConnection() {
     if (!config.getVersionStoreConfig().getVersionStoreType().equals(VersionStoreType.DYNAMO)) {
       return null;
     }
 
-    DynamoStore dynamo = new DynamoStore(DynamoStoreConfig.builder()
-                                            .endpoint(endpoint.map(e -> {
-                                              try {
-                                                return new URI(e);
-                                              } catch (URISyntaxException uriSyntaxException) {
-                                                throw new RuntimeException(uriSyntaxException);
-                                              }
-                                            }))
-                                            .region(Region.of(region))
-                                            .initializeDatabase(config.getVersionStoreDynamoConfig().isDynamoInitialize())
-                                            .refTableName(config.getVersionStoreDynamoConfig().getRefTableName())
-                                            .treeTableName(config.getVersionStoreDynamoConfig().getTreeTableName())
-                                            .valueTableName(config.getVersionStoreDynamoConfig().getValueTableName())
-                                            .build());
+    DynamoStore dynamo =
+        new DynamoStore(
+            DynamoStoreConfig.builder()
+                .endpoint(
+                    endpoint.map(
+                        e -> {
+                          try {
+                            return new URI(e);
+                          } catch (URISyntaxException uriSyntaxException) {
+                            throw new RuntimeException(uriSyntaxException);
+                          }
+                        }))
+                .region(Region.of(region))
+                .initializeDatabase(config.getVersionStoreDynamoConfig().isDynamoInitialize())
+                .refTableName(config.getVersionStoreDynamoConfig().getRefTableName())
+                .treeTableName(config.getVersionStoreDynamoConfig().getTreeTableName())
+                .valueTableName(config.getVersionStoreDynamoConfig().getValueTableName())
+                .build());
     dynamo.start();
     return dynamo;
   }
 
-  /**
-   * produce a git repo based on config.
-   */
+  /** produce a git repo based on config. */
   @Produces
   public Repository repository() throws IOException, GitAPIException {
     if (!config.getVersionStoreConfig().getVersionStoreType().equals(VersionStoreType.JGIT)) {
@@ -151,21 +148,35 @@ public class VersionStoreFactory {
     switch (config.getVersionStoreJGitConfig().getJgitStoreType()) {
       case DISK:
         LOGGER.info("JGit Version store has been configured with the file backend");
-        File jgitDir = new File(config.getVersionStoreJGitConfig().getJgitDirectory()
-                                      .orElseThrow(() -> new RuntimeException("Please set nessie.version.store.jgit.directory")));
+        File jgitDir =
+            new File(
+                config
+                    .getVersionStoreJGitConfig()
+                    .getJgitDirectory()
+                    .orElseThrow(
+                        () ->
+                            new RuntimeException(
+                                "Please set nessie.version.store.jgit.directory")));
         if (!jgitDir.exists()) {
           if (!jgitDir.mkdirs()) {
             throw new RuntimeException(
-              String.format("Couldn't create file at %s", config.getVersionStoreJGitConfig().getJgitDirectory().get()));
+                String.format(
+                    "Couldn't create file at %s",
+                    config.getVersionStoreJGitConfig().getJgitDirectory().get()));
           }
         }
         LOGGER.info("File backend is at {}", jgitDir.getAbsolutePath());
         return Git.init().setDirectory(jgitDir).call().getRepository();
       case INMEMORY:
         LOGGER.info("JGit Version store has been configured with the in memory backend");
-        return new InMemoryRepository.Builder().setRepositoryDescription(new DfsRepositoryDescription()).build();
+        return new InMemoryRepository.Builder()
+            .setRepositoryDescription(new DfsRepositoryDescription())
+            .build();
       default:
-        throw new RuntimeException(String.format("unknown jgit repo type %s", config.getVersionStoreJGitConfig().getJgitStoreType()));
+        throw new RuntimeException(
+            String.format(
+                "unknown jgit repo type %s",
+                config.getVersionStoreJGitConfig().getJgitStoreType()));
     }
   }
 }

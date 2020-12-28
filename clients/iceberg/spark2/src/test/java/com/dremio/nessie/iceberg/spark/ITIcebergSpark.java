@@ -17,11 +17,15 @@ package com.dremio.nessie.iceberg.spark;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.client.tests.AbstractSparkTest;
+import com.dremio.nessie.iceberg.NessieCatalog;
+import com.dremio.nessie.model.Branch;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -39,31 +43,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.client.tests.AbstractSparkTest;
-import com.dremio.nessie.iceberg.NessieCatalog;
-import com.dremio.nessie.model.Branch;
-
 public class ITIcebergSpark extends AbstractSparkTest {
 
   private static final String DB_NAME = "db";
   private static final String TABLE_NAME = "tbl";
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of(DB_NAME, TABLE_NAME);
-  private static final Schema schema = new Schema(Types.StructType.of(required(1, "foe1", Types.StringType.get()),
-                                                                      required(2, "foe2", Types.StringType.get())).fields());
+  private static final Schema schema =
+      new Schema(
+          Types.StructType.of(
+                  required(1, "foe1", Types.StringType.get()),
+                  required(2, "foe2", Types.StringType.get()))
+              .fields());
 
-  @TempDir
-  File icebergLocalDir;
-
+  @TempDir File icebergLocalDir;
 
   protected Path tableLocation;
   protected NessieCatalog catalog;
   private NessieClient client;
 
-  /**
-   * make sure the fs is set correctly for writing Iceberg tables.
-   */
+  /** make sure the fs is set correctly for writing Iceberg tables. */
   @BeforeEach
   public void icebergFs() {
     String defaultFs = icebergLocalDir.toURI().toString();
@@ -88,7 +86,6 @@ public class ITIcebergSpark extends AbstractSparkTest {
     client = null;
   }
 
-
   @Test
   void testAPI() throws IOException {
     List<String[]> stringAsList = new ArrayList<>();
@@ -97,16 +94,15 @@ public class ITIcebergSpark extends AbstractSparkTest {
 
     JavaSparkContext sparkContext = new JavaSparkContext(spark.sparkContext());
 
-    JavaRDD<Row> rowRDD = sparkContext
-        .parallelize(stringAsList)
-        .map(RowFactory::create);
+    JavaRDD<Row> rowRDD = sparkContext.parallelize(stringAsList).map(RowFactory::create);
 
     // Create schema
-    StructType schema = DataTypes
-        .createStructType(new StructField[] {
-          DataTypes.createStructField("foe1", DataTypes.StringType, false),
-          DataTypes.createStructField("foe2", DataTypes.StringType, false)
-        });
+    StructType schema =
+        DataTypes.createStructType(
+            new StructField[] {
+              DataTypes.createStructField("foe1", DataTypes.StringType, false),
+              DataTypes.createStructField("foe2", DataTypes.StringType, false)
+            });
 
     Dataset<Row> dataDF = spark.sqlContext().createDataFrame(rowRDD, schema);
 
@@ -119,7 +115,10 @@ public class ITIcebergSpark extends AbstractSparkTest {
   @Test
   void testBranchHash() throws IOException {
 
-    client.getTreeApi().createReference(Branch.of("test", client.getTreeApi().getReferenceByName("main").getHash()));
+    client
+        .getTreeApi()
+        .createReference(
+            Branch.of("test", client.getTreeApi().getReferenceByName("main").getHash()));
     Branch branch = (Branch) client.getTreeApi().getReferenceByName("test");
     List<String[]> stringAsList = new ArrayList<>();
     stringAsList.add(new String[] {"bar1.1", "bar2.1"});
@@ -130,38 +129,50 @@ public class ITIcebergSpark extends AbstractSparkTest {
     JavaRDD<Row> rowRDD = sparkContext.parallelize(stringAsList).map(RowFactory::create);
 
     // Create schema
-    StructType schema = DataTypes
-        .createStructType(new StructField[] {
-          DataTypes.createStructField("foe1", DataTypes.StringType, false),
-          DataTypes.createStructField("foe2", DataTypes.StringType, false)
-        });
+    StructType schema =
+        DataTypes.createStructType(
+            new StructField[] {
+              DataTypes.createStructField("foe1", DataTypes.StringType, false),
+              DataTypes.createStructField("foe2", DataTypes.StringType, false)
+            });
 
     Dataset<Row> dataDF = spark.sqlContext().createDataFrame(rowRDD, schema);
 
     dataDF.write().format("iceberg").mode("append").save(TABLE_IDENTIFIER.toString() + "@test");
 
-    Dataset<Row> table1 = spark.read().format("iceberg").load(TABLE_IDENTIFIER.toString() + "@test");
+    Dataset<Row> table1 =
+        spark.read().format("iceberg").load(TABLE_IDENTIFIER.toString() + "@test");
     assertEquals("can read and write", transform(dataDF), transform(table1.sort("foe1")));
 
-    Dataset<Row> table2 = spark.read().format("iceberg").option("nessie.ref", "test").load(TABLE_IDENTIFIER.toString());
+    Dataset<Row> table2 =
+        spark
+            .read()
+            .format("iceberg")
+            .option("nessie.ref", "test")
+            .load(TABLE_IDENTIFIER.toString());
     assertEquals("can read and write", transform(dataDF), transform(table2.sort("foe1")));
 
     Branch branchFirstCommit = (Branch) client.getTreeApi().getReferenceByName("test");
     dataDF.write().format("iceberg").mode("append").save(TABLE_IDENTIFIER.toString() + "@test");
-    Dataset<Row> table3 = spark.read()
-                               .format("iceberg")
-                               .option("nessie.ref", branchFirstCommit.getHash())
-                               .load(TABLE_IDENTIFIER.toString());
+    Dataset<Row> table3 =
+        spark
+            .read()
+            .format("iceberg")
+            .option("nessie.ref", branchFirstCommit.getHash())
+            .load(TABLE_IDENTIFIER.toString());
 
     assertEquals("can read and write", transform(dataDF), transform(table3.sort("foe1")));
 
+    Dataset<Row> table4 =
+        spark
+            .read()
+            .format("iceberg")
+            .load(String.format("%s@%s", TABLE_IDENTIFIER.toString(), branchFirstCommit.getHash()));
+    assertEquals(
+        "can read and write", transform(table4.sort("foe1")), transform(table3.sort("foe1")));
 
-    Dataset<Row> table4 = spark.read()
-                               .format("iceberg")
-                               .load(String.format("%s@%s", TABLE_IDENTIFIER.toString(), branchFirstCommit.getHash()));
-    assertEquals("can read and write", transform(table4.sort("foe1")), transform(table3.sort("foe1")));
-
-    client.getTreeApi().deleteBranch(branch.getName(), client.getTreeApi().getReferenceByName("test").getHash());
+    client
+        .getTreeApi()
+        .deleteBranch(branch.getName(), client.getTreeApi().getReferenceByName("test").getHash());
   }
-
 }

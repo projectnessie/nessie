@@ -15,19 +15,14 @@
  */
 package com.dremio.nessie.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
-
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-@Schema(
-    type = SchemaType.OBJECT,
-    title = "MultiGetContentsRequest"
-  )
+@Schema(type = SchemaType.OBJECT, title = "MultiGetContentsRequest")
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableMultiGetContentsRequest.class)
 @JsonDeserialize(as = ImmutableMultiGetContentsRequest.class)
@@ -46,5 +41,4 @@ public interface MultiGetContentsRequest {
   static MultiGetContentsRequest of(List<ContentsKey> keys) {
     return builder().addAllRequestedKeys(keys).build();
   }
-
 }

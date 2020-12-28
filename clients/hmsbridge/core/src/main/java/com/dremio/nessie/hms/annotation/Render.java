@@ -20,11 +20,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Render this object using the provided class.
- */
+/** Render this object using the provided class. */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Render {
-
-}
+public @interface Render {}

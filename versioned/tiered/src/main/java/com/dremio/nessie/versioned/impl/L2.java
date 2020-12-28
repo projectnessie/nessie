@@ -15,12 +15,11 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.Map;
-
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
 public class L2 extends MemoizedId {
 
@@ -42,7 +41,6 @@ public class L2 extends MemoizedId {
     this(null, map);
   }
 
-
   Id getId(int position) {
     return map.getId(position);
   }
@@ -53,37 +51,37 @@ public class L2 extends MemoizedId {
 
   @Override
   Id generateId() {
-    return Id.build(h -> {
-      h.putLong(HASH_SEED);
-      map.forEach(id -> h.putBytes(id.getValue().asReadOnlyByteBuffer()));
-    });
+    return Id.build(
+        h -> {
+          h.putLong(HASH_SEED);
+          map.forEach(id -> h.putBytes(id.getValue().asReadOnlyByteBuffer()));
+        });
   }
 
-  public static final SimpleSchema<L2> SCHEMA = new SimpleSchema<L2>(L2.class) {
+  public static final SimpleSchema<L2> SCHEMA =
+      new SimpleSchema<L2>(L2.class) {
 
-    private static final String ID = "id";
-    private static final String TREE = "tree";
+        private static final String ID = "id";
+        private static final String TREE = "tree";
 
-    @Override
-    public L2 deserialize(Map<String, Entity> attributeMap) {
-      return new L2(
-          Id.fromEntity(attributeMap.get(ID)),
-          IdMap.fromEntity(attributeMap.get(TREE), SIZE)
-      );
-    }
+        @Override
+        public L2 deserialize(Map<String, Entity> attributeMap) {
+          return new L2(
+              Id.fromEntity(attributeMap.get(ID)), IdMap.fromEntity(attributeMap.get(TREE), SIZE));
+        }
 
-    @Override
-    public Map<String, Entity> itemToMap(L2 item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(TREE, item.map.toEntity())
-          .put(ID, item.getId().toEntity())
-          .build();
-    }
-
-  };
+        @Override
+        public Map<String, Entity> itemToMap(L2 item, boolean ignoreNulls) {
+          return ImmutableMap.<String, Entity>builder()
+              .put(TREE, item.map.toEntity())
+              .put(ID, item.getId().toEntity())
+              .build();
+        }
+      };
 
   /**
    * return the number of positions that are non-empty.
+   *
    * @return number of non-empty positions.
    */
   int size() {

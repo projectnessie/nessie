@@ -15,9 +15,7 @@
  */
 package com.dremio.nessie.versioned.store;
 
-/**
- * Thrown when a store operation fails unexpectedly.
- */
+/** Thrown when a store operation fails unexpectedly. */
 @SuppressWarnings("serial")
 public class StoreOperationException extends StoreException {
 
@@ -28,5 +26,4 @@ public class StoreOperationException extends StoreException {
   public StoreOperationException(String message) {
     super(message);
   }
-
 }

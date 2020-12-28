@@ -15,26 +15,27 @@
  */
 package com.dremio.nessie.hms;
 
+import com.dremio.nessie.client.NessieClient;
+import com.google.common.collect.ImmutableMap;
+import com.klarna.hiverunner.annotations.HiveProperties;
 import java.util.Map;
 import java.util.function.Function;
-
 import org.apache.hadoop.hive.metastore.conf.MetastoreConf;
 import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.DelegatingHive3NessieRawStore;
 
-import com.dremio.nessie.client.NessieClient;
-import com.google.common.collect.ImmutableMap;
-import com.klarna.hiverunner.annotations.HiveProperties;
-
 public class ITTestHive3DelegateOps extends BaseDelegateOps {
 
   @HiveProperties
-  public static final Map<String, String> properties = ImmutableMap.<String, String>builder()
-      .put(MetastoreConf.ConfVars.RAW_STORE_IMPL.getVarname(), DelegatingHive3NessieRawStore.class.getName())
-      .put("hive.exec.dynamic.partition.mode","nonstrict")
-      .put(NessieStore.NESSIE_WHITELIST_DBS_OPTION,"nessie,mytestdb")
-      .put(NessieClient.CONF_NESSIE_URL, URL)
-      .build();
+  public static final Map<String, String> properties =
+      ImmutableMap.<String, String>builder()
+          .put(
+              MetastoreConf.ConfVars.RAW_STORE_IMPL.getVarname(),
+              DelegatingHive3NessieRawStore.class.getName())
+          .put("hive.exec.dynamic.partition.mode", "nonstrict")
+          .put(NessieStore.NESSIE_WHITELIST_DBS_OPTION, "nessie,mytestdb")
+          .put(NessieClient.CONF_NESSIE_URL, URL)
+          .build();
 
   @BeforeAll
   static void setupNessieClient() {
@@ -45,5 +46,4 @@ public class ITTestHive3DelegateOps extends BaseDelegateOps {
   protected Function<String, String> configFunction() {
     return properties::get;
   }
-
 }

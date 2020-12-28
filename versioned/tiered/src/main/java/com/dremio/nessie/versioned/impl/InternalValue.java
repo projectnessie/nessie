@@ -19,9 +19,7 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.protobuf.ByteString;
 
-/**
- * Holds a VersionStore binary value for interaction with the Store.
- */
+/** Holds a VersionStore binary value for interaction with the Store. */
 public class InternalValue extends WrappedValueBean {
 
   private InternalValue(Id id, ByteString value) {

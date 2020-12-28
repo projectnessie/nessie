@@ -15,9 +15,6 @@
  */
 package com.dremio.nessie.versioned.store;
 
-import java.util.Map;
-import java.util.Optional;
-
 import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
@@ -30,9 +27,10 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import java.util.Map;
+import java.util.Optional;
 
 public enum ValueType {
-
   REF(InternalRef.class, InternalRef.SCHEMA, false, "r"),
   L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1"),
   L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2"),
@@ -65,17 +63,20 @@ public enum ValueType {
 
   /**
    * Append this type to the provided attribute value map.
+   *
    * @param map The map to append to
    * @return A typed map.
    */
   public Map<String, Entity> addType(Map<String, Entity> map) {
     return ImmutableMap.<String, Entity>builder()
         .putAll(map)
-        .put(ValueType.SCHEMA_TYPE, type).build();
+        .put(ValueType.SCHEMA_TYPE, type)
+        .build();
   }
 
   /**
    * Validate that the provided map includes the expected type.
+   *
    * @param map The map to check
    * @return The map passed in (for chaining)
    */
@@ -83,14 +84,21 @@ public enum ValueType {
     Entity loadedType = map.get(SCHEMA_TYPE);
     Id id = Id.fromEntity(map.get(Store.KEY_NAME));
     Preconditions.checkNotNull(loadedType, "Missing type tag for schema for id %s.", id.getHash());
-    Preconditions.checkArgument(type.equals(loadedType),
-        "Expected schema for id %s to be of type '%s' but is actually '%s'.", id.getHash(), type.getString(), loadedType.getString());
+    Preconditions.checkArgument(
+        type.equals(loadedType),
+        "Expected schema for id %s to be of type '%s' but is actually '%s'.",
+        id.getHash(),
+        type.getString(),
+        loadedType.getString());
     return map;
   }
 
   public ConditionExpression addTypeCheck(Optional<ConditionExpression> possibleExpression) {
-    final ExpressionFunction checkType = ExpressionFunction.equals(ExpressionPath.builder(SCHEMA_TYPE).build(), type);
-    return possibleExpression.map(ce -> ce.and(checkType)).orElse(ConditionExpression.of(checkType));
+    final ExpressionFunction checkType =
+        ExpressionFunction.equals(ExpressionPath.builder(SCHEMA_TYPE).build(), type);
+    return possibleExpression
+        .map(ce -> ce.and(checkType))
+        .orElse(ConditionExpression.of(checkType));
   }
 
   @SuppressWarnings("unchecked")

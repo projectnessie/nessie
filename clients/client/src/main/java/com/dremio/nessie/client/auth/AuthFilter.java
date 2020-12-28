@@ -15,23 +15,18 @@
  */
 package com.dremio.nessie.client.auth;
 
+import com.dremio.nessie.client.NessieClient.AuthType;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 
-import com.dremio.nessie.client.NessieClient.AuthType;
-
-/**
- * Filter to add auth header to all outgoing requests.
- */
+/** Filter to add auth header to all outgoing requests. */
 public class AuthFilter implements ClientRequestFilter {
 
   private final Auth auth;
 
-  /**
-   * construct auth filter depending on auth type.
-   */
+  /** construct auth filter depending on auth type. */
   public AuthFilter(AuthType authType, String username, String password, WebTarget target) {
     switch (authType) {
       case AWS:
@@ -39,7 +34,7 @@ public class AuthFilter implements ClientRequestFilter {
         auth = new NoAuth();
         break;
       case BASIC:
-        auth = new NoAuth();//todo
+        auth = new NoAuth(); // todo
         break;
       default:
         throw new IllegalStateException(String.format("%s does not exist", authType));

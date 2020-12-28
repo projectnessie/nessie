@@ -17,8 +17,6 @@ package com.dremio.nessie.client.auth;
 
 public interface Auth {
 
-  /**
-   * return authorization token for this auth scheme.
-   */
+  /** return authorization token for this auth scheme. */
   String checkKey();
 }

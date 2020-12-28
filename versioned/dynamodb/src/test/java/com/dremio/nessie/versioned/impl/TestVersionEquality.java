@@ -17,17 +17,14 @@ package com.dremio.nessie.versioned.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
+import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
-import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
-
 class TestVersionEquality {
 
-  /**
-   * Make sure that a new branch has the L1.EMPTY_ID identifier.
-   */
+  /** Make sure that a new branch has the L1.EMPTY_ID identifier. */
   @Test
   void internalBranchL1IdEqualsEmpty() {
     InternalBranch b = new InternalBranch("n/a");

@@ -15,13 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
-
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Diff;
 import com.dremio.nessie.versioned.Hash;
@@ -39,46 +32,53 @@ import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
-
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 import software.amazon.awssdk.regions.Region;
 
 /**
  * DynamoDB Store fixture.
  *
- * <p>Combine a local dynamodb server with a {@code DynamoVersionStore} instance to be used for tests.
- *
+ * <p>Combine a local dynamodb server with a {@code DynamoVersionStore} instance to be used for
+ * tests.
  */
 public class DynamoStoreFixture implements VersionStore<String, String>, AutoCloseable {
   private static final DynamoStoreConfig STORE_CONFIG;
 
-  private static final StoreWorker<String, String> WORKER = new StoreWorker<String, String>() {
-    @Override
-    public Serializer<String> getValueSerializer() {
-      return StringSerializer.getInstance();
-    }
+  private static final StoreWorker<String, String> WORKER =
+      new StoreWorker<String, String>() {
+        @Override
+        public Serializer<String> getValueSerializer() {
+          return StringSerializer.getInstance();
+        }
 
-    @Override
-    public Serializer<String> getMetadataSerializer() {
-      return StringSerializer.getInstance();
-    }
+        @Override
+        public Serializer<String> getMetadataSerializer() {
+          return StringSerializer.getInstance();
+        }
 
-    @Override
-    public Stream<AssetKey> getAssetKeys(String value) {
-      return Stream.of();
-    }
+        @Override
+        public Stream<AssetKey> getAssetKeys(String value) {
+          return Stream.of();
+        }
 
-    @Override
-    public CompletableFuture<Void> deleteAsset(AssetKey key) {
-      throw new UnsupportedOperationException();
-    }
-  };
+        @Override
+        public CompletableFuture<Void> deleteAsset(AssetKey key) {
+          throw new UnsupportedOperationException();
+        }
+      };
 
   static {
     try {
-      STORE_CONFIG = DynamoStoreConfig.builder()
-          .endpoint(new URI("http://localhost:8000"))
-          .region(Region.US_WEST_2)
-          .build();
+      STORE_CONFIG =
+          DynamoStoreConfig.builder()
+              .endpoint(new URI("http://localhost:8000"))
+              .region(Region.US_WEST_2)
+              .build();
     } catch (URISyntaxException e) {
       throw new AssertionError(e);
     }
@@ -87,9 +87,7 @@ public class DynamoStoreFixture implements VersionStore<String, String>, AutoClo
   private final DynamoStore store;
   private final VersionStore<String, String> impl;
 
-  /**
-   * Create a new fixture.
-   */
+  /** Create a new fixture. */
   public DynamoStoreFixture() {
     store = new DynamoStore(STORE_CONFIG);
     store.start();
@@ -110,15 +108,18 @@ public class DynamoStoreFixture implements VersionStore<String, String>, AutoClo
   }
 
   @Override
-  public void commit(BranchName branch, Optional<Hash> expectedHash, String metadata,
+  public void commit(
+      BranchName branch,
+      Optional<Hash> expectedHash,
+      String metadata,
       List<Operation<String>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     impl.commit(branch, expectedHash, metadata, operations);
   }
 
   @Override
-  public void transplant(BranchName targetBranch, Optional<Hash> expectedHash,
-      List<Hash> sequenceToTransplant)
+  public void transplant(
+      BranchName targetBranch, Optional<Hash> expectedHash, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
     impl.transplant(targetBranch, expectedHash, sequenceToTransplant);
   }

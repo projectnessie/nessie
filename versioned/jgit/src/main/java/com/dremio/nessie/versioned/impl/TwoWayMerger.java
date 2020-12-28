@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.dircache.DirCacheBuilder;
 import org.eclipse.jgit.dircache.DirCacheEntry;
@@ -34,10 +33,10 @@ import org.eclipse.jgit.treewalk.NameConflictTreeWalk;
 
 /**
  * Simple merge of two potentially conflicting branches.
- * <p>
- * If no file level conflicts exist the merge will succeed. Any file level merges will result in failure.
- * Very similar to StrategySimpleTwoWayInCore but contains extra info for handling Nessie conflicts.
- * </p>
+ *
+ * <p>If no file level conflicts exist the merge will succeed. Any file level merges will result in
+ * failure. Very similar to StrategySimpleTwoWayInCore but contains extra info for handling Nessie
+ * conflicts.
  */
 class TwoWayMerger extends ThreeWayMerger {
 
@@ -73,10 +72,8 @@ class TwoWayMerger extends ThreeWayMerger {
     builder = cache.builder();
     while (tw.next()) {
 
-
-
       if (tw.idEqual(T_OURS, T_THEIRS) && tw.idEqual(T_BASE, T_OURS)) {
-        add(T_OURS, DirCacheEntry.STAGE_0); //this has not changed at all (tree or otherwise)
+        add(T_OURS, DirCacheEntry.STAGE_0); // this has not changed at all (tree or otherwise)
         continue;
       }
       if (unchanged.contains(tw.getPathString()) && !tw.idEqual(T_BASE, T_OURS)) {
@@ -85,32 +82,33 @@ class TwoWayMerger extends ThreeWayMerger {
         continue;
       }
       if (tw.isSubtree()) {
-        tw.enterSubtree(); //this changed and is a tree, descend
+        tw.enterSubtree(); // this changed and is a tree, descend
         continue;
       }
       if (!tw.idEqual(T_OURS, T_THEIRS)) {
-        //has changed in this commit
+        // has changed in this commit
         if (tw.idEqual(T_BASE, T_OURS)) {
-          //base and ours are the same, so only changed in this commit. No conflict
-          if (ObjectId.zeroId().equals(tw.getObjectId(T_THEIRS)) && !FileMode.GITLINK.equals(tw.getRawMode(T_THEIRS))) {
+          // base and ours are the same, so only changed in this commit. No conflict
+          if (ObjectId.zeroId().equals(tw.getObjectId(T_THEIRS))
+              && !FileMode.GITLINK.equals(tw.getRawMode(T_THEIRS))) {
             add(T_OURS, DirCacheEntry.STAGE_0);
           } else {
             add(T_THEIRS, DirCacheEntry.STAGE_0);
           }
         } else if (tw.idEqual(T_BASE, T_THEIRS)) {
-          //base and theirs are the same, so only changed in other commit. No conflict
+          // base and theirs are the same, so only changed in other commit. No conflict
           add(T_OURS, DirCacheEntry.STAGE_0);
         } else {
-          //all three are different, conflict
+          // all three are different, conflict
           add(T_BASE, DirCacheEntry.STAGE_1);
           hasConflict = true;
         }
       } else {
-        //ours and theirs are the same but are different from base...prob a dup change, still a conflict
+        // ours and theirs are the same but are different from base...prob a dup change, still a
+        // conflict
         add(T_BASE, DirCacheEntry.STAGE_1);
         hasConflict = true;
       }
-
     }
     builder.finish();
     builder = null;
@@ -137,7 +135,8 @@ class TwoWayMerger extends ThreeWayMerger {
       } else if (FileMode.GITLINK.equals(tw.getRawMode(tree))) {
         // skip
       } else {
-        final DirCacheEntry e = new DirCacheEntry(tw.getRawPath(), stage);;
+        final DirCacheEntry e = new DirCacheEntry(tw.getRawPath(), stage);
+        ;
         e.setObjectIdFromRaw(i.idBuffer(), i.idOffset());
         e.setFileMode(tw.getFileMode(tree));
         builder.add(e);

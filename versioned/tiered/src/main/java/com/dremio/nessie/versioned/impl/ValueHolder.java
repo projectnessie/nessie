@@ -18,7 +18,6 @@ package com.dremio.nessie.versioned.impl;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.store.Id;
 
-
 class ValueHolder<V> {
 
   private final Serializer<V> serializer;

@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.services.rest;
-
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.api.ConfigApi;
 import com.dremio.nessie.model.ImmutableNessieConfiguration;
 import com.dremio.nessie.model.NessieConfiguration;
 import com.dremio.nessie.services.config.ServerConfig;
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-
-/**
- * REST endpoint to retrieve server settings.
- */
+/** REST endpoint to retrieve server settings. */
 @RequestScoped
 public class ConfigResource implements ConfigApi {
 
@@ -45,8 +39,7 @@ public class ConfigResource implements ConfigApi {
   @Override
   public NessieConfiguration getConfig() {
     return ImmutableNessieConfiguration.builder()
-                                       .defaultBranch(this.config.getDefaultBranch()).build();
+        .defaultBranch(this.config.getDefaultBranch())
+        .build();
   }
-
-
 }

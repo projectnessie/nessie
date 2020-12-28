@@ -15,15 +15,12 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import com.dremio.nessie.versioned.tests.AbstractTestStore;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.dremio.nessie.versioned.tests.AbstractTestStore;
-
-/**
- * A test class that contains MongoDB specific tests.
- */
+/** A test class that contains MongoDB specific tests. */
 @ExtendWith(LocalMongo.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
@@ -37,21 +34,23 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
 
   /**
    * Creates an instance of MongoDBStore on which tests are executed.
+   *
    * @return the store to test.
    */
   @Override
   protected MongoDBStore createStore() {
-    final MongoStoreConfig config = new MongoStoreConfig() {
-      @Override
-      public String getConnectionString() {
-        return connectionString;
-      }
+    final MongoStoreConfig config =
+        new MongoStoreConfig() {
+          @Override
+          public String getConnectionString() {
+            return connectionString;
+          }
 
-      @Override
-      public String getDatabaseName() {
-        return testDatabaseName;
-      }
-    };
+          @Override
+          public String getDatabaseName() {
+            return testDatabaseName;
+          }
+        };
 
     return new MongoDBStore(config);
   }

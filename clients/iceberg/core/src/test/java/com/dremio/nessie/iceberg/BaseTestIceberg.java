@@ -17,11 +17,18 @@ package com.dremio.nessie.iceberg;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 
+import com.dremio.nessie.api.ContentsApi;
+import com.dremio.nessie.api.TreeApi;
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.Reference;
 import java.io.File;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.BaseTable;
 import org.apache.iceberg.Schema;
@@ -38,21 +45,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.api.ContentsApi;
-import com.dremio.nessie.api.TreeApi;
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.error.NessieConflictException;
-import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.Reference;
-
 abstract class BaseTestIceberg {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BaseTestIceberg.class);
 
   private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
-  private static final String NESSIE_ENDPOINT = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
+  private static final String NESSIE_ENDPOINT =
+      String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
   protected static File ALLEY_LOCAL_DIR;
   protected NessieCatalog catalog;
@@ -64,10 +63,11 @@ abstract class BaseTestIceberg {
 
   @BeforeAll
   public static void create() throws Exception {
-    ALLEY_LOCAL_DIR = java.nio.file.Files.createTempDirectory(
-        "test",
-        PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxrwx")))
-        .toFile();
+    ALLEY_LOCAL_DIR =
+        java.nio.file.Files.createTempDirectory(
+                "test",
+                PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxrwx")))
+            .toFile();
   }
 
   public BaseTestIceberg(String branch) {
@@ -99,7 +99,7 @@ abstract class BaseTestIceberg {
     try {
       tree.createReference(Branch.of(branch, null));
     } catch (Exception e) {
-      //ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
+      // ignore, already created. Cant run this in BeforeAll as quarkus hasn't disabled auth
     }
 
     hadoopConfig = new Configuration();
@@ -109,9 +109,7 @@ abstract class BaseTestIceberg {
     hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, branch);
     hadoopConfig.set(NessieCatalog.CONF_NESSIE_AUTH_TYPE, "NONE");
     hadoopConfig.set("fs.defaultFS", ALLEY_LOCAL_DIR.toURI().toString());
-    hadoopConfig.set("fs.file.impl",
-                     org.apache.hadoop.fs.LocalFileSystem.class.getName()
-    );
+    hadoopConfig.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
     catalog = new NessieCatalog(hadoopConfig);
   }
 
@@ -125,8 +123,7 @@ abstract class BaseTestIceberg {
   }
 
   protected void createTable(TableIdentifier tableIdentifier) {
-    Schema schema = new Schema(StructType.of(required(1, "id", LongType.get()))
-                                         .fields());
+    Schema schema = new Schema(StructType.of(required(1, "id", LongType.get())).fields());
     catalog.createTable(tableIdentifier, schema).location();
   }
 
@@ -138,7 +135,8 @@ abstract class BaseTestIceberg {
     return new Schema(Types.StructType.of(fields).fields());
   }
 
-  void createBranch(String name, String hash) throws NessieNotFoundException, NessieConflictException {
+  void createBranch(String name, String hash)
+      throws NessieNotFoundException, NessieConflictException {
     tree.createReference(Branch.of(name, hash));
   }
 
@@ -163,5 +161,4 @@ abstract class BaseTestIceberg {
     NessieTableOperations icebergOps = (NessieTableOperations) ops;
     return icebergOps.currentMetadataLocation();
   }
-
 }

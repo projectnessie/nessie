@@ -15,6 +15,14 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.versioned.ReferenceNotFoundException;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.LoadOp;
+import com.dremio.nessie.versioned.store.LoadStep;
+import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.collect.AbstractIterator;
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,18 +36,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.LoadOp;
-import com.dremio.nessie.versioned.store.LoadStep;
-import com.dremio.nessie.versioned.store.Store;
-import com.dremio.nessie.versioned.store.ValueType;
-import com.google.common.collect.AbstractIterator;
-import com.google.common.collect.ImmutableList;
-
-/**
- * Enables retrieval of L1 history.
- */
+/** Enables retrieval of L1 history. */
 class HistoryRetriever {
 
   private final boolean retrieveL1;
@@ -49,7 +46,13 @@ class HistoryRetriever {
   private final L1 start;
   private final Id end;
 
-  public HistoryRetriever(Store store, L1 start, Id end, boolean retrieveL1, boolean retrieveCommit, boolean includeEndEmpty) {
+  public HistoryRetriever(
+      Store store,
+      L1 start,
+      Id end,
+      boolean retrieveL1,
+      boolean retrieveCommit,
+      boolean includeEndEmpty) {
     super();
     this.store = store;
     this.start = start;
@@ -85,11 +88,11 @@ class HistoryRetriever {
     public String toString() {
       return "HistoryItem [id=" + id + ", l1=" + l1 + ", commitMetadata=" + commitMetadata + "]";
     }
-
   }
 
   Stream<HistoryItem> getStream() {
-    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new HistoryIterator(), 0), false);
+    return StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(new HistoryIterator(), 0), false);
   }
 
   private class HistoryIterator extends AbstractIterator<HistoryItem> {
@@ -159,8 +162,12 @@ class HistoryRetriever {
         }
 
         if (retrieveCommit && !parent.equals(L1.EMPTY_ID)) {
-          secondOps.add(() -> new LoadOp<InternalCommitMetadata>(
-              ValueType.COMMIT_METADATA, item.l1.getMetadataId(), cmd -> item.commitMetadata = cmd));
+          secondOps.add(
+              () ->
+                  new LoadOp<InternalCommitMetadata>(
+                      ValueType.COMMIT_METADATA,
+                      item.l1.getMetadataId(),
+                      cmd -> item.commitMetadata = cmd));
         }
 
         if (parent.equals(end)) {
@@ -175,21 +182,35 @@ class HistoryRetriever {
         return;
       }
 
-      store.load(new LoadStep(loadOps, () -> {
-        if (secondOps.isEmpty()) {
-          return Optional.empty();
-        }
+      store.load(
+          new LoadStep(
+              loadOps,
+              () -> {
+                if (secondOps.isEmpty()) {
+                  return Optional.empty();
+                }
 
-        return Optional.of(new LoadStep(secondOps.stream().map(Supplier::get).collect(ImmutableList.toImmutableList())));
-      }));
+                return Optional.of(
+                    new LoadStep(
+                        secondOps.stream()
+                            .map(Supplier::get)
+                            .collect(ImmutableList.toImmutableList())));
+              }));
       currentIterator = items.iterator();
     }
-
   }
 
   public static Id findCommonParent(Store store, L1 head1, L1 head2, int maxDepth) {
-    Iterator<Id> r1 = new HistoryRetriever(store, head1, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();
-    Iterator<Id> r2 = new HistoryRetriever(store, head2, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();
+    Iterator<Id> r1 =
+        new HistoryRetriever(store, head1, Id.EMPTY, false, false, true)
+            .getStream()
+            .map(HistoryItem::getId)
+            .iterator();
+    Iterator<Id> r2 =
+        new HistoryRetriever(store, head2, Id.EMPTY, false, false, true)
+            .getStream()
+            .map(HistoryItem::getId)
+            .iterator();
     Set<Id> r1Set = new LinkedHashSet<>();
     Set<Id> r2Set = new LinkedHashSet<>();
     int remainingDepth = maxDepth;
@@ -209,8 +230,10 @@ class HistoryRetriever {
     }
 
     throw new IllegalStateException(
-        String.format("Unable to find common parent within specified history depth. "
-            + "The maximum number of items allowed is %d.", maxDepth));
+        String.format(
+            "Unable to find common parent within specified history depth. "
+                + "The maximum number of items allowed is %d.",
+            maxDepth));
   }
 
   private static <T> void addNextPage(Iterator<T> input, Collection<T> consumer, int count) {

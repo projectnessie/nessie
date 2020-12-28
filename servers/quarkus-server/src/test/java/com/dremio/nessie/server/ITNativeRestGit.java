@@ -18,6 +18,4 @@ package com.dremio.nessie.server;
 import io.quarkus.test.junit.NativeImageTest;
 
 @NativeImageTest
-public class ITNativeRestGit extends RestGitTest {
-
-}
+public class ITNativeRestGit extends RestGitTest {}

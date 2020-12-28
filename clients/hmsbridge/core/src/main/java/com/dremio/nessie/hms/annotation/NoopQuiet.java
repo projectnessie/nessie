@@ -30,11 +30,13 @@ import java.lang.annotation.Target;
 public @interface NoopQuiet {
 
   enum QuietMode {
-    EMPTY, NULL;
+    EMPTY,
+    NULL;
   }
 
   /**
    * What quiet mode to do. Defaults to EMPTY but can be NULL.
+   *
    * @return the mode to use
    */
   QuietMode value() default QuietMode.EMPTY;

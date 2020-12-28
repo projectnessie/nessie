@@ -19,20 +19,20 @@ import java.text.Collator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-
 import org.immutables.value.Value;
 
 @Value.Immutable
 public abstract class Key implements Comparable<Key> {
 
-  private static final ThreadLocal<Collator> COLLATOR = new ThreadLocal<Collator>() {
-    @Override
-    protected Collator initialValue() {
-      Collator c = Collator.getInstance(Locale.US);
-      c.setStrength(Collator.PRIMARY);
-      return c;
-    }
-  };
+  private static final ThreadLocal<Collator> COLLATOR =
+      new ThreadLocal<Collator>() {
+        @Override
+        protected Collator initialValue() {
+          Collator c = Collator.getInstance(Locale.US);
+          c.setStrength(Collator.PRIMARY);
+          return c;
+        }
+      };
 
   public abstract List<String> getElements();
 
@@ -41,9 +41,7 @@ public abstract class Key implements Comparable<Key> {
     return ImmutableKey.builder();
   }
 
-  /**
-   * Does a case insensitive comparison by key element.
-   */
+  /** Does a case insensitive comparison by key element. */
   @Override
   public final int compareTo(Key that) {
     Collator collator = COLLATOR.get();
@@ -63,7 +61,10 @@ public abstract class Key implements Comparable<Key> {
   @Override
   public int hashCode() {
     final Collator collator = COLLATOR.get();
-    return getElements().stream().map(s -> collator.getCollationKey(s)).collect(Collectors.toList()).hashCode();
+    return getElements().stream()
+        .map(s -> collator.getCollationKey(s))
+        .collect(Collectors.toList())
+        .hashCode();
   }
 
   @Override
@@ -76,11 +77,10 @@ public abstract class Key implements Comparable<Key> {
     List<String> thisElements = this.getElements();
     List<String> thatElements = that.getElements();
 
-    return thisElements.size() == thatElements.size()
-        && compareTo(that) == 0;
+    return thisElements.size() == thatElements.size() && compareTo(that) == 0;
   }
 
-  public static Key of(String...elements) {
+  public static Key of(String... elements) {
     return ImmutableKey.builder().addElements(elements).build();
   }
 

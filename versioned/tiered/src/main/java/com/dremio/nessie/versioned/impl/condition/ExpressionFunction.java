@@ -15,12 +15,11 @@
  */
 package com.dremio.nessie.versioned.impl.condition;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ExpressionFunction implements Value {
 
@@ -32,14 +31,14 @@ public class ExpressionFunction implements Value {
     //  ATTRIBUTE_EXISTS("attribute_exists", 1),
     ATTRIBUTE_NOT_EXISTS("attribute_not_exists", 1),
     SIZE("size", 1),
-    //  ATTRIBUTE_TYPE("attribute_type", 1),
-    //  BEGINS_WITH("begins_with", 2),
-    //  CONTAINS("contains", 2),
-    //    GT(">"),
-    //    LT("<"),
-    //    LTE("<="),
-    //    GTE(">=")
-    ;
+  //  ATTRIBUTE_TYPE("attribute_type", 1),
+  //  BEGINS_WITH("begins_with", 2),
+  //  CONTAINS("contains", 2),
+  //    GT(">"),
+  //    LT("<"),
+  //    LTE("<="),
+  //    GTE(">=")
+  ;
 
     String protocolName;
     int argCount;
@@ -66,7 +65,8 @@ public class ExpressionFunction implements Value {
   private ExpressionFunction(FunctionName name, ImmutableList<Value> arguments) {
     this.name = name;
     this.arguments = ImmutableList.copyOf(arguments);
-    Preconditions.checkArgument(this.arguments.size() == name.argCount, "Unexpected argument count.");
+    Preconditions.checkArgument(
+        this.arguments.size() == name.argCount, "Unexpected argument count.");
   }
 
   public static ExpressionFunction size(ExpressionPath path) {
@@ -74,7 +74,8 @@ public class ExpressionFunction implements Value {
   }
 
   public static ExpressionFunction appendToList(ExpressionPath initialList, Entity valueToAppend) {
-    return new ExpressionFunction(FunctionName.LIST_APPEND, ImmutableList.of(initialList, Value.of(valueToAppend)));
+    return new ExpressionFunction(
+        FunctionName.LIST_APPEND, ImmutableList.of(initialList, Value.of(valueToAppend)));
   }
 
   public static ExpressionFunction attributeNotExists(ExpressionPath path) {
@@ -89,25 +90,31 @@ public class ExpressionFunction implements Value {
     return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(func, Value.of(value)));
   }
 
-
   public static ExpressionFunction ifNotExists(ExpressionPath path, Entity value) {
-    return new ExpressionFunction(FunctionName.IF_NOT_EXISTS, ImmutableList.of(path, Value.of(value)));
+    return new ExpressionFunction(
+        FunctionName.IF_NOT_EXISTS, ImmutableList.of(path, Value.of(value)));
   }
 
   @Override
   public ExpressionFunction alias(AliasCollector c) {
-    return new ExpressionFunction(name, arguments.stream().map(v -> v.alias(c)).collect(ImmutableList.toImmutableList()));
+    return new ExpressionFunction(
+        name, arguments.stream().map(v -> v.alias(c)).collect(ImmutableList.toImmutableList()));
   }
 
   /**
    * Return this function as a Dynamo expression string.
+   *
    * @return The expression string.
    */
   public String asString() {
     if (name.binaryExpression) {
-      return String.format("%s %s %s", arguments.get(0).asString(), name.protocolName, arguments.get(1).asString());
+      return String.format(
+          "%s %s %s", arguments.get(0).asString(), name.protocolName, arguments.get(1).asString());
     }
-    return String.format("%s(%s)", name.protocolName, arguments.stream().map(v -> v.asString()).collect(Collectors.joining(", ")));
+    return String.format(
+        "%s(%s)",
+        name.protocolName,
+        arguments.stream().map(v -> v.asString()).collect(Collectors.joining(", ")));
   }
 
   @Override
@@ -119,5 +126,4 @@ public class ExpressionFunction implements Value {
   public ExpressionFunction getFunction() {
     return this;
   }
-
 }

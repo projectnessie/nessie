@@ -15,14 +15,12 @@
  */
 package com.dremio.nessie.error;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import javax.ws.rs.core.Response.Status;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import javax.ws.rs.core.Response.Status;
 
 public class NessieError {
 
@@ -41,12 +39,14 @@ public class NessieError {
 
   /**
    * Create Error.
+   *
    * @param message Message of error.
    * @param status Status of error.
    * @param serverStackTrace Server stack trace, if available.
    * @param processingException Any processing exceptions that happened on the client.
    */
-  public NessieError(String message, Status status, String serverStackTrace, Exception processingException) {
+  public NessieError(
+      String message, Status status, String serverStackTrace, Exception processingException) {
     super();
     this.message = message;
     this.status = status;
@@ -73,20 +73,23 @@ public class NessieError {
 
   /**
    * Get full error message.
+   *
    * @return Full error message.
    */
   @JsonIgnore
   public String getFullMessage() {
     if (serverStackTrace != null) {
-      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\nServer Stack Trace:\n%s", message,
-          status.getStatusCode(), status.getReasonPhrase(), serverStackTrace);
+      return String.format(
+          "%s\nStatus Code: %d\nStatus Reason: %s\nServer Stack Trace:\n%s",
+          message, status.getStatusCode(), status.getReasonPhrase(), serverStackTrace);
     }
 
     if (clientProcessingException != null) {
       StringWriter sw = new StringWriter();
       clientProcessingException.printStackTrace(new PrintWriter(sw));
-      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\nClient Processing Failure:\n%s", message,
-          status.getStatusCode(), status.getReasonPhrase(), sw.toString());
+      return String.format(
+          "%s\nStatus Code: %d\nStatus Reason: %s\nClient Processing Failure:\n%s",
+          message, status.getStatusCode(), status.getReasonPhrase(), sw.toString());
     }
     return message;
   }

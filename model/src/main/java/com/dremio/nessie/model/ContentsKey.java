@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -24,18 +26,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * Key for the contents of an object.
  *
- * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before passing in a url string.
+ * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before
+ * passing in a url string.
  */
 public class ContentsKey {
   private static final char ZERO_BYTE = '\u0000';
@@ -93,7 +92,6 @@ public class ContentsKey {
       }
       return value.toPathString();
     }
-
   }
 
   @Provider
@@ -101,23 +99,26 @@ public class ContentsKey {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
+    public <T> ParamConverter<T> getConverter(
+        Class<T> rawType, Type genericType, Annotation[] annotations) {
       if (rawType.equals(ContentsKey.class)) {
         return (ParamConverter<T>) new NessieObjectKeyConverter();
       }
       return null;
     }
-
   }
 
   /**
    * Convert from path encoded string to normal string.
+   *
    * @param encoded Path encoded string
    * @return Actual key.
    */
   public static ContentsKey fromEncoded(String encoded) {
-    List<String> elements = StreamSupport.stream(Arrays.spliterator(encoded.split("\\.")), false)
-        .map(x -> x.replace('\u0000', '.')).collect(Collectors.toList());
+    List<String> elements =
+        StreamSupport.stream(Arrays.spliterator(encoded.split("\\.")), false)
+            .map(x -> x.replace('\u0000', '.'))
+            .collect(Collectors.toList());
     return new ContentsKey(elements, true);
   }
 
@@ -145,10 +146,12 @@ public class ContentsKey {
 
   /**
    * Convert this key to a url encoded path string.
+   *
    * @return String encoded for path use.
    */
   public String toPathString() {
-    String pathString = getElements().stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
+    String pathString =
+        getElements().stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
     return pathString;
   }
 }

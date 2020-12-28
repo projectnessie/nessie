@@ -15,19 +15,6 @@
  */
 package com.dremio.nessie.client;
 
-import java.io.Closeable;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.Objects;
-import java.util.function.Function;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.ResponseProcessingException;
-import javax.ws.rs.client.WebTarget;
-
 import com.dremio.nessie.api.ConfigApi;
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
@@ -37,6 +24,17 @@ import com.dremio.nessie.client.rest.ResponseCheckFilter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.ContentsKey.NessieObjectKeyConverterProvider;
+import java.io.Closeable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.Objects;
+import java.util.function.Function;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ResponseProcessingException;
+import javax.ws.rs.client.WebTarget;
 
 public class NessieClient implements Closeable {
 
@@ -63,16 +61,19 @@ public class NessieClient implements Closeable {
   private final ContentsApi contents;
 
   /**
-   * create new nessie client. All REST api endpoints are mapped here. This client should support any jaxrs implementation
+   * create new nessie client. All REST api endpoints are mapped here. This client should support
+   * any jaxrs implementation
    *
    * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
    */
   public NessieClient(AuthType authType, String path, String username, String password) {
 
-    client = ClientBuilder.newBuilder().register(ObjectMapperContextResolver.class)
-                                       .register(ResponseCheckFilter.class)
-                                       .register(NessieObjectKeyConverterProvider.class)
-                                       .build();
+    client =
+        ClientBuilder.newBuilder()
+            .register(ObjectMapperContextResolver.class)
+            .register(ResponseCheckFilter.class)
+            .register(NessieObjectKeyConverterProvider.class)
+            .build();
     WebTarget target = client.target(path);
     AuthFilter authFilter = new AuthFilter(authType, username, password, target);
     client.register(authFilter);
@@ -83,12 +84,16 @@ public class NessieClient implements Closeable {
 
   @SuppressWarnings("unchecked")
   private <T> T wrap(Class<T> iface, T delegate) {
-    return (T) Proxy.newProxyInstance(delegate.getClass().getClassLoader(), new Class[]{iface}, new ExceptionRewriter(delegate));
+    return (T)
+        Proxy.newProxyInstance(
+            delegate.getClass().getClassLoader(),
+            new Class[] {iface},
+            new ExceptionRewriter(delegate));
   }
 
   /**
-   * This will rewrite exceptions so they are correctly thrown by the api classes.
-   * (since the filter will cause them to be wrapped in ResposneProcessingException)
+   * This will rewrite exceptions so they are correctly thrown by the api classes. (since the filter
+   * will cause them to be wrapped in ResposneProcessingException)
    */
   private static class ExceptionRewriter implements InvocationHandler {
 
@@ -117,12 +122,10 @@ public class NessieClient implements Closeable {
           throw targetException;
         }
 
-
         throw ex;
       }
     }
   }
-
 
   public TreeApi getTreeApi() {
     return tree;
@@ -155,6 +158,7 @@ public class NessieClient implements Closeable {
 
   /**
    * Create a client using a configuration object and standard Nessie configuration keys.
+   *
    * @param configuration The function that exploses configuration keys.
    * @return A new Nessie client.
    */
@@ -168,5 +172,4 @@ public class NessieClient implements Closeable {
     String password = configuration.apply(CONF_NESSIE_PASSWORD);
     return new NessieClient(AuthType.valueOf(authType), url, username, password);
   }
-
 }

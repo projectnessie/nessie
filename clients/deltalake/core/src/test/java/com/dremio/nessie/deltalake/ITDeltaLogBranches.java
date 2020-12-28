@@ -15,11 +15,21 @@
  */
 package com.dremio.nessie.deltalake;
 
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.client.tests.AbstractSparkTest;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.ContentsKey;
+import com.dremio.nessie.model.DeltaLakeTable;
+import com.dremio.nessie.model.Reference;
+import io.delta.tables.DeltaTable;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
@@ -32,27 +42,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
-import com.dremio.nessie.client.tests.AbstractSparkTest;
-import com.dremio.nessie.error.NessieConflictException;
-import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.Contents;
-import com.dremio.nessie.model.ContentsKey;
-import com.dremio.nessie.model.DeltaLakeTable;
-import com.dremio.nessie.model.Reference;
-
-import io.delta.tables.DeltaTable;
 import scala.Tuple2;
 
 class ITDeltaLogBranches extends AbstractSparkTest {
 
   private NessieClient client;
 
-  @TempDir
-  File tempPath;
+  @TempDir File tempPath;
 
   @BeforeAll
   protected static void createDelta() {
@@ -65,7 +61,6 @@ class ITDeltaLogBranches extends AbstractSparkTest {
   @BeforeEach
   public void createClient() {
     client = new NessieClient(AuthType.NONE, url, null, null);
-
   }
 
   @AfterEach
@@ -74,7 +69,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     try {
       ref = client.getTreeApi().getReferenceByName("test");
     } catch (NessieNotFoundException e) {
-      //pass ignore
+      // pass ignore
     }
     if (ref != null) {
       client.getTreeApi().deleteBranch("test", ref.getHash());
@@ -85,11 +80,17 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
   @Test
   void testBranches() throws NessieNotFoundException, NessieConflictException {
-    Dataset<Row> targetTable = createKVDataSet(Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)), "key", "value");
+    Dataset<Row> targetTable =
+        createKVDataSet(
+            Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
+            "key",
+            "value");
     // write some data to table
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     // create test at the point where there is only 1 commit
-    client.getTreeApi().createReference(Branch.of("test", client.getTreeApi().getDefaultBranch().getHash()));
+    client
+        .getTreeApi()
+        .createReference(Branch.of("test", client.getTreeApi().getDefaultBranch().getHash()));
     // add some more data to main
     targetTable.write().format("delta").mode("append").save(tempPath.getAbsolutePath());
 
@@ -111,12 +112,15 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
     // we expect the table from test to be half the size of the table from main
     Assertions.assertEquals(expectedSize * 0.5, targetBranch.collectAsList().size());
-
   }
 
   @Test
   void testCheckpoint() throws NessieNotFoundException {
-    Dataset<Row> targetTable = createKVDataSet(Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)), "key", "value");
+    Dataset<Row> targetTable =
+        createKVDataSet(
+            Arrays.asList(tuple2(1, 10), tuple2(2, 20), tuple2(3, 30), tuple2(4, 40)),
+            "key",
+            "value");
     // write some data to table
     targetTable.write().format("delta").save(tempPath.getAbsolutePath());
     // write enough to trigger a checkpoint generation
@@ -129,8 +133,10 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     Assertions.assertEquals(64, expectedSize);
 
     String tableName = tempPath.getAbsolutePath() + "/_delta_log";
-    Contents contents = client.getContentsApi()
-                              .getContents(new ContentsKey(Arrays.asList(tableName.split("/"))), "main");
+    Contents contents =
+        client
+            .getContentsApi()
+            .getContents(new ContentsKey(Arrays.asList(tableName.split("/"))), "main");
     Optional<DeltaLakeTable> table = contents.unwrap(DeltaLakeTable.class);
     Assertions.assertTrue(table.isPresent());
     Assertions.assertEquals(1, table.get().getCheckpointLocationHistory().size());
@@ -138,8 +144,8 @@ class ITDeltaLogBranches extends AbstractSparkTest {
     Assertions.assertNotNull(table.get().getLastCheckpoint());
   }
 
-
-  private Dataset<Row> createKVDataSet(List<Tuple2<Integer, Integer>> data, String keyName, String valueName) {
+  private Dataset<Row> createKVDataSet(
+      List<Tuple2<Integer, Integer>> data, String keyName, String valueName) {
     Encoder<Tuple2<Integer, Integer>> encoder = Encoders.tuple(Encoders.INT(), Encoders.INT());
     return spark.createDataset(data, encoder).toDF(keyName, valueName);
   }
@@ -147,6 +153,4 @@ class ITDeltaLogBranches extends AbstractSparkTest {
   private <T1, T2> Tuple2<T1, T2> tuple2(T1 t1, T2 t2) {
     return new Tuple2<>(t1, t2);
   }
-
-
 }

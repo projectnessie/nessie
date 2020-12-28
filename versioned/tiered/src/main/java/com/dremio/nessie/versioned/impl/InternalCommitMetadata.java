@@ -31,9 +31,10 @@ public class InternalCommitMetadata extends WrappedValueBean {
 
   @Override
   protected long getSeed() {
-    return 2279557414590649190L;// an arbitrary but consistent seed to ensure no hash conflicts.
+    return 2279557414590649190L; // an arbitrary but consistent seed to ensure no hash conflicts.
   }
 
   public static final SimpleSchema<InternalCommitMetadata> SCHEMA =
-      new WrappedValueBean.WrappedValueSchema<>(InternalCommitMetadata.class, InternalCommitMetadata::new);
+      new WrappedValueBean.WrappedValueSchema<>(
+          InternalCommitMetadata.class, InternalCommitMetadata::new);
 }

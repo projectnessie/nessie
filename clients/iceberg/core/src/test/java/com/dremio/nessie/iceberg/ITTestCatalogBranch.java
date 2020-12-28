@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.iceberg;
 
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.model.Branch;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import com.dremio.nessie.error.NessieConflictException;
-import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.model.Branch;
 
 class ITTestCatalogBranch extends BaseTestIceberg {
 
@@ -37,8 +35,8 @@ class ITTestCatalogBranch extends BaseTestIceberg {
   public void testBasicBranch() throws NessieNotFoundException, NessieConflictException {
     TableIdentifier foobar = TableIdentifier.of("foo", "bar");
     TableIdentifier foobaz = TableIdentifier.of("foo", "baz");
-    Table bar = createTable(foobar, 1); //table 1
-    createTable(foobaz, 1); //table 2
+    Table bar = createTable(foobar, 1); // table 1
+    createTable(foobaz, 1); // table 2
     catalog.refresh();
     createBranch("test", catalog.getHash());
 
@@ -57,7 +55,6 @@ class ITTestCatalogBranch extends BaseTestIceberg {
     Assertions.assertEquals(initialMetadataLocation, getContent(newCatalog, foobar));
     initialMetadataLocation = getContent(newCatalog, foobaz);
 
-
     newCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
 
     // metadata location changed no longer matches
@@ -68,14 +65,11 @@ class ITTestCatalogBranch extends BaseTestIceberg {
 
     String mainHash = tree.getReferenceByName("main").getHash();
     tree.assignBranch("main", mainHash, Branch.of("main", newCatalog.getHash()));
-    Assertions.assertEquals(getContent(newCatalog, foobar),
-                            getContent(catalog, foobar));
-    Assertions.assertEquals(getContent(newCatalog, foobaz),
-                            getContent(catalog, foobaz));
+    Assertions.assertEquals(getContent(newCatalog, foobar), getContent(catalog, foobar));
+    Assertions.assertEquals(getContent(newCatalog, foobaz), getContent(catalog, foobaz));
     catalog.dropTable(foobar);
     catalog.dropTable(foobaz);
     newCatalog.refresh();
     catalog.getTreeApi().deleteBranch("test", newCatalog.getHash());
   }
-
 }

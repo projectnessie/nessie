@@ -15,28 +15,6 @@
  */
 package com.dremio.nessie.hms;
 
-import java.io.File;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import javax.lang.model.element.Modifier;
-
-import org.apache.hadoop.hive.metastore.RawStore;
-import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
-import org.apache.hadoop.hive.metastore.api.CurrentNotificationEventId;
-import org.apache.hadoop.hive.metastore.api.NotificationEventResponse;
-import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
-
 import com.dremio.nessie.hms.annotation.MethodSignature;
 import com.dremio.nessie.hms.annotation.NoopQuiet;
 import com.dremio.nessie.hms.annotation.NoopQuiet.QuietMode;
@@ -50,7 +28,25 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
-
+import java.io.File;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.lang.model.element.Modifier;
+import org.apache.hadoop.hive.metastore.RawStore;
+import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
+import org.apache.hadoop.hive.metastore.api.CurrentNotificationEventId;
+import org.apache.hadoop.hive.metastore.api.NotificationEventResponse;
+import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -58,13 +54,20 @@ import picocli.CommandLine.Option;
 @Command(
     name = "generate-hive-raw-store",
     mixinStandardHelpOptions = true,
-    description = "Generates delegating and non-delegating RawStore implementations for a particular Hive version.")
+    description =
+        "Generates delegating and non-delegating RawStore implementations for a particular Hive version.")
 public class CodeGenerator implements Callable<Integer> {
 
-  @Option(names = {"-m", "--mode"}, required = true, description = "Hive version to generate. Valid values: ${COMPLETION-CANDIDATES}")
+  @Option(
+      names = {"-m", "--mode"},
+      required = true,
+      description = "Hive version to generate. Valid values: ${COMPLETION-CANDIDATES}")
   private HiveVersion version = HiveVersion.HIVE3;
 
-  @Option(names = {"-o", "--output"}, required = true, description = "Output path to write to")
+  @Option(
+      names = {"-o", "--output"},
+      required = true,
+      description = "Output path to write to")
   private String outputPath;
 
   @Override
@@ -76,7 +79,7 @@ public class CodeGenerator implements Callable<Integer> {
     for (Method m : version.annotatedInterface.getMethods()) {
       MethodSignature s = new MethodSignature(m);
       methods.put(s, new MethodHolder(m, false));
-      s.extendIfNecessary().ifPresent(s2 -> methods.put(s2,  new MethodHolder(m, true)));
+      s.extendIfNecessary().ifPresent(s2 -> methods.put(s2, new MethodHolder(m, true)));
     }
 
     for (Method definedMethod : RawStore.class.getMethods()) {
@@ -89,14 +92,18 @@ public class CodeGenerator implements Callable<Integer> {
       generateMethod(version, holder, definedMethod).ifPresent(raw::addMethod);
     }
 
-    raw.addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
-        .addStatement("super(false)")
-        .build());
+    raw.addMethod(
+        MethodSpec.constructorBuilder()
+            .addModifiers(Modifier.PUBLIC)
+            .addStatement("super(false)")
+            .build());
 
-    raw.addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
-        .addParameter(boolean.class, "delegate")
-        .addStatement("super(delegate)")
-        .build());
+    raw.addMethod(
+        MethodSpec.constructorBuilder()
+            .addModifiers(Modifier.PUBLIC)
+            .addParameter(boolean.class, "delegate")
+            .addStatement("super(delegate)")
+            .build());
 
     TypeSpec nodelegate = raw.build();
     {
@@ -106,16 +113,19 @@ public class CodeGenerator implements Callable<Integer> {
 
     TypeSpec.Builder delegating = version.delegatingBuilder(nodelegate);
 
-    delegating.addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
-        .addStatement("super(true)")
-        .build());
+    delegating.addMethod(
+        MethodSpec.constructorBuilder()
+            .addModifiers(Modifier.PUBLIC)
+            .addStatement("super(true)")
+            .build());
     JavaFile javaFile = JavaFile.builder("org.projectnessie", delegating.build()).build();
     javaFile.writeTo(new File(outputPath));
 
     return 0;
   }
 
-  private static Optional<MethodSpec> generateMethod(HiveVersion version, MethodHolder holder, Method definedMethod) {
+  private static Optional<MethodSpec> generateMethod(
+      HiveVersion version, MethodHolder holder, Method definedMethod) {
 
     final Method boundMethod = holder.method;
     final boolean extended = holder.extended();
@@ -124,8 +134,10 @@ public class CodeGenerator implements Callable<Integer> {
     final NoopThrow loud = boundMethod.getAnnotation(NoopThrow.class);
     final Union union = boundMethod.getAnnotation(Union.class);
 
-    List<Param> parameters = Stream.of(definedMethod.getParameters()).map(p -> new Param(p.getName(), p.getParameterizedType()))
-        .collect(Collectors.toList());
+    List<Param> parameters =
+        Stream.of(definedMethod.getParameters())
+            .map(p -> new Param(p.getName(), p.getParameterizedType()))
+            .collect(Collectors.toList());
     if (extended) {
       parameters.set(0, new Param("catalogName", parameters.get(0).getType()));
       for (int i = 0; i < boundMethod.getParameterCount(); i++) {
@@ -137,7 +149,6 @@ public class CodeGenerator implements Callable<Integer> {
         Parameter p = boundMethod.getParameters()[i];
         parameters.set(i, new Param(p.getName(), p.getParameterizedType()));
       }
-
     }
 
     int argNumber = -1;
@@ -166,10 +177,11 @@ public class CodeGenerator implements Callable<Integer> {
     Param param = routed ? parameters.get(argNumber) : null;
     boolean hasReturn = definedMethod.getGenericReturnType() != void.class;
 
-    MethodSpec.Builder meth = MethodSpec.methodBuilder(definedMethod.getName())
-        .addModifiers(Modifier.PUBLIC)
-        .addAnnotation(Override.class)
-        .returns(definedMethod.getGenericReturnType());
+    MethodSpec.Builder meth =
+        MethodSpec.methodBuilder(definedMethod.getName())
+            .addModifiers(Modifier.PUBLIC)
+            .addAnnotation(Override.class)
+            .returns(definedMethod.getGenericReturnType());
 
     if (routed) {
       meth.addComment("This method is routed based on the database name provided.");
@@ -189,27 +201,37 @@ public class CodeGenerator implements Callable<Integer> {
       }
     }
 
-
     String returnStr = hasReturn ? "return " : "";
 
-    List<Param> nessieList = holder.extended ? parameters.subList(1, parameters.size()) : parameters;
+    List<Param> nessieList =
+        holder.extended ? parameters.subList(1, parameters.size()) : parameters;
     parameters.stream().forEach(p -> meth.addParameter(p.getType(), p.getName()));
     Stream.of(definedMethod.getGenericExceptionTypes()).forEach(e -> meth.addException(e));
 
     if (routed) {
       CodeBlock.Builder code = CodeBlock.builder();
 
-      if (param.getType() instanceof ParameterizedType && ((ParameterizedType)param.getType()).getRawType() == List.class) {
-        code.beginControlFlow("if (routeToDelegate($L.stream().flatMap($T::route)))", param.getName(), version.baseRawStore);
+      if (param.getType() instanceof ParameterizedType
+          && ((ParameterizedType) param.getType()).getRawType() == List.class) {
+        code.beginControlFlow(
+            "if (routeToDelegate($L.stream().flatMap($T::route)))",
+            param.getName(),
+            version.baseRawStore);
       } else {
         code.beginControlFlow("if (routeToDelegate(route($L)))", param.getName());
       }
 
-      code.addStatement("$Ldelegate.$L($L)", returnStr, definedMethod.getName(),
+      code.addStatement(
+          "$Ldelegate.$L($L)",
+          returnStr,
+          definedMethod.getName(),
           parameters.stream().map(Param::getName).collect(Collectors.joining(", ")));
       code.nextControlFlow("else");
       if (noAnnotation) {
-        code.addStatement("$Lnessie.$L($L)", returnStr, definedMethod.getName(),
+        code.addStatement(
+            "$Lnessie.$L($L)",
+            returnStr,
+            definedMethod.getName(),
             nessieList.stream().map(Param::getName).collect(Collectors.joining(", ")));
       }
 
@@ -229,7 +251,10 @@ public class CodeGenerator implements Callable<Integer> {
         if (quiet != null) {
           CodeBlock.Builder code = CodeBlock.builder();
           code.beginControlFlow("if (hasDelegate)");
-          code.addStatement("$Ldelegate.$L($L)", returnStr, definedMethod.getName(),
+          code.addStatement(
+              "$Ldelegate.$L($L)",
+              returnStr,
+              definedMethod.getName(),
               parameters.stream().map(Param::getName).collect(Collectors.joining(", ")));
           code.nextControlFlow("else");
           quietReturn(version, code, quiet, definedMethod.getReturnType());
@@ -237,22 +262,26 @@ public class CodeGenerator implements Callable<Integer> {
           meth.addCode(code.build());
         } else {
           meth.addStatement("checkHasDelegate()");
-          meth.addStatement("$Ldelegate.$L($L)", returnStr, definedMethod.getName(),
+          meth.addStatement(
+              "$Ldelegate.$L($L)",
+              returnStr,
+              definedMethod.getName(),
               parameters.stream().map(Param::getName).collect(Collectors.joining(", ")));
         }
-
 
       } else {
         CodeBlock.Builder b = CodeBlock.builder();
         b.beginControlFlow("if (hasDelegate)");
-        b.addStatement("return union(delegate.$L($L), nessie.$L($L))",
+        b.addStatement(
+            "return union(delegate.$L($L), nessie.$L($L))",
             definedMethod.getName(),
             parameters.stream().map(Param::getName).collect(Collectors.joining(", ")),
             definedMethod.getName(),
-            nessieList.stream().map(Param::getName).collect(Collectors.joining(", "))
-        );
+            nessieList.stream().map(Param::getName).collect(Collectors.joining(", ")));
         b.nextControlFlow("else");
-        b.addStatement("return nessie.$L($L)", definedMethod.getName(),
+        b.addStatement(
+            "return nessie.$L($L)",
+            definedMethod.getName(),
             nessieList.stream().map(Param::getName).collect(Collectors.joining(", ")));
         b.endControlFlow();
         meth.addCode(b.build());
@@ -262,7 +291,8 @@ public class CodeGenerator implements Callable<Integer> {
     return Optional.of(meth.build());
   }
 
-  private static void quietReturn(HiveVersion version, CodeBlock.Builder code, NoopQuiet quiet, Class<?> returnType) {
+  private static void quietReturn(
+      HiveVersion version, CodeBlock.Builder code, NoopQuiet quiet, Class<?> returnType) {
     if (returnType != void.class) {
       if (quiet.value() == QuietMode.NULL) {
         code.addStatement("return null");
@@ -300,7 +330,7 @@ public class CodeGenerator implements Callable<Integer> {
   }
 
   public static enum HiveVersion {
-    HIVE2("Hive2", AnnotatedHive2RawStore.class, (a,b) -> false, BaseRawStore.class),
+    HIVE2("Hive2", AnnotatedHive2RawStore.class, (a, b) -> false, BaseRawStore.class),
     HIVE3("Hive3", AnnotatedHive3RawStore.class, Hive3EmptyCode::quietReturn, BaseRawStore3.class);
 
     private final String prefix;
@@ -308,7 +338,11 @@ public class CodeGenerator implements Callable<Integer> {
     private final QuietReturn quietReturn;
     private final Class<? extends BaseRawStore> baseRawStore;
 
-    HiveVersion(String classPrefix, Class<?> annotatedInterface, QuietReturn quietReturn, Class<? extends BaseRawStore> baseRawStore) {
+    HiveVersion(
+        String classPrefix,
+        Class<?> annotatedInterface,
+        QuietReturn quietReturn,
+        Class<? extends BaseRawStore> baseRawStore) {
       this.prefix = classPrefix;
       this.annotatedInterface = annotatedInterface;
       this.quietReturn = quietReturn;
@@ -317,14 +351,15 @@ public class CodeGenerator implements Callable<Integer> {
 
     public TypeSpec.Builder nonDelegatingBuilder() {
       return TypeSpec.classBuilder(prefix + "NessieRawStore")
-        .superclass(baseRawStore).addModifiers(Modifier.PUBLIC);
+          .superclass(baseRawStore)
+          .addModifiers(Modifier.PUBLIC);
     }
 
     public TypeSpec.Builder delegatingBuilder(TypeSpec nodelegate) {
       return TypeSpec.classBuilder("Delegating" + prefix + "NessieRawStore")
-          .superclass(ClassName.bestGuess(nodelegate.name)).addModifiers(Modifier.PUBLIC);
+          .superclass(ClassName.bestGuess(nodelegate.name))
+          .addModifiers(Modifier.PUBLIC);
     }
-
   }
 
   private static class Param {
@@ -345,7 +380,6 @@ public class CodeGenerator implements Callable<Integer> {
     public Type getType() {
       return type;
     }
-
   }
 
   private static class MethodHolder {

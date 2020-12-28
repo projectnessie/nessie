@@ -19,17 +19,16 @@ import static com.dremio.nessie.iceberg.NessieCatalog.CONF_NESSIE_REF;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class TestParsedTableIdentifier {
 
-
   @Test
   void noMarkings() {
     String path = "foo";
-    ParsedTableIdentifier pti = ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>());
+    ParsedTableIdentifier pti =
+        ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>());
     Assertions.assertEquals(path, pti.getTableIdentifier().name());
     Assertions.assertNull(pti.getReference());
     Assertions.assertNull(pti.getTimestamp());
@@ -38,7 +37,8 @@ class TestParsedTableIdentifier {
   @Test
   void branchOnly() {
     String path = "foo@bar";
-    ParsedTableIdentifier pti = ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>());
+    ParsedTableIdentifier pti =
+        ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>());
     Assertions.assertEquals("foo", pti.getTableIdentifier().name());
     Assertions.assertEquals("bar", pti.getReference());
     Assertions.assertNull(pti.getTimestamp());
@@ -47,26 +47,32 @@ class TestParsedTableIdentifier {
   @Test
   void timestampOnly() {
     String path = "foo#baz";
-    Assertions.assertThrows(IllegalArgumentException.class, () -> ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>()));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>()));
   }
 
   @Test
   void branchAndTimestamp() {
     String path = "foo@bar#baz";
-    Assertions.assertThrows(IllegalArgumentException.class, () -> ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>()));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>()));
   }
 
   @Test
   void twoBranches() {
     String path = "foo@bar@boo";
-    Assertions.assertThrows(IllegalArgumentException.class,
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
         () -> ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>()));
   }
 
   @Test
   void twoTimestamps() {
     String path = "foo#baz#baa";
-    Assertions.assertThrows(IllegalArgumentException.class,
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
         () -> ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>()));
   }
 
@@ -85,7 +91,8 @@ class TestParsedTableIdentifier {
   void strangeCharacters() {
     String branch = "bar";
     String path = "/%";
-    ParsedTableIdentifier pti = ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>());
+    ParsedTableIdentifier pti =
+        ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>());
     Assertions.assertEquals(path, pti.getTableIdentifier().name());
     Assertions.assertNull(pti.getReference());
     Assertions.assertNull(pti.getTimestamp());
@@ -108,7 +115,8 @@ class TestParsedTableIdentifier {
   void doubleByte() {
     String branch = "bar";
     String path = "/%国";
-    ParsedTableIdentifier pti = ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>());
+    ParsedTableIdentifier pti =
+        ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>());
     Assertions.assertEquals(path, pti.getTableIdentifier().name());
     Assertions.assertNull(pti.getReference());
     Assertions.assertNull(pti.getTimestamp());
@@ -131,7 +139,8 @@ class TestParsedTableIdentifier {
   void whitespace() {
     String branch = "bar ";
     String path = "foo ";
-    ParsedTableIdentifier pti = ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>());
+    ParsedTableIdentifier pti =
+        ParsedTableIdentifier.getParsedTableIdentifier(path, new HashMap<>());
     Assertions.assertEquals(path, pti.getTableIdentifier().name());
     Assertions.assertNull(pti.getReference());
     Assertions.assertNull(pti.getTimestamp());

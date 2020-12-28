@@ -15,30 +15,30 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import java.util.List;
-import java.util.Map;
-
 import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.protobuf.UnsafeByteOperations;
-
+import java.util.List;
+import java.util.Map;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-/**
- * Tools to convert to and from Entity/AttributeValue.
- */
+/** Tools to convert to and from Entity/AttributeValue. */
 public class AttributeValueUtil {
 
   /**
    * Convert an attribute value to an entity.
+   *
    * @param av Attribute value to convert
    * @return Entity version of value
    */
   public static Entity toEntity(AttributeValue av) {
     if (av.hasL()) {
-      return Entity.ofList(av.l().stream().map(AttributeValueUtil::toEntity).collect(ImmutableList.toImmutableList()));
+      return Entity.ofList(
+          av.l().stream()
+              .map(AttributeValueUtil::toEntity)
+              .collect(ImmutableList.toImmutableList()));
     } else if (av.hasM()) {
       return Entity.ofMap(Maps.transformValues(av.m(), AttributeValueUtil::toEntity));
     } else if (av.s() != null) {
@@ -64,18 +64,25 @@ public class AttributeValueUtil {
 
   /**
    * Convert from entity to AttributeValue.
+   *
    * @param e Entity to convert
    * @return AttributeValue to return
    */
   public static AttributeValue fromEntity(Entity e) {
     switch (e.getType()) {
       case BINARY:
-        return AttributeValue.builder().b(SdkBytes.fromByteBuffer(e.getBinary().asReadOnlyByteBuffer())).build();
+        return AttributeValue.builder()
+            .b(SdkBytes.fromByteBuffer(e.getBinary().asReadOnlyByteBuffer()))
+            .build();
       case BOOLEAN:
         return AttributeValue.builder().bool(e.getBoolean()).build();
       case LIST:
-        return AttributeValue.builder().l(e.getList().stream().map(AttributeValueUtil::fromEntity)
-            .collect(ImmutableList.toImmutableList())).build();
+        return AttributeValue.builder()
+            .l(
+                e.getList().stream()
+                    .map(AttributeValueUtil::fromEntity)
+                    .collect(ImmutableList.toImmutableList()))
+            .build();
       case MAP:
         return AttributeValue.builder().m(fromEntity(e.getMap())).build();
       case NUMBER:
@@ -92,8 +99,8 @@ public class AttributeValueUtil {
   }
 
   public static List<AttributeValue> fromEntity(List<Entity> list) {
-    return list.stream().map(AttributeValueUtil::fromEntity).collect(ImmutableList.toImmutableList());
+    return list.stream()
+        .map(AttributeValueUtil::fromEntity)
+        .collect(ImmutableList.toImmutableList());
   }
-
-
 }

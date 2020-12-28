@@ -15,8 +15,5 @@
  */
 package com.dremio.nessie.versioned;
 
-/**
- * Common interface for all types of refs.
- */
-public interface Ref {
-}
+/** Common interface for all types of refs. */
+public interface Ref {}

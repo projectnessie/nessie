@@ -15,14 +15,6 @@
  */
 package com.dremio.nessie.client;
 
-import java.util.List;
-
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
-
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
@@ -34,11 +26,17 @@ import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Tag;
 import com.dremio.nessie.model.Transplant;
+import java.util.List;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
 
 class ClientTreeApi implements TreeApi {
 
-  private static final GenericType<List<Reference>> REFERENCE_LIST = new GenericType<List<Reference>>() {
-  };
+  private static final GenericType<List<Reference>> REFERENCE_LIST =
+      new GenericType<List<Reference>>() {};
   private final WebTarget target;
 
   public ClientTreeApi(WebTarget target) {
@@ -47,126 +45,149 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public List<Reference> getAllReferences() {
-    return target.path("trees")
-                   .request(MediaType.APPLICATION_JSON_TYPE)
-                   .accept(MediaType.APPLICATION_JSON_TYPE)
-                   .get()
-                   .readEntity(REFERENCE_LIST);
+    return target
+        .path("trees")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .accept(MediaType.APPLICATION_JSON_TYPE)
+        .get()
+        .readEntity(REFERENCE_LIST);
   }
 
   @Override
   public void createReference(@NotNull Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    target.path("trees/tree").request()
+    target
+        .path("trees/tree")
+        .request()
         .post(Entity.entity(reference, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
   public Reference getReferenceByName(@NotNull String refName) throws NessieNotFoundException {
-    return target.path("trees/tree/{ref}")
-                   .resolveTemplate("ref", refName, true)
-                   .request()
-                   .accept(MediaType.APPLICATION_JSON_TYPE)
-                   .get()
-                   .readEntity(Reference.class);
+    return target
+        .path("trees/tree/{ref}")
+        .resolveTemplate("ref", refName, true)
+        .request()
+        .accept(MediaType.APPLICATION_JSON_TYPE)
+        .get()
+        .readEntity(Reference.class);
   }
 
   @Override
   public void assignTag(@NotNull String tagName, @NotNull String expectedHash, @NotNull Tag tag)
       throws NessieNotFoundException, NessieConflictException {
-    target.path("trees/tag/{tagName}")
-          .resolveTemplate("tagName", tagName, true)
-          .queryParam("expectedHash", expectedHash)
-          .request()
-          .put(Entity.entity(tag, MediaType.APPLICATION_JSON_TYPE));
+    target
+        .path("trees/tag/{tagName}")
+        .resolveTemplate("tagName", tagName, true)
+        .queryParam("expectedHash", expectedHash)
+        .request()
+        .put(Entity.entity(tag, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
-  public void deleteTag(@NotNull String tagName, @NotNull String expectedHash) throws NessieConflictException, NessieNotFoundException {
-    target.path("trees/tag/{tagName}")
-          .resolveTemplate("tagName", tagName, true)
-          .queryParam("expectedHash", expectedHash)
-          .request()
-          .delete();
+  public void deleteTag(@NotNull String tagName, @NotNull String expectedHash)
+      throws NessieConflictException, NessieNotFoundException {
+    target
+        .path("trees/tag/{tagName}")
+        .resolveTemplate("tagName", tagName, true)
+        .queryParam("expectedHash", expectedHash)
+        .request()
+        .delete();
   }
 
   @Override
-  public void assignBranch(@NotNull String branchName, @NotNull String expectedHash,
-                           @NotNull Branch branch) throws NessieNotFoundException, NessieConflictException {
-    target.path("trees/branch/{branchName}")
-          .resolveTemplate("branchName", branchName, true)
-          .queryParam("expectedHash", expectedHash)
-          .request()
-          .put(Entity.entity(branch, MediaType.APPLICATION_JSON_TYPE));
+  public void assignBranch(
+      @NotNull String branchName, @NotNull String expectedHash, @NotNull Branch branch)
+      throws NessieNotFoundException, NessieConflictException {
+    target
+        .path("trees/branch/{branchName}")
+        .resolveTemplate("branchName", branchName, true)
+        .queryParam("expectedHash", expectedHash)
+        .request()
+        .put(Entity.entity(branch, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
   public void deleteBranch(@NotNull String branchName, @NotNull String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
-    target.path("trees/branch/{branchName}")
-          .resolveTemplate("branchName", branchName, true)
-          .queryParam("expectedHash", expectedHash)
-          .request()
-          .delete();
+    target
+        .path("trees/branch/{branchName}")
+        .resolveTemplate("branchName", branchName, true)
+        .queryParam("expectedHash", expectedHash)
+        .request()
+        .delete();
   }
 
   @Override
   public Branch getDefaultBranch() {
-    return target.path("trees/tree")
-                 .request()
-                 .accept(MediaType.APPLICATION_JSON_TYPE)
-                 .get()
-                 .readEntity(Branch.class);
+    return target
+        .path("trees/tree")
+        .request()
+        .accept(MediaType.APPLICATION_JSON_TYPE)
+        .get()
+        .readEntity(Branch.class);
   }
 
   @Override
   public LogResponse getCommitLog(@NotNull String ref) throws NessieNotFoundException {
-    return target.path("trees/tree/{ref}/log").resolveTemplate("ref", ref, true)
-                 .request()
-                 .accept(MediaType.APPLICATION_JSON_TYPE)
-                 .get()
-                 .readEntity(LogResponse.class);
+    return target
+        .path("trees/tree/{ref}/log")
+        .resolveTemplate("ref", ref, true)
+        .request()
+        .accept(MediaType.APPLICATION_JSON_TYPE)
+        .get()
+        .readEntity(LogResponse.class);
   }
 
   @Override
-  public void transplantCommitsIntoBranch(@NotNull String branchName, @NotNull String expectedHash, String message, Transplant transplant)
+  public void transplantCommitsIntoBranch(
+      @NotNull String branchName,
+      @NotNull String expectedHash,
+      String message,
+      Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    target.path("trees/branch/{branchName}/transplant")
-          .resolveTemplate("branchName", branchName)
-          .queryParam("expectedHash", expectedHash)
-          .queryParam("message", message)
-          .request()
-          .put(Entity.entity(transplant, MediaType.APPLICATION_JSON_TYPE));
+    target
+        .path("trees/branch/{branchName}/transplant")
+        .resolveTemplate("branchName", branchName)
+        .queryParam("expectedHash", expectedHash)
+        .queryParam("message", message)
+        .request()
+        .put(Entity.entity(transplant, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
-  public void mergeRefIntoBranch(@NotNull String branchName, @NotNull String expectedHash, @NotNull Merge merge)
+  public void mergeRefIntoBranch(
+      @NotNull String branchName, @NotNull String expectedHash, @NotNull Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    target.path("trees/branch/{branchName}/merge")
-          .resolveTemplate("branchName", branchName)
-          .queryParam("expectedHash", expectedHash)
-          .request()
-          .post(Entity.entity(merge, MediaType.APPLICATION_JSON_TYPE));
+    target
+        .path("trees/branch/{branchName}/merge")
+        .resolveTemplate("branchName", branchName)
+        .queryParam("expectedHash", expectedHash)
+        .request()
+        .post(Entity.entity(merge, MediaType.APPLICATION_JSON_TYPE));
   }
 
   @Override
   public EntriesResponse getEntries(@NotNull String refName) throws NessieNotFoundException {
-    return target.path("trees/tree/{ref}/entries")
-                 .resolveTemplate("ref", refName, true)
-                 .request()
-                 .accept(MediaType.APPLICATION_JSON_TYPE)
-                 .get()
-                 .readEntity(EntriesResponse.class);
+    return target
+        .path("trees/tree/{ref}/entries")
+        .resolveTemplate("ref", refName, true)
+        .request()
+        .accept(MediaType.APPLICATION_JSON_TYPE)
+        .get()
+        .readEntity(EntriesResponse.class);
   }
 
   @Override
-  public void commitMultipleOperations(String branch, @NotNull String expectedHash, String message,
-                                       @NotNull Operations operations) throws NessieNotFoundException, NessieConflictException {
-    target.path("trees/branch/{branchName}/commit")
-          .resolveTemplate("branchName", branch)
-          .queryParam("expectedHash", expectedHash)
-          .queryParam("message", message)
-          .request()
-          .post(Entity.entity(operations, MediaType.APPLICATION_JSON_TYPE));
+  public void commitMultipleOperations(
+      String branch, @NotNull String expectedHash, String message, @NotNull Operations operations)
+      throws NessieNotFoundException, NessieConflictException {
+    target
+        .path("trees/branch/{branchName}/commit")
+        .resolveTemplate("branchName", branch)
+        .queryParam("expectedHash", expectedHash)
+        .queryParam("message", message)
+        .request()
+        .post(Entity.entity(operations, MediaType.APPLICATION_JSON_TYPE));
   }
 }

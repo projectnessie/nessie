@@ -19,8 +19,6 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection
 public enum JGitStoreType {
-
   DISK,
   INMEMORY;
-
 }

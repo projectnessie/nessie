@@ -15,13 +15,6 @@
  */
 package com.dremio.nessie.server.providers;
 
-import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import javax.inject.Singleton;
-
 import com.dremio.nessie.jgit.ObjectTypes.PContents;
 import com.dremio.nessie.jgit.ObjectTypes.PDeltaLakeTable;
 import com.dremio.nessie.jgit.ObjectTypes.PHiveDatabase;
@@ -50,6 +43,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.UnsafeByteOperations;
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.inject.Singleton;
 
 @Singleton
 public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitMeta> {
@@ -58,20 +56,24 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
   private final Serializer<CommitMeta> metaSerializer = metadataSerializer();
 
   private Serializer<Contents> serializer() {
-    //todo not handling TableMetadata at all...probably need to combine it w/ AssetKey
+    // todo not handling TableMetadata at all...probably need to combine it w/ AssetKey
     return new Serializer<Contents>() {
       @Override
       public ByteString toBytes(Contents value) {
         PContents.Builder builder = PContents.newBuilder();
         if (value instanceof IcebergTable) {
           builder.setIcebergTable(
-              PIcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
+              PIcebergTable.newBuilder()
+                  .setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
 
         } else if (value instanceof DeltaLakeTable) {
 
-          PDeltaLakeTable.Builder table = PDeltaLakeTable.newBuilder()
-              .addAllMetadataLocationHistory(((DeltaLakeTable) value).getMetadataLocationHistory())
-              .addAllCheckpointLocationHistory(((DeltaLakeTable) value).getCheckpointLocationHistory());
+          PDeltaLakeTable.Builder table =
+              PDeltaLakeTable.newBuilder()
+                  .addAllMetadataLocationHistory(
+                      ((DeltaLakeTable) value).getMetadataLocationHistory())
+                  .addAllCheckpointLocationHistory(
+                      ((DeltaLakeTable) value).getCheckpointLocationHistory());
           String lastCheckpoint = ((DeltaLakeTable) value).getLastCheckpoint();
           if (lastCheckpoint != null) {
             table.setLastCheckpoint(lastCheckpoint);
@@ -80,16 +82,26 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
         } else if (value instanceof HiveTable) {
           HiveTable ht = (HiveTable) value;
-          builder.setHiveTable(PHiveTable.newBuilder()
-              .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition())).addAllPartition(
-                  ht.getPartitions().stream().map(UnsafeByteOperations::unsafeWrap).collect(Collectors.toList())));
+          builder.setHiveTable(
+              PHiveTable.newBuilder()
+                  .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition()))
+                  .addAllPartition(
+                      ht.getPartitions().stream()
+                          .map(UnsafeByteOperations::unsafeWrap)
+                          .collect(Collectors.toList())));
 
         } else if (value instanceof HiveDatabase) {
-          builder.setHiveDatabase(PHiveDatabase.newBuilder()
-              .setDatabase(UnsafeByteOperations.unsafeWrap(((HiveDatabase) value).getDatabaseDefinition())));
+          builder.setHiveDatabase(
+              PHiveDatabase.newBuilder()
+                  .setDatabase(
+                      UnsafeByteOperations.unsafeWrap(
+                          ((HiveDatabase) value).getDatabaseDefinition())));
         } else if (value instanceof SqlView) {
           SqlView view = (SqlView) value;
-          builder.setSqlView(PSqlView.newBuilder().setDialect(view.getDialect().name()).setSqlText(view.getSqlText()));
+          builder.setSqlView(
+              PSqlView.newBuilder()
+                  .setDialect(view.getDialect().name())
+                  .setSqlText(view.getSqlText()));
         } else {
           throw new IllegalArgumentException("Unknown type" + value);
         }
@@ -107,9 +119,12 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
         }
         switch (contents.getObjectTypeCase()) {
           case DELTA_LAKE_TABLE:
-            Builder builder = ImmutableDeltaLakeTable.builder()
-                .addAllMetadataLocationHistory(contents.getDeltaLakeTable().getMetadataLocationHistoryList())
-                .addAllCheckpointLocationHistory(contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
+            Builder builder =
+                ImmutableDeltaLakeTable.builder()
+                    .addAllMetadataLocationHistory(
+                        contents.getDeltaLakeTable().getMetadataLocationHistoryList())
+                    .addAllCheckpointLocationHistory(
+                        contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
             if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
               builder.lastCheckpoint(contents.getDeltaLakeTable().getLastCheckpoint());
             }
@@ -117,27 +132,33 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
           case HIVE_DATABASE:
             return ImmutableHiveDatabase.builder()
-                .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build();
+                .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray())
+                .build();
 
           case HIVE_TABLE:
             return ImmutableHiveTable.builder()
-                .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray)
-                    .collect(Collectors.toList()))
-                .tableDefinition(contents.getHiveTable().getTable().toByteArray()).build();
+                .addAllPartitions(
+                    contents.getHiveTable().getPartitionList().stream()
+                        .map(ByteString::toByteArray)
+                        .collect(Collectors.toList()))
+                .tableDefinition(contents.getHiveTable().getTable().toByteArray())
+                .build();
 
           case ICEBERG_TABLE:
-            return ImmutableIcebergTable.builder().metadataLocation(contents.getIcebergTable().getMetadataLocation())
+            return ImmutableIcebergTable.builder()
+                .metadataLocation(contents.getIcebergTable().getMetadataLocation())
                 .build();
 
           case SQL_VIEW:
             PSqlView view = contents.getSqlView();
-            return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
+            return ImmutableSqlView.builder()
+                .dialect(Dialect.valueOf(view.getDialect()))
+                .sqlText(view.getSqlText())
                 .build();
 
           case OBJECTTYPE_NOT_SET:
           default:
             throw new IllegalArgumentException("Unknown type" + contents.getObjectTypeCase());
-
         }
       }
     };
@@ -161,11 +182,11 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
           return MAPPER.readValue(bytes.toByteArray(), CommitMeta.class);
         } catch (IOException e) {
           return ImmutableCommitMeta.builder()
-                                    .message("unknown")
-                                    .commiter("unknown")
-                                    .email("unknown")
-                                    .hash("unknown")
-                                    .build();
+              .message("unknown")
+              .commiter("unknown")
+              .email("unknown")
+              .hash("unknown")
+              .build();
         }
       }
     };

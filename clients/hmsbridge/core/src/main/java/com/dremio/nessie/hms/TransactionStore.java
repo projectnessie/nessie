@@ -15,19 +15,6 @@
  */
 package com.dremio.nessie.hms;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
-
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.error.NessieConflictException;
@@ -44,10 +31,22 @@ import com.dremio.nessie.model.Operation;
 import com.dremio.nessie.model.Reference;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 
 /**
- * Interface that guarantees consistency of access to underlying data. Caches all operations within a commit and makes
- * sure all rest api operations are merged with locally cached but not yet committed changes.
+ * Interface that guarantees consistency of access to underlying data. Caches all operations within
+ * a commit and makes sure all rest api operations are merged with locally cached but not yet
+ * committed changes.
  */
 class TransactionStore {
 
@@ -75,7 +74,7 @@ class TransactionStore {
 
     try {
       Item item = Item.fromContents(contents.getContents(contentsKey, ref));
-      cachedItems.put(key,  item);
+      cachedItems.put(key, item);
       return Optional.ofNullable(item);
     } catch (NessieNotFoundException e) {
       throw new NoSuchObjectException(String.format("Unable to find ref [%s].", ref));
@@ -101,13 +100,18 @@ class TransactionStore {
     ListMultimap<String, RefKey> keysByRef = Multimaps.index(refKeysToRetrieve, RefKey::getRef);
 
     for (String ref : keysByRef.keySet()) {
-      List<ContentsKey> keys = keysByRef.get(ref).stream().map(RefKey::getKey).collect(Collectors.toList());
-      MultiGetContentsResponse response = contents.getMultipleContents(ref,
-          ImmutableMultiGetContentsRequest.builder().addAllRequestedKeys(keys).build());
-      response.getContents().forEach(cwk -> {
-        RefKey key = new RefKey(ref, cwk.getKey());
-        items.set(keyToPos.get(key), Optional.of(Item.fromContents(cwk.getContents())));
-      });
+      List<ContentsKey> keys =
+          keysByRef.get(ref).stream().map(RefKey::getKey).collect(Collectors.toList());
+      MultiGetContentsResponse response =
+          contents.getMultipleContents(
+              ref, ImmutableMultiGetContentsRequest.builder().addAllRequestedKeys(keys).build());
+      response
+          .getContents()
+          .forEach(
+              cwk -> {
+                RefKey key = new RefKey(ref, cwk.getKey());
+                items.set(keyToPos.get(key), Optional.of(Item.fromContents(cwk.getContents())));
+              });
     }
 
     return items;
@@ -119,15 +123,20 @@ class TransactionStore {
 
   public Stream<Entry> getEntriesForDefaultRef() throws NessieNotFoundException {
     List<Entry> entries = tree.getEntries(reference.getHash()).getEntries();
-    Supplier<Stream<RefKey>> defaultRefKeys = () -> cachedItems.keySet().stream().filter(k -> k.getRef().equals(reference.getHash()));
-    Set<ContentsKey> toRemove = defaultRefKeys.get().map(RefKey::getKey).collect(Collectors.toSet());
-    return Stream.concat(entries.stream().filter(k -> !toRemove.contains(k.getName())),
-        defaultRefKeys.get().map(r -> ImmutableEntry.builder().name(r.getKey()).type(Type.UNKNOWN).build()));
+    Supplier<Stream<RefKey>> defaultRefKeys =
+        () -> cachedItems.keySet().stream().filter(k -> k.getRef().equals(reference.getHash()));
+    Set<ContentsKey> toRemove =
+        defaultRefKeys.get().map(RefKey::getKey).collect(Collectors.toSet());
+    return Stream.concat(
+        entries.stream().filter(k -> !toRemove.contains(k.getName())),
+        defaultRefKeys
+            .get()
+            .map(r -> ImmutableEntry.builder().name(r.getKey()).type(Type.UNKNOWN).build()));
   }
 
   void setItem(ContentsKey key, Item item) {
     checkWritable();
-    cachedItems.put(new RefKey(reference.getHash(),  key), item);
+    cachedItems.put(new RefKey(reference.getHash(), key), item);
     operations.add(Operation.Put.of(key, item.toContents()));
   }
 
@@ -137,19 +146,25 @@ class TransactionStore {
     }
 
     checkWritable();
-    tree.commitMultipleOperations(reference.getName(), reference.getHash(), "HMS commit",
-        ImmutableOperations.builder().addAllOperations(operations.stream().collect(Collectors.toList())).build());
+    tree.commitMultipleOperations(
+        reference.getName(),
+        reference.getHash(),
+        "HMS commit",
+        ImmutableOperations.builder()
+            .addAllOperations(operations.stream().collect(Collectors.toList()))
+            .build());
   }
 
   void deleteItem(ContentsKey key) {
     checkWritable();
-    cachedItems.put(new RefKey(reference.getHash(),  key), null);
+    cachedItems.put(new RefKey(reference.getHash(), key), null);
     operations.add(Operation.Delete.of(key));
   }
 
   private void checkWritable() {
     if (!writable) {
-      throw new IllegalArgumentException("Changes can only be applied to branches. The provided ref is not a branch.");
+      throw new IllegalArgumentException(
+          "Changes can only be applied to branches. The provided ref is not a branch.");
     }
   }
 
@@ -187,6 +202,5 @@ class TransactionStore {
       RefKey other = (RefKey) obj;
       return Objects.equals(key, other.key) && Objects.equals(ref, other.ref);
     }
-
   }
 }

@@ -15,17 +15,14 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.Optional;
 
-/**
- * A description of a specific value that was different from what was expected.
- */
+/** A description of a specific value that was different from what was expected. */
 public class InconsistentValue {
 
   private final Key key;
@@ -40,7 +37,8 @@ public class InconsistentValue {
   }
 
   /**
-   * Returned when a conflict is detected and the specific conflicts are known (not always the case).
+   * Returned when a conflict is detected and the specific conflicts are known (not always the
+   * case).
    */
   public static class InconsistentValueException extends ReferenceConflictException {
     private static final long serialVersionUID = -1983826821815886489L;
@@ -48,14 +46,16 @@ public class InconsistentValue {
     private final List<InconsistentValue> inconsistentValues;
 
     public InconsistentValueException(List<InconsistentValue> inconsistentValues) {
-      super(String.format("Unable to complete operation. Found %d inconsistent value(s).", inconsistentValues.size()));
+      super(
+          String.format(
+              "Unable to complete operation. Found %d inconsistent value(s).",
+              inconsistentValues.size()));
       this.inconsistentValues = ImmutableList.copyOf(inconsistentValues);
     }
 
     public List<InconsistentValue> getInconsistentValues() {
       return inconsistentValues;
     }
-
   }
 
   public Key getKey() {
@@ -69,5 +69,4 @@ public class InconsistentValue {
   public Optional<Id> getActual() {
     return actual;
   }
-
 }

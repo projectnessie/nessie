@@ -15,31 +15,31 @@
  */
 package com.dremio.nessie.client.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientResponseContext;
-import javax.ws.rs.client.ClientResponseFilter;
-import javax.ws.rs.core.Response.Status;
-
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieError;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import java.io.IOException;
+import java.io.InputStream;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientResponseContext;
+import javax.ws.rs.client.ClientResponseFilter;
+import javax.ws.rs.core.Response.Status;
 
 public class ResponseCheckFilter implements ClientResponseFilter {
 
   private static final ObjectReader READER = new ObjectMapper().readerFor(NessieError.class);
 
   @Override
-  public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
+  public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext)
+      throws IOException {
     checkResponse(responseContext.getStatus(), responseContext);
   }
 
   /**
    * check that response had a valid return code. Throw exception if not.
+   *
    * @throws IOException Throws IOException for certain error types.
    */
   @SuppressWarnings("incomplete-switch")
@@ -65,7 +65,6 @@ public class ResponseCheckFilter implements ClientResponseFilter {
       default:
         throw new NessieServiceException(error);
     }
-
   }
 
   private static NessieError decodeErrorObject(ClientResponseContext response) {
@@ -73,7 +72,12 @@ public class ResponseCheckFilter implements ClientResponseFilter {
     InputStream inputStream = response.getEntityStream();
     NessieError error;
     if (inputStream == null) {
-      error = new NessieError(status.getReasonPhrase(), status, null, new RuntimeException("Could not parse error object in response."));
+      error =
+          new NessieError(
+              status.getReasonPhrase(),
+              status,
+              null,
+              new RuntimeException("Could not parse error object in response."));
     } else {
       try {
         error = READER.readValue(inputStream);
@@ -83,5 +87,4 @@ public class ResponseCheckFilter implements ClientResponseFilter {
     }
     return error;
   }
-
 }

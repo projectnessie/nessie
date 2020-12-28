@@ -15,12 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl.condition;
 
-import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-
-import org.immutables.value.Value;
-
 import com.dremio.nessie.versioned.impl.condition.AliasCollector.Aliasable;
 import com.dremio.nessie.versioned.impl.condition.UpdateClause.Type;
 import com.google.common.base.Preconditions;
@@ -28,6 +22,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
+import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import org.immutables.value.Value;
 
 @Value.Immutable
 public abstract class UpdateExpression implements Aliasable<UpdateExpression> {
@@ -41,17 +39,20 @@ public abstract class UpdateExpression implements Aliasable<UpdateExpression> {
   @Override
   public UpdateExpression alias(AliasCollector c) {
     return ImmutableUpdateExpression.builder()
-        .clauses(getClauses().stream().map(f -> f.alias(c)).collect(ImmutableList.toImmutableList()))
+        .clauses(
+            getClauses().stream().map(f -> f.alias(c)).collect(ImmutableList.toImmutableList()))
         .build();
   }
 
   /**
    * Generate the expression string used for an update.
+   *
    * @return The update expression of this object.
    */
   public String toUpdateExpressionString() {
     Preconditions.checkArgument(!getClauses().isEmpty(), "At least one clauses must be defined.");
-    ListMultimap<UpdateClause.Type, UpdateClause> clauses = Multimaps.index(getClauses(), c -> c.getType());
+    ListMultimap<UpdateClause.Type, UpdateClause> clauses =
+        Multimaps.index(getClauses(), c -> c.getType());
     StringBuilder sb = new StringBuilder();
     addIfExist(sb, clauses.get(Type.ADD), Type.ADD);
     addIfExist(sb, clauses.get(Type.SET), Type.SET);
@@ -84,17 +85,18 @@ public abstract class UpdateExpression implements Aliasable<UpdateExpression> {
 
   /**
    * Collect update expressions into a single compound update expression.
+   *
    * @return combined update.
    */
-  public static final Collector<UpdateExpression, List<UpdateClause>, UpdateExpression> toUpdateExpression() {
+  public static final Collector<UpdateExpression, List<UpdateClause>, UpdateExpression>
+      toUpdateExpression() {
     return Collector.of(
-      Lists::newArrayList,
-      (o1, l1) -> o1.addAll(l1.getClauses()),
-      (o1, o2) -> {
-        o1.addAll(o2);
-        return o1;
-      },
-      o1 ->  ImmutableUpdateExpression.builder().addAllClauses(o1).build()
-      );
+        Lists::newArrayList,
+        (o1, l1) -> o1.addAll(l1.getClauses()),
+        (o1, o2) -> {
+          o1.addAll(o2);
+          return o1;
+        },
+        o1 -> ImmutableUpdateExpression.builder().addAllClauses(o1).build());
   }
 }

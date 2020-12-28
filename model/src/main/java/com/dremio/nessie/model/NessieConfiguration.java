@@ -13,27 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.model;
-
-import javax.annotation.Nullable;
-
-import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
-/**
- * configuration object to tell a client how a server is configured.
- */
+/** configuration object to tell a client how a server is configured. */
 @Value.Immutable
 @JsonSerialize(as = ImmutableNessieConfiguration.class)
 @JsonDeserialize(as = ImmutableNessieConfiguration.class)
 public abstract class NessieConfiguration {
 
-  @JsonIgnore
-  private static final String CURRENT_VERSION = "1.0";
+  @JsonIgnore private static final String CURRENT_VERSION = "1.0";
 
   @Nullable
   public abstract String getDefaultBranch();
@@ -42,5 +36,4 @@ public abstract class NessieConfiguration {
   public String getVersion() {
     return CURRENT_VERSION;
   }
-
 }

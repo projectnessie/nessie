@@ -15,12 +15,10 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.Map;
-
-import org.immutables.value.Value.Immutable;
-
 import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableMap;
+import java.util.Map;
+import org.immutables.value.Value.Immutable;
 
 abstract class KeyMutation {
 
@@ -63,7 +61,6 @@ abstract class KeyMutation {
     public static KeyRemoval of(InternalKey key) {
       return ImmutableKeyRemoval.builder().key(key).build();
     }
-
   }
 
   Entity toEntity() {

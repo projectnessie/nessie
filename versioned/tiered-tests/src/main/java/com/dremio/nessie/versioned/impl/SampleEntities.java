@@ -15,35 +15,36 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.Id;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.store.Entity;
-import com.dremio.nessie.versioned.store.Id;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-
 /**
- * This utility class generates sample objects mapping to each enumerate in
- * {@link com.dremio.nessie.versioned.store.ValueType}.
- * This should be moved to versioned/tests once it will not introduce a circular dependency. Currently this also relies
- * on being in the com.dremio.nessie.versioned.impl package for visibility to create the L1, L3, and InternalBranch
+ * This utility class generates sample objects mapping to each enumerate in {@link
+ * com.dremio.nessie.versioned.store.ValueType}. This should be moved to versioned/tests once it
+ * will not introduce a circular dependency. Currently this also relies on being in the
+ * com.dremio.nessie.versioned.impl package for visibility to create the L1, L3, and InternalBranch
  * objects, and should be moved once possible.
  */
 public class SampleEntities {
   /**
    * Create a Sample L1 entity.
+   *
    * @param random object to use for randomization of entity creation.
    * @return sample L1 entity.
    */
   public static L1 createL1(Random random) {
-    final List<KeyMutation> mutations = ImmutableList.of(
-        KeyMutation.KeyAddition.of(new InternalKey(Key.of("a", createString(random, 8), createString(random, 9))))
-    );
+    final List<KeyMutation> mutations =
+        ImmutableList.of(
+            KeyMutation.KeyAddition.of(
+                new InternalKey(Key.of("a", createString(random, 8), createString(random, 9)))));
 
     final List<Entity> deltaIds = new ArrayList<>(L1.SIZE);
     for (int i = 0; i < L1.SIZE; i++) {
@@ -51,13 +52,14 @@ public class SampleEntities {
     }
 
     return L1.EMPTY.getChildWithTree(
-      createId(random),
-      IdMap.fromEntity(Entity.ofList(deltaIds), L1.SIZE),
-      KeyMutationList.of(mutations));
+        createId(random),
+        IdMap.fromEntity(Entity.ofList(deltaIds), L1.SIZE),
+        KeyMutationList.of(mutations));
   }
 
   /**
    * Create a Sample L2 entity.
+   *
    * @param random object to use for randomization of entity creation.
    * @return sample L2 entity.
    */
@@ -76,6 +78,7 @@ public class SampleEntities {
 
   /**
    * Create a Sample L3 entity.
+   *
    * @param random object to use for randomization of entity creation.
    * @return sample L3 entity.
    */
@@ -83,8 +86,11 @@ public class SampleEntities {
     final int size = 100;
     L3 l3 = L3.EMPTY;
     for (int i = 0; i < size; ++i) {
-      l3 = l3.set(new InternalKey(Key.of(
-        createString(random, 5), createString(random, 9), String.valueOf(i))), createId(random));
+      l3 =
+          l3.set(
+              new InternalKey(
+                  Key.of(createString(random, 5), createString(random, 9), String.valueOf(i))),
+              createId(random));
     }
 
     return l3;
@@ -92,6 +98,7 @@ public class SampleEntities {
 
   /**
    * Create a Sample Fragment entity.
+   *
    * @param random object to use for randomization of entity creation.
    * @return sample Fragment entity.
    */
@@ -99,8 +106,11 @@ public class SampleEntities {
     final int size = 10;
     final List<Entity> keyList = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
-      keyList.add(Entity.ofList(
-          createStringEntity(random, 5), createStringEntity(random, 8), Entity.ofString(String.valueOf(i))));
+      keyList.add(
+          Entity.ofList(
+              createStringEntity(random, 5),
+              createStringEntity(random, 8),
+              Entity.ofString(String.valueOf(i))));
     }
 
     final Map<String, Entity> attributeMap = new HashMap<>();
@@ -112,6 +122,7 @@ public class SampleEntities {
 
   /**
    * Create a Sample Branch (InternalRef) entity.
+   *
    * @param random object to use for randomization of entity creation.
    * @return sample Branch (InternalRef) entity.
    */
@@ -123,22 +134,32 @@ public class SampleEntities {
 
     // Two commits, one with a DELTA and one without.
     final List<Entity> commitList = new ArrayList<>(2);
-    commitList.add(Entity.ofMap(ImmutableMap.of(
-        "id", createIdEntity(random),
-        "commit", createIdEntity(random),
-        "parent", createIdEntity(random)
-    )));
-    commitList.add(Entity.ofMap(ImmutableMap.of(
-        "id", createIdEntity(random),
-        "commit", createIdEntity(random),
-        "deltas", Entity.ofList(Entity.ofMap(ImmutableMap.of(
-            "position", Entity.ofNumber(1),
-            "old", createIdEntity(random),
-            "new", createIdEntity(random)
-        ))),
-        "keys", Entity.ofList(Entity.ofMap(ImmutableMap.of("a",
-            Entity.ofList(createStringEntity(random, 8), createStringEntity(random, 8)))))
-    )));
+    commitList.add(
+        Entity.ofMap(
+            ImmutableMap.of(
+                "id", createIdEntity(random),
+                "commit", createIdEntity(random),
+                "parent", createIdEntity(random))));
+    commitList.add(
+        Entity.ofMap(
+            ImmutableMap.of(
+                "id", createIdEntity(random),
+                "commit", createIdEntity(random),
+                "deltas",
+                    Entity.ofList(
+                        Entity.ofMap(
+                            ImmutableMap.of(
+                                "position", Entity.ofNumber(1),
+                                "old", createIdEntity(random),
+                                "new", createIdEntity(random)))),
+                "keys",
+                    Entity.ofList(
+                        Entity.ofMap(
+                            ImmutableMap.of(
+                                "a",
+                                Entity.ofList(
+                                    createStringEntity(random, 8),
+                                    createStringEntity(random, 8))))))));
 
     final Map<String, Entity> attributeMap = new HashMap<>();
     attributeMap.put(InternalRef.TYPE, Entity.ofString("b"));
@@ -154,6 +175,7 @@ public class SampleEntities {
 
   /**
    * Create a Sample Tag (InternalRef) entity.
+   *
    * @param random object to use for randomization of entity creation.
    * @return sample Tag (InternalRef) entity.
    */
@@ -169,6 +191,7 @@ public class SampleEntities {
 
   /**
    * Create a Sample CommitMetadata entity.
+   *
    * @param random object to use for randomization of entity creation.
    * @return sample CommitMetadata entity.
    */
@@ -182,6 +205,7 @@ public class SampleEntities {
 
   /**
    * Create a Sample Value entity.
+   *
    * @param random object to use for randomization of entity creation.
    * @return sample Value entity.
    */
@@ -195,6 +219,7 @@ public class SampleEntities {
 
   /**
    * Create an array of random bytes.
+   *
    * @param random random number generator to use.
    * @param numBytes the size of the array.
    * @return the array of random bytes.
@@ -207,12 +232,14 @@ public class SampleEntities {
 
   /**
    * Create a String of random characters.
+   *
    * @param random random number generator to use.
    * @param numChars the size of the String.
    * @return the String of random characters.
    */
   private static String createString(Random random, int numChars) {
-    return random.ints('a', 'z' + 1)
+    return random
+        .ints('a', 'z' + 1)
         .limit(numChars)
         .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
         .toString();

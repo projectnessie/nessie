@@ -13,52 +13,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.model;
-
-import java.util.Objects;
-import java.util.Optional;
-
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Objects;
+import java.util.Optional;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-/**
- * Abstract implementation of contents within Nessie.
- */
+/** Abstract implementation of contents within Nessie. */
 @Schema(
     type = SchemaType.OBJECT,
     title = "Contents",
-    oneOf = { IcebergTable.class, DeltaLakeTable.class, SqlView.class, HiveTable.class, HiveDatabase.class },
-    discriminatorMapping = {
-        @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class),
-        @DiscriminatorMapping(value = "DELTA_LAKE_TABLE", schema = DeltaLakeTable.class),
-        @DiscriminatorMapping(value = "VIEW", schema = SqlView.class),
-        @DiscriminatorMapping(value = "HIVE_TABLE", schema = HiveTable.class),
-        @DiscriminatorMapping(value = "HIVE_DATABASE", schema = HiveDatabase.class)
+    oneOf = {
+      IcebergTable.class,
+      DeltaLakeTable.class,
+      SqlView.class,
+      HiveTable.class,
+      HiveDatabase.class
     },
-    discriminatorProperty = "type"
-  )
+    discriminatorMapping = {
+      @DiscriminatorMapping(value = "ICEBERG_TABLE", schema = IcebergTable.class),
+      @DiscriminatorMapping(value = "DELTA_LAKE_TABLE", schema = DeltaLakeTable.class),
+      @DiscriminatorMapping(value = "VIEW", schema = SqlView.class),
+      @DiscriminatorMapping(value = "HIVE_TABLE", schema = HiveTable.class),
+      @DiscriminatorMapping(value = "HIVE_DATABASE", schema = HiveDatabase.class)
+    },
+    discriminatorProperty = "type")
 @JsonSubTypes({
-    @Type(IcebergTable.class),
-    @Type(DeltaLakeTable.class),
-    @Type(SqlView.class),
-    @Type(HiveTable.class),
-    @Type(HiveDatabase.class)
-  })
+  @Type(IcebergTable.class),
+  @Type(DeltaLakeTable.class),
+  @Type(SqlView.class),
+  @Type(HiveTable.class),
+  @Type(HiveDatabase.class)
+})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public interface Contents {
 
   static enum Type {
-    UNKNOWN, ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
+    UNKNOWN,
+    ICEBERG_TABLE,
+    DELTA_LAKE_TABLE,
+    HIVE_TABLE,
+    HIVE_DATABASE,
+    VIEW;
   }
 
   /**
    * Unwrap object if possible, otherwise throw.
+   *
    * @param <T> Type to wrap to.
    * @param clazz Class we're trying to return.
    * @return The return value
@@ -70,5 +76,4 @@ public interface Contents {
     }
     return Optional.empty();
   }
-
 }

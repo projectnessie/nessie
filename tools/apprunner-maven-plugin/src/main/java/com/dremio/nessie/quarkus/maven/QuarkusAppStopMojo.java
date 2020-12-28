@@ -20,14 +20,10 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
-/**
- * Stop Quarkus application.
- */
+/** Stop Quarkus application. */
 @Mojo(name = "stop", requiresDependencyResolution = ResolutionScope.NONE, threadSafe = true)
 public class QuarkusAppStopMojo extends AbstractQuarkusAppMojo {
-  /**
-   * Mojo execution.
-   */
+  /** Mojo execution. */
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (isSkipped()) {
@@ -49,5 +45,4 @@ public class QuarkusAppStopMojo extends AbstractQuarkusAppMojo {
       resetApplication();
     }
   }
-
 }

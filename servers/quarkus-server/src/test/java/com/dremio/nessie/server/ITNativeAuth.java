@@ -18,6 +18,4 @@ package com.dremio.nessie.server;
 import io.quarkus.test.junit.NativeImageTest;
 
 @NativeImageTest
-public class ITNativeAuth extends TestAuth {
-
-}
+public class ITNativeAuth extends TestAuth {}

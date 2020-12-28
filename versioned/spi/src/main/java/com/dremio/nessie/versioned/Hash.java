@@ -18,21 +18,20 @@ package com.dremio.nessie.versioned;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.io.BaseEncoding;
+import com.google.common.io.BaseEncoding.DecodingException;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Objects;
-
 import javax.annotation.Nonnull;
 
-import com.google.common.io.BaseEncoding;
-import com.google.common.io.BaseEncoding.DecodingException;
-import com.google.protobuf.ByteString;
-
 /**
- * Describes a specific point in time/history. Internally is a binary value but a string representation is available.
+ * Describes a specific point in time/history. Internally is a binary value but a string
+ * representation is available.
  */
 public final class Hash implements Ref {
 
@@ -44,8 +43,7 @@ public final class Hash implements Ref {
   }
 
   /**
-   * Generates a string representation of the hash suitable to be used with
-   * {@link #of(String)}.
+   * Generates a string representation of the hash suitable to be used with {@link #of(String)}.
    *
    * @return
    */
@@ -63,6 +61,7 @@ public final class Hash implements Ref {
 
   /**
    * Gets the bytes representation of the hash.
+   *
    * @return the hash's bytes
    */
   public ByteString asBytes() {
@@ -79,7 +78,8 @@ public final class Hash implements Ref {
    */
   public static Hash of(@Nonnull String hash) {
     requireNonNull(hash);
-    checkArgument(hash.length() % 2 == 0, "hash length needs to be a multiple of two, was %s", hash.length());
+    checkArgument(
+        hash.length() % 2 == 0, "hash length needs to be a multiple of two, was %s", hash.length());
 
     final int maxSize = hash.length() / 2;
     try (final StringReader sr = new StringReader(hash);

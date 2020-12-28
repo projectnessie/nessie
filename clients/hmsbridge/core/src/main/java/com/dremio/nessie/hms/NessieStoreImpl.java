@@ -15,6 +15,17 @@
  */
 package com.dremio.nessie.hms;
 
+import com.dremio.nessie.client.NessieClient;
+import com.dremio.nessie.error.NessieConflictException;
+import com.dremio.nessie.error.NessieNotFoundException;
+import com.dremio.nessie.hms.NessieTransaction.Handle;
+import com.dremio.nessie.hms.NessieTransaction.TableAndPartition;
+import com.dremio.nessie.model.Branch;
+import com.dremio.nessie.model.Reference;
+import com.dremio.nessie.model.Tag;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -27,7 +38,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.PartitionExpressionProxy;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -51,21 +61,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.error.NessieConflictException;
-import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.hms.NessieTransaction.Handle;
-import com.dremio.nessie.hms.NessieTransaction.TableAndPartition;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.Reference;
-import com.dremio.nessie.model.Tag;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-
-/**
- * A rawstore implementation that is backed by the Nessie REST API.
- */
+/** A rawstore implementation that is backed by the Nessie REST API. */
 public class NessieStoreImpl implements NessieStore {
 
   private static Logger LOG = LoggerFactory.getLogger(NessieStoreImpl.class);
@@ -168,8 +164,6 @@ public class NessieStoreImpl implements NessieStore {
     return db;
   }
 
-
-
   @Override
   public Database getDatabase(String name) throws NoSuchObjectException {
     if (isNessie(name)) {
@@ -197,7 +191,8 @@ public class NessieStoreImpl implements NessieStore {
         this.ref = client.getTreeApi().getDefaultBranch().getName();
         return true;
       } catch (NessieNotFoundException e) {
-        throw new MetaException("Failure while trying to reset to default branch. Default branch does not exist on Nessie.");
+        throw new MetaException(
+            "Failure while trying to reset to default branch. Default branch does not exist on Nessie.");
       }
     }
 
@@ -208,7 +203,8 @@ public class NessieStoreImpl implements NessieStore {
   }
 
   @Override
-  public boolean alterDatabase(String dbname, Database db) throws NoSuchObjectException, MetaException {
+  public boolean alterDatabase(String dbname, Database db)
+      throws NoSuchObjectException, MetaException {
     if (dbname.equalsIgnoreCase(NESSIE_DB)) {
       return handleNessieDb(db);
     }
@@ -237,8 +233,9 @@ public class NessieStoreImpl implements NessieStore {
     String tblName = tbl.getTableName();
 
     if (!tbl.getTableType().equals(TableType.VIRTUAL_VIEW.name())) {
-      throw new MetaException("Branches/tags can be made only by creating a pseudo-view when using HiveQL. "
-          + "For example CREATE VIEW v1 DBPROPERTIES(\"type\"=\"branch\", \"ref\"=\"abcd...\") as SELECT 1");
+      throw new MetaException(
+          "Branches/tags can be made only by creating a pseudo-view when using HiveQL. "
+              + "For example CREATE VIEW v1 DBPROPERTIES(\"type\"=\"branch\", \"ref\"=\"abcd...\") as SELECT 1");
     }
 
     Reference requestedReference = null;
@@ -249,7 +246,8 @@ public class NessieStoreImpl implements NessieStore {
       }
 
     } catch (NessieNotFoundException ex) {
-      throw new MetaException(String.format("The requested Nessie reference [%s] does not exist.", ref));
+      throw new MetaException(
+          String.format("The requested Nessie reference [%s] does not exist.", ref));
     }
 
     String type = tbl.getParameters().get("type");
@@ -260,19 +258,22 @@ public class NessieStoreImpl implements NessieStore {
       } else if (type.equalsIgnoreCase("tag")) {
         branch = false;
       } else {
-        throw new MetaException("Invalid Nessie object type. Expected 'tag' or 'branch' or nothing.");
+        throw new MetaException(
+            "Invalid Nessie object type. Expected 'tag' or 'branch' or nothing.");
       }
     }
 
     try {
-      Reference reference = branch
-          ? Branch.of(tblName, requestedReference.getHash())
-          : Tag.of(tblName, requestedReference.getHash());
+      Reference reference =
+          branch
+              ? Branch.of(tblName, requestedReference.getHash())
+              : Tag.of(tblName, requestedReference.getHash());
       client.getTreeApi().createReference(reference);
     } catch (NessieNotFoundException e) {
       throw new MetaException("Cannot find the defined reference.");
     } catch (NessieConflictException e) {
-      throw new MetaException("Cannot create provided branch or tag, one with that name already exists.");
+      throw new MetaException(
+          "Cannot create provided branch or tag, one with that name already exists.");
     }
   }
 
@@ -284,8 +285,10 @@ public class NessieStoreImpl implements NessieStore {
     }
 
     checkTableProperties(tbl);
-    // Nessie always appends a random uuid to a default table path to avoid future conflicts on insertions. Since
-    // partitions have independent paths, this only influences insertions on an empty external table.
+    // Nessie always appends a random uuid to a default table path to avoid future conflicts on
+    // insertions. Since
+    // partitions have independent paths, this only influences insertions on an empty external
+    // table.
     tbl.getSd().setLocation(tbl.getSd().getLocation() + "/" + UUID.randomUUID().toString());
     try (Handle h = txo()) {
       tx().createTable(tbl);
@@ -294,21 +297,20 @@ public class NessieStoreImpl implements NessieStore {
 
   private void checkTableProperties(Table tbl) throws MetaException {
     final boolean isExternalTable = TableType.EXTERNAL_TABLE.name().equals(tbl.getTableType());
-    if (
-        !isExternalTable
-        && !TableType.VIRTUAL_VIEW.name().equals(tbl.getTableType())
-        ) {
-      throw new MetaException("Nessie only supports storing External Tables and Virtual Views. "
-          + "This ensures Hive doesn't delete historical data from valid branches and/or tags.");
+    if (!isExternalTable && !TableType.VIRTUAL_VIEW.name().equals(tbl.getTableType())) {
+      throw new MetaException(
+          "Nessie only supports storing External Tables and Virtual Views. "
+              + "This ensures Hive doesn't delete historical data from valid branches and/or tags.");
     }
 
     if (isExternalTable && "true".equals(tbl.getParameters().getOrDefault("immutable", "false"))) {
       return;
     }
 
-    throw new MetaException(String.format("Nessie only supports tables that carry the 'immutable=true' property. "
-        + "This allows partition add/removal but disallows operations that skip the metastore."));
-
+    throw new MetaException(
+        String.format(
+            "Nessie only supports tables that carry the 'immutable=true' property. "
+                + "This allows partition add/removal but disallows operations that skip the metastore."));
   }
 
   @Override
@@ -376,8 +378,10 @@ public class NessieStoreImpl implements NessieStore {
       try {
         table = tx().getTable(parts.get(0).getDbName(), parts.get(0).getTableName());
       } catch (NoSuchObjectException e) {
-        throw new InvalidObjectException(String.format("Unable to find table [%s.%s] for partitions.",
-            parts.get(0).getDbName(), parts.get(0).getTableName()));
+        throw new InvalidObjectException(
+            String.format(
+                "Unable to find table [%s.%s] for partitions.",
+                parts.get(0).getDbName(), parts.get(0).getTableName()));
       }
       if (!table.isPresent()) {
         throw new InvalidObjectException();
@@ -391,7 +395,8 @@ public class NessieStoreImpl implements NessieStore {
   }
 
   @Override
-  public boolean addPartitions(String dbName, String tblName, PartitionSpecProxy partitionSpec, boolean ifNotExists)
+  public boolean addPartitions(
+      String dbName, String tblName, PartitionSpecProxy partitionSpec, boolean ifNotExists)
       throws InvalidObjectException, MetaException {
 
     // TODO: handle ifNotExists.
@@ -399,16 +404,15 @@ public class NessieStoreImpl implements NessieStore {
         dbName,
         tblName,
         StreamSupport.stream(
-            Spliterators.spliteratorUnknownSize(partitionSpec.getPartitionIterator(), 0), false).collect(Collectors.toList())
-        );
+                Spliterators.spliteratorUnknownSize(partitionSpec.getPartitionIterator(), 0), false)
+            .collect(Collectors.toList()));
   }
 
   @Override
   public Partition getPartition(String dbName, String tableName, List<String> partitionValues)
       throws MetaException, NoSuchObjectException {
     try (Handle h = txo()) {
-      return tx().getPartitions(dbName, tableName)
-          .stream()
+      return tx().getPartitions(dbName, tableName).stream()
           .filter(p -> p.getValues().equals(partitionValues))
           .findFirst()
           .orElseThrow(() -> new NoSuchObjectException());
@@ -416,14 +420,20 @@ public class NessieStoreImpl implements NessieStore {
   }
 
   @Override
-  public Partition getPartitionWithAuth(String dbName, String tblName, List<String> partVals,
-      String userName, List<String> groupNames) throws MetaException, NoSuchObjectException, InvalidObjectException {
+  public Partition getPartitionWithAuth(
+      String dbName,
+      String tblName,
+      List<String> partVals,
+      String userName,
+      List<String> groupNames)
+      throws MetaException, NoSuchObjectException, InvalidObjectException {
     return getPartition(dbName, tblName, partVals);
   }
 
   @Override
-  public List<Partition> getPartitionsWithAuth(String dbName, String tblName, short maxParts,
-      String userName, List<String> groupNames) throws MetaException, NoSuchObjectException, InvalidObjectException {
+  public List<Partition> getPartitionsWithAuth(
+      String dbName, String tblName, short maxParts, String userName, List<String> groupNames)
+      throws MetaException, NoSuchObjectException, InvalidObjectException {
     return getPartitions(dbName, tblName, maxParts);
   }
 
@@ -431,8 +441,7 @@ public class NessieStoreImpl implements NessieStore {
   public boolean doesPartitionExist(String dbName, String tableName, List<String> partitionValues)
       throws MetaException, NoSuchObjectException {
     try (Handle h = txo()) {
-      return tx().getPartitions(dbName, tableName)
-          .stream()
+      return tx().getPartitions(dbName, tableName).stream()
           .filter(p -> p.getValues().equals(partitionValues))
           .findFirst()
           .isPresent();
@@ -471,11 +480,13 @@ public class NessieStoreImpl implements NessieStore {
   public void dropPartitions(String dbName, String tableName, List<String> partNames)
       throws MetaException, NoSuchObjectException {
     try (Handle h = txo()) {
-      TableAndPartition tandp = tx().getTable(dbName, tableName).orElseThrow(() -> new NoSuchObjectException());
+      TableAndPartition tandp =
+          tx().getTable(dbName, tableName).orElseThrow(() -> new NoSuchObjectException());
       List<Partition> newPartitions = new ArrayList<>();
       Set<String> dropNames = new HashSet<>(partNames);
       for (Partition p : tandp.getPartitions()) {
-        String partName = Warehouse.makePartName(tandp.getTable().getPartitionKeys(), p.getValues());
+        String partName =
+            Warehouse.makePartName(tandp.getTable().getPartitionKeys(), p.getValues());
         if (!dropNames.contains(partName)) {
           newPartitions.add(p);
         }
@@ -485,12 +496,13 @@ public class NessieStoreImpl implements NessieStore {
     }
   }
 
-
   @Override
   public List<Partition> getPartitions(String dbName, String tableName, int max)
       throws MetaException, NoSuchObjectException {
     try (Handle h = txo()) {
-      return tx().getPartitions(dbName, tableName).stream().limit(max == -1 ? Integer.MAX_VALUE : max).collect(Collectors.toList());
+      return tx().getPartitions(dbName, tableName).stream()
+          .limit(max == -1 ? Integer.MAX_VALUE : max)
+          .collect(Collectors.toList());
     }
   }
 
@@ -509,13 +521,14 @@ public class NessieStoreImpl implements NessieStore {
     } catch (NoSuchObjectException e) {
       throw new InvalidObjectException();
     }
-
   }
 
   @Override
   public List<String> getTables(String dbName, String pattern) throws MetaException {
     if (isNessie(dbName)) {
-      return client.getTreeApi().getAllReferences().stream().map(nr -> nr.getName()).collect(Collectors.toList());
+      return client.getTreeApi().getAllReferences().stream()
+          .map(nr -> nr.getName())
+          .collect(Collectors.toList());
     }
 
     try (Handle h = txo()) {
@@ -538,18 +551,21 @@ public class NessieStoreImpl implements NessieStore {
       throws MetaException {
     try (Handle h = txo()) {
       // TODO: support tabletype and pattern.
-      return tx().getTables(dbName).map(k -> {
-        TableMeta m = new TableMeta();
-        m.setCatName("hive");
-        m.setDbName(k.getElements().get(0));
-        m.setTableName(k.getElements().get(1));
+      return tx().getTables(dbName)
+          .map(
+              k -> {
+                TableMeta m = new TableMeta();
+                m.setCatName("hive");
+                m.setDbName(k.getElements().get(0));
+                m.setTableName(k.getElements().get(1));
 
-        // TODO:
-        //m.setTableType(..);
-        //m.setComments(..);
+                // TODO:
+                // m.setTableType(..);
+                // m.setComments(..);
 
-        return m;
-      }).collect(Collectors.toList());
+                return m;
+              })
+          .collect(Collectors.toList());
     }
   }
 
@@ -575,65 +591,96 @@ public class NessieStoreImpl implements NessieStore {
     // TODO: filter
     try (Handle h = txo()) {
       // TODO: support tabletype and pattern.
-      return tx().getTables(dbName).map(k -> k.getElements().get(1)).limit(maxTables).collect(Collectors.toList());
+      return tx().getTables(dbName)
+          .map(k -> k.getElements().get(1))
+          .limit(maxTables)
+          .collect(Collectors.toList());
     }
   }
 
   @Override
-  public List<String> listPartitionNames(String dbName, String tblName, short maxParts) throws MetaException {
+  public List<String> listPartitionNames(String dbName, String tblName, short maxParts)
+      throws MetaException {
     try (Handle h = txo()) {
-      TableAndPartition tbl = tx().getTable(dbName, tblName).orElseThrow(() -> new NoSuchObjectException());
-      return tbl.getPartitions().stream().map(p -> {
-        try {
-          return Warehouse.makePartName(tbl.getTable().getPartitionKeys(), p.getValues());
-        } catch (MetaException e) {
-          throw new RuntimeException(e);
-        }
-      }).collect(Collectors.toList());
+      TableAndPartition tbl =
+          tx().getTable(dbName, tblName).orElseThrow(() -> new NoSuchObjectException());
+      return tbl.getPartitions().stream()
+          .map(
+              p -> {
+                try {
+                  return Warehouse.makePartName(tbl.getTable().getPartitionKeys(), p.getValues());
+                } catch (MetaException e) {
+                  throw new RuntimeException(e);
+                }
+              })
+          .collect(Collectors.toList());
     } catch (NoSuchObjectException e) {
-      throw new MetaException(String.format("Requested table [%s.%s] does not exist.", dbName, tblName));
+      throw new MetaException(
+          String.format("Requested table [%s.%s] does not exist.", dbName, tblName));
     }
   }
 
   @Override
-  public PartitionValuesResponse listPartitionValues(String dbName, String tblName,
-      List<FieldSchema> cols, boolean applyDistinct, String filter, boolean ascending, List<FieldSchema> order,
-      long maxParts) throws MetaException {
+  public PartitionValuesResponse listPartitionValues(
+      String dbName,
+      String tblName,
+      List<FieldSchema> cols,
+      boolean applyDistinct,
+      String filter,
+      boolean ascending,
+      List<FieldSchema> order,
+      long maxParts)
+      throws MetaException {
     throw new MetaException("Not yet supported.");
   }
 
   @Override
-  public void alterPartition(String dbName, String tblName, List<String> partVals,
-      Partition newPart) throws InvalidObjectException, MetaException {
-  }
+  public void alterPartition(
+      String dbName, String tblName, List<String> partVals, Partition newPart)
+      throws InvalidObjectException, MetaException {}
 
   @Override
-  public void alterPartitions(String dbName, String tblName, List<List<String>> partValsList,
-      List<Partition> newParts) throws InvalidObjectException, MetaException {
-  }
+  public void alterPartitions(
+      String dbName, String tblName, List<List<String>> partValsList, List<Partition> newParts)
+      throws InvalidObjectException, MetaException {}
 
   @Override
-  public List<Partition> getPartitionsByFilter(String dbName, String tblName, String filter,
-      short maxParts) throws MetaException, NoSuchObjectException {
+  public List<Partition> getPartitionsByFilter(
+      String dbName, String tblName, String filter, short maxParts)
+      throws MetaException, NoSuchObjectException {
     return null;
   }
 
   @Override
-  public boolean getPartitionsByExpr(String dbName, String tblName, byte[] expr,
-      String defaultPartitionName, short maxParts, List<Partition> result) throws TException {
+  public boolean getPartitionsByExpr(
+      String dbName,
+      String tblName,
+      byte[] expr,
+      String defaultPartitionName,
+      short maxParts,
+      List<Partition> result)
+      throws TException {
 
     try (Handle h = txo()) {
-      TableAndPartition tandp = tx().getTable(dbName, tblName).orElseThrow(() -> new NoSuchObjectException());
+      TableAndPartition tandp =
+          tx().getTable(dbName, tblName).orElseThrow(() -> new NoSuchObjectException());
       List<FieldSchema> partitionKeys = tandp.getTable().getPartitionKeys();
-      Map<String, Partition> partByName = tandp.getPartitions().stream().collect(Collectors.toMap(p -> {
-        try {
-          return Warehouse.makePartName(partitionKeys, p.getValues());
-        } catch (MetaException e) {
-          throw new RuntimeException(e);
-        }
-      }, Function.identity()));
+      Map<String, Partition> partByName =
+          tandp.getPartitions().stream()
+              .collect(
+                  Collectors.toMap(
+                      p -> {
+                        try {
+                          return Warehouse.makePartName(partitionKeys, p.getValues());
+                        } catch (MetaException e) {
+                          throw new RuntimeException(e);
+                        }
+                      },
+                      Function.identity()));
       List<String> partitionNames = new ArrayList<>(partByName.keySet());
-      boolean resultBool = PartitionFilterer.filterPartitionsByExpr(conf, tandp.getTable().getPartitionKeys(), expr, partitionNames);
+      boolean resultBool =
+          PartitionFilterer.filterPartitionsByExpr(
+              conf, tandp.getTable().getPartitionKeys(), expr, partitionNames);
       for (String name : partitionNames) {
         result.add(partByName.get(name));
       }
@@ -657,25 +704,34 @@ public class NessieStoreImpl implements NessieStore {
   public List<Partition> getPartitionsByNames(String dbName, String tblName, List<String> partNames)
       throws MetaException, NoSuchObjectException {
     try (Handle h = txo()) {
-      TableAndPartition tandp = tx().getTable(dbName, tblName).orElseThrow(() -> new NoSuchObjectException());
+      TableAndPartition tandp =
+          tx().getTable(dbName, tblName).orElseThrow(() -> new NoSuchObjectException());
       List<FieldSchema> partitionKeys = tandp.getTable().getPartitionKeys();
       Set<String> parts = new HashSet<>(partNames);
 
-      return tandp.getPartitions().stream().filter(p -> {
-        String name;
-        try {
-          name = Warehouse.makePartName(partitionKeys, p.getValues());
-        } catch (MetaException e) {
-          throw new RuntimeException(e);
-        }
-        return parts.contains(name);
-      }).collect(Collectors.toList());
+      return tandp.getPartitions().stream()
+          .filter(
+              p -> {
+                String name;
+                try {
+                  name = Warehouse.makePartName(partitionKeys, p.getValues());
+                } catch (MetaException e) {
+                  throw new RuntimeException(e);
+                }
+                return parts.contains(name);
+              })
+          .collect(Collectors.toList());
     }
   }
 
   @Override
-  public List<Partition> listPartitionsPsWithAuth(String dbName, String tblName, List<String> partVals,
-      short maxParts, String userName, List<String> groupNames)
+  public List<Partition> listPartitionsPsWithAuth(
+      String dbName,
+      String tblName,
+      List<String> partVals,
+      short maxParts,
+      String userName,
+      List<String> groupNames)
       throws MetaException, InvalidObjectException, NoSuchObjectException {
     return null;
   }
@@ -686,8 +742,8 @@ public class NessieStoreImpl implements NessieStore {
   }
 
   @Override
-  public List<String> listPartitionNamesByFilter(String dbName, String tblName, String filter, short maxParts)
-      throws MetaException {
+  public List<String> listPartitionNamesByFilter(
+      String dbName, String tblName, String filter, short maxParts) throws MetaException {
     return null;
   }
 
@@ -695,7 +751,8 @@ public class NessieStoreImpl implements NessieStore {
     String className = conf.get("hive.metastore.expression.proxy");
     try {
 
-      Class<? extends PartitionExpressionProxy> clazz = getClass(className, PartitionExpressionProxy.class);
+      Class<? extends PartitionExpressionProxy> clazz =
+          getClass(className, PartitionExpressionProxy.class);
       return newInstance(clazz, new Class<?>[0], new Object[0]);
     } catch (MetaException e) {
       LOG.error("Error loading PartitionExpressionProxy", e);
@@ -703,14 +760,17 @@ public class NessieStoreImpl implements NessieStore {
     }
   }
 
-  private static <T> T newInstance(Class<T> theClass, Class<?>[] parameterTypes, Object[] initargs) {
+  private static <T> T newInstance(
+      Class<T> theClass, Class<?>[] parameterTypes, Object[] initargs) {
     if (parameterTypes.length != initargs.length) {
-      throw new IllegalArgumentException("Number of constructor parameter types doesn't match number of arguments");
+      throw new IllegalArgumentException(
+          "Number of constructor parameter types doesn't match number of arguments");
     }
     for (int i = 0; i < parameterTypes.length; i++) {
       Class<?> clazz = parameterTypes[i];
       if (initargs[i] != null && !(clazz.isInstance(initargs[i]))) {
-        throw new IllegalArgumentException("Object : " + initargs[i] + " is not an instance of " + clazz);
+        throw new IllegalArgumentException(
+            "Object : " + initargs[i] + " is not an instance of " + clazz);
       }
     }
 
@@ -741,7 +801,6 @@ public class NessieStoreImpl implements NessieStore {
     return classLoader;
   }
 
-
   @Override
   public int getDatabaseCount() throws MetaException {
     return 0;
@@ -758,10 +817,8 @@ public class NessieStoreImpl implements NessieStore {
   }
 
   @Override
-  public Map<String, List<String>> getPartitionColsWithStats(String dbName, String tableName) throws MetaException, NoSuchObjectException {
+  public Map<String, List<String>> getPartitionColsWithStats(String dbName, String tableName)
+      throws MetaException, NoSuchObjectException {
     return null;
   }
-
-
-
 }

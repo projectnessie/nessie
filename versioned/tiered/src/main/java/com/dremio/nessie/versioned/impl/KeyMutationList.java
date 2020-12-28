@@ -15,12 +15,10 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.versioned.store.Entity;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.immutables.value.Value.Immutable;
-
-import com.dremio.nessie.versioned.store.Entity;
 
 @Immutable
 abstract class KeyMutationList {
@@ -32,13 +30,14 @@ abstract class KeyMutationList {
   }
 
   public Entity toEntity() {
-    return Entity.ofList(getMutations().stream().map(KeyMutation::toEntity).collect(Collectors.toList()));
+    return Entity.ofList(
+        getMutations().stream().map(KeyMutation::toEntity).collect(Collectors.toList()));
   }
 
   public static KeyMutationList fromEntity(Entity value) {
-    return ImmutableKeyMutationList.builder().addAllMutations(
-        value.getList().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
+    return ImmutableKeyMutationList.builder()
+        .addAllMutations(
+            value.getList().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
         .build();
   }
-
 }

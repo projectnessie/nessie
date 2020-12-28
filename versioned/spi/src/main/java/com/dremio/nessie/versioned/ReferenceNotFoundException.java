@@ -20,10 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import javax.annotation.Nonnull;
 
-/**
- * Exception thrown when an reference is not present in the store.
- *
- */
+/** Exception thrown when an reference is not present in the store. */
 public class ReferenceNotFoundException extends VersionStoreException {
   private static final long serialVersionUID = -4231207387427624751L;
 
@@ -31,14 +28,13 @@ public class ReferenceNotFoundException extends VersionStoreException {
     super(message);
   }
 
-
   public ReferenceNotFoundException(String message, Throwable cause) {
     super(message, cause);
   }
 
   /**
-   * Create a {@code ReferenceNotFoundException} instance with an accurate message
-   * based on the provided reference.
+   * Create a {@code ReferenceNotFoundException} instance with an accurate message based on the
+   * provided reference.
    *
    * @param ref the reference not found in the store
    * @return a {@code ReferenceNotFoundException} instance

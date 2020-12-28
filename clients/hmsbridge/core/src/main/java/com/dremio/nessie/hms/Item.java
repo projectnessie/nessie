@@ -15,8 +15,10 @@
  */
 package com.dremio.nessie.hms;
 
+import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.model.HiveDatabase;
+import com.dremio.nessie.model.HiveTable;
 import java.util.List;
-
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -26,13 +28,11 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TBinaryProtocol;
 
-import com.dremio.nessie.model.Contents;
-import com.dremio.nessie.model.HiveDatabase;
-import com.dremio.nessie.model.HiveTable;
-
 abstract class Item {
   public static enum Type {
-    CATALOG, DATABASE, TABLE
+    CATALOG,
+    DATABASE,
+    TABLE
   }
 
   public abstract Type getType();
@@ -65,7 +65,7 @@ abstract class Item {
     } else if (c instanceof HiveDatabase) {
       return DatabaseW.fromContents(c);
     } else {
-      //TODO: support translation of Iceberg and Delta native tables.
+      // TODO: support translation of Iceberg and Delta native tables.
       throw new RuntimeException("Unable to convert to known value.");
     }
   }
@@ -88,5 +88,4 @@ abstract class Item {
       throw new RuntimeException(e);
     }
   }
-
 }

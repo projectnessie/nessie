@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.model;
-
-import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.immutables.value.Value;
 
-/**
- * Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology.
- */
+/** Api representation of an Nessie Tag/Branch. This object is akin to a Ref in Git terminology. */
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableBranch.class)
 @JsonDeserialize(as = ImmutableBranch.class)

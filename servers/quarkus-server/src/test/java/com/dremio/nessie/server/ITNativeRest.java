@@ -15,12 +15,9 @@
  */
 package com.dremio.nessie.server;
 
-import org.junit.jupiter.api.Disabled;
-
 import io.quarkus.test.junit.NativeImageTest;
+import org.junit.jupiter.api.Disabled;
 
 @Disabled
 @NativeImageTest
-public class ITNativeRest extends TestRest {
-
-}
+public class ITNativeRest extends TestRest {}

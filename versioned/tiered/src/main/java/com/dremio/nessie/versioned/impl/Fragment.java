@@ -15,15 +15,14 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Fragment extends MemoizedId {
 
@@ -36,33 +35,41 @@ public class Fragment extends MemoizedId {
 
   @Override
   Id generateId() {
-    return Id.build(h -> {
-      keys.stream().forEach(k -> InternalKey.addToHasher(k, h));
-    });
+    return Id.build(
+        h -> {
+          keys.stream().forEach(k -> InternalKey.addToHasher(k, h));
+        });
   }
 
   public List<InternalKey> getKeys() {
     return keys;
   }
 
-  public static final SimpleSchema<Fragment> SCHEMA = new SimpleSchema<Fragment>(Fragment.class) {
-    private static final String ID = "id";
-    private static final String KEYS = "keys";
+  public static final SimpleSchema<Fragment> SCHEMA =
+      new SimpleSchema<Fragment>(Fragment.class) {
+        private static final String ID = "id";
+        private static final String KEYS = "keys";
 
-    @Override
-    public Fragment deserialize(Map<String, Entity> attributeMap) {
-      List<InternalKey> keys = attributeMap.get(KEYS).getList().stream().map(InternalKey::fromEntity).collect(Collectors.toList());
-      return new Fragment(keys);
-    }
+        @Override
+        public Fragment deserialize(Map<String, Entity> attributeMap) {
+          List<InternalKey> keys =
+              attributeMap.get(KEYS).getList().stream()
+                  .map(InternalKey::fromEntity)
+                  .collect(Collectors.toList());
+          return new Fragment(keys);
+        }
 
-    @Override
-    public Map<String, Entity> itemToMap(Fragment item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(ID, item.getId().toEntity())
-          .put(KEYS, Entity.ofList(item.getKeys().stream().map(InternalKey::toEntity).collect(ImmutableList.toImmutableList())))
-          .build();
-    }
-
-  };
-
+        @Override
+        public Map<String, Entity> itemToMap(Fragment item, boolean ignoreNulls) {
+          return ImmutableMap.<String, Entity>builder()
+              .put(ID, item.getId().toEntity())
+              .put(
+                  KEYS,
+                  Entity.ofList(
+                      item.getKeys().stream()
+                          .map(InternalKey::toEntity)
+                          .collect(ImmutableList.toImmutableList())))
+              .build();
+        }
+      };
 }

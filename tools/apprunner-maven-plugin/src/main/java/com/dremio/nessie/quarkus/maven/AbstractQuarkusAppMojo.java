@@ -15,12 +15,11 @@
  */
 package com.dremio.nessie.quarkus.maven;
 
+import io.quarkus.bootstrap.model.AppArtifact;
+import io.quarkus.bootstrap.model.AppArtifactCoords;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-
-import io.quarkus.bootstrap.model.AppArtifact;
-import io.quarkus.bootstrap.model.AppArtifactCoords;
 
 /*
  * Base class to share configuration between mojo.
@@ -28,24 +27,17 @@ import io.quarkus.bootstrap.model.AppArtifactCoords;
 abstract class AbstractQuarkusAppMojo extends AbstractMojo {
   private static final String CONTEXT_KEY = "nessie.quarkus.app";
 
-  /**
-   * Maven project.
-   */
+  /** Maven project. */
   @Parameter(defaultValue = "${project}", readonly = true, required = true)
   private MavenProject project;
 
-  /**
-   * Whether execution should be skipped.
-   */
+  /** Whether execution should be skipped. */
   @Parameter(property = "nessie.apprunner.skip", required = false, defaultValue = "false")
   private boolean skip;
 
-  /**
-   * Execution id for the app.
-   */
+  /** Execution id for the app. */
   @Parameter(property = "nessie.apprunner.executionId", required = false, defaultValue = "default")
   private String executionId;
-
 
   public boolean isSkipped() {
     return skip;
@@ -78,15 +70,20 @@ abstract class AbstractQuarkusAppMojo extends AbstractMojo {
     final String key = getContextKey();
     final Object previous = project.getContextValue(key);
     if (previous != null) {
-      getLog().warn(String.format("Found a previous application for execution id %s.", getExecutionId()));
+      getLog()
+          .warn(
+              String.format("Found a previous application for execution id %s.", getExecutionId()));
     }
     project.setContextValue(key, application);
   }
 
-
   static AppArtifact fromString(String artifactId) {
     AppArtifactCoords coords = AppArtifactCoords.fromString(artifactId);
-    return new AppArtifact(coords.getGroupId(), coords.getArtifactId(), coords.getClassifier(),
-        coords.getType(), coords.getVersion());
+    return new AppArtifact(
+        coords.getGroupId(),
+        coords.getArtifactId(),
+        coords.getClassifier(),
+        coords.getType(),
+        coords.getVersion());
   }
 }

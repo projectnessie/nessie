@@ -16,7 +16,6 @@
 package com.dremio.nessie.hms;
 
 import java.util.stream.Stream;
-
 import org.apache.hadoop.hive.metastore.api.SQLCheckConstraint;
 import org.apache.hadoop.hive.metastore.api.SQLDefaultConstraint;
 import org.apache.hadoop.hive.metastore.api.SQLNotNullConstraint;

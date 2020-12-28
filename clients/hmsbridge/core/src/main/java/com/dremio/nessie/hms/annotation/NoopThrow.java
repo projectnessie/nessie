@@ -20,11 +20,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Throw if called and no delegate exists.
- */
+/** Throw if called and no delegate exists. */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface NoopThrow {
-
-}
+public @interface NoopThrow {}

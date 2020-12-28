@@ -15,18 +15,16 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import com.dremio.nessie.versioned.impl.SampleEntities;
+import com.dremio.nessie.versioned.store.Entity;
+import com.google.common.collect.ImmutableMap;
 import java.io.StringWriter;
 import java.util.Map;
 import java.util.Random;
-
 import org.bson.internal.Base64;
 import org.bson.json.JsonWriter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import com.dremio.nessie.versioned.impl.SampleEntities;
-import com.dremio.nessie.versioned.store.Entity;
-import com.google.common.collect.ImmutableMap;
 
 class TestEntityToBsonConverter {
   private static final Random RANDOM = new Random(16234910234034L);
@@ -54,8 +52,11 @@ class TestEntityToBsonConverter {
   @Test
   public void readBinary() {
     byte[] buffer = SampleEntities.createBinary(RANDOM, 10);
-    read(ImmutableMap.of("value", Entity.ofBinary(buffer)),
-        String.format("{\"value\": {\"$binary\": {\"base64\": \"%s\", \"subType\": \"00\"}}}", Base64.encode(buffer)));
+    read(
+        ImmutableMap.of("value", Entity.ofBinary(buffer)),
+        String.format(
+            "{\"value\": {\"$binary\": {\"base64\": \"%s\", \"subType\": \"00\"}}}",
+            Base64.encode(buffer)));
   }
 
   @Test
@@ -65,11 +66,15 @@ class TestEntityToBsonConverter {
 
   @Test
   public void readMap() {
-    read(ImmutableMap.of("value", Entity.ofMap(ImmutableMap.of(
-        "key", Entity.ofNumber(5),
-        "key2", Entity.ofBoolean(false),
-        "key3", Entity.ofMap(ImmutableMap.of())
-      ))), "{\"value\": {\"key\": 5, \"key2\": false, \"key3\": {}}}");
+    read(
+        ImmutableMap.of(
+            "value",
+            Entity.ofMap(
+                ImmutableMap.of(
+                    "key", Entity.ofNumber(5),
+                    "key2", Entity.ofBoolean(false),
+                    "key3", Entity.ofMap(ImmutableMap.of())))),
+        "{\"value\": {\"key\": 5, \"key2\": false, \"key3\": {}}}");
   }
 
   @Test
@@ -79,8 +84,11 @@ class TestEntityToBsonConverter {
 
   @Test
   public void readList() {
-    read(ImmutableMap.of("value",
-        Entity.ofList(Entity.ofString("myValue"), Entity.ofNumber(999), Entity.ofMap(ImmutableMap.of()))),
+    read(
+        ImmutableMap.of(
+            "value",
+            Entity.ofList(
+                Entity.ofString("myValue"), Entity.ofNumber(999), Entity.ofMap(ImmutableMap.of()))),
         "{\"value\": [\"myValue\", 999, {}]}");
   }
 

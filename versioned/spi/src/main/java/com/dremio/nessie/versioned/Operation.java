@@ -19,8 +19,8 @@ import org.immutables.value.Value;
 
 public interface Operation<V> {
   /**
-   * Whether the commit expected hash should be reviewed to confirm the key for this operation hasn't changed since the
-   * expected hash.
+   * Whether the commit expected hash should be reviewed to confirm the key for this operation
+   * hasn't changed since the expected hash.
    *
    * @return True if this operation should match the hash.
    */
@@ -31,6 +31,7 @@ public interface Operation<V> {
 
   /**
    * The key for this operation.
+   *
    * @return
    */
   Key getKey();

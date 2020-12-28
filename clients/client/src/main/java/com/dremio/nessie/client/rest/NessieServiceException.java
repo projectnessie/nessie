@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.client.rest;
 
+import com.dremio.nessie.error.NessieError;
 import javax.ws.rs.client.ResponseProcessingException;
 import javax.ws.rs.core.Response;
 
-import com.dremio.nessie.error.NessieError;
-
-/**
- * A Nessie REST API runtime exception.
- */
+/** A Nessie REST API runtime exception. */
 public class NessieServiceException extends ResponseProcessingException {
 
   private final NessieError error;
@@ -36,5 +32,4 @@ public class NessieServiceException extends ResponseProcessingException {
   public NessieError getError() {
     return error;
   }
-
 }

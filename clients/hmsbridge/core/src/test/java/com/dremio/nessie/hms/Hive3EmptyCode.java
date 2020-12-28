@@ -15,10 +15,9 @@
  */
 package com.dremio.nessie.hms;
 
+import com.squareup.javapoet.CodeBlock;
 import org.apache.hadoop.hive.metastore.api.Catalog;
 import org.apache.hadoop.hive.metastore.api.NotificationEventsCountResponse;
-
-import com.squareup.javapoet.CodeBlock;
 
 class Hive3EmptyCode {
 

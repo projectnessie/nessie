@@ -24,5 +24,4 @@ class DynamoGeneralReadFailure extends RuntimeException {
   public DynamoGeneralReadFailure(String message) {
     super(message);
   }
-
 }

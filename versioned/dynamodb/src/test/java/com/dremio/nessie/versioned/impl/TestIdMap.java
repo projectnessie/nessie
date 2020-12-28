@@ -21,9 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
-
 import com.dremio.nessie.versioned.store.Id;
+import org.junit.jupiter.api.Test;
 
 public class TestIdMap {
 
@@ -77,7 +76,6 @@ public class TestIdMap {
     // rollback operation and confirm no changes.
     map = map.withId(5, Id.EMPTY);
     assertEquals(0, map.getChanges().size());
-
   }
 
   @Test
@@ -100,7 +98,4 @@ public class TestIdMap {
     IdMap map1 = new IdMap(15);
     assertThrows(IllegalArgumentException.class, () -> IdMap.fromEntity(map1.toEntity(), 14));
   }
-
-
-
 }

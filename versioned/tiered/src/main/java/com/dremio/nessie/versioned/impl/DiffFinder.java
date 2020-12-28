@@ -15,13 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.stream.Stream;
-
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
@@ -30,10 +23,14 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.MapDifference.ValueDifference;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.stream.Stream;
 
-/**
- * Given two L1s, determine the value differences between them.
- */
+/** Given two L1s, determine the value differences between them. */
 class DiffFinder {
 
   private final List<L3Diff> l3Diffs = new ArrayList<>();
@@ -85,7 +82,6 @@ class DiffFinder {
 
       return new LoadStep(loadOps, () -> L2Diff.loadStep(l2Diffs, l3DiffsOutput));
     }
-
   }
 
   private static class L2Diff {
@@ -100,7 +96,8 @@ class DiffFinder {
       this.to = to;
     }
 
-    public static Optional<LoadStep> loadStep(Collection<L2Diff> diffs, List<L3Diff> l3DiffsOutput) {
+    public static Optional<LoadStep> loadStep(
+        Collection<L2Diff> diffs, List<L3Diff> l3DiffsOutput) {
       List<LoadOp<?>> loadOps = new ArrayList<>();
       for (L2Diff diff : diffs) {
         L2 from = diff.from;
@@ -116,7 +113,9 @@ class DiffFinder {
           }
         }
       }
-      return loadOps.isEmpty() ? Optional.empty() : Optional.of(new LoadStep(loadOps, () -> Optional.empty()));
+      return loadOps.isEmpty()
+          ? Optional.empty()
+          : Optional.of(new LoadStep(loadOps, () -> Optional.empty()));
     }
   }
 
@@ -135,12 +134,9 @@ class DiffFinder {
     Stream<KeyDiff> getKeyDiffs() {
       return L3.compare(from, to);
     }
-
   }
 
-  /**
-   * Describes the state of mutated key between two versions.
-   */
+  /** Describes the state of mutated key between two versions. */
   static class KeyDiff {
 
     private final InternalKey key;
@@ -171,6 +167,7 @@ class DiffFinder {
 
     /**
      * The key that this diff applies to.
+     *
      * @return The key
      */
     public InternalKey getKey() {
@@ -179,6 +176,7 @@ class DiffFinder {
 
     /**
      * The initial value of this Key.
+     *
      * @return The Id. Will be Id.EMPTY if the key was added as part of this diff.
      */
     public Id getFrom() {
@@ -187,15 +185,16 @@ class DiffFinder {
 
     /**
      * The final value of this Key.
+     *
      * @return The Id. Will be Id.EMPTY if the key was removed as part of this diff.
      */
     public Id getTo() {
       return to;
     }
-
   }
 
-  static List<DiffFinder> getFinders(List<L1> l1Ascending, Store store) throws ReferenceNotFoundException {
+  static List<DiffFinder> getFinders(List<L1> l1Ascending, Store store)
+      throws ReferenceNotFoundException {
     Preconditions.checkArgument(l1Ascending.size() > 1);
     L1 previous = null;
     List<DiffFinder> diffs = new ArrayList<>();

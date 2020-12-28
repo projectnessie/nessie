@@ -15,12 +15,11 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.Map;
-
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
 class InternalTag extends MemoizedId implements InternalRef {
 
@@ -54,28 +53,26 @@ class InternalTag extends MemoizedId implements InternalRef {
     return ImmutableMap.of(COMMIT, commit.toEntity());
   }
 
-  static final SimpleSchema<InternalTag> SCHEMA = new SimpleSchema<InternalTag>(InternalTag.class) {
+  static final SimpleSchema<InternalTag> SCHEMA =
+      new SimpleSchema<InternalTag>(InternalTag.class) {
 
+        @Override
+        public InternalTag deserialize(Map<String, Entity> attributeMap) {
+          return new InternalTag(
+              Id.fromEntity(attributeMap.get(ID)),
+              attributeMap.get(NAME).getString(),
+              Id.fromEntity(attributeMap.get(COMMIT)));
+        }
 
-    @Override
-    public InternalTag deserialize(Map<String, Entity> attributeMap) {
-      return new InternalTag(
-          Id.fromEntity(attributeMap.get(ID)),
-          attributeMap.get(NAME).getString(),
-          Id.fromEntity(attributeMap.get(COMMIT))
-          );
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(InternalTag item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(ID, item.getId().toEntity())
-          .put(COMMIT, item.commit.toEntity())
-          .put(NAME, Entity.ofString(item.name))
-          .build();
-    }
-
-  };
+        @Override
+        public Map<String, Entity> itemToMap(InternalTag item, boolean ignoreNulls) {
+          return ImmutableMap.<String, Entity>builder()
+              .put(ID, item.getId().toEntity())
+              .put(COMMIT, item.commit.toEntity())
+              .put(NAME, Entity.ofString(item.name))
+              .build();
+        }
+      };
 
   @Override
   public Type getType() {
@@ -86,7 +83,4 @@ class InternalTag extends MemoizedId implements InternalRef {
   public InternalTag getTag() {
     return this;
   }
-
 }
-
-

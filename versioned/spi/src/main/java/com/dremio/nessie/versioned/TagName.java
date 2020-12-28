@@ -16,17 +16,15 @@
 package com.dremio.nessie.versioned;
 
 import javax.annotation.Nonnull;
-
 import org.immutables.value.Value;
 
-/**
- * A pointer to a hash.
- */
+/** A pointer to a hash. */
 @Value.Immutable
 public interface TagName extends NamedRef {
 
   /**
    * Create a new tag reference.
+   *
    * @param name the tag name
    * @return an instance of {@code TagName} for the provided name
    */

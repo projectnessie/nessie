@@ -15,10 +15,6 @@
  */
 package com.dremio.nessie.services.rest;
 
-import java.security.Principal;
-import java.util.List;
-import java.util.Optional;
-
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.CommitMeta;
@@ -32,6 +28,9 @@ import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
+import java.security.Principal;
+import java.util.List;
+import java.util.Optional;
 
 abstract class BaseResource {
   private final ServerConfig config;
@@ -45,7 +44,8 @@ abstract class BaseResource {
     this(null, null, null);
   }
 
-  protected BaseResource(ServerConfig config, Principal principal, VersionStore<Contents, CommitMeta> store) {
+  protected BaseResource(
+      ServerConfig config, Principal principal, VersionStore<Contents, CommitMeta> store) {
     this.config = config;
     this.principal = principal;
     this.store = store;
@@ -61,7 +61,8 @@ abstract class BaseResource {
   }
 
   Hash getHashOrThrow(String ref) throws NessieNotFoundException {
-    return getHash(ref).orElseThrow(() -> new NessieNotFoundException(String.format("Ref for %s not found", ref)));
+    return getHash(ref)
+        .orElseThrow(() -> new NessieNotFoundException(String.format("Ref for %s not found", ref)));
   }
 
   protected ServerConfig getConfig() {
@@ -72,19 +73,23 @@ abstract class BaseResource {
     return store;
   }
 
-  protected void doOps(String branch, String hash, String message, List<com.dremio.nessie.versioned.Operation<Contents>> operations)
+  protected void doOps(
+      String branch,
+      String hash,
+      String message,
+      List<com.dremio.nessie.versioned.Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
       store.commit(
           BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
           Optional.ofNullable(hash).map(Hash::of),
           meta(principal, message),
-          operations
-      );
+          operations);
     } catch (IllegalArgumentException e) {
       throw new NessieNotFoundException("Invalid hash provided.", e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException("Failed to commit data. Provided hash does not match current value.", e);
+      throw new NessieConflictException(
+          "Failed to commit data. Provided hash does not match current value.", e);
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException("Failed to commit data. Provided ref was not found.", e);
     }

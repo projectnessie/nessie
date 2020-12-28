@@ -20,14 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Collections;
-import java.util.Optional;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.ImmutablePut;
 import com.dremio.nessie.versioned.Key;
@@ -36,11 +28,18 @@ import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
+import java.util.Collections;
+import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class ITInMemoryVersionStore extends AbstractITVersionStore {
-  private static final InMemoryVersionStore.Builder<String, String> BUILDER = InMemoryVersionStore.<String, String>builder()
-      .valueSerializer(StringSerializer.getInstance())
-      .metadataSerializer(StringSerializer.getInstance());
+  private static final InMemoryVersionStore.Builder<String, String> BUILDER =
+      InMemoryVersionStore.<String, String>builder()
+          .valueSerializer(StringSerializer.getInstance())
+          .metadataSerializer(StringSerializer.getInstance());
 
   private VersionStore<String, String> store;
 
@@ -56,19 +55,27 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
 
   @Test
   void clearUnsafe() throws Exception {
-    InMemoryVersionStore<String, String> inMemoryVersionStore = (InMemoryVersionStore<String, String>) store;
+    InMemoryVersionStore<String, String> inMemoryVersionStore =
+        (InMemoryVersionStore<String, String>) store;
 
     BranchName fooBranch = BranchName.of("foo");
 
     inMemoryVersionStore.create(fooBranch, Optional.empty());
     assertNotNull(inMemoryVersionStore.toRef("foo"));
-    inMemoryVersionStore.commit(fooBranch, Optional.empty(), "foo",
-                                Collections.singletonList(ImmutablePut.<String>builder().key(Key.of("bar")).value("baz").build()));
+    inMemoryVersionStore.commit(
+        fooBranch,
+        Optional.empty(),
+        "foo",
+        Collections.singletonList(
+            ImmutablePut.<String>builder().key(Key.of("bar")).value("baz").build()));
     assertEquals(1L, inMemoryVersionStore.getCommits(fooBranch).count());
 
     inMemoryVersionStore.clearUnsafe();
-    assertThrows(ReferenceNotFoundException.class, () -> assertNull(inMemoryVersionStore.toRef("foo")));
-    assertThrows(ReferenceNotFoundException.class, () -> assertNull(inMemoryVersionStore.getCommits(fooBranch)));
+    assertThrows(
+        ReferenceNotFoundException.class, () -> assertNull(inMemoryVersionStore.toRef("foo")));
+    assertThrows(
+        ReferenceNotFoundException.class,
+        () -> assertNull(inMemoryVersionStore.getCommits(fooBranch)));
   }
 
   @BeforeEach
@@ -80,5 +87,4 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
   protected void afterEach() {
     this.store = null;
   }
-
 }

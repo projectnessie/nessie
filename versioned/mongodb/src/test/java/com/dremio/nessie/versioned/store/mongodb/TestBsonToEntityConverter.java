@@ -15,19 +15,17 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import com.dremio.nessie.versioned.impl.SampleEntities;
+import com.dremio.nessie.versioned.store.Entity;
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.Random;
-
 import org.bson.BsonReader;
 import org.bson.BsonSerializationException;
 import org.bson.internal.Base64;
 import org.bson.json.JsonReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import com.dremio.nessie.versioned.impl.SampleEntities;
-import com.dremio.nessie.versioned.store.Entity;
-import com.google.common.collect.ImmutableMap;
 
 class TestBsonToEntityConverter {
   private static final Random RANDOM = new Random(-9082734792382L);
@@ -96,8 +94,11 @@ class TestBsonToEntityConverter {
   @Test
   public void readBinary() {
     final byte[] buffer = SampleEntities.createBinary(RANDOM, 10);
-    final BsonReader reader = getReader(String.format(
-        "{\"value\": {\"$binary\": {\"base64\": \"%s\", \"subType\": \"00\"}}}", Base64.encode(buffer)));
+    final BsonReader reader =
+        getReader(
+            String.format(
+                "{\"value\": {\"$binary\": {\"base64\": \"%s\", \"subType\": \"00\"}}}",
+                Base64.encode(buffer)));
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
     Assertions.assertEquals(Entity.ofBinary(buffer), entities.get("value"));
   }
@@ -111,14 +112,16 @@ class TestBsonToEntityConverter {
 
   @Test
   public void readMap() {
-    final BsonReader reader = getReader(
-        "{\"value\": {\"key1\": \"str1\", \"key2\": false, \"key3\": []}}");
+    final BsonReader reader =
+        getReader("{\"value\": {\"key1\": \"str1\", \"key2\": false, \"key3\": []}}");
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
-    Assertions.assertEquals(Entity.ofMap(ImmutableMap.of(
-        "key1", Entity.ofString("str1"),
-        "key2", Entity.ofBoolean(false),
-        "key3", Entity.ofList()
-    )), entities.get("value"));
+    Assertions.assertEquals(
+        Entity.ofMap(
+            ImmutableMap.of(
+                "key1", Entity.ofString("str1"),
+                "key2", Entity.ofBoolean(false),
+                "key3", Entity.ofList())),
+        entities.get("value"));
   }
 
   @Test
@@ -133,7 +136,11 @@ class TestBsonToEntityConverter {
     final BsonReader reader = getReader("{\"value\": [5, \"Str\", false, {}]}");
     final Map<String, Entity> entities = CodecProvider.BSON_TO_ENTITY_CONVERTER.read(reader);
     Assertions.assertEquals(
-        Entity.ofList(Entity.ofNumber(5), Entity.ofString("Str"), Entity.ofBoolean(false), Entity.ofMap(ImmutableMap.of())),
+        Entity.ofList(
+            Entity.ofNumber(5),
+            Entity.ofString("Str"),
+            Entity.ofBoolean(false),
+            Entity.ofMap(ImmutableMap.of())),
         entities.get("value"));
   }
 
