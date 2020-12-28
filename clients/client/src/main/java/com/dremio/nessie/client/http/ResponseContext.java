@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.error;
+package com.dremio.nessie.client.http;
 
+import java.io.IOException;
+import java.io.InputStream;
 
-public class NessieConflictException extends BaseNessieClientServerException {
+/**
+ * Interface for the important parts of a response. This is created after executing the request.
+ */
+public interface ResponseContext {
 
-  public NessieConflictException(String message, Throwable cause) {
-    super(message, 409, "Conflict", cause);
-  }
+  Status getResponseCode() throws IOException;
 
-  public NessieConflictException(String message) {
-    super(message, 409, "Conflict");
-  }
+  InputStream getInputStream() throws IOException;
 
-  public NessieConflictException(NessieError error) {
-    super(error);
-  }
+  InputStream getErrorStream() throws IOException;
+
 }

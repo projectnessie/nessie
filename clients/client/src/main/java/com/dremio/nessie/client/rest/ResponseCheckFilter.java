@@ -18,48 +18,47 @@ package com.dremio.nessie.client.rest;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientResponseContext;
-import javax.ws.rs.client.ClientResponseFilter;
-import javax.ws.rs.core.Response.Status;
-
+import com.dremio.nessie.client.http.ResponseContext;
+import com.dremio.nessie.client.http.Status;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieError;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
-public class ResponseCheckFilter implements ClientResponseFilter {
-
-  private static final ObjectReader READER = new ObjectMapper().readerFor(NessieError.class);
-
-  @Override
-  public void filter(ClientRequestContext requestContext, ClientResponseContext responseContext) throws IOException {
-    checkResponse(responseContext.getStatus(), responseContext);
-  }
+public class ResponseCheckFilter {
 
   /**
    * check that response had a valid return code. Throw exception if not.
+   * @param con open http connection
+   * @param mapper Jackson ObjectMapper instance for this client
    * @throws IOException Throws IOException for certain error types.
    */
-  @SuppressWarnings("incomplete-switch")
-  public static void checkResponse(int statusCode, ClientResponseContext cntxt) throws IOException {
-    if (statusCode > 199 && statusCode < 300) {
+  public static void checkResponse(ResponseContext con, ObjectMapper mapper) throws IOException {
+    final Status status;
+    final NessieError error;
+    // this could IOException, in which case the error will be passed up to the client as an HttpClientException
+    status = con.getResponseCode();
+    if (status.getCode() > 199 && status.getCode() < 300) {
       return;
     }
 
-    NessieError error = decodeErrorObject(cntxt);
-    switch (error.getStatus()) {
-      case NOT_FOUND:
-        throw new NessieNotFoundException(error);
-      case CONFLICT:
-        throw new NessieConflictException(error);
+    // this could IOException, in which case the error will be passed up to the client as an HttpClientException
+    try (InputStream is = con.getErrorStream()) {
+      error = decodeErrorObject(status, is, mapper.readerFor(NessieError.class));
+    }
+
+    switch (status) {
       case BAD_REQUEST:
         throw new NessieBadRequestException(error);
       case UNAUTHORIZED:
         throw new NessieNotAuthorizedException(error);
       case FORBIDDEN:
         throw new NessieForbiddenException(error);
+      case NOT_FOUND:
+        throw new NessieNotFoundException(error);
+      case CONFLICT:
+        throw new NessieConflictException(error);
       case INTERNAL_SERVER_ERROR:
         throw new NessieInternalServerException(error);
       default:
@@ -68,17 +67,17 @@ public class ResponseCheckFilter implements ClientResponseFilter {
 
   }
 
-  private static NessieError decodeErrorObject(ClientResponseContext response) {
-    Status status = Status.fromStatusCode(response.getStatus());
-    InputStream inputStream = response.getEntityStream();
+  private static NessieError decodeErrorObject(Status status, InputStream inputStream, ObjectReader reader) {
     NessieError error;
     if (inputStream == null) {
-      error = new NessieError(status.getReasonPhrase(), status, null, new RuntimeException("Could not parse error object in response."));
+      error = new NessieError(status.getCode(), status.getReason(),
+                              "Could not parse error object in response.",
+                              new RuntimeException("Could not parse error object in response."));
     } else {
       try {
-        error = READER.readValue(inputStream);
+        error = reader.readValue(inputStream);
       } catch (IOException e) {
-        error = new NessieError(status.getReasonPhrase(), status, null, e);
+        error = new NessieError(status.getCode(), status.getReason(), null, e);
       }
     }
     return error;

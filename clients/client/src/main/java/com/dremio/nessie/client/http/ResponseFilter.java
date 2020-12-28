@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.client.auth;
+package com.dremio.nessie.client.http;
 
 /**
- * Mechanism to prevent sending Auth header. This is used when authorization is not enabled. Typically only during tests.
+ * Filter evaluated post call. The connection, its response streams and response code are available to the filter.
  */
-public class NoAuth implements Auth {
+@FunctionalInterface
+public interface ResponseFilter {
 
-  @Override
-  public String checkKey() {
-    return null;
-  }
+  void filter(ResponseContext con);
+
 }

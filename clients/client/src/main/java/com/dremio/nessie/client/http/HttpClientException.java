@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.error;
+package com.dremio.nessie.client.http;
 
+public class HttpClientException extends RuntimeException {
 
-public class NessieConflictException extends BaseNessieClientServerException {
-
-  public NessieConflictException(String message, Throwable cause) {
-    super(message, 409, "Conflict", cause);
+  public HttpClientException() {
+    super();
   }
 
-  public NessieConflictException(String message) {
-    super(message, 409, "Conflict");
+  public HttpClientException(String message) {
+    super(message);
   }
 
-  public NessieConflictException(NessieError error) {
-    super(error);
+  public HttpClientException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public HttpClientException(Throwable cause) {
+    super(cause);
   }
 }

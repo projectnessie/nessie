@@ -17,8 +17,7 @@ package com.dremio.nessie.error;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
-import javax.ws.rs.core.Response.Status;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -27,39 +26,64 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class NessieError {
 
   private final String message;
-  private final Status status;
+  private final int status;
+  private final String reason;
   private final String serverStackTrace;
   private final Exception clientProcessingException;
 
   @JsonCreator
   public NessieError(
       @JsonProperty("message") String message,
-      @JsonProperty("status") Status status,
+      @JsonProperty("status") int status,
+      @JsonProperty("reason") String reason,
       @JsonProperty("serverStackTrace") String serverStackTrace) {
-    this(message, status, serverStackTrace, null);
+    this(message, status, reason, serverStackTrace, null);
   }
 
   /**
    * Create Error.
-   * @param message Message of error.
-   * @param status Status of error.
-   * @param serverStackTrace Server stack trace, if available.
+   *
+   * @param message             Message of error.
+   * @param status              Status of error.
+   * @param reason              Reason for status.
+   * @param serverStackTrace    Server stack trace, if available.
    * @param processingException Any processing exceptions that happened on the client.
    */
-  public NessieError(String message, Status status, String serverStackTrace, Exception processingException) {
-    super();
+  public NessieError(String message, int status, String reason, String serverStackTrace, Exception processingException) {
     this.message = message;
     this.status = status;
+    this.reason = reason;
     this.serverStackTrace = serverStackTrace;
     this.clientProcessingException = processingException;
   }
+
+  /**
+   * Create Error.
+   *
+   * @param statusCode          Status of error.
+   * @param reason              Reason for status.
+   * @param serverStackTrace    Server stack trace, if available.
+   * @param processingException Any processing exceptions that happened on the client.
+   */
+  public NessieError(int statusCode, String reason, String serverStackTrace, Exception processingException) {
+    this.status = statusCode;
+    this.message = reason;
+    this.reason = reason;
+    this.serverStackTrace = serverStackTrace;
+    this.clientProcessingException = processingException;
+  }
+
 
   public String getMessage() {
     return message;
   }
 
-  public Status getStatus() {
+  public int getStatus() {
     return status;
+  }
+
+  public String getReason() {
+    return reason;
   }
 
   public String getServerStackTrace() {
@@ -73,21 +97,40 @@ public class NessieError {
 
   /**
    * Get full error message.
+   *
    * @return Full error message.
    */
   @JsonIgnore
   public String getFullMessage() {
     if (serverStackTrace != null) {
-      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\nServer Stack Trace:\n%s", message,
-          status.getStatusCode(), status.getReasonPhrase(), serverStackTrace);
+      return String.format("%s\nStatus Code: %d (%s)\nServer Stack Trace:\n%s", message,
+                           status, reason, serverStackTrace);
     }
 
     if (clientProcessingException != null) {
       StringWriter sw = new StringWriter();
       clientProcessingException.printStackTrace(new PrintWriter(sw));
-      return String.format("%s\nStatus Code: %d\nStatus Reason: %s\nClient Processing Failure:\n%s", message,
-          status.getStatusCode(), status.getReasonPhrase(), sw.toString());
+      return String.format("%s\nStatus Code: %d (%s)\nClient Processing Failure:\n%s", message,
+                           status, reason, sw.toString());
     }
     return message;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    NessieError error = (NessieError) o;
+    return status == error.status && Objects.equals(message, error.message) && Objects
+      .equals(serverStackTrace, error.serverStackTrace);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(message, status, serverStackTrace);
   }
 }

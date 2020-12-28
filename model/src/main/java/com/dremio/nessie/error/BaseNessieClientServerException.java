@@ -17,14 +17,13 @@ package com.dremio.nessie.error;
 
 import java.io.IOException;
 
-import javax.ws.rs.core.Response.Status;
-
 /**
  * A caught exception that is thrown on the server and caught in the client.
  */
 public class BaseNessieClientServerException extends IOException {
 
-  private final Status status;
+  private final int status;
+  private final String reason;
   private final String serverStackTrace;
 
   /**
@@ -33,9 +32,10 @@ public class BaseNessieClientServerException extends IOException {
    * @param status HTTP status
    * @param cause The underlying cause.
    */
-  public BaseNessieClientServerException(String message, Status status, Throwable cause) {
+  public BaseNessieClientServerException(String message, int status, String reason, Throwable cause) {
     super(message, cause);
     this.status = status;
+    this.reason = reason;
     this.serverStackTrace = null;
   }
 
@@ -44,9 +44,10 @@ public class BaseNessieClientServerException extends IOException {
    * @param message Message
    * @param status HTTP status
    */
-  public BaseNessieClientServerException(String message, Status status) {
+  public BaseNessieClientServerException(String message, int status, String reason) {
     super(message);
     this.status = status;
+    this.reason = reason;
     this.serverStackTrace = null;
   }
 
@@ -57,15 +58,16 @@ public class BaseNessieClientServerException extends IOException {
   public BaseNessieClientServerException(NessieError error) {
     super(error.getMessage());
     this.status = error.getStatus();
+    this.reason = error.getReason();
     this.serverStackTrace = error.getServerStackTrace();
   }
 
-  public Status getStatus() {
+  public int getStatus() {
     return status;
   }
 
   public String getReason() {
-    return status.getReasonPhrase();
+    return reason;
   }
 
   public String getServerStackTrace() {

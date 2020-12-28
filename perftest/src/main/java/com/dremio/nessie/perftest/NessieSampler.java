@@ -144,7 +144,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     } catch (NessieServiceException e) {
       logger.warn("Request was not successfully processed", e);
       String errStr = e.getMessage();
-      fillSampler(sampleResult, "", retries, false, errStr, e.getError().getStatus().getStatusCode(), method);
+      fillSampler(sampleResult, "", retries, false, errStr, e.getError().getStatus(), method);
     } catch (Throwable t) {
       logger.warn("Request was not successfully processed", t);
       String msg = t.getMessage() == null ? "" : t.getMessage();
@@ -204,4 +204,3 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     baseBranch = context.getParameter(BASE_BRANCH_TAG, "master");
   }
 }
-
