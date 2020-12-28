@@ -27,7 +27,7 @@ import javax.ws.rs.core.Response;
 
 import org.junit.jupiter.api.Test;
 
-class NessieErrorTest {
+class TestNessieError {
   @Test
   void allNulls() {
     NessieError e = new NessieError(null, null, null);

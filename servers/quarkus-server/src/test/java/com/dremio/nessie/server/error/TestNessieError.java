@@ -47,7 +47,7 @@ import io.quarkus.test.junit.QuarkusTest;
  * code isn't even run) and exceptions reported <em>by</em> Nessie.
  */
 @QuarkusTest
-class NessieErrorTest {
+class TestNessieError {
 
   static String baseURI = "http://localhost:19121/api/v1/nessieErrorTest";
 

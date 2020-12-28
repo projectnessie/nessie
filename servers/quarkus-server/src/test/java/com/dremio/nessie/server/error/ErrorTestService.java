@@ -32,7 +32,7 @@ import javax.ws.rs.core.MediaType;
 import com.dremio.nessie.error.NessieNotFoundException;
 
 /**
- * REST service used to generate a bunch of violations for {@link NessieErrorTest}.
+ * REST service used to generate a bunch of violations for {@link TestNessieError}.
  */
 @RequestScoped
 @Path("/nessieErrorTest")
