@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.L1Builder;
+import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -153,14 +153,26 @@ public class L1 extends MemoizedId {
     return count;
   }
 
-  public <T> L1Builder<T> applyToBuilder(L1Builder<T> builder) {
+  public <T extends L1Consumer<T>> L1Consumer<T> applyToConsumer(L1Consumer<T> consumer) {
     // TODO
-    return builder;
+    return consumer;
   }
 
-  public static L1Builder<L1> builder() {
-    // TODO: return an L1 builder that builds L1s.
+  public static Builder builder() {
+    return new Builder();
+  }
 
+  public static class Builder implements L1Consumer<Builder> {
+
+    private Builder() {}
+
+    // TODO
+    // ...
+    // ...
+
+    public L1 build() {
+      return new L1(...);
+    }
   }
 
 }
