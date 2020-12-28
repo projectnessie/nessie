@@ -17,7 +17,7 @@ package com.dremio.nessie.tiered.builder;
 
 import java.util.Map;
 
-public class DynamoL1Builder implements L1Builder<Map<String, AttributeValue>> {
+public class DynamoL1Consumer implements L1Consumer<Map<String, AttributeValue>> {
 
   // TODO: implement something that builds the Dynamo AttributeValue hierarchy.
 }
