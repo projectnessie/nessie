@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,10 +41,12 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Streams;
@@ -353,4 +356,27 @@ class PartialTree<V> {
     return l3s.values().stream().flatMap(p -> p.get().getKeys());
   }
 
+
+  public PartialTree<V> cleanClone() {
+    PartialTree<V> clone = new PartialTree<V>(serializer, refId, keys);
+    this.l3s.entrySet().stream()
+            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(L3.SCHEMA, x.getValue())))
+            .forEach(x -> clone.l3s.put(x.getKey(), x.getValue()));
+    this.l2s.entrySet().stream()
+            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(L2.SCHEMA, x.getValue())))
+            .forEach(x -> clone.l2s.put(x.getKey(), x.getValue()));
+    this.values.forEach(clone.values::put);
+    clone.refType = this.refType;
+    clone.rootId = this.rootId;
+    clone.l1 = cloneInner(L1.SCHEMA, this.l1);
+    return clone;
+  }
+
+  private static <T extends HasId> Pointer<T> cloneInner(SimpleSchema<T> schema, Pointer<T> value) {
+    if (value.isDirty()) {
+      return new Pointer<>(schema.mapToItem(schema.itemToMap(value.get(), true)));
+    } else {
+      return value;
+    }
+  }
 }
