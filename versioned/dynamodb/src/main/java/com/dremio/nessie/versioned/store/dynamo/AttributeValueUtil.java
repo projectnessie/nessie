@@ -18,7 +18,11 @@ package com.dremio.nessie.versioned.store.dynamo;
 import java.util.List;
 import java.util.Map;
 
+import com.dremio.nessie.versioned.impl.L1;
+import com.dremio.nessie.versioned.impl.L1.Builder;
 import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.Id;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.protobuf.UnsafeByteOperations;
@@ -54,7 +58,11 @@ public class AttributeValueUtil {
     }
   }
 
+  // todo make generic, Probably want to add this into ValueType somehow
   public static Map<String, Entity> toEntity(Map<String, AttributeValue> map) {
+    if ("l1".equals(map.get("t").s())) {
+      return null;
+    }
     return Maps.transformValues(map, AttributeValueUtil::toEntity);
   }
 
@@ -95,5 +103,34 @@ public class AttributeValueUtil {
     return list.stream().map(AttributeValueUtil::fromEntity).collect(ImmutableList.toImmutableList());
   }
 
+  public static HasId toConsumer(Map<String, AttributeValue> attributeMap) {
+    if ("l1".equals(attributeMap.get("t").s())) {
+      throw new UnsupportedOperationException("Only L1 can be mapped via consumers");
+    }
 
+    //todo move this method somewhere useful.
+    final String ID = "id";
+    final String TREE = "tree";
+    final String METADATA = "metadata";
+    final String PARENTS = "parents";
+    final String KEY_LIST = "keys";
+
+    //todo unclear how best to do the dynamo conversion.
+    Builder builder = L1.builder();
+    return builder.commitMetadataId(Id.build(UnsafeByteOperations.unsafeWrap(attributeMap.get(METADATA).b().asByteArray())))
+                  .children(attributeMap.get(TREE))
+                  .id(Id.build(UnsafeByteOperations.unsafeWrap(attributeMap.get(ID).b().asByteArray())))
+                  .addAncestors(attributeMap.get(PARENTS))
+                  .keyList(attributeMap.get(KEY_LIST))
+                  .build();
+  }
+
+  public static Map<String, AttributeValue> fromConsumer(HasId value) {
+    if (value instanceof L1) {
+      DynamoL1Consumer consumer = new DynamoL1Consumer();
+      ((L1) value).applyToConsumer(consumer);
+      return consumer.getEntity();
+    }
+    throw new UnsupportedOperationException("Only L1 can be mapped via consumers");
+  }
 }

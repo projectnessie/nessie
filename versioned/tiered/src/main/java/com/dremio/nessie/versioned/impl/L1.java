@@ -15,15 +15,22 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.impl.KeyList.CompleteList;
+import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
+import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
+import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
 public class L1 extends MemoizedId {
@@ -154,7 +161,32 @@ public class L1 extends MemoizedId {
   }
 
   public <T extends L1Consumer<T>> L1Consumer<T> applyToConsumer(L1Consumer<T> consumer) {
-    // TODO
+    consumer.id(this.getId());
+    consumer.commitMetadataId(this.metadataId);
+    //todo likely we want to change this interface to InternalKey
+    this.keyList.getMutations()
+                .stream()
+                .filter(x -> x instanceof KeyAddition)
+                .map(KeyMutation::getKey)
+                .map(InternalKey::toKey)
+                .forEach(consumer::addKeyAddition);
+    this.keyList.getMutations()
+                .stream()
+                .filter(x -> x instanceof KeyRemoval)
+                .map(KeyMutation::getKey)
+                .map(InternalKey::toKey)
+                .forEach(consumer::addKeyRemoval);
+
+    ArrayList<Id> children = new ArrayList<>();
+    this.tree.iterator().forEachRemaining(children::add);
+    consumer.children(children);
+    consumer.addAncestors(parentList.getParents());
+    if (keyList.isFull()) {
+      consumer.completeKeyList(((CompleteList)keyList).getFragments());
+    } else {
+      IncrementalList list = (IncrementalList) keyList;
+      consumer.incrementalKeyList(list.getPreviousCheckpoint(), list.getDistanceFromCheckpointCommits());
+    }
     return consumer;
   }
 
@@ -164,14 +196,113 @@ public class L1 extends MemoizedId {
 
   public static class Builder implements L1Consumer<Builder> {
 
+    private Id metadataId;
+    private List<Id> ancestors;
+    private List<Id> children;
+    private final List<KeyMutation> keyChanges = new ArrayList<>();
+    private Id id;
+    private Id checkpointId;
+    private int distanceFromCheckpoint;
+    private List<Id> fragmentIds;
+
     private Builder() {}
 
-    // TODO
-    // ...
-    // ...
-
     public L1 build() {
-      return new L1(...);
+      return new L1(metadataId, buildIdMap(), id, buildKeyList(), buildParentList());
+    }
+
+    private IdMap buildIdMap() {
+      //todo likely we want to move this into IdMap or expose a new constructor/builder.
+      IdMap idMap = new IdMap(children.size());
+      for (int i=0;i<children.size();i++) {
+        idMap = idMap.withId(i, children.get(i));
+      }
+      return idMap;
+    }
+
+    private ParentList buildParentList() {
+      //todo likely we want to move this into ParentList or expose a new constructor/builder.
+      ParentList parentList = ParentList.EMPTY;
+      for (int i=0;i<ancestors.size();i++) {
+        parentList = parentList.cloneWithAdditional(ancestors.get(i));
+      }
+      return parentList;
+    }
+
+    private KeyList buildKeyList() {
+      if (checkpointId != null) {
+        return KeyList.incremental(checkpointId, keyChanges, distanceFromCheckpoint);
+      }
+      if (fragmentIds != null) {
+        return new KeyList.CompleteList(fragmentIds, keyChanges);
+      }
+      // todo what if its neither? Fail
+      throw new IllegalStateException("Neither a checkpoint nor a incremental key list were found.");
+    }
+
+    @Override
+    public Builder commitMetadataId(Id id) {
+      checkCalled(metadataId, "commitMetadataId");
+      this.metadataId = id;
+      return this;
+    }
+
+    @Override
+    public Builder addAncestors(List<Id> ids) {
+      checkCalled(ancestors, "addAncestors");
+      this.ancestors = ids;
+      return this;
+    }
+
+    @Override
+    public Builder children(List<Id> ids) {
+      checkCalled(children, "children");
+      this.children = ids;
+      return this;
+    }
+
+    @Override
+    public Builder id(Id id) {
+      checkCalled(id, "id");
+      this.id = id;
+      return this;
+    }
+
+    @Override
+    public Builder addKeyAddition(Key key) {
+      keyChanges.add(KeyMutation.KeyAddition.of(new InternalKey(key)));
+      return this;
+    }
+
+    @Override
+    public Builder addKeyRemoval(Key key) {
+      keyChanges.add(KeyMutation.KeyRemoval.of(new InternalKey(key)));
+      return this;
+    }
+
+    @Override
+    public Builder incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
+      checkCalled(checkpointId, "incrementalKeyList");
+      if (this.fragmentIds != null) {
+        throw new UnsupportedOperationException("Cannot call incrementalKeyList after completeKeyList.");
+      }
+      this.checkpointId = checkpointId;
+      this.distanceFromCheckpoint = distanceFromCheckpoint;
+      return this;
+    }
+
+    @Override
+    public Builder completeKeyList(List<Id> fragmentIds) {
+      checkCalled(fragmentIds, "completeKeyList");
+      if (this.checkpointId != null) {
+        throw new UnsupportedOperationException("Cannot call completeKeyList after incrementalKeyList.");
+      }
+      this.fragmentIds = fragmentIds;
+      return this;
+    }
+
+    private static void checkCalled(Object arg, String name) {
+      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
     }
   }
 

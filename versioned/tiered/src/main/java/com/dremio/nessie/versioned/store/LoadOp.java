@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collector;
 
+import com.dremio.nessie.versioned.impl.L1;
 import com.google.common.base.Preconditions;
 
 public class LoadOp<V extends HasId> {
@@ -44,6 +45,13 @@ public class LoadOp<V extends HasId> {
   public void loaded(Map<String, Entity> load) {
     SimpleSchema<V> schema = type.getSchema();
     consumer.accept(schema.mapToItem(type.checkType(load)));
+  }
+
+  //replacement for loaded w/ entity
+  public void loaded(HasId load) {
+    if (load instanceof L1 && type == ValueType.L1) {
+      consumer.accept((V) load);
+    }
   }
 
   public Id getId() {
