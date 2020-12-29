@@ -29,7 +29,7 @@ public class L1 extends MemoizedId {
 
   private static final long HASH_SEED = 3506039963025592061L;
 
-  public static final int SIZE = 151;
+  public static final int SIZE = 43;
   public static L1 EMPTY = new L1(Id.EMPTY, new IdMap(SIZE, L2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
   public static Id EMPTY_ID = EMPTY.getId();
 
