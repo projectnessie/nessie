@@ -34,17 +34,19 @@ public final class NessieConfigConstants {
   /**
    * Config property name ({@value #CONF_NESSIE_AUTH_TYPE}) for the authentication type,
    * see {@link com.dremio.nessie.client.NessieClient.AuthType}.
+   * <p>
+   * If no {@value #CONF_NESSIE_AUTH_TYPE} option is specified, the implementation will default
+   * to {@link com.dremio.nessie.client.NessieClient.AuthType#BASIC}, if both
+   * {@value #CONF_NESSIE_USERNAME} and {@value #CONF_NESSIE_PASSWORD} are specified, otherwise
+   * the default will be {@link com.dremio.nessie.client.NessieClient.AuthType#NONE}. Note that
+   * "basic" HTTP authentication is not considered secure.
+   * </p>
    */
   public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
   /**
    * Config property name ({@value #CONF_NESSIE_REF}) for the nessie reference used by clients.
    */
   public static final String CONF_NESSIE_REF = "nessie.ref";
-
-  /**
-   * Config property value for the basic-auth authentication type: {@value #NESSIE_AUTH_TYPE_DEFAULT}.
-   */
-  public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
 
   private NessieConfigConstants() {
     // empty

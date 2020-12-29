@@ -19,7 +19,6 @@ import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TY
 import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
 import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_URL;
 import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
-import static com.dremio.nessie.client.NessieConfigConstants.NESSIE_AUTH_TYPE_DEFAULT;
 
 import java.io.Closeable;
 import java.lang.reflect.InvocationHandler;
@@ -173,7 +172,7 @@ public class NessieClient implements Closeable {
     String password = configuration.apply(CONF_NESSIE_PASSWORD);
     if (authType == null) {
       if (username != null && password != null) {
-        authType = NESSIE_AUTH_TYPE_DEFAULT;
+        authType = AuthType.BASIC.name();
       } else {
         authType = AuthType.NONE.name();
       }
