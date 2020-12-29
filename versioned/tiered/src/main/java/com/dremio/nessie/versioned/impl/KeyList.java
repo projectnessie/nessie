@@ -333,6 +333,10 @@ abstract class KeyList {
     List<KeyMutation> getMutations() {
       return mutations;
     }
+
+    List<Id> getFragments() {
+      return ImmutableList.copyOf(fragmentIds);
+    }
   }
 
 
