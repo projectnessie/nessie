@@ -61,10 +61,19 @@ public enum ValueType {
     this.defaultTableSuffix = defaultTableSuffix;
   }
 
+  /**
+   * Get the object class associated with this {@code ValueType}.
+   * @return The object class for this {@code ValueType}.
+   */
   public Class<?> getObjectClass() {
     return objectClass;
   }
 
+  /**
+   * Get the name of the table for this object optionally added the provided prefix.
+   * @param prefix The prefix to append (if defined and non-empty).
+   * @return The complete table name for this {@code ValueType}.
+   */
   public String getTableName(String prefix) {
     if (prefix == null || prefix.isEmpty()) {
       return defaultTableSuffix;
