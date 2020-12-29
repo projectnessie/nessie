@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.model;
 
+import static com.dremio.nessie.model.Validation.validateHash;
+
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
@@ -32,4 +34,15 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 public interface Merge {
 
   String getFromHash();
+
+  /**
+   * Validation rule using {@link com.dremio.nessie.model.Validation#validateHash(String)} (String)}.
+   */
+  @Value.Check
+  default void checkHash() {
+    String hash = getFromHash();
+    if (hash != null) {
+      validateHash(hash);
+    }
+  }
 }

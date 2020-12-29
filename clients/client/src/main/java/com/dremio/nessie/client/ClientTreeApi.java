@@ -17,6 +17,7 @@ package com.dremio.nessie.client;
 
 import java.util.List;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import com.dremio.nessie.api.TreeApi;
@@ -108,17 +109,24 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public void transplantCommitsIntoBranch(@NotNull String branchName, @NotNull String expectedHash, String message, Transplant transplant)
+  public void transplantCommitsIntoBranch(
+      @NotNull String branchName,
+      @NotNull String expectedHash,
+      String message,
+      @Valid Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     client.newRequest().path("trees/branch/{branchName}/transplant")
           .resolveTemplate("branchName", branchName)
           .queryParam("expectedHash", expectedHash)
           .queryParam("message", message)
-          .put(transplant);
+          .post(transplant);
   }
 
   @Override
-  public void mergeRefIntoBranch(@NotNull String branchName, @NotNull String expectedHash, @NotNull Merge merge)
+  public void mergeRefIntoBranch(
+      @NotNull String branchName,
+      @NotNull String expectedHash,
+      @NotNull @Valid Merge merge)
       throws NessieNotFoundException, NessieConflictException {
     client.newRequest().path("trees/branch/{branchName}/merge")
           .resolveTemplate("branchName", branchName)
@@ -135,8 +143,11 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public void commitMultipleOperations(String branch, @NotNull String expectedHash, String message,
-                                       @NotNull Operations operations) throws NessieNotFoundException, NessieConflictException {
+  public void commitMultipleOperations(
+      String branch,
+      @NotNull String expectedHash,
+      String message,
+      @NotNull Operations operations) throws NessieNotFoundException, NessieConflictException {
     client.newRequest().path("trees/branch/{branchName}/commit")
           .resolveTemplate("branchName", branch)
           .queryParam("expectedHash", expectedHash)
