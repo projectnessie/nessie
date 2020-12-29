@@ -315,7 +315,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return store.getRefs()
+    return store.getValues(InternalRef.class, ValueType.REF)
         .map(ir -> {
           if (ir.getType() == Type.TAG) {
             return WithHash.<NamedRef>of(ir.getTag().getCommit().toHash(), ImmutableTagName.builder().name(ir.getTag().getName()).build());

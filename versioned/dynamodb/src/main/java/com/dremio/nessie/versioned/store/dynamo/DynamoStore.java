@@ -93,6 +93,7 @@ import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 public class DynamoStore implements Store {
 
+
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
   private final int paginationSize = 100;
@@ -107,15 +108,12 @@ public class DynamoStore implements Store {
    */
   public DynamoStore(DynamoStoreConfig config) {
     this.config = config;
-    this.tableNames = ImmutableMap.<ValueType, String>builder()
-        .put(ValueType.REF, config.getRefTableName())
-        .put(ValueType.L1, config.getTreeTableName())
-        .put(ValueType.L2, config.getTreeTableName())
-        .put(ValueType.L3, config.getTreeTableName())
-        .put(ValueType.VALUE, config.getValueTableName())
-        .put(ValueType.KEY_FRAGMENT, config.getKeyListTableName())
-        .put(ValueType.COMMIT_METADATA, config.getMetadataTableName())
-        .build();
+    this.tableNames = Stream.of(ValueType.values())
+        .collect(ImmutableMap.toImmutableMap(v -> v, v -> v.getTableName(config.getTablePrefix())));
+
+    if (tableNames.size() != tableNames.values().stream().collect(Collectors.toSet()).size()) {
+      throw new IllegalArgumentException("Each Nessie dynamo table must be named distinctly.");
+    }
   }
 
   @Override
@@ -378,12 +376,14 @@ public class DynamoStore implements Store {
     }
   }
 
+
+  @SuppressWarnings("unchecked")
   @Override
-  public Stream<InternalRef> getRefs() {
-    return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(ValueType.REF)).build())
+  public <V> Stream<V> getValues(Class<V> valueClass, ValueType type) {
+    return ((Stream<V>) client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
         .stream()
         .flatMap(r -> r.items().stream())
-        .map(i -> ValueType.REF.<InternalRef>getSchema().mapToItem(AttributeValueUtil.toEntity(i)));
+        .map(i -> type.<InternalRef>getSchema().mapToItem(AttributeValueUtil.toEntity(i))));
   }
 
   private final void createIfMissing(String name) {

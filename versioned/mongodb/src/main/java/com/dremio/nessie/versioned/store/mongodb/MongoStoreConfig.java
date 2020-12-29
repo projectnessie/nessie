@@ -28,38 +28,8 @@ public abstract class MongoStoreConfig {
   }
 
   @Default
-  public String getRefTableName() {
-    return "refs";
-  }
-
-  @Default
-  public String getL1TableName() {
-    return "l1";
-  }
-
-  @Default
-  public String getL2TableName() {
-    return "l2";
-  }
-
-  @Default
-  public String getL3TableName() {
-    return "l3";
-  }
-
-  @Default
-  public String getValueTableName() {
-    return "values";
-  }
-
-  @Default
-  public String getKeyListTableName() {
-    return "keys";
-  }
-
-  @Default
-  public String getMetadataTableName() {
-    return "commit_metadata";
+  public String getTablePrefix() {
+    return "";
   }
 
   @Default
