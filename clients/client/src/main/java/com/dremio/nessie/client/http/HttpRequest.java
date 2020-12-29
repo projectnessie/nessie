@@ -20,6 +20,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -96,8 +97,14 @@ public class HttpRequest {
       con.setRequestMethod(method.name());
       if (body != null && (method.equals(Method.PUT) || method.equals(Method.POST))) {
         con.setDoOutput(true);
-        con.setRequestProperty("Content-Type", "application/json");
-        mapper.writerFor(body.getClass()).writeValue(con.getOutputStream(), body);
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        Class<?> bodyType = body.getClass();
+        if (bodyType != String.class) {
+          mapper.writerFor(bodyType).writeValue(con.getOutputStream(), body);
+        } else {
+          // This is mostly used for testing bad/broken JSON
+          con.getOutputStream().write(((String)body).getBytes(StandardCharsets.UTF_8));
+        }
       }
       con.connect();
       con.getResponseCode(); // call to ensure http request is complete

@@ -31,6 +31,13 @@ public class NessieError {
   private final String serverStackTrace;
   private final Exception clientProcessingException;
 
+  /**
+   * Deserialize error message from the server.
+   *
+   * @param message Error message
+   * @param status HTTP status code
+   * @param serverStackTrace exception, if present (can be empty or {@code null}
+   */
   @JsonCreator
   public NessieError(
       @JsonProperty("message") String message,
@@ -102,18 +109,28 @@ public class NessieError {
    */
   @JsonIgnore
   public String getFullMessage() {
-    if (serverStackTrace != null) {
-      return String.format("%s\nStatus Code: %d (%s)\nServer Stack Trace:\n%s", message,
-                           status, reason, serverStackTrace);
+    StringBuilder sb = new StringBuilder();
+    if (reason != null) {
+      sb.append(reason)
+        .append(" (HTTP/").append(status).append(')');
     }
 
+    if (message != null) {
+      if (sb.length() > 0) {
+        sb.append(": ");
+      }
+      sb.append(message);
+    }
+
+    if (serverStackTrace != null) {
+      sb.append("\n").append(serverStackTrace);
+    }
     if (clientProcessingException != null) {
       StringWriter sw = new StringWriter();
       clientProcessingException.printStackTrace(new PrintWriter(sw));
-      return String.format("%s\nStatus Code: %d (%s)\nClient Processing Failure:\n%s", message,
-                           status, reason, sw.toString());
+      sb.append("\n").append(sw);
     }
-    return message;
+    return sb.toString();
   }
 
   @Override
