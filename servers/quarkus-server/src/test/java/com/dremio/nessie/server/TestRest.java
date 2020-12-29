@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,7 +42,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
@@ -75,15 +75,19 @@ class TestRest {
   VersionStore<Contents, CommitMeta> versionStore;
 
   @BeforeEach
-  void init() throws Exception {
-    String path = "http://localhost:19121/api/v1";
-    this.client = new NessieClient(AuthType.NONE, path, null, null);
+  void init() {
+    client = NessieClient.none("http://localhost:19121/api/v1");
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 
     if (versionStore instanceof InMemoryVersionStore) {
       ((InMemoryVersionStore<?, ?>) versionStore).clearUnsafe();
     }
+  }
+
+  @AfterEach
+  void closeClient() {
+    client.close();
   }
 
   @ParameterizedTest

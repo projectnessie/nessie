@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.hms;
 
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_URL;
+
 import java.util.Map;
 import java.util.function.Function;
 
@@ -33,7 +35,7 @@ public class ITTestHive2DelegateOps extends BaseDelegateOps {
       .put(HiveConf.ConfVars.METASTORE_RAW_STORE_IMPL.varname, DelegatingHive2NessieRawStore.class.getName())
       .put("hive.exec.dynamic.partition.mode","nonstrict")
       .put(NessieStore.NESSIE_WHITELIST_DBS_OPTION,"nessie,mytestdb")
-      .put(NessieClient.CONF_NESSIE_URL, URL)
+      .put(CONF_NESSIE_URL, URL)
       .build();
 
   @BeforeAll

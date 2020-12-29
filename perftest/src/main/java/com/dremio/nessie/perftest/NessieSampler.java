@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.rest.NessieServiceException;
 import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.ContentsKey;
@@ -69,7 +68,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
    */
   private synchronized NessieClient nessieClient() {
     if (client == null) {
-      client = new NessieClient(AuthType.BASIC, path, "admin_user", "test123");
+      client = NessieClient.basic(path, "admin_user", "test123");
       try {
         client.getTreeApi().createReference(Branch.of("master", null));
       } catch (Exception t) {
