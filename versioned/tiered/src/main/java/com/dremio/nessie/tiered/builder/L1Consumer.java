@@ -42,7 +42,7 @@ public interface L1Consumer<T extends L1Consumer<T>> {
    * @param ids A list of ancestors ordered by my recent to oldest.
    * @return This consumer.
    */
-  T addAnscestors(List<Id> ids);
+  T addAncestors(List<Id> ids);
 
   /**
    * Add a list of children ids indexed by position.
