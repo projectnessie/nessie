@@ -16,11 +16,18 @@
 
 package com.dremio.nessie.server;
 
+import static com.dremio.nessie.model.Validation.HASH_MESSAGE;
+import static com.dremio.nessie.model.Validation.REF_NAME_MESSAGE;
+import static com.dremio.nessie.model.Validation.REF_NAME_OR_HASH_MESSAGE;
 import static com.dremio.nessie.server.ReferenceMatchers.referenceWithNameAndType;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -35,6 +42,7 @@ import javax.inject.Inject;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -42,6 +50,10 @@ import com.dremio.nessie.api.ContentsApi;
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
 import com.dremio.nessie.client.NessieClient.AuthType;
+import com.dremio.nessie.client.http.HttpClient;
+import com.dremio.nessie.client.http.HttpClientException;
+import com.dremio.nessie.client.rest.NessieBadRequestException;
+import com.dremio.nessie.client.rest.NessieHttpResponseFilter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
@@ -61,25 +73,34 @@ import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Tag;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
 class TestRest {
 
-  private NessieClient client;
+  public static final String VALID_HASH = "1234567890123456789012345678901234567890123456789012345678901234";
+
   private TreeApi tree;
   private ContentsApi contents;
+  private HttpClient httpClient;
 
   @Inject
   VersionStore<Contents, CommitMeta> versionStore;
 
   @BeforeEach
-  void init() throws Exception {
+  void init() {
     String path = "http://localhost:19121/api/v1";
-    this.client = new NessieClient(AuthType.NONE, path, null, null);
+    NessieClient client = new NessieClient(AuthType.NONE, path, null, null);
     tree = client.getTreeApi();
     contents = client.getContentsApi();
+
+    ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
+        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    httpClient = HttpClient.builder().setBaseUri(path).setObjectMapper(mapper).build();
+    httpClient.register(new NessieHttpResponseFilter(mapper));
 
     if (versionStore instanceof InMemoryVersionStore) {
       ((InMemoryVersionStore<?, ?>) versionStore).clearUnsafe();
@@ -89,7 +110,7 @@ class TestRest {
   @ParameterizedTest
   @ValueSource(strings = {
       "normal",
-      "with space",
+      "with-no_space",
       "slash/thing"
   })
   void referenceNames(String refNamePart) throws NessieNotFoundException, NessieConflictException {
@@ -185,5 +206,202 @@ class TestRest {
     tree.createReference(Branch.of(branch, null));
     NessieConflictException e = assertThrows(NessieConflictException.class, () -> tree.createReference(Branch.of(branch, null)));
     assertThat(e.getMessage(), Matchers.containsString("already exists"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "x/",
+      "abc'",
+      ".foo",
+      "abc'def'..'blah",
+      "abc'de..blah",
+      "abc'de@{blah"
+  })
+  void invalidBranchNames(String invalidBranchName) {
+    Operations ops = ImmutableOperations.builder().build();
+    ContentsKey key = ContentsKey.of("x");
+    Contents cts = IcebergTable.of("moo");
+    MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
+    Tag tag = Tag.of("valid", VALID_HASH);
+    assertAll(
+        () -> assertEquals("Bad Request (HTTP/400): commitMultipleOperations.branchName: " + REF_NAME_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.commitMultipleOperations(invalidBranchName, VALID_HASH, null, ops)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): deleteBranch.branchName: " + REF_NAME_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.deleteBranch(invalidBranchName, VALID_HASH)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): getCommitLog.ref: " + REF_NAME_OR_HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.getCommitLog(invalidBranchName)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): getEntries.refName: " + REF_NAME_OR_HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.getEntries(invalidBranchName)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): getReferenceByName.refName: " + REF_NAME_OR_HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.getReferenceByName(invalidBranchName)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): assignTag.tagName: " + REF_NAME_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.assignTag(invalidBranchName, VALID_HASH, tag)).getMessage()),
+        () -> assertThat(
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.mergeRefIntoBranch(invalidBranchName, VALID_HASH, null)).getMessage(),
+            allOf(
+                containsString("Bad Request (HTTP/400): "),
+                containsString("mergeRefIntoBranch.branchName: " + REF_NAME_MESSAGE),
+                containsString("mergeRefIntoBranch.merge: must not be null")
+            )),
+        () -> assertEquals("Bad Request (HTTP/400): deleteTag.tagName: " + REF_NAME_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.deleteTag(invalidBranchName, VALID_HASH)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): transplantCommitsIntoBranch.branchName: " + REF_NAME_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.transplantCommitsIntoBranch(invalidBranchName, VALID_HASH, null, null)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): setContents.branch: " + REF_NAME_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.setContents(key, invalidBranchName, VALID_HASH, null, cts)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): deleteContents.branch: " + REF_NAME_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.deleteContents(key, invalidBranchName, VALID_HASH, null)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): getContents.ref: " + REF_NAME_OR_HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.getContents(key, invalidBranchName)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): getMultipleContents.ref: " + REF_NAME_OR_HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.getMultipleContents(invalidBranchName, mgReq)).getMessage())
+    );
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "",
+      "abc'",
+      ".foo",
+      "abc'def'..'blah",
+      "abc'de..blah",
+      "abc'de@{blah"
+  })
+  void invalidHashes(String invalidHash) {
+    String validBranchName = "hello";
+    Operations ops = ImmutableOperations.builder().build();
+    ContentsKey key = ContentsKey.of("x");
+    Contents cts = IcebergTable.of("moo");
+    MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
+    Tag tag = Tag.of("valid", VALID_HASH);
+    assertAll(
+        () -> assertEquals("Bad Request (HTTP/400): commitMultipleOperations.hash: " + HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.commitMultipleOperations(validBranchName, invalidHash, null, ops)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): deleteBranch.hash: " + HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.deleteBranch(validBranchName, invalidHash)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): assignTag.oldHash: " + HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.assignTag(validBranchName, invalidHash, tag)).getMessage()),
+        () -> assertThat(
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.mergeRefIntoBranch(validBranchName, invalidHash, null)).getMessage(),
+            allOf(
+                containsString("Bad Request (HTTP/400): "),
+                containsString("mergeRefIntoBranch.merge: must not be null"),
+                containsString("mergeRefIntoBranch.hash: " + HASH_MESSAGE)
+            )),
+        () -> assertEquals("Bad Request (HTTP/400): deleteTag.hash: " + HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.deleteTag(validBranchName, invalidHash)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): transplantCommitsIntoBranch.hash: " + HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.transplantCommitsIntoBranch(validBranchName, invalidHash, null, null)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): setContents.hash: " + HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.setContents(key, validBranchName, invalidHash, null, cts)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): deleteContents.hash: " + HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.deleteContents(key, validBranchName, invalidHash, null)).getMessage()),
+        () -> assertThat(
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.getMultipleContents(invalidHash, null)).getMessage(),
+            allOf(
+                containsString("Bad Request (HTTP/400): "),
+                containsString("getMultipleContents.request: must not be null"),
+                containsString("getMultipleContents.ref: " + REF_NAME_OR_HASH_MESSAGE)
+            ))
+    );
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {
+      "",
+      "abc'",
+      ".foo",
+      "abc'def'..'blah",
+      "abc'de..blah",
+      "abc'de@{blah"
+  })
+  void invalidTags(String invalidTagName) {
+    String validBranchName = "hello";
+    ContentsKey key = ContentsKey.of("x");
+    MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
+    // Need the string-ified JSON representation of `Tag` here, because `Tag` itself performs
+    // validation.
+    String tag = "{\"type\": \"TAG\", \"name\": \"" + invalidTagName + "\", \"hash\": \"" + VALID_HASH + "\"}";
+    String branch = "{\"type\": \"BRANCH\", \"name\": \"" + invalidTagName + "\", \"hash\": \"" + VALID_HASH + "\"}";
+    String different = "{\"type\": \"FOOBAR\", \"name\": \"" + invalidTagName + "\", \"hash\": \"" + VALID_HASH + "\"}";
+    assertAll(
+        () -> assertEquals("Bad Request (HTTP/400): assignTag.tag: must not be null",
+            assertThrows(NessieBadRequestException.class,
+                () -> unwrap(() ->
+                    httpClient.newRequest().path("trees/tag/{tagName}")
+                        .resolveTemplate("tagName", validBranchName)
+                        .queryParam("expectedHash", VALID_HASH)
+                        .put(null))
+            ).getMessage()),
+        () -> assertThat(
+            assertThrows(NessieBadRequestException.class,
+                () -> unwrap(() ->
+                    httpClient.newRequest().path("trees/tag/{tagName}")
+                        .resolveTemplate("tagName", validBranchName)
+                        .queryParam("expectedHash", VALID_HASH)
+                        .put(tag))
+            ).getMessage(),
+            startsWith("Bad Request (HTTP/400): Cannot construct instance of "
+                + "`com.dremio.nessie.model.ImmutableTag`, problem: "
+                + REF_NAME_MESSAGE + " - but was: " + invalidTagName + "\n")),
+        () -> assertThat(
+            assertThrows(NessieBadRequestException.class,
+                () -> unwrap(() ->
+                    httpClient.newRequest().path("trees/tag/{tagName}")
+                        .resolveTemplate("tagName", validBranchName)
+                        .queryParam("expectedHash", VALID_HASH)
+                        .put(branch))
+            ).getMessage(),
+            startsWith("Bad Request (HTTP/400): Could not resolve type id 'BRANCH' as a subtype of "
+                + "`com.dremio.nessie.model.Tag`: Class `com.dremio.nessie.model.Branch` "
+                + "not subtype of `com.dremio.nessie.model.Tag`\n")),
+        () -> assertThat(
+            assertThrows(NessieBadRequestException.class,
+                () -> unwrap(() ->
+                    httpClient.newRequest().path("trees/tag/{tagName}")
+                        .resolveTemplate("tagName", validBranchName)
+                        .queryParam("expectedHash", VALID_HASH)
+                        .put(different))
+            ).getMessage(),
+            startsWith("Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
+                + "`com.dremio.nessie.model.Tag`: known type ids = [BRANCH, HASH, TAG]\n"))
+    );
+  }
+
+  void unwrap(Executable exec) throws Throwable {
+    try {
+      exec.execute();
+    } catch (Throwable targetException) {
+      if (targetException instanceof HttpClientException) {
+        if (targetException.getCause() instanceof NessieNotFoundException
+            || targetException.getCause() instanceof NessieConflictException) {
+          throw targetException.getCause();
+        }
+      }
+
+      throw targetException;
+    }
   }
 }

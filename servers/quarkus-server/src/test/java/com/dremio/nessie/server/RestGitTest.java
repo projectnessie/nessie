@@ -132,10 +132,13 @@ public class RestGitTest {
 
     rest().get("trees/tree/tagtest").then().statusCode(200).body("hash", equalTo(b3.getHash()));
 
-    rest().queryParam("expectedHash","aa").delete("trees/tag/tagtest").then().statusCode(409);
+    rest().queryParam(
+        "expectedHash",
+        "0011223344556677889900112233445566778899001122334455667788990011")
+        .delete("trees/tag/tagtest").then().statusCode(409);
 
-    rest().queryParam("expectedHash", b3.getHash()).delete("trees/tag/tagtest").then().statusCode(204);
-
+    rest().queryParam("expectedHash", b3.getHash())
+        .delete("trees/tag/tagtest").then().statusCode(204);
 
     LogResponse log = rest().get("trees/tree/test/log").then().statusCode(200).extract().as(LogResponse.class);
     Assertions.assertEquals(3, log.getOperations().size());

@@ -38,4 +38,8 @@ public abstract class Hash implements Reference {
     return getName();
   }
 
+  public static Hash of(String hash) {
+    return ImmutableHash.builder().name(hash).build();
+  }
+
 }
