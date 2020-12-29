@@ -38,7 +38,6 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
@@ -317,7 +316,7 @@ public class MongoDBStore implements Store {
   @Override
   public <V> Stream<V> getValues(Class<V> valueClass, ValueType type) {
     // TODO: Can this be optimized to not collect the elements before streaming them?
-    return (Stream<V>) await(((MongoCollection<InternalRef>)getCollection(ValueType.REF)).find()).getReceived().stream();
+    return await(((MongoCollection<V>)getCollection(ValueType.REF)).find()).getReceived().stream();
   }
 
   /**
