@@ -24,7 +24,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.bson.BsonDocument;
@@ -172,24 +171,13 @@ public class MongoDBStore implements Store {
     }
   }
 
-  private static final Map<ValueType, Function<MongoStoreConfig, String>> typeCollections =
-      ImmutableMap.<ValueType, Function<MongoStoreConfig, String>>builder()
-          .put(ValueType.L1, MongoStoreConfig::getL1TableName)
-          .put(ValueType.L2, MongoStoreConfig::getL2TableName)
-          .put(ValueType.L3, MongoStoreConfig::getL3TableName)
-          .put(ValueType.REF, MongoStoreConfig::getRefTableName)
-          .put(ValueType.VALUE, MongoStoreConfig::getValueTableName)
-          .put(ValueType.COMMIT_METADATA, MongoStoreConfig::getMetadataTableName)
-          .put(ValueType.KEY_FRAGMENT, MongoStoreConfig::getKeyListTableName)
-          .build();
-
   private final MongoStoreConfig config;
   private final MongoClientSettings mongoClientSettings;
 
   private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
   private final long timeoutMs;
-  private final Map<ValueType, MongoCollection<? extends HasId>> collections;
+  private Map<ValueType, MongoCollection<? extends HasId>> collections;
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
@@ -217,14 +205,19 @@ public class MongoDBStore implements Store {
    * either before they are used. This creates or retrieves collections that map 1:1 to the enumerates in
    * {@link com.dremio.nessie.versioned.store.ValueType}
    */
+  @SuppressWarnings("unchecked")
   @Override
   public void start() {
     mongoClient = MongoClients.create(mongoClientSettings);
     mongoDatabase = mongoClient.getDatabase(config.getDatabaseName());
 
     // Initialise collections for each ValueType.
-    typeCollections.forEach((k, v) ->
-        collections.put(k, (MongoCollection<? extends HasId>)mongoDatabase.getCollection(v.apply(config), k.getObjectClass())));
+    collections = Stream.of(ValueType.values()).collect(ImmutableMap.<ValueType, ValueType, MongoCollection<? extends HasId>>toImmutableMap(
+        v -> v,
+        v -> {
+          String collectionName = v.getTableName(config.getTablePrefix());
+          return ((MongoCollection<? extends HasId>) mongoDatabase.getCollection(collectionName, v.getObjectClass()));
+        }));
   }
 
   /**
@@ -323,9 +316,6 @@ public class MongoDBStore implements Store {
   @SuppressWarnings("unchecked")
   @Override
   public <V> Stream<V> getValues(Class<V> valueClass, ValueType type) {
-    if (type != ValueType.REF) {
-      throw new UnsupportedOperationException();
-    }
     // TODO: Can this be optimized to not collect the elements before streaming them?
     return (Stream<V>) await(((MongoCollection<InternalRef>)getCollection(ValueType.REF)).find()).getReceived().stream();
   }

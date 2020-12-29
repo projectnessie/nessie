@@ -135,14 +135,7 @@ public class VersionStoreFactory {
           }))
           .region(Region.of(region))
           .initializeDatabase(in.isDynamoInitialize())
-          .refTableName(in.getRefTableName())
-          .l1TableName(in.getL1TableName())
-          .l2TableName(in.getL2TableName())
-          .l3TableName(in.getL3TableName())
-          .keyListTableName(in.getKeyListTableName())
-          .valueTableName(in.getValueTableName())
-          .commitMetaTableName(in.getCommitMetaTableName())
-          .valueTableName(config.getVersionStoreDynamoConfig().getValueTableName())
+          .tablePrefix(in.getTablePrefix())
           .build());
     dynamo.start();
     return dynamo;

@@ -86,7 +86,6 @@ public class ApplicationConfig {
 
   }
 
-
   @ConfigProperties(prefix = "nessie.backends")
   public interface BackendsConfig {
 
@@ -118,25 +117,8 @@ public class ApplicationConfig {
     @ConfigProperty(name = "initialize", defaultValue = "false")
     boolean isDynamoInitialize();
 
-    @ConfigProperty(defaultValue = DynamoStoreConfig.REF_TABLE)
-    String getRefTableName();
+    @ConfigProperty(defaultValue = DynamoStoreConfig.TABLE_PREFIX)
+    String getTablePrefix();
 
-    @ConfigProperty(defaultValue = DynamoStoreConfig.L1_TABLE)
-    String getL1TableName();
-
-    @ConfigProperty(defaultValue = DynamoStoreConfig.L2_TABLE)
-    String getL2TableName();
-
-    @ConfigProperty(defaultValue = DynamoStoreConfig.L3_TABLE)
-    String getL3TableName();
-
-    @ConfigProperty(defaultValue = DynamoStoreConfig.KEY_LIST_TABLE)
-    String getKeyListTableName();
-
-    @ConfigProperty(defaultValue = DynamoStoreConfig.VALUE_TABLE)
-    String getValueTableName();
-
-    @ConfigProperty(defaultValue = DynamoStoreConfig.COMMIT_META_TABLE)
-    String getCommitMetaTableName();
   }
 }

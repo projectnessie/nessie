@@ -93,6 +93,7 @@ import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 public class DynamoStore implements Store {
 
+
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
   private final int paginationSize = 100;
@@ -107,15 +108,8 @@ public class DynamoStore implements Store {
    */
   public DynamoStore(DynamoStoreConfig config) {
     this.config = config;
-    this.tableNames = ImmutableMap.<ValueType, String>builder()
-        .put(ValueType.REF, config.getRefTableName())
-        .put(ValueType.L1, config.getL1TableName())
-        .put(ValueType.L2, config.getL2TableName())
-        .put(ValueType.L3, config.getL3TableName())
-        .put(ValueType.VALUE, config.getValueTableName())
-        .put(ValueType.KEY_FRAGMENT, config.getKeyListTableName())
-        .put(ValueType.COMMIT_METADATA, config.getCommitMetaTableName())
-        .build();
+    this.tableNames = Stream.of(ValueType.values())
+        .collect(ImmutableMap.toImmutableMap(v -> v, v -> v.getTableName(config.getTablePrefix())));
 
     if (tableNames.size() != tableNames.values().stream().collect(Collectors.toSet()).size()) {
       throw new IllegalArgumentException("Each Nessie dynamo table must be named distinctly.");

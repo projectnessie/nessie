@@ -33,13 +33,13 @@ import com.google.common.collect.ImmutableMap;
 
 public enum ValueType {
 
-  REF(InternalRef.class, InternalRef.SCHEMA, false, "r"),
-  L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1"),
-  L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2"),
-  L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA, "l3"),
-  VALUE(InternalValue.class, InternalValue.SCHEMA, "v"),
-  KEY_FRAGMENT(Fragment.class, Fragment.SCHEMA, "k"),
-  COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA, "m");
+  REF(InternalRef.class, InternalRef.SCHEMA, false, "r", "refs"),
+  L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1", "l1"),
+  L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2", "l2"),
+  L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA, "l3", "l3"),
+  VALUE(InternalValue.class, InternalValue.SCHEMA, "v", "values"),
+  KEY_FRAGMENT(Fragment.class, Fragment.SCHEMA, "k", "key_lists"),
+  COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA, "m", "commit_metadata");
 
   public static String SCHEMA_TYPE = "t";
 
@@ -47,20 +47,30 @@ public enum ValueType {
   private final SimpleSchema<?> schema;
   private final boolean immutable;
   private final Entity type;
+  private final String defaultTableSuffix;
 
-  ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName) {
-    this(objectClass, schema, true, valueName);
+  ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName, String defaultTableSuffix) {
+    this(objectClass, schema, true, valueName, defaultTableSuffix);
   }
 
-  ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable, String valueName) {
+  ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable, String valueName, String defaultTableSuffix) {
     this.objectClass = objectClass;
     this.schema = schema;
     this.immutable = immutable;
     this.type = Entity.ofString(valueName);
+    this.defaultTableSuffix = defaultTableSuffix;
   }
 
   public Class<?> getObjectClass() {
     return objectClass;
+  }
+
+  public String getTableName(String prefix) {
+    if (prefix == null || prefix.isEmpty()) {
+      return defaultTableSuffix;
+    }
+
+    return prefix + defaultTableSuffix;
   }
 
   /**
