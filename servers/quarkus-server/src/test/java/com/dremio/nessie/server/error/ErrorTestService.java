@@ -16,6 +16,9 @@
 package com.dremio.nessie.server.error;
 
 import javax.enterprise.context.RequestScoped;
+import javax.validation.ConstraintDeclarationException;
+import javax.validation.ConstraintDefinitionException;
+import javax.validation.GroupDefinitionException;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
@@ -75,5 +78,29 @@ public class ErrorTestService {
   @Consumes(MediaType.APPLICATION_JSON)
   public String basicEntity(@Valid SomeEntity entity) {
     return "oh oh";
+  }
+
+  // Triggers the "else-ish" part in ResteasyExceptionMapper.toResponse()
+  @Path("constraintDefinitionException")
+  @GET
+  @Consumes(MediaType.APPLICATION_JSON)
+  public String constraintDefinitionException() {
+    throw new ConstraintDefinitionException("meep");
+  }
+
+  // Triggers the "else-ish" part in ResteasyExceptionMapper.toResponse()
+  @Path("constraintDeclarationException")
+  @GET
+  @Consumes(MediaType.APPLICATION_JSON)
+  public String constraintDeclarationException() {
+    throw new ConstraintDeclarationException("meep");
+  }
+
+  // Triggers the "else-ish" part in ResteasyExceptionMapper.toResponse()
+  @Path("groupDefinitionException")
+  @GET
+  @Consumes(MediaType.APPLICATION_JSON)
+  public String groupDefinitionException() {
+    throw new GroupDefinitionException("meep");
   }
 }

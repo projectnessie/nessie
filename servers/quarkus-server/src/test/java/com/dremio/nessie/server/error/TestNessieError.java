@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.dremio.nessie.client.rest.NessieInternalServerException;
 import javax.ws.rs.core.Response;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -186,6 +187,34 @@ class TestNessieError {
         () -> assertThat(ex.getServerStackTrace(),
                          startsWith("com.dremio.nessie.error.NessieNotFoundException: not-there-message\n")),
         () -> assertEquals(Response.Status.NOT_FOUND.getStatusCode(), ex.getStatus())
+    );
+  }
+
+  @Test
+  void nonConstraintValidationExceptions() {
+    // Exceptions that trigger the "else-ish" part in ResteasyExceptionMapper.toResponse()
+    assertAll(
+        () -> assertThat(
+            assertThrows(NessieInternalServerException.class,
+                () -> unwrap(() ->
+                    client.newRequest()
+                        .path("constraintDefinitionException")
+                        .get())).getMessage(),
+            startsWith("Internal Server Error (HTTP/500): javax.validation.ConstraintDefinitionException: meep\n")),
+        () -> assertThat(
+            assertThrows(NessieInternalServerException.class,
+                () -> unwrap(() ->
+                    client.newRequest()
+                        .path("constraintDeclarationException")
+                        .get())).getMessage(),
+            startsWith("Internal Server Error (HTTP/500): javax.validation.ConstraintDeclarationException: meep\n")),
+        () -> assertThat(
+            assertThrows(NessieInternalServerException.class,
+                () -> unwrap(() ->
+                    client.newRequest()
+                        .path("groupDefinitionException")
+                        .get())).getMessage(),
+            startsWith("Internal Server Error (HTTP/500): javax.validation.GroupDefinitionException: meep\n"))
     );
   }
 
