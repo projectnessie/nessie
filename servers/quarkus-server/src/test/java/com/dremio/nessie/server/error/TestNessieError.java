@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.dremio.nessie.client.rest.NessieInternalServerException;
 import javax.ws.rs.core.Response;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -33,6 +32,7 @@ import com.dremio.nessie.client.http.HttpClient;
 import com.dremio.nessie.client.http.HttpClientException;
 import com.dremio.nessie.client.rest.NessieBadRequestException;
 import com.dremio.nessie.client.rest.NessieHttpResponseFilter;
+import com.dremio.nessie.client.rest.NessieInternalServerException;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
