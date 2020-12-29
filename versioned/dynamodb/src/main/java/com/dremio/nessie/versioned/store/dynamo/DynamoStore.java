@@ -38,6 +38,7 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.ConditionFailedException;
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
@@ -197,7 +198,13 @@ public class DynamoStore implements Store {
           Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
           for (int i = 0; i < values.size(); i++) {
             Map<String, AttributeValue> item = values.get(i);
-            opMap.get(Id.fromEntity(AttributeValueUtil.toEntity(item.get(KEY_NAME)))).loaded(AttributeValueUtil.toEntity(item));
+            // cheap and dirty until more consumers are implemented
+            Map<String, Entity> e = AttributeValueUtil.toEntity(item);
+            if (e == null) {
+              opMap.get(Id.fromEntity(AttributeValueUtil.toEntity(item.get(KEY_NAME)))).loaded(AttributeValueUtil.toConsumer(item));
+            } else {
+              opMap.get(Id.fromEntity(AttributeValueUtil.toEntity(item.get(KEY_NAME)))).loaded(e);
+            }
           }
         }
       }
@@ -305,7 +312,13 @@ public class DynamoStore implements Store {
       ListMultimap<String, SaveOp<?>> mm =
           Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save -> {
-        return WriteRequest.builder().putRequest(PutRequest.builder().item(AttributeValueUtil.fromEntity(save.toEntity())).build()).build();
+        if (save.getType() == ValueType.L1) {
+          return WriteRequest.builder().putRequest(PutRequest.builder().item(AttributeValueUtil.fromConsumer(save.getValue())).build())
+                             .build();
+        } else {
+          return WriteRequest.builder().putRequest(PutRequest.builder().item(AttributeValueUtil.fromEntity(save.toEntity())).build())
+                             .build();
+        }
       });
       BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
       saves.add(async.batchWriteItem(batch));
