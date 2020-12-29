@@ -43,12 +43,10 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.eclipse.microprofile.openapi</groupId>
@@ -112,7 +110,7 @@
         <configuration>
           <createDependencyReducedPom>false</createDependencyReducedPom>
           <shadedArtifactAttached>true</shadedArtifactAttached>
-          <shadedClassifierName>distribution</shadedClassifierName>
+          <shadedClassifierName>minimal</shadedClassifierName>
           <filters>
             <filter>
               <artifact>*:*</artifact>

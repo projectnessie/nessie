@@ -38,14 +38,9 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-model</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-client</artifactId>
       <version>${project.version}</version>
-      <classifier>distribution</classifier>
+      <classifier>minimal</classifier>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
