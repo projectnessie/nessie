@@ -17,6 +17,7 @@ package com.dremio.nessie.api;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -39,6 +40,7 @@ import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.MultiGetContentsRequest;
 import com.dremio.nessie.model.MultiGetContentsResponse;
+import com.dremio.nessie.model.Validation;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("contents")
@@ -56,8 +58,14 @@ public interface ContentsApi {
       @APIResponse(responseCode = "404", description = "Table not found on ref")
     })
   Contents getContents(
-      @Valid @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
-      @Parameter(description = "Reference to use. Defaults to default branch if not provided.") @QueryParam("ref") String ref
+      @Valid
+      @Parameter(description = "object name to search for")
+      @PathParam("key")
+          ContentsKey key,
+      @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
+      @Parameter(description = "Reference to use. Defaults to default branch if not provided.")
+      @QueryParam("ref")
+          String ref
       ) throws NessieNotFoundException;
 
   @POST
@@ -67,8 +75,14 @@ public interface ContentsApi {
       @APIResponse(responseCode = "200", description = "Retrieved successfully."),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")})
   public MultiGetContentsResponse getMultipleContents(
-      @Parameter(description = "Reference to use. Defaults to default branch if not provided.") @QueryParam("ref") String ref,
-      @Valid @NotNull @RequestBody(description = "Keys to retrieve.") MultiGetContentsRequest request)
+      @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
+      @Parameter(description = "Reference to use. Defaults to default branch if not provided.")
+      @QueryParam("ref")
+          String ref,
+      @Valid
+      @NotNull
+      @RequestBody(description = "Keys to retrieve.")
+          MultiGetContentsRequest request)
       throws NessieNotFoundException;
 
   /**
@@ -83,11 +97,27 @@ public interface ContentsApi {
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")})
   public void setContents(
-      @Valid @NotNull @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
-      @Parameter(description = "Branch to change. Defaults to default branch.") @QueryParam("branch") String branch,
-      @NotNull @Parameter(description = "Expected hash of branch.") @QueryParam("hash") String hash,
-      @Parameter(description = "Commit message") @QueryParam("message") String message,
-      @Valid @NotNull @RequestBody(description = "Contents to be upserted") Contents contents)
+      @Valid
+      @NotNull
+      @Parameter(description = "object name to search for")
+      @PathParam("key")
+          ContentsKey key,
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Parameter(description = "Branch to change. Defaults to default branch.")
+      @QueryParam("branch")
+          String branch,
+      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @NotNull
+      @Parameter(description = "Expected hash of branch.")
+      @QueryParam("hash")
+          String hash,
+      @Parameter(description = "Commit message")
+      @QueryParam("message")
+          String message,
+      @Valid
+      @NotNull
+      @RequestBody(description = "Contents to be upserted")
+          Contents contents)
       throws NessieNotFoundException, NessieConflictException;
 
   /**
@@ -103,10 +133,21 @@ public interface ContentsApi {
       }
   )
   public void deleteContents(
-      @Valid @Parameter(description = "object name to search for") @PathParam("key") ContentsKey key,
-      @Parameter(description = "Branch to delete from. Defaults to default branch.") @QueryParam("branch") String branch,
-      @Parameter(description = "Expected hash of branch.") @QueryParam("hash") String hash,
-      @Parameter(description = "Commit message") @QueryParam("message") String message
+      @Valid
+      @Parameter(description = "object name to search for")
+      @PathParam("key")
+          ContentsKey key,
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Parameter(description = "Branch to delete from. Defaults to default branch.")
+      @QueryParam("branch")
+          String branch,
+      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Parameter(description = "Expected hash of branch.")
+      @QueryParam("hash")
+          String hash,
+      @Parameter(description = "Commit message")
+      @QueryParam("message")
+          String message
       ) throws NessieNotFoundException, NessieConflictException;
 
 

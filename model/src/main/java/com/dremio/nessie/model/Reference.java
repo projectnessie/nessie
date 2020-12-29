@@ -15,11 +15,14 @@
  */
 package com.dremio.nessie.model;
 
+import static com.dremio.nessie.model.Validation.validateHash;
+
 import javax.annotation.Nullable;
 
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -45,9 +48,19 @@ public interface Reference extends Base {
   String getName();
 
   /**
-   * backend system id. Usually the 20-byte hash of the commit this reference points to.
+   * backend system id. Usually the 32-byte hash of the commit this reference points to.
    */
   @Nullable
   String getHash();
 
+  /**
+   * Validation rule using {@link com.dremio.nessie.model.Validation#validateHash(String)} (String)}.
+   */
+  @Value.Check
+  default void checkHash() {
+    String hash = getHash();
+    if (hash != null) {
+      validateHash(hash);
+    }
+  }
 }

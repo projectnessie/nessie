@@ -95,15 +95,19 @@ public class HttpRequest {
              .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
              .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
       con.setRequestMethod(method.name());
-      if (body != null && (method.equals(Method.PUT) || method.equals(Method.POST))) {
-        con.setDoOutput(true);
+      if (method.equals(Method.PUT) || method.equals(Method.POST)) {
+        // Need to set the Content-Type even if body==null, otherwise the server responds with
+        // RESTEASY003065: Cannot consume content type
         con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-        Class<?> bodyType = body.getClass();
-        if (bodyType != String.class) {
-          mapper.writerFor(bodyType).writeValue(con.getOutputStream(), body);
-        } else {
-          // This is mostly used for testing bad/broken JSON
-          con.getOutputStream().write(((String)body).getBytes(StandardCharsets.UTF_8));
+        if (body != null) {
+          con.setDoOutput(true);
+          Class<?> bodyType = body.getClass();
+          if (bodyType != String.class) {
+            mapper.writerFor(bodyType).writeValue(con.getOutputStream(), body);
+          } else {
+            // This is mostly used for testing bad/broken JSON
+            con.getOutputStream().write(((String) body).getBytes(StandardCharsets.UTF_8));
+          }
         }
       }
       con.connect();
