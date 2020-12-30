@@ -58,6 +58,9 @@ public class AttributeValueUtil {
     }
   }
 
+  /**
+   * TODO javadoc for checkstyle.
+   */
   // todo make generic, Probably want to add this into ValueType somehow
   public static Map<String, Entity> toEntity(Map<String, AttributeValue> map) {
     if ("l1".equals(map.get("t").s())) {
@@ -95,36 +98,48 @@ public class AttributeValueUtil {
     }
   }
 
+  /**
+   * TODO javadoc for checkstyle.
+   */
   public static Map<String, AttributeValue> fromEntity(Map<String, Entity> map) {
     return Maps.transformValues(map, AttributeValueUtil::fromEntity);
   }
 
+  /**
+   * TODO javadoc for checkstyle.
+   */
   public static List<AttributeValue> fromEntity(List<Entity> list) {
     return list.stream().map(AttributeValueUtil::fromEntity).collect(ImmutableList.toImmutableList());
   }
 
+  /**
+   * TODO javadoc for checkstyle.
+   */
   public static HasId toConsumer(Map<String, AttributeValue> attributeMap) {
     if ("l1".equals(attributeMap.get("t").s())) {
       throw new UnsupportedOperationException("Only L1 can be mapped via consumers");
     }
 
     //todo move this method somewhere useful.
-    final String ID = "id";
-    final String TREE = "tree";
-    final String METADATA = "metadata";
-    final String PARENTS = "parents";
-    final String KEY_LIST = "keys";
+    final String id = "id";
+    final String tree = "tree";
+    final String metadata = "metadata";
+    final String parents = "parents";
+    final String key_list = "keys";
 
     //todo unclear how best to do the dynamo conversion.
     Builder builder = L1.builder();
-    return builder.commitMetadataId(Id.build(UnsafeByteOperations.unsafeWrap(attributeMap.get(METADATA).b().asByteArray())))
-                  .children(attributeMap.get(TREE))
-                  .id(Id.build(UnsafeByteOperations.unsafeWrap(attributeMap.get(ID).b().asByteArray())))
-                  .addAncestors(attributeMap.get(PARENTS))
-                  .keyList(attributeMap.get(KEY_LIST))
+    return builder.commitMetadataId(Id.build(UnsafeByteOperations.unsafeWrap(attributeMap.get(metadata).b().asByteArray())))
+                  // TODO .children(attributeMap.get(tree))
+                  .id(Id.build(UnsafeByteOperations.unsafeWrap(attributeMap.get(id).b().asByteArray())))
+                  // TODO .addAncestors(attributeMap.get(parents))
+                  // TODO .keyList(attributeMap.get(key_list))
                   .build();
   }
 
+  /**
+   * TODO javadoc.
+   */
   public static Map<String, AttributeValue> fromConsumer(HasId value) {
     if (value instanceof L1) {
       DynamoL1Consumer consumer = new DynamoL1Consumer();
