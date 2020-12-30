@@ -17,7 +17,9 @@ package com.dremio.nessie.versioned.store;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
+import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
@@ -33,13 +35,13 @@ import com.google.common.collect.ImmutableMap;
 
 public enum ValueType {
 
-  REF(InternalRef.class, InternalRef.SCHEMA, false, "r", "refs", false),
-  L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1", "l1", true),
-  L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2", "l2", false),
-  L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA, "l3", "l3", false),
-  VALUE(InternalValue.class, InternalValue.SCHEMA, "v", "values", false),
-  KEY_FRAGMENT(Fragment.class, Fragment.SCHEMA, "k", "key_lists", false),
-  COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA, "m", "commit_metadata", false);
+  REF(InternalRef.class, InternalRef.SCHEMA, false, "r", "refs", false, null),
+  L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1", "l1", true, com.dremio.nessie.versioned.impl.L1::builder),
+  L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2", "l2", true, com.dremio.nessie.versioned.impl.L2::builder),
+  L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA, "l3", "l3", true, com.dremio.nessie.versioned.impl.L3::builder),
+  VALUE(InternalValue.class, InternalValue.SCHEMA, "v", "values", false, null),
+  KEY_FRAGMENT(Fragment.class, Fragment.SCHEMA, "k", "key_lists", false, null),
+  COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA, "m", "commit_metadata", false, null);
 
   public static String SCHEMA_TYPE = "t";
 
@@ -49,16 +51,20 @@ public enum ValueType {
   private final String valueName;
   private final Entity type;
   private final String defaultTableSuffix;
+  private final Supplier<HasIdConsumer<?>> consumerSupplier;
+
   /**
-   * TODO remove this field once `Entity` has been removed!
+   * TODO remove this field once `Entity` has been removed.
    */
   private final boolean consumerized;
 
-  ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName, String defaultTableSuffix, boolean consumerized) {
-    this(objectClass, schema, true, valueName, defaultTableSuffix, consumerized);
+  ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName, String defaultTableSuffix,
+      boolean consumerized, Supplier<HasIdConsumer<?>> consumerSupplier) {
+    this(objectClass, schema, true, valueName, defaultTableSuffix, consumerized, consumerSupplier);
   }
 
-  ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable, String valueName, String defaultTableSuffix, boolean consumerized) {
+  ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable, String valueName,
+      String defaultTableSuffix, boolean consumerized, Supplier<HasIdConsumer<?>> consumerSupplier) {
     this.objectClass = objectClass;
     this.schema = schema;
     this.immutable = immutable;
@@ -66,10 +72,11 @@ public enum ValueType {
     this.type = Entity.ofString(valueName);
     this.defaultTableSuffix = defaultTableSuffix;
     this.consumerized = consumerized;
+    this.consumerSupplier = consumerSupplier;
   }
 
   /**
-   * TODO maybe remove this method once `Entity` has been removed!
+   * TODO maybe remove this method once `Entity` has been removed.
    */
   public static ValueType byValueName(String t) {
     for (ValueType value : ValueType.values()) {
@@ -81,7 +88,7 @@ public enum ValueType {
   }
 
   /**
-   * TODO remove this method once `Entity` has been removed!
+   * TODO remove this method once `Entity` has been removed.
    */
   public boolean isConsumerized() {
     return consumerized;
@@ -155,5 +162,14 @@ public enum ValueType {
 
   public boolean isImmutable() {
     return immutable;
+  }
+
+  /**
+   * Create a new consumer for this type.
+   */
+  // TODO this is currently unused - does it provide any value?
+  @SuppressWarnings("unchecked")
+  public <T extends HasIdConsumer<T>> T newEntityConsumer() {
+    return (T) consumerSupplier.get();
   }
 }

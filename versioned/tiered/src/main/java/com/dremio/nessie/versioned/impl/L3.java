@@ -22,17 +22,23 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.dremio.nessie.tiered.builder.L3Consumer;
+import com.dremio.nessie.versioned.ImmutableKey;
+import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 
-public class L3 extends MemoizedId {
+public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
 
   private static final long HASH_SEED = 4604180344422375655L;
 
@@ -61,7 +67,7 @@ public class L3 extends MemoizedId {
 
   /**
    * Get the key if it exists.
-   * @param id The id of the key to retrieve
+   * @param key The id of the key to retrieve
    * @return If the key exists, provide. Else, provide Optional.empty()
    */
   Optional<Id> getPossibleId(InternalKey key) {
@@ -176,6 +182,93 @@ public class L3 extends MemoizedId {
    */
   int size() {
     return map.size();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    L3 l3 = (L3) o;
+    return Objects.equal(map, l3.map);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(map);
+  }
+
+  @Override
+  public ValueType type() {
+    return ValueType.L2;
+  }
+
+  /**
+   * TODO Javadoc for checkstyle.
+   * TODO Needs to be pulled up into {@link com.dremio.nessie.versioned.store.HasId}.
+   */
+  @Override
+  public L3Consumer<?> applyToConsumer(L3Consumer<?> consumer) {
+    consumer.id(this.getId());
+
+    if (true) {
+      throw new UnsupportedOperationException("IMPLEMENT ME");
+    }
+
+    return consumer;
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder implements L3Consumer<Builder> {
+
+    private Id id;
+    private TreeMap<InternalKey, PositionDelta> keys = new TreeMap<>();
+
+    private Builder() {
+      // empty
+    }
+
+    /**
+     * Built the {@link L2}.
+     */
+    public L3 build() {
+      return new L3(
+          id,
+          keys);
+    }
+
+    @Override
+    public Builder addKeyDelta(Key key, Id id) {
+      InternalKey intKey = new InternalKey(
+          ImmutableKey.builder()
+              .addAllElements(key.getElements())
+              .build());
+
+      PositionDelta delta = PositionDelta.of(0, id);
+
+      PositionDelta old = keys.put(intKey, delta);
+      if (old != null) {
+        throw new IllegalArgumentException("Key '" + key + "' added twice: " + old + " + " + delta);
+      }
+      return this;
+    }
+
+    @Override
+    public L3.Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
+    }
+
+    private static void checkCalled(Object arg, String name) {
+      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
+    }
   }
 
   /**

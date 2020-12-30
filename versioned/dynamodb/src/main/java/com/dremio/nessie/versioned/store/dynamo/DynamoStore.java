@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import com.dremio.nessie.versioned.store.HasId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +37,7 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.ConditionFailedException;
+import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
@@ -312,7 +312,7 @@ public class DynamoStore implements Store {
       ListMultimap<String, SaveOp<?>> mm =
           Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save ->
-        WriteRequest.builder().putRequest(PutRequest.builder().item(AttributeValueUtil.fromSaveOp(save)).build())
+          WriteRequest.builder().putRequest(PutRequest.builder().item(AttributeValueUtil.fromSaveOp(save)).build())
                     .build());
       BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
       saves.add(async.batchWriteItem(batch));

@@ -15,22 +15,21 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.DISTANCE;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.FRAGMENTS;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.IS_CHECKPOINT;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_ADDITION;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_LIST;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_REMOVAL;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.METADATA;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.MUTATIONS;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ORIGIN;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.PARENTS;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE;
+
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.impl.L1;
-import com.dremio.nessie.versioned.impl.L1.Builder;
+import com.dremio.nessie.versioned.impl.Persistent;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
@@ -43,13 +42,7 @@ import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
 import com.google.common.collect.Maps;
 import com.google.protobuf.UnsafeByteOperations;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -61,10 +54,11 @@ public class AttributeValueUtil {
   /**
    * TODO javadoc for checkstyle.
    */
-  public static Map<String, AttributeValue> fromSaveOp(SaveOp<?> saveOp) {
+  public static <C extends DynamoConsumer<C>> Map<String, AttributeValue> fromSaveOp(SaveOp<?> saveOp) {
     if (saveOp.getType().isConsumerized()) {
+      Persistent<DynamoConsumer<C>> persistent = (Persistent<DynamoConsumer<C>>) saveOp.getValue();
       Map<String, AttributeValue> ref = fromEntity(saveOp.toEntity());
-      Map<String, AttributeValue> con = fromConsumer(saveOp.getValue());
+      Map<String, AttributeValue> con = fromConsumer(persistent);
       MapDifference<String, AttributeValue> mapDiff = Maps.difference(ref, con);
 
       StringBuilder errors = new StringBuilder();
@@ -236,19 +230,12 @@ public class AttributeValueUtil {
    * TODO javadoc for checkstyle.
    */
   public static HasId toConsumer(ValueType valueType, Map<String, AttributeValue> attributeMap) {
-    HasId item;
-    switch (valueType) {
-      case L1:
-        item = toL1Consumer(attributeMap);
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "Don't know how to deserialize " + valueType + " from " + attributeMap);
-    }
+    HasId item = DynamoConsumer.newProducer(valueType)
+        .deserialize(attributeMap);
 
     // TODO remove this sanity check
     Map<String, Entity> oldOne = Maps.transformValues(attributeMap, AttributeValueUtil::toEntity);
-    Object oldItem = ValueType.L1.getSchema().mapToItem(valueType.checkType(oldOne));
+    Object oldItem = valueType.getSchema().mapToItem(valueType.checkType(oldOne));
     if (!item.equals(oldItem)) {
       throw new IllegalStateException("Uh! " + valueType + " item building is broken");
     }
@@ -256,55 +243,10 @@ public class AttributeValueUtil {
     return item;
   }
 
-  private static L1 toL1Consumer(Map<String, AttributeValue> attributeMap) {
-    //todo unclear how best to do the dynamo conversion.
-    Builder builder = L1.builder()
-        .id(deserializeId(attributeMap));
-    if (attributeMap.containsKey(METADATA)) {
-      builder = builder.commitMetadataId(deserializeId(attributeMap.get(METADATA)));
-    }
-    if (attributeMap.containsKey(TREE)) {
-      builder = builder.children(deserializeIdList(attributeMap.get(TREE)));
-    }
-    if (attributeMap.containsKey(PARENTS)) {
-      builder = builder.addAncestors(deserializeIdList(attributeMap.get(PARENTS)));
-    }
-    if (attributeMap.containsKey(KEY_LIST)) {
-      Map<String, AttributeValue> keys = attributeMap.get(KEY_LIST).m();
-      Boolean checkpoint = keys.get(IS_CHECKPOINT).bool();
-      if (checkpoint != null) {
-        if (checkpoint) {
-          builder = builder.completeKeyList(deserializeIdList(keys.get(FRAGMENTS)));
-        } else {
-          builder = builder.incrementalKeyList(
-              deserializeId(keys.get(ORIGIN)),
-              Integer.parseInt(keys.get(DISTANCE).n())
-          );
-        }
-      }
-      // See com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.addKeyMutation about a
-      // proposal to simplify this one.
-      List<AttributeValue> mutations = keys.get(MUTATIONS).l();
-      for (AttributeValue mutation : mutations) {
-        Map<String, AttributeValue> m = mutation.m();
-        if (m.size() > 2) {
-          throw new IllegalStateException("Ugh - got a keys.mutations map like this: " + m);
-        }
-        AttributeValue raw = m.get(KEY_ADDITION);
-        if (raw != null) {
-          builder = builder.addKeyAddition(deserializeKey(raw));
-        }
-        raw = m.get(KEY_REMOVAL);
-        if (raw != null) {
-          builder = builder.addKeyRemoval(deserializeKey(raw));
-        }
-      }
-    }
-
-    return builder.build();
-  }
-
-  private static Key deserializeKey(AttributeValue raw) {
+  /**
+   * TODO add some javadoc.
+   */
+  public static Key deserializeKey(AttributeValue raw) {
     ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
     for (AttributeValue keyPart : raw.l()) {
       keyBuilder.addElements(keyPart.s());
@@ -312,7 +254,10 @@ public class AttributeValueUtil {
     return keyBuilder.build();
   }
 
-  private static List<Id> deserializeIdList(AttributeValue raw) {
+  /**
+   * TODO add some javadoc.
+   */
+  public static List<Id> deserializeIdList(AttributeValue raw) {
     return raw.l()
         .stream()
         .map(AttributeValueUtil::deserializeId)
@@ -322,13 +267,10 @@ public class AttributeValueUtil {
   /**
    * TODO javadoc.
    */
-  public static Map<String, AttributeValue> fromConsumer(HasId value) {
-    if (value instanceof L1) {
-      DynamoL1Consumer consumer = new DynamoL1Consumer();
-      ((L1) value).applyToConsumer(consumer);
-      return consumer.getEntity();
-    }
-    throw new UnsupportedOperationException("Only L1 can be mapped via consumers");
+  public static <C extends DynamoConsumer<C>> Map<String, AttributeValue> fromConsumer(Persistent<DynamoConsumer<C>> value) {
+    DynamoConsumer<C> consumer = DynamoConsumer.newConsumer(value.type());
+    value.applyToConsumer(consumer);
+    return consumer.getEntity();
   }
 
   public static Id deserializeId(Map<String, AttributeValue> item) {
@@ -343,6 +285,9 @@ public class AttributeValueUtil {
     return AttributeValue.builder().b(SdkBytes.fromByteBuffer(id.getValue().asReadOnlyByteBuffer())).build();
   }
 
+  /**
+   * Deserialize the given {code map} as the given {@link ValueType type}.
+   */
   @SuppressWarnings("unchecked")
   public static <V> V deserialize(ValueType valueType, Map<String, AttributeValue> item) {
     checkType(valueType, item);
