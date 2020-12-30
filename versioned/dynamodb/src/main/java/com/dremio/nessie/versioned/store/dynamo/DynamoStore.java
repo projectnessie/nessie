@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import com.dremio.nessie.versioned.store.HasId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +30,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
@@ -38,7 +38,6 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.ConditionFailedException;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
@@ -195,16 +194,17 @@ public class DynamoStore implements Store {
           }
 
           // unfortunately, responses don't come in the order of the requests so we need to map between ids.
-          Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
+          Map<Id, LoadOp<? extends HasId>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
           for (int i = 0; i < values.size(); i++) {
             Map<String, AttributeValue> item = values.get(i);
             // cheap and dirty until more consumers are implemented
-            Map<String, Entity> e = AttributeValueUtil.toEntity(item);
-            if (e == null) {
-              opMap.get(Id.fromEntity(AttributeValueUtil.toEntity(item.get(KEY_NAME)))).loaded(AttributeValueUtil.toConsumer(item));
-            } else {
-              opMap.get(Id.fromEntity(AttributeValueUtil.toEntity(item.get(KEY_NAME)))).loaded(e);
+            ValueType valueType = ValueType.byValueName(item.get("t").s());
+            Id id = AttributeValueUtil.deserializeId(item);
+            LoadOp<? extends HasId> loadOp = opMap.get(id);
+            if (loadOp == null) {
+              throw new IllegalStateException("No load-op for loaded ID " + id);
             }
+            loadOp.loaded(AttributeValueUtil.deserialize(valueType, item));
           }
         }
       }
@@ -337,13 +337,13 @@ public class DynamoStore implements Store {
   public <V> V loadSingle(ValueType valueType, Id id) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
         .tableName(tableNames.get(valueType))
-        .key(ImmutableMap.of(KEY_NAME, AttributeValueUtil.fromEntity(id.toEntity())))
+        .key(ImmutableMap.of(KEY_NAME, AttributeValueUtil.serializeId(id)))
         .consistentRead(true)
         .build());
     if (!response.hasItem()) {
       throw new NotFoundException("Unable to load item.");
     }
-    return (V) valueType.getSchema().mapToItem(valueType.checkType(AttributeValueUtil.toEntity(response.item())));
+    return AttributeValueUtil.deserialize(valueType, response.item());
   }
 
   @Override
@@ -357,12 +357,12 @@ public class DynamoStore implements Store {
       UpdateItemRequest.Builder updateRequest = collector.apply(UpdateItemRequest.builder())
           .returnValues(ReturnValue.ALL_NEW)
           .tableName(tableNames.get(type))
-          .key(ImmutableMap.of(KEY_NAME, AttributeValueUtil.fromEntity(id.toEntity())))
+          .key(ImmutableMap.of(KEY_NAME, AttributeValueUtil.serializeId(id)))
           .updateExpression(aliased.toUpdateExpressionString());
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
       UpdateItemRequest builtRequest = updateRequest.build();
       UpdateItemResponse response = client.updateItem(builtRequest);
-      return (Optional<V>) Optional.of(type.getSchema().mapToItem(AttributeValueUtil.toEntity(response.attributes())));
+      return Optional.of(AttributeValueUtil.deserialize(type, response.attributes()));
     } catch (ResourceNotFoundException ex) {
       throw new NotFoundException("Unable to find value.", ex);
     } catch (ConditionalCheckFailedException checkFailed) {
@@ -387,10 +387,10 @@ public class DynamoStore implements Store {
   @SuppressWarnings("unchecked")
   @Override
   public <V> Stream<V> getValues(Class<V> valueClass, ValueType type) {
-    return ((Stream<V>) client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
+    return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
         .stream()
         .flatMap(r -> r.items().stream())
-        .map(i -> type.<InternalRef>getSchema().mapToItem(AttributeValueUtil.toEntity(i))));
+        .map(i -> AttributeValueUtil.deserialize(type, i));
   }
 
   private final void createIfMissing(String name) {
@@ -404,8 +404,7 @@ public class DynamoStore implements Store {
         .tableName(name)
         .attributeDefinitions(AttributeDefinition.builder()
             .attributeName(KEY_NAME)
-            .attributeType(
-              ScalarAttributeType.B)
+            .attributeType(ScalarAttributeType.B)
             .build())
         .provisionedThroughput(ProvisionedThroughput.builder()
             .readCapacityUnits(10L)

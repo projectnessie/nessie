@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -313,6 +314,28 @@ abstract class KeyList {
             MUTATIONS,
             Entity.ofList(mutations.stream().map(KeyMutation::toEntity))
             ));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      CompleteList that = (CompleteList) o;
+
+      return Objects.equals(fragmentIds, that.fragmentIds)
+          && Objects.equals(mutations, that.mutations);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = fragmentIds != null ? fragmentIds.hashCode() : 0;
+      result = 31 * result + (mutations != null ? mutations.hashCode() : 0);
+      return result;
     }
 
     static KeyList fromEntity(Map<String, Entity> value) {
