@@ -33,32 +33,65 @@ import com.google.common.collect.ImmutableMap;
 
 public enum ValueType {
 
-  REF(InternalRef.class, InternalRef.SCHEMA, false, "r", "refs"),
-  L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1", "l1"),
-  L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2", "l2"),
-  L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA, "l3", "l3"),
-  VALUE(InternalValue.class, InternalValue.SCHEMA, "v", "values"),
-  KEY_FRAGMENT(Fragment.class, Fragment.SCHEMA, "k", "key_lists"),
-  COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA, "m", "commit_metadata");
+  REF(InternalRef.class, InternalRef.SCHEMA, false, "r", "refs", false),
+  L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1", "l1", true),
+  L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2", "l2", false),
+  L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA, "l3", "l3", false),
+  VALUE(InternalValue.class, InternalValue.SCHEMA, "v", "values", false),
+  KEY_FRAGMENT(Fragment.class, Fragment.SCHEMA, "k", "key_lists", false),
+  COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA, "m", "commit_metadata", false);
 
   public static String SCHEMA_TYPE = "t";
 
   private final Class<?> objectClass;
   private final SimpleSchema<?> schema;
   private final boolean immutable;
+  private final String valueName;
   private final Entity type;
   private final String defaultTableSuffix;
+  /**
+   * TODO remove this field once `Entity` has been removed!
+   */
+  private final boolean consumerized;
 
-  ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName, String defaultTableSuffix) {
-    this(objectClass, schema, true, valueName, defaultTableSuffix);
+  ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName, String defaultTableSuffix, boolean consumerized) {
+    this(objectClass, schema, true, valueName, defaultTableSuffix, consumerized);
   }
 
-  ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable, String valueName, String defaultTableSuffix) {
+  ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable, String valueName, String defaultTableSuffix, boolean consumerized) {
     this.objectClass = objectClass;
     this.schema = schema;
     this.immutable = immutable;
+    this.valueName = valueName;
     this.type = Entity.ofString(valueName);
     this.defaultTableSuffix = defaultTableSuffix;
+    this.consumerized = consumerized;
+  }
+
+  /**
+   * TODO maybe remove this method once `Entity` has been removed!
+   */
+  public static ValueType byTable(String t) {
+    for (ValueType value : ValueType.values()) {
+      if (t.endsWith(t)) {
+        return value;
+      }
+    }
+    throw new IllegalArgumentException("No ValueType for table '" + t + "'");
+  }
+
+  /**
+   * TODO remove this method once `Entity` has been removed!
+   */
+  public boolean isConsumerized() {
+    return consumerized;
+  }
+
+  /**
+   * TODO javadoc for checkstyle.
+   */
+  public String getValueName() {
+    return valueName;
   }
 
   /**
@@ -87,6 +120,7 @@ public enum ValueType {
    * @param map The map to append to
    * @return A typed map.
    */
+  // TODO Remove once `Entity` is out.
   public Map<String, Entity> addType(Map<String, Entity> map) {
     Preconditions.checkNotNull(map, "map parameter is null");
     return ImmutableMap.<String, Entity>builder()
