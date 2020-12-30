@@ -23,15 +23,15 @@ import java.util.regex.Pattern;
  * Collection of validation rules.
  */
 public final class Validation {
-  public static final String HASH_REGEX = "^[0-9a-fA-F]{64}$";
+  public static final String HASH_REGEX = "^[0-9a-fA-F]{16,64}$";
   public static final String REF_NAME_REGEX = "^[A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?$";
-  public static final String REF_NAME_OR_HASH_REGEX = "^(([0-9a-fA-F]{64})|([A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?))$";
+  public static final String REF_NAME_OR_HASH_REGEX = "^(([0-9a-fA-F]{16,64})|([A-Za-z](((?![.][.])[A-Za-z0-9./_-])*[A-Za-z0-9._-])?))$";
 
   public static final Pattern HASH_PATTERN = Pattern.compile(HASH_REGEX);
   public static final Pattern REF_NAME_PATTERN = Pattern.compile(REF_NAME_REGEX);
   public static final Pattern REF_NAME_OR_HASH_PATTERN = Pattern.compile(REF_NAME_OR_HASH_REGEX);
 
-  private static final String HASH_RULE = "consist of the hex representation of 32 bytes";
+  private static final String HASH_RULE = "consist of the hex representation of 8-32 bytes";
   private static final String REF_RULE = "start with a letter, followed by letters, digits, a ./_- character, "
       + "not end with a slash, not contain ..";
 
