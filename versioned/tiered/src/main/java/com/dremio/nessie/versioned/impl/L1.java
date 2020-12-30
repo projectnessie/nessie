@@ -160,6 +160,9 @@ public class L1 extends MemoizedId {
     return count;
   }
 
+  /**
+   * TODO Javadoc.
+   */
   public <T extends L1Consumer<T>> L1Consumer<T> applyToConsumer(L1Consumer<T> consumer) {
     consumer.id(this.getId());
     consumer.commitMetadataId(this.metadataId);
@@ -205,7 +208,9 @@ public class L1 extends MemoizedId {
     private int distanceFromCheckpoint;
     private List<Id> fragmentIds;
 
-    private Builder() {}
+    private Builder() {
+      // empty
+    }
 
     public L1 build() {
       return new L1(metadataId, buildIdMap(), id, buildKeyList(), buildParentList());
@@ -214,7 +219,7 @@ public class L1 extends MemoizedId {
     private IdMap buildIdMap() {
       //todo likely we want to move this into IdMap or expose a new constructor/builder.
       IdMap idMap = new IdMap(children.size());
-      for (int i=0;i<children.size();i++) {
+      for (int i = 0; i < children.size(); i++) {
         idMap = idMap.withId(i, children.get(i));
       }
       return idMap;
@@ -223,7 +228,7 @@ public class L1 extends MemoizedId {
     private ParentList buildParentList() {
       //todo likely we want to move this into ParentList or expose a new constructor/builder.
       ParentList parentList = ParentList.EMPTY;
-      for (int i=0;i<ancestors.size();i++) {
+      for (int i = 0; i < ancestors.size(); i++) {
         parentList = parentList.cloneWithAdditional(ancestors.get(i));
       }
       return parentList;
