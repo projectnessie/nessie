@@ -21,7 +21,8 @@ import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 
 /**
- * Interface to create an L1 Builder. To be implemented by each {@link Store} implementation.
+ * Interface to create an L1 Builder. To be implemented by each
+ * {@link com.dremio.nessie.versioned.store.Store} implementation.
  *
  * @param <T> The public class of this builder for fluent code development.
  */
@@ -49,7 +50,7 @@ public interface L1Consumer<T extends L1Consumer<T>> {
    * Add a list of children ids indexed by position.
    *
    * <p>Can be called once.
-   * @param ids The list of ids. List must be {@link L1.SIZE} in length.
+   * @param ids The list of ids. List must be {@link com.dremio.nessie.versioned.impl.L1#SIZE} in length.
    * @return This consumer.
    */
   T children(List<Id> ids);
@@ -82,7 +83,8 @@ public interface L1Consumer<T extends L1Consumer<T>> {
   T addKeyRemoval(Key key);
 
   /**
-   * States that this L1 has an incremental key list. Can only be called once and cannot be called if {@link completelKeyList is called}.
+   * States that this L1 has an incremental key list.
+   * Can only be called once and cannot be called if {@link #completeKeyList(List)} is called.
    *
    * <p>Can be called once.
    *
@@ -93,7 +95,8 @@ public interface L1Consumer<T extends L1Consumer<T>> {
   T incrementalKeyList(Id checkpointId, int distanceFromCheckpoint);
 
   /**
-   * States that this L1 has a complete key list. Can only be called once and cannot be called if {@link incrementalKeyList is called}.
+   * States that this L1 has a complete key list.
+   * Can only be called once and cannot be called if {@link #incrementalKeyList(Id, int)} is called.
    *
    * <p>Add a list of fragments associated with this complete list of keys.
    * @param fragmentIds The ids of each of the key list fragments given in a meaningful/to be maintained order.
