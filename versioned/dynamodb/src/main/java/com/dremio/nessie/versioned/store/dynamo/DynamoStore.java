@@ -311,15 +311,9 @@ public class DynamoStore implements Store {
 
       ListMultimap<String, SaveOp<?>> mm =
           Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
-      ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save -> {
-        if (save.getType() == ValueType.L1) {
-          return WriteRequest.builder().putRequest(PutRequest.builder().item(AttributeValueUtil.fromConsumer(save.getValue())).build())
-                             .build();
-        } else {
-          return WriteRequest.builder().putRequest(PutRequest.builder().item(AttributeValueUtil.fromEntity(save.toEntity())).build())
-                             .build();
-        }
-      });
+      ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save ->
+        WriteRequest.builder().putRequest(PutRequest.builder().item(AttributeValueUtil.fromSaveOp(save)).build())
+                    .build());
       BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
       saves.add(async.batchWriteItem(batch));
     }
