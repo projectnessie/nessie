@@ -2,6 +2,13 @@
 History
 =======
 
+0.3.0 (2020-12-30)
+------------------
+
+* support for python3.9
+* correct display of contents in the cli
+* better type checking
+
 0.2.1 (2020-10-30)
 ------------------
 
