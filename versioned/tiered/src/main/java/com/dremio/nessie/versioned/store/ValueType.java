@@ -88,6 +88,7 @@ public enum ValueType {
    * @return A typed map.
    */
   public Map<String, Entity> addType(Map<String, Entity> map) {
+    Preconditions.checkNotNull(map, "map parameter is null");
     return ImmutableMap.<String, Entity>builder()
         .putAll(map)
         .put(ValueType.SCHEMA_TYPE, type).build();
@@ -99,6 +100,7 @@ public enum ValueType {
    * @return The map passed in (for chaining)
    */
   public Map<String, Entity> checkType(Map<String, Entity> map) {
+    Preconditions.checkNotNull(map, "map parameter is null");
     Entity loadedType = map.get(SCHEMA_TYPE);
     Id id = Id.fromEntity(map.get(Store.KEY_NAME));
     Preconditions.checkNotNull(loadedType, "Missing type tag for schema for id %s.", id.getHash());
