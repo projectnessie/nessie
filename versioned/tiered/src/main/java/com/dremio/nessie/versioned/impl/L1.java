@@ -161,7 +161,8 @@ public class L1 extends MemoizedId {
   }
 
   /**
-   * TODO Javadoc.
+   * TODO Javadoc for checkstyle.
+   * TODO Needs to be pulled up into {@link com.dremio.nessie.versioned.store.HasId}.
    */
   public <T extends L1Consumer<T>> L1Consumer<T> applyToConsumer(L1Consumer<T> consumer) {
     consumer.id(this.getId());
