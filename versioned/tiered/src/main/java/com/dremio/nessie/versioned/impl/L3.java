@@ -77,7 +77,7 @@ public class L3 extends MemoizedId {
     TreeMap<InternalKey, PositionDelta> newMap = (TreeMap<InternalKey, PositionDelta>) map.clone();
     PositionDelta newDelta = newMap.get(key);
     if (newDelta == null) {
-      newDelta = PositionDelta.EMPTY_ZERO;
+      newDelta = PositionDelta.SINGLE_ZERO;
     }
 
     newDelta = ImmutablePositionDelta.builder().from(newDelta).newId(valueId).build();

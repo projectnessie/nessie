@@ -15,14 +15,34 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.DISTANCE;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.FRAGMENTS;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.IS_CHECKPOINT;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_ADDITION;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_LIST;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_REMOVAL;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.METADATA;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.MUTATIONS;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ORIGIN;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.PARENTS;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE;
 
+import com.dremio.nessie.versioned.ImmutableKey;
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.impl.L1;
+import com.dremio.nessie.versioned.impl.L1.Builder;
+import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
-import com.google.protobuf.ByteString;
-import io.netty.buffer.ByteBuf;
+import com.google.common.collect.Maps;
+import com.google.protobuf.UnsafeByteOperations;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,18 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import com.dremio.nessie.versioned.impl.L1;
-import com.dremio.nessie.versioned.impl.L1.Builder;
-import com.dremio.nessie.versioned.store.Entity;
-import com.dremio.nessie.versioned.store.HasId;
-import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.ValueType;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
-import com.google.protobuf.UnsafeByteOperations;
-
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -184,8 +192,9 @@ public class AttributeValueUtil {
    */
   // todo make generic, Probably want to add this into ValueType somehow
   public static Map<String, Entity> toEntity(Map<String, AttributeValue> map) {
-    if (ValueType.byTable(map.get("t").s()).isConsumerized()) {
-      throw new UnsupportedOperationException("IMPLEMENT ME"); // TODO
+    ValueType valueType = ValueType.byValueName(map.get("t").s());
+    if (valueType.isConsumerized()) {
+      throw new UnsupportedOperationException("We should never ever get here!"); // TODO
     }
     return Maps.transformValues(map, AttributeValueUtil::toEntity);
   }
@@ -226,26 +235,88 @@ public class AttributeValueUtil {
   /**
    * TODO javadoc for checkstyle.
    */
-  public static HasId toConsumer(Map<String, AttributeValue> attributeMap) {
-    if ("l1".equals(attributeMap.get("t").s())) {
-      throw new UnsupportedOperationException("Only L1 can be mapped via consumers");
+  public static HasId toConsumer(ValueType valueType, Map<String, AttributeValue> attributeMap) {
+    HasId item;
+    switch (valueType) {
+      case L1:
+        item = toL1Consumer(attributeMap);
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "Don't know how to deserialize " + valueType + " from " + attributeMap);
     }
 
-    //todo move this method somewhere useful.
-    final String id = "id";
-    final String tree = "tree";
-    final String metadata = "metadata";
-    final String parents = "parents";
-    final String key_list = "keys";
+    // TODO remove this sanity check
+    Map<String, Entity> oldOne = Maps.transformValues(attributeMap, AttributeValueUtil::toEntity);
+    Object oldItem = ValueType.L1.getSchema().mapToItem(valueType.checkType(oldOne));
+    if (!item.equals(oldItem)) {
+      throw new IllegalStateException("Uh! " + valueType + " item building is broken");
+    }
 
+    return item;
+  }
+
+  private static L1 toL1Consumer(Map<String, AttributeValue> attributeMap) {
     //todo unclear how best to do the dynamo conversion.
-    Builder builder = L1.builder();
-    return builder.commitMetadataId(Id.build(UnsafeByteOperations.unsafeWrap(attributeMap.get(metadata).b().asByteArray())))
-                  // TODO .children(attributeMap.get(tree))
-                  .id(Id.build(UnsafeByteOperations.unsafeWrap(attributeMap.get(id).b().asByteArray())))
-                  // TODO .addAncestors(attributeMap.get(parents))
-                  // TODO .keyList(attributeMap.get(key_list))
-                  .build();
+    Builder builder = L1.builder()
+        .id(deserializeId(attributeMap));
+    if (attributeMap.containsKey(METADATA)) {
+      builder = builder.commitMetadataId(deserializeId(attributeMap.get(METADATA)));
+    }
+    if (attributeMap.containsKey(TREE)) {
+      builder = builder.children(deserializeIdList(attributeMap.get(TREE)));
+    }
+    if (attributeMap.containsKey(PARENTS)) {
+      builder = builder.addAncestors(deserializeIdList(attributeMap.get(PARENTS)));
+    }
+    if (attributeMap.containsKey(KEY_LIST)) {
+      Map<String, AttributeValue> keys = attributeMap.get(KEY_LIST).m();
+      Boolean checkpoint = keys.get(IS_CHECKPOINT).bool();
+      if (checkpoint != null) {
+        if (checkpoint) {
+          builder = builder.completeKeyList(deserializeIdList(keys.get(FRAGMENTS)));
+        } else {
+          builder = builder.incrementalKeyList(
+              deserializeId(keys.get(ORIGIN)),
+              Integer.parseInt(keys.get(DISTANCE).n())
+          );
+        }
+      }
+      // See com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.addKeyMutation about a
+      // proposal to simplify this one.
+      List<AttributeValue> mutations = keys.get(MUTATIONS).l();
+      for (AttributeValue mutation : mutations) {
+        Map<String, AttributeValue> m = mutation.m();
+        if (m.size() > 2) {
+          throw new IllegalStateException("Ugh - got a keys.mutations map like this: " + m);
+        }
+        AttributeValue raw = m.get(KEY_ADDITION);
+        if (raw != null) {
+          builder = builder.addKeyAddition(deserializeKey(raw));
+        }
+        raw = m.get(KEY_REMOVAL);
+        if (raw != null) {
+          builder = builder.addKeyRemoval(deserializeKey(raw));
+        }
+      }
+    }
+
+    return builder.build();
+  }
+
+  private static Key deserializeKey(AttributeValue raw) {
+    ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
+    for (AttributeValue keyPart : raw.l()) {
+      keyBuilder.addElements(keyPart.s());
+    }
+    return keyBuilder.build();
+  }
+
+  private static List<Id> deserializeIdList(AttributeValue raw) {
+    return raw.l()
+        .stream()
+        .map(AttributeValueUtil::deserializeId)
+        .collect(Collectors.toList());
   }
 
   /**
@@ -258,5 +329,37 @@ public class AttributeValueUtil {
       return consumer.getEntity();
     }
     throw new UnsupportedOperationException("Only L1 can be mapped via consumers");
+  }
+
+  public static Id deserializeId(Map<String, AttributeValue> item) {
+    return deserializeId(item.get(Store.KEY_NAME));
+  }
+
+  public static Id deserializeId(AttributeValue raw) {
+    return Id.of(raw.b().asByteArrayUnsafe());
+  }
+
+  public static AttributeValue serializeId(Id id) {
+    return AttributeValue.builder().b(SdkBytes.fromByteBuffer(id.getValue().asReadOnlyByteBuffer())).build();
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <V> V deserialize(ValueType valueType, Map<String, AttributeValue> item) {
+    checkType(valueType, item);
+    if (valueType.isConsumerized()) {
+      return (V) toConsumer(valueType, item);
+    }
+    // TODO once all types have been migrated off of `Entity`, get rid of this one.
+    return (V) valueType.getSchema().mapToItem(AttributeValueUtil.toEntity(item));
+  }
+
+  // Adopted from ValueType.checkType()
+  private static void checkType(ValueType valueType, Map<String, AttributeValue> map) {
+    Preconditions.checkNotNull(map, "map parameter is null");
+    String loadedType = map.get(ValueType.SCHEMA_TYPE).s();
+    Id id = deserializeId(map.get(Store.KEY_NAME));
+    Preconditions.checkNotNull(loadedType, "Missing type tag for schema for id %s.", id.getHash());
+    Preconditions.checkArgument(valueType.getValueName().equals(loadedType),
+        "Expected schema for id %s to be of type '%s' but is actually '%s'.", id.getHash(), valueType.getValueName(), loadedType);
   }
 }

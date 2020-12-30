@@ -26,7 +26,7 @@ import com.dremio.nessie.versioned.store.Id;
 @Value.Immutable
 abstract class PositionDelta {
 
-  static final PositionDelta EMPTY_ZERO = PositionDelta.builder().newId(Id.EMPTY).oldId(Id.EMPTY).position(0).build();
+  static final PositionDelta SINGLE_ZERO = PositionDelta.builder().newId(Id.EMPTY).oldId(Id.EMPTY).position(0).build();
 
   abstract int getPosition();
 

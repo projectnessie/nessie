@@ -71,9 +71,9 @@ public enum ValueType {
   /**
    * TODO maybe remove this method once `Entity` has been removed!
    */
-  public static ValueType byTable(String t) {
+  public static ValueType byValueName(String t) {
     for (ValueType value : ValueType.values()) {
-      if (t.endsWith(t)) {
+      if (value.valueName.equals(t)) {
         return value;
       }
     }

@@ -42,16 +42,9 @@ public class LoadOp<V extends HasId> {
     this.consumer = consumer;
   }
 
-  public void loaded(Map<String, Entity> load) {
-    SimpleSchema<V> schema = type.getSchema();
-    consumer.accept(schema.mapToItem(type.checkType(load)));
-  }
-
   /** replacement for loaded w/ entity. */
-  public void loaded(HasId load) {
-    if (load instanceof L1 && type == ValueType.L1) {
-      consumer.accept((V) load);
-    }
+  public void loaded(V load) {
+    consumer.accept(load);
   }
 
   public Id getId() {

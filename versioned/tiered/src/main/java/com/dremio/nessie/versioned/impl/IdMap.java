@@ -113,6 +113,21 @@ class IdMap implements Iterable<Id> {
     return new IdMap(deltas);
   }
 
+  /**
+   * Constructs an {@link IdMap} from a list of {@link Id}s.
+   */
+  public static IdMap of(List<Id> children) {
+    int sz = children.size();
+    PositionDelta[] deltas = new PositionDelta[sz];
+
+    for (int i = 0; i < sz; i++) {
+      Id id = children.get(i);
+      deltas[i] = PositionDelta.of(i, id);
+    }
+
+    return new IdMap(deltas);
+  }
+
   @Override
   public int hashCode() {
     return Arrays.hashCode(deltas);
