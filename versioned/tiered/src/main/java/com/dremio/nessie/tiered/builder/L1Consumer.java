@@ -26,7 +26,7 @@ import com.dremio.nessie.versioned.store.Id;
  *
  * @param <T> The public class of this builder for fluent code development.
  */
-public interface L1Consumer<T extends L1Consumer<T>> {
+public interface L1Consumer<T extends L1Consumer> extends HasIdConsumer<T> {
 
   /**
    * The commit metadata id for this l1.
@@ -54,15 +54,6 @@ public interface L1Consumer<T extends L1Consumer<T>> {
    * @return This consumer.
    */
   T children(List<Id> ids);
-
-  /**
-   * The id defined for this L1.
-   *
-   * <p>Can be called once.
-   * @param id The id.
-   * @return This consumer.
-   */
-  T id(Id id);
 
   /**
    * Add a key that was added as part of this commit.

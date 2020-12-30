@@ -27,6 +27,8 @@ class DynamoConstants {
   static final String DISTANCE = "dist";
   static final String ID = "id";
   static final String TREE = "tree";
+  static final String TREE_KEY = "key";
+  static final String TREE_ID = "id";
   static final String METADATA = "metadata";
   static final String PARENTS = "parents";
   static final String KEY_LIST = "keys";
