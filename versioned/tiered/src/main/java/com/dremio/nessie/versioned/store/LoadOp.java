@@ -47,7 +47,7 @@ public class LoadOp<V extends HasId> {
     consumer.accept(schema.mapToItem(type.checkType(load)));
   }
 
-  //replacement for loaded w/ entity
+  /** replacement for loaded w/ entity. */
   public void loaded(HasId load) {
     if (load instanceof L1 && type == ValueType.L1) {
       consumer.accept((V) load);

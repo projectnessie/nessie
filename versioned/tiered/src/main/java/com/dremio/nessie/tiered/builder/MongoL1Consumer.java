@@ -15,9 +15,7 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import java.util.Map;
-
-public class MongoL1Consumer implements L1Consumer<BsonObject> {
+public class MongoL1Consumer { // TODO implements L1Consumer<BsonObject> {
 
   // TODO: implement something that builds Mongo BSON data.
 }
