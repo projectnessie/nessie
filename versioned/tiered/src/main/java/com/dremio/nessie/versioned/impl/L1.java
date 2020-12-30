@@ -31,10 +31,11 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
-public class L1 extends MemoizedId {
+public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
 
   private static final long HASH_SEED = 3506039963025592061L;
 
@@ -165,40 +166,6 @@ public class L1 extends MemoizedId {
     return count;
   }
 
-  /**
-   * TODO Javadoc for checkstyle.
-   * TODO Needs to be pulled up into {@link com.dremio.nessie.versioned.store.HasId}.
-   */
-  public <T extends L1Consumer<T>> L1Consumer<T> applyToConsumer(L1Consumer<T> consumer) {
-    consumer.id(this.getId());
-    consumer.commitMetadataId(this.metadataId);
-    //todo likely we want to change this interface to InternalKey
-    this.keyList.getMutations()
-                .stream()
-                .filter(x -> x instanceof KeyAddition)
-                .map(KeyMutation::getKey)
-                .map(InternalKey::toKey)
-                .forEach(consumer::addKeyAddition);
-    this.keyList.getMutations()
-                .stream()
-                .filter(x -> x instanceof KeyRemoval)
-                .map(KeyMutation::getKey)
-                .map(InternalKey::toKey)
-                .forEach(consumer::addKeyRemoval);
-
-    ArrayList<Id> children = new ArrayList<>();
-    this.tree.iterator().forEachRemaining(children::add);
-    consumer.children(children);
-    consumer.addAncestors(parentList.getParents());
-    if (keyList.isFull()) {
-      consumer.completeKeyList(((CompleteList)keyList).getFragments());
-    } else {
-      IncrementalList list = (IncrementalList) keyList;
-      consumer.incrementalKeyList(list.getPreviousCheckpoint(), list.getDistanceFromCheckpointCommits());
-    }
-    return consumer;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -225,6 +192,46 @@ public class L1 extends MemoizedId {
     return result;
   }
 
+  @Override
+  public ValueType type() {
+    return ValueType.L1;
+  }
+
+  /**
+   * TODO Javadoc for checkstyle.
+   * TODO Needs to be pulled up into {@link com.dremio.nessie.versioned.store.HasId}.
+   */
+  @Override
+  public L1Consumer<?> applyToConsumer(L1Consumer<?> consumer) {
+    consumer.id(this.getId());
+    consumer.commitMetadataId(this.metadataId);
+    //todo likely we want to change this interface to InternalKey
+
+    for (KeyMutation mutation : this.keyList.getMutations()) {
+      Key key = mutation.getKey().toKey();
+      if (mutation instanceof KeyAddition) {
+        consumer.addKeyAddition(key);
+      } else if (mutation instanceof KeyRemoval) {
+        consumer.addKeyRemoval(key);
+      }
+    }
+
+    ArrayList<Id> children = new ArrayList<>();
+    this.tree.iterator().forEachRemaining(children::add);
+    consumer.children(children);
+
+    consumer.addAncestors(parentList.getParents());
+
+    if (keyList.isFull()) {
+      consumer.completeKeyList(((CompleteList)keyList).getFragments());
+    } else {
+      IncrementalList list = (IncrementalList) keyList;
+      consumer.incrementalKeyList(list.getPreviousCheckpoint(), list.getDistanceFromCheckpointCommits());
+    }
+
+    return consumer;
+  }
+
   public static Builder builder() {
     return new Builder();
   }
@@ -244,6 +251,9 @@ public class L1 extends MemoizedId {
       // empty
     }
 
+    /**
+     * Built the {@link L1}.
+     */
     public L1 build() {
       return new L1(
           metadataId,

@@ -15,19 +15,22 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static java.util.stream.Collectors.toList;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdList;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKey;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.DISTANCE;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.FRAGMENTS;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ID;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.IS_CHECKPOINT;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_ADDITION;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_LIST;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_REMOVAL;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.METADATA;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.MUTATIONS;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ORIGIN;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.PARENTS;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_ADDITION;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_REMOVAL;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +42,7 @@ import java.util.stream.Collectors;
 
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
@@ -48,7 +52,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
 import software.amazon.awssdk.utils.builder.SdkBuilder;
 
-class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer> {
+class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer>, DynamoConsumer<DynamoL1Consumer> {
 
   private final Map<String, AttributeValue.Builder> entity;
   private final Map<String, AttributeValue.Builder> keys;
@@ -158,6 +162,7 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer> {
     return this;
   }
 
+  @Override
   public Map<String, AttributeValue> getEntity() {
     // TODO the original 'toEntity' implementation adds empty 'mutations' - is that necessary?
     addKeysSafe(MUTATIONS, list(buildValues(keysMutations)));
@@ -228,5 +233,56 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer> {
 
   private static Builder map(Map<String, AttributeValue> map) {
     return AttributeValue.builder().m(map);
+  }
+
+  public static class Producer implements DynamoProducer<L1> {
+    @Override
+    public L1 deserialize(Map<String, AttributeValue> entity) {
+      L1.Builder builder = L1.builder()
+          .id(deserializeId(entity));
+
+      if (entity.containsKey(METADATA)) {
+        builder = builder.commitMetadataId(deserializeId(entity.get(METADATA)));
+      }
+      if (entity.containsKey(TREE)) {
+        builder = builder.children(deserializeIdList(entity.get(TREE)));
+      }
+      if (entity.containsKey(PARENTS)) {
+        builder = builder.addAncestors(deserializeIdList(entity.get(PARENTS)));
+      }
+      if (entity.containsKey(KEY_LIST)) {
+        Map<String, AttributeValue> keys = entity.get(KEY_LIST).m();
+        Boolean checkpoint = keys.get(IS_CHECKPOINT).bool();
+        if (checkpoint != null) {
+          if (checkpoint) {
+            builder = builder.completeKeyList(deserializeIdList(keys.get(FRAGMENTS)));
+          } else {
+            builder = builder.incrementalKeyList(
+                deserializeId(keys.get(ORIGIN)),
+                Integer.parseInt(keys.get(DISTANCE).n())
+            );
+          }
+        }
+        // See com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.addKeyMutation about a
+        // proposal to simplify this one.
+        List<AttributeValue> mutations = keys.get(MUTATIONS).l();
+        for (AttributeValue mutation : mutations) {
+          Map<String, AttributeValue> m = mutation.m();
+          if (m.size() > 2) {
+            throw new IllegalStateException("Ugh - got a keys.mutations map like this: " + m);
+          }
+          AttributeValue raw = m.get(KEY_ADDITION);
+          if (raw != null) {
+            builder = builder.addKeyAddition(deserializeKey(raw));
+          }
+          raw = m.get(KEY_REMOVAL);
+          if (raw != null) {
+            builder = builder.addKeyRemoval(deserializeKey(raw));
+          }
+        }
+      }
+
+      return builder.build();
+    }
   }
 }
