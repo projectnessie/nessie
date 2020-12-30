@@ -15,14 +15,20 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import com.dremio.nessie.tiered.builder.L2Consumer;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
-public class L2 extends MemoizedId {
+public class L2 extends MemoizedId implements Persistent<L2Consumer<?>> {
 
   private static final long HASH_SEED = -6352836103271505167L;
 
@@ -94,5 +100,83 @@ public class L2 extends MemoizedId {
       }
     }
     return count;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    L2 l2 = (L2) o;
+    return Objects.equal(map, l2.map);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(map);
+  }
+
+  @Override
+  public ValueType type() {
+    return ValueType.L2;
+  }
+
+  /**
+   * TODO Javadoc for checkstyle.
+   * TODO Needs to be pulled up into {@link com.dremio.nessie.versioned.store.HasId}.
+   */
+  @Override
+  public L2Consumer<?> applyToConsumer(L2Consumer<?> consumer) {
+    consumer.id(this.getId());
+
+    ArrayList<Id> children = new ArrayList<>();
+    this.map.iterator().forEachRemaining(children::add);
+    consumer.children(children);
+
+    return consumer;
+  }
+
+  public static L2.Builder builder() {
+    return new L2.Builder();
+  }
+
+  public static class Builder implements L2Consumer<Builder> {
+
+    private Id id;
+    private List<Id> children;
+
+    private Builder() {
+      // empty
+    }
+
+    /**
+     * Built the {@link L2}.
+     */
+    public L2 build() {
+      return new L2(
+          id,
+          IdMap.of(children));
+    }
+
+    @Override
+    public L2.Builder children(List<Id> ids) {
+      checkCalled(this.children, "children");
+      this.children = ids;
+      return this;
+    }
+
+    @Override
+    public L2.Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
+    }
+
+    private static void checkCalled(Object arg, String name) {
+      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
+    }
   }
 }
