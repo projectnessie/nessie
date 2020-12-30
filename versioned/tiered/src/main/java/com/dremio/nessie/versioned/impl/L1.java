@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1Consumer;
@@ -54,8 +55,12 @@ public class L1 extends MemoizedId {
     this.keyList = keyList;
     this.tree = tree;
 
-    assert tree.size() == SIZE;
-    assert id == null || id.equals(generateId());
+    if (tree.size() != SIZE) {
+      throw new AssertionError("tree.size(" + tree.size() + ") != " + SIZE);
+    }
+    if (id != null && !id.equals(generateId())) {
+      throw new AssertionError("wrong id=" + id + ", expected=" + generateId());
+    }
   }
 
   L1 getChildWithTree(Id metadataId, IdMap tree, KeyMutationList mutations) {
@@ -194,6 +199,32 @@ public class L1 extends MemoizedId {
     return consumer;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    L1 l1 = (L1) o;
+
+    return Objects.equals(tree, l1.tree)
+        && Objects.equals(metadataId, l1.metadataId)
+        && Objects.equals(keyList, l1.keyList)
+        && Objects.equals(parentList, l1.parentList);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = tree != null ? tree.hashCode() : 0;
+    result = 31 * result + (metadataId != null ? metadataId.hashCode() : 0);
+    result = 31 * result + (keyList != null ? keyList.hashCode() : 0);
+    result = 31 * result + (parentList != null ? parentList.hashCode() : 0);
+    return result;
+  }
+
   public static Builder builder() {
     return new Builder();
   }
@@ -214,25 +245,12 @@ public class L1 extends MemoizedId {
     }
 
     public L1 build() {
-      return new L1(metadataId, buildIdMap(), id, buildKeyList(), buildParentList());
-    }
-
-    private IdMap buildIdMap() {
-      //todo likely we want to move this into IdMap or expose a new constructor/builder.
-      IdMap idMap = new IdMap(children.size());
-      for (int i = 0; i < children.size(); i++) {
-        idMap = idMap.withId(i, children.get(i));
-      }
-      return idMap;
-    }
-
-    private ParentList buildParentList() {
-      //todo likely we want to move this into ParentList or expose a new constructor/builder.
-      ParentList parentList = ParentList.EMPTY;
-      for (int i = 0; i < ancestors.size(); i++) {
-        parentList = parentList.cloneWithAdditional(ancestors.get(i));
-      }
-      return parentList;
+      return new L1(
+          metadataId,
+          IdMap.of(children),
+          id,
+          buildKeyList(),
+          ParentList.of(ancestors));
     }
 
     private KeyList buildKeyList() {
@@ -248,28 +266,28 @@ public class L1 extends MemoizedId {
 
     @Override
     public Builder commitMetadataId(Id id) {
-      checkCalled(metadataId, "commitMetadataId");
+      checkCalled(this.metadataId, "commitMetadataId");
       this.metadataId = id;
       return this;
     }
 
     @Override
     public Builder addAncestors(List<Id> ids) {
-      checkCalled(ancestors, "addAncestors");
+      checkCalled(this.ancestors, "addAncestors");
       this.ancestors = ids;
       return this;
     }
 
     @Override
     public Builder children(List<Id> ids) {
-      checkCalled(children, "children");
+      checkCalled(this.children, "children");
       this.children = ids;
       return this;
     }
 
     @Override
     public Builder id(Id id) {
-      checkCalled(id, "id");
+      checkCalled(this.id, "id");
       this.id = id;
       return this;
     }
@@ -288,7 +306,7 @@ public class L1 extends MemoizedId {
 
     @Override
     public Builder incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
-      checkCalled(checkpointId, "incrementalKeyList");
+      checkCalled(this.checkpointId, "incrementalKeyList");
       if (this.fragmentIds != null) {
         throw new UnsupportedOperationException("Cannot call incrementalKeyList after completeKeyList.");
       }
@@ -299,7 +317,7 @@ public class L1 extends MemoizedId {
 
     @Override
     public Builder completeKeyList(List<Id> fragmentIds) {
-      checkCalled(fragmentIds, "completeKeyList");
+      checkCalled(this.fragmentIds, "completeKeyList");
       if (this.checkpointId != null) {
         throw new UnsupportedOperationException("Cannot call completeKeyList after incrementalKeyList.");
       }

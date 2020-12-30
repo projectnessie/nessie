@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static java.util.stream.Collectors.toList;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.DISTANCE;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.FRAGMENTS;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ID;
@@ -28,11 +29,6 @@ import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_ADDITION;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_REMOVAL;
 
-import com.dremio.nessie.tiered.builder.L1Consumer;
-import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.ValueType;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,6 +36,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+
+import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.ValueType;
+import com.google.protobuf.ByteString;
+
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
@@ -121,12 +124,18 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer> {
     //    list(
     //        list ( key-elements )
     //    )
+    //
+    // Even better:
+    //    keys [ "mutations-a" ] := list ( byte-strings )
+    //    keys [ "mutations-d" ] := list ( byte-strings )
+    // And each "byte-string" is our custom serialzation of a key-path.
+    // TL;DR a quite flat structure.
 
     keysMutations.add(
         map(Collections.singletonMap(
             addRemove,
             list(key.getElements().stream()
-                .map(elem -> string(elem).build()).collect(Collectors.toList()))
+                .map(elem -> string(elem).build()).collect(toList()))
                 .build())
         )
     );
@@ -179,7 +188,7 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer> {
   private static Builder idsList(List<Id> ids) {
     List<AttributeValue> idsList = ids.stream()
         .map(id -> bytes(id.getValue()).build())
-        .collect(Collectors.toList());
+        .collect(toList());
     return list(idsList);
   }
 
@@ -194,7 +203,7 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer> {
   private static List<AttributeValue> buildValues(List<AttributeValue.Builder> source) {
     return source.stream()
         .map(SdkBuilder::build)
-        .collect(Collectors.toList());
+        .collect(toList());
   }
 
   private static Builder bytes(ByteString bytes) {
