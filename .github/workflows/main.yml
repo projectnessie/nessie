@@ -111,22 +111,39 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
+      # note the big include entry in matrix is used to ensure we get human readable names for the jobs
       matrix:
         include:
           - jackson-version: 2.6.5
             target-library: Hive 2.3.7
+            java-version: 11
           - jackson-version: 2.9.5
             target-library: Hive 3.1.2
+            java-version: 11
           - jackson-version: 2.6.7
             target-library: Spark 2.4.4
+            java-version: 11
           - jackson-version: 2.10.0
-            target-library: Spark 3.0,1
+            target-library: Spark 3.0.1
+            java-version: 11
+          - jackson-version: 2.6.5
+            target-library: Hive 2.3.7
+            java-version: 8
+          - jackson-version: 2.9.5
+            target-library: Hive 3.1.2
+            java-version: 8
+          - jackson-version: 2.6.7
+            target-library: Spark 2.4.4
+            java-version: 8
+          - jackson-version: 2.10.0
+            target-library: Spark 3.0.1
+            java-version: 8
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 11
+      - name: Set up JDK
         uses: actions/setup-java@v1
         with:
-          java-version: 11
+          java-version: ${{ matrix.java-version }}
       - name: Cache local Maven repository
         uses: actions/cache@v2
         with:
