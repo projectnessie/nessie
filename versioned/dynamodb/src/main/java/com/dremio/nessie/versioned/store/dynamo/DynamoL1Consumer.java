@@ -15,8 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +22,8 @@ import java.util.Map;
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
+
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer> {
   private final Map<String, AttributeValue> entity = new HashMap<>();
