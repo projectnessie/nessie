@@ -15,15 +15,22 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
+import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 /**
@@ -127,5 +134,123 @@ public interface InternalRef extends HasId {
     }
 
   };
+
+  static Builder builder() {
+    return new Builder();
+  }
+
+  class Builder implements RefConsumer<InternalRef.Builder> {
+
+    private Id id;
+    private RefType refType;
+    private String name;
+
+    // tag only
+    private Id commit;
+
+    // branch only
+    private Id metadata;
+    private List<Id> children;
+    private List<BranchCommit> commits;
+
+    @Override
+    public Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
+    }
+
+    @Override
+    public Builder type(RefType refType) {
+      checkCalled(this.refType, "refType");
+      this.refType = refType;
+      return this;
+    }
+
+    @Override
+    public Builder name(String name) {
+      checkCalled(this.name, "name");
+      this.name = name;
+      return this;
+    }
+
+    @Override
+    public Builder commit(Id commit) {
+      checkCalled(this.commit, "commit");
+      this.commit = commit;
+      return this;
+    }
+
+    @Override
+    public Builder metadata(Id metadata) {
+      checkCalled(this.metadata, "metadata");
+      this.metadata = metadata;
+      return this;
+    }
+
+    @Override
+    public Builder children(List<Id> children) {
+      checkCalled(this.children, "children");
+      this.children = children;
+      return this;
+    }
+
+    @Override
+    public Builder commits(List<BranchCommit> commits) {
+      checkCalled(this.commits, "commits");
+      this.commits = commits;
+      return this;
+    }
+
+    public InternalRef build() {
+      checkSet(id, "id");
+      checkSet(refType, "refType");
+      checkSet(name, "name");
+
+      switch (refType) {
+        case TAG:
+          checkSet(commit, "commit");
+          return new InternalTag(id, name, commit);
+        case BRANCH:
+          checkSet(metadata, "metadata");
+          checkSet(children, "children");
+          checkSet(commits, "commits");
+          return new InternalBranch(
+              id,
+              name,
+              IdMap.of(children),
+              metadata,
+              commits.stream()
+                  .map(bc -> bc.isSaved()
+                      ? new Commit(bc.getId(), bc.getCommit(), bc.getParent())
+                      : new Commit(
+                          bc.getId(),
+                          bc.getCommit(),
+                          bc.getDeltas().stream()
+                            .map(d -> new UnsavedDelta(d.getPosition(), d.getOldId(), d.getNewId()))
+                            .collect(Collectors.toList()),
+                          keyMutations(bc)
+                          ))
+                  .collect(Collectors.toList()));
+        default:
+          throw new UnsupportedOperationException("Unknown ref-type " + refType);
+      }
+    }
+
+    private KeyMutationList keyMutations(BranchCommit bc) {
+      List<KeyMutation> mutations = new ArrayList<>();
+      bc.getKeyAdditions().stream().map(km -> KeyMutation.KeyAddition.of(new InternalKey(km))).forEach(mutations::add);
+      bc.getKeyRemovals().stream().map(km -> KeyMutation.KeyRemoval.of(new InternalKey(km))).forEach(mutations::add);
+      return KeyMutationList.of(mutations);
+    }
+
+    private static void checkCalled(Object arg, String name) {
+      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
+    }
+
+    private static void checkSet(Object arg, String name) {
+      Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
+    }
+  }
 
 }

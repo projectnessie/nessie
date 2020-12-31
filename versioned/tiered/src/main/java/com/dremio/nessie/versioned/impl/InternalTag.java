@@ -17,12 +17,15 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.Map;
 
+import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 
-class InternalTag extends MemoizedId implements InternalRef {
+class InternalTag extends MemoizedId implements InternalRef, Persistent<RefConsumer<?>> {
 
   static final String ID = "id";
   static final String NAME = "name";
@@ -85,6 +88,34 @@ class InternalTag extends MemoizedId implements InternalRef {
   @Override
   public InternalTag getTag() {
     return this;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    InternalTag that = (InternalTag) o;
+    return Objects.equal(name, that.name) && Objects
+        .equal(commit, that.commit);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(name, commit);
+  }
+
+  @Override
+  public ValueType type() {
+    return ValueType.REF;
+  }
+
+  @Override
+  public RefConsumer<?> applyToConsumer(RefConsumer<?> consumer) {
+    throw new UnsupportedOperationException("IMPLEMENT ME");
   }
 
 }

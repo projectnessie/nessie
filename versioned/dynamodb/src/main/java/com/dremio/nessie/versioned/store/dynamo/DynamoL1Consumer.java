@@ -17,6 +17,7 @@ package com.dremio.nessie.versioned.store.dynamo;
 
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdList;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeInt;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKey;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.DISTANCE;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.FRAGMENTS;
@@ -141,7 +142,7 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
   }
 
   @Override
-  public Map<String, AttributeValue> getEntity() {
+  Map<String, AttributeValue> getEntity() {
     // TODO the original 'toEntity' implementation adds empty 'mutations' - is that necessary?
     addKeysSafe(MUTATIONS, list(buildValues(keysMutations)));
     if (!keys.isEmpty()) {
@@ -181,7 +182,7 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
           } else {
             builder = builder.incrementalKeyList(
                 deserializeId(keys.get(ORIGIN)),
-                Integer.parseInt(keys.get(DISTANCE).n())
+                deserializeInt(keys.get(DISTANCE))
             );
           }
         }
