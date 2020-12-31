@@ -15,15 +15,5 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import com.dremio.nessie.versioned.Key;
-
-public interface FragmentConsumer<T extends FragmentConsumer<T>> extends HasIdConsumer<T> {
-
-  /**
-   * The commit metadata id for this l1.
-   *
-   * @param key The id to add.
-   * @return This consumer.
-   */
-  T addKey(Key key);
+public interface CommitMetadataConsumer<T extends CommitMetadataConsumer<T>> extends BytesValueConsumer<T> {
 }

@@ -61,16 +61,15 @@ class DynamoL3Consumer extends DynamoConsumer<DynamoL3Consumer> implements L3Con
   }
 
   @Override
-  public Map<String, AttributeValue> getEntity() {
-
+  Map<String, AttributeValue> getEntity() {
     // TODO is this correct ??
     List<AttributeValue> maps = tree.entrySet().stream()
         .filter(e -> !e.getValue().isEmpty())
         .map(e ->
-            dualMap(
+            map(dualMap(
                 TREE_KEY, keyList(e.getKey()),
                 TREE_ID, idValue(e.getValue())
-            ).build()
+            )).build()
         ).collect(Collectors.toList());
 
     Builder treeBuilder = AttributeValue.builder().l(maps);

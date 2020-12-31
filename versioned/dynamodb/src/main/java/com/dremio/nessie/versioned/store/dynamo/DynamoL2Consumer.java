@@ -49,7 +49,7 @@ class DynamoL2Consumer extends DynamoConsumer<DynamoL2Consumer> implements L2Con
   }
 
   @Override
-  public Map<String, AttributeValue> getEntity() {
+  Map<String, AttributeValue> getEntity() {
     return buildValuesMap(entity);
   }
 

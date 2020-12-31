@@ -15,7 +15,9 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.immutables.value.Value.Immutable;
@@ -41,4 +43,37 @@ abstract class KeyMutationList {
         .build();
   }
 
+  public static boolean equalsIgnoreOrder(KeyMutationList l1, KeyMutationList l2) {
+    if (l1 != null && l2 == null) {
+      return false;
+    }
+    if (l1 == null && l2 != null) {
+      return false;
+    }
+    if (l1 == null) {
+      return true;
+    }
+    return l1.equalsIgnoreOrder(l2);
+  }
+
+  public boolean equalsIgnoreOrder(KeyMutationList o) {
+    if (o == null) {
+      return false;
+    }
+
+    List<KeyMutation> mm = getMutations();
+    List<KeyMutation> om = o.getMutations();
+    if (mm.size() != om.size()) {
+      return false;
+    }
+
+    Set<KeyMutation> s = new HashSet<>(mm);
+    for (KeyMutation km : om) {
+      if (!s.contains(km)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }

@@ -41,6 +41,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
 import com.google.common.collect.Maps;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 
 import software.amazon.awssdk.core.SdkBytes;
@@ -55,107 +56,103 @@ public class AttributeValueUtil {
    * TODO javadoc for checkstyle.
    */
   public static <C extends DynamoConsumer<C>> Map<String, AttributeValue> fromSaveOp(SaveOp<?> saveOp) {
-    if (saveOp.getType().isConsumerized()) {
-      Persistent<DynamoConsumer<C>> persistent = (Persistent<DynamoConsumer<C>>) saveOp.getValue();
-      Map<String, AttributeValue> ref = fromEntity(saveOp.toEntity());
-      Map<String, AttributeValue> con = fromConsumer(persistent);
-      MapDifference<String, AttributeValue> mapDiff = Maps.difference(ref, con);
+    Persistent<DynamoConsumer<C>> persistent = (Persistent<DynamoConsumer<C>>) saveOp.getValue();
+    Map<String, AttributeValue> ref = fromEntity(saveOp.toEntity());
+    Map<String, AttributeValue> con = fromConsumer(persistent);
+    MapDifference<String, AttributeValue> mapDiff = Maps.difference(ref, con);
 
-      StringBuilder errors = new StringBuilder();
-      Map<String, AttributeValue> onlyInRef = mapDiff.entriesOnlyOnLeft();
-      Map<String, AttributeValue> onlyInCon = mapDiff.entriesOnlyOnRight();
-      Map<String, ValueDifference<AttributeValue>> diff = new HashMap<>(mapDiff.entriesDiffering());
+    StringBuilder errors = new StringBuilder();
+    Map<String, AttributeValue> onlyInRef = mapDiff.entriesOnlyOnLeft();
+    Map<String, AttributeValue> onlyInCon = mapDiff.entriesOnlyOnRight();
+    Map<String, ValueDifference<AttributeValue>> diff = new HashMap<>(mapDiff.entriesDiffering());
+    if (!onlyInRef.isEmpty()) {
+      errors.append("\nOnly in 'fromEntity': ").append(onlyInRef);
+    }
+    if (!onlyInCon.isEmpty()) {
+      errors.append("\nOnly in 'fromConsumer': ").append(onlyInCon);
+    }
+    boolean keysDiff = diff.containsKey(KEY_LIST);
+    if (keysDiff) {
+      diff.remove(KEY_LIST);
+    }
+    if (!diff.isEmpty()) {
+      errors.append("\nDifferent: ").append(diff);
+    }
+
+    if (keysDiff) {
+      Map<String, AttributeValue> refKeys = ref.get(KEY_LIST).m();
+      Map<String, AttributeValue> conKeys = con.get(KEY_LIST).m();
+      mapDiff = Maps.difference(refKeys, conKeys);
+      onlyInRef = mapDiff.entriesOnlyOnLeft();
+      onlyInCon = mapDiff.entriesOnlyOnRight();
+      diff = new HashMap<>(mapDiff.entriesDiffering());
       if (!onlyInRef.isEmpty()) {
-        errors.append("\nOnly in 'fromEntity': ").append(onlyInRef);
+        errors.append("\nOnly in 'fromEntity.keys': ").append(onlyInRef);
       }
       if (!onlyInCon.isEmpty()) {
-        errors.append("\nOnly in 'fromConsumer': ").append(onlyInCon);
+        errors.append("\nOnly in 'fromConsumer.keys': ").append(onlyInCon);
       }
-      boolean keysDiff = diff.containsKey(KEY_LIST);
-      if (keysDiff) {
-        diff.remove(KEY_LIST);
+      boolean mutationsDiff = diff.containsKey(MUTATIONS);
+      boolean fragmentsDiff = diff.containsKey(FRAGMENTS);
+      if (mutationsDiff) {
+        diff.remove(MUTATIONS);
+        Set<List<String>> refAdd = new HashSet<>();
+        Set<List<String>> refRem = new HashSet<>();
+        Set<List<String>> conAdd = new HashSet<>();
+        Set<List<String>> conRem = new HashSet<>();
+        refKeys.get(MUTATIONS).l().stream()
+            .map(AttributeValue::m)
+            .forEach(m -> {
+              if (m.containsKey("a")) {
+                refAdd.add(m.get("a").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
+              }
+              if (m.containsKey("d")) {
+                refRem.add(m.get("d").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
+              }
+            });
+        conKeys.get(MUTATIONS).l().stream()
+            .map(AttributeValue::m)
+            .forEach(m -> {
+              if (m.containsKey("a")) {
+                conAdd.add(m.get("a").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
+              }
+              if (m.containsKey("d")) {
+                conRem.add(m.get("d").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
+              }
+            });
+        if (!refAdd.equals(conAdd) || !refRem.equals(conRem)) {
+          errors.append("\nfromEntity.keys.mutations(a): ").append(refAdd);
+          errors.append("\nfromEntity.keys.mutations(d): ").append(refRem);
+          errors.append("\nfromConsumer.keys.mutations(a): ").append(conAdd);
+          errors.append("\nfromConsumer.keys.mutations(d): ").append(conRem);
+        }
+      }
+      if (fragmentsDiff) {
+        diff.remove(FRAGMENTS);
+        Set<ByteBuffer> refFrags = refKeys.get(FRAGMENTS).l().stream().map(a -> a.b().asByteBuffer()).collect(Collectors.toSet());
+        Set<ByteBuffer> conFrags = conKeys.get(FRAGMENTS).l().stream().map(a -> a.b().asByteBuffer()).collect(Collectors.toSet());
+        if (!refFrags.equals(conFrags)) {
+          errors.append("\nfromEntity.keys.fragments: ").append(refFrags);
+          errors.append("\nfromConsumer.keys.fragments: ").append(conFrags);
+        }
       }
       if (!diff.isEmpty()) {
-        errors.append("\nDifferent: ").append(diff);
+        errors.append("\nDifferent in 'keys': ").append(diff);
       }
-
-      if (keysDiff) {
-        Map<String, AttributeValue> refKeys = ref.get(KEY_LIST).m();
-        Map<String, AttributeValue> conKeys = con.get(KEY_LIST).m();
-        mapDiff = Maps.difference(refKeys, conKeys);
-        onlyInRef = mapDiff.entriesOnlyOnLeft();
-        onlyInCon = mapDiff.entriesOnlyOnRight();
-        diff = new HashMap<>(mapDiff.entriesDiffering());
-        if (!onlyInRef.isEmpty()) {
-          errors.append("\nOnly in 'fromEntity.keys': ").append(onlyInRef);
-        }
-        if (!onlyInCon.isEmpty()) {
-          errors.append("\nOnly in 'fromConsumer.keys': ").append(onlyInCon);
-        }
-        boolean mutationsDiff = diff.containsKey(MUTATIONS);
-        boolean fragmentsDiff = diff.containsKey(FRAGMENTS);
-        if (mutationsDiff) {
-          diff.remove(MUTATIONS);
-          Set<List<String>> refAdd = new HashSet<>();
-          Set<List<String>> refRem = new HashSet<>();
-          Set<List<String>> conAdd = new HashSet<>();
-          Set<List<String>> conRem = new HashSet<>();
-          refKeys.get(MUTATIONS).l().stream()
-              .map(AttributeValue::m)
-              .forEach(m -> {
-                if (m.containsKey("a")) {
-                  refAdd.add(m.get("a").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
-                }
-                if (m.containsKey("d")) {
-                  refRem.add(m.get("d").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
-                }
-              });
-          conKeys.get(MUTATIONS).l().stream()
-              .map(AttributeValue::m)
-              .forEach(m -> {
-                if (m.containsKey("a")) {
-                  conAdd.add(m.get("a").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
-                }
-                if (m.containsKey("d")) {
-                  conRem.add(m.get("d").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
-                }
-              });
-          if (!refAdd.equals(conAdd) || !refRem.equals(conRem)) {
-            errors.append("\nfromEntity.keys.mutations(a): ").append(refAdd);
-            errors.append("\nfromEntity.keys.mutations(d): ").append(refRem);
-            errors.append("\nfromConsumer.keys.mutations(a): ").append(conAdd);
-            errors.append("\nfromConsumer.keys.mutations(d): ").append(conRem);
-          }
-        }
-        if (fragmentsDiff) {
-          diff.remove(FRAGMENTS);
-          Set<ByteBuffer> refFrags = refKeys.get(FRAGMENTS).l().stream().map(a -> a.b().asByteBuffer()).collect(Collectors.toSet());
-          Set<ByteBuffer> conFrags = conKeys.get(FRAGMENTS).l().stream().map(a -> a.b().asByteBuffer()).collect(Collectors.toSet());
-          if (!refFrags.equals(conFrags)) {
-            errors.append("\nfromEntity.keys.fragments: ").append(refFrags);
-            errors.append("\nfromConsumer.keys.fragments: ").append(conFrags);
-          }
-        }
-        if (!diff.isEmpty()) {
-          errors.append("\nDifferent in 'keys': ").append(diff);
-        }
-      }
-
-      if (errors.length() > 0) {
-        throw new AssertionError("Ugh! fromEntity is different from fromConsumer!"
-            + errors
-            + "\nfromEntity:\n    "
-            + ref.entrySet().stream().map(Object::toString).sorted().collect(Collectors.joining("\n    "))
-            + "\nfromConsumer:\n    "
-            + con.entrySet().stream().map(Object::toString).sorted().collect(Collectors.joining("\n    ")));
-      }
-
-      // END OF TEMPORARY COMPARISON-CODE
-
-      return con;
-    } else {
-      return fromEntity(saveOp.toEntity());
     }
+
+    if (errors.length() > 0) {
+      throw new AssertionError("Ugh! fromEntity is different from fromConsumer!"
+          + errors
+          + "\nfromEntity:\n    "
+          + ref.entrySet().stream().map(Object::toString).sorted().collect(Collectors.joining("\n    "))
+          + "\nfromConsumer:\n    "
+          + con.entrySet().stream().map(Object::toString).sorted().collect(Collectors.joining("\n    ")));
+    }
+
+    // END OF TEMPORARY COMPARISON-CODE
+
+    return con;
   }
 
   /**
@@ -179,18 +176,6 @@ public class AttributeValueUtil {
     } else {
       throw new UnsupportedOperationException("Unable to convert: " + av.toString());
     }
-  }
-
-  /**
-   * TODO javadoc for checkstyle.
-   */
-  // todo make generic, Probably want to add this into ValueType somehow
-  public static Map<String, Entity> toEntity(Map<String, AttributeValue> map) {
-    ValueType valueType = ValueType.byValueName(map.get("t").s());
-    if (valueType.isConsumerized()) {
-      throw new UnsupportedOperationException("We should never ever get here!"); // TODO
-    }
-    return Maps.transformValues(map, AttributeValueUtil::toEntity);
   }
 
   /**
@@ -281,6 +266,14 @@ public class AttributeValueUtil {
     return Id.of(raw.b().asByteArrayUnsafe());
   }
 
+  public static int deserializeInt(AttributeValue v) {
+    return Integer.parseInt(v.n());
+  }
+
+  public static ByteString deserializeBytes(AttributeValue raw) {
+    return ByteString.copyFrom(raw.b().asByteArrayUnsafe());
+  }
+
   public static AttributeValue serializeId(Id id) {
     return AttributeValue.builder().b(SdkBytes.fromByteBuffer(id.getValue().asReadOnlyByteBuffer())).build();
   }
@@ -291,11 +284,7 @@ public class AttributeValueUtil {
   @SuppressWarnings("unchecked")
   public static <V> V deserialize(ValueType valueType, Map<String, AttributeValue> item) {
     checkType(valueType, item);
-    if (valueType.isConsumerized()) {
-      return (V) toConsumer(valueType, item);
-    }
-    // TODO once all types have been migrated off of `Entity`, get rid of this one.
-    return (V) valueType.getSchema().mapToItem(AttributeValueUtil.toEntity(item));
+    return (V) toConsumer(valueType, item);
   }
 
   // Adopted from ValueType.checkType()

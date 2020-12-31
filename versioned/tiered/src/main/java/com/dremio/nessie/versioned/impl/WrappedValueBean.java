@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
+import com.dremio.nessie.tiered.builder.BytesValueConsumer;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -100,6 +101,30 @@ abstract class WrappedValueBean extends MemoizedId {
           .put(ID, item.getId().toEntity())
           .put(VALUE, Entity.ofBinary(item.getBytes()))
           .build();
+    }
+  }
+
+  abstract static class AbstractBuilder<T extends AbstractBuilder<T>> implements BytesValueConsumer<T> {
+
+    protected Id id;
+    protected ByteString value;
+
+    @Override
+    public T id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return (T) this;
+    }
+
+    @Override
+    public T value(ByteString value) {
+      checkCalled(this.value, "value");
+      this.value = value;
+      return (T) this;
+    }
+
+    private static void checkCalled(Object arg, String name) {
+      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
     }
   }
 }
