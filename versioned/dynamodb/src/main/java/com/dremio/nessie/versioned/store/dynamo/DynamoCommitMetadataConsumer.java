@@ -16,10 +16,6 @@
 
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeBytes;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.VALUE;
-
 import java.util.Map;
 
 import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
@@ -28,7 +24,7 @@ import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class DynamoCommitMetadataConsumer extends DynamoBytesValueConsumer<DynamoCommitMetadataConsumer>
+class DynamoCommitMetadataConsumer extends DynamoBytesValueConsumer<DynamoCommitMetadataConsumer>
     implements CommitMetadataConsumer<DynamoCommitMetadataConsumer> {
 
   DynamoCommitMetadataConsumer() {

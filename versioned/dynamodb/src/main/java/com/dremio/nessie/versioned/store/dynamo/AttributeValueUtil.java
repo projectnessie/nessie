@@ -27,21 +27,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.dremio.nessie.versioned.ImmutableKey;
-import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.impl.Persistent;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
-import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
 import com.google.common.collect.Maps;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 
 import software.amazon.awssdk.core.SdkBytes;
@@ -50,15 +43,74 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 /**
  * Tools to convert to and from Entity/AttributeValue.
  */
+@Deprecated // TOOD REMOVE THIS CLASS
 public class AttributeValueUtil {
+
+  /**
+   * Convert an attribute value to an entity.
+   * @param av Attribute value to convert
+   * @return Entity version of value
+   */
+  @Deprecated
+  public static Entity toEntity(AttributeValue av) {
+    if (av.hasL()) {
+      return Entity.ofList(av.l().stream().map(AttributeValueUtil::toEntity).collect(ImmutableList.toImmutableList()));
+    } else if (av.hasM()) {
+      return Entity.ofMap(Maps.transformValues(av.m(), AttributeValueUtil::toEntity));
+    } else if (av.s() != null) {
+      return Entity.ofString(av.s());
+    } else if (av.bool() != null) {
+      return Entity.ofBoolean(av.bool());
+    } else if (av.n() != null) {
+      return Entity.ofNumber(Long.parseLong(av.n()));
+    } else if (av.b() != null) {
+      return Entity.ofBinary(UnsafeByteOperations.unsafeWrap(av.b().asByteArray()));
+    } else {
+      throw new UnsupportedOperationException("Unable to convert: " + av.toString());
+    }
+  }
+
+  /**
+   * Convert from entity to AttributeValue.
+   * @param e Entity to convert
+   * @return AttributeValue to return
+   */
+  @Deprecated
+  public static AttributeValue fromEntity(Entity e) {
+    switch (e.getType()) {
+      case BINARY:
+        return AttributeValue.builder().b(SdkBytes.fromByteBuffer(e.getBinary().asReadOnlyByteBuffer())).build();
+      case BOOLEAN:
+        return AttributeValue.builder().bool(e.getBoolean()).build();
+      case LIST:
+        return AttributeValue.builder().l(e.getList().stream().map(AttributeValueUtil::fromEntity)
+            .collect(ImmutableList.toImmutableList())).build();
+      case MAP:
+        return AttributeValue.builder().m(fromEntity(e.getMap())).build();
+      case NUMBER:
+        return AttributeValue.builder().n(String.valueOf(e.getNumber())).build();
+      case STRING:
+        return AttributeValue.builder().s(e.getString()).build();
+      default:
+        throw new UnsupportedOperationException("Unable to convert type " + e);
+    }
+  }
 
   /**
    * TODO javadoc for checkstyle.
    */
-  public static <C extends DynamoConsumer<C>> Map<String, AttributeValue> fromSaveOp(SaveOp<?> saveOp) {
-    Persistent<DynamoConsumer<C>> persistent = (Persistent<DynamoConsumer<C>>) saveOp.getValue();
-    Map<String, AttributeValue> ref = fromEntity(saveOp.toEntity());
-    Map<String, AttributeValue> con = fromConsumer(persistent);
+  @Deprecated
+  public static Map<String, AttributeValue> fromEntity(Map<String, Entity> map) {
+    return Maps.transformValues(map, AttributeValueUtil::fromEntity);
+  }
+
+  // TODO REMOVE THE FOLLOWING STUFF
+
+  static <V> void sanityCheckFromSaveOp(ValueType type, V value, Map<String, AttributeValue> con) {
+    SimpleSchema<V> schema = type.getSchema();
+    Map<String, Entity> x = schema.itemToMap(value, true);
+    Map<String, AttributeValue> ref = Maps.transformValues(x, AttributeValueUtil::fromEntity);
+
     MapDifference<String, AttributeValue> mapDiff = Maps.difference(ref, con);
 
     StringBuilder errors = new StringBuilder();
@@ -104,20 +156,24 @@ public class AttributeValueUtil {
             .map(AttributeValue::m)
             .forEach(m -> {
               if (m.containsKey("a")) {
-                refAdd.add(m.get("a").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
+                refAdd.add(
+                    m.get("a").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
               }
               if (m.containsKey("d")) {
-                refRem.add(m.get("d").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
+                refRem.add(
+                    m.get("d").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
               }
             });
         conKeys.get(MUTATIONS).l().stream()
             .map(AttributeValue::m)
             .forEach(m -> {
               if (m.containsKey("a")) {
-                conAdd.add(m.get("a").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
+                conAdd.add(
+                    m.get("a").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
               }
               if (m.containsKey("d")) {
-                conRem.add(m.get("d").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
+                conRem.add(
+                    m.get("d").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
               }
             });
         if (!refAdd.equals(conAdd) || !refRem.equals(conRem)) {
@@ -129,8 +185,10 @@ public class AttributeValueUtil {
       }
       if (fragmentsDiff) {
         diff.remove(FRAGMENTS);
-        Set<ByteBuffer> refFrags = refKeys.get(FRAGMENTS).l().stream().map(a -> a.b().asByteBuffer()).collect(Collectors.toSet());
-        Set<ByteBuffer> conFrags = conKeys.get(FRAGMENTS).l().stream().map(a -> a.b().asByteBuffer()).collect(Collectors.toSet());
+        Set<ByteBuffer> refFrags = refKeys.get(FRAGMENTS).l().stream()
+            .map(a -> a.b().asByteBuffer()).collect(Collectors.toSet());
+        Set<ByteBuffer> conFrags = conKeys.get(FRAGMENTS).l().stream()
+            .map(a -> a.b().asByteBuffer()).collect(Collectors.toSet());
         if (!refFrags.equals(conFrags)) {
           errors.append("\nfromEntity.keys.fragments: ").append(refFrags);
           errors.append("\nfromConsumer.keys.fragments: ").append(conFrags);
@@ -145,155 +203,20 @@ public class AttributeValueUtil {
       throw new AssertionError("Ugh! fromEntity is different from fromConsumer!"
           + errors
           + "\nfromEntity:\n    "
-          + ref.entrySet().stream().map(Object::toString).sorted().collect(Collectors.joining("\n    "))
+          + ref.entrySet().stream().map(Object::toString).sorted()
+          .collect(Collectors.joining("\n    "))
           + "\nfromConsumer:\n    "
-          + con.entrySet().stream().map(Object::toString).sorted().collect(Collectors.joining("\n    ")));
-    }
-
-    // END OF TEMPORARY COMPARISON-CODE
-
-    return con;
-  }
-
-  /**
-   * Convert an attribute value to an entity.
-   * @param av Attribute value to convert
-   * @return Entity version of value
-   */
-  public static Entity toEntity(AttributeValue av) {
-    if (av.hasL()) {
-      return Entity.ofList(av.l().stream().map(AttributeValueUtil::toEntity).collect(ImmutableList.toImmutableList()));
-    } else if (av.hasM()) {
-      return Entity.ofMap(Maps.transformValues(av.m(), AttributeValueUtil::toEntity));
-    } else if (av.s() != null) {
-      return Entity.ofString(av.s());
-    } else if (av.bool() != null) {
-      return Entity.ofBoolean(av.bool());
-    } else if (av.n() != null) {
-      return Entity.ofNumber(Long.parseLong(av.n()));
-    } else if (av.b() != null) {
-      return Entity.ofBinary(UnsafeByteOperations.unsafeWrap(av.b().asByteArray()));
-    } else {
-      throw new UnsupportedOperationException("Unable to convert: " + av.toString());
+          + con.entrySet().stream().map(Object::toString).sorted()
+          .collect(Collectors.joining("\n    ")));
     }
   }
 
-  /**
-   * Convert from entity to AttributeValue.
-   * @param e Entity to convert
-   * @return AttributeValue to return
-   */
-  public static AttributeValue fromEntity(Entity e) {
-    switch (e.getType()) {
-      case BINARY:
-        return AttributeValue.builder().b(SdkBytes.fromByteBuffer(e.getBinary().asReadOnlyByteBuffer())).build();
-      case BOOLEAN:
-        return AttributeValue.builder().bool(e.getBoolean()).build();
-      case LIST:
-        return AttributeValue.builder().l(e.getList().stream().map(AttributeValueUtil::fromEntity)
-            .collect(ImmutableList.toImmutableList())).build();
-      case MAP:
-        return AttributeValue.builder().m(fromEntity(e.getMap())).build();
-      case NUMBER:
-        return AttributeValue.builder().n(String.valueOf(e.getNumber())).build();
-      case STRING:
-        return AttributeValue.builder().s(e.getString()).build();
-      default:
-        throw new UnsupportedOperationException("Unable to convert type " + e);
-    }
-  }
-
-  /**
-   * TODO javadoc for checkstyle.
-   */
-  @Deprecated
-  public static Map<String, AttributeValue> fromEntity(Map<String, Entity> map) {
-    return Maps.transformValues(map, AttributeValueUtil::fromEntity);
-  }
-
-  /**
-   * TODO javadoc for checkstyle.
-   */
-  public static HasId toConsumer(ValueType valueType, Map<String, AttributeValue> attributeMap) {
-    HasId item = DynamoConsumer.newProducer(valueType)
-        .deserialize(attributeMap);
-
-    // TODO remove this sanity check
+  static void sanityCheckToConsumer(Map<String, AttributeValue> attributeMap,
+      ValueType valueType, HasId item) {
     Map<String, Entity> oldOne = Maps.transformValues(attributeMap, AttributeValueUtil::toEntity);
     Object oldItem = valueType.getSchema().mapToItem(valueType.checkType(oldOne));
     if (!item.equals(oldItem)) {
       throw new IllegalStateException("Uh! " + valueType + " item building is broken");
     }
-
-    return item;
-  }
-
-  /**
-   * TODO add some javadoc.
-   */
-  public static Key deserializeKey(AttributeValue raw) {
-    ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
-    for (AttributeValue keyPart : raw.l()) {
-      keyBuilder.addElements(keyPart.s());
-    }
-    return keyBuilder.build();
-  }
-
-  /**
-   * TODO add some javadoc.
-   */
-  public static List<Id> deserializeIdList(AttributeValue raw) {
-    return raw.l()
-        .stream()
-        .map(AttributeValueUtil::deserializeId)
-        .collect(Collectors.toList());
-  }
-
-  /**
-   * TODO javadoc.
-   */
-  public static <C extends DynamoConsumer<C>> Map<String, AttributeValue> fromConsumer(Persistent<DynamoConsumer<C>> value) {
-    DynamoConsumer<C> consumer = DynamoConsumer.newConsumer(value.type());
-    value.applyToConsumer(consumer);
-    return consumer.getEntity();
-  }
-
-  public static Id deserializeId(Map<String, AttributeValue> item) {
-    return deserializeId(item.get(Store.KEY_NAME));
-  }
-
-  public static Id deserializeId(AttributeValue raw) {
-    return Id.of(raw.b().asByteArrayUnsafe());
-  }
-
-  public static int deserializeInt(AttributeValue v) {
-    return Integer.parseInt(v.n());
-  }
-
-  public static ByteString deserializeBytes(AttributeValue raw) {
-    return ByteString.copyFrom(raw.b().asByteArrayUnsafe());
-  }
-
-  public static AttributeValue serializeId(Id id) {
-    return AttributeValue.builder().b(SdkBytes.fromByteBuffer(id.getValue().asReadOnlyByteBuffer())).build();
-  }
-
-  /**
-   * Deserialize the given {code map} as the given {@link ValueType type}.
-   */
-  @SuppressWarnings("unchecked")
-  public static <V> V deserialize(ValueType valueType, Map<String, AttributeValue> item) {
-    checkType(valueType, item);
-    return (V) toConsumer(valueType, item);
-  }
-
-  // Adopted from ValueType.checkType()
-  private static void checkType(ValueType valueType, Map<String, AttributeValue> map) {
-    Preconditions.checkNotNull(map, "map parameter is null");
-    String loadedType = map.get(ValueType.SCHEMA_TYPE).s();
-    Id id = deserializeId(map.get(Store.KEY_NAME));
-    Preconditions.checkNotNull(loadedType, "Missing type tag for schema for id %s.", id.getHash());
-    Preconditions.checkArgument(valueType.getValueName().equals(loadedType),
-        "Expected schema for id %s to be of type '%s' but is actually '%s'.", id.getHash(), valueType.getValueName(), loadedType);
   }
 }

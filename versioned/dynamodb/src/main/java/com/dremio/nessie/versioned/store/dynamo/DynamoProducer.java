@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.versioned.store.dynamo;
 
 import java.util.Map;
@@ -22,6 +21,10 @@ import com.dremio.nessie.versioned.store.HasId;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+/**
+ * A producer implements the deserialization part and uses the consumers to build the
+ * deserialized objects.
+ */
 public interface DynamoProducer<E extends HasId> {
   E deserialize(Map<String, AttributeValue> entity);
 }

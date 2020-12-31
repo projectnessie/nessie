@@ -214,7 +214,6 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
   public L3Consumer<?> applyToConsumer(L3Consumer<?> consumer) {
     consumer.id(this.getId());
 
-    // TODO is this correct ??
     for (Entry<InternalKey, PositionDelta> keyDelta : this.map.entrySet()) {
       Key key = keyDelta.getKey().toKey();
       Id id = keyDelta.getValue().getNewId();
@@ -255,7 +254,6 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
               .addAllElements(key.getElements())
               .build());
 
-      // TODO is this correct ??
       PositionDelta delta = PositionDelta.of(0, id);
       PositionDelta old = keys.put(intKey, delta);
       if (old != null) {

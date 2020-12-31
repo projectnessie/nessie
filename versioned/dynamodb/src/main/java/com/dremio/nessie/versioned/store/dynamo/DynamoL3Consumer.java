@@ -15,13 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKey;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ID;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE_ID;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE_KEY;
-
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -62,7 +55,8 @@ class DynamoL3Consumer extends DynamoConsumer<DynamoL3Consumer> implements L3Con
 
   @Override
   Map<String, AttributeValue> getEntity() {
-    // TODO is this correct ??
+    // TODO add validation
+
     List<AttributeValue> maps = tree.entrySet().stream()
         .filter(e -> !e.getValue().isEmpty())
         .map(e ->
@@ -86,7 +80,6 @@ class DynamoL3Consumer extends DynamoConsumer<DynamoL3Consumer> implements L3Con
           .id(deserializeId(entity));
 
       if (entity.containsKey(TREE)) {
-        // TODO is this correct ??
         for (AttributeValue mapValue : entity.get(TREE).l()) {
           Map<String, AttributeValue> map = mapValue.m();
           Key key = deserializeKey(map.get(TREE_KEY));
