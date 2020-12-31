@@ -199,7 +199,6 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
 
   /**
    * TODO Javadoc for checkstyle.
-   * TODO Needs to be pulled up into {@link com.dremio.nessie.versioned.store.HasId}.
    */
   @Override
   public L1Consumer<?> applyToConsumer(L1Consumer<?> consumer) {

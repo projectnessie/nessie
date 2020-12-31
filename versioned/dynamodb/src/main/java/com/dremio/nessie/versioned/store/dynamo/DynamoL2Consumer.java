@@ -19,36 +19,25 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deseri
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdList;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ID;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE;
-import static java.util.stream.Collectors.toList;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import com.dremio.nessie.tiered.builder.L2Consumer;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.protobuf.ByteString;
 
-import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
 
-class DynamoL2Consumer implements L2Consumer<DynamoL2Consumer>, DynamoConsumer<DynamoL2Consumer> {
-
-  private final Map<String, Builder> entity;
+class DynamoL2Consumer extends DynamoConsumer<DynamoL2Consumer> implements L2Consumer<DynamoL2Consumer> {
 
   DynamoL2Consumer() {
-    entity = new HashMap<>();
-    entity.put("t", string(ValueType.L2.getValueName()));
+    super(ValueType.L2);
   }
 
   @Override
   public DynamoL2Consumer children(List<Id> ids) {
-    System.err.println("children " + ids);
     addIdList(TREE, ids);
     return this;
   }
@@ -64,45 +53,7 @@ class DynamoL2Consumer implements L2Consumer<DynamoL2Consumer>, DynamoConsumer<D
     return buildValuesMap(entity);
   }
 
-  private static Map<String, AttributeValue> buildValuesMap(Map<String, AttributeValue.Builder> source) {
-    return source.entrySet().stream()
-        .collect(Collectors.toMap(
-            Entry::getKey,
-            e -> e.getValue().build()
-        ));
-  }
-
-  private void addIdList(String key, List<Id> ids) {
-    addEntitySafe(key, idsList(ids));
-  }
-
-  private void addEntitySafe(String key, Builder value) {
-    Builder old = entity.put(key, value);
-    if (old != null) {
-      throw new IllegalStateException("Duplicate '" + key + "' in 'entity' map. Old={" + old + "} current={" + value + "}");
-    }
-  }
-
-  private static Builder idsList(List<Id> ids) {
-    List<AttributeValue> idsList = ids.stream()
-        .map(id -> bytes(id.getValue()).build())
-        .collect(toList());
-    return list(idsList);
-  }
-
-  private static Builder bytes(ByteString bytes) {
-    return AttributeValue.builder().b(SdkBytes.fromByteBuffer(bytes.asReadOnlyByteBuffer()));
-  }
-
-  private static Builder string(String string) {
-    return AttributeValue.builder().s(string);
-  }
-
-  private static Builder list(List<AttributeValue> list) {
-    return AttributeValue.builder().l(list);
-  }
-
-  public static class Producer implements DynamoProducer<L2> {
+  static class Producer implements DynamoProducer<L2> {
     @Override
     public L2 deserialize(Map<String, AttributeValue> entity) {
       L2.Builder builder = L2.builder()

@@ -17,6 +17,7 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -203,19 +204,23 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
 
   @Override
   public ValueType type() {
-    return ValueType.L2;
+    return ValueType.L3;
   }
 
   /**
    * TODO Javadoc for checkstyle.
-   * TODO Needs to be pulled up into {@link com.dremio.nessie.versioned.store.HasId}.
    */
   @Override
   public L3Consumer<?> applyToConsumer(L3Consumer<?> consumer) {
     consumer.id(this.getId());
 
-    if (true) {
-      throw new UnsupportedOperationException("IMPLEMENT ME");
+    // TODO is this correct ??
+    for (Entry<InternalKey, PositionDelta> keyDelta : this.map.entrySet()) {
+      Key key = keyDelta.getKey().toKey();
+      Id id = keyDelta.getValue().getNewId();
+      if (!id.isEmpty()) {
+        consumer.addKeyDelta(key, id);
+      }
     }
 
     return consumer;
@@ -250,8 +255,8 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
               .addAllElements(key.getElements())
               .build());
 
+      // TODO is this correct ??
       PositionDelta delta = PositionDelta.of(0, id);
-
       PositionDelta old = keys.put(intKey, delta);
       if (old != null) {
         throw new IllegalArgumentException("Key '" + key + "' added twice: " + old + " + " + delta);

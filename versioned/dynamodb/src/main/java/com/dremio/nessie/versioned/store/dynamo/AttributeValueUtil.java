@@ -146,7 +146,7 @@ public class AttributeValueUtil {
             + errors
             + "\nfromEntity:\n    "
             + ref.entrySet().stream().map(Object::toString).sorted().collect(Collectors.joining("\n    "))
-            + "\nfromEntity:\n    "
+            + "\nfromConsumer:\n    "
             + con.entrySet().stream().map(Object::toString).sorted().collect(Collectors.joining("\n    ")));
       }
 
