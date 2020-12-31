@@ -15,11 +15,14 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
-public class InternalCommitMetadata extends WrappedValueBean {
+public class InternalCommitMetadata extends WrappedValueBean implements Persistent<CommitMetadataConsumer<?>> {
 
   private InternalCommitMetadata(Id id, ByteString value) {
     super(id, value);
@@ -36,4 +39,37 @@ public class InternalCommitMetadata extends WrappedValueBean {
 
   public static final SimpleSchema<InternalCommitMetadata> SCHEMA =
       new WrappedValueBean.WrappedValueSchema<>(InternalCommitMetadata.class, InternalCommitMetadata::new);
+
+  @Override
+  public ValueType type() {
+    return ValueType.COMMIT_METADATA;
+  }
+
+  @Override
+  public CommitMetadataConsumer<?> applyToConsumer(CommitMetadataConsumer<?> consumer) {
+    consumer.id(getId());
+    consumer.value(getBytes());
+    return consumer;
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder extends AbstractBuilder<Builder> implements CommitMetadataConsumer<Builder> {
+
+    /**
+     * TODO javadoc.
+     */
+    public InternalCommitMetadata build() {
+      checkSet(id, "id");
+      checkSet(value, "value");
+
+      return new InternalCommitMetadata(id, value);
+    }
+
+    private static void checkSet(Object arg, String name) {
+      Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
+    }
+  }
 }

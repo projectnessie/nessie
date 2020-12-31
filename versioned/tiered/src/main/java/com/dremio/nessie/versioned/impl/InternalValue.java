@@ -15,14 +15,17 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 /**
  * Holds a VersionStore binary value for interaction with the Store.
  */
-public class InternalValue extends WrappedValueBean {
+public class InternalValue extends WrappedValueBean implements Persistent<ValueConsumer<?>> {
 
   private InternalValue(Id id, ByteString value) {
     super(id, value);
@@ -39,4 +42,37 @@ public class InternalValue extends WrappedValueBean {
 
   public static final SimpleSchema<InternalValue> SCHEMA =
       new WrappedValueBean.WrappedValueSchema<>(InternalValue.class, InternalValue::new);
+
+  @Override
+  public ValueType type() {
+    return ValueType.VALUE;
+  }
+
+  @Override
+  public ValueConsumer<?> applyToConsumer(ValueConsumer<?> consumer) {
+    consumer.id(getId());
+    consumer.value(getBytes());
+    return consumer;
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder extends AbstractBuilder<Builder> implements ValueConsumer<Builder> {
+
+    /**
+     * TODO javadoc.
+     */
+    public InternalValue build() {
+      checkSet(id, "id");
+      checkSet(value, "value");
+
+      return new InternalValue(id, value);
+    }
+
+    private static void checkSet(Object arg, String name) {
+      Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
+    }
+  }
 }

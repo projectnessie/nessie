@@ -35,13 +35,14 @@ import com.google.common.collect.ImmutableMap;
 
 public enum ValueType {
 
-  REF(InternalRef.class, InternalRef.SCHEMA, false, "r", "refs", false, null),
-  L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1", "l1", true, com.dremio.nessie.versioned.impl.L1::builder),
-  L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2", "l2", true, com.dremio.nessie.versioned.impl.L2::builder),
-  L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA, "l3", "l3", true, com.dremio.nessie.versioned.impl.L3::builder),
-  VALUE(InternalValue.class, InternalValue.SCHEMA, "v", "values", false, null),
-  KEY_FRAGMENT(Fragment.class, Fragment.SCHEMA, "k", "key_lists", false, null),
-  COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA, "m", "commit_metadata", false, null);
+  REF(InternalRef.class, InternalRef.SCHEMA, false, "r", "refs", com.dremio.nessie.versioned.impl.InternalRef::builder),
+  L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1", "l1", com.dremio.nessie.versioned.impl.L1::builder),
+  L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2", "l2", com.dremio.nessie.versioned.impl.L2::builder),
+  L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA, "l3", "l3", com.dremio.nessie.versioned.impl.L3::builder),
+  VALUE(InternalValue.class, InternalValue.SCHEMA, "v", "values", com.dremio.nessie.versioned.impl.InternalValue::builder),
+  KEY_FRAGMENT(Fragment.class, Fragment.SCHEMA, "k", "key_lists", com.dremio.nessie.versioned.impl.Fragment::builder),
+  COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA, "m", "commit_metadata",
+      com.dremio.nessie.versioned.impl.InternalCommitMetadata::builder);
 
   public static String SCHEMA_TYPE = "t";
 
@@ -53,25 +54,19 @@ public enum ValueType {
   private final String defaultTableSuffix;
   private final Supplier<HasIdConsumer<?>> consumerSupplier;
 
-  /**
-   * TODO remove this field once `Entity` has been removed.
-   */
-  private final boolean consumerized;
-
-  ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName, String defaultTableSuffix,
-      boolean consumerized, Supplier<HasIdConsumer<?>> consumerSupplier) {
-    this(objectClass, schema, true, valueName, defaultTableSuffix, consumerized, consumerSupplier);
+  ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName,
+      String defaultTableSuffix, Supplier<HasIdConsumer<?>> consumerSupplier) {
+    this(objectClass, schema, true, valueName, defaultTableSuffix, consumerSupplier);
   }
 
   ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable, String valueName,
-      String defaultTableSuffix, boolean consumerized, Supplier<HasIdConsumer<?>> consumerSupplier) {
+      String defaultTableSuffix, Supplier<HasIdConsumer<?>> consumerSupplier) {
     this.objectClass = objectClass;
     this.schema = schema;
     this.immutable = immutable;
     this.valueName = valueName;
     this.type = Entity.ofString(valueName);
     this.defaultTableSuffix = defaultTableSuffix;
-    this.consumerized = consumerized;
     this.consumerSupplier = consumerSupplier;
   }
 
@@ -85,13 +80,6 @@ public enum ValueType {
       }
     }
     throw new IllegalArgumentException("No ValueType for table '" + t + "'");
-  }
-
-  /**
-   * TODO remove this method once `Entity` has been removed.
-   */
-  public boolean isConsumerized() {
-    return consumerized;
   }
 
   /**

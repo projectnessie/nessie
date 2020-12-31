@@ -20,6 +20,7 @@ class DynamoConstants {
     // empty
   }
 
+
   static final String MUTATIONS = "mutations";
   static final String FRAGMENTS = "fragments";
   static final String IS_CHECKPOINT = "chk";
@@ -29,9 +30,21 @@ class DynamoConstants {
   static final String TREE = "tree";
   static final String TREE_KEY = "key";
   static final String TREE_ID = "id";
+  static final String TYPE = "type";
   static final String METADATA = "metadata";
   static final String PARENTS = "parents";
   static final String KEY_LIST = "keys";
   static final String KEY_ADDITION = "a";
   static final String KEY_REMOVAL = "d";
+  static final String VALUE = "value";
+  static final String NAME = "name";
+  static final String COMMIT = "commit";
+  static final String COMMITS = "commits";
+  static final String DELTAS = "deltas";
+  static final String PARENT = "parent";
+  static final String POSITION = "position";
+  static final String NEW_ID = "new";
+  static final String OLD_ID = "old";
+  static final String REF_TYPE_BRANCH = "b";
+  static final String REF_TYPE_TAG = "t";
 }

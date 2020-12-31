@@ -30,6 +30,7 @@ import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.core.SdkBytes;
@@ -45,7 +46,18 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> implements HasIdConsum
     entity.put("t", string(valueType.getValueName()));
   }
 
-  public abstract Map<String, AttributeValue> getEntity();
+  void addIdList(String key, List<Id> ids) {
+    addEntitySafe(key, idsList(ids));
+  }
+
+  void addEntitySafe(String key, Builder value) {
+    Builder old = entity.put(key, value);
+    if (old != null) {
+      throw new IllegalStateException("Duplicate '" + key + "' in 'entity' map. Old={" + old + "} current={" + value + "}");
+    }
+  }
+
+  abstract Map<String, AttributeValue> getEntity();
 
   /**
    * TODO add some javadoc.
@@ -59,6 +71,14 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> implements HasIdConsum
         return (DynamoConsumer<C>) new DynamoL2Consumer();
       case L3:
         return (DynamoConsumer<C>) new DynamoL3Consumer();
+      case COMMIT_METADATA:
+        return (DynamoConsumer<C>) new DynamoCommitMetadataConsumer();
+      case VALUE:
+        return (DynamoConsumer<C>) new DynamoValueConsumer();
+      case REF:
+        return (DynamoConsumer<C>) new DynamoRefConsumer();
+      case KEY_FRAGMENT:
+        return (DynamoConsumer<C>) new DynamoFragmentConsumer();
       default:
         throw new IllegalArgumentException("No DynamoConsumer implementation for " + type);
     }
@@ -76,19 +96,16 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> implements HasIdConsum
         return (P) new DynamoL2Consumer.Producer();
       case L3:
         return (P) new DynamoL3Consumer.Producer();
+      case COMMIT_METADATA:
+        return (P) new DynamoCommitMetadataConsumer.Producer();
+      case VALUE:
+        return (P) new DynamoValueConsumer.Producer();
+      case REF:
+        return (P) new DynamoRefConsumer.Producer();
+      case KEY_FRAGMENT:
+        return (P) new DynamoFragmentConsumer.Producer();
       default:
         throw new IllegalArgumentException("No DynamoConsumer implementation for " + type);
-    }
-  }
-
-  void addIdList(String key, List<Id> ids) {
-    addEntitySafe(key, idsList(ids));
-  }
-
-  void addEntitySafe(String key, Builder value) {
-    Builder old = entity.put(key, value);
-    if (old != null) {
-      throw new IllegalStateException("Duplicate '" + key + "' in 'entity' map. Old={" + old + "} current={" + value + "}");
     }
   }
 
@@ -120,7 +137,11 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> implements HasIdConsum
   }
 
   static AttributeValue idValue(Id id) {
-    return bytes(id.getValue()).build();
+    return idBuilder(id).build();
+  }
+
+  static Builder idBuilder(Id id) {
+    return bytes(id.getValue());
   }
 
   static Builder bytes(ByteString bytes) {
@@ -147,14 +168,22 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> implements HasIdConsum
     return map(Collections.singletonMap(key, value));
   }
 
-  static Builder dualMap(String key1, AttributeValue value1, String key2, AttributeValue value2) {
+  static Map<String, AttributeValue> dualMap(String key1, AttributeValue value1, String key2, AttributeValue value2) {
     Map<String, AttributeValue> map = new HashMap<>();
     map.put(key1, value1);
     map.put(key2, value2);
-    return map(map);
+    return map;
   }
 
   static Builder map(Map<String, AttributeValue> map) {
     return AttributeValue.builder().m(map);
+  }
+
+  static void checkCalled(Object arg, String name) {
+    Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
+  }
+
+  static void checkSet(Object arg, String name) {
+    Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
   }
 }

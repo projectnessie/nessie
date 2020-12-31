@@ -15,22 +15,33 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.dremio.nessie.tiered.builder.FragmentConsumer;
+import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-public class Fragment extends MemoizedId {
+public class Fragment extends MemoizedId implements Persistent<FragmentConsumer<?>> {
 
   private final List<InternalKey> keys;
 
   public Fragment(List<InternalKey> keys) {
     super();
+    this.keys = ImmutableList.copyOf(keys);
+  }
+
+  public Fragment(Id id, List<InternalKey> keys) {
+    super(id);
     this.keys = ImmutableList.copyOf(keys);
   }
 
@@ -65,4 +76,78 @@ public class Fragment extends MemoizedId {
 
   };
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Fragment fragment = (Fragment) o;
+    return Objects.equal(keys, fragment.keys);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(keys);
+  }
+
+  @Override
+  public ValueType type() {
+    return ValueType.KEY_FRAGMENT;
+  }
+
+  @Override
+  public FragmentConsumer<?> applyToConsumer(FragmentConsumer<?> consumer) {
+    consumer.id(getId());
+    for (InternalKey key : keys) {
+      consumer.addKey(key.toKey());
+    }
+    return consumer;
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder implements FragmentConsumer<Fragment.Builder> {
+
+    private Id id;
+    private final List<Key> keys = new ArrayList<>();
+
+    @Override
+    public Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
+    }
+
+    @Override
+    public Builder addKey(Key key) {
+      keys.add(key);
+      return this;
+    }
+
+    /**
+     * TODO javadoc.
+     */
+    public Fragment build() {
+      checkSet(id, "id");
+
+      List<InternalKey> intKeys = keys.stream()
+          .map(InternalKey::new)
+          .collect(Collectors.toList());
+
+      return new Fragment(id, intKeys);
+    }
+
+    private static void checkCalled(Object arg, String name) {
+      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
+    }
+
+    private static void checkSet(Object arg, String name) {
+      Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
+    }
+  }
 }

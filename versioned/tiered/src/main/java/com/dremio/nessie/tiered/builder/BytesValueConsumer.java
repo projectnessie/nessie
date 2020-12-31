@@ -15,15 +15,15 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import com.dremio.nessie.versioned.Key;
+import com.google.protobuf.ByteString;
 
-public interface FragmentConsumer<T extends FragmentConsumer<T>> extends HasIdConsumer<T> {
-
+public interface BytesValueConsumer<T extends BytesValueConsumer<T>> extends HasIdConsumer<T> {
   /**
-   * The commit metadata id for this l1.
+   * The value for this l1.
    *
-   * @param key The id to add.
+   * <p>Can be called once.
+   * @param value The value to set.
    * @return This consumer.
    */
-  T addKey(Key key);
+  T value(ByteString value);
 }

@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
@@ -43,6 +44,7 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -106,7 +108,7 @@ import com.google.common.primitives.Ints;
  * <li>The ids for all saved commits will exist in the L1 table.
  * </ol>
  */
-class InternalBranch extends MemoizedId implements InternalRef {
+class InternalBranch extends MemoizedId implements InternalRef, Persistent<RefConsumer<?>> {
 
   static final String ID = "id";
   static final String NAME = "name";
@@ -141,7 +143,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
         ImmutableList.of(new Commit(target.getId(), target.getMetadataId(), target.getParentId())));
   }
 
-  private InternalBranch(Id id, String name, IdMap tree, Id metadata, List<Commit> commits) {
+  InternalBranch(Id id, String name, IdMap tree, Id metadata, List<Commit> commits) {
     super(id);
     this.metadata = metadata;
     this.name = name;
@@ -204,6 +206,28 @@ class InternalBranch extends MemoizedId implements InternalRef {
 
     public Entity toEntity() {
       return Entity.ofMap(SCHEMA.itemToMap(this, true));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      Commit commit1 = (Commit) o;
+      return Objects.equal(saved, commit1.saved)
+          && Objects.equal(id, commit1.id)
+          && Objects.equal(commit, commit1.commit)
+          && Objects.equal(parent, commit1.parent)
+          && Objects.equal(deltas, commit1.deltas)
+          && KeyMutationList.equalsIgnoreOrder(keyMutationList, commit1.keyMutationList);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(saved, id, commit, parent, deltas, keyMutationList);
     }
 
     static final SimpleSchema<Commit> SCHEMA = new SimpleSchema<Commit>(Commit.class) {
@@ -510,6 +534,24 @@ class InternalBranch extends MemoizedId implements InternalRef {
       return tree.withId(position,  oldId);
     }
 
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      UnsavedDelta that = (UnsavedDelta) o;
+      return position == that.position && Objects.equal(oldId, that.oldId)
+          && Objects.equal(newId, that.newId);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(position, oldId, newId);
+    }
+
     static final SimpleSchema<UnsavedDelta> SCHEMA = new SimpleSchema<UnsavedDelta>(UnsavedDelta.class) {
 
       @Override
@@ -571,6 +613,35 @@ class InternalBranch extends MemoizedId implements InternalRef {
   @Override
   public InternalBranch getBranch() {
     return this;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    InternalBranch that = (InternalBranch) o;
+    return Objects.equal(name, that.name) && Objects
+        .equal(tree, that.tree) && Objects.equal(metadata, that.metadata)
+        && Objects.equal(commits, that.commits);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(name, tree, metadata, commits);
+  }
+
+  @Override
+  public ValueType type() {
+    return ValueType.REF;
+  }
+
+  @Override
+  public RefConsumer<?> applyToConsumer(RefConsumer<?> consumer) {
+    throw new UnsupportedOperationException("IMPLEMENT ME");
   }
 
 }
