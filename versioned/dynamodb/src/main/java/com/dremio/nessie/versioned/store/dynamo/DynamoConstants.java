@@ -15,11 +15,10 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-class DynamoConstants {
-  private DynamoConstants() {
+abstract class DynamoConstants {
+  DynamoConstants() {
     // empty
   }
-
 
   static final String MUTATIONS = "mutations";
   static final String FRAGMENTS = "fragments";

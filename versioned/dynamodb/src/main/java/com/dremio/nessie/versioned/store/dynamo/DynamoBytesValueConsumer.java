@@ -16,9 +16,6 @@
 
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ID;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.VALUE;
-
 import java.util.Map;
 
 import com.dremio.nessie.tiered.builder.ValueConsumer;
@@ -28,7 +25,7 @@ import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class DynamoBytesValueConsumer<T extends DynamoBytesValueConsumer<T>> extends DynamoConsumer<T> implements
+class DynamoBytesValueConsumer<T extends DynamoBytesValueConsumer<T>> extends DynamoConsumer<T> implements
     ValueConsumer<T> {
 
   DynamoBytesValueConsumer(ValueType valueType) {
@@ -49,6 +46,8 @@ public class DynamoBytesValueConsumer<T extends DynamoBytesValueConsumer<T>> ext
 
   @Override
   Map<String, AttributeValue> getEntity() {
+    // TODO add validation
+
     return buildValuesMap(entity);
   }
 }

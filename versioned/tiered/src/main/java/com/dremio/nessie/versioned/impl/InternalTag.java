@@ -115,7 +115,9 @@ class InternalTag extends MemoizedId implements InternalRef, Persistent<RefConsu
 
   @Override
   public RefConsumer<?> applyToConsumer(RefConsumer<?> consumer) {
-    throw new UnsupportedOperationException("IMPLEMENT ME");
+    return consumer.id(getId())
+        .name(name)
+        .commit(commit);
   }
 
 }

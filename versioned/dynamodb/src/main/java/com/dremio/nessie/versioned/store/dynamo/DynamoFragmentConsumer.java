@@ -16,11 +16,6 @@
 
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKey;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ID;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_LIST;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +29,7 @@ import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class DynamoFragmentConsumer extends DynamoConsumer<DynamoFragmentConsumer> implements
+class DynamoFragmentConsumer extends DynamoConsumer<DynamoFragmentConsumer> implements
     FragmentConsumer<DynamoFragmentConsumer> {
 
   private Id id;
@@ -58,6 +53,8 @@ public class DynamoFragmentConsumer extends DynamoConsumer<DynamoFragmentConsume
 
   @Override
   Map<String, AttributeValue> getEntity() {
+    // TODO add validation
+
     addEntitySafe(
         KEY_LIST,
         AttributeValue.builder().l(keys.stream()

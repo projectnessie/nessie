@@ -15,23 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdList;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeInt;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKey;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.DISTANCE;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.FRAGMENTS;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ID;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.IS_CHECKPOINT;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_ADDITION;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_LIST;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_REMOVAL;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.METADATA;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.MUTATIONS;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ORIGIN;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.PARENTS;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -143,7 +126,8 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
 
   @Override
   Map<String, AttributeValue> getEntity() {
-    // TODO the original 'toEntity' implementation adds empty 'mutations' - is that necessary?
+    // TODO add validation
+
     addKeysSafe(MUTATIONS, list(buildValues(keysMutations)));
     if (!keys.isEmpty()) {
       addEntitySafe(KEY_LIST, map(buildValuesMap(keys)));
@@ -165,22 +149,22 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
           .id(deserializeId(entity));
 
       if (entity.containsKey(METADATA)) {
-        builder = builder.commitMetadataId(deserializeId(entity.get(METADATA)));
+        builder.commitMetadataId(deserializeId(entity.get(METADATA)));
       }
       if (entity.containsKey(TREE)) {
-        builder = builder.children(deserializeIdList(entity.get(TREE)));
+        builder.children(deserializeIdList(entity.get(TREE)));
       }
       if (entity.containsKey(PARENTS)) {
-        builder = builder.addAncestors(deserializeIdList(entity.get(PARENTS)));
+        builder.addAncestors(deserializeIdList(entity.get(PARENTS)));
       }
       if (entity.containsKey(KEY_LIST)) {
         Map<String, AttributeValue> keys = entity.get(KEY_LIST).m();
         Boolean checkpoint = keys.get(IS_CHECKPOINT).bool();
         if (checkpoint != null) {
           if (checkpoint) {
-            builder = builder.completeKeyList(deserializeIdList(keys.get(FRAGMENTS)));
+            builder.completeKeyList(deserializeIdList(keys.get(FRAGMENTS)));
           } else {
-            builder = builder.incrementalKeyList(
+            builder.incrementalKeyList(
                 deserializeId(keys.get(ORIGIN)),
                 deserializeInt(keys.get(DISTANCE))
             );
@@ -189,20 +173,11 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
         // See com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.addKeyMutation about a
         // proposal to simplify this one.
         List<AttributeValue> mutations = keys.get(MUTATIONS).l();
-        for (AttributeValue mutation : mutations) {
-          Map<String, AttributeValue> m = mutation.m();
-          if (m.size() > 2) {
-            throw new IllegalStateException("Ugh - got a keys.mutations map like this: " + m);
-          }
-          AttributeValue raw = m.get(KEY_ADDITION);
-          if (raw != null) {
-            builder = builder.addKeyAddition(deserializeKey(raw));
-          }
-          raw = m.get(KEY_REMOVAL);
-          if (raw != null) {
-            builder = builder.addKeyRemoval(deserializeKey(raw));
-          }
-        }
+        deserializeKeyMutations(
+            mutations,
+            builder::addKeyAddition,
+            builder::addKeyRemoval
+        );
       }
 
       return builder.build();
