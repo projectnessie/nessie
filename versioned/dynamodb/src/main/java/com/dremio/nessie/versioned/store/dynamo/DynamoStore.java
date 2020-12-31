@@ -15,11 +15,13 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConsumer.serializeId;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserialize;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serialize;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -170,7 +172,7 @@ public class DynamoStore implements Store {
         Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
           List<LoadOp<?>> loadList = l.get(table);
           List<Map<String, AttributeValue>> keys = loadList.stream()
-              .map(load -> ImmutableMap.of(KEY_NAME, AttributeValueUtil.fromEntity(load.getId().toEntity())))
+              .map(load -> ImmutableMap.of(KEY_NAME, serializeId(load.getId())))
               .collect(Collectors.toList());
           return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
         }));
@@ -287,7 +289,7 @@ public class DynamoStore implements Store {
   @Override
   public boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) {
     DeleteItemRequest.Builder delete = DeleteItemRequest.builder()
-        .key(AttributeValueUtil.fromEntity(id.toKeyMap()))
+        .key(Collections.singletonMap(DynamoConstants.ID, serializeId(id)))
         .tableName(tableNames.get(type));
 
     AliasCollectorImpl collector = new AliasCollectorImpl();
@@ -340,7 +342,7 @@ public class DynamoStore implements Store {
   public <V> V loadSingle(ValueType valueType, Id id) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
         .tableName(tableNames.get(valueType))
-        .key(ImmutableMap.of(KEY_NAME, DynamoConsumer.serializeId(id)))
+        .key(ImmutableMap.of(KEY_NAME, serializeId(id)))
         .consistentRead(true)
         .build());
     if (!response.hasItem()) {
@@ -360,7 +362,7 @@ public class DynamoStore implements Store {
       UpdateItemRequest.Builder updateRequest = collector.apply(UpdateItemRequest.builder())
           .returnValues(ReturnValue.ALL_NEW)
           .tableName(tableNames.get(type))
-          .key(ImmutableMap.of(KEY_NAME, DynamoConsumer.serializeId(id)))
+          .key(ImmutableMap.of(KEY_NAME, serializeId(id)))
           .updateExpression(aliased.toUpdateExpressionString());
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
       UpdateItemRequest builtRequest = updateRequest.build();
