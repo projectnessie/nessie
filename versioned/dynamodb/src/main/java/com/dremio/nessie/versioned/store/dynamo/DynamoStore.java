@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserialize;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serialize;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
+import com.dremio.nessie.versioned.impl.Persistent;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -43,7 +47,6 @@ import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -92,7 +95,6 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 public class DynamoStore implements Store {
-
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
@@ -199,12 +201,12 @@ public class DynamoStore implements Store {
             Map<String, AttributeValue> item = values.get(i);
             // cheap and dirty until more consumers are implemented
             ValueType valueType = ValueType.byValueName(item.get("t").s());
-            Id id = AttributeValueUtil.deserializeId(item);
+            Id id = DynamoConsumer.deserializeId(item);
             LoadOp<? extends HasId> loadOp = opMap.get(id);
             if (loadOp == null) {
               throw new IllegalStateException("No load-op for loaded ID " + id);
             }
-            loadOp.loaded(AttributeValueUtil.deserialize(valueType, item));
+            loadOp.loaded(deserialize(valueType, item));
           }
         }
       }
@@ -261,8 +263,8 @@ public class DynamoStore implements Store {
   public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
-    Map<String, AttributeValue> attributes = AttributeValueUtil.fromEntity(
-        type.addType(((SimpleSchema<V>)type.getSchema()).itemToMap(value, true)));
+    Persistent<DynamoConsumer<?>> persistent = (Persistent<DynamoConsumer<?>>) value;
+    Map<String, AttributeValue> attributes = serialize(type, persistent);
 
     PutItemRequest.Builder builder = PutItemRequest.builder()
         .tableName(tableNames.get(type))
@@ -312,7 +314,8 @@ public class DynamoStore implements Store {
       ListMultimap<String, SaveOp<?>> mm =
           Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save ->
-          WriteRequest.builder().putRequest(PutRequest.builder().item(AttributeValueUtil.fromSaveOp(save)).build())
+          WriteRequest.builder().putRequest(PutRequest.builder().item(
+              serialize(save.getType(), save.getValue())).build())
                     .build());
       BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
       saves.add(async.batchWriteItem(batch));
@@ -337,13 +340,13 @@ public class DynamoStore implements Store {
   public <V> V loadSingle(ValueType valueType, Id id) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
         .tableName(tableNames.get(valueType))
-        .key(ImmutableMap.of(KEY_NAME, AttributeValueUtil.serializeId(id)))
+        .key(ImmutableMap.of(KEY_NAME, DynamoConsumer.serializeId(id)))
         .consistentRead(true)
         .build());
     if (!response.hasItem()) {
       throw new NotFoundException("Unable to load item.");
     }
-    return AttributeValueUtil.deserialize(valueType, response.item());
+    return deserialize(valueType, response.item());
   }
 
   @Override
@@ -357,12 +360,12 @@ public class DynamoStore implements Store {
       UpdateItemRequest.Builder updateRequest = collector.apply(UpdateItemRequest.builder())
           .returnValues(ReturnValue.ALL_NEW)
           .tableName(tableNames.get(type))
-          .key(ImmutableMap.of(KEY_NAME, AttributeValueUtil.serializeId(id)))
+          .key(ImmutableMap.of(KEY_NAME, DynamoConsumer.serializeId(id)))
           .updateExpression(aliased.toUpdateExpressionString());
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
       UpdateItemRequest builtRequest = updateRequest.build();
       UpdateItemResponse response = client.updateItem(builtRequest);
-      return Optional.of(AttributeValueUtil.deserialize(type, response.attributes()));
+      return Optional.of(deserialize(type, response.attributes()));
     } catch (ResourceNotFoundException ex) {
       throw new NotFoundException("Unable to find value.", ex);
     } catch (ConditionalCheckFailedException checkFailed) {
@@ -390,7 +393,7 @@ public class DynamoStore implements Store {
     return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
         .stream()
         .flatMap(r -> r.items().stream())
-        .map(i -> AttributeValueUtil.deserialize(type, i));
+        .map(i -> deserialize(type, i));
   }
 
   private final void createIfMissing(String name) {

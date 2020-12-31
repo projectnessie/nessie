@@ -133,6 +133,7 @@ public class AliasCollectorImpl implements AliasCollector {
    * @param value The value to be held.
    * @return The name used to reference the aliased value.
    */
+  // TODO refactor to prevent the use of `Entity` and replace with `AttributeValue`
   public String alias(Entity value) {
     String escaped = ":v" + counter;
     attributeValues.put(escaped, AttributeValueUtil.fromEntity(value));

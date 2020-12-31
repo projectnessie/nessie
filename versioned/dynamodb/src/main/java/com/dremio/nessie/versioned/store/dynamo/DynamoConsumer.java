@@ -23,12 +23,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
@@ -38,7 +41,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
 import software.amazon.awssdk.utils.builder.SdkBuilder;
 
-abstract class DynamoConsumer<C extends HasIdConsumer<C>> implements HasIdConsumer<C> {
+abstract class DynamoConsumer<C extends HasIdConsumer<C>> extends DynamoConstants implements HasIdConsumer<C> {
 
   protected final Map<String, Builder> entity = new HashMap<>();
 
@@ -185,5 +188,61 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> implements HasIdConsum
 
   static void checkSet(Object arg, String name) {
     Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
+  }
+
+  static void deserializeKeyMutations(
+      List<AttributeValue> mutations,
+      Consumer<Key> addConsumer,
+      Consumer<Key> removalConsumer
+  ) {
+    for (AttributeValue mutation : mutations) {
+      Map<String, AttributeValue> m = mutation.m();
+      if (m.size() > 2) {
+        throw new IllegalStateException("Ugh - got a keys.mutations map like this: " + m);
+      }
+      AttributeValue raw = m.get(KEY_ADDITION);
+      if (raw != null) {
+        addConsumer.accept(deserializeKey(raw));
+      }
+      raw = m.get(KEY_REMOVAL);
+      if (raw != null) {
+        removalConsumer.accept(deserializeKey(raw));
+      }
+    }
+  }
+
+  static Key deserializeKey(AttributeValue raw) {
+    ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
+    for (AttributeValue keyPart : raw.l()) {
+      keyBuilder.addElements(keyPart.s());
+    }
+    return keyBuilder.build();
+  }
+
+  static List<Id> deserializeIdList(AttributeValue raw) {
+    return raw.l()
+        .stream()
+        .map(DynamoConsumer::deserializeId)
+        .collect(toList());
+  }
+
+  static Id deserializeId(Map<String, AttributeValue> item) {
+    return deserializeId(item.get(Store.KEY_NAME));
+  }
+
+  static Id deserializeId(AttributeValue raw) {
+    return Id.of(raw.b().asByteArrayUnsafe());
+  }
+
+  static int deserializeInt(AttributeValue v) {
+    return Integer.parseInt(v.n());
+  }
+
+  static ByteString deserializeBytes(AttributeValue raw) {
+    return ByteString.copyFrom(raw.b().asByteArrayUnsafe());
+  }
+
+  static AttributeValue serializeId(Id id) {
+    return AttributeValue.builder().b(SdkBytes.fromByteBuffer(id.getValue().asReadOnlyByteBuffer())).build();
   }
 }
