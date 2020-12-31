@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.tiered.builder.RefConsumer.BranchCommit;
 import com.dremio.nessie.tiered.builder.RefConsumer.BranchUnsavedDelta;
+import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
@@ -646,10 +647,10 @@ class InternalBranch extends MemoizedId implements InternalRef, Persistent<RefCo
   public RefConsumer<?> applyToConsumer(RefConsumer<?> consumer) {
     ArrayList<Id> children = new ArrayList<>();
     this.tree.iterator().forEachRemaining(children::add);
-    consumer.children(children);
 
     return consumer.id(getId())
         .name(name)
+        .type(RefType.BRANCH)
         .metadata(metadata)
         .children(children)
         .commits(commits.stream()
