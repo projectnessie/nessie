@@ -15,29 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdList;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeInt;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKey;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.serializeId;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.COMMIT;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.COMMITS;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.DELTAS;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ID;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_ADDITION;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_LIST;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_REMOVAL;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.METADATA;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.NAME;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.NEW_ID;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.OLD_ID;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.PARENT;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.POSITION;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.REF_TYPE_BRANCH;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.REF_TYPE_TAG;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TYPE;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +29,7 @@ import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> implements
+class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> implements
     RefConsumer<DynamoRefConsumer> {
 
   DynamoRefConsumer() {
@@ -155,6 +132,8 @@ public class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> impleme
 
   @Override
   Map<String, AttributeValue> getEntity() {
+    // TODO add validation
+
     return buildValuesMap(entity);
   }
 
@@ -209,21 +188,11 @@ public class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> impleme
       List<Key> keyAdditions = new ArrayList<>();
       List<Key> keyRemovals = new ArrayList<>();
 
-      map.get(KEY_LIST).l().stream()
-          .map(AttributeValue::m)
-          .forEach(m -> {
-            if (m.size() > 2) {
-              throw new IllegalStateException("Ugh - got a keys.mutations map like this: " + m);
-            }
-            AttributeValue raw = m.get(KEY_ADDITION);
-            if (raw != null) {
-              keyAdditions.add(deserializeKey(raw));
-            }
-            raw = m.get(KEY_REMOVAL);
-            if (raw != null) {
-              keyRemovals.add(deserializeKey(raw));
-            }
-          });
+      deserializeKeyMutations(
+          map.get(KEY_LIST).l(),
+          keyAdditions::add,
+          keyRemovals::add
+      );
 
       return new BranchCommit(
           id,

@@ -15,11 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdList;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ID;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE;
-
 import java.util.List;
 import java.util.Map;
 
@@ -50,6 +45,8 @@ class DynamoL2Consumer extends DynamoConsumer<DynamoL2Consumer> implements L2Con
 
   @Override
   Map<String, AttributeValue> getEntity() {
+    // TODO add validation
+
     return buildValuesMap(entity);
   }
 

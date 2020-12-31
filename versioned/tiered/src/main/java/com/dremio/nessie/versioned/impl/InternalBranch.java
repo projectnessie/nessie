@@ -30,6 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.tiered.builder.RefConsumer.BranchCommit;
+import com.dremio.nessie.tiered.builder.RefConsumer.BranchUnsavedDelta;
+import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
@@ -641,7 +644,53 @@ class InternalBranch extends MemoizedId implements InternalRef, Persistent<RefCo
 
   @Override
   public RefConsumer<?> applyToConsumer(RefConsumer<?> consumer) {
-    throw new UnsupportedOperationException("IMPLEMENT ME");
+    ArrayList<Id> children = new ArrayList<>();
+    this.tree.iterator().forEachRemaining(children::add);
+    consumer.children(children);
+
+    return consumer.id(getId())
+        .name(name)
+        .metadata(metadata)
+        .children(children)
+        .commits(commits.stream()
+        .map(c -> {
+          if (c.saved) {
+            return new BranchCommit(c.id, c.commit, c.parent);
+          }
+
+          List<Key> keyAdditions = new ArrayList<>();
+          List<Key> keyRemovals = new ArrayList<>();
+
+          List<BranchUnsavedDelta> deltas = c.deltas.stream()
+              .map(d -> new RefConsumer.BranchUnsavedDelta(
+                  d.position,
+                  d.oldId,
+                  d.newId
+              ))
+              .collect(Collectors.toList());
+
+          c.keyMutationList.getMutations().forEach(km -> {
+            switch (km.getType()) {
+              case ADDITION:
+                keyAdditions.add(km.getKey().toKey());
+                break;
+              case REMOVAL:
+                keyRemovals.add(km.getKey().toKey());
+                break;
+              default:
+                throw new UnsupportedOperationException(km.getType().name());
+            }
+          });
+
+          return new BranchCommit(
+              c.id,
+              c.commit,
+              deltas,
+              keyAdditions,
+              keyRemovals
+          );
+        })
+        .collect(Collectors.toList()));
   }
 
 }
