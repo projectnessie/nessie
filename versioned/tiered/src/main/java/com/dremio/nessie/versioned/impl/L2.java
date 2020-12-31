@@ -126,7 +126,6 @@ public class L2 extends MemoizedId implements Persistent<L2Consumer<?>> {
 
   /**
    * TODO Javadoc for checkstyle.
-   * TODO Needs to be pulled up into {@link com.dremio.nessie.versioned.store.HasId}.
    */
   @Override
   public L2Consumer<?> applyToConsumer(L2Consumer<?> consumer) {

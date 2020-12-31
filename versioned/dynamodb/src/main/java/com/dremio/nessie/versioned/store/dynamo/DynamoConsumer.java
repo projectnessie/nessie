@@ -16,16 +16,36 @@
 
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static java.util.stream.Collectors.toList;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.protobuf.ByteString;
 
+import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
+import software.amazon.awssdk.utils.builder.SdkBuilder;
 
-public interface DynamoConsumer<C extends HasIdConsumer<C>> extends HasIdConsumer<C> {
-  Map<String, AttributeValue> getEntity();
+abstract class DynamoConsumer<C extends HasIdConsumer<C>> implements HasIdConsumer<C> {
+
+  protected final Map<String, Builder> entity = new HashMap<>();
+
+  DynamoConsumer(ValueType valueType) {
+    entity.put("t", string(valueType.getValueName()));
+  }
+
+  public abstract Map<String, AttributeValue> getEntity();
 
   /**
    * TODO add some javadoc.
@@ -59,5 +79,82 @@ public interface DynamoConsumer<C extends HasIdConsumer<C>> extends HasIdConsume
       default:
         throw new IllegalArgumentException("No DynamoConsumer implementation for " + type);
     }
+  }
+
+  void addIdList(String key, List<Id> ids) {
+    addEntitySafe(key, idsList(ids));
+  }
+
+  void addEntitySafe(String key, Builder value) {
+    Builder old = entity.put(key, value);
+    if (old != null) {
+      throw new IllegalStateException("Duplicate '" + key + "' in 'entity' map. Old={" + old + "} current={" + value + "}");
+    }
+  }
+
+  static AttributeValue keyList(Key key) {
+    return list(key.getElements().stream()
+        .map(elem -> string(elem).build()).collect(toList()))
+        .build();
+  }
+
+  static Builder idsList(List<Id> ids) {
+    List<AttributeValue> idsList = ids.stream()
+        .map(DynamoConsumer::idValue)
+        .collect(toList());
+    return list(idsList);
+  }
+
+  static Map<String, AttributeValue> buildValuesMap(Map<String, AttributeValue.Builder> source) {
+    return source.entrySet().stream()
+        .collect(Collectors.toMap(
+            Entry::getKey,
+            e -> e.getValue().build()
+        ));
+  }
+
+  static List<AttributeValue> buildValues(List<AttributeValue.Builder> source) {
+    return source.stream()
+        .map(SdkBuilder::build)
+        .collect(toList());
+  }
+
+  static AttributeValue idValue(Id id) {
+    return bytes(id.getValue()).build();
+  }
+
+  static Builder bytes(ByteString bytes) {
+    return AttributeValue.builder().b(SdkBytes.fromByteBuffer(bytes.asReadOnlyByteBuffer()));
+  }
+
+  static Builder bool(boolean bool) {
+    return AttributeValue.builder().bool(bool);
+  }
+
+  static Builder number(int number) {
+    return AttributeValue.builder().n(Integer.toString(number));
+  }
+
+  static Builder string(String string) {
+    return AttributeValue.builder().s(string);
+  }
+
+  static Builder list(List<AttributeValue> list) {
+    return AttributeValue.builder().l(list);
+  }
+
+  static Builder singletonMap(String key, AttributeValue value) {
+    return map(Collections.singletonMap(key, value));
+  }
+
+  static Builder dualMap(String key1, AttributeValue value1, String key2, AttributeValue value2) {
+    Map<String, AttributeValue> map = new HashMap<>();
+    map.put(key1, value1);
+    map.put(key2, value2);
+    return map(map);
+  }
+
+  static Builder map(Map<String, AttributeValue> map) {
+    return AttributeValue.builder().m(map);
   }
 }

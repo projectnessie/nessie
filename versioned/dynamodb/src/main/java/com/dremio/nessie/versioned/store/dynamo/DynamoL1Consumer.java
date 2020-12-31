@@ -30,37 +30,28 @@ import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.MUTATIONS
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.ORIGIN;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.PARENTS;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.TREE;
-import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.protobuf.ByteString;
 
-import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
-import software.amazon.awssdk.utils.builder.SdkBuilder;
 
-class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer>, DynamoConsumer<DynamoL1Consumer> {
+class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Consumer<DynamoL1Consumer> {
 
-  private final Map<String, AttributeValue.Builder> entity;
   private final Map<String, AttributeValue.Builder> keys;
   private final List<AttributeValue.Builder> keysMutations;
 
   DynamoL1Consumer() {
-    entity = new HashMap<>();
-    entity.put("t", string(ValueType.L1.getValueName()));
+    super(ValueType.L1);
     keys = new HashMap<>();
     keysMutations = new ArrayList<>();
   }
@@ -73,14 +64,12 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer>, DynamoConsumer<D
 
   @Override
   public DynamoL1Consumer addAncestors(List<Id> ids) {
-    System.err.println("addAncestors " + ids);
     addIdList(PARENTS, ids);
     return this;
   }
 
   @Override
   public DynamoL1Consumer children(List<Id> ids) {
-    System.err.println("children " + ids);
     addIdList(TREE, ids);
     return this;
   }
@@ -93,14 +82,12 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer>, DynamoConsumer<D
 
   @Override
   public DynamoL1Consumer addKeyAddition(Key key) {
-    System.err.println("addKeyAddition " + key);
     addKeyMutation(true, key);
     return this;
   }
 
   @Override
   public DynamoL1Consumer addKeyRemoval(Key key) {
-    System.err.println("addKeyRemoval " + key);
     addKeyMutation(false, key);
     return this;
   }
@@ -135,19 +122,11 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer>, DynamoConsumer<D
     // And each "byte-string" is our custom serialzation of a key-path.
     // TL;DR a quite flat structure.
 
-    keysMutations.add(
-        map(Collections.singletonMap(
-            addRemove,
-            list(key.getElements().stream()
-                .map(elem -> string(elem).build()).collect(toList()))
-                .build())
-        )
-    );
+    keysMutations.add(singletonMap(addRemove, keyList(key)));
   }
 
   @Override
   public DynamoL1Consumer incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
-    System.err.println("incrementalKeyList " + checkpointId + " " + distanceFromCheckpoint);
     addKeysSafe(IS_CHECKPOINT, bool(false));
     addKeysSafe(ORIGIN, bytes(checkpointId.getValue()));
     addKeysSafe(DISTANCE, number(distanceFromCheckpoint));
@@ -156,7 +135,6 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer>, DynamoConsumer<D
 
   @Override
   public DynamoL1Consumer completeKeyList(List<Id> fragmentIds) {
-    System.err.println("fragmentIds " + fragmentIds);
     addKeysSafe(IS_CHECKPOINT, bool(true));
     addKeysSafe(FRAGMENTS, idsList(fragmentIds));
     return this;
@@ -172,17 +150,6 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer>, DynamoConsumer<D
     return buildValuesMap(entity);
   }
 
-  private void addIdList(String key, List<Id> ids) {
-    addEntitySafe(key, idsList(ids));
-  }
-
-  private void addEntitySafe(String key, Builder value) {
-    Builder old = entity.put(key, value);
-    if (old != null) {
-      throw new IllegalStateException("Duplicate '" + key + "' in 'entity' map. Old={" + old + "} current={" + value + "}");
-    }
-  }
-
   private void addKeysSafe(String key, Builder value) {
     Builder old = keys.put(key, value);
     if (old != null) {
@@ -190,52 +157,7 @@ class DynamoL1Consumer implements L1Consumer<DynamoL1Consumer>, DynamoConsumer<D
     }
   }
 
-  private static Builder idsList(List<Id> ids) {
-    List<AttributeValue> idsList = ids.stream()
-        .map(id -> bytes(id.getValue()).build())
-        .collect(toList());
-    return list(idsList);
-  }
-
-  private static Map<String, AttributeValue> buildValuesMap(Map<String, AttributeValue.Builder> source) {
-    return source.entrySet().stream()
-        .collect(Collectors.toMap(
-            Entry::getKey,
-            e -> e.getValue().build()
-        ));
-  }
-
-  private static List<AttributeValue> buildValues(List<AttributeValue.Builder> source) {
-    return source.stream()
-        .map(SdkBuilder::build)
-        .collect(toList());
-  }
-
-  private static Builder bytes(ByteString bytes) {
-    return AttributeValue.builder().b(SdkBytes.fromByteBuffer(bytes.asReadOnlyByteBuffer()));
-  }
-
-  private static Builder bool(boolean bool) {
-    return AttributeValue.builder().bool(bool);
-  }
-
-  private static Builder number(int number) {
-    return AttributeValue.builder().n(Integer.toString(number));
-  }
-
-  private static Builder string(String string) {
-    return AttributeValue.builder().s(string);
-  }
-
-  private static Builder list(List<AttributeValue> list) {
-    return AttributeValue.builder().l(list);
-  }
-
-  private static Builder map(Map<String, AttributeValue> map) {
-    return AttributeValue.builder().m(map);
-  }
-
-  public static class Producer implements DynamoProducer<L1> {
+  static class Producer implements DynamoProducer<L1> {
     @Override
     public L1 deserialize(Map<String, AttributeValue> entity) {
       L1.Builder builder = L1.builder()
