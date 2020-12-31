@@ -33,7 +33,7 @@ class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> implements
     RefConsumer<DynamoRefConsumer> {
 
   DynamoRefConsumer() {
-    super(ValueType.VALUE);
+    super(ValueType.REF);
   }
 
   @Override
@@ -141,8 +141,8 @@ class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> implements
     @Override
     public InternalRef deserialize(Map<String, AttributeValue> entity) {
       InternalRef.Builder builder = InternalRef.builder();
-      builder.id(deserializeId(entity));
-      builder.name(entity.get(NAME).s());
+      builder.id(deserializeId(entity))
+          .name(entity.get(NAME).s());
 
       String refType = entity.get(TYPE).s();
       switch (refType) {
