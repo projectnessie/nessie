@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import java.util.Map;
 
 import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -117,6 +118,7 @@ class InternalTag extends MemoizedId implements InternalRef, Persistent<RefConsu
   public RefConsumer<?> applyToConsumer(RefConsumer<?> consumer) {
     return consumer.id(getId())
         .name(name)
+        .type(RefType.TAG)
         .commit(commit);
   }
 
