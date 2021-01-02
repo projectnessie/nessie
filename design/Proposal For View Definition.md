@@ -1,8 +1,6 @@
 ﻿
 
 
-> Written with [StackEdit](https://stackedit.io/).
-> 
 
 ## Proposal to extend the View Definition
 **Background**
@@ -27,49 +25,60 @@ The current  interface for a SqlView  which is a first class object in Nessie sp
 While thinking of integrating Dremio with Nessie, we found we needed several more fields to fully define a view along with  a schema  (written up in a separate proposal) 
 
 **Proposal for additional fields**
-While a View is ultimately describe by just the SQL query , these  additional fields needed to describe a view (or what we refer to as a Virtual Dataset in the context of Dremio) for the DREMIO dialect . This is the addition that we  propose we add as an implementation of  the existing SqlView interface. 
+While a View is ultimately describe by just the SQL query , these  additional fields needed to describe a view (or what we refer to as a Virtual Dataset in the context of Dremio) for the DREMIO dialect . 
+
+   
+**Generic Vs Implementation specific View Definition**
+Some fields are  generic enough that  we could create a  definition common to view definitions of any dialect. Each "Dialect" can  then define its own extended fields needed for maintaining metadata for its internal implementation of a view (shown below for Dremio) .
+
+**Generic fields**
+
+    message PSqlView {
+    
+    required string sqlText = 1 ; // SQL string  that defines the view
+    
+    string dialect = 2 ; // Describes the type of system this view is defined on - eg hive, presto, dremio etc. 
+    
+    optional ViewSchema schema = 3; // Details on the fields/column of the view, the datatypes, precision and scale. (See definition of ViewSchema)
+    
+    repeated string context = 4; // Defines the folder, space the view is defined on. Represented as list of strings which are keys  to container objects in Nessie.Eg ["@myspace","myfolder","mysubfolder"] or ["mycatalog", "myschema"]
+       
+    }
+    
+
+**Dremio specific  fields** 
+
+    message PDremioView {
+    
+     required int64 datasetId  = 1; // A unique ID , generated when the view  is created to identify this dataset that could be used to associate/link  this view to other system objects specific to Dremio  -eg reflections.
+        
+     optional int64 previousDatasetId = 2 ; //  To keep track of the previous edits to  the view until it is saved. For a saved view this could be NULL.  This is to mark/track system ephemeral commits.
+       
+     repeated FieldOrigin fieldOrigins = 4; // Describes the origin or resolved field for the  underlying table or view this view is being defined on and if the field is a derived expression.  This information is obtained after the SQL query text has been compiled. 
+     
+     repeated string tags = 5; // List of tags to describe the view. Can be NULL if no tags are defined. Tags are short strings which can be used to mark or classify views. Tags can be added via a REST API (via UI)  to existing view definitions or  "Alter VDS" command. 
+        
+     }
+
+ Resolved field definition - i.e which table and column it was defined on or derived from . 
+
+    message FieldOrigin {
+    
+    required string name = 1; // Name of the field . Can be a rename of an underlying column of the table  or an expression on the underlying base table columns  like : basetable.column1+basetable.column2.
+    
+    repeated Origin origins = 2; //  Underlying column or columns this field is defined on. 
+    
+    required boolean derived = 3 ; //  True if the field is derived from the underlying tables column 
+        
+    }
+Underlying base table and column information
+
    
 
-    public class DremioView  implements SqlView {
-    ...    
-      String datasetPath; // distinct path to the view 
-    
-      long datasetId; //unique ID *generic*
-    
-      String sqlText; // Sql view text
-    
-      ViewSchema schema; //Schema describing the view columns.
-    
-      long previousDatasetId; // pointer to the previous definition  used to link previous edits to the view 
-    
-      List<Origin> fieldOrigins; //the original table or view columns this view is defined on (useful for join recommendations during view compilation)
-    
-      String context; // the context this view was defined in - i.e the home space, folder.
-    
-      long lastModTimestamp; // Last time this view was modified   *generic*
-     
-      long userId ; // the user that last modified this view definition *generic*
-    
-      List<String> dependentHash ; // a list of dependent hashes this view was defined on to avoid GC on those hashes.
-    
-      List<string> tags; // List of tag strings of a fixed size (100) used to describe the view
+    message Origin {
+        
+     repeated string table = 1; // Underlying base table name 
+        
+     required string columnName = 2; // Column name from the underlying table.  
     
     }
-
-    class Origin {
-      private List<String> table;  
-      private String columnName;  
-      private Boolean derived;
-    }
-
-**Extending the interface**
-Since several of these fields are generic to other views, we could possibly move some of them into an abstract View class (marked with `*generic*` in the definition above)  - a middle layer that would be common to most view definitions. Other option is to leave SqlView as simple as it is now and  leave each "Dialect" to define it's own extended definition of it's view . 
-
-
-
-
-
-
-
-
-
