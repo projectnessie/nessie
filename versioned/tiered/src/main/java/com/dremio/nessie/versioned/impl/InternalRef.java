@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +36,6 @@ import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 /**
@@ -250,14 +252,6 @@ public interface InternalRef extends HasId {
       bc.getKeyAdditions().stream().map(km -> KeyMutation.KeyAddition.of(new InternalKey(km))).forEach(mutations::add);
       bc.getKeyRemovals().stream().map(km -> KeyMutation.KeyRemoval.of(new InternalKey(km))).forEach(mutations::add);
       return KeyMutationList.of(mutations);
-    }
-
-    private static void checkCalled(Object arg, String name) {
-      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
-    }
-
-    private static void checkSet(Object arg, String name) {
-      Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
     }
   }
 

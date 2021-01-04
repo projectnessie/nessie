@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,12 +37,11 @@ import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 
-public class L3 extends MemoizedId implements Persistent<L3Consumer> {
+public class L3 extends MemoizedId<L3Consumer> {
 
   private static final long HASH_SEED = 4604180344422375655L;
 
@@ -202,11 +204,6 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer> {
     return Objects.hashCode(map);
   }
 
-  @Override
-  public ValueType type() {
-    return ValueType.L3;
-  }
-
   /**
    * TODO Javadoc for checkstyle.
    */
@@ -217,7 +214,7 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer> {
     Stream<KeyDelta> keyDelta = this.map.entrySet().stream()
         .filter(e -> !e.getValue().getNewId().isEmpty())
         .map(e -> KeyDelta.of(e.getKey().toKey(), e.getValue().getNewId()));
-    consumer.addKeyDelta(keyDelta);
+    consumer.keyDelta(keyDelta);
 
     return consumer;
   }
@@ -229,7 +226,6 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer> {
   public static class Builder implements L3Consumer, Producer<L3, L3Consumer> {
 
     private Id id;
-    private TreeMap<InternalKey, PositionDelta> keys = new TreeMap<>();
     private Stream<KeyDelta> keyDelta;
 
     private Builder() {
@@ -240,6 +236,9 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer> {
      * Built the {@link L2}.
      */
     public L3 build() {
+      checkSet(id, "id");
+      checkSet(keyDelta, "keyDelta");
+
       return new L3(
           id,
           keyDelta.collect(
@@ -256,7 +255,8 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer> {
     }
 
     @Override
-    public Builder addKeyDelta(Stream<KeyDelta> keyDelta) {
+    public Builder keyDelta(Stream<KeyDelta> keyDelta) {
+      checkCalled(this.keyDelta, "keyDelta");
       this.keyDelta = keyDelta;
       return this;
     }
@@ -271,10 +271,6 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer> {
     @Override
     public boolean canHandleType(ValueType valueType) {
       return valueType == ValueType.L3;
-    }
-
-    private static void checkCalled(Object arg, String name) {
-      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
     }
   }
 

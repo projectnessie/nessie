@@ -16,50 +16,17 @@
 
 package com.dremio.nessie.versioned.store.dynamo;
 
-import java.util.Map;
-
 import com.dremio.nessie.tiered.builder.ValueConsumer;
-import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.protobuf.ByteString;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-
-class DynamoValueConsumer extends DynamoConsumer<ValueConsumer> implements ValueConsumer {
-
-  static final String VALUE = "value";
+class DynamoValueConsumer extends DynamoWrappedValueConsumer<ValueConsumer> implements ValueConsumer {
 
   DynamoValueConsumer() {
     super(ValueType.VALUE);
   }
 
   @Override
-  public DynamoValueConsumer id(Id id) {
-    addEntitySafe(ID, idBuilder(id));
-    return this;
-  }
-
-  @Override
   public boolean canHandleType(ValueType valueType) {
     return valueType == ValueType.VALUE;
   }
-
-  @Override
-  public DynamoValueConsumer value(ByteString value) {
-    addEntitySafe(VALUE, bytes(value));
-    return this;
-  }
-
-  static class Producer extends DynamoProducer<ValueConsumer> {
-    public Producer(Map<String, AttributeValue> entity) {
-      super(entity);
-    }
-
-    @Override
-    public void applyToConsumer(ValueConsumer consumer) {
-      consumer.id(deserializeId(entity))
-          .value(deserializeBytes(entity.get(VALUE)));
-    }
-  }
-
 }

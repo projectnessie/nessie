@@ -18,6 +18,12 @@ package com.dremio.nessie.tiered.builder;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 
+/**
+ * TODO javadoc.
+ * <p>
+ * Do not implement this interface in non-abstract implementation classes!
+ * </p>
+ */
 public interface HasIdConsumer<T> {
   /**
    * The id for this consumer.

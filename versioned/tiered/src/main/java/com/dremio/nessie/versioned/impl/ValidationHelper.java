@@ -15,12 +15,18 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
-import com.dremio.nessie.versioned.store.HasId;
-import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Preconditions;
 
-public interface Persistent<C extends HasIdConsumer<?>> extends HasId {
-  C applyToConsumer(C consumer);
+final class ValidationHelper {
+  private ValidationHelper() {
+    // empty
+  }
 
-  ValueType type();
+  static void checkCalled(Object arg, String name) {
+    Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
+  }
+
+  static void checkSet(Object arg, String name) {
+    Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
+  }
 }

@@ -15,17 +15,24 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKey;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.keyElements;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryList;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.map;
+
+import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L3Consumer;
-import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
 
 class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer {
 
@@ -38,21 +45,15 @@ class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer 
   }
 
   @Override
-  public DynamoL3Consumer addKeyDelta(Stream<KeyDelta> keyDelta) {
-    Stream<AttributeValue> maps = keyDelta.map(kd -> map(dualMap(
-        TREE_KEY, keyList(kd.getKey()),
-        TREE_ID, idValue(kd.getId())
-    )).build());
-
-    Builder treeBuilder = AttributeValue.builder().l(maps.collect(Collectors.toList()));
-    addEntitySafe(TREE, treeBuilder);
-    return this;
+  public DynamoL3Consumer keyDelta(Stream<KeyDelta> keyDelta) {
+    return addEntitySafe(TREE, list(keyDelta.map(DynamoL3Consumer::treeKeyId)));
   }
 
-  @Override
-  public DynamoL3Consumer id(Id id) {
-    addEntitySafe(ID, bytes(id.getValue()));
-    return this;
+  private static AttributeValue treeKeyId(KeyDelta kd) {
+    Map<String, AttributeValue> map = new HashMap<>();
+    map.put(DynamoL3Consumer.TREE_KEY, keyElements(kd.getKey()));
+    map.put(DynamoL3Consumer.TREE_ID, idValue(kd.getId()));
+    return map(map);
   }
 
   @Override
@@ -60,25 +61,25 @@ class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer 
     return valueType == ValueType.L3;
   }
 
-  static class Producer extends DynamoProducer<L3Consumer> {
-    public Producer(Map<String, AttributeValue> entity) {
-      super(entity);
-    }
+  @Override
+  public Map<String, AttributeValue> build() {
+    checkPresent(TREE, "keyDelta");
 
-    @Override
-    public void applyToConsumer(L3Consumer consumer) {
-      consumer.id(deserializeId(entity));
+    return super.build();
+  }
 
-      if (entity.containsKey(TREE)) {
-        Stream<KeyDelta> keyDelta = entity.get(TREE).l().stream()
-            .map(AttributeValue::m)
-            .map(m -> KeyDelta.of(
-                deserializeKey(m.get(TREE_KEY)),
-                deserializeId(m.get(TREE_ID))
-            ));
+  static void produceToConsumer(Map<String, AttributeValue> entity, L3Consumer consumer) {
+    consumer.id(deserializeId(entity, ID));
 
-        consumer.addKeyDelta(keyDelta);
-      }
+    if (entity.containsKey(TREE)) {
+      Stream<KeyDelta> keyDelta = mandatoryList(attributeValue(entity, TREE)).stream()
+          .map(AttributeValue::m)
+          .map(m -> KeyDelta.of(
+              deserializeKey(m, TREE_KEY),
+              deserializeId(m, TREE_ID)
+          ));
+
+      consumer.keyDelta(keyDelta);
     }
   }
 }

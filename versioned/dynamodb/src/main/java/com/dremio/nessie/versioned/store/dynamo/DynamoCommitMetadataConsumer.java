@@ -16,49 +16,17 @@
 
 package com.dremio.nessie.versioned.store.dynamo;
 
-import java.util.Map;
-
 import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
-import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.protobuf.ByteString;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-
-class DynamoCommitMetadataConsumer extends DynamoConsumer<CommitMetadataConsumer> implements CommitMetadataConsumer {
-
-  static final String VALUE = "value";
+class DynamoCommitMetadataConsumer extends DynamoWrappedValueConsumer<CommitMetadataConsumer> implements CommitMetadataConsumer {
 
   DynamoCommitMetadataConsumer() {
     super(ValueType.COMMIT_METADATA);
   }
 
   @Override
-  public DynamoCommitMetadataConsumer id(Id id) {
-    addEntitySafe(ID, idBuilder(id));
-    return this;
-  }
-
-  @Override
   public boolean canHandleType(ValueType valueType) {
     return valueType == ValueType.COMMIT_METADATA;
-  }
-
-  @Override
-  public DynamoCommitMetadataConsumer value(ByteString value) {
-    addEntitySafe(VALUE, bytes(value));
-    return this;
-  }
-
-  static class Producer extends DynamoProducer<CommitMetadataConsumer> {
-    public Producer(Map<String, AttributeValue> entity) {
-      super(entity);
-    }
-
-    @Override
-    public void applyToConsumer(CommitMetadataConsumer consumer) {
-      consumer.id(deserializeId(entity))
-          .value(deserializeBytes(entity.get(VALUE)));
-    }
   }
 }

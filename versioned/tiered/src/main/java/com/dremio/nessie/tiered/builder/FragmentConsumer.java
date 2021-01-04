@@ -19,6 +19,9 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.Key;
 
+/**
+ * TODO javadoc.
+ */
 public interface FragmentConsumer extends HasIdConsumer<FragmentConsumer> {
 
   /**

@@ -139,7 +139,7 @@ class PartialTree<V> {
     return Streams.<SaveOp<?>>concat(
         l2s.values().stream().filter(Pointer::isDirty).map(l2p -> new SaveOp<L2>(ValueType.L2, l2p.get())).distinct(),
         l3s.values().stream().filter(Pointer::isDirty).map(l3p -> new SaveOp<L3>(ValueType.L3, l3p.get())).distinct(),
-        values.values().stream().map(v -> new SaveOp<WrappedValueBean>(ValueType.VALUE, v.getPersistentValue())).distinct()
+        values.values().stream().map(v -> new SaveOp<>(ValueType.VALUE, v.getPersistentValue())).distinct()
         );
   }
 

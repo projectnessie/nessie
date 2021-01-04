@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,11 +31,10 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-public class Fragment extends MemoizedId implements Persistent<FragmentConsumer> {
+public class Fragment extends MemoizedId<FragmentConsumer> {
 
   private final List<InternalKey> keys;
 
@@ -95,11 +97,6 @@ public class Fragment extends MemoizedId implements Persistent<FragmentConsumer>
   }
 
   @Override
-  public ValueType type() {
-    return ValueType.KEY_FRAGMENT;
-  }
-
-  @Override
   public FragmentConsumer applyToConsumer(FragmentConsumer consumer) {
     consumer.id(getId());
     consumer.keys(keys.stream().map(InternalKey::toKey));
@@ -138,17 +135,10 @@ public class Fragment extends MemoizedId implements Persistent<FragmentConsumer>
      * TODO javadoc.
      */
     public Fragment build() {
-      checkSet(id, "id");
+      checkSet(id, "keys");
+      checkSet(keys, "id");
 
       return new Fragment(id, keys);
-    }
-
-    private static void checkCalled(Object arg, String name) {
-      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
-    }
-
-    private static void checkSet(Object arg, String name) {
-      Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
     }
   }
 }

@@ -19,6 +19,13 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.store.KeyDelta;
 
+/**
+ * TODO javadoc.
+ */
 public interface L3Consumer extends HasIdConsumer<L3Consumer> {
-  L3Consumer addKeyDelta(Stream<KeyDelta> keyDelta);
+
+  /**
+   * TODO javadoc.
+   */
+  L3Consumer keyDelta(Stream<KeyDelta> keyDelta);
 }

@@ -18,6 +18,9 @@ package com.dremio.nessie.versioned.store;
 import java.util.Map;
 import java.util.Objects;
 
+import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.versioned.impl.MemoizedId;
+
 public class SaveOp<V extends HasId> {
   private final ValueType type;
   private final V value;
@@ -33,6 +36,22 @@ public class SaveOp<V extends HasId> {
 
   public V getValue() {
     return value;
+  }
+
+  /**
+   * Apply the contents of this {@link SaveOp}'s {@code value} to the given {@code consumer}.
+   * <p>
+   * Works only, if {@code value} is an instance of {@link MemoizedId}.
+   * </p>
+   *
+   * @param consumer the consumer that will receive the contents of {@code value}
+   * @param <C> the type of the consumer
+   */
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public <C extends HasIdConsumer<C>> void serialize(C consumer) {
+    // ah, lovely Java generics
+    MemoizedId v = (MemoizedId) value;
+    v.applyToConsumer(consumer);
   }
 
   public Map<String, Entity> toEntity() {

@@ -15,15 +15,17 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
+
 import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
 import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
-public class InternalCommitMetadata extends WrappedValueBean implements Persistent<CommitMetadataConsumer> {
+public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsumer> {
 
   private InternalCommitMetadata(Id id, ByteString value) {
     super(id, value);
@@ -42,15 +44,9 @@ public class InternalCommitMetadata extends WrappedValueBean implements Persiste
       new WrappedValueBean.WrappedValueSchema<>(InternalCommitMetadata.class, InternalCommitMetadata::new);
 
   @Override
-  public ValueType type() {
-    return ValueType.COMMIT_METADATA;
-  }
-
-  @Override
   public CommitMetadataConsumer applyToConsumer(CommitMetadataConsumer consumer) {
-    consumer.id(getId());
-    consumer.value(getBytes());
-    return consumer;
+    return consumer.id(getId())
+        .value(getBytes());
   }
 
   public static Builder builder() {
@@ -89,14 +85,6 @@ public class InternalCommitMetadata extends WrappedValueBean implements Persiste
       checkSet(value, "value");
 
       return new InternalCommitMetadata(id, value);
-    }
-
-    private static void checkCalled(Object arg, String name) {
-      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
-    }
-
-    private static void checkSet(Object arg, String name) {
-      Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
     }
   }
 }

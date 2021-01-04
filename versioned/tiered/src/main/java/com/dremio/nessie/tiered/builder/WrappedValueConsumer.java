@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.store.dynamo;
+package com.dremio.nessie.tiered.builder;
 
-import java.util.Map;
-
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import com.google.protobuf.ByteString;
 
 /**
- * A producer implements the deserialization part and uses the consumers to build the
- * deserialized objects.
+ * TODO javadoc.
+ * <p>
+ * Do not implement this interface in non-abstract implementation classes!
+ * </p>
  */
-public abstract class DynamoProducer<C extends HasIdConsumer<C>> {
-  protected final Map<String, AttributeValue> entity;
-
-  public DynamoProducer(Map<String, AttributeValue> entity) {
-    this.entity = entity;
-  }
-
-  public abstract void applyToConsumer(C consumer);
+public interface WrappedValueConsumer<C extends WrappedValueConsumer<C>> extends HasIdConsumer<C> {
+  /**
+   * The value for this bytes-value.
+   *
+   * <p>Can be called once.
+   * @param value The value to set.
+   * @return This consumer.
+   */
+  C value(ByteString value);
 }

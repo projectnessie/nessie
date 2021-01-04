@@ -30,7 +30,6 @@ import org.immutables.value.Value.Immutable;
 
 import com.dremio.nessie.versioned.impl.KeyMutation.MutationType;
 import com.dremio.nessie.versioned.store.Entity;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
@@ -399,7 +398,7 @@ abstract class KeyList {
         if (!presaved.contains(fragment.getId())) {
           // only save if we didn't save on the last checkpoint. This could still be a dupe of an older list but since the object
           // is hashed, the value will be a simple overwrite of the same data.
-          store.save(Collections.singletonList(new SaveOp<HasId>(ValueType.KEY_FRAGMENT, fragment)));
+          store.save(Collections.singletonList(new SaveOp<>(ValueType.KEY_FRAGMENT, fragment)));
           fragmentIds.add(fragment.getId());
         }
       }

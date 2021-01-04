@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
+
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -25,10 +28,9 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
-public class L2 extends MemoizedId implements Persistent<L2Consumer> {
+public class L2 extends MemoizedId<L2Consumer> {
 
   private static final long HASH_SEED = -6352836103271505167L;
 
@@ -119,11 +121,6 @@ public class L2 extends MemoizedId implements Persistent<L2Consumer> {
     return Objects.hashCode(map);
   }
 
-  @Override
-  public ValueType type() {
-    return ValueType.L2;
-  }
-
   /**
    * TODO Javadoc for checkstyle.
    */
@@ -152,6 +149,9 @@ public class L2 extends MemoizedId implements Persistent<L2Consumer> {
      * Built the {@link L2}.
      */
     public L2 build() {
+      checkSet(id, "id");
+      checkSet(children, "children");
+
       return new L2(
           id,
           IdMap.of(children));
@@ -174,10 +174,6 @@ public class L2 extends MemoizedId implements Persistent<L2Consumer> {
       checkCalled(this.id, "id");
       this.id = id;
       return this;
-    }
-
-    private static void checkCalled(Object arg, String name) {
-      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
     }
   }
 }

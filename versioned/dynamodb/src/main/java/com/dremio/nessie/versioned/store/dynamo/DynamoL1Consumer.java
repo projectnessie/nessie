@@ -15,6 +15,21 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.bool;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdStream;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeInt;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKeyMutations;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idsList;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.keyElements;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryMap;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.map;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.number;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.singletonMap;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +42,6 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
 
 class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer {
 
@@ -41,8 +55,8 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
-  private final Map<String, AttributeValue.Builder> keys;
-  private final List<AttributeValue.Builder> keysMutations;
+  private final Map<String, AttributeValue> keys;
+  private final List<AttributeValue> keysMutations;
 
   DynamoL1Consumer() {
     super(ValueType.L1);
@@ -57,41 +71,30 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
 
   @Override
   public DynamoL1Consumer commitMetadataId(Id id) {
-    addEntitySafe(METADATA, bytes(id.getValue()));
-    return this;
+    return addEntitySafe(METADATA, idValue(id));
   }
 
   @Override
   public DynamoL1Consumer ancestors(Stream<Id> ids) {
-    addIdList(PARENTS, ids);
-    return this;
+    return addIdList(PARENTS, ids);
   }
 
   @Override
   public DynamoL1Consumer children(Stream<Id> ids) {
-    addIdList(TREE, ids);
-    return this;
-  }
-
-  @Override
-  public DynamoL1Consumer id(Id id) {
-    addEntitySafe(ID, bytes(id.getValue()));
-    return this;
+    return addIdList(TREE, ids);
   }
 
   @Override
   public DynamoL1Consumer addKeyAddition(Key key) {
-    addKeyMutation(true, key);
-    return this;
+    return addKeyMutation(true, key);
   }
 
   @Override
   public DynamoL1Consumer addKeyRemoval(Key key) {
-    addKeyMutation(false, key);
-    return this;
+    return addKeyMutation(false, key);
   }
 
-  private void addKeyMutation(boolean add, Key key) {
+  private DynamoL1Consumer addKeyMutation(boolean add, Key key) {
     // TODO potentially peal out com.dremio.nessie.versioned.impl.KeyMutation.MutationType to get proper constants?
     String addRemove = add ? KEY_ADDITION : KEY_REMOVAL;
 
@@ -121,13 +124,15 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
     // And each "byte-string" is our custom serialzation of a key-path.
     // TL;DR a quite flat structure.
 
-    keysMutations.add(singletonMap(addRemove, keyList(key)));
+    keysMutations.add(singletonMap(addRemove, keyElements(key)));
+
+    return this;
   }
 
   @Override
   public DynamoL1Consumer incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
     addKeysSafe(IS_CHECKPOINT, bool(false));
-    addKeysSafe(ORIGIN, bytes(checkpointId.getValue()));
+    addKeysSafe(ORIGIN, idValue(checkpointId));
     addKeysSafe(DISTANCE, number(distanceFromCheckpoint));
     return this;
   }
@@ -141,62 +146,58 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
 
   @Override
   public Map<String, AttributeValue> build() {
-    addKeysSafe(MUTATIONS, list(buildValues(keysMutations)));
+    addKeysSafe(MUTATIONS, list(keysMutations.stream()));
     if (!keys.isEmpty()) {
-      addEntitySafe(KEY_LIST, map(buildValuesMap(keys)));
+      addEntitySafe(KEY_LIST, map(keys));
     }
+
+    checkPresent(METADATA, "metadata");
+    checkPresent(TREE, "children");
+    checkPresent(PARENTS, "ancestors");
 
     return super.build();
   }
 
-  private void addKeysSafe(String key, Builder value) {
-    Builder old = keys.put(key, value);
+  private void addKeysSafe(String key, AttributeValue value) {
+    AttributeValue old = keys.put(key, value);
     if (old != null) {
       throw new IllegalStateException("Duplicate '" + key + "' in 'keys' map. Old={" + old + "} current={" + value + "}");
     }
   }
 
-  static class Producer extends DynamoProducer<L1Consumer> {
+  static void produceToConsumer(Map<String, AttributeValue> entity, L1Consumer consumer) {
+    consumer.id(deserializeId(entity, ID));
 
-    public Producer(Map<String, AttributeValue> map) {
-      super(map);
+    if (entity.containsKey(METADATA)) {
+      consumer.commitMetadataId(deserializeId(entity, METADATA));
     }
-
-    @Override
-    public void applyToConsumer(L1Consumer consumer) {
-      consumer.id(deserializeId(entity));
-
-      if (entity.containsKey(METADATA)) {
-        consumer.commitMetadataId(deserializeId(entity.get(METADATA)));
-      }
-      if (entity.containsKey(TREE)) {
-        consumer.children(deserializeIdList(entity.get(TREE)));
-      }
-      if (entity.containsKey(PARENTS)) {
-        consumer.ancestors(deserializeIdList(entity.get(PARENTS)));
-      }
-      if (entity.containsKey(KEY_LIST)) {
-        Map<String, AttributeValue> keys = entity.get(KEY_LIST).m();
-        Boolean checkpoint = keys.get(IS_CHECKPOINT).bool();
-        if (checkpoint != null) {
-          if (checkpoint) {
-            consumer.completeKeyList(deserializeIdList(keys.get(FRAGMENTS)));
-          } else {
-            consumer.incrementalKeyList(
-                deserializeId(keys.get(ORIGIN)),
-                deserializeInt(keys.get(DISTANCE))
-            );
-          }
+    if (entity.containsKey(TREE)) {
+      consumer.children(deserializeIdStream(entity, TREE));
+    }
+    if (entity.containsKey(PARENTS)) {
+      consumer.ancestors(deserializeIdStream(entity, PARENTS));
+    }
+    if (entity.containsKey(KEY_LIST)) {
+      Map<String, AttributeValue> keys = mandatoryMap(attributeValue(entity, KEY_LIST));
+      Boolean checkpoint = attributeValue(keys, IS_CHECKPOINT).bool();
+      if (checkpoint != null) {
+        if (checkpoint) {
+          consumer.completeKeyList(deserializeIdStream(keys, FRAGMENTS));
+        } else {
+          consumer.incrementalKeyList(
+              deserializeId(keys, ORIGIN),
+              deserializeInt(keys, DISTANCE)
+          );
         }
-        // See com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.addKeyMutation about a
-        // proposal to simplify this one.
-        List<AttributeValue> mutations = keys.get(MUTATIONS).l();
-        deserializeKeyMutations(
-            mutations,
-            consumer::addKeyAddition,
-            consumer::addKeyRemoval
-        );
       }
+      // See com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.addKeyMutation about a
+      // proposal to simplify this one.
+      deserializeKeyMutations(
+          keys,
+          MUTATIONS,
+          consumer::addKeyAddition,
+          consumer::addKeyRemoval
+      );
     }
   }
 }
