@@ -24,7 +24,7 @@ import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
-public interface RefConsumer<T extends RefConsumer<T>> extends HasIdConsumer<T> {
+public interface RefConsumer extends HasIdConsumer<RefConsumer> {
   enum RefType {
     TAG,
     BRANCH
@@ -33,37 +33,37 @@ public interface RefConsumer<T extends RefConsumer<T>> extends HasIdConsumer<T> 
   /**
    * TODO javadoc.
    */
-  T id(Id id);
+  RefConsumer id(Id id);
 
   /**
    * TODO javadoc.
    */
-  T type(RefType refType);
+  RefConsumer type(RefType refType);
 
   /**
    * TODO javadoc.
    */
-  T name(String name);
+  RefConsumer name(String name);
 
   /**
    * TODO javadoc.
    */
-  T commit(Id commit);
+  RefConsumer commit(Id commit);
 
   /**
    * TODO javadoc.
    */
-  T metadata(Id metadata);
+  RefConsumer metadata(Id metadata);
 
   /**
    * TODO javadoc.
    */
-  T children(Stream<Id> children);
+  RefConsumer children(Stream<Id> children);
 
   /**
    * TODO javadoc.
    */
-  T commits(Stream<BranchCommit> commits);
+  RefConsumer commits(Stream<BranchCommit> commits);
 
   class BranchCommit {
 

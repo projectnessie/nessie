@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.KeyList.CompleteList;
 import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
@@ -36,7 +37,7 @@ import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
-public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
+public class L1 extends MemoizedId implements Persistent<L1Consumer> {
 
   private static final long HASH_SEED = 3506039963025592061L;
 
@@ -202,7 +203,7 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
    * TODO Javadoc for checkstyle.
    */
   @Override
-  public L1Consumer<?> applyToConsumer(L1Consumer<?> consumer) {
+  public L1Consumer applyToConsumer(L1Consumer consumer) {
     consumer.id(this.getId());
     consumer.commitMetadataId(this.metadataId);
     //todo likely we want to change this interface to InternalKey
@@ -234,7 +235,7 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
     return new Builder();
   }
 
-  public static class Builder implements L1Consumer<Builder> {
+  public static class Builder implements L1Consumer, Producer<L1, L1Consumer> {
 
     private Id metadataId;
     private Stream<Id> ancestors;
@@ -272,6 +273,11 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
       }
       // todo what if its neither? Fail
       throw new IllegalStateException("Neither a checkpoint nor a incremental key list were found.");
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.L1;
     }
 
     @Override

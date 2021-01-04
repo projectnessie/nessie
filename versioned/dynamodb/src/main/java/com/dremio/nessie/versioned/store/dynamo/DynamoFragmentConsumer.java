@@ -22,14 +22,14 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.FragmentConsumer;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoFragmentConsumer extends DynamoConsumer<DynamoFragmentConsumer> implements
-    FragmentConsumer<DynamoFragmentConsumer> {
+class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements FragmentConsumer {
+
+  static final String KEY_LIST = "keys";
 
   DynamoFragmentConsumer() {
     super(ValueType.KEY_FRAGMENT);
@@ -39,6 +39,11 @@ class DynamoFragmentConsumer extends DynamoConsumer<DynamoFragmentConsumer> impl
   public DynamoFragmentConsumer id(Id id) {
     addEntitySafe(ID, idBuilder(id));
     return this;
+  }
+
+  @Override
+  public boolean canHandleType(ValueType valueType) {
+    return valueType == ValueType.KEY_FRAGMENT;
   }
 
   @Override
@@ -52,15 +57,17 @@ class DynamoFragmentConsumer extends DynamoConsumer<DynamoFragmentConsumer> impl
     return this;
   }
 
-  static class Producer implements DynamoProducer<Fragment> {
+  static class Producer extends DynamoProducer<FragmentConsumer> {
+    public Producer(Map<String, AttributeValue> entity) {
+      super(entity);
+    }
+
     @Override
-    public Fragment deserialize(Map<String, AttributeValue> entity) {
-      Fragment.Builder builder = Fragment.builder();
-      builder.id(deserializeId(entity));
-      builder.keys(entity.get(KEY_LIST).l().stream()
-          .map(DynamoConsumer::deserializeKey)
-      );
-      return builder.build();
+    public void applyToConsumer(FragmentConsumer consumer) {
+      consumer.id(deserializeId(entity))
+          .keys(entity.get(KEY_LIST).l().stream()
+              .map(DynamoConsumer::deserializeKey)
+          );
     }
   }
 }

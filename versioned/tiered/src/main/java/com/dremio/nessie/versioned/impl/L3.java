@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L3Consumer;
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
@@ -38,7 +39,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 
-public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
+public class L3 extends MemoizedId implements Persistent<L3Consumer> {
 
   private static final long HASH_SEED = 4604180344422375655L;
 
@@ -210,7 +211,7 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
    * TODO Javadoc for checkstyle.
    */
   @Override
-  public L3Consumer<?> applyToConsumer(L3Consumer<?> consumer) {
+  public L3Consumer applyToConsumer(L3Consumer consumer) {
     consumer.id(this.getId());
 
     Stream<KeyDelta> keyDelta = this.map.entrySet().stream()
@@ -225,7 +226,7 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
     return new Builder();
   }
 
-  public static class Builder implements L3Consumer<Builder> {
+  public static class Builder implements L3Consumer, Producer<L3, L3Consumer> {
 
     private Id id;
     private TreeMap<InternalKey, PositionDelta> keys = new TreeMap<>();
@@ -265,6 +266,11 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
       checkCalled(this.id, "id");
       this.id = id;
       return this;
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.L3;
     }
 
     private static void checkCalled(Object arg, String name) {

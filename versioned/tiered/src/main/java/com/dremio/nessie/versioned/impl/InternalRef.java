@@ -20,7 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
@@ -30,9 +32,9 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import java.util.stream.Stream;
 
 /**
  * Generic class for reading a reference.
@@ -140,7 +142,7 @@ public interface InternalRef extends HasId {
     return new Builder();
   }
 
-  class Builder implements RefConsumer<InternalRef.Builder> {
+  class Builder implements RefConsumer, Producer<InternalRef, RefConsumer> {
 
     private Id id;
     private RefType refType;
@@ -159,6 +161,11 @@ public interface InternalRef extends HasId {
       checkCalled(this.id, "id");
       this.id = id;
       return this;
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.REF;
     }
 
     @Override

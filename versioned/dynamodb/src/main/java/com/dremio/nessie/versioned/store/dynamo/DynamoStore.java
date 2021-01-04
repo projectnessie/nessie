@@ -17,7 +17,7 @@ package com.dremio.nessie.versioned.store.dynamo;
 
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConsumer.serializeId;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserialize;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serialize;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serializeEntity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -265,8 +265,8 @@ public class DynamoStore implements Store {
   public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
-    Persistent<DynamoConsumer<?>> persistent = (Persistent<DynamoConsumer<?>>) value;
-    Map<String, AttributeValue> attributes = serialize(type, persistent);
+    Persistent<?> persistent = (Persistent<?>) value;
+    Map<String, AttributeValue> attributes = serializeEntity(type, persistent);
 
     PutItemRequest.Builder builder = PutItemRequest.builder()
         .tableName(tableNames.get(type))
@@ -289,7 +289,7 @@ public class DynamoStore implements Store {
   @Override
   public boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) {
     DeleteItemRequest.Builder delete = DeleteItemRequest.builder()
-        .key(Collections.singletonMap(DynamoConstants.ID, serializeId(id)))
+        .key(Collections.singletonMap(DynamoConsumer.ID, serializeId(id)))
         .tableName(tableNames.get(type));
 
     AliasCollectorImpl collector = new AliasCollectorImpl();
@@ -317,7 +317,7 @@ public class DynamoStore implements Store {
           Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save ->
           WriteRequest.builder().putRequest(PutRequest.builder().item(
-              serialize(save.getType(), save.getValue())).build())
+              serializeEntity(save.getType(), save.getValue())).build())
                     .build());
       BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
       saves.add(async.batchWriteItem(batch));

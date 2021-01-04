@@ -16,9 +16,9 @@
 package com.dremio.nessie.tiered.builder;
 
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.ValueType;
 
-public interface HasIdConsumer<T extends HasIdConsumer<T>> {
-
+public interface HasIdConsumer<T> {
   /**
    * The id for this consumer.
    *
@@ -28,4 +28,12 @@ public interface HasIdConsumer<T extends HasIdConsumer<T>> {
    */
   T id(Id id);
 
+  /**
+   * Validation helper that checks whether a consumer implementation can handle the given
+   * {@link ValueType valueType}.
+   *
+   * @param valueType the type to check
+   * @return {@code true}, if the implementation can handle the given {@code valueType}, {@code false otherwise}
+   */
+  boolean canHandleType(ValueType valueType);
 }

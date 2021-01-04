@@ -26,7 +26,7 @@ import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 
-class InternalTag extends MemoizedId implements InternalRef, Persistent<RefConsumer<?>> {
+class InternalTag extends MemoizedId implements InternalRef, Persistent<RefConsumer> {
 
   static final String ID = "id";
   static final String NAME = "name";
@@ -115,7 +115,7 @@ class InternalTag extends MemoizedId implements InternalRef, Persistent<RefConsu
   }
 
   @Override
-  public RefConsumer<?> applyToConsumer(RefConsumer<?> consumer) {
+  public RefConsumer applyToConsumer(RefConsumer consumer) {
     return consumer.id(getId())
         .name(name)
         .type(RefType.TAG)

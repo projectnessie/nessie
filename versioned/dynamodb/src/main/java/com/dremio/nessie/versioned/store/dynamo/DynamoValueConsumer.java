@@ -19,25 +19,46 @@ package com.dremio.nessie.versioned.store.dynamo;
 import java.util.Map;
 
 import com.dremio.nessie.tiered.builder.ValueConsumer;
-import com.dremio.nessie.versioned.impl.InternalValue;
+import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoValueConsumer extends DynamoBytesValueConsumer<DynamoValueConsumer>
-    implements ValueConsumer<DynamoValueConsumer> {
+class DynamoValueConsumer extends DynamoConsumer<ValueConsumer> implements ValueConsumer {
+
+  static final String VALUE = "value";
 
   DynamoValueConsumer() {
     super(ValueType.VALUE);
   }
 
-  static class Producer implements DynamoProducer<InternalValue> {
+  @Override
+  public DynamoValueConsumer id(Id id) {
+    addEntitySafe(ID, idBuilder(id));
+    return this;
+  }
+
+  @Override
+  public boolean canHandleType(ValueType valueType) {
+    return valueType == ValueType.VALUE;
+  }
+
+  @Override
+  public DynamoValueConsumer value(ByteString value) {
+    addEntitySafe(VALUE, bytes(value));
+    return this;
+  }
+
+  static class Producer extends DynamoProducer<ValueConsumer> {
+    public Producer(Map<String, AttributeValue> entity) {
+      super(entity);
+    }
+
     @Override
-    public InternalValue deserialize(Map<String, AttributeValue> entity) {
-      return InternalValue.builder()
-          .id(deserializeId(entity))
-          .value(deserializeBytes(entity.get(VALUE)))
-          .build();
+    public void applyToConsumer(ValueConsumer consumer) {
+      consumer.id(deserializeId(entity))
+          .value(deserializeBytes(entity.get(VALUE)));
     }
   }
 

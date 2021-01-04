@@ -19,20 +19,21 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2Consumer;
-import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoL2Consumer extends DynamoConsumer<DynamoL2Consumer> implements L2Consumer<DynamoL2Consumer> {
+class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer {
+
+  static final String TREE = "tree";
 
   DynamoL2Consumer() {
     super(ValueType.L2);
   }
 
   @Override
-  public DynamoL2Consumer children(Stream<Id> ids) {
+  public L2Consumer children(Stream<Id> ids) {
     addIdList(TREE, ids);
     return this;
   }
@@ -43,17 +44,24 @@ class DynamoL2Consumer extends DynamoConsumer<DynamoL2Consumer> implements L2Con
     return this;
   }
 
-  static class Producer implements DynamoProducer<L2> {
+  @Override
+  public boolean canHandleType(ValueType valueType) {
+    return valueType == ValueType.L2;
+  }
+
+  static class Producer extends DynamoProducer<L2Consumer> {
+
+    public Producer(Map<String, AttributeValue> entity) {
+      super(entity);
+    }
+
     @Override
-    public L2 deserialize(Map<String, AttributeValue> entity) {
-      L2.Builder builder = L2.builder()
-          .id(deserializeId(entity));
+    public void applyToConsumer(L2Consumer consumer) {
+      consumer.id(deserializeId(entity));
 
       if (entity.containsKey(TREE)) {
-        builder = builder.children(deserializeIdList(entity.get(TREE)));
+        consumer.children(deserializeIdList(entity.get(TREE)));
       }
-
-      return builder.build();
     }
   }
 }
