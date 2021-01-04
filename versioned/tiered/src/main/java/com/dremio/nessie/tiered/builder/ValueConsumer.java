@@ -15,5 +15,15 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-public interface ValueConsumer<T extends ValueConsumer<T>> extends BytesValueConsumer<T> {
+import com.google.protobuf.ByteString;
+
+public interface ValueConsumer extends HasIdConsumer<ValueConsumer> {
+  /**
+   * The value for this bytes-value.
+   *
+   * <p>Can be called once.
+   * @param value The value to set.
+   * @return This consumer.
+   */
+  ValueConsumer value(ByteString value);
 }

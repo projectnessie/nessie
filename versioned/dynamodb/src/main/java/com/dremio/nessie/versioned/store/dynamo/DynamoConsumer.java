@@ -28,9 +28,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -41,7 +41,13 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
 import software.amazon.awssdk.utils.builder.SdkBuilder;
 
-abstract class DynamoConsumer<C extends HasIdConsumer<C>> extends DynamoConstants implements HasIdConsumer<C> {
+abstract class DynamoConsumer<C extends HasIdConsumer<C>>
+    implements HasIdConsumer<C>, Producer<Map<String, AttributeValue>, C> {
+
+  static final String ID = "id";
+
+  static final String KEY_ADDITION = "a";
+  static final String KEY_REMOVAL = "d";
 
   protected final Map<String, Builder> entity = new HashMap<>();
 
@@ -69,70 +75,16 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> extends DynamoConstant
   /**
    * TODO javadoc.
    */
-  Map<String, AttributeValue> toEntity() {
+  public Map<String, AttributeValue> build() {
     // TODO add validation
 
     return buildValuesMap(entity);
-  }
-
-  /**
-   * TODO add some javadoc.
-   */
-  @SuppressWarnings("unchecked")
-  static <C extends DynamoConsumer<C>> DynamoConsumer<C> newConsumer(ValueType type) {
-    switch (type) {
-      case L1:
-        return (DynamoConsumer<C>) new DynamoL1Consumer();
-      case L2:
-        return (DynamoConsumer<C>) new DynamoL2Consumer();
-      case L3:
-        return (DynamoConsumer<C>) new DynamoL3Consumer();
-      case COMMIT_METADATA:
-        return (DynamoConsumer<C>) new DynamoCommitMetadataConsumer();
-      case VALUE:
-        return (DynamoConsumer<C>) new DynamoValueConsumer();
-      case REF:
-        return (DynamoConsumer<C>) new DynamoRefConsumer();
-      case KEY_FRAGMENT:
-        return (DynamoConsumer<C>) new DynamoFragmentConsumer();
-      default:
-        throw new IllegalArgumentException("No DynamoConsumer implementation for " + type);
-    }
-  }
-
-  /**
-   * TODO add some javadoc.
-   */
-  @SuppressWarnings("unchecked")
-  static <E extends HasId, P extends DynamoProducer<E>> P newProducer(ValueType type) {
-    switch (type) {
-      case L1:
-        return (P) new DynamoL1Consumer.Producer();
-      case L2:
-        return (P) new DynamoL2Consumer.Producer();
-      case L3:
-        return (P) new DynamoL3Consumer.Producer();
-      case COMMIT_METADATA:
-        return (P) new DynamoCommitMetadataConsumer.Producer();
-      case VALUE:
-        return (P) new DynamoValueConsumer.Producer();
-      case REF:
-        return (P) new DynamoRefConsumer.Producer();
-      case KEY_FRAGMENT:
-        return (P) new DynamoFragmentConsumer.Producer();
-      default:
-        throw new IllegalArgumentException("No DynamoConsumer implementation for " + type);
-    }
   }
 
   static AttributeValue keyList(Key key) {
     return list(key.getElements().stream()
         .map(elem -> string(elem).build()).collect(toList()))
         .build();
-  }
-
-  static Builder idsList(List<Id> ids) {
-    return idsList(ids.stream());
   }
 
   static Builder idsList(Stream<Id> ids) {

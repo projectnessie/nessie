@@ -19,25 +19,46 @@ package com.dremio.nessie.versioned.store.dynamo;
 import java.util.Map;
 
 import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
-import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
+import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoCommitMetadataConsumer extends DynamoBytesValueConsumer<DynamoCommitMetadataConsumer>
-    implements CommitMetadataConsumer<DynamoCommitMetadataConsumer> {
+class DynamoCommitMetadataConsumer extends DynamoConsumer<CommitMetadataConsumer> implements CommitMetadataConsumer {
+
+  static final String VALUE = "value";
 
   DynamoCommitMetadataConsumer() {
     super(ValueType.COMMIT_METADATA);
   }
 
-  static class Producer implements DynamoProducer<InternalCommitMetadata> {
+  @Override
+  public DynamoCommitMetadataConsumer id(Id id) {
+    addEntitySafe(ID, idBuilder(id));
+    return this;
+  }
+
+  @Override
+  public boolean canHandleType(ValueType valueType) {
+    return valueType == ValueType.COMMIT_METADATA;
+  }
+
+  @Override
+  public DynamoCommitMetadataConsumer value(ByteString value) {
+    addEntitySafe(VALUE, bytes(value));
+    return this;
+  }
+
+  static class Producer extends DynamoProducer<CommitMetadataConsumer> {
+    public Producer(Map<String, AttributeValue> entity) {
+      super(entity);
+    }
+
     @Override
-    public InternalCommitMetadata deserialize(Map<String, AttributeValue> entity) {
-      return InternalCommitMetadata.builder()
-          .id(deserializeId(entity))
-          .value(deserializeBytes(entity.get(VALUE)))
-          .build();
+    public void applyToConsumer(CommitMetadataConsumer consumer) {
+      consumer.id(deserializeId(entity))
+          .value(deserializeBytes(entity.get(VALUE)));
     }
   }
 }

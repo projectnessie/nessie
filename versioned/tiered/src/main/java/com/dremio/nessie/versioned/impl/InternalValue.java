@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -25,7 +26,7 @@ import com.google.protobuf.ByteString;
 /**
  * Holds a VersionStore binary value for interaction with the Store.
  */
-public class InternalValue extends WrappedValueBean implements Persistent<ValueConsumer<?>> {
+public class InternalValue extends WrappedValueBean implements Persistent<ValueConsumer> {
 
   private InternalValue(Id id, ByteString value) {
     super(id, value);
@@ -49,7 +50,7 @@ public class InternalValue extends WrappedValueBean implements Persistent<ValueC
   }
 
   @Override
-  public ValueConsumer<?> applyToConsumer(ValueConsumer<?> consumer) {
+  public ValueConsumer applyToConsumer(ValueConsumer consumer) {
     consumer.id(getId());
     consumer.value(getBytes());
     return consumer;
@@ -59,7 +60,29 @@ public class InternalValue extends WrappedValueBean implements Persistent<ValueC
     return new Builder();
   }
 
-  public static class Builder extends AbstractBuilder<Builder> implements ValueConsumer<Builder> {
+  public static class Builder implements ValueConsumer, Producer<InternalValue, ValueConsumer> {
+
+    protected Id id;
+    protected ByteString value;
+
+    @Override
+    public Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.VALUE;
+    }
+
+    @Override
+    public Builder value(ByteString value) {
+      checkCalled(this.value, "value");
+      this.value = value;
+      return this;
+    }
 
     /**
      * TODO javadoc.
@@ -69,6 +92,10 @@ public class InternalValue extends WrappedValueBean implements Persistent<ValueC
       checkSet(value, "value");
 
       return new InternalValue(id, value);
+    }
+
+    private static void checkCalled(Object arg, String name) {
+      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
     }
 
     private static void checkSet(Object arg, String name) {

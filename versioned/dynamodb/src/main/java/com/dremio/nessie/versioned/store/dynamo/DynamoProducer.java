@@ -17,7 +17,7 @@ package com.dremio.nessie.versioned.store.dynamo;
 
 import java.util.Map;
 
-import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.tiered.builder.HasIdConsumer;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -25,6 +25,12 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  * A producer implements the deserialization part and uses the consumers to build the
  * deserialized objects.
  */
-public interface DynamoProducer<E extends HasId> {
-  E deserialize(Map<String, AttributeValue> entity);
+public abstract class DynamoProducer<C extends HasIdConsumer<C>> {
+  protected final Map<String, AttributeValue> entity;
+
+  public DynamoProducer(Map<String, AttributeValue> entity) {
+    this.entity = entity;
+  }
+
+  public abstract void applyToConsumer(C consumer);
 }

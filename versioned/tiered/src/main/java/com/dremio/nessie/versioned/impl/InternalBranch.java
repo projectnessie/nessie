@@ -112,7 +112,7 @@ import com.google.common.primitives.Ints;
  * <li>The ids for all saved commits will exist in the L1 table.
  * </ol>
  */
-class InternalBranch extends MemoizedId implements InternalRef, Persistent<RefConsumer<?>> {
+class InternalBranch extends MemoizedId implements InternalRef, Persistent<RefConsumer> {
 
   static final String ID = "id";
   static final String NAME = "name";
@@ -644,7 +644,7 @@ class InternalBranch extends MemoizedId implements InternalRef, Persistent<RefCo
   }
 
   @Override
-  public RefConsumer<?> applyToConsumer(RefConsumer<?> consumer) {
+  public RefConsumer applyToConsumer(RefConsumer consumer) {
     return consumer.id(getId())
         .name(name)
         .type(RefType.BRANCH)

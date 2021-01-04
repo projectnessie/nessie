@@ -24,14 +24,27 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> implements
-    RefConsumer<DynamoRefConsumer> {
+class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsumer {
+
+  static final String TYPE = "type";
+  static final String NAME = "name";
+  static final String COMMIT = "commit";
+  static final String COMMITS = "commits";
+  static final String DELTAS = "deltas";
+  static final String PARENT = "parent";
+  static final String POSITION = "position";
+  static final String NEW_ID = "new";
+  static final String OLD_ID = "old";
+  static final String REF_TYPE_BRANCH = "b";
+  static final String REF_TYPE_TAG = "t";
+  static final String TREE = "tree";
+  static final String METADATA = "metadata";
+  static final String KEY_LIST = "keys";
 
   DynamoRefConsumer() {
     super(ValueType.REF);
@@ -41,6 +54,11 @@ class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> implements
   public DynamoRefConsumer id(Id id) {
     addEntitySafe(ID, bytes(id.getValue()));
     return this;
+  }
+
+  @Override
+  public boolean canHandleType(ValueType valueType) {
+    return valueType == ValueType.REF;
   }
 
   @Override
@@ -131,32 +149,33 @@ class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> implements
     return AttributeValue.builder().m(map).build();
   }
 
-  static class Producer implements DynamoProducer<InternalRef> {
+  static class Producer extends DynamoProducer<RefConsumer> {
+    public Producer(Map<String, AttributeValue> entity) {
+      super(entity);
+    }
+
     @Override
-    public InternalRef deserialize(Map<String, AttributeValue> entity) {
-      InternalRef.Builder builder = InternalRef.builder();
-      builder.id(deserializeId(entity))
+    public void applyToConsumer(RefConsumer consumer) {
+      consumer.id(deserializeId(entity))
           .name(entity.get(NAME).s());
 
       String refType = entity.get(TYPE).s();
       switch (refType) {
         case REF_TYPE_BRANCH:
-          builder.type(RefType.BRANCH);
+          consumer.type(RefType.BRANCH);
 
-          builder.metadata(deserializeId(entity.get(METADATA)));
-          builder.children(deserializeIdList(entity.get(TREE)));
-          builder.commits(deserializeCommits(entity.get(COMMITS)));
+          consumer.metadata(deserializeId(entity.get(METADATA)))
+              .children(deserializeIdList(entity.get(TREE)))
+              .commits(deserializeCommits(entity.get(COMMITS)));
 
           break;
         case REF_TYPE_TAG:
-          builder.type(RefType.TAG);
-          builder.commit(deserializeId(entity.get(COMMIT)));
+          consumer.type(RefType.TAG)
+              .commit(deserializeId(entity.get(COMMIT)));
           break;
         default:
           throw new IllegalStateException("Invalid ref-type '" + refType + "'");
       }
-
-      return builder.build();
     }
 
     private static Stream<BranchCommit> deserializeCommits(AttributeValue attributeValue) {

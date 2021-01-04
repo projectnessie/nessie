@@ -23,14 +23,23 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
 
-class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Consumer<DynamoL1Consumer> {
+class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer {
+
+  static final String MUTATIONS = "mutations";
+  static final String FRAGMENTS = "fragments";
+  static final String IS_CHECKPOINT = "chk";
+  static final String ORIGIN = "origin";
+  static final String DISTANCE = "dist";
+  static final String PARENTS = "parents";
+  static final String TREE = "tree";
+  static final String METADATA = "metadata";
+  static final String KEY_LIST = "keys";
 
   private final Map<String, AttributeValue.Builder> keys;
   private final List<AttributeValue.Builder> keysMutations;
@@ -39,6 +48,11 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
     super(ValueType.L1);
     keys = new HashMap<>();
     keysMutations = new ArrayList<>();
+  }
+
+  @Override
+  public boolean canHandleType(ValueType valueType) {
+    return valueType == ValueType.L1;
   }
 
   @Override
@@ -126,13 +140,13 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
   }
 
   @Override
-  Map<String, AttributeValue> toEntity() {
+  public Map<String, AttributeValue> build() {
     addKeysSafe(MUTATIONS, list(buildValues(keysMutations)));
     if (!keys.isEmpty()) {
       addEntitySafe(KEY_LIST, map(buildValuesMap(keys)));
     }
 
-    return super.toEntity();
+    return super.build();
   }
 
   private void addKeysSafe(String key, Builder value) {
@@ -142,29 +156,33 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
     }
   }
 
-  static class Producer implements DynamoProducer<L1> {
+  static class Producer extends DynamoProducer<L1Consumer> {
+
+    public Producer(Map<String, AttributeValue> map) {
+      super(map);
+    }
+
     @Override
-    public L1 deserialize(Map<String, AttributeValue> entity) {
-      L1.Builder builder = L1.builder()
-          .id(deserializeId(entity));
+    public void applyToConsumer(L1Consumer consumer) {
+      consumer.id(deserializeId(entity));
 
       if (entity.containsKey(METADATA)) {
-        builder.commitMetadataId(deserializeId(entity.get(METADATA)));
+        consumer.commitMetadataId(deserializeId(entity.get(METADATA)));
       }
       if (entity.containsKey(TREE)) {
-        builder.children(deserializeIdList(entity.get(TREE)));
+        consumer.children(deserializeIdList(entity.get(TREE)));
       }
       if (entity.containsKey(PARENTS)) {
-        builder.ancestors(deserializeIdList(entity.get(PARENTS)));
+        consumer.ancestors(deserializeIdList(entity.get(PARENTS)));
       }
       if (entity.containsKey(KEY_LIST)) {
         Map<String, AttributeValue> keys = entity.get(KEY_LIST).m();
         Boolean checkpoint = keys.get(IS_CHECKPOINT).bool();
         if (checkpoint != null) {
           if (checkpoint) {
-            builder.completeKeyList(deserializeIdList(keys.get(FRAGMENTS)));
+            consumer.completeKeyList(deserializeIdList(keys.get(FRAGMENTS)));
           } else {
-            builder.incrementalKeyList(
+            consumer.incrementalKeyList(
                 deserializeId(keys.get(ORIGIN)),
                 deserializeInt(keys.get(DISTANCE))
             );
@@ -175,12 +193,10 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
         List<AttributeValue> mutations = keys.get(MUTATIONS).l();
         deserializeKeyMutations(
             mutations,
-            builder::addKeyAddition,
-            builder::addKeyRemoval
+            consumer::addKeyAddition,
+            consumer::addKeyRemoval
         );
       }
-
-      return builder.build();
     }
   }
 }

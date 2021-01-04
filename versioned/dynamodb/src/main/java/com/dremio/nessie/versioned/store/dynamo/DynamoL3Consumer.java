@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L3Consumer;
-import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -28,7 +27,11 @@ import com.dremio.nessie.versioned.store.ValueType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
 
-class DynamoL3Consumer extends DynamoConsumer<DynamoL3Consumer> implements L3Consumer<DynamoL3Consumer> {
+class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer {
+
+  static final String TREE = "tree";
+  static final String TREE_KEY = "key";
+  static final String TREE_ID = "id";
 
   DynamoL3Consumer() {
     super(ValueType.L3);
@@ -52,11 +55,19 @@ class DynamoL3Consumer extends DynamoConsumer<DynamoL3Consumer> implements L3Con
     return this;
   }
 
-  static class Producer implements DynamoProducer<L3> {
+  @Override
+  public boolean canHandleType(ValueType valueType) {
+    return valueType == ValueType.L3;
+  }
+
+  static class Producer extends DynamoProducer<L3Consumer> {
+    public Producer(Map<String, AttributeValue> entity) {
+      super(entity);
+    }
+
     @Override
-    public L3 deserialize(Map<String, AttributeValue> entity) {
-      L3.Builder builder = L3.builder()
-          .id(deserializeId(entity));
+    public void applyToConsumer(L3Consumer consumer) {
+      consumer.id(deserializeId(entity));
 
       if (entity.containsKey(TREE)) {
         Stream<KeyDelta> keyDelta = entity.get(TREE).l().stream()
@@ -66,10 +77,8 @@ class DynamoL3Consumer extends DynamoConsumer<DynamoL3Consumer> implements L3Con
                 deserializeId(m.get(TREE_ID))
             ));
 
-        builder.addKeyDelta(keyDelta);
+        consumer.addKeyDelta(keyDelta);
       }
-
-      return builder.build();
     }
   }
 }

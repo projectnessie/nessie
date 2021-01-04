@@ -16,13 +16,14 @@
 package com.dremio.nessie.versioned.impl;
 
 import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
-public class InternalCommitMetadata extends WrappedValueBean implements Persistent<CommitMetadataConsumer<?>> {
+public class InternalCommitMetadata extends WrappedValueBean implements Persistent<CommitMetadataConsumer> {
 
   private InternalCommitMetadata(Id id, ByteString value) {
     super(id, value);
@@ -46,7 +47,7 @@ public class InternalCommitMetadata extends WrappedValueBean implements Persiste
   }
 
   @Override
-  public CommitMetadataConsumer<?> applyToConsumer(CommitMetadataConsumer<?> consumer) {
+  public CommitMetadataConsumer applyToConsumer(CommitMetadataConsumer consumer) {
     consumer.id(getId());
     consumer.value(getBytes());
     return consumer;
@@ -56,7 +57,29 @@ public class InternalCommitMetadata extends WrappedValueBean implements Persiste
     return new Builder();
   }
 
-  public static class Builder extends AbstractBuilder<Builder> implements CommitMetadataConsumer<Builder> {
+  public static class Builder implements CommitMetadataConsumer, Producer<InternalCommitMetadata, CommitMetadataConsumer> {
+
+    protected Id id;
+    protected ByteString value;
+
+    @Override
+    public Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.COMMIT_METADATA;
+    }
+
+    @Override
+    public Builder value(ByteString value) {
+      checkCalled(this.value, "value");
+      this.value = value;
+      return this;
+    }
 
     /**
      * TODO javadoc.
@@ -66,6 +89,10 @@ public class InternalCommitMetadata extends WrappedValueBean implements Persiste
       checkSet(value, "value");
 
       return new InternalCommitMetadata(id, value);
+    }
+
+    private static void checkCalled(Object arg, String name) {
+      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
     }
 
     private static void checkSet(Object arg, String name) {
