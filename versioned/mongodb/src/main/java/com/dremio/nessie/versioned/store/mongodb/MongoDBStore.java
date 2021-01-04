@@ -34,6 +34,7 @@ import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
+import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
@@ -211,7 +212,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <V> boolean putIfAbsent(ValueType type, V value) {
+  public <V extends HasId> boolean putIfAbsent(ValueType type, V value) {
     final MongoCollection<V> collection = getCollection(type);
 
     // Use upsert so that a document is created if the filter does not match. The update operator is only $setOnInsert
@@ -224,7 +225,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
+  public <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
 
@@ -261,7 +262,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <V> V loadSingle(ValueType valueType, Id id) {
+  public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
     final MongoCollection<V> collection = getCollection(valueType);
 
     final V value = Mono.from(collection.find(Filters.eq(Store.KEY_NAME, id))).block(timeout);
@@ -272,14 +273,19 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
+  public <C extends HasIdConsumer<C>> void loadSingle(ValueType type, Id id, C consumer) {
+    throw new UnsupportedOperationException("must be implemented"); // TODO implement
+  }
+
+  @Override
+  public <V extends HasId> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
       throws NotFoundException {
     throw new UnsupportedOperationException();
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <V> Stream<V> getValues(Class<V> valueClass, ValueType type) {
+  public <V extends HasId> Stream<V> getValues(Class<V> valueClass, ValueType type) {
     // TODO: Can this be optimized to not collect the elements before streaming them?
     return Flux.from(this.<V>getCollection(ValueType.REF).find()).toStream();
   }

@@ -13,50 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.bytes;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeBytes;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdStream;
 
 import java.util.Map;
-import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.L2Consumer;
-import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer {
+abstract class DynamoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends DynamoConsumer<C> implements WrappedValueConsumer<C> {
 
-  static final String TREE = "tree";
+  static final String VALUE = "value";
 
-  DynamoL2Consumer() {
-    super(ValueType.L2);
+  DynamoWrappedValueConsumer(ValueType valueType) {
+    super(valueType);
   }
 
   @Override
-  public L2Consumer children(Stream<Id> ids) {
-    return addIdList(TREE, ids);
-  }
-
-  @Override
-  public boolean canHandleType(ValueType valueType) {
-    return valueType == ValueType.L2;
+  public C value(ByteString value) {
+    return addEntitySafe(VALUE, bytes(value));
   }
 
   @Override
   public Map<String, AttributeValue> build() {
-    checkPresent(TREE, "children");
+    checkPresent(VALUE, "value");
 
     return super.build();
   }
 
-  static void produceToConsumer(Map<String, AttributeValue> entity, L2Consumer consumer) {
-    consumer.id(deserializeId(entity, ID));
-
-    if (entity.containsKey(TREE)) {
-      consumer.children(deserializeIdStream(entity, TREE));
-    }
+  static <C extends WrappedValueConsumer<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
+    consumer.id(deserializeId(entity, ID))
+        .value(deserializeBytes(entity, VALUE));
   }
+
 }

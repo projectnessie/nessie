@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 
@@ -59,7 +60,7 @@ public interface Store extends AutoCloseable {
    * @return Returns true if the item was absent and is now inserted.
    * @throws StoreOperationException Thrown if some kind of underlying operation fails.
    */
-  <V> boolean putIfAbsent(ValueType type, V value);
+  <V extends HasId> boolean putIfAbsent(ValueType type, V value);
 
   /**
    * Put a value in the store.
@@ -74,7 +75,7 @@ public interface Store extends AutoCloseable {
    * @throws ConditionFailedException If the condition provided didn't match the current state of the value.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <V> void put(ValueType type, V value, Optional<ConditionExpression> condition);
+  <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> condition);
 
   /**
    * Delete a value.
@@ -112,7 +113,12 @@ public interface Store extends AutoCloseable {
    * @throws NotFoundException If the value is not found.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <V> V loadSingle(ValueType type, Id id);
+  <V extends HasId> V loadSingle(ValueType type, Id id);
+
+  /**
+   * TODO this is just a proposal.
+   */
+  <C extends HasIdConsumer<C>> void loadSingle(ValueType type, Id id, C consumer);
 
   /**
    * Do a conditional update. If the condition succeeds, return the values in the object. If it fails, return a Optional.empty().
@@ -125,7 +131,7 @@ public interface Store extends AutoCloseable {
    * @throws NotFoundException Thrown if no value is found with the provided id.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition);
+  <V extends HasId> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition);
 
   /**
    * Get a list of all available values of the requested value type.
@@ -135,5 +141,5 @@ public interface Store extends AutoCloseable {
    * @param type The {@link ValueType} to load.
    * @return
    */
-  <V> Stream<V> getValues(Class<V> valueClass, ValueType type);
+  <V extends HasId> Stream<V> getValues(Class<V> valueClass, ValueType type);
 }

@@ -255,7 +255,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       store.save(
           Streams.concat(
               current.getMostSaveOps(),
-              Stream.of(new SaveOp<WrappedValueBean>(ValueType.COMMIT_METADATA, metadata))
+              Stream.of(new SaveOp<>(ValueType.COMMIT_METADATA, metadata))
           ).collect(Collectors.toList()));
 
       CommitOp commitOp = current.getCommitOp(

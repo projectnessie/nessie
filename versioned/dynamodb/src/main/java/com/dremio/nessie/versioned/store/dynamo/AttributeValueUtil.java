@@ -15,25 +15,23 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.FRAGMENTS;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.MUTATIONS;
+import static java.util.stream.Collectors.toList;
+import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.builder;
 
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
+import com.dremio.nessie.versioned.ImmutableKey;
+import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
-import com.dremio.nessie.versioned.store.HasId;
-import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.dremio.nessie.versioned.store.ValueType;
+import com.dremio.nessie.versioned.store.Id;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.MapDifference.ValueDifference;
 import com.google.common.collect.Maps;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 
 import software.amazon.awssdk.core.SdkBytes;
@@ -42,8 +40,11 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 /**
  * Tools to convert to and from Entity/AttributeValue.
  */
-@Deprecated // TOOD REMOVE THIS CLASS
-public class AttributeValueUtil {
+public final class AttributeValueUtil {
+
+  private AttributeValueUtil() {
+    // empty
+  }
 
   /**
    * Convert an attribute value to an entity.
@@ -78,144 +79,160 @@ public class AttributeValueUtil {
   public static AttributeValue fromEntity(Entity e) {
     switch (e.getType()) {
       case BINARY:
-        return AttributeValue.builder().b(SdkBytes.fromByteBuffer(e.getBinary().asReadOnlyByteBuffer())).build();
+        return bytes(e.getBinary());
       case BOOLEAN:
-        return AttributeValue.builder().bool(e.getBoolean()).build();
+        return bool(e.getBoolean());
       case LIST:
-        return AttributeValue.builder().l(e.getList().stream().map(AttributeValueUtil::fromEntity)
-            .collect(ImmutableList.toImmutableList())).build();
+        return list(e.getList().stream().map(AttributeValueUtil::fromEntity));
       case MAP:
-        return AttributeValue.builder().m(fromEntity(e.getMap())).build();
+        return map(Maps.transformValues(e.getMap(), AttributeValueUtil::fromEntity));
       case NUMBER:
-        return AttributeValue.builder().n(String.valueOf(e.getNumber())).build();
+        return builder().n(String.valueOf(e.getNumber())).build();
       case STRING:
-        return AttributeValue.builder().s(e.getString()).build();
+        return string(e.getString());
       default:
         throw new UnsupportedOperationException("Unable to convert type " + e);
     }
   }
 
+  static AttributeValue keyElements(Key key) {
+    Preconditions.checkNotNull(key);
+    return list(key.getElements().stream().map(AttributeValueUtil::string));
+  }
+
+  static AttributeValue idsList(Stream<Id> ids) {
+    Preconditions.checkNotNull(ids);
+    return list(ids.map(AttributeValueUtil::idValue));
+  }
+
+  static AttributeValue idValue(Id id) {
+    Preconditions.checkNotNull(id);
+    return bytes(id.getValue());
+  }
+
+  static AttributeValue bytes(ByteString bytes) {
+    Preconditions.checkNotNull(bytes);
+    return builder().b(SdkBytes.fromByteBuffer(bytes.asReadOnlyByteBuffer())).build();
+  }
+
+  static AttributeValue bool(boolean bool) {
+    return builder().bool(bool).build();
+  }
+
+  static AttributeValue number(int number) {
+    return builder().n(Integer.toString(number)).build();
+  }
+
+  static AttributeValue string(String string) {
+    return builder().s(Preconditions.checkNotNull(string)).build();
+  }
+
+  static AttributeValue list(Stream<AttributeValue> list) {
+    Preconditions.checkNotNull(list);
+    return builder().l(list.collect(toList())).build();
+  }
+
+  static AttributeValue map(Map<String, AttributeValue> map) {
+    Preconditions.checkNotNull(map);
+    return builder().m(map).build();
+  }
+
+  static AttributeValue singletonMap(String key, AttributeValue value) {
+    Preconditions.checkNotNull(key);
+    Preconditions.checkNotNull(value);
+    return builder().m(Collections.singletonMap(key, value)).build();
+  }
+
+  static void deserializeKeyMutations(
+      Map<String, AttributeValue> map,
+      String key,
+      Consumer<Key> addConsumer,
+      Consumer<Key> removalConsumer
+  ) {
+    List<AttributeValue> mutations = mandatoryList(attributeValue(map, key));
+    for (AttributeValue mutation : mutations) {
+      Map<String, AttributeValue> m = mutation.m();
+      if (m.size() > 2) {
+        throw new IllegalStateException("Ugh - got a keys.mutations map like this: " + m);
+      }
+      AttributeValue raw = m.get(DynamoConsumer.KEY_ADDITION);
+      if (raw != null) {
+        addConsumer.accept(deserializeKey(raw));
+      }
+      raw = m.get(DynamoConsumer.KEY_REMOVAL);
+      if (raw != null) {
+        removalConsumer.accept(deserializeKey(raw));
+      }
+    }
+  }
+
+  static AttributeValue attributeValue(Map<String, AttributeValue> map, String key) {
+    Preconditions.checkNotNull(map);
+    Preconditions.checkNotNull(key);
+    AttributeValue av = map.get(key);
+    if (av == null) {
+      throw new IllegalStateException("Missing mandatory attribtue '" + key + "'");
+    }
+    return av;
+  }
+
+  static Key deserializeKey(Map<String, AttributeValue> map, String key) {
+    AttributeValue raw = attributeValue(map, key);
+    return deserializeKey(raw);
+  }
+
+  static Key deserializeKey(AttributeValue raw) {
+    ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
+    for (AttributeValue keyPart : mandatoryList(raw)) {
+      keyBuilder.addElements(Preconditions.checkNotNull(keyPart.s(), "mandatory part of key-list is not a string"));
+    }
+    return keyBuilder.build();
+  }
+
+  static List<AttributeValue> mandatoryList(AttributeValue raw) {
+    Preconditions.checkNotNull(raw);
+    return Preconditions.checkNotNull(raw.l(), "mandatory list value is null");
+  }
+
+  static Map<String, AttributeValue> mandatoryMap(AttributeValue raw) {
+    Preconditions.checkNotNull(raw);
+    return Preconditions.checkNotNull(raw.m(), "mandatory map value is null");
+  }
+
+  static Stream<Id> deserializeIdStream(Map<String, AttributeValue> map, String key) {
+    AttributeValue raw = attributeValue(map, key);
+    return raw.l()
+        .stream()
+        .map(AttributeValueUtil::deserializeId);
+  }
+
+  static Id deserializeId(Map<String, AttributeValue> map, String key) {
+    AttributeValue raw = attributeValue(map, key);
+    return deserializeId(raw);
+  }
+
+  static Id deserializeId(AttributeValue raw) {
+    SdkBytes b = Preconditions.checkNotNull(raw.b(), "mandatory binary value is null");
+    return Id.of(b.asByteArrayUnsafe());
+  }
+
+  static int deserializeInt(Map<String, AttributeValue> map, String key) {
+    AttributeValue raw = attributeValue(map, key);
+    String b = Preconditions.checkNotNull(raw.n(), "mandatory number value is null");
+    return Integer.parseInt(raw.n());
+  }
+
+  static ByteString deserializeBytes(Map<String, AttributeValue> map, String key) {
+    AttributeValue raw = attributeValue(map, key);
+    SdkBytes b = Preconditions.checkNotNull(raw.b(), "mandatory binary value is null");
+    return ByteString.copyFrom(b.asByteArrayUnsafe());
+  }
+
   /**
-   * TODO javadoc for checkstyle.
+   * A "cast to everything" helper method - looks neat, but it's actually not.
    */
-  @Deprecated
-  public static Map<String, AttributeValue> fromEntity(Map<String, Entity> map) {
-    return Maps.transformValues(map, AttributeValueUtil::fromEntity);
-  }
-
-  // TODO REMOVE THE FOLLOWING STUFF
-
-  static <V> void sanityCheckFromSaveOp(ValueType type, V value, Map<String, AttributeValue> con) {
-    SimpleSchema<V> schema = type.getSchema();
-    Map<String, Entity> x = schema.itemToMap(value, true);
-    Map<String, AttributeValue> ref = Maps.transformValues(x, AttributeValueUtil::fromEntity);
-
-    MapDifference<String, AttributeValue> mapDiff = Maps.difference(ref, con);
-
-    StringBuilder errors = new StringBuilder();
-    Map<String, AttributeValue> onlyInRef = mapDiff.entriesOnlyOnLeft();
-    Map<String, AttributeValue> onlyInCon = mapDiff.entriesOnlyOnRight();
-    Map<String, ValueDifference<AttributeValue>> diff = new HashMap<>(mapDiff.entriesDiffering());
-    if (!onlyInRef.isEmpty()) {
-      errors.append("\nOnly in 'fromEntity': ").append(onlyInRef);
-    }
-    if (!onlyInCon.isEmpty()) {
-      errors.append("\nOnly in 'fromConsumer': ").append(onlyInCon);
-    }
-    boolean keysDiff = diff.containsKey("keys");
-    if (keysDiff) {
-      diff.remove("keys");
-    }
-    if (!diff.isEmpty()) {
-      errors.append("\nDifferent: ").append(diff);
-    }
-
-    if (keysDiff) {
-      Map<String, AttributeValue> refKeys = ref.get("keys").m();
-      Map<String, AttributeValue> conKeys = con.get("keys").m();
-      mapDiff = Maps.difference(refKeys, conKeys);
-      onlyInRef = mapDiff.entriesOnlyOnLeft();
-      onlyInCon = mapDiff.entriesOnlyOnRight();
-      diff = new HashMap<>(mapDiff.entriesDiffering());
-      if (!onlyInRef.isEmpty()) {
-        errors.append("\nOnly in 'fromEntity.keys': ").append(onlyInRef);
-      }
-      if (!onlyInCon.isEmpty()) {
-        errors.append("\nOnly in 'fromConsumer.keys': ").append(onlyInCon);
-      }
-      boolean mutationsDiff = diff.containsKey(MUTATIONS);
-      boolean fragmentsDiff = diff.containsKey(FRAGMENTS);
-      if (mutationsDiff) {
-        diff.remove(MUTATIONS);
-        Set<List<String>> refAdd = new HashSet<>();
-        Set<List<String>> refRem = new HashSet<>();
-        Set<List<String>> conAdd = new HashSet<>();
-        Set<List<String>> conRem = new HashSet<>();
-        refKeys.get(MUTATIONS).l().stream()
-            .map(AttributeValue::m)
-            .forEach(m -> {
-              if (m.containsKey("a")) {
-                refAdd.add(
-                    m.get("a").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
-              }
-              if (m.containsKey("d")) {
-                refRem.add(
-                    m.get("d").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
-              }
-            });
-        conKeys.get(MUTATIONS).l().stream()
-            .map(AttributeValue::m)
-            .forEach(m -> {
-              if (m.containsKey("a")) {
-                conAdd.add(
-                    m.get("a").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
-              }
-              if (m.containsKey("d")) {
-                conRem.add(
-                    m.get("d").l().stream().map(AttributeValue::s).collect(Collectors.toList()));
-              }
-            });
-        if (!refAdd.equals(conAdd) || !refRem.equals(conRem)) {
-          errors.append("\nfromEntity.keys.mutations(a): ").append(refAdd);
-          errors.append("\nfromEntity.keys.mutations(d): ").append(refRem);
-          errors.append("\nfromConsumer.keys.mutations(a): ").append(conAdd);
-          errors.append("\nfromConsumer.keys.mutations(d): ").append(conRem);
-        }
-      }
-      if (fragmentsDiff) {
-        diff.remove(FRAGMENTS);
-        Set<ByteBuffer> refFrags = refKeys.get(FRAGMENTS).l().stream()
-            .map(a -> a.b().asByteBuffer()).collect(Collectors.toSet());
-        Set<ByteBuffer> conFrags = conKeys.get(FRAGMENTS).l().stream()
-            .map(a -> a.b().asByteBuffer()).collect(Collectors.toSet());
-        if (!refFrags.equals(conFrags)) {
-          errors.append("\nfromEntity.keys.fragments: ").append(refFrags);
-          errors.append("\nfromConsumer.keys.fragments: ").append(conFrags);
-        }
-      }
-      if (!diff.isEmpty()) {
-        errors.append("\nDifferent in 'keys': ").append(diff);
-      }
-    }
-
-    if (errors.length() > 0) {
-      throw new AssertionError("Ugh! fromEntity is different from fromConsumer!"
-          + errors
-          + "\nfromEntity:\n    "
-          + ref.entrySet().stream().map(Object::toString).sorted()
-          .collect(Collectors.joining("\n    "))
-          + "\nfromConsumer:\n    "
-          + con.entrySet().stream().map(Object::toString).sorted()
-          .collect(Collectors.joining("\n    ")));
-    }
-  }
-
-  static void sanityCheckToConsumer(Map<String, AttributeValue> attributeMap,
-      ValueType valueType, HasId item) {
-    Map<String, Entity> oldOne = Maps.transformValues(attributeMap, AttributeValueUtil::toEntity);
-    Object oldItem = valueType.getSchema().mapToItem(valueType.checkType(oldOne));
-    if (!item.equals(oldItem)) {
-      throw new IllegalStateException("Uh! " + valueType + " item building is broken");
-    }
+  @SuppressWarnings("unchecked")
+  static <T> T cast(Object o) {
+    return (T) o;
   }
 }

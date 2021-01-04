@@ -15,18 +15,20 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
+
 import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 /**
  * Holds a VersionStore binary value for interaction with the Store.
  */
-public class InternalValue extends WrappedValueBean implements Persistent<ValueConsumer> {
+public class InternalValue extends WrappedValueBean<ValueConsumer> {
 
   private InternalValue(Id id, ByteString value) {
     super(id, value);
@@ -45,15 +47,9 @@ public class InternalValue extends WrappedValueBean implements Persistent<ValueC
       new WrappedValueBean.WrappedValueSchema<>(InternalValue.class, InternalValue::new);
 
   @Override
-  public ValueType type() {
-    return ValueType.VALUE;
-  }
-
-  @Override
   public ValueConsumer applyToConsumer(ValueConsumer consumer) {
-    consumer.id(getId());
-    consumer.value(getBytes());
-    return consumer;
+    return consumer.id(getId())
+        .value(getBytes());
   }
 
   public static Builder builder() {
@@ -92,14 +88,6 @@ public class InternalValue extends WrappedValueBean implements Persistent<ValueC
       checkSet(value, "value");
 
       return new InternalValue(id, value);
-    }
-
-    private static void checkCalled(Object arg, String name) {
-      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
-    }
-
-    private static void checkSet(Object arg, String name) {
-      Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
     }
   }
 }

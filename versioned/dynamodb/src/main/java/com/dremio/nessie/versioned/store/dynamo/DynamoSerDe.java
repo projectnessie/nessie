@@ -15,15 +15,19 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.cast;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
+
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.tiered.builder.Producer;
-import com.dremio.nessie.versioned.impl.Persistent;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
@@ -32,37 +36,39 @@ import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class DynamoSerDe {
+final class DynamoSerDe {
 
   private static final EnumMap<ValueType, Supplier<DynamoConsumer<?>>> dynamoConsumerSuppliers;
-  private static final EnumMap<ValueType, Function<Map<String, AttributeValue>, DynamoProducer<?>>> dynamoProducerSuppliers;
+  private static final EnumMap<ValueType, BiConsumer<Map<String, AttributeValue>, HasIdConsumer<?>>> dynamoProducerMethodss;
 
   static {
     dynamoConsumerSuppliers = new EnumMap<>(ValueType.class);
-    dynamoProducerSuppliers = new EnumMap<>(ValueType.class);
+    dynamoProducerMethodss = new EnumMap<>(ValueType.class);
 
     dynamoConsumerSuppliers.put(ValueType.L1, DynamoL1Consumer::new);
-    dynamoProducerSuppliers.put(ValueType.L1, DynamoL1Consumer.Producer::new);
+    dynamoProducerMethodss.put(ValueType.L1, (e, c) -> DynamoL1Consumer.produceToConsumer(e, cast(c)));
 
     dynamoConsumerSuppliers.put(ValueType.L2, DynamoL2Consumer::new);
-    dynamoProducerSuppliers.put(ValueType.L2, DynamoL2Consumer.Producer::new);
+    dynamoProducerMethodss.put(ValueType.L2, (e, c) -> DynamoL2Consumer.produceToConsumer(e, cast(c)));
 
     dynamoConsumerSuppliers.put(ValueType.L3, DynamoL3Consumer::new);
-    dynamoProducerSuppliers.put(ValueType.L3, DynamoL3Consumer.Producer::new);
+    dynamoProducerMethodss.put(ValueType.L3, (e, c) -> DynamoL3Consumer.produceToConsumer(e, cast(c)));
 
     dynamoConsumerSuppliers.put(ValueType.COMMIT_METADATA, DynamoCommitMetadataConsumer::new);
-    dynamoProducerSuppliers.put(ValueType.COMMIT_METADATA, DynamoCommitMetadataConsumer.Producer::new);
+    dynamoProducerMethodss.put(ValueType.COMMIT_METADATA, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, cast(c)));
 
     dynamoConsumerSuppliers.put(ValueType.VALUE, DynamoValueConsumer::new);
-    dynamoProducerSuppliers.put(ValueType.VALUE, DynamoValueConsumer.Producer::new);
+    dynamoProducerMethodss
+        .put(ValueType.VALUE, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, cast(c)));
 
     dynamoConsumerSuppliers.put(ValueType.REF, DynamoRefConsumer::new);
-    dynamoProducerSuppliers.put(ValueType.REF, DynamoRefConsumer.Producer::new);
+    dynamoProducerMethodss.put(ValueType.REF, (e, c) -> DynamoRefConsumer.produceToConsumer(e, cast(c)));
 
     dynamoConsumerSuppliers.put(ValueType.KEY_FRAGMENT, DynamoFragmentConsumer::new);
-    dynamoProducerSuppliers.put(ValueType.KEY_FRAGMENT, DynamoFragmentConsumer.Producer::new);
+    dynamoProducerMethodss
+        .put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragmentConsumer.produceToConsumer(e, cast(c)));
 
-    if (!dynamoConsumerSuppliers.keySet().equals(dynamoProducerSuppliers.keySet())) {
+    if (!dynamoConsumerSuppliers.keySet().equals(dynamoProducerMethodss.keySet())) {
       throw new UnsupportedOperationException("The enum-maps dynamoConsumerSuppliers and dynamoProducerSuppliers "
           + "are not equal. This is a bug in the implementation of DynamoSerDe.");
     }
@@ -75,50 +81,39 @@ public class DynamoSerDe {
     }
   }
 
-  /**
-   * TODO javadoc for checkstyle.
-   */
-  public static <C extends DynamoConsumer<C>, V> Map<String, AttributeValue> serializeEntity(
-      ValueType type,
-      V value) {
-
-    @SuppressWarnings("unchecked") Persistent<HasIdConsumer<C>> persistent = (Persistent<HasIdConsumer<C>>) value;
-    Preconditions.checkArgument(type == persistent.type(),
-        "Expected type %s is not the type of the value %s (%s)",
-        type.name(), value.getClass(), persistent.type());
-
-    DynamoConsumer<C> consumer = newConsumer(persistent.type());
-
-    Preconditions.checkArgument(consumer.canHandleType(type),
-        "Given consumer %s cannot handle ValueType.%s",
-        consumer.getClass(), type.name());
-
-    persistent.applyToConsumer(consumer);
-    Map<String, AttributeValue> map = consumer.build();
-
-    if (false) {
-      AttributeValueUtil.sanityCheckFromSaveOp(type, persistent, map);
-    }
-    return map;
+  private DynamoSerDe() {
+    // empty
   }
 
   /**
-   * Deserialize the given {@code entity} as the given {@link ValueType type}.
+   * TODO javadoc for checkstyle.
+   */
+  public static <C extends HasIdConsumer<C>> Map<String, AttributeValue> serializeWithConsumer(
+      ValueType valueType, Consumer<C> serializer) {
+    Preconditions.checkNotNull(valueType, "valueType parameter is null");
+    Preconditions.checkNotNull(serializer, "serializer parameter is null");
+
+    // No need for any 'type' validation - that's done in the static initializer
+    DynamoConsumer<C> consumer = cast(dynamoConsumerSuppliers.get(valueType).get());
+
+    serializer.accept(cast(consumer));
+
+    return consumer.build();
+  }
+
+  /**
+   * Convenience functionality that deserialized directly into a materialized entity instance,
+   * deserialize the given {@code entity} as the given {@link ValueType type}.
+   *
+   * @see #deserializeToConsumer(ValueType, Map, HasIdConsumer)
    */
   public static <V extends HasId, C extends HasIdConsumer<C>> V deserialize(
       ValueType valueType, Map<String, AttributeValue> entity) {
     Producer<V, C> producer = valueType.newEntityProducer();
-    @SuppressWarnings("unchecked") C consumer = (C) producer;
 
-    deserializeTo(valueType, entity, consumer);
+    deserializeToConsumer(valueType, entity, cast(producer));
 
-    V item = producer.build();
-
-    if (false) {
-      AttributeValueUtil.sanityCheckToConsumer(entity, valueType, item);
-    }
-
-    return item;
+    return producer.build();
   }
 
   /**
@@ -130,10 +125,14 @@ public class DynamoSerDe {
    * @param consumer consumer that receives the deserialized parts of the entity
    * @param <C> type of the consumer
    */
-  public static <C extends HasIdConsumer<C>> void deserializeTo(ValueType valueType, Map<String, AttributeValue> entity, C consumer) {
+  public static <C extends HasIdConsumer<C>> void deserializeToConsumer(
+      ValueType valueType, Map<String, AttributeValue> entity, HasIdConsumer<C> consumer) {
+    Preconditions.checkNotNull(valueType, "valueType parameter is null");
     Preconditions.checkNotNull(entity, "entity parameter is null");
-    String loadedType = entity.get(ValueType.SCHEMA_TYPE).s();
-    Id id = DynamoConsumer.deserializeId(entity.get(Store.KEY_NAME));
+    Preconditions.checkNotNull(consumer, "consumer parameter is null");
+    String loadedType = Preconditions.checkNotNull(attributeValue(entity, ValueType.SCHEMA_TYPE).s(),
+        "Schema-type ('t') in entity is not a string");
+    Id id = deserializeId(entity, Store.KEY_NAME);
     Preconditions.checkNotNull(loadedType,
         "Missing type tag for schema for id %s.", id.getHash());
     Preconditions.checkArgument(valueType.getValueName().equals(loadedType),
@@ -143,31 +142,7 @@ public class DynamoSerDe {
         "Given consumer %s cannot handle ValueType.%s",
         consumer.getClass(), valueType.name());
 
-    DynamoProducer<C> dynamoProducer = newProducer(valueType, entity);
-    dynamoProducer.applyToConsumer(consumer);
-  }
-
-  /**
-   * TODO add some javadoc.
-   */
-  @SuppressWarnings("unchecked")
-  static <C extends HasIdConsumer<C>> DynamoConsumer<C> newConsumer(ValueType type) {
-    DynamoConsumer<?> c = dynamoConsumerSuppliers.get(type).get();
-    if (c == null) {
-      throw new IllegalArgumentException("No DynamoConsumer implementation for " + type);
-    }
-    return (DynamoConsumer<C>) c;
-  }
-
-  /**
-   * TODO add some javadoc.
-   */
-  @SuppressWarnings("unchecked")
-  static <C extends HasIdConsumer<C>> DynamoProducer<C> newProducer(ValueType type, Map<String, AttributeValue> map) {
-    DynamoProducer<?> c = dynamoProducerSuppliers.get(type).apply(map);
-    if (c == null) {
-      throw new IllegalArgumentException("No DynamoConsumer implementation for " + type);
-    }
-    return (DynamoProducer<C>) c;
+    // No need for any 'valueType' validation against the static map - that's done in the static initializer
+    dynamoProducerMethodss.get(valueType).accept(entity, consumer);
   }
 }
