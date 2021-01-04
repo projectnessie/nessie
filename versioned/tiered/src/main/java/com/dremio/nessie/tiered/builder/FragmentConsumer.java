@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.Key;
 
-public interface FragmentConsumer<T extends FragmentConsumer<T>> extends HasIdConsumer<T> {
+public interface FragmentConsumer extends HasIdConsumer<FragmentConsumer> {
 
   /**
    * The commit metadata id for this l1.
@@ -27,5 +27,5 @@ public interface FragmentConsumer<T extends FragmentConsumer<T>> extends HasIdCo
    * @param keys The keys to add.
    * @return This consumer.
    */
-  T keys(Stream<Key> keys);
+  FragmentConsumer keys(Stream<Key> keys);
 }

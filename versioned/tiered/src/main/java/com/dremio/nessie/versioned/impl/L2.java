@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2Consumer;
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -27,7 +28,7 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
-public class L2 extends MemoizedId implements Persistent<L2Consumer<?>> {
+public class L2 extends MemoizedId implements Persistent<L2Consumer> {
 
   private static final long HASH_SEED = -6352836103271505167L;
 
@@ -127,7 +128,7 @@ public class L2 extends MemoizedId implements Persistent<L2Consumer<?>> {
    * TODO Javadoc for checkstyle.
    */
   @Override
-  public L2Consumer<?> applyToConsumer(L2Consumer<?> consumer) {
+  public L2Consumer applyToConsumer(L2Consumer consumer) {
     consumer.id(this.getId());
     consumer.children(this.map.stream());
 
@@ -138,7 +139,7 @@ public class L2 extends MemoizedId implements Persistent<L2Consumer<?>> {
     return new L2.Builder();
   }
 
-  public static class Builder implements L2Consumer<Builder> {
+  public static class Builder implements L2Consumer, Producer<L2, L2Consumer> {
 
     private Id id;
     private Stream<Id> children;
@@ -154,6 +155,11 @@ public class L2 extends MemoizedId implements Persistent<L2Consumer<?>> {
       return new L2(
           id,
           IdMap.of(children));
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.L2;
     }
 
     @Override

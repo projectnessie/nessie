@@ -15,9 +15,8 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.FRAGMENTS;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.KEY_LIST;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConstants.MUTATIONS;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.FRAGMENTS;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.MUTATIONS;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -123,17 +122,17 @@ public class AttributeValueUtil {
     if (!onlyInCon.isEmpty()) {
       errors.append("\nOnly in 'fromConsumer': ").append(onlyInCon);
     }
-    boolean keysDiff = diff.containsKey(KEY_LIST);
+    boolean keysDiff = diff.containsKey("keys");
     if (keysDiff) {
-      diff.remove(KEY_LIST);
+      diff.remove("keys");
     }
     if (!diff.isEmpty()) {
       errors.append("\nDifferent: ").append(diff);
     }
 
     if (keysDiff) {
-      Map<String, AttributeValue> refKeys = ref.get(KEY_LIST).m();
-      Map<String, AttributeValue> conKeys = con.get(KEY_LIST).m();
+      Map<String, AttributeValue> refKeys = ref.get("keys").m();
+      Map<String, AttributeValue> conKeys = con.get("keys").m();
       mapDiff = Maps.difference(refKeys, conKeys);
       onlyInRef = mapDiff.entriesOnlyOnLeft();
       onlyInCon = mapDiff.entriesOnlyOnRight();

@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.store.Id;
 
-public interface L2Consumer<T extends L2Consumer<T>> extends HasIdConsumer<T> {
+public interface L2Consumer extends HasIdConsumer<L2Consumer> {
 
   /**
    * Add a list of children ids indexed by position.
@@ -28,6 +28,6 @@ public interface L2Consumer<T extends L2Consumer<T>> extends HasIdConsumer<T> {
    * @param ids The list of ids
    * @return This consumer.
    */
-  T children(Stream<Id> ids);
+  L2Consumer children(Stream<Id> ids);
 
 }

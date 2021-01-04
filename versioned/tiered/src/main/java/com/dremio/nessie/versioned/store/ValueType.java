@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
@@ -52,22 +53,22 @@ public enum ValueType {
   private final String valueName;
   private final Entity type;
   private final String defaultTableSuffix;
-  private final Supplier<HasIdConsumer<?>> consumerSupplier;
+  private final Supplier<Producer<?, ?>> producerSupplier;
 
   ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName,
-      String defaultTableSuffix, Supplier<HasIdConsumer<?>> consumerSupplier) {
-    this(objectClass, schema, true, valueName, defaultTableSuffix, consumerSupplier);
+      String defaultTableSuffix, Supplier<Producer<?, ?>> producerSupplier) {
+    this(objectClass, schema, true, valueName, defaultTableSuffix, producerSupplier);
   }
 
   ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable, String valueName,
-      String defaultTableSuffix, Supplier<HasIdConsumer<?>> consumerSupplier) {
+      String defaultTableSuffix, Supplier<Producer<?, ?>> producerSupplier) {
     this.objectClass = objectClass;
     this.schema = schema;
     this.immutable = immutable;
     this.valueName = valueName;
     this.type = Entity.ofString(valueName);
     this.defaultTableSuffix = defaultTableSuffix;
-    this.consumerSupplier = consumerSupplier;
+    this.producerSupplier = producerSupplier;
   }
 
   /**
@@ -157,7 +158,8 @@ public enum ValueType {
    */
   // TODO this is currently unused - does it provide any value?
   @SuppressWarnings("unchecked")
-  public <T extends HasIdConsumer<T>> T newEntityConsumer() {
-    return (T) consumerSupplier.get();
+  public <E extends HasId, C extends HasIdConsumer<C>> Producer<E, C> newEntityProducer() {
+    Producer<?, ?> p = producerSupplier.get();
+    return (Producer<E, C>) p;
   }
 }

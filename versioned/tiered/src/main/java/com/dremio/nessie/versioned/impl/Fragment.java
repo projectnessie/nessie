@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.FragmentConsumer;
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
@@ -31,7 +32,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-public class Fragment extends MemoizedId implements Persistent<FragmentConsumer<?>> {
+public class Fragment extends MemoizedId implements Persistent<FragmentConsumer> {
 
   private final List<InternalKey> keys;
 
@@ -99,7 +100,7 @@ public class Fragment extends MemoizedId implements Persistent<FragmentConsumer<
   }
 
   @Override
-  public FragmentConsumer<?> applyToConsumer(FragmentConsumer<?> consumer) {
+  public FragmentConsumer applyToConsumer(FragmentConsumer consumer) {
     consumer.id(getId());
     consumer.keys(keys.stream().map(InternalKey::toKey));
     return consumer;
@@ -109,7 +110,7 @@ public class Fragment extends MemoizedId implements Persistent<FragmentConsumer<
     return new Builder();
   }
 
-  public static class Builder implements FragmentConsumer<Fragment.Builder> {
+  public static class Builder implements FragmentConsumer, Producer<Fragment, FragmentConsumer> {
 
     private Id id;
     private List<InternalKey> keys;
@@ -119,6 +120,11 @@ public class Fragment extends MemoizedId implements Persistent<FragmentConsumer<
       checkCalled(this.id, "id");
       this.id = id;
       return this;
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.KEY_FRAGMENT;
     }
 
     @Override
