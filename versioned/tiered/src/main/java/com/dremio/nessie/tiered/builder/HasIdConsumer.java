@@ -17,7 +17,7 @@ package com.dremio.nessie.tiered.builder;
 
 import com.dremio.nessie.versioned.store.Id;
 
-public interface HasIdConsumer<T extends HasIdConsumer> {
+public interface HasIdConsumer<T extends HasIdConsumer<T>> {
 
   /**
    * The id for this consumer.

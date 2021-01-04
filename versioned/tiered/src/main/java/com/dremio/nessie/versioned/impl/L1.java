@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1Consumer;
@@ -215,14 +216,12 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
       }
     }
 
-    ArrayList<Id> children = new ArrayList<>();
-    this.tree.iterator().forEachRemaining(children::add);
-    consumer.children(children);
+    consumer.children(this.tree.stream());
 
-    consumer.addAncestors(parentList.getParents());
+    consumer.ancestors(parentList.getParents().stream());
 
     if (keyList.isFull()) {
-      consumer.completeKeyList(((CompleteList)keyList).getFragments());
+      consumer.completeKeyList(((CompleteList)keyList).getFragments().stream());
     } else {
       IncrementalList list = (IncrementalList) keyList;
       consumer.incrementalKeyList(list.getPreviousCheckpoint(), list.getDistanceFromCheckpointCommits());
@@ -238,13 +237,13 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
   public static class Builder implements L1Consumer<Builder> {
 
     private Id metadataId;
-    private List<Id> ancestors;
-    private List<Id> children;
+    private Stream<Id> ancestors;
+    private Stream<Id> children;
     private final List<KeyMutation> keyChanges = new ArrayList<>();
     private Id id;
     private Id checkpointId;
     private int distanceFromCheckpoint;
-    private List<Id> fragmentIds;
+    private Stream<Id> fragmentIds;
 
     private Builder() {
       // empty
@@ -256,7 +255,7 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
     public L1 build() {
       return new L1(
           metadataId,
-          IdMap.of(children),
+          children.collect(IdMap.collector()),
           id,
           buildKeyList(),
           ParentList.of(ancestors));
@@ -267,7 +266,9 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
         return KeyList.incremental(checkpointId, keyChanges, distanceFromCheckpoint);
       }
       if (fragmentIds != null) {
-        return new KeyList.CompleteList(fragmentIds, keyChanges);
+        return new KeyList.CompleteList(
+            fragmentIds.collect(Collectors.toList()),
+            keyChanges);
       }
       // todo what if its neither? Fail
       throw new IllegalStateException("Neither a checkpoint nor a incremental key list were found.");
@@ -281,14 +282,14 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
     }
 
     @Override
-    public Builder addAncestors(List<Id> ids) {
+    public Builder ancestors(Stream<Id> ids) {
       checkCalled(this.ancestors, "addAncestors");
       this.ancestors = ids;
       return this;
     }
 
     @Override
-    public Builder children(List<Id> ids) {
+    public Builder children(Stream<Id> ids) {
       checkCalled(this.children, "children");
       this.children = ids;
       return this;
@@ -325,7 +326,7 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer<?>> {
     }
 
     @Override
-    public Builder completeKeyList(List<Id> fragmentIds) {
+    public Builder completeKeyList(Stream<Id> fragmentIds) {
       checkCalled(this.fragmentIds, "completeKeyList");
       if (this.checkpointId != null) {
         throw new UnsupportedOperationException("Cannot call completeKeyList after incrementalKeyList.");

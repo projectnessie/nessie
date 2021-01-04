@@ -15,9 +15,8 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2Consumer;
 import com.dremio.nessie.versioned.store.Entity;
@@ -130,10 +129,7 @@ public class L2 extends MemoizedId implements Persistent<L2Consumer<?>> {
   @Override
   public L2Consumer<?> applyToConsumer(L2Consumer<?> consumer) {
     consumer.id(this.getId());
-
-    ArrayList<Id> children = new ArrayList<>();
-    this.map.iterator().forEachRemaining(children::add);
-    consumer.children(children);
+    consumer.children(this.map.stream());
 
     return consumer;
   }
@@ -145,7 +141,7 @@ public class L2 extends MemoizedId implements Persistent<L2Consumer<?>> {
   public static class Builder implements L2Consumer<Builder> {
 
     private Id id;
-    private List<Id> children;
+    private Stream<Id> children;
 
     private Builder() {
       // empty
@@ -161,7 +157,7 @@ public class L2 extends MemoizedId implements Persistent<L2Consumer<?>> {
     }
 
     @Override
-    public L2.Builder children(List<Id> ids) {
+    public L2.Builder children(Stream<Id> ids) {
       checkCalled(this.children, "children");
       this.children = ids;
       return this;

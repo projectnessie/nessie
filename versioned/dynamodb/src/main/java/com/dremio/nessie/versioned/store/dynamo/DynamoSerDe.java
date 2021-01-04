@@ -39,7 +39,7 @@ public class DynamoSerDe {
 
     DynamoConsumer<C> consumer = DynamoConsumer.newConsumer(persistent.type());
     persistent.applyToConsumer(consumer);
-    Map<String, AttributeValue> map = consumer.getEntity();
+    Map<String, AttributeValue> map = consumer.toEntity();
 
     if (false) {
       AttributeValueUtil.sanityCheckFromSaveOp(type, persistent, map);

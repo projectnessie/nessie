@@ -15,8 +15,8 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2Consumer;
 import com.dremio.nessie.versioned.impl.L2;
@@ -32,7 +32,7 @@ class DynamoL2Consumer extends DynamoConsumer<DynamoL2Consumer> implements L2Con
   }
 
   @Override
-  public DynamoL2Consumer children(List<Id> ids) {
+  public DynamoL2Consumer children(Stream<Id> ids) {
     addIdList(TREE, ids);
     return this;
   }
@@ -41,13 +41,6 @@ class DynamoL2Consumer extends DynamoConsumer<DynamoL2Consumer> implements L2Con
   public DynamoL2Consumer id(Id id) {
     addEntitySafe(ID, bytes(id.getValue()));
     return this;
-  }
-
-  @Override
-  Map<String, AttributeValue> getEntity() {
-    // TODO add validation
-
-    return buildValuesMap(entity);
   }
 
   static class Producer implements DynamoProducer<L2> {
