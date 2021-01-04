@@ -645,14 +645,11 @@ class InternalBranch extends MemoizedId implements InternalRef, Persistent<RefCo
 
   @Override
   public RefConsumer<?> applyToConsumer(RefConsumer<?> consumer) {
-    ArrayList<Id> children = new ArrayList<>();
-    this.tree.iterator().forEachRemaining(children::add);
-
     return consumer.id(getId())
         .name(name)
         .type(RefType.BRANCH)
         .metadata(metadata)
-        .children(children)
+        .children(this.tree.stream())
         .commits(commits.stream()
         .map(c -> {
           if (c.saved) {
@@ -690,8 +687,7 @@ class InternalBranch extends MemoizedId implements InternalRef, Persistent<RefCo
               keyAdditions,
               keyRemovals
           );
-        })
-        .collect(Collectors.toList()));
+        }));
   }
 
 }

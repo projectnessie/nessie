@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.versioned.Key;
@@ -76,14 +77,14 @@ class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> implements
   }
 
   @Override
-  public DynamoRefConsumer children(List<Id> children) {
+  public DynamoRefConsumer children(Stream<Id> children) {
     addIdList(TREE, children);
     return this;
   }
 
   @Override
-  public DynamoRefConsumer commits(List<BranchCommit> commits) {
-    List<AttributeValue> commitList = commits.stream()
+  public DynamoRefConsumer commits(Stream<BranchCommit> commits) {
+    List<AttributeValue> commitList = commits
         .map(DynamoRefConsumer::commitToMap)
         .collect(Collectors.toList());
 
@@ -130,13 +131,6 @@ class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> implements
     return AttributeValue.builder().m(map).build();
   }
 
-  @Override
-  Map<String, AttributeValue> getEntity() {
-    // TODO add validation
-
-    return buildValuesMap(entity);
-  }
-
   static class Producer implements DynamoProducer<InternalRef> {
     @Override
     public InternalRef deserialize(Map<String, AttributeValue> entity) {
@@ -165,8 +159,8 @@ class DynamoRefConsumer extends DynamoConsumer<DynamoRefConsumer> implements
       return builder.build();
     }
 
-    private static List<BranchCommit> deserializeCommits(AttributeValue attributeValue) {
-      return attributeValue.l().stream().map(a -> deserializeCommit(a.m())).collect(Collectors.toList());
+    private static Stream<BranchCommit> deserializeCommits(AttributeValue attributeValue) {
+      return attributeValue.l().stream().map(a -> deserializeCommit(a.m()));
     }
 
     private static BranchCommit deserializeCommit(Map<String, AttributeValue> map) {

@@ -15,7 +15,7 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.store.Id;
 
@@ -28,6 +28,6 @@ public interface L2Consumer<T extends L2Consumer<T>> extends HasIdConsumer<T> {
    * @param ids The list of ids
    * @return This consumer.
    */
-  T children(List<Id> ids);
+  T children(Stream<Id> ids);
 
 }

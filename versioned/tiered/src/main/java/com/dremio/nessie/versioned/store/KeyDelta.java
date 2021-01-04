@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.tiered.builder;
+package com.dremio.nessie.versioned.store;
 
-import com.google.protobuf.ByteString;
+import org.immutables.value.Value.Immutable;
 
-public interface BytesValueConsumer<T extends BytesValueConsumer<T>> extends HasIdConsumer<T> {
-  /**
-   * The value for this bytes-value.
-   *
-   * <p>Can be called once.
-   * @param value The value to set.
-   * @return This consumer.
-   */
-  T value(ByteString value);
+import com.dremio.nessie.versioned.Key;
+
+@Immutable
+public interface KeyDelta {
+  Key getKey();
+
+  Id getId();
+
+  static KeyDelta of(Key key, Id id) {
+    return ImmutableKeyDelta.builder().key(key).id(id).build();
+  }
 }

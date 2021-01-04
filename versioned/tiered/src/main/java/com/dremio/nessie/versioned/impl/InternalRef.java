@@ -32,6 +32,7 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import java.util.stream.Stream;
 
 /**
  * Generic class for reading a reference.
@@ -150,8 +151,8 @@ public interface InternalRef extends HasId {
 
     // branch only
     private Id metadata;
-    private List<Id> children;
-    private List<BranchCommit> commits;
+    private Stream<Id> children;
+    private Stream<BranchCommit> commits;
 
     @Override
     public Builder id(Id id) {
@@ -189,14 +190,14 @@ public interface InternalRef extends HasId {
     }
 
     @Override
-    public Builder children(List<Id> children) {
+    public Builder children(Stream<Id> children) {
       checkCalled(this.children, "children");
       this.children = children;
       return this;
     }
 
     @Override
-    public Builder commits(List<BranchCommit> commits) {
+    public Builder commits(Stream<BranchCommit> commits) {
       checkCalled(this.commits, "commits");
       this.commits = commits;
       return this;
@@ -220,7 +221,7 @@ public interface InternalRef extends HasId {
               name,
               IdMap.of(children),
               metadata,
-              commits.stream()
+              commits
                   .map(bc -> bc.isSaved()
                       ? new Commit(bc.getId(), bc.getCommit(), bc.getParent())
                       : new Commit(

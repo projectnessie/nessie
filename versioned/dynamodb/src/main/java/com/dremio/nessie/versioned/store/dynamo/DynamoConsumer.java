@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.versioned.ImmutableKey;
@@ -33,7 +34,6 @@ import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.core.SdkBytes;
@@ -49,10 +49,16 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> extends DynamoConstant
     entity.put("t", string(valueType.getValueName()));
   }
 
-  void addIdList(String key, List<Id> ids) {
+  /**
+   * TODO javadoc.
+   */
+  void addIdList(String key, Stream<Id> ids) {
     addEntitySafe(key, idsList(ids));
   }
 
+  /**
+   * TODO javadoc.
+   */
   void addEntitySafe(String key, Builder value) {
     Builder old = entity.put(key, value);
     if (old != null) {
@@ -60,7 +66,14 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> extends DynamoConstant
     }
   }
 
-  abstract Map<String, AttributeValue> getEntity();
+  /**
+   * TODO javadoc.
+   */
+  Map<String, AttributeValue> toEntity() {
+    // TODO add validation
+
+    return buildValuesMap(entity);
+  }
 
   /**
    * TODO add some javadoc.
@@ -119,8 +132,11 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> extends DynamoConstant
   }
 
   static Builder idsList(List<Id> ids) {
-    List<AttributeValue> idsList = ids.stream()
-        .map(DynamoConsumer::idValue)
+    return idsList(ids.stream());
+  }
+
+  static Builder idsList(Stream<Id> ids) {
+    List<AttributeValue> idsList = ids.map(DynamoConsumer::idValue)
         .collect(toList());
     return list(idsList);
   }
@@ -182,14 +198,6 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> extends DynamoConstant
     return AttributeValue.builder().m(map);
   }
 
-  static void checkCalled(Object arg, String name) {
-    Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
-  }
-
-  static void checkSet(Object arg, String name) {
-    Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
-  }
-
   static void deserializeKeyMutations(
       List<AttributeValue> mutations,
       Consumer<Key> addConsumer,
@@ -219,11 +227,10 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>> extends DynamoConstant
     return keyBuilder.build();
   }
 
-  static List<Id> deserializeIdList(AttributeValue raw) {
+  static Stream<Id> deserializeIdList(AttributeValue raw) {
     return raw.l()
         .stream()
-        .map(DynamoConsumer::deserializeId)
-        .collect(toList());
+        .map(DynamoConsumer::deserializeId);
   }
 
   static Id deserializeId(Map<String, AttributeValue> item) {

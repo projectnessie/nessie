@@ -15,10 +15,20 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
@@ -76,6 +86,10 @@ class IdMap implements Iterable<Id> {
     return deltas.length;
   }
 
+  public Stream<Id> stream() {
+    return Arrays.stream(deltas).map(PositionDelta::getNewId);
+  }
+
   @Override
   public Iterator<Id> iterator() {
     return Iterators.unmodifiableIterator(Arrays.stream(deltas).map(PositionDelta::getNewId).iterator());
@@ -116,6 +130,16 @@ class IdMap implements Iterable<Id> {
   /**
    * Constructs an {@link IdMap} from a list of {@link Id}s.
    */
+  public static IdMap of(Stream<Id> children) {
+    AtomicInteger counter = new AtomicInteger();
+    PositionDelta[] deltas = children.map(id -> PositionDelta.of(counter.getAndIncrement(), id))
+        .toArray(PositionDelta[]::new);
+    return new IdMap(deltas);
+  }
+
+  /**
+   * Constructs an {@link IdMap} from a list of {@link Id}s.
+   */
   public static IdMap of(List<Id> children) {
     int sz = children.size();
     PositionDelta[] deltas = new PositionDelta[sz];
@@ -145,4 +169,35 @@ class IdMap implements Iterable<Id> {
     return Arrays.equals(deltas, other.deltas);
   }
 
+  public static Collector<Id, List<Id>, IdMap> collector() {
+    return new Collector<Id, List<Id>, IdMap>() {
+      @Override
+      public Supplier<List<Id>> supplier() {
+        return ArrayList::new;
+      }
+
+      @Override
+      public BiConsumer<List<Id>, Id> accumulator() {
+        return List::add;
+      }
+
+      @Override
+      public BinaryOperator<List<Id>> combiner() {
+        return (l1, l2) -> {
+          l1.addAll(l2);
+          return l1;
+        };
+      }
+
+      @Override
+      public Function<List<Id>, IdMap> finisher() {
+        return IdMap::of;
+      }
+
+      @Override
+      public Set<Characteristics> characteristics() {
+        return EnumSet.noneOf(Characteristics.class);
+      }
+    };
+  }
 }

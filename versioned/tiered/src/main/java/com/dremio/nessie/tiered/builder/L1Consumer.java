@@ -15,7 +15,7 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
@@ -26,7 +26,7 @@ import com.dremio.nessie.versioned.store.Id;
  *
  * @param <T> The public class of this builder for fluent code development.
  */
-public interface L1Consumer<T extends L1Consumer> extends HasIdConsumer<T> {
+public interface L1Consumer<T extends L1Consumer<T>> extends HasIdConsumer<T> {
 
   /**
    * The commit metadata id for this l1.
@@ -44,7 +44,7 @@ public interface L1Consumer<T extends L1Consumer> extends HasIdConsumer<T> {
    * @param ids A list of ancestors ordered by my recent to oldest.
    * @return This consumer.
    */
-  T addAncestors(List<Id> ids);
+  T ancestors(Stream<Id> ids);
 
   /**
    * Add a list of children ids indexed by position.
@@ -53,7 +53,7 @@ public interface L1Consumer<T extends L1Consumer> extends HasIdConsumer<T> {
    * @param ids The list of ids. List must be {@link com.dremio.nessie.versioned.impl.L1#SIZE} in length.
    * @return This consumer.
    */
-  T children(List<Id> ids);
+  T children(Stream<Id> ids);
 
   /**
    * Add a key that was added as part of this commit.
@@ -75,7 +75,7 @@ public interface L1Consumer<T extends L1Consumer> extends HasIdConsumer<T> {
 
   /**
    * States that this L1 has an incremental key list.
-   * Can only be called once and cannot be called if {@link #completeKeyList(List)} is called.
+   * Can only be called once and cannot be called if {@link #completeKeyList(Stream)} is called.
    *
    * <p>Can be called once.
    *
@@ -93,6 +93,6 @@ public interface L1Consumer<T extends L1Consumer> extends HasIdConsumer<T> {
    * @param fragmentIds The ids of each of the key list fragments given in a meaningful/to be maintained order.
    * @return This consumer.
    */
-  T completeKeyList(List<Id> fragmentIds);
+  T completeKeyList(Stream<Id> fragmentIds);
 
 }

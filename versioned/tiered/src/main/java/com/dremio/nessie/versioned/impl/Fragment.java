@@ -15,10 +15,10 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.FragmentConsumer;
 import com.dremio.nessie.versioned.Key;
@@ -101,9 +101,7 @@ public class Fragment extends MemoizedId implements Persistent<FragmentConsumer<
   @Override
   public FragmentConsumer<?> applyToConsumer(FragmentConsumer<?> consumer) {
     consumer.id(getId());
-    for (InternalKey key : keys) {
-      consumer.addKey(key.toKey());
-    }
+    consumer.keys(keys.stream().map(InternalKey::toKey));
     return consumer;
   }
 
@@ -114,7 +112,7 @@ public class Fragment extends MemoizedId implements Persistent<FragmentConsumer<
   public static class Builder implements FragmentConsumer<Fragment.Builder> {
 
     private Id id;
-    private final List<Key> keys = new ArrayList<>();
+    private List<InternalKey> keys;
 
     @Override
     public Builder id(Id id) {
@@ -124,8 +122,9 @@ public class Fragment extends MemoizedId implements Persistent<FragmentConsumer<
     }
 
     @Override
-    public Builder addKey(Key key) {
-      keys.add(key);
+    public Builder keys(Stream<Key> keys) {
+      checkCalled(this.keys, "keys");
+      this.keys = keys.map(InternalKey::new).collect(Collectors.toList());
       return this;
     }
 
@@ -135,11 +134,7 @@ public class Fragment extends MemoizedId implements Persistent<FragmentConsumer<
     public Fragment build() {
       checkSet(id, "id");
 
-      List<InternalKey> intKeys = keys.stream()
-          .map(InternalKey::new)
-          .collect(Collectors.toList());
-
-      return new Fragment(id, intKeys);
+      return new Fragment(id, keys);
     }
 
     private static void checkCalled(Object arg, String name) {

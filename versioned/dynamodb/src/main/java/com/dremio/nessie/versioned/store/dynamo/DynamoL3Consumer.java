@@ -15,15 +15,14 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L3Consumer;
-import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -31,19 +30,19 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
 
 class DynamoL3Consumer extends DynamoConsumer<DynamoL3Consumer> implements L3Consumer<DynamoL3Consumer> {
 
-  private final TreeMap<Key, Id> tree;
-
   DynamoL3Consumer() {
     super(ValueType.L3);
-    tree = new TreeMap<>();
   }
 
   @Override
-  public DynamoL3Consumer addKeyDelta(Key key, Id id) {
-    Id old = tree.put(key, id);
-    if (old != null) {
-      throw new IllegalArgumentException("Key '" + key + "' added twice: " + old + " + " + id);
-    }
+  public DynamoL3Consumer addKeyDelta(Stream<KeyDelta> keyDelta) {
+    Stream<AttributeValue> maps = keyDelta.map(kd -> map(dualMap(
+        TREE_KEY, keyList(kd.getKey()),
+        TREE_ID, idValue(kd.getId())
+    )).build());
+
+    Builder treeBuilder = AttributeValue.builder().l(maps.collect(Collectors.toList()));
+    addEntitySafe(TREE, treeBuilder);
     return this;
   }
 
@@ -53,26 +52,6 @@ class DynamoL3Consumer extends DynamoConsumer<DynamoL3Consumer> implements L3Con
     return this;
   }
 
-  @Override
-  Map<String, AttributeValue> getEntity() {
-    // TODO add validation
-
-    List<AttributeValue> maps = tree.entrySet().stream()
-        .filter(e -> !e.getValue().isEmpty())
-        .map(e ->
-            map(dualMap(
-                TREE_KEY, keyList(e.getKey()),
-                TREE_ID, idValue(e.getValue())
-            )).build()
-        ).collect(Collectors.toList());
-
-    Builder treeBuilder = AttributeValue.builder().l(maps);
-
-    addEntitySafe(TREE, treeBuilder);
-
-    return buildValuesMap(entity);
-  }
-
   static class Producer implements DynamoProducer<L3> {
     @Override
     public L3 deserialize(Map<String, AttributeValue> entity) {
@@ -80,12 +59,14 @@ class DynamoL3Consumer extends DynamoConsumer<DynamoL3Consumer> implements L3Con
           .id(deserializeId(entity));
 
       if (entity.containsKey(TREE)) {
-        for (AttributeValue mapValue : entity.get(TREE).l()) {
-          Map<String, AttributeValue> map = mapValue.m();
-          Key key = deserializeKey(map.get(TREE_KEY));
-          Id id = deserializeId(map.get(TREE_ID));
-          builder.addKeyDelta(key, id);
-        }
+        Stream<KeyDelta> keyDelta = entity.get(TREE).l().stream()
+            .map(AttributeValue::m)
+            .map(m -> KeyDelta.of(
+                deserializeKey(m.get(TREE_KEY)),
+                deserializeId(m.get(TREE_ID))
+            ));
+
+        builder.addKeyDelta(keyDelta);
       }
 
       return builder.build();
