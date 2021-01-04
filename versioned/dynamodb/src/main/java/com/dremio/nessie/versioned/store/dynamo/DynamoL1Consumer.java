@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.Key;
@@ -47,13 +48,13 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
   }
 
   @Override
-  public DynamoL1Consumer addAncestors(List<Id> ids) {
+  public DynamoL1Consumer ancestors(Stream<Id> ids) {
     addIdList(PARENTS, ids);
     return this;
   }
 
   @Override
-  public DynamoL1Consumer children(List<Id> ids) {
+  public DynamoL1Consumer children(Stream<Id> ids) {
     addIdList(TREE, ids);
     return this;
   }
@@ -118,21 +119,20 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
   }
 
   @Override
-  public DynamoL1Consumer completeKeyList(List<Id> fragmentIds) {
+  public DynamoL1Consumer completeKeyList(Stream<Id> fragmentIds) {
     addKeysSafe(IS_CHECKPOINT, bool(true));
     addKeysSafe(FRAGMENTS, idsList(fragmentIds));
     return this;
   }
 
   @Override
-  Map<String, AttributeValue> getEntity() {
-    // TODO add validation
-
+  Map<String, AttributeValue> toEntity() {
     addKeysSafe(MUTATIONS, list(buildValues(keysMutations)));
     if (!keys.isEmpty()) {
       addEntitySafe(KEY_LIST, map(buildValuesMap(keys)));
     }
-    return buildValuesMap(entity);
+
+    return super.toEntity();
   }
 
   private void addKeysSafe(String key, Builder value) {
@@ -155,7 +155,7 @@ class DynamoL1Consumer extends DynamoConsumer<DynamoL1Consumer> implements L1Con
         builder.children(deserializeIdList(entity.get(TREE)));
       }
       if (entity.containsKey(PARENTS)) {
-        builder.addAncestors(deserializeIdList(entity.get(PARENTS)));
+        builder.ancestors(deserializeIdList(entity.get(PARENTS)));
       }
       if (entity.containsKey(KEY_LIST)) {
         Map<String, AttributeValue> keys = entity.get(KEY_LIST).m();

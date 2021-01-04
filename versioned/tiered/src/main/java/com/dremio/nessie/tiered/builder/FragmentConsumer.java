@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.tiered.builder;
 
+import java.util.stream.Stream;
+
 import com.dremio.nessie.versioned.Key;
 
 public interface FragmentConsumer<T extends FragmentConsumer<T>> extends HasIdConsumer<T> {
@@ -22,8 +24,8 @@ public interface FragmentConsumer<T extends FragmentConsumer<T>> extends HasIdCo
   /**
    * The commit metadata id for this l1.
    *
-   * @param key The id to add.
+   * @param keys The keys to add.
    * @return This consumer.
    */
-  T addKey(Key key);
+  T keys(Stream<Key> keys);
 }

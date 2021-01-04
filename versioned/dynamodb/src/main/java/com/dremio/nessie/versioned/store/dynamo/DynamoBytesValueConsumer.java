@@ -16,14 +16,10 @@
 
 package com.dremio.nessie.versioned.store.dynamo;
 
-import java.util.Map;
-
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
-
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class DynamoBytesValueConsumer<T extends DynamoBytesValueConsumer<T>> extends DynamoConsumer<T> implements
     ValueConsumer<T> {
@@ -42,12 +38,5 @@ class DynamoBytesValueConsumer<T extends DynamoBytesValueConsumer<T>> extends Dy
   public T value(ByteString value) {
     addEntitySafe(VALUE, bytes(value));
     return (T) this;
-  }
-
-  @Override
-  Map<String, AttributeValue> getEntity() {
-    // TODO add validation
-
-    return buildValuesMap(entity);
   }
 }

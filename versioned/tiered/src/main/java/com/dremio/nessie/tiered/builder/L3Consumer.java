@@ -15,9 +15,10 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.store.Id;
+import java.util.stream.Stream;
+
+import com.dremio.nessie.versioned.store.KeyDelta;
 
 public interface L3Consumer<T extends L3Consumer<T>> extends HasIdConsumer<T> {
-  T addKeyDelta(Key key, Id id);
+  T addKeyDelta(Stream<KeyDelta> keyDelta);
 }

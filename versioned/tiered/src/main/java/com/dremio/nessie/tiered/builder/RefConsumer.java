@@ -17,6 +17,7 @@ package com.dremio.nessie.tiered.builder;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
@@ -57,12 +58,12 @@ public interface RefConsumer<T extends RefConsumer<T>> extends HasIdConsumer<T> 
   /**
    * TODO javadoc.
    */
-  T children(List<Id> children);
+  T children(Stream<Id> children);
 
   /**
    * TODO javadoc.
    */
-  T commits(List<BranchCommit> commits);
+  T commits(Stream<BranchCommit> commits);
 
   class BranchCommit {
 

@@ -17,7 +17,6 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -25,12 +24,12 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L3Consumer;
 import com.dremio.nessie.versioned.ImmutableKey;
-import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
@@ -214,13 +213,10 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
   public L3Consumer<?> applyToConsumer(L3Consumer<?> consumer) {
     consumer.id(this.getId());
 
-    for (Entry<InternalKey, PositionDelta> keyDelta : this.map.entrySet()) {
-      Key key = keyDelta.getKey().toKey();
-      Id id = keyDelta.getValue().getNewId();
-      if (!id.isEmpty()) {
-        consumer.addKeyDelta(key, id);
-      }
-    }
+    Stream<KeyDelta> keyDelta = this.map.entrySet().stream()
+        .filter(e -> !e.getValue().getNewId().isEmpty())
+        .map(e -> KeyDelta.of(e.getKey().toKey(), e.getValue().getNewId()));
+    consumer.addKeyDelta(keyDelta);
 
     return consumer;
   }
@@ -233,6 +229,7 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
 
     private Id id;
     private TreeMap<InternalKey, PositionDelta> keys = new TreeMap<>();
+    private Stream<KeyDelta> keyDelta;
 
     private Builder() {
       // empty
@@ -244,21 +241,22 @@ public class L3 extends MemoizedId implements Persistent<L3Consumer<?>> {
     public L3 build() {
       return new L3(
           id,
-          keys);
+          keyDelta.collect(
+              Collectors.toMap(
+                  kd -> new InternalKey(ImmutableKey.builder().addAllElements(kd.getKey().getElements()).build()),
+                  kd -> PositionDelta.of(0, kd.getId()),
+                  (a, b) -> {
+                    throw new IllegalArgumentException(String.format("Got Id %s and %s for same key",
+                        a.getNewId(), b.getNewId()));
+                  },
+                  TreeMap::new
+              )
+          ));
     }
 
     @Override
-    public Builder addKeyDelta(Key key, Id id) {
-      InternalKey intKey = new InternalKey(
-          ImmutableKey.builder()
-              .addAllElements(key.getElements())
-              .build());
-
-      PositionDelta delta = PositionDelta.of(0, id);
-      PositionDelta old = keys.put(intKey, delta);
-      if (old != null) {
-        throw new IllegalArgumentException("Key '" + key + "' added twice: " + old + " + " + delta);
-      }
+    public Builder addKeyDelta(Stream<KeyDelta> keyDelta) {
+      this.keyDelta = keyDelta;
       return this;
     }
 
