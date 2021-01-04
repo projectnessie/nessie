@@ -22,11 +22,10 @@ import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 
-class InternalTag extends MemoizedId implements InternalRef, Persistent<RefConsumer> {
+class InternalTag extends MemoizedId<RefConsumer> implements InternalRef {
 
   static final String ID = "id";
   static final String NAME = "name";
@@ -107,11 +106,6 @@ class InternalTag extends MemoizedId implements InternalRef, Persistent<RefConsu
   @Override
   public int hashCode() {
     return Objects.hashCode(name, commit);
-  }
-
-  @Override
-  public ValueType type() {
-    return ValueType.REF;
   }
 
   @Override

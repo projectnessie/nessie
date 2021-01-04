@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
+import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,10 +37,9 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
-public class L1 extends MemoizedId implements Persistent<L1Consumer> {
+public class L1 extends MemoizedId<L1Consumer> {
 
   private static final long HASH_SEED = 3506039963025592061L;
 
@@ -194,11 +196,6 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer> {
     return result;
   }
 
-  @Override
-  public ValueType type() {
-    return ValueType.L1;
-  }
-
   /**
    * TODO Javadoc for checkstyle.
    */
@@ -254,6 +251,11 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer> {
      * Built the {@link L1}.
      */
     public L1 build() {
+      checkSet(id, "id");
+      checkSet(metadataId, "metadataId");
+      checkSet(children, "children");
+      checkSet(ancestors, "ancestors");
+
       return new L1(
           metadataId,
           children.collect(IdMap.collector()),
@@ -339,10 +341,6 @@ public class L1 extends MemoizedId implements Persistent<L1Consumer> {
       }
       this.fragmentIds = fragmentIds;
       return this;
-    }
-
-    private static void checkCalled(Object arg, String name) {
-      Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
     }
   }
 

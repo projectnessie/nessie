@@ -15,9 +15,14 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConsumer.serializeId;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.cast;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoConsumer.ID;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserialize;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serializeEntity;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserializeToConsumer;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serializeWithConsumer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,10 +39,12 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
-import com.dremio.nessie.versioned.impl.Persistent;
+import com.dremio.nessie.versioned.impl.MemoizedId;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -172,7 +179,7 @@ public class DynamoStore implements Store {
         Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
           List<LoadOp<?>> loadList = l.get(table);
           List<Map<String, AttributeValue>> keys = loadList.stream()
-              .map(load -> ImmutableMap.of(KEY_NAME, serializeId(load.getId())))
+              .map(load -> ImmutableMap.of(KEY_NAME, idValue(load.getId())))
               .collect(Collectors.toList());
           return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
         }));
@@ -201,14 +208,13 @@ public class DynamoStore implements Store {
           Map<Id, LoadOp<? extends HasId>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
           for (int i = 0; i < values.size(); i++) {
             Map<String, AttributeValue> item = values.get(i);
-            // cheap and dirty until more consumers are implemented
-            ValueType valueType = ValueType.byValueName(item.get("t").s());
-            Id id = DynamoConsumer.deserializeId(item);
+            ValueType valueType = ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
+            Id id = deserializeId(item, ID);
             LoadOp<? extends HasId> loadOp = opMap.get(id);
             if (loadOp == null) {
               throw new IllegalStateException("No load-op for loaded ID " + id);
             }
-            loadOp.loaded(deserialize(valueType, item));
+            loadOp.deserialize(consumer -> deserializeToConsumer(valueType, item, consumer));
           }
         }
       }
@@ -235,7 +241,7 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <V> boolean putIfAbsent(ValueType type, V value) {
+  public <V extends HasId> boolean putIfAbsent(ValueType type, V value) {
     ConditionExpression condition = ConditionExpression.of(ExpressionFunction.attributeNotExists(ExpressionPath.builder(KEY_NAME).build()));
     try {
       put(type, value, Optional.of(condition));
@@ -261,12 +267,12 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
+  public <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
-    Persistent<?> persistent = (Persistent<?>) value;
-    Map<String, AttributeValue> attributes = serializeEntity(type, persistent);
+    @SuppressWarnings("rawtypes") MemoizedId v = (MemoizedId) value;
+    @SuppressWarnings("Convert2MethodRef")
+    Map<String, AttributeValue> attributes = serializeWithConsumer(type, cons -> v.applyToConsumer(cons));
 
     PutItemRequest.Builder builder = PutItemRequest.builder()
         .tableName(tableNames.get(type))
@@ -289,7 +295,7 @@ public class DynamoStore implements Store {
   @Override
   public boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) {
     DeleteItemRequest.Builder delete = DeleteItemRequest.builder()
-        .key(Collections.singletonMap(DynamoConsumer.ID, serializeId(id)))
+        .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
         .tableName(tableNames.get(type));
 
     AliasCollectorImpl collector = new AliasCollectorImpl();
@@ -315,9 +321,10 @@ public class DynamoStore implements Store {
 
       ListMultimap<String, SaveOp<?>> mm =
           Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
+      @SuppressWarnings("Convert2MethodRef")
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save ->
           WriteRequest.builder().putRequest(PutRequest.builder().item(
-              serializeEntity(save.getType(), save.getValue())).build())
+              serializeWithConsumer(save.getType(), cons -> save.serialize(cons))).build())
                     .build());
       BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
       saves.add(async.batchWriteItem(batch));
@@ -338,22 +345,27 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <V> V loadSingle(ValueType valueType, Id id) {
+  public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
+    Producer<V, ?> producer = valueType.newEntityProducer();
+    loadSingle(valueType, id, cast(producer));
+    return producer.build();
+  }
+
+  @Override
+  public <C extends HasIdConsumer<C>> void loadSingle(ValueType valueType, Id id, C consumer) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
         .tableName(tableNames.get(valueType))
-        .key(ImmutableMap.of(KEY_NAME, serializeId(id)))
+        .key(ImmutableMap.of(KEY_NAME, idValue(id)))
         .consistentRead(true)
         .build());
     if (!response.hasItem()) {
       throw new NotFoundException("Unable to load item.");
     }
-    return deserialize(valueType, response.item());
+    deserializeToConsumer(valueType, response.item(), consumer);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
+  public <V extends HasId> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
       throws NotFoundException {
     try {
       AliasCollectorImpl collector = new AliasCollectorImpl();
@@ -362,7 +374,7 @@ public class DynamoStore implements Store {
       UpdateItemRequest.Builder updateRequest = collector.apply(UpdateItemRequest.builder())
           .returnValues(ReturnValue.ALL_NEW)
           .tableName(tableNames.get(type))
-          .key(ImmutableMap.of(KEY_NAME, serializeId(id)))
+          .key(ImmutableMap.of(KEY_NAME, idValue(id)))
           .updateExpression(aliased.toUpdateExpressionString());
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
       UpdateItemRequest builtRequest = updateRequest.build();
@@ -389,9 +401,8 @@ public class DynamoStore implements Store {
   }
 
 
-  @SuppressWarnings("unchecked")
   @Override
-  public <V> Stream<V> getValues(Class<V> valueClass, ValueType type) {
+  public <V extends HasId> Stream<V> getValues(Class<V> valueClass, ValueType type) {
     return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
         .stream()
         .flatMap(r -> r.items().stream())

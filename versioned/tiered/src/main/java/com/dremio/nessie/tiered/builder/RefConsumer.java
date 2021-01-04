@@ -24,16 +24,14 @@ import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
+/**
+ * TODO javadoc.
+ */
 public interface RefConsumer extends HasIdConsumer<RefConsumer> {
   enum RefType {
     TAG,
     BRANCH
   }
-
-  /**
-   * TODO javadoc.
-   */
-  RefConsumer id(Id id);
 
   /**
    * TODO javadoc.
@@ -65,6 +63,9 @@ public interface RefConsumer extends HasIdConsumer<RefConsumer> {
    */
   RefConsumer commits(Stream<BranchCommit> commits);
 
+  /**
+   * TODO make this a generated "Immutable".
+   */
   class BranchCommit {
 
     private final boolean saved;
@@ -75,6 +76,9 @@ public interface RefConsumer extends HasIdConsumer<RefConsumer> {
     private final List<Key> keyAdditions;
     private final List<Key> keyRemovals;
 
+    /**
+     * TODO javadoc.
+     */
     public BranchCommit(Id id, Id commit, Id parent) {
       this.id = id;
       this.parent = parent;
@@ -85,6 +89,9 @@ public interface RefConsumer extends HasIdConsumer<RefConsumer> {
       this.keyRemovals = null;
     }
 
+    /**
+     * TODO javadoc.
+     */
     public BranchCommit(Id unsavedId, Id commit, List<BranchUnsavedDelta> deltas, List<Key> keyAdditions, List<Key> keyRemovals) {
       super();
       this.saved = false;
@@ -96,54 +103,90 @@ public interface RefConsumer extends HasIdConsumer<RefConsumer> {
       this.id = Preconditions.checkNotNull(unsavedId);
     }
 
+    /**
+     * TODO javadoc.
+     */
     public boolean isSaved() {
       return saved;
     }
 
+    /**
+     * TODO javadoc.
+     */
     public Id getId() {
       return id;
     }
 
+    /**
+     * TODO javadoc.
+     */
     public Id getCommit() {
       return commit;
     }
 
+    /**
+     * TODO javadoc.
+     */
     public Id getParent() {
       return parent;
     }
 
+    /**
+     * TODO javadoc.
+     */
     public List<BranchUnsavedDelta> getDeltas() {
       return deltas;
     }
 
+    /**
+     * TODO javadoc.
+     */
     public List<Key> getKeyAdditions() {
       return keyAdditions;
     }
 
+    /**
+     * TODO javadoc.
+     */
     public List<Key> getKeyRemovals() {
       return keyRemovals;
     }
   }
 
+  /**
+   * TODO make this a generated "Immutable".
+   */
   class BranchUnsavedDelta {
     private final int position;
     private final Id oldId;
     private final Id newId;
 
+    /**
+     * TODO javadoc.
+     */
     public BranchUnsavedDelta(int position, Id oldId, Id newId) {
       this.position = position;
       this.oldId = oldId;
       this.newId = newId;
     }
 
+    /**
+     * TODO javadoc.
+     */
     public int getPosition() {
       return position;
     }
 
+    /**
+     * TODO javadoc.
+     */
     public Id getOldId() {
       return oldId;
     }
 
+    /**
+     * TODO javadoc.
+     */
     public Id getNewId() {
       return newId;
     }

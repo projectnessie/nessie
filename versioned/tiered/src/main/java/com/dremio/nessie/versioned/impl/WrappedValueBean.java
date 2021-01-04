@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
+import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -32,7 +33,7 @@ import com.google.protobuf.ByteString;
  * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.
  *
  */
-abstract class WrappedValueBean extends MemoizedId {
+abstract class WrappedValueBean<C extends HasIdConsumer<C>> extends MemoizedId<C> {
 
   private static final int MAX_SIZE = 1024 * 256;
   private final ByteString value;

@@ -112,7 +112,7 @@ import com.google.common.primitives.Ints;
  * <li>The ids for all saved commits will exist in the L1 table.
  * </ol>
  */
-class InternalBranch extends MemoizedId implements InternalRef, Persistent<RefConsumer> {
+class InternalBranch extends MemoizedId<RefConsumer> implements InternalRef {
 
   static final String ID = "id";
   static final String NAME = "name";
@@ -636,11 +636,6 @@ class InternalBranch extends MemoizedId implements InternalRef, Persistent<RefCo
   @Override
   public int hashCode() {
     return Objects.hashCode(name, tree, metadata, commits);
-  }
-
-  @Override
-  public ValueType type() {
-    return ValueType.REF;
   }
 
   @Override

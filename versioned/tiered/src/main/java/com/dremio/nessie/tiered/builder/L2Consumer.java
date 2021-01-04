@@ -19,6 +19,9 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.store.Id;
 
+/**
+ * TODO javadoc.
+ */
 public interface L2Consumer extends HasIdConsumer<L2Consumer> {
 
   /**

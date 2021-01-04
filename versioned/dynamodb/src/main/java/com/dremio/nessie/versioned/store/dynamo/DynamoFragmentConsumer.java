@@ -16,13 +16,16 @@
 
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryList;
+
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.FragmentConsumer;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -36,38 +39,28 @@ class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements
   }
 
   @Override
-  public DynamoFragmentConsumer id(Id id) {
-    addEntitySafe(ID, idBuilder(id));
-    return this;
-  }
-
-  @Override
   public boolean canHandleType(ValueType valueType) {
     return valueType == ValueType.KEY_FRAGMENT;
   }
 
   @Override
   public DynamoFragmentConsumer keys(Stream<Key> keys) {
-    addEntitySafe(
+    return addEntitySafe(
         KEY_LIST,
-        AttributeValue.builder().l(keys
-            .map(DynamoConsumer::keyList)
-            .collect(Collectors.toList())
-        ));
-    return this;
+        list(keys.map(AttributeValueUtil::keyElements)));
   }
 
-  static class Producer extends DynamoProducer<FragmentConsumer> {
-    public Producer(Map<String, AttributeValue> entity) {
-      super(entity);
-    }
+  @Override
+  public Map<String, AttributeValue> build() {
+    checkPresent(KEY_LIST, "keys");
 
-    @Override
-    public void applyToConsumer(FragmentConsumer consumer) {
-      consumer.id(deserializeId(entity))
-          .keys(entity.get(KEY_LIST).l().stream()
-              .map(DynamoConsumer::deserializeKey)
-          );
-    }
+    return super.build();
+  }
+
+  static void produceToConsumer(Map<String, AttributeValue> entity, FragmentConsumer consumer) {
+    consumer.id(deserializeId(entity, ID))
+        .keys(mandatoryList(attributeValue(entity, KEY_LIST)).stream()
+            .map(AttributeValueUtil::deserializeKey)
+        );
   }
 }

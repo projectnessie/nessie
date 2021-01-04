@@ -15,10 +15,11 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 
-abstract class MemoizedId implements HasId {
+public abstract class MemoizedId<C extends HasIdConsumer<C>> implements HasId {
 
   //unchanging but only generated once needed.
   private Id id;
@@ -32,6 +33,8 @@ abstract class MemoizedId implements HasId {
   }
 
   abstract Id generateId();
+
+  public abstract C applyToConsumer(C consumer);
 
   @Override
   public final Id getId() {

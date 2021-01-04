@@ -15,6 +15,12 @@
  */
 package com.dremio.nessie.tiered.builder;
 
+/**
+ * TODO javadoc.
+ */
 public interface Producer<E, C extends HasIdConsumer<C>> extends HasIdConsumer<C> {
+  /**
+   * TODO javadoc.
+   */
   E build();
 }
