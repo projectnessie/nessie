@@ -13,31 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.client.rest;
 
-import javax.ws.rs.ext.ContextResolver;
-import javax.ws.rs.ext.Provider;
+import java.io.IOException;
 
+import com.dremio.nessie.client.http.HttpClientException;
+import com.dremio.nessie.client.http.ResponseContext;
+import com.dremio.nessie.client.http.ResponseFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 
-/**
- * custom resolver for ObjectMapper to enable optional settings on json &lt;-&gt; object conversion.
- */
-@Provider
-public class ObjectMapperContextResolver implements ContextResolver<ObjectMapper> {
+public class NessieHttpResponseFilter implements ResponseFilter {
 
   private final ObjectMapper mapper;
 
-  public ObjectMapperContextResolver() {
-    this.mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-                                    .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+  public NessieHttpResponseFilter(ObjectMapper mapper) {
+    this.mapper = mapper;
   }
 
   @Override
-  public ObjectMapper getContext(Class<?> type) {
-    return mapper;
+  public void filter(ResponseContext con) {
+    try {
+      ResponseCheckFilter.checkResponse(con, mapper);
+    } catch (IOException e) {
+      throw new HttpClientException(e); // pass up invalid response exception as untyped exception
+    }
   }
-
 }

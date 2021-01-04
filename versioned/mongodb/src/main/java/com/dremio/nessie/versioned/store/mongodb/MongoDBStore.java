@@ -34,7 +34,6 @@ import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
-import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
@@ -118,16 +117,6 @@ public class MongoDBStore implements Store {
   // requests.
   @VisibleForTesting
   static final int LOAD_SIZE = 1_000;
-  private static final Map<ValueType, Function<MongoStoreConfig, String>> typeCollections =
-      ImmutableMap.<ValueType, Function<MongoStoreConfig, String>>builder()
-          .put(ValueType.L1, MongoStoreConfig::getL1TableName)
-          .put(ValueType.L2, MongoStoreConfig::getL2TableName)
-          .put(ValueType.L3, MongoStoreConfig::getL3TableName)
-          .put(ValueType.REF, MongoStoreConfig::getRefTableName)
-          .put(ValueType.VALUE, MongoStoreConfig::getValueTableName)
-          .put(ValueType.COMMIT_METADATA, MongoStoreConfig::getMetadataTableName)
-          .put(ValueType.KEY_FRAGMENT, MongoStoreConfig::getKeyListTableName)
-          .build();
 
   private final MongoStoreConfig config;
   private final MongoClientSettings mongoClientSettings;
@@ -135,7 +124,7 @@ public class MongoDBStore implements Store {
   private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
   private final Duration timeout;
-  private final Map<ValueType, MongoCollection<? extends HasId>> collections;
+  private Map<ValueType, MongoCollection<? extends HasId>> collections;
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
@@ -163,14 +152,19 @@ public class MongoDBStore implements Store {
    * either before they are used. This creates or retrieves collections that map 1:1 to the enumerates in
    * {@link com.dremio.nessie.versioned.store.ValueType}
    */
+  @SuppressWarnings("unchecked")
   @Override
   public void start() {
     mongoClient = MongoClients.create(mongoClientSettings);
     mongoDatabase = mongoClient.getDatabase(config.getDatabaseName());
 
     // Initialise collections for each ValueType.
-    typeCollections.forEach((k, v) ->
-        collections.put(k, (MongoCollection<? extends HasId>)mongoDatabase.getCollection(v.apply(config), k.getObjectClass())));
+    collections = Stream.of(ValueType.values()).collect(ImmutableMap.<ValueType, ValueType, MongoCollection<? extends HasId>>toImmutableMap(
+        v -> v,
+        v -> {
+          String collectionName = v.getTableName(config.getTablePrefix());
+          return ((MongoCollection<? extends HasId>) mongoDatabase.getCollection(collectionName, v.getObjectClass()));
+        }));
   }
 
   /**
@@ -283,9 +277,11 @@ public class MongoDBStore implements Store {
     throw new UnsupportedOperationException();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public Stream<InternalRef> getRefs() {
-    return Flux.from(this.<InternalRef>getCollection(ValueType.REF).find()).toStream();
+  public <V> Stream<V> getValues(Class<V> valueClass, ValueType type) {
+    // TODO: Can this be optimized to not collect the elements before streaming them?
+    return Flux.from(this.<V>getCollection(ValueType.REF).find()).toStream();
   }
 
   /**

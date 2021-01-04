@@ -13,15 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.client.auth;
+package com.dremio.nessie.server.error;
+
+import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Mechanism to prevent sending Auth header. This is used when authorization is not enabled. Typically only during tests.
+ * Just a dummy entity.
  */
-public class NoAuth implements Auth {
+public class OtherEntity {
+  private final String foo;
 
-  @Override
-  public String checkKey() {
-    return null;
+  @JsonCreator
+  public OtherEntity(
+      @NotNull @JsonProperty("foo") String foo) {
+    this.foo = foo;
+  }
+
+  public String getFoo() {
+    return foo;
   }
 }

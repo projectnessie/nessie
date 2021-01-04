@@ -431,11 +431,8 @@ def contents(ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[
         def content(*x: str) -> Generator[Contents, Any, None]:
             return ctx.nessie.get_values(ref if ref else ctx.nessie.get_default_branch(), *x)
 
-        results = ContentsSchema().dumps(content(*key), many=True) if ctx.json else (i.pretty_print() for i in content(*key))
-    if ctx.json or not results:
-        click.echo(results)
-    else:
-        click.echo(results)
+        results = ContentsSchema().dumps(content(*key), many=True) if ctx.json else "\n".join((i.pretty_print() for i in content(*key)))
+    click.echo(results)
 
 
 def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: str) -> MultiContents:

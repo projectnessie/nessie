@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.client.auth;
+package com.dremio.nessie.client.http;
 
-public interface Auth {
+/**
+ * Filter to be evaluated before making a request. It is too late to change the URL or method but headers can be changed or other
+ * connection parameters set.
+ */
+@FunctionalInterface
+public interface RequestFilter {
 
-  /**
-   * return authorization token for this auth scheme.
-   */
-  String checkKey();
+  void filter(RequestContext context);
 }

@@ -12,7 +12,7 @@ theme:
   custom_dir: overrides
   logo: img/small.svg
   favicon: images/fav2.png
-  
+
   features:
     - navigation.tabs
     - navigation.expand
@@ -25,8 +25,8 @@ google_analytics:
   - auto
 extra:
   versions:
-    java: 0.2.1
-    python: v0.2.1
+    java: 0.3.0
+    python: v0.3.0
   social:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/projectnessie
@@ -39,9 +39,9 @@ plugins:
   - markdownextradata
   - search
   - awesome-pages:
-      filename: _config  
+      filename: _config
   - minify:
-      minify_html: true  
+      minify_html: true
 markdown_extensions:
   - smarty
   - sane_lists
@@ -83,4 +83,4 @@ markdown_extensions:
   - pymdownx.tabbed
   - pymdownx.tasklist:
       custom_checkbox: true
-  - pymdownx.tilde  
+  - pymdownx.tilde
