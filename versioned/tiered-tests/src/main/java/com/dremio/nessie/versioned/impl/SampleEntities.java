@@ -206,6 +206,15 @@ public class SampleEntities {
   }
 
   /**
+   * Create a Sample ID entity.
+   * @param random object to use for randomization of entity creation.
+   * @return sample ID entity.
+   */
+  public static Id createId(Random random) {
+    return Id.of(createBinary(random, 20));
+  }
+
+  /**
    * Create a String of random characters.
    * @param random random number generator to use.
    * @param numChars the size of the String.
@@ -216,10 +225,6 @@ public class SampleEntities {
         .limit(numChars)
         .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
         .toString();
-  }
-
-  private static Id createId(Random random) {
-    return Id.of(createBinary(random, 20));
   }
 
   private static Entity createIdEntity(Random random) {
