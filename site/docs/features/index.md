@@ -257,9 +257,9 @@ to take a look.
 ### Working branches for "humans"
 
 You can also use "developer" branches to run experiments against your data, test
-changes of your jobs, etc etc etc.
+changes of your jobs etc.
 
-Production and staging and development can use the same data lake without risking
+Production, staging and development environments can use the same data lake without risking
 the consistent state of production data.
 
 ### Squashing commits
@@ -278,12 +278,12 @@ to specific commits but unlike branches do not get automatically "moved".
 
 *Tags* are useful to reference specific commits, for example a tag named
 `financial-data-of-FY2021` could reference all sources of financial data relevant
-used for some FY report.
+used for some financial year report.
 
 ### Commit messages and more
 
-As briefly mentioned above, every commit in Nessie has a bunch of attributes.
-The probably most important ones are "summary" and "description", which are exactly
+As briefly mentioned above, every commit in Nessie has a set of attributes.
+Some of the more important ones are "summary" and "description", which are exactly
 that - meaningful summaries and detailed descriptions that explain what has been
 changed and why it has been changed. This gives data engineers the ability to know
 why something has changed.
@@ -292,10 +292,10 @@ In addition to "summary" and "description", there are a bunch of additional attr
 
 | Attribute | Meaning
 | --- | ---
-| commit timestamp | the timestamp when the commit has been recorded in Nessie
+| commit timestamp | the timestamp when the commit was recorded in Nessie
 | committer | the one (human user, system id) that actually recorded the change in Nessie
 | author timestamp | the timestamp when a change has been implemented (can be different from the commit timestamp)
-| author | the one (human user, system id) that authored the change. can be different, if someone else actually commits the change to Nessie
+| author | the one (human user, system id) that authored the change, can be different if someone else actually commits the change to Nessie
 | summary | one-line meaningful summary of the changes
 | description | potentially long description of the changes
 | ... | there are potentially way more attributes, just too many to mention here
