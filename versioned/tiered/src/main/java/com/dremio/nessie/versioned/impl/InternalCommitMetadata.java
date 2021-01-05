@@ -15,11 +15,7 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
-
 import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -43,48 +39,7 @@ public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsu
   public static final SimpleSchema<InternalCommitMetadata> SCHEMA =
       new WrappedValueBean.WrappedValueSchema<>(InternalCommitMetadata.class, InternalCommitMetadata::new);
 
-  @Override
-  public CommitMetadataConsumer applyToConsumer(CommitMetadataConsumer consumer) {
-    return consumer.id(getId())
-        .value(getBytes());
-  }
-
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static class Builder implements CommitMetadataConsumer, Producer<InternalCommitMetadata, CommitMetadataConsumer> {
-
-    protected Id id;
-    protected ByteString value;
-
-    @Override
-    public Builder id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return this;
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.COMMIT_METADATA;
-    }
-
-    @Override
-    public Builder value(ByteString value) {
-      checkCalled(this.value, "value");
-      this.value = value;
-      return this;
-    }
-
-    /**
-     * TODO javadoc.
-     */
-    public InternalCommitMetadata build() {
-      checkSet(id, "id");
-      checkSet(value, "value");
-
-      return new InternalCommitMetadata(id, value);
-    }
+  public static Builder<InternalCommitMetadata, CommitMetadataConsumer> builder() {
+    return new Builder<>(ValueType.COMMIT_METADATA, InternalCommitMetadata::new);
   }
 }

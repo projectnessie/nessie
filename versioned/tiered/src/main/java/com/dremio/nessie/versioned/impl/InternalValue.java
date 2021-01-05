@@ -15,10 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
-
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -46,48 +42,7 @@ public class InternalValue extends WrappedValueBean<ValueConsumer> {
   public static final SimpleSchema<InternalValue> SCHEMA =
       new WrappedValueBean.WrappedValueSchema<>(InternalValue.class, InternalValue::new);
 
-  @Override
-  public ValueConsumer applyToConsumer(ValueConsumer consumer) {
-    return consumer.id(getId())
-        .value(getBytes());
-  }
-
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static class Builder implements ValueConsumer, Producer<InternalValue, ValueConsumer> {
-
-    protected Id id;
-    protected ByteString value;
-
-    @Override
-    public Builder id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return this;
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.VALUE;
-    }
-
-    @Override
-    public Builder value(ByteString value) {
-      checkCalled(this.value, "value");
-      this.value = value;
-      return this;
-    }
-
-    /**
-     * TODO javadoc.
-     */
-    public InternalValue build() {
-      checkSet(id, "id");
-      checkSet(value, "value");
-
-      return new InternalValue(id, value);
-    }
+  public static Builder<InternalValue, ValueConsumer> builder() {
+    return new Builder<>(ValueType.VALUE, InternalValue::new);
   }
 }
