@@ -31,6 +31,7 @@ import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.google.common.primitives.Ints;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 
@@ -140,8 +141,8 @@ public final class AttributeValueUtil {
   /**
    * Convenience method to produce a built {@link Builder#n(String)}.
    */
-  static AttributeValue number(int number) {
-    return builder().n(Integer.toString(number)).build();
+  static AttributeValue number(long number) {
+    return builder().n(Long.toString(number)).build();
   }
 
   /**
@@ -306,9 +307,19 @@ public final class AttributeValueUtil {
    * @throws NullPointerException if {@code key} or {@code map} are null.
    */
   static int deserializeInt(Map<String, AttributeValue> map, String key) {
+    return Ints.saturatedCast(deserializeLong(map, key));
+  }
+
+  /**
+   * Deserialize the given {@code key} from {@code map} as a {@code long}.
+   *
+   * @throws IllegalArgumentException if {@code key} is not present.
+   * @throws NullPointerException if {@code key} or {@code map} are null.
+   */
+  static long deserializeLong(Map<String, AttributeValue> map, String key) {
     AttributeValue raw = attributeValue(map, key);
     String b = Preconditions.checkNotNull(raw.n(), "mandatory number value is null");
-    return Integer.parseInt(raw.n());
+    return Long.parseLong(raw.n());
   }
 
   /**
