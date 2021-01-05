@@ -10,7 +10,7 @@ pytest-mock==3.4.0
 pytest-mypy==0.8.0
 pytest-recording==0.11.0
 pytest-runner==5.2
-Sphinx==3.4.1
+Sphinx==3.4.2
 sphinx-autodoc-typehints==1.11.1
 tox==3.20.1
 twine==3.3.0
