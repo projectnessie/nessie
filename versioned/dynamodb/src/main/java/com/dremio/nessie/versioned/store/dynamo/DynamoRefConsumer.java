@@ -65,11 +65,6 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
   }
 
   @Override
-  public boolean canHandleType(ValueType valueType) {
-    return valueType == ValueType.REF;
-  }
-
-  @Override
   public RefConsumer type(RefType refType) {
     switch (refType) {
       case TAG:

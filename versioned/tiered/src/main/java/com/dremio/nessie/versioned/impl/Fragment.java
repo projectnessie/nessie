@@ -29,7 +29,6 @@ import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -136,11 +135,6 @@ public class Fragment extends MemoizedId<FragmentConsumer> {
       checkCalled(this.keys, "keys");
       this.keys = keys.map(InternalKey::new).collect(Collectors.toList());
       return this;
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.KEY_FRAGMENT;
     }
 
     @Override

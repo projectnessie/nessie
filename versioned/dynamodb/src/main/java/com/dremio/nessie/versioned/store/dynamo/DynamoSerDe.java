@@ -149,9 +149,6 @@ final class DynamoSerDe {
     Preconditions.checkArgument(valueType.getValueName().equals(loadedType),
         "Expected schema for id %s to be of type '%s' but is actually '%s'.",
         id.getHash(), valueType.getValueName(), loadedType);
-    Preconditions.checkArgument(consumer.canHandleType(valueType),
-        "Given consumer %s cannot handle ValueType.%s",
-        consumer.getClass(), valueType.name());
 
     // No need for any 'valueType' validation against the static map - that's done in the static initializer
     dynamoProducerMethodss.get(valueType).accept(entity, consumer);

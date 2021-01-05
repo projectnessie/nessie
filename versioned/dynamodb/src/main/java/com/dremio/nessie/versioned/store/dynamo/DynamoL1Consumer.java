@@ -65,11 +65,6 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   }
 
   @Override
-  public boolean canHandleType(ValueType valueType) {
-    return valueType == ValueType.L1;
-  }
-
-  @Override
   public L1Consumer commitMetadataId(Id id) {
     return addEntitySafe(METADATA, idValue(id));
   }

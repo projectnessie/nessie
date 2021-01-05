@@ -57,11 +57,6 @@ class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer 
   }
 
   @Override
-  public boolean canHandleType(ValueType valueType) {
-    return valueType == ValueType.L3;
-  }
-
-  @Override
   public Map<String, AttributeValue> build() {
     checkPresent(TREE, "keyDelta");
 

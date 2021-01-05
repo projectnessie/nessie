@@ -26,7 +26,6 @@ import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 
@@ -171,11 +170,6 @@ public class L2 extends MemoizedId<L2Consumer> {
     @Override
     public Builder consumer() {
       return this;
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.L2;
     }
 
     @Override

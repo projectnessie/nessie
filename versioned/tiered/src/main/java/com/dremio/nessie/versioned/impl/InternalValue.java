@@ -19,7 +19,6 @@ import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
 
 /**
@@ -65,11 +64,6 @@ public class InternalValue extends WrappedValueBean<ValueConsumer> {
 
     Builder() {
       super(InternalValue::new);
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return ValueType.VALUE == valueType;
     }
   }
 }

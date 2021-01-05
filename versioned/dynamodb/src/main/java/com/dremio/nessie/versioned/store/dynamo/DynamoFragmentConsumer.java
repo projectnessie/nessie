@@ -39,11 +39,6 @@ class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements
   }
 
   @Override
-  public boolean canHandleType(ValueType valueType) {
-    return valueType == ValueType.KEY_FRAGMENT;
-  }
-
-  @Override
   public FragmentConsumer keys(Stream<Key> keys) {
     return addEntitySafe(
         KEY_LIST,

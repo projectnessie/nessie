@@ -19,7 +19,6 @@ import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
 import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
 
 public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsumer> {
@@ -62,11 +61,6 @@ public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsu
 
     Builder() {
       super(InternalCommitMetadata::new);
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return ValueType.COMMIT_METADATA == valueType;
     }
   }
 }
