@@ -37,12 +37,14 @@ import org.bson.conversions.Bson;
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -190,12 +192,15 @@ public class MongoDBStore implements Store {
         .flatMap(entry -> entry.collection.find(Filters.in(KEY_NAME, entry.ids)))
         .handle((op, sink) -> {
           // Process each of the loaded entries.
-          final LoadOp<?> loadOp = idLoadOps.remove(op.getId());
+          final LoadOp loadOp = idLoadOps.remove(op.getId());
           if (null == loadOp) {
             sink.error(new StoreOperationException(String.format("Retrieved unexpected object with ID: %s", op.getId())));
           } else {
             final ValueType type = loadOp.getValueType();
-            loadOp.loaded(type.addType(type.getSchema().itemToMap(op, true)));
+            final SimpleSchema<HasId> schema = SimpleSchema.schemaFor(type);
+            Map<String, Entity> typeAdded = addType(schema.itemToMap(op, true), type);
+            HasId item = schema.mapToItem(typeAdded);
+            loadOp.loaded(item);
             sink.next(op);
           }
         })
@@ -209,6 +214,12 @@ public class MongoDBStore implements Store {
         throw new NotFoundException(String.format("Requested object IDs missing: %s", String.join(", ", missedIds)));
       }
     }
+  }
+
+  private static Map<String, Entity> addType(Map<String, Entity> map, ValueType type) {
+    return ImmutableMap.<String, Entity>builder()
+        .putAll(map)
+        .put(ValueType.SCHEMA_TYPE, Entity.ofString(type.getValueName())).build();
   }
 
   @Override
