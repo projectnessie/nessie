@@ -41,11 +41,6 @@ class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer 
   }
 
   @Override
-  public boolean canHandleType(ValueType valueType) {
-    return valueType == ValueType.L2;
-  }
-
-  @Override
   public Map<String, AttributeValue> build() {
     checkPresent(TREE, "children");
 

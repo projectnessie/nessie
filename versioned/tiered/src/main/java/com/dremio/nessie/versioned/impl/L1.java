@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.impl.KeyList.CompleteList;
 import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
@@ -36,7 +35,6 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableMap;
 
 public class L1 extends MemoizedId<L1Consumer> {
@@ -212,7 +210,7 @@ public class L1 extends MemoizedId<L1Consumer> {
     consumer.ancestors(parentList.getParents().stream());
 
     if (keyList.isFull()) {
-      consumer.completeKeyList(((CompleteList)keyList).getFragments().stream());
+      consumer.completeKeyList(keyList.getFragments().stream());
     } else {
       IncrementalList list = (IncrementalList) keyList;
       consumer.incrementalKeyList(list.getPreviousCheckpoint(), list.getDistanceFromCheckpointCommits());
@@ -311,11 +309,6 @@ public class L1 extends MemoizedId<L1Consumer> {
       }
       this.fragmentIds = fragmentIds;
       return this;
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.L1;
     }
 
     @Override

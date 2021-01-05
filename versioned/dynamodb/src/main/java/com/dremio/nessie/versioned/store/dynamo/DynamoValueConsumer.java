@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.versioned.store.dynamo;
 
 import com.dremio.nessie.tiered.builder.ValueConsumer;
@@ -23,10 +22,5 @@ class DynamoValueConsumer extends DynamoWrappedValueConsumer<ValueConsumer> impl
 
   DynamoValueConsumer() {
     super(ValueType.VALUE);
-  }
-
-  @Override
-  public boolean canHandleType(ValueType valueType) {
-    return valueType == ValueType.VALUE;
   }
 }

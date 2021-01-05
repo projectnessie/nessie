@@ -35,7 +35,6 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.Maps;
 
 /**
@@ -217,11 +216,6 @@ public interface InternalRef extends HasId {
       checkCalled(this.commits, "commits");
       this.commits = commits;
       return this;
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.REF;
     }
 
     @Override

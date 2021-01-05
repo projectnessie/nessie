@@ -24,9 +24,4 @@ class DynamoCommitMetadataConsumer extends DynamoWrappedValueConsumer<CommitMeta
   DynamoCommitMetadataConsumer() {
     super(ValueType.COMMIT_METADATA);
   }
-
-  @Override
-  public boolean canHandleType(ValueType valueType) {
-    return valueType == ValueType.COMMIT_METADATA;
-  }
 }
