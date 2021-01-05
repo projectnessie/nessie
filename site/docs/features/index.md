@@ -1,10 +1,10 @@
 # About Nessie
 
-Nessie is to Data Lakes what git is to source code repositories. Therefore,
-Nessie uses many terms from both git and data lakes.
+Nessie is to Data Lakes what Git is to source code repositories. Therefore,
+Nessie uses many terms from both Git and data lakes.
 
 This page explains how Nessie makes working with data in data lakes much easier
-without requiring much prior knowledge of either git or data lakes.
+without requiring much prior knowledge of either Git or data lakes.
 
 Nessie is designed to give users an always-consistent view of their data
 across all involved data sets (tables). Changes to your data, for example
@@ -48,37 +48,35 @@ consists of many data files.
 New data files can be added to the set of files for a particular table.
 Data files can also contain updates to and deletions of existing data.
 
-Since data lakes contain the history of all that data, it is possible to
-perform queries against the state of the data as it was at a point in time
-in the past.
-
 The amount of data held in data lakes is rather huge (GBs, TBs, PBs), and so
 is the number of tables and data files (100s of thousands, millions).
 
 Managing that amount of data and data files while keeping track of schema
 changes, for example adding or removing a column, changing a column's type,
-renaming a column in a table ("PDS", physical datasets) and views ("VDS",
-virtual datasets), is one of the things that Nessie tackles.
+renaming a column in a table and views, is one of the things that Nessie tackles.
 
 Data in a data lake is usually consumed and written using tools like
 Apache [Hive](https://hive.apache.org)[^2] or Apache
 [Spark](https://spark.apache.org)[^2]. Your existing jobs can easily integrate
 Nessie without any production code changes, it's a simple configuration change.
 
-## git 101
+## Git 101
 
 > *"Git is a free and open source distributed version control system designed to 
 handle everything from small to very large projects with speed and efficiency"*
 (cite from [git-scm.com](https://git-scm.com/))
 
-git maintains the history or all changes of a software project from the very
+Git maintains the history or all changes of a software project from the very
 first *commit* until the current state.
 
-git is used by humans, i.e. developers.
+Git is used by humans, i.e. developers.
 
-Many of the concepts of git for source code are implemented by Nessie for all
-the data your data lake. It would be rather confusing to explain all git
-concepts here and then outline the differences in the next chapter.
+Many of the concepts of Git for source code are implemented by Nessie for all
+the data your data lake. It would be rather confusing to explain all Git
+concepts here and then outline the differences in the next chapter. If you want
+to learn more about Git, we recommend looking this
+[Git book](https://git-scm.com/book/en/v2) (available in many languages) or
+the [About Git](https://git-scm.com/about) pages as a quick start.
 
 ## Working with data in Nessie
 
@@ -86,8 +84,8 @@ Each individual state in Nessie is defined by a *Nessie commit*.
 Each *commit* in Nessie, except the very first one, has references to its
 predecessors, the previous versions of the data.
 
-Each *Nessie commit* also "knows" about the data files in your data lake, which
-represent the state of all data in all tables.
+Each *Nessie commit* also indirectly "knows" about the data files (via some metadata)
+in your data lake, which represent the state of all data in all tables.
 
 The following example illustrates that our *current commit* adds a 3rd data file.
 The other two data files 1+2 have been added by *previous commit*.
@@ -125,13 +123,13 @@ COMMIT TRANSACTION;
 ```
 
 Each commit is identified by a sequence of hexadecimal characters like
-`2898591840e992ec5a7d5c811c58c8b42a8e0d0914f86a37badbeedeadaffe`, which is not
-easy to read and remember for us humans.
+`2898591840e992ec5a7d5c811c58c8b42a8e0d0914f86a37badbeedeadaffe`[^3], which is
+not easy to read and remember for us humans.
 
 ### Branches
 
 Nessie uses the concept of "branches" to always reference the *latest* version
-in a chain of commits. Our example branch is named "master" and has just
+in a chain of commits. Our example branch is named "main" and has just
 a single commit:
 ```
  +-------------+
@@ -140,13 +138,13 @@ a single commit:
         ^
         |
         |
-     "master"
+      "main"
       branch
 ```
-When we add changes to our "master" branch, a new `commit #2` will be created:
+When we add changes to our "main" branch, a new `commit #2` will be created:
 
 * the new `commit #2` will reference `commit #1` as its predecessor and
-* the *named reference* "master" will be updated to point to our new `commit #2`
+* the *named reference* "main" will be updated to point to our new `commit #2`
 
 ```
  +-------------+       +-------------+
@@ -155,10 +153,10 @@ When we add changes to our "master" branch, a new `commit #2` will be created:
                               ^
                               |
                               |
-                           "master"
+                            "main"
                             branch
 ```
-This behavior ensures that the *named reference* "master" always points to the
+This behavior ensures that the *named reference* "main" always points to the
 very latest version of our data.
 
 ### Working-branches for analytics jobs
@@ -169,10 +167,10 @@ is distributed across many machines running many processes. All these individual
 tasks generate commits, but only the "sum" of all commits from all the tasks
 represents a consistent state.
 
-If all the tasks of a job would directly commit onto our "master" branch, the
-"master" branch would be *inconsistent* at least until not all tasks have finished.
+If all the tasks of a job would directly commit onto our "main" branch, the
+"main" branch would be *inconsistent* at least until not all tasks have finished.
 Further, if the whole job fails, it would be hard to rollback the changes, especially
-if other jobs are running. Last but not least, the "master" branch would contain a
+if other jobs are running. Last but not least, the "main" branch would contain a
 lot of commits (for example `job#213, task#47346, add 1234 rows to table x`), which
 do not make a lot of sense on their own, but a single commit (for example
 `aggregate-financial-stuff 2020/12/24`) would.
@@ -180,7 +178,7 @@ do not make a lot of sense on their own, but a single commit (for example
 To get around that issue, jobs can create a new "work"-branch when they start.
 The results from all tasks of a job are recorded as individual commits into that
 "work"-branch. Once the job has finished, all changes are then merged into the 
-"master" branch at once.
+"main" branch at once.
 ```
     "work"
     branch
@@ -193,7 +191,7 @@ The results from all tasks of a job are recorded as individual commits into that
       ^
       |
       |
-   "master"
+    "main"
     branch
 ```
 Our example Spark job has two tasks, each generates a separate commit, which are only
@@ -215,11 +213,11 @@ visible on our "work"-branch:
       ^
       |
       |
-   "master"
+    "main"
     branch
 ```
 When the job has finished, you can merge the now consistent result back
-into the "master"-branch.
+into the "main"-branch.
 ```
           task#1         task#2   "work"
           result         result   branch
@@ -237,19 +235,19 @@ into the "master"-branch.
                                       ^
                                       |
                                       |
-                                   "master"
+                                    "main"
                                     branch
 ```
 Note that the merge-`commit #4` has references to two commits:
 
-* the previous commit on the "master" branch and
-* the merged commit from the "work"-branch
+* The previous commit on the "main" branch.
+* The merged commit from the "work"-branch is not yet recorded in Nessie.
 
 It would be nice to give that `commit #4` a meaningful commit message, like
 `aggregate-financial-stuff 2020/12/24`, though, so people that look through the
 history of the data can grasp what that commit changes and why it's there.
 
-Before you actually merge the data from a working-branch into the "master" branch,
+Before you actually merge the data from a working-branch into the "main" branch,
 it is possible to review all the changes made by your job - either programmatically,
 like running some process that validates the state of the branch, or asking a human
 to take a look.
@@ -262,43 +260,43 @@ changes of your jobs etc.
 Production, staging and development environments can use the same data lake without risking
 the consistent state of production data.
 
-### Squashing commits
+### Squashing
 
-Nessie can also help to reduce the amount of data files in a data lake.
-
-You can for example merge all data files produces by all tasks of an analytics job
-before the whole change is actually merged into the "master" branch. Nessie will
-[figure out](#garbage-collection) that only the merged files need to survive and
-remove the unused files.
+Nessie can not yet squash commits.
 
 ### Tags
 
 Another type of named references are *tags*. Nessie *tags* are named references
-to specific commits but unlike branches do not get automatically "moved".
+to specific commits. Tags do always point to the same commit and won't be changed
+automatically.
 
-*Tags* are useful to reference specific commits, for example a tag named
-`financial-data-of-FY2021` could reference all sources of financial data relevant
-used for some financial year report.
+This means, that *tags* are useful to reference specific commits, for example a tag
+named `financial-data-of-FY2021` could reference all sources of financial data
+relevant used for some financial year report.
+
+See [Git tags](https://git-scm.com/book/en/v2/Git-Basics-Tagging) for comparison and
+to learn how tagging works in Git.
 
 ### Commit messages and more
 
 As briefly mentioned above, every commit in Nessie has a set of attributes.
 Some of the more important ones are "summary" and "description", which are exactly
 that - meaningful summaries and detailed descriptions that explain what has been
-changed and why it has been changed. This gives data engineers the ability to know
-why something has changed.
+changed and why it has been changed.
 
-In addition to "summary" and "description", there are a bunch of additional attributes:
+In addition to "summary" and "description", there are a bunch of additional attributes
+as shown in the following table. We plan to add more structure to these attributes
+in the future.
 
-| Attribute | Meaning
+| Attribute | Meaning in Nessie
 | --- | ---
-| commit timestamp | the timestamp when the commit was recorded in Nessie
-| committer | the one (human user, system id) that actually recorded the change in Nessie
-| author timestamp | the timestamp when a change has been implemented (can be different from the commit timestamp)
-| author | the one (human user, system id) that authored the change, can be different if someone else actually commits the change to Nessie
-| summary | one-line meaningful summary of the changes
-| description | potentially long description of the changes
-| ... | there are potentially way more attributes, just too many to mention here
+| commit timestamp | The timestamp when the commit was recorded in Nessie.
+| committer | The one (human user, system id) that actually recorded the change in Nessie.
+| author timestamp | the timestamp when a change has been implemented (can be different from the commit timestamp).
+| author | The one (human user, system id) that authored the change, can be different if someone else actually commits the change to Nessie.
+| summary | A short, one-line meaningful summary of the changes.
+| description | potentially long description of the changes.
+| ... | There are potentially way more attributes, just too many to mention here.
 
 ## Garbage collection
 
@@ -325,3 +323,5 @@ Nessie keeps track of unused data files and collects the garbage for you.
   [Delta Lake Tables](../tables/deltalake.md), [Hive Metastore Tables](../tables/hive.md)
 
 [^2]: Apache, Hive, Spark, Iceberg, Parquet are trademarks of The Apache Software Foundation.
+
+[^3]: This is a SHA-hash. All commits in Nessie (and in Git) are identified using such a hash.

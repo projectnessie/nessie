@@ -36,7 +36,7 @@ $ insert 2 records into t2
 ```
 
 A user can then use the Nessie CLI to view the history of the main branch. You'll see 
-that each operation in Spark was automatically recorded as a commit within Nessie:
+that each operation was automatically recorded as a commit within Nessie:
 
 ```
 $ nessie log
