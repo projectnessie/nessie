@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -42,7 +43,33 @@ public class InternalValue extends WrappedValueBean<ValueConsumer> {
   public static final SimpleSchema<InternalValue> SCHEMA =
       new WrappedValueBean.WrappedValueSchema<>(InternalValue.class, InternalValue::new);
 
-  public static Builder<InternalValue, ValueConsumer> builder() {
-    return new Builder<>(ValueType.VALUE, InternalValue::new);
+  /**
+   * Create a new {@link Builder} instance that implements both
+   * {@link ValueConsumer} and a matching {@link Producer} that
+   * builds an {@link InternalValue} object.
+   *
+   * @return new builder instance
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /**
+   * Implements both
+   * {@link ValueConsumer} and a matching {@link Producer} that
+   * builds an {@link InternalValue} object.
+   */
+  public static final class Builder
+      extends WrappedValueBean.Builder<InternalValue, ValueConsumer>
+      implements ValueConsumer, Producer<InternalValue, ValueConsumer> {
+
+    Builder() {
+      super(InternalValue::new);
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return ValueType.VALUE == valueType;
+    }
   }
 }

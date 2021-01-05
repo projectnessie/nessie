@@ -28,8 +28,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.tiered.builder.Producer;
+import com.dremio.nessie.versioned.impl.Fragment;
+import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
+import com.dremio.nessie.versioned.impl.InternalValue;
 import com.dremio.nessie.versioned.impl.L1;
+import com.dremio.nessie.versioned.impl.L2;
+import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.LoadOp;
@@ -258,10 +264,20 @@ public abstract class AbstractTestStore<S extends Store> {
   @Test
   void save() {
     final L1 l1 = SampleEntities.createL1(random);
+    final L2 l2 = SampleEntities.createL2(random);
+    final L3 l3 = SampleEntities.createL3(random);
+    final Fragment fragment = SampleEntities.createFragment(random);
     final InternalRef branch = SampleEntities.createBranch(random);
     final InternalRef tag = SampleEntities.createTag(random);
+    final InternalCommitMetadata commitMetadata = SampleEntities.createCommitMetadata(random);
+    final InternalValue value = SampleEntities.createValue(random);
     final List<SaveOp<?>> saveOps = ImmutableList.of(
         new SaveOp<>(ValueType.L1, l1),
+        new SaveOp<>(ValueType.L2, l2),
+        new SaveOp<>(ValueType.L3, l3),
+        new SaveOp<>(ValueType.KEY_FRAGMENT, fragment),
+        new SaveOp<>(ValueType.COMMIT_METADATA, commitMetadata),
+        new SaveOp<>(ValueType.VALUE, value),
         new SaveOp<>(ValueType.REF, branch),
         new SaveOp<>(ValueType.REF, tag)
     );
@@ -269,10 +285,26 @@ public abstract class AbstractTestStore<S extends Store> {
 
     saveOps.forEach(s -> {
       try {
-        final SimpleSchema<Object> schema = s.getType().getSchema();
+        final SimpleSchema<Object> schema = SimpleSchema.schemaFor(s.getType());
+        HasId saveOpValue = s.getValue();
+        HasId loadedValue = store.loadSingle(s.getType(), saveOpValue.getId());
         assertEquals(
-            schema.itemToMap(s.getValue(), true),
-            schema.itemToMap(store.loadSingle(s.getType(), s.getValue().getId()), true));
+            schema.itemToMap(saveOpValue, true),
+            schema.itemToMap(loadedValue, true));
+        assertEquals(saveOpValue, loadedValue);
+
+        try {
+          Producer producer = s.getType().newEntityProducer();
+          store.loadSingle(s.getType(), saveOpValue.getId(), producer);
+          loadedValue = (HasId) producer.build();
+          assertEquals(
+              schema.itemToMap(saveOpValue, true),
+              schema.itemToMap(loadedValue, true));
+          assertEquals(saveOpValue, loadedValue);
+        } catch (UnsupportedOperationException e) {
+          // TODO ignore this for now
+        }
+
       } catch (NotFoundException e) {
         Assertions.fail(e);
       }
@@ -295,8 +327,8 @@ public abstract class AbstractTestStore<S extends Store> {
   protected LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs, Optional<LoadStep> next) {
     return new LoadStep(
         objs.entries().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
-            r -> assertEquals(e.getKey().getSchema().itemToMap(e.getValue(), true),
-                e.getKey().getSchema().itemToMap(r, true)))
+            r -> assertEquals(SimpleSchema.schemaFor(e.getKey()).itemToMap(e.getValue(), true),
+                SimpleSchema.schemaFor(e.getKey()).itemToMap(r, true)))
         ).collect(Collectors.toList()),
         () -> next
     );
@@ -304,7 +336,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   protected <T extends HasId> void testLoadSingle(ValueType type, T sample) {
     final T read = store.loadSingle(type, sample.getId());
-    final SimpleSchema<T> schema = type.getSchema();
+    final SimpleSchema<T> schema = SimpleSchema.schemaFor(type);
     assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
   }
 

@@ -271,7 +271,7 @@ class CodecProvider implements org.bson.codecs.configuration.CodecProvider {
   static {
     final ImmutableMap.Builder<Class<?>, Codec<?>> builder = ImmutableMap.builder();
     Arrays.stream(ValueType.values()).forEach(v ->
-        builder.put(v.getObjectClass(), new EntityCodec<>(v.getObjectClass(), v.getSchema()))
+        builder.put(v.getObjectClass(), new EntityCodec<>(v.getObjectClass(), SimpleSchema.schemaFor(v)))
     );
 
     // Specific case where the ID is not encoded as a document, but directly as a binary value. Keep within this provider

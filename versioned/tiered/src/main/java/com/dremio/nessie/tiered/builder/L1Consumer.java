@@ -29,7 +29,7 @@ public interface L1Consumer extends HasIdConsumer<L1Consumer> {
   /**
    * The commit metadata id for this l1.
    *
-   * <p>Can be called once.
+   * <p>Can only be called once.
    * @param id The id to reference.
    * @return This consumer.
    */
@@ -38,8 +38,8 @@ public interface L1Consumer extends HasIdConsumer<L1Consumer> {
   /**
    * Add ancestors associated with this L1.
    *
-   * <p>Can be called once.
-   * @param ids A list of ancestors ordered by my recent to oldest.
+   * <p>Can only be called once.
+   * @param ids A list of ancestors ordered by most recent recent first.
    * @return This consumer.
    */
   L1Consumer ancestors(Stream<Id> ids);
@@ -47,7 +47,7 @@ public interface L1Consumer extends HasIdConsumer<L1Consumer> {
   /**
    * Add a list of children ids indexed by position.
    *
-   * <p>Can be called once.
+   * <p>Can only be called once.
    * @param ids The list of ids. List must be {@link com.dremio.nessie.versioned.impl.L1#SIZE} in length.
    * @return This consumer.
    */
@@ -75,7 +75,7 @@ public interface L1Consumer extends HasIdConsumer<L1Consumer> {
    * States that this L1 has an incremental key list.
    * Can only be called once and cannot be called if {@link #completeKeyList(Stream)} is called.
    *
-   * <p>Can be called once.
+   * <p>Can only be called once.
    *
    * @param checkpointId The id of the last checkpoint.
    * @param distanceFromCheckpoint The number of commits between this commit and the last checkpoint.

@@ -23,6 +23,14 @@ package com.dremio.nessie.tiered.builder;
  * @param <E> entity type that is built by this producer
  */
 public interface Producer<E, C extends HasIdConsumer<C>> extends HasIdConsumer<C> {
+
+  /**
+   * Convenience method to cast {@code this} to {@code C}.
+   *
+   * @return {@code this}
+   */
+  C consumer();
+
   /**
    * Build the entity representation.
    *

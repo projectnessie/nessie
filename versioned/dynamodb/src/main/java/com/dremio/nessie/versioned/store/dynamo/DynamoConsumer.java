@@ -16,7 +16,6 @@
 
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.cast;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idsList;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.string;
@@ -48,35 +47,41 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>>
     entity.put(ValueType.SCHEMA_TYPE, string(valueType.getValueName()));
   }
 
+  @Override
+  @SuppressWarnings("unchecked")
+  public C consumer() {
+    return (C) this;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
   public C id(Id id) {
     addEntitySafe(ID, idValue(id));
-    return cast(this);
+    return (C) this;
   }
 
   /**
-   * TODO javadoc.
+   * Adds an {@link AttributeValue} that consists of a list of {@link Id}s.
    */
   @SuppressWarnings("unchecked")
-  <R> R addIdList(String key, Stream<Id> ids) {
+  C addIdList(String key, Stream<Id> ids) {
     addEntitySafe(key, idsList(ids));
-    return (R) this;
+    return (C) this;
   }
 
   /**
    * Adds the {@link AttributeValue} for the given key for the final entity.
    */
   @SuppressWarnings("unchecked")
-  <R> R addEntitySafe(String key, AttributeValue value) {
+  C addEntitySafe(String key, AttributeValue value) {
     AttributeValue old = entity.put(key, value);
     if (old != null) {
       throw new IllegalStateException("Duplicate '" + key + "' in 'entity' map. Old={" + old + "} current={" + value + "}");
     }
-    return (R) this;
+    return (C) this;
   }
 
-  /**
-   * TODO javadoc.
-   */
+  @Override
   public Map<String, AttributeValue> build() {
     checkPresent(ID, "id");
 
@@ -87,6 +92,12 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>>
     Preconditions.checkArgument(
         entity.containsKey(id),
         String.format("Method %s of consumer %s has not been called", name, getClass().getSimpleName()));
+  }
+
+  void checkNotPresent(String id, String name) {
+    Preconditions.checkArgument(
+        !entity.containsKey(id),
+        String.format("Method %s of consumer %s must not be called", name, getClass().getSimpleName()));
   }
 
 }

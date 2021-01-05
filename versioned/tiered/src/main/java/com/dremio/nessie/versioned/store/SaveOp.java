@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.versioned.store;
 
-import java.util.Map;
 import java.util.Objects;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
@@ -52,11 +51,6 @@ public class SaveOp<V extends HasId> {
     // ah, lovely Java generics
     MemoizedId v = (MemoizedId) value;
     v.applyToConsumer(consumer);
-  }
-
-  public Map<String, Entity> toEntity() {
-    SimpleSchema<V> schema = type.getSchema();
-    return type.addType(schema.itemToMap(value, true));
   }
 
   @Override

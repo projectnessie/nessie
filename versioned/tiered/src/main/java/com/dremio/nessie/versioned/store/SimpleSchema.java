@@ -16,11 +16,17 @@
 package com.dremio.nessie.versioned.store;
 
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
+import com.dremio.nessie.versioned.impl.Fragment;
+import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
+import com.dremio.nessie.versioned.impl.InternalRef;
+import com.dremio.nessie.versioned.impl.InternalValue;
+import com.dremio.nessie.versioned.impl.L1;
+import com.dremio.nessie.versioned.impl.L2;
+import com.dremio.nessie.versioned.impl.L3;
 
 /**
  * Abstract class for converting to/from an object to a Map&gt;String, Entity&lt;.
@@ -30,12 +36,28 @@ import com.google.common.collect.Maps;
  */
 public abstract class SimpleSchema<T> {
 
-  public SimpleSchema(Class<T> clazz) {
+  private static final class TypeSchema {
+    // separate class to prevent class-loading issues
+    private static final EnumMap<ValueType, SimpleSchema<?>> schemas;
+
+    static {
+      schemas = new EnumMap<>(ValueType.class);
+      schemas.put(ValueType.L1, L1.SCHEMA);
+      schemas.put(ValueType.L2, L2.SCHEMA);
+      schemas.put(ValueType.L3, L3.SCHEMA);
+      schemas.put(ValueType.KEY_FRAGMENT, Fragment.SCHEMA);
+      schemas.put(ValueType.REF, InternalRef.SCHEMA);
+      schemas.put(ValueType.COMMIT_METADATA, InternalCommitMetadata.SCHEMA);
+      schemas.put(ValueType.VALUE, InternalValue.SCHEMA);
+    }
   }
 
-  public Map<String, Entity> itemToMap(T item, Collection<String> attributes) {
-    Set<String> include = ImmutableSet.copyOf(attributes);
-    return Maps.filterKeys(itemToMap(item, true), k -> include.contains(k));
+  @SuppressWarnings("unchecked")
+  public static <T> SimpleSchema<T> schemaFor(ValueType type) {
+    return (SimpleSchema<T>) TypeSchema.schemas.get(type);
+  }
+
+  public SimpleSchema() {
   }
 
   public abstract Map<String, Entity> itemToMap(T item, boolean ignoreNulls);

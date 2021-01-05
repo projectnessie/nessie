@@ -43,6 +43,10 @@ abstract class KeyMutationList {
         .build();
   }
 
+  /**
+   * Compare the given {@link KeyMutationList}s but ignores the order of the mutations in both
+   * lists.
+   */
   public static boolean equalsIgnoreOrder(KeyMutationList l1, KeyMutationList l2) {
     if (l1 != null && l2 == null) {
       return false;
@@ -56,6 +60,10 @@ abstract class KeyMutationList {
     return l1.equalsIgnoreOrder(l2);
   }
 
+  /**
+   * Compare the given {@link KeyMutationList} with this one but ignores the order of the
+   * mutations in both lists.
+   */
   public boolean equalsIgnoreOrder(KeyMutationList o) {
     if (o == null) {
       return false;

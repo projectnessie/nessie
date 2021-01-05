@@ -67,7 +67,7 @@ public class L2 extends MemoizedId<L2Consumer> {
     });
   }
 
-  public static final SimpleSchema<L2> SCHEMA = new SimpleSchema<L2>(L2.class) {
+  public static final SimpleSchema<L2> SCHEMA = new SimpleSchema<L2>() {
 
     private static final String ID = "id";
     private static final String TREE = "tree";
@@ -121,9 +121,6 @@ public class L2 extends MemoizedId<L2Consumer> {
     return Objects.hashCode(map);
   }
 
-  /**
-   * TODO Javadoc for checkstyle.
-   */
   @Override
   public L2Consumer applyToConsumer(L2Consumer consumer) {
     consumer.id(this.getId());
@@ -132,10 +129,22 @@ public class L2 extends MemoizedId<L2Consumer> {
     return consumer;
   }
 
-  public static L2.Builder builder() {
-    return new L2.Builder();
+  /**
+   * Create a new {@link Builder} instance that implements both
+   * {@link L2Consumer} and a matching {@link Producer} that
+   * builds an {@link L2} object.
+   *
+   * @return new builder instance
+   */
+  public static Builder builder() {
+    return new Builder();
   }
 
+  /**
+   * implements both
+   * {@link L2Consumer} and a matching {@link Producer} that
+   * builds an {@link L2} object.
+   */
   public static final class Builder implements L2Consumer, Producer<L2, L2Consumer> {
 
     private Id id;
@@ -160,13 +169,18 @@ public class L2 extends MemoizedId<L2Consumer> {
     }
 
     @Override
+    public Builder consumer() {
+      return this;
+    }
+
+    @Override
     public boolean canHandleType(ValueType valueType) {
       return valueType == ValueType.L2;
     }
 
     @Override
     public L2 build() {
-      checkSet(id, "id");
+      // null-id is allowed (will be generated)
       checkSet(children, "children");
 
       return new L2(

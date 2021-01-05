@@ -70,7 +70,7 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
   }
 
   @Override
-  public DynamoRefConsumer type(RefType refType) {
+  public RefConsumer type(RefType refType) {
     switch (refType) {
       case TAG:
         return addEntitySafe(TYPE, string(REF_TYPE_TAG));
@@ -82,27 +82,27 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
   }
 
   @Override
-  public DynamoRefConsumer name(String name) {
+  public RefConsumer name(String name) {
     return addEntitySafe(NAME, string(name));
   }
 
   @Override
-  public DynamoRefConsumer commit(Id commit) {
+  public RefConsumer commit(Id commit) {
     return addEntitySafe(COMMIT, idValue(commit));
   }
 
   @Override
-  public DynamoRefConsumer metadata(Id metadata) {
+  public RefConsumer metadata(Id metadata) {
     return addEntitySafe(METADATA, idValue(metadata));
   }
 
   @Override
-  public DynamoRefConsumer children(Stream<Id> children) {
+  public RefConsumer children(Stream<Id> children) {
     return addIdList(TREE, children);
   }
 
   @Override
-  public DynamoRefConsumer commits(Stream<BranchCommit> commits) {
+  public RefConsumer commits(Stream<BranchCommit> commits) {
     return addEntitySafe(COMMITS, list(commits.map(DynamoRefConsumer::commitToMap)));
   }
 
@@ -114,8 +114,12 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
     if (entity.get(TYPE).s().equals(REF_TYPE_TAG)) {
       // tag
       checkPresent(COMMIT, "commit");
+      checkNotPresent(COMMITS, "commits");
+      checkNotPresent(TREE, "tree");
+      checkNotPresent(METADATA, "metadata");
     } else {
       // branch
+      checkNotPresent(COMMIT, "commit");
       checkPresent(COMMITS, "commits");
       checkPresent(TREE, "tree");
       checkPresent(METADATA, "metadata");
@@ -157,6 +161,9 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
     return map(map);
   }
 
+  /**
+   * Deserialize a DynamoDB entity into the given consumer.
+   */
   static void produceToConsumer(Map<String, AttributeValue> entity, RefConsumer consumer) {
     consumer.id(deserializeId(entity, ID))
         .name(Preconditions.checkNotNull(attributeValue(entity, NAME).s()));

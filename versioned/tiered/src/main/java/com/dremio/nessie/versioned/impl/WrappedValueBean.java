@@ -18,13 +18,12 @@ package com.dremio.nessie.versioned.impl;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
 
-import com.dremio.nessie.tiered.builder.Producer;
-import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
-import com.dremio.nessie.versioned.store.ValueType;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
+import com.dremio.nessie.tiered.builder.Producer;
+import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -35,8 +34,7 @@ import com.google.protobuf.ByteString;
 /**
  * A base implementation of a opaque byte object stored in the VersionStore. Used for both for commit metadata and values.
  *
- * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.
- *
+ * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.</p>
  */
 abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends MemoizedId<C> {
 
@@ -91,7 +89,6 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Memoi
     private final BiFunction<Id, ByteString, T> deserializer;
 
     protected WrappedValueSchema(Class<T> clazz, BiFunction<Id, ByteString, T> deserializer) {
-      super(clazz);
       this.deserializer = deserializer;
     }
 
@@ -115,17 +112,18 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Memoi
         .value(getBytes());
   }
 
-  static final class Builder<E, C extends WrappedValueConsumer<C>> implements WrappedValueConsumer<C>,
+  /**
+   * Base builder-implementation for both {@link InternalCommitMetadata} and {@link InternalValue}.
+   */
+  public abstract static class Builder<E, C extends WrappedValueConsumer<C>> implements WrappedValueConsumer<C>,
       Producer<E, C> {
 
     private Id id;
     private ByteString value;
 
-    private final ValueType valueType;
     private final BiFunction<Id, ByteString, E> builder;
 
-    protected Builder(ValueType valueType, BiFunction<Id, ByteString, E> builder) {
-      this.valueType = valueType;
+    Builder(BiFunction<Id, ByteString, E> builder) {
       this.builder = builder;
     }
 
@@ -133,29 +131,25 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Memoi
     public C id(Id id) {
       checkCalled(this.id, "id");
       this.id = id;
-      return me();
+      return consumer();
     }
 
     @Override
     public C value(ByteString value) {
       checkCalled(this.value, "value");
       this.value = value;
-      return me();
+      return consumer();
     }
 
+    @Override
     @SuppressWarnings("unchecked")
-    private C me() {
+    public C consumer() {
       return (C) this;
     }
 
     @Override
-    public boolean canHandleType(ValueType valueType) {
-      return this.valueType == valueType;
-    }
-
-    @Override
     public E build() {
-      checkSet(id, "id");
+      // null-id is allowed (will be generated)
       checkSet(value, "value");
 
       return builder.apply(id, value);

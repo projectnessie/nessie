@@ -59,58 +59,7 @@ import com.google.common.primitives.Ints;
 /**
  * Stores the current state of branch.
  *
- * <p>The branch state is a current snapshot of the L1 state. It may also include some changes which define how we arrived here.
- *
- * <p>This is basically an L1 but the id of the data and the parent is unknown until we finalize all commits.
- *
- * <p>This contains a commit log of non-finalized commits including deltas. These can be used to build up history of recent
- * commits just in case the L1's associated with each were not saved.
- *
- * <p>The initial structure of the commit log is:</p>
- *
- * <pre>[{id: &lt;EMPTY_COMMIT_ID&gt;, parent: &lt;EMPTY_COMMIT_ID&gt;}]</pre>
- *
- * <p>If a lot of commits come in at the same moment, the log may temporarily be represented like this:
- * <pre>
- * [
- *   {id: &lt;l1Id&gt;, parent: &lt;parent_l1id&gt;}
- *   {id: &lt;randomid&gt;, saved:false, deltas: [
- *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;},
- *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}
- *       ]
- *   }
- *   {id: &lt;randomid&gt;, saved:false, deltas: [{position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}]}
- *   {id: &lt;randomid&gt;, saved:false, deltas: [
- *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;},
- *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}
- *       ]
- *   }
- *   {id: &lt;randomid&gt;, saved:false, deltas: [{position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}]}
- * ]
- * </pre>
- *
- * <p>In the state shown above, several concurrent commmiters have written their branch commits to the branch
- * but have yet to clean up. In those cases, any one of the committers may clean up some or all of the
- * non-finalized commits (including commits that potentially happened after their own).
- *
- * <p>Each time a commit happens, the committer will do the following:
- * <ol>
- * <li>The mutates the branch tree AND adds their change to the list of commits in the log.
- * <li>Save the tree state (and any other pending saves) based on the result of their mutations in step 1. (*)
- * <li>Remove all finalized commits from the log except the last one. Finalize the last one within the log. (*)
- * </ol>
- *
- * <p>A commit is complete once step (1) above is completed. While steps 2 and 3 are typically also done by the same actor as step 1,
- * they may not be. In situations where that actor dies or is slow, other actors are may "finalize" that commit. The commit <b>must</b>
- * be finalized before being exposed to outside consumers of the VersionStore.
- *
- * <p>The following things are always true about the commit log.
- * <ol>
- * <li>There must always be at least one finalized entry.
- * <li>There order of commits will always be &lt;finalized&gt;+&lt;unsaved&gt;*
- * (one or more saved followed by zero or more unsaved commits).
- * <li>The ids for all saved commits will exist in the L1 table.
- * </ol>
+ * @see RefConsumer for a detailed description
  */
 class InternalBranch extends MemoizedId<RefConsumer> implements InternalRef {
 
@@ -195,11 +144,6 @@ class InternalBranch extends MemoizedId<RefConsumer> implements InternalRef {
       this.id = Preconditions.checkNotNull(unsavedId);
     }
 
-    Id getParent() {
-      Preconditions.checkArgument(saved, "Can only retrieve parent on saved commits.");
-      return parent;
-    }
-
     Id getId() {
       return id;
     }
@@ -234,7 +178,7 @@ class InternalBranch extends MemoizedId<RefConsumer> implements InternalRef {
       return Objects.hashCode(saved, id, commit, parent, deltas, keyMutationList);
     }
 
-    static final SimpleSchema<Commit> SCHEMA = new SimpleSchema<Commit>(Commit.class) {
+    static final SimpleSchema<Commit> SCHEMA = new SimpleSchema<Commit>() {
 
       @Override
       public Commit deserialize(Map<String, Entity> map) {
@@ -393,7 +337,6 @@ class InternalBranch extends MemoizedId<RefConsumer> implements InternalRef {
      *        before returning/failing. If false, the final collapse will be done in a separate thread.
      * @return
      */
-    @SuppressWarnings("unchecked")
     CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, int attempts, boolean waitOnCollapse) {
       if (saves.isEmpty()) {
         saved = true;
@@ -556,7 +499,7 @@ class InternalBranch extends MemoizedId<RefConsumer> implements InternalRef {
       return Objects.hashCode(position, oldId, newId);
     }
 
-    static final SimpleSchema<UnsavedDelta> SCHEMA = new SimpleSchema<UnsavedDelta>(UnsavedDelta.class) {
+    static final SimpleSchema<UnsavedDelta> SCHEMA = new SimpleSchema<UnsavedDelta>() {
 
       @Override
       public UnsavedDelta deserialize(Map<String, Entity> map) {
@@ -583,7 +526,7 @@ class InternalBranch extends MemoizedId<RefConsumer> implements InternalRef {
     return Id.build(name);
   }
 
-  static final SimpleSchema<InternalBranch> SCHEMA = new SimpleSchema<InternalBranch>(InternalBranch.class) {
+  static final SimpleSchema<InternalBranch> SCHEMA = new SimpleSchema<InternalBranch>() {
 
     @Override
     public InternalBranch deserialize(Map<String, Entity> attributeMap) {

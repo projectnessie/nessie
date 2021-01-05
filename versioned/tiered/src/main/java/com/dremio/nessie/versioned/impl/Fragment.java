@@ -59,7 +59,7 @@ public class Fragment extends MemoizedId<FragmentConsumer> {
     return keys;
   }
 
-  public static final SimpleSchema<Fragment> SCHEMA = new SimpleSchema<Fragment>(Fragment.class) {
+  public static final SimpleSchema<Fragment> SCHEMA = new SimpleSchema<Fragment>() {
     private static final String ID = "id";
     private static final String KEYS = "keys";
 
@@ -103,10 +103,22 @@ public class Fragment extends MemoizedId<FragmentConsumer> {
     return consumer;
   }
 
+  /**
+   * Create a new {@link Builder} instance that implements both
+   * {@link FragmentConsumer} and a matching {@link Producer} that
+   * builds an {@link Fragment} object.
+   *
+   * @return new builder instance
+   */
   public static Builder builder() {
     return new Builder();
   }
 
+  /**
+   * Implements both
+   * {@link FragmentConsumer} and a matching {@link Producer} that
+   * builds an {@link Fragment} object.
+   */
   public static class Builder implements FragmentConsumer, Producer<Fragment, FragmentConsumer> {
 
     private Id id;
@@ -132,9 +144,14 @@ public class Fragment extends MemoizedId<FragmentConsumer> {
     }
 
     @Override
+    public Builder consumer() {
+      return this;
+    }
+
+    @Override
     public Fragment build() {
-      checkSet(id, "keys");
-      checkSet(keys, "id");
+      // null-id is allowed (will be generated)
+      checkSet(keys, "keys");
 
       return new Fragment(id, keys);
     }

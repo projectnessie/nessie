@@ -117,6 +117,11 @@ public interface Store extends AutoCloseable {
 
   /**
    * TODO this is just a proposal.
+   *
+   * @param type the type to load
+   * @param id id to load
+   * @param consumer consumer that will receive the properties
+   * @param <C> type of the consumer
    */
   <C extends HasIdConsumer<C>> void loadSingle(ValueType type, Id id, C consumer);
 

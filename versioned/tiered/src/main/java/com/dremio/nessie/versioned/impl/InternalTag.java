@@ -57,7 +57,7 @@ class InternalTag extends MemoizedId<RefConsumer> implements InternalRef {
     return ImmutableMap.of(COMMIT, commit.toEntity());
   }
 
-  static final SimpleSchema<InternalTag> SCHEMA = new SimpleSchema<InternalTag>(InternalTag.class) {
+  static final SimpleSchema<InternalTag> SCHEMA = new SimpleSchema<InternalTag>() {
 
 
     @Override
