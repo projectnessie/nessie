@@ -72,15 +72,4 @@ abstract class ParentList {
         }
     ).build();
   }
-
-  /**
-   * Construct a {@link ParentList} from a list of {@link Id}s.
-   */
-  public static ParentList of(List<Id> ancestors) {
-    ImmutableParentList.Builder parents = ImmutableParentList.builder();
-    for (int i = 0; i < ancestors.size(); i++) {
-      parents.addParents(ancestors.get(i));
-    }
-    return parents.build();
-  }
 }

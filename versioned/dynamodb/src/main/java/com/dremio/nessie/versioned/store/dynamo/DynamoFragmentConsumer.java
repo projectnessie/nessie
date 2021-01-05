@@ -44,7 +44,7 @@ class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements
   }
 
   @Override
-  public DynamoFragmentConsumer keys(Stream<Key> keys) {
+  public FragmentConsumer keys(Stream<Key> keys) {
     return addEntitySafe(
         KEY_LIST,
         list(keys.map(AttributeValueUtil::keyElements)));
@@ -57,6 +57,9 @@ class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements
     return super.build();
   }
 
+  /**
+   * Deserialize a DynamoDB entity into the given consumer.
+   */
   static void produceToConsumer(Map<String, AttributeValue> entity, FragmentConsumer consumer) {
     consumer.id(deserializeId(entity, ID))
         .keys(mandatoryList(attributeValue(entity, KEY_LIST)).stream()

@@ -34,6 +34,12 @@ public abstract class MemoizedId<C extends HasIdConsumer<C>> implements HasId {
 
   abstract Id generateId();
 
+  /**
+   * Apply the contents this entity to the given consumer.
+   *
+   * @param consumer consumer that will receive the properties of this entity
+   * @return the consumer passed into the function
+   */
   public abstract C applyToConsumer(C consumer);
 
   @Override

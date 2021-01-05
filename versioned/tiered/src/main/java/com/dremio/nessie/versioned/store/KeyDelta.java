@@ -19,6 +19,9 @@ import org.immutables.value.Value.Immutable;
 
 import com.dremio.nessie.versioned.Key;
 
+/**
+ * Key-deltas of an L3.
+ */
 @Immutable
 public interface KeyDelta {
   Key getKey();

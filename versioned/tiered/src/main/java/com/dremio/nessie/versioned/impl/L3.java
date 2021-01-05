@@ -118,7 +118,7 @@ public class L3 extends MemoizedId<L3Consumer> {
   }
 
 
-  public static final SimpleSchema<L3> SCHEMA = new SimpleSchema<L3>(L3.class) {
+  public static final SimpleSchema<L3> SCHEMA = new SimpleSchema<L3>() {
 
     private static final String ID = "id";
     private static final String TREE = "tree";
@@ -204,9 +204,6 @@ public class L3 extends MemoizedId<L3Consumer> {
     return Objects.hashCode(map);
   }
 
-  /**
-   * TODO Javadoc for checkstyle.
-   */
   @Override
   public L3Consumer applyToConsumer(L3Consumer consumer) {
     consumer.id(this.getId());
@@ -219,10 +216,22 @@ public class L3 extends MemoizedId<L3Consumer> {
     return consumer;
   }
 
+  /**
+   * Create a new {@link Builder} instance that implements both
+   * {@link L3Consumer} and a matching {@link Producer} that
+   * builds an {@link L3} object.
+   *
+   * @return new builder instance
+   */
   public static Builder builder() {
     return new Builder();
   }
 
+  /**
+   * Implements both
+   * {@link L3Consumer} and a matching {@link Producer} that
+   * builds an {@link L3} object.
+   */
   public static final class Builder implements L3Consumer, Producer<L3, L3Consumer> {
 
     private Id id;
@@ -247,13 +256,18 @@ public class L3 extends MemoizedId<L3Consumer> {
     }
 
     @Override
+    public Builder consumer() {
+      return this;
+    }
+
+    @Override
     public boolean canHandleType(ValueType valueType) {
       return valueType == ValueType.L3;
     }
 
     @Override
     public L3 build() {
-      checkSet(id, "id");
+      // null-id is allowed (will be generated)
       checkSet(keyDelta, "keyDelta");
 
       return new L3(

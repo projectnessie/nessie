@@ -18,7 +18,7 @@ package com.dremio.nessie.tiered.builder;
 import com.google.protobuf.ByteString;
 
 /**
- * TODO javadoc.
+ * Base consumer implementation for commit-metadata and binary values.
  * <p>
  * Do not implement this interface in non-abstract implementation classes!
  * </p>
@@ -27,7 +27,7 @@ public interface WrappedValueConsumer<C extends WrappedValueConsumer<C>> extends
   /**
    * The value for this bytes-value.
    *
-   * <p>Can be called once.
+   * <p>Can only be called once.
    * @param value The value to set.
    * @return This consumer.
    */

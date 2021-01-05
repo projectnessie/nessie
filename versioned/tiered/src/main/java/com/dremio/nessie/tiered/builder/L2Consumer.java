@@ -20,14 +20,14 @@ import java.util.stream.Stream;
 import com.dremio.nessie.versioned.store.Id;
 
 /**
- * TODO javadoc.
+ * Consumer for L2s.
  */
 public interface L2Consumer extends HasIdConsumer<L2Consumer> {
 
   /**
    * Add a list of children ids indexed by position.
    *
-   * <p>Can be called once.
+   * <p>Can only be called once.
    * @param ids The list of ids
    * @return This consumer.
    */

@@ -52,6 +52,9 @@ class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer 
     return super.build();
   }
 
+  /**
+   * Deserialize a DynamoDB entity into the given consumer.
+   */
   static void produceToConsumer(Map<String, AttributeValue> entity, L2Consumer consumer) {
     consumer.id(deserializeId(entity, ID));
 

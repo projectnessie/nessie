@@ -16,6 +16,7 @@
 package com.dremio.nessie.versioned.impl;
 
 import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -39,7 +40,33 @@ public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsu
   public static final SimpleSchema<InternalCommitMetadata> SCHEMA =
       new WrappedValueBean.WrappedValueSchema<>(InternalCommitMetadata.class, InternalCommitMetadata::new);
 
-  public static Builder<InternalCommitMetadata, CommitMetadataConsumer> builder() {
-    return new Builder<>(ValueType.COMMIT_METADATA, InternalCommitMetadata::new);
+  /**
+   * Create a new {@link Builder} instance that implements both
+   * {@link CommitMetadataConsumer} and a matching {@link Producer} that
+   * builds an {@link InternalCommitMetadata} object.
+   *
+   * @return new builder instance
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /**
+   * Implements both
+   * {@link CommitMetadataConsumer} and a matching {@link Producer} that
+   * builds an {@link InternalCommitMetadata} object.
+   */
+  public static final class Builder
+      extends WrappedValueBean.Builder<InternalCommitMetadata, CommitMetadataConsumer>
+      implements CommitMetadataConsumer, Producer<InternalCommitMetadata, CommitMetadataConsumer> {
+
+    Builder() {
+      super(InternalCommitMetadata::new);
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return ValueType.COMMIT_METADATA == valueType;
+    }
   }
 }

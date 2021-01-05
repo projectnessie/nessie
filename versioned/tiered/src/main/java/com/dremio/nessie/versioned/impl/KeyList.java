@@ -76,6 +76,8 @@ abstract class KeyList {
 
   abstract List<KeyMutation> getMutations();
 
+  abstract List<Id> getFragments();
+
   abstract Entity toEntity();
 
   static KeyList fromEntity(Entity value) {
@@ -356,6 +358,7 @@ abstract class KeyList {
       return mutations;
     }
 
+    @Override
     List<Id> getFragments() {
       return ImmutableList.copyOf(fragmentIds);
     }

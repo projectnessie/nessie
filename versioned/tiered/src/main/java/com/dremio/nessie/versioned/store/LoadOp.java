@@ -45,6 +45,8 @@ public class LoadOp<V extends HasId> {
   /**
    * Called when the entity has been loaded, delegates to the {@link Consumer} passed into the
    * constructor of {@link #LoadOp(ValueType, Id, Consumer) this constructor}.
+   *
+   * @param load the loaded entity
    */
   public void loaded(V load) {
     consumer.accept(load);

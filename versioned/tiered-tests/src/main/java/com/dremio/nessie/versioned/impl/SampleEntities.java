@@ -15,17 +15,28 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Collections;
 import java.util.Random;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
+import com.dremio.nessie.tiered.builder.FragmentConsumer;
+import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.tiered.builder.L2Consumer;
+import com.dremio.nessie.tiered.builder.L3Consumer;
+import com.dremio.nessie.tiered.builder.Producer;
+import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.tiered.builder.RefConsumer.BranchCommit;
+import com.dremio.nessie.tiered.builder.RefConsumer.BranchUnsavedDelta;
+import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
+import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.dremio.nessie.versioned.store.KeyDelta;
+import com.dremio.nessie.versioned.store.ValueType;
+import com.google.protobuf.ByteString;
 
 /**
  * This utility class generates sample objects mapping to each enumerate in
@@ -41,19 +52,15 @@ public class SampleEntities {
    * @return sample L1 entity.
    */
   public static L1 createL1(Random random) {
-    final List<KeyMutation> mutations = ImmutableList.of(
-        KeyMutation.KeyAddition.of(new InternalKey(Key.of("a", createString(random, 8), createString(random, 9))))
-    );
-
-    final List<Entity> deltaIds = new ArrayList<>(L1.SIZE);
-    for (int i = 0; i < L1.SIZE; i++) {
-      deltaIds.add(createIdEntity(random));
-    }
-
-    return L1.EMPTY.getChildWithTree(
-      createId(random),
-      IdMap.fromEntity(Entity.ofList(deltaIds), L1.SIZE),
-      KeyMutationList.of(mutations));
+    Producer<L1, L1Consumer> producer = ValueType.L1.newEntityProducer();
+    Id id = L1.EMPTY.getId();
+    producer.consumer()
+        .commitMetadataId(createId(random))
+        .children(IntStream.range(0, L1.SIZE).mapToObj(x -> createId(random)))
+        .ancestors(Stream.of(id, Id.EMPTY))
+        .addKeyAddition(Key.of(createString(random, 8), createString(random, 9)))
+        .incrementalKeyList(id, 1);
+    return producer.build();
   }
 
   /**
@@ -62,16 +69,10 @@ public class SampleEntities {
    * @return sample L2 entity.
    */
   public static L2 createL2(Random random) {
-    final List<Entity> treeList = new ArrayList<>(L2.SIZE);
-    for (int i = 0; i < L2.SIZE; i++) {
-      treeList.add(createIdEntity(random));
-    }
-
-    final Map<String, Entity> attributeMap = new HashMap<>();
-    attributeMap.put("id", createIdEntity(random));
-    attributeMap.put("tree", Entity.ofList(treeList));
-
-    return L2.SCHEMA.mapToItem(attributeMap);
+    Producer<L2, L2Consumer> producer = ValueType.L2.newEntityProducer();
+    producer.id(createId(random))
+        .children(IntStream.range(0, L2.SIZE).mapToObj(x -> createId(random)));
+    return producer.build();
   }
 
   /**
@@ -80,14 +81,11 @@ public class SampleEntities {
    * @return sample L3 entity.
    */
   public static L3 createL3(Random random) {
-    final int size = 100;
-    L3 l3 = L3.EMPTY;
-    for (int i = 0; i < size; ++i) {
-      l3 = l3.set(new InternalKey(Key.of(
-        createString(random, 5), createString(random, 9), String.valueOf(i))), createId(random));
-    }
-
-    return l3;
+    Producer<L3, L3Consumer> producer = ValueType.L3.newEntityProducer();
+    producer.consumer()
+        .keyDelta(IntStream.range(0, 100)
+            .mapToObj(i -> KeyDelta.of(Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)), createId(random))));
+    return producer.build();
   }
 
   /**
@@ -96,18 +94,11 @@ public class SampleEntities {
    * @return sample Fragment entity.
    */
   public static Fragment createFragment(Random random) {
-    final int size = 10;
-    final List<Entity> keyList = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      keyList.add(Entity.ofList(
-          createStringEntity(random, 5), createStringEntity(random, 8), Entity.ofString(String.valueOf(i))));
-    }
-
-    final Map<String, Entity> attributeMap = new HashMap<>();
-    attributeMap.put("id", createIdEntity(random));
-    attributeMap.put("keys", Entity.ofList(keyList));
-
-    return Fragment.SCHEMA.mapToItem(attributeMap);
+    Producer<Fragment, FragmentConsumer> producer = ValueType.KEY_FRAGMENT.newEntityProducer();
+    producer.consumer()
+        .keys(IntStream.range(0, 10)
+            .mapToObj(i -> Key.of(createString(random, 5), createString(random, 9), String.valueOf(i))));
+    return producer.build();
   }
 
   /**
@@ -116,40 +107,27 @@ public class SampleEntities {
    * @return sample Branch (InternalRef) entity.
    */
   public static InternalRef createBranch(Random random) {
-    final List<Entity> treeList = new ArrayList<>(L1.SIZE);
-    for (int i = 0; i < L1.SIZE; i++) {
-      treeList.add(createIdEntity(random));
-    }
-
-    // Two commits, one with a DELTA and one without.
-    final List<Entity> commitList = new ArrayList<>(2);
-    commitList.add(Entity.ofMap(ImmutableMap.of(
-        "id", createIdEntity(random),
-        "commit", createIdEntity(random),
-        "parent", createIdEntity(random)
-    )));
-    commitList.add(Entity.ofMap(ImmutableMap.of(
-        "id", createIdEntity(random),
-        "commit", createIdEntity(random),
-        "deltas", Entity.ofList(Entity.ofMap(ImmutableMap.of(
-            "position", Entity.ofNumber(1),
-            "old", createIdEntity(random),
-            "new", createIdEntity(random)
-        ))),
-        "keys", Entity.ofList(Entity.ofMap(ImmutableMap.of("a",
-            Entity.ofList(createStringEntity(random, 8), createStringEntity(random, 8)))))
-    )));
-
-    final Map<String, Entity> attributeMap = new HashMap<>();
-    attributeMap.put(InternalRef.TYPE, Entity.ofString("b"));
     final String name = createString(random, 10);
-    attributeMap.put("name", Entity.ofString(name));
-    attributeMap.put("id", Id.build(name).toEntity());
-    attributeMap.put("tree", Entity.ofList(treeList));
-    attributeMap.put("metadata", createIdEntity(random));
-    attributeMap.put("commits", Entity.ofList(commitList));
 
-    return InternalRef.SCHEMA.mapToItem(attributeMap);
+    Producer<InternalRef, RefConsumer> producer = ValueType.REF.newEntityProducer();
+    producer.id(Id.build(name))
+        .type(RefType.BRANCH)
+        .name(name)
+        .children(IntStream.range(0, L1.SIZE).mapToObj(x -> createId(random)))
+        .metadata(createId(random))
+        .commits(Stream.of(
+            new BranchCommit(
+                createId(random),
+                createId(random),
+                createId(random)),
+            new BranchCommit(
+                createId(random),
+                createId(random),
+                Collections.singletonList(new BranchUnsavedDelta(1, createId(random), createId(random))),
+                Collections.singletonList(Key.of(createString(random, 8), createString(random, 8))),
+                Collections.emptyList())
+        ));
+    return producer.build();
   }
 
   /**
@@ -158,13 +136,12 @@ public class SampleEntities {
    * @return sample Tag (InternalRef) entity.
    */
   public static InternalRef createTag(Random random) {
-    final Map<String, Entity> attributeMap = new HashMap<>();
-    attributeMap.put(InternalRef.TYPE, Entity.ofString("t"));
-    attributeMap.put("id", createIdEntity(random));
-    attributeMap.put("name", Entity.ofString("tagName"));
-    attributeMap.put("commit", createIdEntity(random));
-
-    return InternalRef.SCHEMA.mapToItem(attributeMap);
+    Producer<InternalRef, RefConsumer> producer = ValueType.REF.newEntityProducer();
+    producer.id(createId(random))
+        .type(RefType.TAG)
+        .name("tagName")
+        .commit(createId(random));
+    return producer.build();
   }
 
   /**
@@ -173,11 +150,10 @@ public class SampleEntities {
    * @return sample CommitMetadata entity.
    */
   public static InternalCommitMetadata createCommitMetadata(Random random) {
-    final Map<String, Entity> attributeMap = new HashMap<>();
-    attributeMap.put("id", createIdEntity(random));
-    attributeMap.put("value", Entity.ofBinary(createBinary(random, 6)));
-
-    return InternalCommitMetadata.SCHEMA.mapToItem(attributeMap);
+    Producer<InternalCommitMetadata, CommitMetadataConsumer> producer = ValueType.COMMIT_METADATA.newEntityProducer();
+    producer.id(createId(random))
+        .value(ByteString.copyFrom(createBinary(random, 6)));
+    return producer.build();
   }
 
   /**
@@ -186,11 +162,10 @@ public class SampleEntities {
    * @return sample Value entity.
    */
   public static InternalValue createValue(Random random) {
-    final Map<String, Entity> attributeMap = new HashMap<>();
-    attributeMap.put("id", createIdEntity(random));
-    attributeMap.put("value", Entity.ofBinary(createBinary(random, 7)));
-
-    return InternalValue.SCHEMA.mapToItem(attributeMap);
+    Producer<InternalValue, ValueConsumer> producer = ValueType.VALUE.newEntityProducer();
+    producer.id(createId(random))
+        .value(ByteString.copyFrom(createBinary(random, 6)));
+    return producer.build();
   }
 
   /**

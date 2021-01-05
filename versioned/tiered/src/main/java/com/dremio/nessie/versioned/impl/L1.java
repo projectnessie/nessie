@@ -120,7 +120,7 @@ public class L1 extends MemoizedId<L1Consumer> {
     return tree.getChanges();
   }
 
-  public static final SimpleSchema<L1> SCHEMA = new SimpleSchema<L1>(L1.class) {
+  public static final SimpleSchema<L1> SCHEMA = new SimpleSchema<L1>() {
 
     private static final String ID = "id";
     private static final String TREE = "tree";
@@ -189,16 +189,9 @@ public class L1 extends MemoizedId<L1Consumer> {
 
   @Override
   public int hashCode() {
-    int result = tree != null ? tree.hashCode() : 0;
-    result = 31 * result + (metadataId != null ? metadataId.hashCode() : 0);
-    result = 31 * result + (keyList != null ? keyList.hashCode() : 0);
-    result = 31 * result + (parentList != null ? parentList.hashCode() : 0);
-    return result;
+    return Objects.hash(tree, metadataId, keyList, parentList);
   }
 
-  /**
-   * TODO Javadoc for checkstyle.
-   */
   @Override
   public L1Consumer applyToConsumer(L1Consumer consumer) {
     consumer.id(this.getId());
@@ -228,10 +221,22 @@ public class L1 extends MemoizedId<L1Consumer> {
     return consumer;
   }
 
+  /**
+   * Create a new {@link Builder} instance that implements both
+   * {@link L1Consumer} and a matching {@link Producer} that
+   * builds an {@link L1} object.
+   *
+   * @return new builder instance
+   */
   public static Builder builder() {
     return new Builder();
   }
 
+  /**
+   * Implements both
+   * {@link L1Consumer} and a matching {@link Producer} that
+   * builds an {@link L1} object.
+   */
   public static final class Builder implements L1Consumer, Producer<L1, L1Consumer> {
 
     private Id metadataId;
@@ -314,8 +319,13 @@ public class L1 extends MemoizedId<L1Consumer> {
     }
 
     @Override
+    public Builder consumer() {
+      return this;
+    }
+
+    @Override
     public L1 build() {
-      checkSet(id, "id");
+      // null-id is allowed (will be generated)
       checkSet(metadataId, "metadataId");
       checkSet(children, "children");
       checkSet(ancestors, "ancestors");

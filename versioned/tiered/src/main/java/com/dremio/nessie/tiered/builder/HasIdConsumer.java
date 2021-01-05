@@ -19,16 +19,16 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 
 /**
- * TODO javadoc.
+ * Base interface for all consumers.
  * <p>
  * Do not implement this interface in non-abstract implementation classes!
  * </p>
  */
-public interface HasIdConsumer<T> {
+public interface HasIdConsumer<T extends HasIdConsumer<T>> {
   /**
    * The id for this consumer.
    *
-   * <p>Can be called once.
+   * <p>Can only be called once.</p>
    * @param id The id.
    * @return This consumer.
    */

@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.dynamo;
 
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.cast;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConsumer.ID;
@@ -50,6 +49,7 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.ConditionFailedException;
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
@@ -104,6 +104,7 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 public class DynamoStore implements Store {
+
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
@@ -299,7 +300,7 @@ public class DynamoStore implements Store {
         .tableName(tableNames.get(type));
 
     AliasCollectorImpl collector = new AliasCollectorImpl();
-    ConditionExpression aliased = type.addTypeCheck(condition).alias(collector);
+    ConditionExpression aliased = addTypeCheck(type, condition).alias(collector);
     collector.apply(delete);
     delete.conditionExpression(aliased.toConditionExpressionString());
 
@@ -312,6 +313,13 @@ public class DynamoStore implements Store {
     } catch (DynamoDbException ex) {
       throw new StoreOperationException("Failure during delete.", ex);
     }
+  }
+
+  private static ConditionExpression addTypeCheck(ValueType type, Optional<ConditionExpression> possibleExpression) {
+    final ExpressionFunction checkType = ExpressionFunction.equals(
+        ExpressionPath.builder(ValueType.SCHEMA_TYPE).build(),
+        Entity.ofString(type.getValueName()));
+    return possibleExpression.map(ce -> ce.and(checkType)).orElse(ConditionExpression.of(checkType));
   }
 
   @Override
@@ -344,10 +352,12 @@ public class DynamoStore implements Store {
     }
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
     Producer<V, ?> producer = valueType.newEntityProducer();
-    loadSingle(valueType, id, cast(producer));
+    HasIdConsumer consumer = producer;
+    loadSingle(valueType, id, consumer);
     return producer.build();
   }
 
@@ -420,7 +430,8 @@ public class DynamoStore implements Store {
         .tableName(name)
         .attributeDefinitions(AttributeDefinition.builder()
             .attributeName(KEY_NAME)
-            .attributeType(ScalarAttributeType.B)
+            .attributeType(
+              ScalarAttributeType.B)
             .build())
         .provisionedThroughput(ProvisionedThroughput.builder()
             .readCapacityUnits(10L)

@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.dynamo;
 
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.cast;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 
 import java.util.Arrays;
@@ -26,8 +25,15 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
+import com.dremio.nessie.tiered.builder.FragmentConsumer;
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.tiered.builder.L2Consumer;
+import com.dremio.nessie.tiered.builder.L3Consumer;
 import com.dremio.nessie.tiered.builder.Producer;
+import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
@@ -46,27 +52,26 @@ final class DynamoSerDe {
     dynamoProducerMethodss = new EnumMap<>(ValueType.class);
 
     dynamoConsumerSuppliers.put(ValueType.L1, DynamoL1Consumer::new);
-    dynamoProducerMethodss.put(ValueType.L1, (e, c) -> DynamoL1Consumer.produceToConsumer(e, cast(c)));
+    dynamoProducerMethodss.put(ValueType.L1, (e, c) -> DynamoL1Consumer.produceToConsumer(e, (L1Consumer) c));
 
     dynamoConsumerSuppliers.put(ValueType.L2, DynamoL2Consumer::new);
-    dynamoProducerMethodss.put(ValueType.L2, (e, c) -> DynamoL2Consumer.produceToConsumer(e, cast(c)));
+    dynamoProducerMethodss.put(ValueType.L2, (e, c) -> DynamoL2Consumer.produceToConsumer(e, (L2Consumer) c));
 
     dynamoConsumerSuppliers.put(ValueType.L3, DynamoL3Consumer::new);
-    dynamoProducerMethodss.put(ValueType.L3, (e, c) -> DynamoL3Consumer.produceToConsumer(e, cast(c)));
+    dynamoProducerMethodss.put(ValueType.L3, (e, c) -> DynamoL3Consumer.produceToConsumer(e, (L3Consumer) c));
 
     dynamoConsumerSuppliers.put(ValueType.COMMIT_METADATA, DynamoCommitMetadataConsumer::new);
-    dynamoProducerMethodss.put(ValueType.COMMIT_METADATA, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, cast(c)));
+    dynamoProducerMethodss.put(ValueType.COMMIT_METADATA,
+        (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (CommitMetadataConsumer) c));
 
     dynamoConsumerSuppliers.put(ValueType.VALUE, DynamoValueConsumer::new);
-    dynamoProducerMethodss
-        .put(ValueType.VALUE, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, cast(c)));
+    dynamoProducerMethodss.put(ValueType.VALUE, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (ValueConsumer) c));
 
     dynamoConsumerSuppliers.put(ValueType.REF, DynamoRefConsumer::new);
-    dynamoProducerMethodss.put(ValueType.REF, (e, c) -> DynamoRefConsumer.produceToConsumer(e, cast(c)));
+    dynamoProducerMethodss.put(ValueType.REF, (e, c) -> DynamoRefConsumer.produceToConsumer(e, (RefConsumer) c));
 
     dynamoConsumerSuppliers.put(ValueType.KEY_FRAGMENT, DynamoFragmentConsumer::new);
-    dynamoProducerMethodss
-        .put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragmentConsumer.produceToConsumer(e, cast(c)));
+    dynamoProducerMethodss.put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragmentConsumer.produceToConsumer(e, (FragmentConsumer) c));
 
     if (!dynamoConsumerSuppliers.keySet().equals(dynamoProducerMethodss.keySet())) {
       throw new UnsupportedOperationException("The enum-maps dynamoConsumerSuppliers and dynamoProducerSuppliers "
@@ -86,17 +91,23 @@ final class DynamoSerDe {
   }
 
   /**
-   * TODO javadoc for checkstyle.
+   * Serialize using the DynamoDB native consumer to the DynamoDB entity map.
+   * <p>
+   * The actual entity to serialize is not passed into this method, but this method calls
+   * a Java {@link Consumer} that receives an instance of {@link DynamoConsumer} that receives
+   * the entity components.
+   * </p>
    */
+  @SuppressWarnings("unchecked")
   public static <C extends HasIdConsumer<C>> Map<String, AttributeValue> serializeWithConsumer(
       ValueType valueType, Consumer<C> serializer) {
     Preconditions.checkNotNull(valueType, "valueType parameter is null");
     Preconditions.checkNotNull(serializer, "serializer parameter is null");
 
     // No need for any 'type' validation - that's done in the static initializer
-    DynamoConsumer<C> consumer = cast(dynamoConsumerSuppliers.get(valueType).get());
+    DynamoConsumer<C> consumer = (DynamoConsumer<C>) dynamoConsumerSuppliers.get(valueType).get();
 
-    serializer.accept(cast(consumer));
+    serializer.accept((C) consumer);
 
     return consumer.build();
   }
@@ -111,7 +122,7 @@ final class DynamoSerDe {
       ValueType valueType, Map<String, AttributeValue> entity) {
     Producer<V, C> producer = valueType.newEntityProducer();
 
-    deserializeToConsumer(valueType, entity, cast(producer));
+    deserializeToConsumer(valueType, entity, producer);
 
     return producer.build();
   }

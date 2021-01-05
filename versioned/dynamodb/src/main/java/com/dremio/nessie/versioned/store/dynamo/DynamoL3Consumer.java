@@ -45,7 +45,7 @@ class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer 
   }
 
   @Override
-  public DynamoL3Consumer keyDelta(Stream<KeyDelta> keyDelta) {
+  public L3Consumer keyDelta(Stream<KeyDelta> keyDelta) {
     return addEntitySafe(TREE, list(keyDelta.map(DynamoL3Consumer::treeKeyId)));
   }
 
@@ -68,6 +68,9 @@ class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer 
     return super.build();
   }
 
+  /**
+   * Deserialize a DynamoDB entity into the given consumer.
+   */
   static void produceToConsumer(Map<String, AttributeValue> entity, L3Consumer consumer) {
     consumer.id(deserializeId(entity, ID));
 

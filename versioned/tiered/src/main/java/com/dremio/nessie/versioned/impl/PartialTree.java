@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
@@ -41,12 +42,10 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Entity;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Streams;
@@ -360,21 +359,25 @@ class PartialTree<V> {
   public PartialTree<V> cleanClone() {
     PartialTree<V> clone = new PartialTree<V>(serializer, refId, keys);
     this.l3s.entrySet().stream()
-            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(L3.SCHEMA, x.getValue())))
+            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(ValueType.L3, x.getValue())))
             .forEach(x -> clone.l3s.put(x.getKey(), x.getValue()));
     this.l2s.entrySet().stream()
-            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(L2.SCHEMA, x.getValue())))
+            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(ValueType.L2, x.getValue())))
             .forEach(x -> clone.l2s.put(x.getKey(), x.getValue()));
     this.values.forEach(clone.values::put);
     clone.refType = this.refType;
     clone.rootId = this.rootId;
-    clone.l1 = cloneInner(L1.SCHEMA, this.l1);
+    clone.l1 = cloneInner(ValueType.L1, this.l1);
     return clone;
   }
 
-  private static <T extends HasId> Pointer<T> cloneInner(SimpleSchema<T> schema, Pointer<T> value) {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private static <T extends MemoizedId<?>> Pointer<T> cloneInner(ValueType type, Pointer<T> value) {
     if (value.isDirty()) {
-      return new Pointer<>(schema.mapToItem(schema.itemToMap(value.get(), true)));
+      Producer<T, ?> prod = type.newEntityProducer();
+      MemoizedId m = value.get();
+      m.applyToConsumer(prod);
+      return new Pointer<>(prod.build());
     } else {
       return value;
     }

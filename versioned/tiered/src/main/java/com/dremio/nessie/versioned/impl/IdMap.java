@@ -86,6 +86,9 @@ class IdMap implements Iterable<Id> {
     return deltas.length;
   }
 
+  /**
+   * Returns the new-IDs of the deltas as a {@link Stream}.
+   */
   public Stream<Id> stream() {
     return Arrays.stream(deltas).map(PositionDelta::getNewId);
   }
@@ -169,6 +172,9 @@ class IdMap implements Iterable<Id> {
     return Arrays.equals(deltas, other.deltas);
   }
 
+  /**
+   * Collects a {@link Stream} of {@link Id}s as an {@link IdMap}.
+   */
   public static Collector<Id, List<Id>, IdMap> collector() {
     return new Collector<Id, List<Id>, IdMap>() {
       @Override

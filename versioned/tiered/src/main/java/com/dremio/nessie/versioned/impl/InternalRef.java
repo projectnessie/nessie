@@ -105,7 +105,7 @@ public interface InternalRef extends HasId {
 
   Id getId();
 
-  static final SimpleSchema<InternalRef> SCHEMA = new SimpleSchema<InternalRef>(InternalRef.class) {
+  static final SimpleSchema<InternalRef> SCHEMA = new SimpleSchema<InternalRef>() {
 
     @Override
     public InternalRef deserialize(Map<String, Entity> attributeMap) {
@@ -140,10 +140,22 @@ public interface InternalRef extends HasId {
 
   };
 
+  /**
+   * Create a new {@link Builder} instance that implements both
+   * {@link RefConsumer} and a matching {@link Producer} that
+   * builds an {@link InternalRef} object.
+   *
+   * @return new builder instance
+   */
   static Builder builder() {
     return new Builder();
   }
 
+  /**
+   * Implements both
+   * {@link RefConsumer} and a matching {@link Producer} that
+   * builds an {@link InternalRef} object.
+   */
   final class Builder implements RefConsumer, Producer<InternalRef, RefConsumer> {
 
     private Id id;
@@ -213,8 +225,13 @@ public interface InternalRef extends HasId {
     }
 
     @Override
+    public Builder consumer() {
+      return this;
+    }
+
+    @Override
     public InternalRef build() {
-      checkSet(id, "id");
+      // null-id is allowed (will be generated)
       checkSet(refType, "refType");
       checkSet(name, "name");
 

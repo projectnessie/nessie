@@ -70,27 +70,27 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   }
 
   @Override
-  public DynamoL1Consumer commitMetadataId(Id id) {
+  public L1Consumer commitMetadataId(Id id) {
     return addEntitySafe(METADATA, idValue(id));
   }
 
   @Override
-  public DynamoL1Consumer ancestors(Stream<Id> ids) {
+  public L1Consumer ancestors(Stream<Id> ids) {
     return addIdList(PARENTS, ids);
   }
 
   @Override
-  public DynamoL1Consumer children(Stream<Id> ids) {
+  public L1Consumer children(Stream<Id> ids) {
     return addIdList(TREE, ids);
   }
 
   @Override
-  public DynamoL1Consumer addKeyAddition(Key key) {
+  public L1Consumer addKeyAddition(Key key) {
     return addKeyMutation(true, key);
   }
 
   @Override
-  public DynamoL1Consumer addKeyRemoval(Key key) {
+  public L1Consumer addKeyRemoval(Key key) {
     return addKeyMutation(false, key);
   }
 
@@ -130,7 +130,7 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   }
 
   @Override
-  public DynamoL1Consumer incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
+  public L1Consumer incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
     addKeysSafe(IS_CHECKPOINT, bool(false));
     addKeysSafe(ORIGIN, idValue(checkpointId));
     addKeysSafe(DISTANCE, number(distanceFromCheckpoint));
@@ -138,7 +138,7 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   }
 
   @Override
-  public DynamoL1Consumer completeKeyList(Stream<Id> fragmentIds) {
+  public L1Consumer completeKeyList(Stream<Id> fragmentIds) {
     addKeysSafe(IS_CHECKPOINT, bool(true));
     addKeysSafe(FRAGMENTS, idsList(fragmentIds));
     return this;
@@ -165,6 +165,9 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
     }
   }
 
+  /**
+   * Deserialize a DynamoDB entity into the given consumer.
+   */
   static void produceToConsumer(Map<String, AttributeValue> entity, L1Consumer consumer) {
     consumer.id(deserializeId(entity, ID));
 

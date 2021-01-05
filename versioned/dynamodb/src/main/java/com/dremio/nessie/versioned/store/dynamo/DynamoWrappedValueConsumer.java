@@ -48,6 +48,9 @@ abstract class DynamoWrappedValueConsumer<C extends WrappedValueConsumer<C>> ext
     return super.build();
   }
 
+  /**
+   * Deserialize a DynamoDB entity into the given consumer.
+   */
   static <C extends WrappedValueConsumer<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
     consumer.id(deserializeId(entity, ID))
         .value(deserializeBytes(entity, VALUE));

@@ -16,7 +16,7 @@
 package com.dremio.nessie.tiered.builder;
 
 /**
- * TODO javadoc.
+ * Consumer for binary values.
  */
 public interface ValueConsumer extends WrappedValueConsumer<ValueConsumer> {
 }
