@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.impl;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.dremio.nessie.versioned.LocalDynamoDB;
@@ -30,13 +29,6 @@ import com.dremio.nessie.versioned.tests.AbstractTestStore;
 class ITDynamoDBStore extends AbstractTestStore<DynamoStore> {
   private DynamoStoreFixture fixture;
 
-  @BeforeEach
-  public void setup() {
-    super.store = null;
-    fixture = new DynamoStoreFixture();
-    super.setup();
-  }
-
   @AfterEach
   void deleteResources() {
     fixture.close();
@@ -48,6 +40,7 @@ class ITDynamoDBStore extends AbstractTestStore<DynamoStore> {
    */
   @Override
   protected DynamoStore createStore() {
+    fixture = new DynamoStoreFixture();
     return fixture.getStore();
   }
 
@@ -58,6 +51,6 @@ class ITDynamoDBStore extends AbstractTestStore<DynamoStore> {
 
   @Override
   protected void resetStoreState() {
-    // empty
+    super.store = null;
   }
 }
