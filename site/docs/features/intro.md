@@ -15,10 +15,10 @@ Nessie is heavily inspired by Git. The main concepts Nessie exposes map directly
 [Git concepts](https://git-scm.com/book/en/v2). In most cases, you simply need to replace 
 references of files and directories in Git with Tables in Nessie. The primary concepts in Nessie are:
  
-* Commit: Consistent snapshot of all tables at a particular point in time
+* Commit: Consistent snapshot of all tables at a particular point in time.
 * Branch: Human-friendly reference that a user can add commits to.
 * Tag: Human-friendly reference that points to a particular commit.
-* Hash: Hexadecimal string representation of a particular commit
+* Hash: Hexadecimal string representation of a particular commit.
 
 Out of the box, Nessie starts with a single branch called `main` that points to the 
 beginning of time. A user can immediately start adding tables to that branch. For example 
@@ -72,13 +72,13 @@ $ select count(*) from t1@mytag join t2@mytag
 Nessie does not make copies of your underlying data. Instead, it works to version 
 separate lists of files associated with your dataset. Whether using Spark, Hive or 
 some other tool, each mutation operation you do will add or delete one or more files from 
-the definition of your table. Nessies keeps tracks of which files are related to each 
+the definition of your table. Nessie keeps tracks of which files are related to each 
 of your tables at every point in time and then allows you to recall those as needed.
 
 ## Scale & Performance
 
 Nessie is built for very large data warehouses. Nessie [supports](../develop/kernel.md) 
-millions of tables and 1000s of commits/second. Because Nessie builds on top of Iceberg 
+millions of tables and thousands of commits/second. Because Nessie builds on top of Iceberg 
 and Delta Lake, each table can have millions of files. As such, Nessie can support 
 data warehouses several magnitudes larger than the largest in the world today. This 
 is possible in large part due to the separation of transaction management (Nessie) from 
@@ -86,13 +86,13 @@ table metadata management (Iceberg and Delta Lake).
 
 ## Technology 
 Nessie can be [deployed in multiple ways](../try) and is composed primarily of the Nessie service, 
-which exposes a set of [REST APIs](../develop/rest.md) and a simple browse UI. This service works with multiple
-libraries to expose Nessie version control capabilities to common data management technologies.
+which exposes a set of [REST APIs](../develop/rest.md) and a simple browser UI. This service works with multiple
+libraries to expose Nessie's version control capabilities to common data management technologies.
 
 Nessie was built as a Cloud native technology and is designed to be highly scalable, 
 [performant](../develop/kernel.md) and resilient. Built 
 on Java and leveraging [Quarkus](https://quarkus.io/), it is compiled to a GraalVM native image 
-that starts in less than 20ms. This makes Nessie work very well in docker and FaaS environments. 
+that starts in less than 20ms. This makes Nessie work very well in Docker and FaaS environments. 
 Nessie has a pluggable storage backend and comes pre-packaged with support for DynamoDB and local 
 storage.
 
@@ -104,4 +104,3 @@ Nessie was originally conceived and built by engineers at [Dremio](http://dremio
 
 * Read more about [Nessie transactions](transactions.md)
 * Get started with the Nessie [quickstart](../try).
-
