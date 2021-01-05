@@ -232,7 +232,7 @@ public class L1 extends MemoizedId<L1Consumer> {
     return new Builder();
   }
 
-  public static class Builder implements L1Consumer, Producer<L1, L1Consumer> {
+  public static final class Builder implements L1Consumer, Producer<L1, L1Consumer> {
 
     private Id metadataId;
     private Stream<Id> ancestors;
@@ -245,41 +245,6 @@ public class L1 extends MemoizedId<L1Consumer> {
 
     private Builder() {
       // empty
-    }
-
-    /**
-     * Built the {@link L1}.
-     */
-    public L1 build() {
-      checkSet(id, "id");
-      checkSet(metadataId, "metadataId");
-      checkSet(children, "children");
-      checkSet(ancestors, "ancestors");
-
-      return new L1(
-          metadataId,
-          children.collect(IdMap.collector()),
-          id,
-          buildKeyList(),
-          ParentList.of(ancestors));
-    }
-
-    private KeyList buildKeyList() {
-      if (checkpointId != null) {
-        return KeyList.incremental(checkpointId, keyChanges, distanceFromCheckpoint);
-      }
-      if (fragmentIds != null) {
-        return new KeyList.CompleteList(
-            fragmentIds.collect(Collectors.toList()),
-            keyChanges);
-      }
-      // todo what if its neither? Fail
-      throw new IllegalStateException("Neither a checkpoint nor a incremental key list were found.");
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.L1;
     }
 
     @Override
@@ -341,6 +306,39 @@ public class L1 extends MemoizedId<L1Consumer> {
       }
       this.fragmentIds = fragmentIds;
       return this;
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.L1;
+    }
+
+    @Override
+    public L1 build() {
+      checkSet(id, "id");
+      checkSet(metadataId, "metadataId");
+      checkSet(children, "children");
+      checkSet(ancestors, "ancestors");
+
+      return new L1(
+          metadataId,
+          children.collect(IdMap.collector()),
+          id,
+          buildKeyList(),
+          ParentList.of(ancestors));
+    }
+
+    private KeyList buildKeyList() {
+      if (checkpointId != null) {
+        return KeyList.incremental(checkpointId, keyChanges, distanceFromCheckpoint);
+      }
+      if (fragmentIds != null) {
+        return new KeyList.CompleteList(
+            fragmentIds.collect(Collectors.toList()),
+            keyChanges);
+      }
+      // todo what if its neither? Fail
+      throw new IllegalStateException("Neither a checkpoint nor a incremental key list were found.");
     }
   }
 

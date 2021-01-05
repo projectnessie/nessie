@@ -16,11 +16,17 @@
 package com.dremio.nessie.tiered.builder;
 
 /**
- * TODO javadoc.
+ * Producers are "enhancements" of consumer implementations that build entity representations
+ * from the values passed to the consumer implementations.
+ *
+ * @param <C> consumer type
+ * @param <E> entity type that is built by this producer
  */
 public interface Producer<E, C extends HasIdConsumer<C>> extends HasIdConsumer<C> {
   /**
-   * TODO javadoc.
+   * Build the entity representation.
+   *
+   * @return built entity
    */
   E build();
 }

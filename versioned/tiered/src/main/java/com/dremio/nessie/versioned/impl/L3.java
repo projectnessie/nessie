@@ -223,7 +223,7 @@ public class L3 extends MemoizedId<L3Consumer> {
     return new Builder();
   }
 
-  public static class Builder implements L3Consumer, Producer<L3, L3Consumer> {
+  public static final class Builder implements L3Consumer, Producer<L3, L3Consumer> {
 
     private Id id;
     private Stream<KeyDelta> keyDelta;
@@ -232,9 +232,26 @@ public class L3 extends MemoizedId<L3Consumer> {
       // empty
     }
 
-    /**
-     * Built the {@link L2}.
-     */
+    @Override
+    public L3.Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
+    }
+
+    @Override
+    public Builder keyDelta(Stream<KeyDelta> keyDelta) {
+      checkCalled(this.keyDelta, "keyDelta");
+      this.keyDelta = keyDelta;
+      return this;
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.L3;
+    }
+
+    @Override
     public L3 build() {
       checkSet(id, "id");
       checkSet(keyDelta, "keyDelta");
@@ -252,25 +269,6 @@ public class L3 extends MemoizedId<L3Consumer> {
                   TreeMap::new
               )
           ));
-    }
-
-    @Override
-    public Builder keyDelta(Stream<KeyDelta> keyDelta) {
-      checkCalled(this.keyDelta, "keyDelta");
-      this.keyDelta = keyDelta;
-      return this;
-    }
-
-    @Override
-    public L3.Builder id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return this;
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.L3;
     }
   }
 

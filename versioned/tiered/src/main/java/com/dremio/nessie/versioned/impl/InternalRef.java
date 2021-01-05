@@ -144,7 +144,7 @@ public interface InternalRef extends HasId {
     return new Builder();
   }
 
-  class Builder implements RefConsumer, Producer<InternalRef, RefConsumer> {
+  final class Builder implements RefConsumer, Producer<InternalRef, RefConsumer> {
 
     private Id id;
     private RefType refType;
@@ -163,11 +163,6 @@ public interface InternalRef extends HasId {
       checkCalled(this.id, "id");
       this.id = id;
       return this;
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.REF;
     }
 
     @Override
@@ -212,6 +207,12 @@ public interface InternalRef extends HasId {
       return this;
     }
 
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.REF;
+    }
+
+    @Override
     public InternalRef build() {
       checkSet(id, "id");
       checkSet(refType, "refType");

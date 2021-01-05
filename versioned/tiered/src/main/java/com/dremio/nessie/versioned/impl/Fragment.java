@@ -120,20 +120,18 @@ public class Fragment extends MemoizedId<FragmentConsumer> {
     }
 
     @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.KEY_FRAGMENT;
-    }
-
-    @Override
     public Builder keys(Stream<Key> keys) {
       checkCalled(this.keys, "keys");
       this.keys = keys.map(InternalKey::new).collect(Collectors.toList());
       return this;
     }
 
-    /**
-     * TODO javadoc.
-     */
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.KEY_FRAGMENT;
+    }
+
+    @Override
     public Fragment build() {
       checkSet(id, "keys");
       checkSet(keys, "id");

@@ -136,30 +136,13 @@ public class L2 extends MemoizedId<L2Consumer> {
     return new L2.Builder();
   }
 
-  public static class Builder implements L2Consumer, Producer<L2, L2Consumer> {
+  public static final class Builder implements L2Consumer, Producer<L2, L2Consumer> {
 
     private Id id;
     private Stream<Id> children;
 
     private Builder() {
       // empty
-    }
-
-    /**
-     * Built the {@link L2}.
-     */
-    public L2 build() {
-      checkSet(id, "id");
-      checkSet(children, "children");
-
-      return new L2(
-          id,
-          IdMap.of(children));
-    }
-
-    @Override
-    public boolean canHandleType(ValueType valueType) {
-      return valueType == ValueType.L2;
     }
 
     @Override
@@ -174,6 +157,21 @@ public class L2 extends MemoizedId<L2Consumer> {
       checkCalled(this.id, "id");
       this.id = id;
       return this;
+    }
+
+    @Override
+    public boolean canHandleType(ValueType valueType) {
+      return valueType == ValueType.L2;
+    }
+
+    @Override
+    public L2 build() {
+      checkSet(id, "id");
+      checkSet(children, "children");
+
+      return new L2(
+          id,
+          IdMap.of(children));
     }
   }
 }
