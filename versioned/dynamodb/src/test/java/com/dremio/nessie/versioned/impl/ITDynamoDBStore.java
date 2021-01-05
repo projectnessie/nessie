@@ -15,12 +15,13 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import com.dremio.nessie.versioned.LocalDynamoDB;
-import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
-import com.dremio.nessie.versioned.tests.AbstractTestStore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import com.dremio.nessie.versioned.LocalDynamoDB;
+import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
+import com.dremio.nessie.versioned.tests.AbstractTestStore;
 
 /**
  * A test class that contains MongoDB specific tests.
