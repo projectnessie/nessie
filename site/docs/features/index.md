@@ -4,19 +4,19 @@ Nessie is to Data Lakes what git is to source code repositories. Therefore,
 Nessie uses many terms from both git and data lakes.
 
 This page explains how Nessie makes working with data in data lakes much easier
-without requiring much prior knowledge of either git nor data lakes.
+without requiring much prior knowledge of either git or data lakes.
 
-Nessie is designed to give users an always-consistent view to their data
-across all involved data sources (tables). Changes to your data, for example
+Nessie is designed to give users an always-consistent view of their data
+across all involved data sets (tables). Changes to your data, for example
 from batch jobs, happen independently and are completely isolated. Users will
 not see any incomplete changes. Once all the changes are done, all the changes
 can be atomically and consistently applied and become visible to your users.
 
-Nessie completely eliminates the hard and often manual work to keep track
+Nessie completely eliminates the hard and often manual work required to keep track
 of the individual data files. Nessie knows which data files are being used
 and which data files can safely be deleted.
 
-Production and staging and development can use the same data lake without risking
+Production, staging and development environments can use the same data lake without risking
 the consistent state of production data.
 
 Nessie does not copy your data, instead it references the existing data, which
@@ -26,14 +26,14 @@ works fine, because data files[^1] are immutable.
 
 * Changes to the contents of the data lake are
   [recorded in Nessie](#working-with-data-in-nessie) as *commits* without copying
-  the actual data
-* Add [meanings to the changes](#commit-messages-and-more) to your data lake
-* [Always-consistent](#branches) view to all the data 
-* Sets of changes, like the whole [work of a distributed Spark job](#working-branches-for-analytics-jobs)
-  or [experiments of data engineers](#working-branches-for-humans), are
+  the actual data.
+* Add [meanings to the changes](#commit-messages-and-more) to your data lake.
+* [Always-consistent](#branches) view of all the data 
+* Sets of changes, like the whole [work of a distributed Spark job](#working-branches-for-analytics-jobs).
+  or [experiments of data engineers](#working-branches-for-humans) are
   isolated in Nessie via *branches*. Failed jobs do not add additional harm to the data.
-* Known, fixed versions of all data can be [tagged](#tags)
-* Automatic removal of unused data files ([garbage collection](#garbage-collection))
+* Known, fixed versions of all data can be [tagged](#tags).
+* Automatic removal of unused data files ([garbage collection](#garbage-collection)).
 
 ## Data Lake 101
 
