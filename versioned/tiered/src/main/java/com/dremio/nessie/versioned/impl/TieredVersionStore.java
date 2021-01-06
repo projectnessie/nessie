@@ -315,7 +315,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return store.getRefs()
+    return store.getValues(InternalRef.class, ValueType.REF)
         .map(ir -> {
           if (ir.getType() == Type.TAG) {
             return WithHash.<NamedRef>of(ir.getTag().getCommit().toHash(), ImmutableTagName.builder().name(ir.getTag().getName()).build());
@@ -645,7 +645,14 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         .combine(headToRebaseOn.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
 
     // Now that we have all the items loaded, let's apply the changeset to both the sequential DiffManagers and the composite PartialTree.
-    creators.forEach(pt -> pt.apply(headToRebaseOn));
+    // We generate the intention log here with clean PartialTrees.
+    List<Commit> intentions = new ArrayList<>();
+    creators.forEach(pt -> {
+      PartialTree<DATA> clean = headToRebaseOn.cleanClone();
+      pt.apply(headToRebaseOn);
+      pt.apply(clean);
+      intentions.add(clean.getCommitOp(pt.metadataId, Collections.emptyList(), false, true).getCommitIntention());
+    });
 
     // Save L2s and L3s. Note we don't need to do any value saves here as we know that the values are already stored.
     store.save(
@@ -656,7 +663,6 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         .collect(Collectors.toList()));
 
     // get a list of all the intentions as a SetClause
-    List<Commit> intentions = creators.stream().map(pt -> pt.getCommit()).collect(Collectors.toList());
     SetClause commitUpdate = CommitOp.getCommitSet(intentions);
 
     // Get the composite commit operation, but exclude any Commit intentions.

@@ -26,38 +26,20 @@ import software.amazon.awssdk.regions.Region;
 @Immutable
 public abstract class DynamoStoreConfig {
 
+  // DEFAULT TABLE PREFIXNAMES
+  public static final String TABLE_PREFIX = "nessie_";
+
   public abstract Optional<URI> getEndpoint();
 
   @Default
-  public String getRefTableName() {
-    return "nessie_refs";
-  }
-
-  @Default
-  public String getTreeTableName() {
-    return "nessie_objects";
-  }
-
-  @Default
-  public String getValueTableName() {
-    return "nessie_objects";
-  }
-
-  @Default
-  public String getKeyListTableName() {
-    return "nessie_objects";
-  }
-
-  @Default
-  public String getMetadataTableName() {
-    return "nessie_objects";
+  public String getTablePrefix() {
+    return TABLE_PREFIX;
   }
 
   @Default
   public boolean initializeDatabase() {
     return true;
   }
-
 
   public abstract Optional<Region> getRegion();
 

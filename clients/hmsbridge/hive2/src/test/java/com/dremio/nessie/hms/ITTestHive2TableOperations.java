@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.hms;
 
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_URL;
+
 import java.util.Map;
 import java.util.function.Function;
 
@@ -32,7 +34,7 @@ public class ITTestHive2TableOperations extends BaseTableOperations {
   public static final Map<String, String> properties = ImmutableMap.<String, String>builder()
       .put(HiveConf.ConfVars.METASTORE_RAW_STORE_IMPL.varname, Hive2NessieRawStore.class.getName())
       .put("hive.exec.dynamic.partition.mode","nonstrict")
-      .put(NessieClient.CONF_NESSIE_URL, URL)
+      .put(CONF_NESSIE_URL, URL)
       .build();
 
   @BeforeAll

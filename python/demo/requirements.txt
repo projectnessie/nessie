@@ -1,6 +1,6 @@
-pynessie==0.2.1
-jupyterlab==2.2.9
+pynessie==0.3.0
+jupyterlab==3.0.1
 findspark==1.4.2
 pyspark==3.0.1
-pandas==1.1.5
+pandas==1.2.0
 pyarrow==2.0.0

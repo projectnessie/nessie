@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-hms-parent</artifactId>
-    <version>0.2.2-SNAPSHOT</version>
+    <version>0.3.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-hms-hive2</artifactId>
@@ -201,23 +201,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.core</groupId>
-      <artifactId>jersey-client</artifactId>
-      <version>2.22.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.media</groupId>
-      <artifactId>jersey-media-json-jackson</artifactId>
-      <version>2.22.2</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>2.6.5</version>
-    </dependency>
-
 
     <dependency>
       <groupId>commons-beanutils</groupId>
@@ -250,11 +233,7 @@
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <artifactSet>
                 <includes>
-                  <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</include>
-                  <include>org.glassfish.jersey.media:jersey-media-json-jackson</include>
                   <include>org.projectnessie</include>
-                  <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</include>
-                  <include>org.glassfish.jersey.ext:jersey-entity-filtering</include>
                 </includes>
               </artifactSet>
               <transformers>

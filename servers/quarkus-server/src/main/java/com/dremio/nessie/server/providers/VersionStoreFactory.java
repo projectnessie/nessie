@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.server.config.ApplicationConfig;
+import com.dremio.nessie.server.config.ApplicationConfig.VersionStoreDynamoConfig;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.services.config.ServerConfig;
 import com.dremio.nessie.versioned.BranchName;
@@ -122,20 +123,20 @@ public class VersionStoreFactory {
       return null;
     }
 
-    DynamoStore dynamo = new DynamoStore(DynamoStoreConfig.builder()
-                                            .endpoint(endpoint.map(e -> {
-                                              try {
-                                                return new URI(e);
-                                              } catch (URISyntaxException uriSyntaxException) {
-                                                throw new RuntimeException(uriSyntaxException);
-                                              }
-                                            }))
-                                            .region(Region.of(region))
-                                            .initializeDatabase(config.getVersionStoreDynamoConfig().isDynamoInitialize())
-                                            .refTableName(config.getVersionStoreDynamoConfig().getRefTableName())
-                                            .treeTableName(config.getVersionStoreDynamoConfig().getTreeTableName())
-                                            .valueTableName(config.getVersionStoreDynamoConfig().getValueTableName())
-                                            .build());
+    VersionStoreDynamoConfig in = config.getVersionStoreDynamoConfig();
+    DynamoStore dynamo = new DynamoStore(
+        DynamoStoreConfig.builder()
+          .endpoint(endpoint.map(e -> {
+            try {
+              return new URI(e);
+            } catch (URISyntaxException uriSyntaxException) {
+              throw new RuntimeException(uriSyntaxException);
+            }
+          }))
+          .region(Region.of(region))
+          .initializeDatabase(in.isDynamoInitialize())
+          .tablePrefix(in.getTablePrefix())
+          .build());
     dynamo.start();
     return dynamo;
   }

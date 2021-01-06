@@ -15,16 +15,14 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.ArrayList;
+import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.bson.BsonDocument;
@@ -35,26 +33,24 @@ import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
-import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.RemoveClause;
 import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.impl.condition.UpdateClauseVisitor;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import com.dremio.nessie.versioned.store.ConditionFailedException;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
@@ -67,12 +63,14 @@ import com.mongodb.client.model.InsertManyOptions;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoClients;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.MongoDatabase;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * This class implements the Store interface that is used by Nessie as a backing store for versioning of it's
@@ -81,72 +79,15 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
  */
 public class MongoDBStore implements Store {
   /**
-   * A Subscriber that stores the publishers results and provides a latch so can block on completion.
-   *
-   * <p>Note that this class is taken from the MongoDB Tour:
-   * https://github.com/mongodb/mongo-java-driver-reactivestreams/blob/master/examples/tour/src/main/tour/SubscriberHelpers.java
-   *
-   * @param <T> The publishers result type
+   * Pair of a collection to the set of IDs to be loaded.
    */
-  private static class ObservableSubscriber<T> implements Subscriber<T> {
-    private final List<T> received;
-    private final CountDownLatch latch;
-    private Throwable error;
-    private boolean hasRequested;
-    private volatile Subscription subscription;
+  private static class CollectionLoadIds {
+    final MongoCollection<? extends HasId> collection;
+    final List<Id> ids;
 
-    ObservableSubscriber() {
-      this.received = new ArrayList<>();
-      this.latch = new CountDownLatch(1);
-      this.hasRequested = false;
-    }
-
-    @Override
-    public void onSubscribe(final Subscription s) {
-      subscription = s;
-    }
-
-    @Override
-    public void onNext(final T t) {
-      received.add(t);
-    }
-
-    @Override
-    public void onError(final Throwable t) {
-      error = t;
-      onComplete();
-    }
-
-    @Override
-    public void onComplete() {
-      latch.countDown();
-    }
-
-    T first() {
-      return received.isEmpty() ? null : received.get(0);
-    }
-
-    List<T> getReceived() {
-      return received;
-    }
-
-    void request() {
-      subscription.request(Integer.MAX_VALUE);
-      hasRequested = true;
-    }
-
-    ObservableSubscriber<T> await(final long timeout) throws Throwable {
-      if (!hasRequested) {
-        subscription.request(Integer.MAX_VALUE);
-      }
-
-      if (!latch.await(timeout, TimeUnit.MILLISECONDS)) {
-        throw new TimeoutException("Publisher onComplete timed out");
-      }
-      if (null != error) {
-        throw new ExecutionException(error);
-      }
-      return this;
+    CollectionLoadIds(MongoCollection<? extends HasId> collection, List<Id> ops) {
+      this.collection = collection;
+      this.ids = ops;
     }
   }
 
@@ -165,7 +106,7 @@ public class MongoDBStore implements Store {
 
     @Override
     public <TDocument> BsonDocument toBsonDocument(Class<TDocument> clazz, CodecRegistry codecRegistry) {
-      // Intentionally don't use Updates.setOnInsert as that will result in issues encoding the value entity,
+      // Intentionally don't use Updates.setOnInsert() as that will result in issues encoding the value entity,
       // due to codec lookups the MongoDB driver will actually encode the fields of the basic object, not the entity.
       final BsonDocumentWriter writer = new BsonDocumentWriter(new BsonDocument());
       writer.writeStartDocument();
@@ -177,7 +118,7 @@ public class MongoDBStore implements Store {
     }
   }
 
-  private static final Map<ValueType, Function<MongoStoreConfig, String>> typeCollections =
+  private static final Map<ValueType, Function<MongoStoreConfig, String>> TYPE_COLLECTIONS =
       ImmutableMap.<ValueType, Function<MongoStoreConfig, String>>builder()
           .put(ValueType.L1, MongoStoreConfig::getL1TableName)
           .put(ValueType.L2, MongoStoreConfig::getL2TableName)
@@ -191,12 +132,18 @@ public class MongoDBStore implements Store {
   private static final AggBsonUpdateVisitor AGG_UPDATE_VISITOR = new AggBsonUpdateVisitor();
   private static final BsonUpdateVisitor UPDATE_VISITOR = new BsonUpdateVisitor();
 
+  // Mongo has a 16MB limit on documents, which also pertains to the input query. Given that we use IN for loads,
+  // restrict the number of IDs to avoid going above that limit, and to take advantage of the async nature of the
+  // requests.
+  @VisibleForTesting
+  static final int LOAD_SIZE = 1_000;
+
   private final MongoStoreConfig config;
   private final MongoClientSettings mongoClientSettings;
 
   private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
-  private final long timeoutMs;
+  private final Duration timeout;
   private final Map<ValueType, MongoCollection<? extends HasId>> collections;
 
   /**
@@ -205,7 +152,7 @@ public class MongoDBStore implements Store {
    */
   public MongoDBStore(MongoStoreConfig config) {
     this.config = config;
-    this.timeoutMs = config.getTimeoutMs();
+    this.timeout = Duration.ofMillis(config.getTimeoutMs());
     this.collections = new HashMap<>();
     final CodecRegistry codecRegistry = CodecRegistries.fromProviders(
         new CodecProvider(),
@@ -225,13 +172,14 @@ public class MongoDBStore implements Store {
    * either before they are used. This creates or retrieves collections that map 1:1 to the enumerates in
    * {@link com.dremio.nessie.versioned.store.ValueType}
    */
+  @SuppressWarnings("unchecked")
   @Override
   public void start() {
     mongoClient = MongoClients.create(mongoClientSettings);
     mongoDatabase = mongoClient.getDatabase(config.getDatabaseName());
 
     // Initialise collections for each ValueType.
-    typeCollections.forEach((k, v) ->
+    TYPE_COLLECTIONS.forEach((k, v) ->
         collections.put(k, (MongoCollection<? extends HasId>)mongoDatabase.getCollection(v.apply(config), k.getObjectClass())));
   }
 
@@ -248,7 +196,34 @@ public class MongoDBStore implements Store {
 
   @Override
   public void load(LoadStep loadstep) throws NotFoundException {
-    throw new UnsupportedOperationException();
+    for (LoadStep step = loadstep; step != null; step = step.getNext().orElse(null)) {
+      final Map<Id, LoadOp<?>> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
+
+      Flux.fromStream(step.getOps())
+        .groupBy(op -> this.<HasId>getCollection(op.getValueType()))
+        .flatMap(entry -> entry.map(LoadOp::getId).buffer(LOAD_SIZE).map(l -> new CollectionLoadIds(entry.key(), l)))
+        .flatMap(entry -> entry.collection.find(Filters.in(KEY_NAME, entry.ids)))
+        .handle((op, sink) -> {
+          // Process each of the loaded entries.
+          final LoadOp<?> loadOp = idLoadOps.remove(op.getId());
+          if (null == loadOp) {
+            sink.error(new StoreOperationException(String.format("Retrieved unexpected object with ID: %s", op.getId())));
+          } else {
+            final ValueType type = loadOp.getValueType();
+            loadOp.loaded(type.addType(type.getSchema().itemToMap(op, true)));
+            sink.next(op);
+          }
+        })
+          .blockLast(timeout);
+
+      // Check if there were any missed ops.
+      final Collection<String> missedIds = idLoadOps.values().stream()
+          .map(e -> e.getId().toString())
+          .collect(Collectors.toList());
+      if (!missedIds.isEmpty()) {
+        throw new NotFoundException(String.format("Requested object IDs missing: %s", String.join(", ", missedIds)));
+      }
+    }
   }
 
   @Override
@@ -257,10 +232,10 @@ public class MongoDBStore implements Store {
 
     // Use upsert so that a document is created if the filter does not match. The update operator is only $setOnInsert
     // so no action is triggered on a simple update, only on insert.
-    final UpdateResult result = await(collection.updateOne(
+    final UpdateResult result = Mono.from(collection.updateOne(
         Filters.eq(Store.KEY_NAME, ((HasId)value).getId()),
         new UpdateEntityBson<>((Class<V>)type.getObjectClass(), value),
-        new UpdateOptions().upsert(true))).first();
+        new UpdateOptions().upsert(true))).block(timeout);
     return result.getUpsertedId() != null;
   }
 
@@ -269,14 +244,18 @@ public class MongoDBStore implements Store {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
 
-    Bson filter = Filters.eq(Store.KEY_NAME, ((HasId) value).getId());
-    if (conditionUnAliased.isPresent()) {
-      filter = Filters.and(filter, conditionUnAliased.get().accept(CONDITION_VISITOR));
-    }
-
-    // Use upsert so that if an item does not exist, it will be insert.
     final MongoCollection<V> collection = getCollection(type);
-    await(collection.replaceOne(filter, value, new ReplaceOptions().upsert(!conditionUnAliased.isPresent())));
+    final Bson idFilter = Filters.eq(Store.KEY_NAME, ((HasId) value).getId());
+    if (conditionUnAliased.isPresent()) {
+      final Bson fullFilter = Filters.and(idFilter, conditionUnAliased.get().accept(CONDITION_VISITOR));
+
+      if (1 != Mono.from(collection.replaceOne(fullFilter, value)).block(timeout).getModifiedCount()) {
+        throw new ConditionFailedException("Condition failed during put operation.");
+      }
+    } else {
+      // Use upsert so that if an item does not exist, it will be inserted.
+      Mono.from(collection.replaceOne(idFilter, value, new ReplaceOptions().upsert(true))).block(timeout);
+    }
   }
 
   @Override
@@ -288,42 +267,31 @@ public class MongoDBStore implements Store {
       filter = Filters.and(filter, condition.get().accept(CONDITION_VISITOR));
     }
 
-    return 0 != await(collection.deleteOne(filter)).first().getDeletedCount();
+    return 0 != Mono.from(collection.deleteOne(filter)).block(timeout).getDeletedCount();
   }
 
   @Override
   public void save(List<SaveOp<?>> ops) {
-    final ListMultimap<MongoCollection<?>, SaveOp<?>> mm = Multimaps.index(ops, l -> collections.get(l.getType()));
-    final ListMultimap<MongoCollection<?>, Object> collectionWrites = Multimaps.transformValues(mm, SaveOp::getValue);
+    final ListMultimap<MongoCollection<?>, SaveOp<?>> mm = Multimaps.index(ops, l -> getCollection(l.getType()));
+    final ListMultimap<MongoCollection<?>, HasId> collectionWrites = Multimaps.transformValues(mm, SaveOp::getValue);
 
-    final List<ObservableSubscriber<InsertManyResult>> subscribers = new ArrayList<>();
-    for (MongoCollection collection : collectionWrites.keySet()) {
-      final ObservableSubscriber<InsertManyResult> subscriber = new ObservableSubscriber<>();
-      subscribers.add(subscriber);
+    Flux.fromIterable(Multimaps.asMap(collectionWrites).entrySet())
+      .flatMap(entry -> {
+        final MongoCollection collection = entry.getKey();
 
-      // Ordering of the inserts doesn't matter, so set to unordered to give potential performance improvements.
-      collection.insertMany(collectionWrites.get(collection), new InsertManyOptions().ordered(false)).subscribe(subscriber);
-      subscriber.request();
-    }
-
-    // Wait for each of the writes to have completed.
-    subscribers.forEach(s -> {
-      try {
-        s.await(this.timeoutMs);
-      } catch (Throwable throwable) {
-        Throwables.throwIfUnchecked(throwable);
-        throw new RuntimeException(throwable);
-      }
-    });
+        // Ordering of the inserts doesn't matter, so set to unordered to give potential performance improvements.
+        return collection.insertMany(entry.getValue(), new InsertManyOptions().ordered(false));
+      })
+        .blockLast(timeout);
   }
 
   @Override
   public <V> V loadSingle(ValueType valueType, Id id) {
     final MongoCollection<V> collection = getCollection(valueType);
 
-    final V value = await(collection.find(Filters.eq(Store.KEY_NAME, id))).first();
+    final V value = Mono.from(collection.find(Filters.eq(Store.KEY_NAME, id))).block(timeout);
     if (null == value) {
-      throw new NotFoundException("Unable to load item with ID: " + id);
+      throw new NotFoundException(String.format("Unable to load item with ID: %s", id));
     }
     return value;
   }
@@ -338,35 +306,29 @@ public class MongoDBStore implements Store {
       filter = Filters.and(filter, condition.get().accept(CONDITION_VISITOR));
     }
 
-    final List<V> updated;
+    final Optional<V> updated;
     if (shouldUseAggPipeline(update)) {
       // Mongo cannot remove an element from an array in one operation, it requires two or the agg pipeline. Thus,
       // when we detect that case use the agg pipeline instead of the normal pipeline. Note that this is likely to be
       // slower than the normal path, but given that it's used for cleanup purposes and is not on the critical path,
       // this should be fine.
-      updated = await(collection.findOneAndUpdate(
+      updated = Mono.from(collection.findOneAndUpdate(
         filter,
         update.accept(AGG_UPDATE_VISITOR),
-        new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER))).getReceived();
+        new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER))).blockOptional(timeout);
     } else {
-      updated = await(collection.findOneAndUpdate(
+      updated = Mono.from(collection.findOneAndUpdate(
           filter,
           update.accept(UPDATE_VISITOR),
-          new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER))).getReceived();
+          new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER))).blockOptional(timeout);
     }
 
-    if (updated.isEmpty()) {
-      return Optional.empty();
-    }
-
-    return Optional.of(updated.get(0));
+    return updated;
   }
 
   @Override
-  public Stream<InternalRef> getRefs() {
-    // TODO: Can this be optimized to not collect the elements before streaming them?
-    final MongoCollection<InternalRef> collection = getCollection(ValueType.REF);
-    return await(collection.find()).getReceived().stream();
+  public <V> Stream<V> getValues(Class<V> valueClass, ValueType type) {
+    return Flux.from(this.<V>getCollection(ValueType.REF).find()).toStream();
   }
 
   /**
@@ -374,32 +336,16 @@ public class MongoDBStore implements Store {
    */
   @VisibleForTesting
   void resetCollections() {
-    collections.forEach((k, v) -> await(v.deleteMany(Filters.ne("_id", "s"))));
+    Flux.fromIterable(collections.values()).flatMap(collection -> collection.deleteMany(Filters.ne("_id", "s"))).blockLast(timeout);
   }
 
-  /**
-   * Given an async publisher, wait for results to arrive and return the subscriber with the result..
-   * @param publisher the publisher to wait for results with.
-   * @param <T> the type of the result from the publisher.
-   * @return the subscriber containing the results of the publisher.
-   */
-  private <T> ObservableSubscriber<T> await(Publisher<T> publisher) {
-    try {
-      final ObservableSubscriber<T> subscriber = new ObservableSubscriber<>();
-      publisher.subscribe(subscriber);
-      return subscriber.await(this.timeoutMs);
-    } catch (Throwable throwable) {
-      Throwables.throwIfUnchecked(throwable);
-      throw new RuntimeException(throwable);
-    }
-  }
-
-  private <V> MongoCollection<V> getCollection(ValueType valueType) {
+  @VisibleForTesting
+  <T> MongoCollection<T> getCollection(ValueType valueType) {
     final MongoCollection<? extends HasId> collection = collections.get(valueType);
     if (null == collection) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
     }
-    return (MongoCollection<V>) collection;
+    return (MongoCollection<T>) collection;
   }
 
   private boolean shouldUseAggPipeline(UpdateExpression update) {

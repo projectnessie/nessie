@@ -47,7 +47,7 @@ public class SampleEntities {
 
     final List<Entity> deltaIds = new ArrayList<>(L1.SIZE);
     for (int i = 0; i < L1.SIZE; i++) {
-      deltaIds.add(createIdEntity(random));
+      deltaIds.add(createId(random).toEntity());
     }
 
     return L1.EMPTY.getChildWithTree(
@@ -64,11 +64,11 @@ public class SampleEntities {
   public static L2 createL2(Random random) {
     final List<Entity> treeList = new ArrayList<>(L2.SIZE);
     for (int i = 0; i < L2.SIZE; i++) {
-      treeList.add(createIdEntity(random));
+      treeList.add(createId(random).toEntity());
     }
 
     final Map<String, Entity> attributeMap = new HashMap<>();
-    attributeMap.put("id", createIdEntity(random));
+    attributeMap.put("id", createId(random).toEntity());
     attributeMap.put("tree", Entity.ofList(treeList));
 
     return L2.SCHEMA.mapToItem(attributeMap);
@@ -104,7 +104,7 @@ public class SampleEntities {
     }
 
     final Map<String, Entity> attributeMap = new HashMap<>();
-    attributeMap.put("id", createIdEntity(random));
+    attributeMap.put("id", createId(random).toEntity());
     attributeMap.put("keys", Entity.ofList(keyList));
 
     return Fragment.SCHEMA.mapToItem(attributeMap);
@@ -118,23 +118,23 @@ public class SampleEntities {
   public static InternalRef createBranch(Random random) {
     final List<Entity> treeList = new ArrayList<>(L1.SIZE);
     for (int i = 0; i < L1.SIZE; i++) {
-      treeList.add(createIdEntity(random));
+      treeList.add(createId(random).toEntity());
     }
 
     // Two commits, one with a DELTA and one without.
     final List<Entity> commitList = new ArrayList<>(2);
     commitList.add(Entity.ofMap(ImmutableMap.of(
-        "id", createIdEntity(random),
-        "commit", createIdEntity(random),
-        "parent", createIdEntity(random)
+        "id", createId(random).toEntity(),
+        "commit", createId(random).toEntity(),
+        "parent", createId(random).toEntity()
     )));
     commitList.add(Entity.ofMap(ImmutableMap.of(
-        "id", createIdEntity(random),
-        "commit", createIdEntity(random),
+        "id", createId(random).toEntity(),
+        "commit", createId(random).toEntity(),
         "deltas", Entity.ofList(Entity.ofMap(ImmutableMap.of(
             "position", Entity.ofNumber(1),
-            "old", createIdEntity(random),
-            "new", createIdEntity(random)
+            "old", createId(random).toEntity(),
+            "new", createId(random).toEntity()
         ))),
         "keys", Entity.ofList(Entity.ofMap(ImmutableMap.of("a",
             Entity.ofList(createStringEntity(random, 8), createStringEntity(random, 8)))))
@@ -146,7 +146,7 @@ public class SampleEntities {
     attributeMap.put("name", Entity.ofString(name));
     attributeMap.put("id", Id.build(name).toEntity());
     attributeMap.put("tree", Entity.ofList(treeList));
-    attributeMap.put("metadata", createIdEntity(random));
+    attributeMap.put("metadata", createId(random).toEntity());
     attributeMap.put("commits", Entity.ofList(commitList));
 
     return InternalRef.SCHEMA.mapToItem(attributeMap);
@@ -160,9 +160,9 @@ public class SampleEntities {
   public static InternalRef createTag(Random random) {
     final Map<String, Entity> attributeMap = new HashMap<>();
     attributeMap.put(InternalRef.TYPE, Entity.ofString("t"));
-    attributeMap.put("id", createIdEntity(random));
+    attributeMap.put("id", createId(random).toEntity());
     attributeMap.put("name", Entity.ofString("tagName"));
-    attributeMap.put("commit", createIdEntity(random));
+    attributeMap.put("commit", createId(random).toEntity());
 
     return InternalRef.SCHEMA.mapToItem(attributeMap);
   }
@@ -174,7 +174,7 @@ public class SampleEntities {
    */
   public static InternalCommitMetadata createCommitMetadata(Random random) {
     final Map<String, Entity> attributeMap = new HashMap<>();
-    attributeMap.put("id", createIdEntity(random));
+    attributeMap.put("id", createId(random).toEntity());
     attributeMap.put("value", Entity.ofBinary(createBinary(random, 6)));
 
     return InternalCommitMetadata.SCHEMA.mapToItem(attributeMap);
@@ -187,7 +187,7 @@ public class SampleEntities {
    */
   public static InternalValue createValue(Random random) {
     final Map<String, Entity> attributeMap = new HashMap<>();
-    attributeMap.put("id", createIdEntity(random));
+    attributeMap.put("id", createId(random).toEntity());
     attributeMap.put("value", Entity.ofBinary(createBinary(random, 7)));
 
     return InternalValue.SCHEMA.mapToItem(attributeMap);
@@ -206,21 +206,12 @@ public class SampleEntities {
   }
 
   /**
-   * Create a random ID.
-   * @param random random number generator to use.
-   * @return the generated ID.
+   * Create a Sample ID entity.
+   * @param random object to use for randomization of entity creation.
+   * @return sample ID entity.
    */
   public static Id createId(Random random) {
     return Id.of(createBinary(random, 20));
-  }
-
-  /**
-   * Create a random ID as an Entity.
-   * @param random random number generator to use.
-   * @return the generated Entity ID.
-   */
-  public static Entity createIdEntity(Random random) {
-    return Entity.ofBinary(createBinary(random, 20));
   }
 
   /**

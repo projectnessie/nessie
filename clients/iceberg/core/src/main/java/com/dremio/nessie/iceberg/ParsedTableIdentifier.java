@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.iceberg;
 
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_REF;
+
 import java.time.Instant;
 import java.util.Map;
 
@@ -75,7 +77,7 @@ public class ParsedTableIdentifier {
     }
 
     TableIdentifier identifier = TableIdentifier.parse(path);
-    String reference = properties.get(NessieCatalog.CONF_NESSIE_REF);
+    String reference = properties.get(CONF_NESSIE_REF);
     return new ParsedTableIdentifier(identifier, null, reference);
   }
 

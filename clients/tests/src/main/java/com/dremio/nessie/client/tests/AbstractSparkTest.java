@@ -1,4 +1,4 @@
-package com.dremio.nessie.client.tests;/*
+/*
  * Copyright (C) 2020 Dremio
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,11 @@ package com.dremio.nessie.client.tests;/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.dremio.nessie.client.tests;
 
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_REF;
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_URL;
 
 import java.io.IOException;
 import java.util.List;
@@ -33,13 +37,6 @@ import org.junit.jupiter.api.BeforeEach;
 public abstract class AbstractSparkTest {
   private static final Object ANY = new Object();
   private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
-
-  public static final String CONF_NESSIE_URL = "nessie.url";
-  public static final String CONF_NESSIE_USERNAME = "nessie.username";
-  public static final String CONF_NESSIE_PASSWORD = "nessie.password";
-  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
-  public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
-  public static final String CONF_NESSIE_REF = "nessie.ref";
   protected static SparkConf conf = new SparkConf();
 
   protected static SparkSession spark;

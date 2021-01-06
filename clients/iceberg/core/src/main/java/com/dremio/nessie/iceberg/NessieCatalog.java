@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.iceberg;
 
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_REF;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +35,6 @@ import org.apache.iceberg.exceptions.NoSuchTableException;
 
 import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Contents;
@@ -52,14 +53,6 @@ import com.google.common.collect.ImmutableMap;
  * Nessie implementation of Iceberg Catalog.
  */
 public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable {
-
-  public static final String CONF_NESSIE_URL = "nessie.url";
-  public static final String CONF_NESSIE_USERNAME = "nessie.username";
-  public static final String CONF_NESSIE_PASSWORD = "nessie.password";
-  public static final String CONF_NESSIE_AUTH_TYPE = "nessie.auth_type";
-  public static final String NESSIE_AUTH_TYPE_DEFAULT = "BASIC";
-  public static final String CONF_NESSIE_REF = "nessie.ref";
-  public static final String CONF_NESSIE_HASH = "nessie.hash";
 
   private static final Joiner SLASH = Joiner.on("/");
   private static final String ICEBERG_HADOOP_WAREHOUSE_BASE = "iceberg/warehouse";
@@ -96,12 +89,7 @@ public class NessieCatalog extends BaseMetastoreCatalog implements AutoCloseable
   public NessieCatalog(String name, Configuration config, String ref) {
     this.config = config;
     this.name = name;
-    String path = config.get(CONF_NESSIE_URL);
-    String username = config.get(CONF_NESSIE_USERNAME);
-    String password = config.get(CONF_NESSIE_PASSWORD);
-    String authTypeStr = config.get(CONF_NESSIE_AUTH_TYPE, NESSIE_AUTH_TYPE_DEFAULT);
-    AuthType authType = AuthType.valueOf(authTypeStr);
-    this.client = new NessieClient(authType, path, username, password);
+    this.client = NessieClient.withConfig(config::get);
 
     warehouseLocation = config.get("fs.defaultFS") + "/" + ICEBERG_HADOOP_WAREHOUSE_BASE;
 

@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 
@@ -129,10 +128,12 @@ public interface Store extends AutoCloseable {
   <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition);
 
   /**
-   * Get a list of all available refs.
+   * Get a list of all available values of the requested value type.
    *
-   * @return A stream of refs.
-   * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
+   * @param <V> The value type.
+   * @param valueClass The {@code Class} associated with requested value type. Should match {@code ValueType.getObjectClass()}.
+   * @param type The {@link ValueType} to load.
+   * @return
    */
-  Stream<InternalRef> getRefs();
+  <V> Stream<V> getValues(Class<V> valueClass, ValueType type);
 }

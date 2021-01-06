@@ -16,6 +16,8 @@
 
 package com.dremio.nessie.iceberg;
 
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_REF;
+
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.types.Types;
 import org.junit.jupiter.api.Assertions;
@@ -44,7 +46,7 @@ class ITTestDefaultCatalogBranch extends BaseTestIceberg {
 
     catalog.refresh();
     tree.createReference(Branch.of("FORWARD", catalog.getHash()));
-    hadoopConfig.set(NessieCatalog.CONF_NESSIE_REF, "FORWARD");
+    hadoopConfig.set(CONF_NESSIE_REF, "FORWARD");
     NessieCatalog forwardCatalog = new NessieCatalog(hadoopConfig);
     forwardCatalog.loadTable(foobaz).updateSchema().addColumn("id1", Types.LongType.get()).commit();
     forwardCatalog.loadTable(foobar).updateSchema().addColumn("id1", Types.LongType.get()).commit();

@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.model;
 
+import static com.dremio.nessie.model.Validation.validateHash;
+
 import java.util.List;
 
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -34,5 +36,18 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 public interface Transplant {
 
   List<String> getHashesToTransplant();
+
+  /**
+   * Validation rule using {@link com.dremio.nessie.model.Validation#validateHash(String)} (String)}.
+   */
+  @Value.Check
+  default void checkHashes() {
+    List<String> hashes = getHashesToTransplant();
+    if (hashes != null) {
+      for (String hash : hashes) {
+        validateHash(hash);
+      }
+    }
+  }
 
 }

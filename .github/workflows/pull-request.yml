@@ -87,7 +87,6 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build
       working-directory: ./tools/apprunner-gradle-plugin
-
   python:
     name: Python
     runs-on: ubuntu-latest
