@@ -96,13 +96,18 @@ the [About Git](https://git-scm.com/about) pages as a quick start.
 | (Multi-table) transaction | Since a Nessie commit can group data data files from many tables, you can think of a Nessie commit as a (multi-table) transaction.
 | Branch | Named reference to a commit. A new commit to a branch updates the branch to the new commit.
 | Tag | Named reference to a commit. Not automatically changed.
-| Merge | Combination of two commits. Usually applies the changes of one source-branch onto another target-branch. Creates a merge-commit.
+| Merge | Combination of two commits. Usually applies the changes of one source-branch onto another target-branch.
 
 ## Working with data in Nessie
 
 Each individual state in Nessie is defined by a *Nessie commit*.
 Each *commit* in Nessie, except the very first one, has references to its
-predecessors, the previous versions of the data.
+predecessor, the previous versions of the data.
+
+For those who know Git and merge-commits: One important difference of Nessie-merges
+is that Nessie-commits have only parent (predecessor). Nessie-merge operations
+technically work a bit different: the changes in branch to be merged are replayed
+on top of the target branch.
 
 Each *Nessie commit* also indirectly "knows" about the data files (via some metadata)
 in your data lake, which represent the state of all data in all tables.
@@ -290,13 +295,17 @@ into the "main"-branch.
                                     "main"
                                     branch
 ```
-Note that the merge-`commit #4` has references to two commits:
 
-* The previous commit on the "main" branch.
-* The merged commit from the "work"-branch is not yet recorded in Nessie.
+Technically, Nessie replays `commit #2` and `commit #3` on top of the most-recent
+commit of the "main" branch.
 
-It would be nice to give that `commit #4` a meaningful commit message, like
-`aggregate-financial-stuff 2020/12/24`, though, so people that look through the
+For those who know Git and merge-commits: One important difference of Nessie-merges
+is that Nessie-commits have only parent (predecessor). Nessie-merge operations
+technically work a bit different: the changes in branch to be merged are replayed
+on top of the target branch.
+
+It would be nice to give the commits a meaningful commit messages, like
+`aggregate-financial-stuff 2020/12/24`, so people that look through the
 history of the data can grasp what that commit changes and why it's there.
 
 Before you actually merge the data from a working-branch into the "main" branch,
