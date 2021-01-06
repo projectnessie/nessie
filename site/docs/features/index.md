@@ -45,8 +45,18 @@ data (i.e. names and types of the columns) and contains the data. A single,
 logical table (for example a `customers` or a `bank_account_transactions` table)
 consists of many data files.
 
+A common (mis)understanding of Data Lakes is "throw everything in and see
+what happens". This might work for some time, leaving data, especially large
+amounts of data, unorganized is a rather bad idea. A common best-practice
+is still to properly organize the (immutable) data files in directories that
+reflect both orgenizational (think: units/groups in your company) and
+structural (think: table schema) aspects.
+
 New data files can be added to the set of files for a particular table.
-Data files can also contain updates to and deletions of existing data.
+Data files can also contain updates to and deletions of existing data. For
+example: if you need to make changes to the data in data-file `A`, you
+basically have to read that data-file, apply the changes and write a new
+data-file `A'` with the changes, which makes `data-file-A` irrelevant.
 
 The amount of data held in data lakes is rather huge (GBs, TBs, PBs), and so
 is the number of tables and data files (100s of thousands, millions).
@@ -77,6 +87,16 @@ concepts here and then outline the differences in the next chapter. If you want
 to learn more about Git, we recommend looking this
 [Git book](https://git-scm.com/book/en/v2) (available in many languages) or
 the [About Git](https://git-scm.com/about) pages as a quick start.
+
+## Terms summary
+
+| Term | Meaning in Nessie
+| --- | ---
+| Commit | An atomic change to a set of data files.
+| (Multi-table) transaction | Since a Nessie commit can group data data files from many tables, you can think of a Nessie commit as a (multi-table) transaction.
+| Branch | Named reference to a commit. A new commit to a branch updates the branch to the new commit.
+| Tag | Named reference to a commit. Not automatically changed.
+| Merge | Combination of two commits. Usually applies the changes of one source-branch onto another target-branch. Creates a merge-commit.
 
 ## Working with data in Nessie
 
@@ -125,6 +145,38 @@ COMMIT TRANSACTION;
 Each commit is identified by a sequence of hexadecimal characters like
 `2898591840e992ec5a7d5c811c58c8b42a8e0d0914f86a37badbeedeadaffe`[^3], which is
 not easy to read and remember for us humans.
+
+### Transaction in Nessie
+
+The term "transaction" has different meanings to different people coming from
+different backgrounds. It is probably fair to say that, in general, a transaction
+is a group of changes applied to some data.
+
+The *term* "transaction" alone does not define any guarantees. Different systems
+provide different guarantees, for example whether (or: when) changes performed
+in a transaction become visible to others, whether (parts of) the data gets locked,
+and so on.
+
+Relational database systems (RDBMS) for example usually provide certain levels of
+isolation (think: others cannot see uncommitted changes) and also ensure that either
+a change within a transaction succeeds, the request times out or fails straight 
+away. Relational databases have a single and central transaction-coordinator[^4]
+and are designed to always provide a consistent data set.
+
+The smallest atomic change in Nessie is a single commit. It is fair to say, that
+a commit is the smallest possible transaction in Nessie.
+
+A single Nessie commit in Nessie: 
+
+* ... can be "just" the set of changes of a single worker out of many distributed
+  workers.
+* ... can cover a quite small change or cover a huge amount of changes and/or huge
+  amount of changed data or even group many Nessie commits into an atomic merge
+  operation (think: a transaction over many transactions).
+
+The major difference between "Nessie's (distributed) transactions" and transactions
+in a relational database is that Nessie's concept of having multiple commits plus
+the concept of merging one branch into another branch provides a lot of flexibility.
 
 ### Branches
 
@@ -252,13 +304,16 @@ it is possible to review all the changes made by your job - either programmatica
 like running some process that validates the state of the branch, or asking a human
 to take a look.
 
+As described above in [Transactions in Nessie](#transaction-in-nessie), the merge
+operation in the above example can be considered a *Nessie distributed transaction*. 
+
 ### Working branches for "humans"
 
 You can also use "developer" branches to run experiments against your data, test
 changes of your jobs etc.
 
-Production, staging and development environments can use the same data lake without risking
-the consistent state of production data.
+Production, staging and development environments can use the same data lake without
+risking the consistent state of production data.
 
 ### Squashing
 
@@ -307,16 +362,6 @@ privacy regulations (for example GDPR or CCPA).
 
 Nessie keeps track of unused data files and collects the garbage for you.
 
-## Terms summary
-
-| Term | Meaning in Nessie
-| --- | ---
-| Commit | An atomic change to a set of data files.
-| (Multi-table) transaction | Since a Nessie commit can group data data files from many tables, you can think of a Nessie commit as a (multi-table) transaction.
-| Branch | Named reference to a commit. A new commit to a branch updates the branch to the new commit.
-| Tag | Named reference to a commit. Not automatically changed.
-| Merge | Combination of two commits. Usually applies the changes of one source-branch onto another target-branch. Creates a merge-commit.
-
 ## Footnotes
 
 [^1]: Common data file formats are [Apache Iceberg Tables](../tables/iceberg.md),
@@ -325,3 +370,8 @@ Nessie keeps track of unused data files and collects the garbage for you.
 [^2]: Apache, Hive, Spark, Iceberg, Parquet are trademarks of The Apache Software Foundation.
 
 [^3]: This is a SHA-hash. All commits in Nessie (and in Git) are identified using such a hash.
+
+[^4]: There are distributed relational databases that are not implemented as a single monolith.
+  Those "proper" distributed relational databases use distributed consensus algorithms like
+  RAFT to provide the same (or even better) guarantees that classic relational databases give.
+  However, the concepts of a classic relational database still apply.
