@@ -494,17 +494,17 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  void updateRemoveOneArray() {
+  protected void updateRemoveOneArray() {
     updateRemoveArray(UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("keys").position(0).build())), 1, 10);
   }
 
   @Test
-  void updateRemoveOneArrayEnd() {
+  protected void updateRemoveOneArrayEnd() {
     updateRemoveArray(UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("keys").position(9).build())), 0, 9);
   }
 
   @Test
-  void updateRemoveMultipleArrayAscending() {
+  protected void updateRemoveMultipleArrayAscending() {
     UpdateExpression update = UpdateExpression.of();
     for (int i = 0; i < 5; ++i) {
       update = update.and(RemoveClause.of(ExpressionPath.builder("keys").position(i).build()));
@@ -514,7 +514,7 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
-  void updateRemoveMultipleArrayDescending() {
+  protected void updateRemoveMultipleArrayDescending() {
     UpdateExpression update = UpdateExpression.of();
     for (int i = 4; i >= 0; --i) {
       update = update.and(RemoveClause.of(ExpressionPath.builder("keys").position(i).build()));
