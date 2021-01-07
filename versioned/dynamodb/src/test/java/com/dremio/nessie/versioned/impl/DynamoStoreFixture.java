@@ -91,9 +91,13 @@ public class DynamoStoreFixture implements VersionStore<String, String>, AutoClo
    * Create a new fixture.
    */
   public DynamoStoreFixture() {
-    store = new DynamoStore(STORE_CONFIG);
+    store = createStoreImpl();
     store.start();
     impl = new TieredVersionStore<>(WORKER, store, true);
+  }
+
+  public DynamoStore createStoreImpl() {
+    return new DynamoStore(STORE_CONFIG);
   }
 
   public DynamoStore getStore() {

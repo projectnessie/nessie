@@ -130,6 +130,9 @@ public class DynamoStore implements Store {
 
   @Override
   public void start() {
+    if (client != null && async != null) {
+      return; // no-op
+    }
     try {
       DynamoDbClientBuilder b1 = DynamoDbClient.builder();
       b1.httpClient(UrlConnectionHttpClient.create());
@@ -161,13 +164,43 @@ public class DynamoStore implements Store {
       }
 
     } catch (DynamoDbException ex) {
+      try {
+        close();
+      } catch (Exception e) {
+        ex.addSuppressed(e);
+      }
       throw new StoreOperationException("Failure connection to Dynamo", ex);
     }
   }
 
   @Override
   public void close() {
-    client.close();
+    Exception failure = null;
+    if (client != null) {
+      try {
+        client.close();
+      } catch (Exception e) {
+        failure = e;
+      } finally {
+        client = null;
+      }
+    }
+    if (async != null) {
+      try {
+        async.close();
+      } catch (Exception e) {
+        if (failure != null) {
+          failure.addSuppressed(e);
+        } else {
+          failure = e;
+        }
+      } finally {
+        async = null;
+      }
+    }
+    if (failure != null) {
+      throw new StoreOperationException("Failed to close store", failure);
+    }
   }
 
   @Override

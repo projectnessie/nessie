@@ -73,6 +73,11 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   }
 
   @Override
+  protected MongoDBStore createRawStore() {
+    return new MongoDBStore(createConfig());
+  }
+
+  @Override
   protected long getRandomSeed() {
     return 8612341233543L;
   }
