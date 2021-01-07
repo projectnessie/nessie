@@ -37,6 +37,11 @@ public abstract class MongoStoreConfig {
     return 5000;
   }
 
+  @Default
+  public boolean initializeDatabase() {
+    return true;
+  }
+
   public static ImmutableMongoStoreConfig.Builder builder() {
     return ImmutableMongoStoreConfig.builder();
   }

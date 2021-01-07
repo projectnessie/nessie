@@ -35,6 +35,9 @@ import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.versioned.impl.L1;
+import com.dremio.nessie.versioned.impl.L2;
+import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Entity;
@@ -168,6 +171,13 @@ public class MongoDBStore implements Store {
           String collectionName = v.getTableName(config.getTablePrefix());
           return ((MongoCollection<? extends HasId>) mongoDatabase.getCollection(collectionName, v.getObjectClass()));
         }));
+
+    if (config.initializeDatabase()) {
+      // make sure we have an empty l1 (ignore result, doesn't matter)
+      putIfAbsent(ValueType.L1, L1.EMPTY);
+      putIfAbsent(ValueType.L2, L2.EMPTY);
+      putIfAbsent(ValueType.L3, L3.EMPTY);
+    }
   }
 
   /**
