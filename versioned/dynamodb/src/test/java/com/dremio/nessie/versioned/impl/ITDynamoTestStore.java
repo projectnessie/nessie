@@ -26,7 +26,7 @@ import com.dremio.nessie.versioned.tests.AbstractTestStore;
  * A test class that contains DynamoDB tests.
  */
 @ExtendWith(LocalDynamoDB.class)
-class ITDynamoDBStore extends AbstractTestStore<DynamoStore> {
+class ITDynamoTestStore extends AbstractTestStore<DynamoStore> {
   private DynamoStoreFixture fixture;
 
   @AfterEach
