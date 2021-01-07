@@ -23,7 +23,7 @@ import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import com.dremio.nessie.versioned.tests.AbstractTestStore;
 
 /**
- * A test class that contains MongoDB specific tests.
+ * A test class that contains DynamoDB tests.
  */
 @ExtendWith(LocalDynamoDB.class)
 class ITDynamoDBStore extends AbstractTestStore<DynamoStore> {
