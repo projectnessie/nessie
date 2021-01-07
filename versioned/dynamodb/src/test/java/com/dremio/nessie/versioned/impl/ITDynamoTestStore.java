@@ -58,4 +58,9 @@ class ITDynamoTestStore extends AbstractTestStore<DynamoStore> {
   protected void resetStoreState() {
     super.store = null;
   }
+
+  @Override
+  protected int loadSize() {
+    return DynamoStore.LOAD_SIZE;
+  }
 }

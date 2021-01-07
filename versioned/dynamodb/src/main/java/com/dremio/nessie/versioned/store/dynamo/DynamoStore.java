@@ -105,10 +105,11 @@ import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 public class DynamoStore implements Store {
 
+  public static final int LOAD_SIZE = 100;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
-  private final int paginationSize = 100;
+  private final int paginationSize = LOAD_SIZE;
   private final DynamoStoreConfig config;
 
   private DynamoDbClient client;
