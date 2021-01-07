@@ -100,6 +100,8 @@ public abstract class AbstractTestStore<S extends Store> {
 
   protected abstract void resetStoreState();
 
+  protected abstract int loadSize();
+
   @Test
   void closeWithoutStart() {
     final Store localStore = createRawStore();
@@ -311,6 +313,21 @@ public abstract class AbstractTestStore<S extends Store> {
         Assertions.fail(e);
       }
     });
+  }
+
+  @Test
+  void loadPagination() {
+    final ImmutableMultimap.Builder<ValueType, HasId> builder = ImmutableMultimap.builder();
+    for (int i = 0; i < (10 + loadSize()); ++i) {
+      // Only create a single type as this is meant to test the pagination within Mongo, not the variety. Variety is
+      // taken care of by a test in AbstractTestStore.
+      builder.put(ValueType.REF, SampleEntities.createTag(random));
+    }
+
+    final Multimap<ValueType, HasId> objs = builder.build();
+    objs.forEach(this::putThenLoad);
+
+    testLoad(objs);
   }
 
   protected <T extends HasId> void putThenLoad(ValueType type, T sample) {

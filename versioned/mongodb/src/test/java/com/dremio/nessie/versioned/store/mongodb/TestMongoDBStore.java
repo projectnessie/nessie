@@ -87,6 +87,11 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
     store.resetCollections();
   }
 
+  @Override
+  protected int loadSize() {
+    return MongoDBStore.LOAD_SIZE;
+  }
+
   @Test
   void loadExtraInvalidEntity() {
     // Set up the sample data and load it.
@@ -119,21 +124,6 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
     };
 
     Assertions.assertThrows(StoreOperationException.class, () -> testStore.load(step));
-  }
-
-  @Test
-  void loadPagination() {
-    final ImmutableMultimap.Builder<ValueType, HasId> builder = ImmutableMultimap.builder();
-    for (int i = 0; i < (10 + MongoDBStore.LOAD_SIZE); ++i) {
-      // Only create a single type as this is meant to test the pagination within Mongo, not the variety. Variety is
-      // taken care of by a test in AbstractTestStore.
-      builder.put(ValueType.REF, SampleEntities.createTag(random));
-    }
-
-    final Multimap<ValueType, HasId> objs = builder.build();
-    objs.forEach(this::putThenLoad);
-
-    testLoad(objs);
   }
 
   private MongoStoreConfig createConfig() {
