@@ -1,0 +1,7 @@
+## Python venv
+/pyvenv.cfg
+/bin
+/lib
+
+## mkdocs
+/site
