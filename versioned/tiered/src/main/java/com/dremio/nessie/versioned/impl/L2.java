@@ -93,7 +93,7 @@ public class L2 extends MemoizedId<L2Consumer> {
    * return the number of positions that are non-empty.
    * @return number of non-empty positions.
    */
-  int size() {
+  public int size() {
     int count = 0;
     for (Id id : map) {
       if (!id.equals(L3.EMPTY_ID)) {
