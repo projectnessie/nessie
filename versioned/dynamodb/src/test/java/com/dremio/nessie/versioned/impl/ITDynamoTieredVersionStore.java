@@ -25,7 +25,7 @@ import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.store.Store;
 
 @ExtendWith(LocalDynamoDB.class)
-class ITDynamoVersionStoreAndStore extends AbstractITVersionStoreAndStore {
+class ITDynamoTieredVersionStore extends AbstractITTieredVersionStore {
   private DynamoStoreFixture fixture;
 
   @BeforeEach
@@ -38,11 +38,11 @@ class ITDynamoVersionStoreAndStore extends AbstractITVersionStoreAndStore {
     fixture.close();
   }
 
-  VersionStore<String, String> versionStore() {
+  public VersionStore<String, String> versionStore() {
     return fixture;
   }
 
-  Store store() {
+  public Store store() {
     return fixture.getStore();
   }
 }

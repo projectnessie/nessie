@@ -56,10 +56,10 @@ import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-abstract class AbstractITVersionStoreAndStore {
-  abstract VersionStore<String, String> versionStore();
+public abstract class AbstractITTieredVersionStore {
+  public abstract VersionStore<String, String> versionStore();
 
-  abstract Store store();
+  public abstract Store store();
 
   @Test
   void checkDuplicateValueCommit() throws Exception {
