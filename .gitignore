@@ -54,3 +54,6 @@ gradle/
 out
 gradle/wrapper/gradle-wrapper.jar
 version.txt
+
+# Python venv
+venv/
