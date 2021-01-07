@@ -114,9 +114,9 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
     final AtomicBoolean hasReturnedCollection = new AtomicBoolean(false);
     final MongoDBStore testStore = new MongoDBStore(createConfig()) {
       @Override
-      <T> MongoCollection<T> getCollection(ValueType valueType) {
+      MongoCollection<HasId> getCollection(ValueType valueType) {
         try {
-          return (MongoCollection<T>) mockCollection;
+          return (MongoCollection) mockCollection;
         } finally {
           hasReturnedCollection.set(true);
         }
