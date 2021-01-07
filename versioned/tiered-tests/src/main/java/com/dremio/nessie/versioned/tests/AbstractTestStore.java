@@ -94,19 +94,21 @@ public abstract class AbstractTestStore<S extends Store> {
    */
   protected abstract S createStore();
 
+  protected abstract S createRawStore();
+
   protected abstract long getRandomSeed();
 
   protected abstract void resetStoreState();
 
   @Test
   void closeWithoutStart() {
-    final Store localStore = createStore();
+    final Store localStore = createRawStore();
     localStore.close(); // This should be a no-op.
   }
 
   @Test
   void closeTwice() {
-    final Store localStore = createStore();
+    final Store localStore = createRawStore();
     localStore.start();
     localStore.close();
     localStore.close(); // This should be a no-op.

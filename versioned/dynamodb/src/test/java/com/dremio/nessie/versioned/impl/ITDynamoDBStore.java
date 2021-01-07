@@ -45,6 +45,11 @@ class ITDynamoDBStore extends AbstractTestStore<DynamoStore> {
   }
 
   @Override
+  protected DynamoStore createRawStore() {
+    return fixture.createStoreImpl();
+  }
+
+  @Override
   protected long getRandomSeed() {
     return 8612341233543L;
   }
