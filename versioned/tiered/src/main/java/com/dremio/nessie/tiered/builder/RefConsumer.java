@@ -90,13 +90,13 @@ import com.google.common.collect.ImmutableList;
  * </ol>
  *
  * <p>A commit is complete once step (1) above is completed. While steps 2 and 3 are typically also done by the same actor as step 1,
- * they may not be. In situations where that actor dies or is slow, other actors are may "finalize" that commit. The commit <b>must</b>
+ * they may not be. In situations where that actor dies or is slow, other actors may "finalize" that commit. The commit <b>must</b>
  * be finalized before being exposed to outside consumers of the VersionStore.
  *
  * <p>The following things are always true about the commit log.
  * <ol>
  * <li>There must always be at least one finalized entry.
- * <li>There order of commits will always be &lt;finalized&gt;+&lt;unsaved&gt;*
+ * <li>The order of commits will always be &lt;finalized&gt;+&lt;unsaved&gt;*
  * (one or more saved followed by zero or more unsaved commits).
  * <li>The ids for all saved commits will exist in the L1 table.
  * </ol>
