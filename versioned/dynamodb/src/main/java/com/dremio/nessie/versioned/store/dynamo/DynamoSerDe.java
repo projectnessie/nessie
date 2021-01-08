@@ -123,11 +123,7 @@ final class DynamoSerDe {
    */
   public static <V extends HasId, C extends HasIdConsumer<C>> V deserialize(
       ValueType valueType, Map<String, AttributeValue> entity) {
-    HasIdConsumer<C> producer = valueType.newEntityProducer();
-
-    deserializeToConsumer(valueType, entity, producer);
-
-    return valueType.buildFromProducer(producer);
+    return valueType.buildEntity(producer -> deserializeToConsumer(valueType, entity, producer));
   }
 
   /**

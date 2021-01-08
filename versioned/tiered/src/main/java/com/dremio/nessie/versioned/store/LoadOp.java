@@ -59,9 +59,10 @@ public class LoadOp<V extends HasId> {
    * @param <C> the type of the Nessie-entity-consumer
    */
   public <C extends HasIdConsumer<C>> void deserialize(Consumer<HasIdConsumer<C>> deserilializer) {
-    HasIdConsumer<C> prod = type.newEntityProducer();
-    deserilializer.accept(prod);
-    loaded(type.buildFromProducer(prod));
+    loaded(type.buildEntity(producer -> {
+      @SuppressWarnings("unchecked") HasIdConsumer<C> prod = (HasIdConsumer<C>) producer;
+      deserilializer.accept(prod);
+    }));
   }
 
   public Id getId() {

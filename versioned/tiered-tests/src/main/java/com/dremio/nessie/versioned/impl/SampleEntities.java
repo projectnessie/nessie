@@ -50,14 +50,11 @@ public class SampleEntities {
    * @return sample L1 entity.
    */
   public static L1 createL1(Random random) {
-    L1Consumer producer = ValueType.L1.newEntityProducer();
-    Id id = L1.EMPTY.getId();
-    producer.commitMetadataId(createId(random))
+    return ValueType.L1.buildEntity((L1Consumer producer) -> producer.commitMetadataId(createId(random))
         .children(IntStream.range(0, L1.SIZE).mapToObj(x -> createId(random)))
-        .ancestors(Stream.of(id, Id.EMPTY))
+        .ancestors(Stream.of(L1.EMPTY.getId(), Id.EMPTY))
         .addKeyAddition(Key.of(createString(random, 8), createString(random, 9)))
-        .incrementalKeyList(id, 1);
-    return ValueType.L1.buildFromProducer(producer);
+        .incrementalKeyList(L1.EMPTY.getId(), 1));
   }
 
   /**
@@ -66,10 +63,8 @@ public class SampleEntities {
    * @return sample L2 entity.
    */
   public static L2 createL2(Random random) {
-    L2Consumer producer = ValueType.L2.newEntityProducer();
-    producer.id(createId(random))
-        .children(IntStream.range(0, L2.SIZE).mapToObj(x -> createId(random)));
-    return ValueType.L2.buildFromProducer(producer);
+    return ValueType.L2.buildEntity((L2Consumer producer) -> producer.id(createId(random))
+        .children(IntStream.range(0, L2.SIZE).mapToObj(x -> createId(random))));
   }
 
   /**
@@ -78,10 +73,10 @@ public class SampleEntities {
    * @return sample L3 entity.
    */
   public static L3 createL3(Random random) {
-    L3Consumer producer = ValueType.L3.newEntityProducer();
-    producer.keyDelta(IntStream.range(0, 100)
-            .mapToObj(i -> KeyDelta.of(Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)), createId(random))));
-    return ValueType.L3.buildFromProducer(producer);
+    return ValueType.L3.buildEntity((L3Consumer producer) -> producer.keyDelta(IntStream.range(0, 100)
+        .mapToObj(i -> KeyDelta
+            .of(Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)),
+                createId(random)))));
   }
 
   /**
@@ -90,10 +85,9 @@ public class SampleEntities {
    * @return sample Fragment entity.
    */
   public static Fragment createFragment(Random random) {
-    FragmentConsumer producer = ValueType.KEY_FRAGMENT.newEntityProducer();
-    producer.keys(IntStream.range(0, 10)
-            .mapToObj(i -> Key.of(createString(random, 5), createString(random, 9), String.valueOf(i))));
-    return ValueType.KEY_FRAGMENT.buildFromProducer(producer);
+    return ValueType.KEY_FRAGMENT.buildEntity((FragmentConsumer producer) -> producer.keys(IntStream.range(0, 10)
+        .mapToObj(
+            i -> Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)))));
   }
 
   /**
@@ -104,8 +98,7 @@ public class SampleEntities {
   public static InternalRef createBranch(Random random) {
     final String name = createString(random, 10);
 
-    RefConsumer producer = ValueType.REF.newEntityProducer();
-    producer.id(Id.build(name))
+    return ValueType.REF.buildEntity((RefConsumer producer) -> producer.id(Id.build(name))
         .type(RefType.BRANCH)
         .name(name)
         .children(IntStream.range(0, L1.SIZE).mapToObj(x -> createId(random)))
@@ -121,8 +114,7 @@ public class SampleEntities {
                 Collections.singletonList(new BranchUnsavedDelta(1, createId(random), createId(random))),
                 Collections.singletonList(Key.of(createString(random, 8), createString(random, 8))),
                 Collections.emptyList())
-        ));
-    return ValueType.REF.buildFromProducer(producer);
+        )));
   }
 
   /**
@@ -131,12 +123,10 @@ public class SampleEntities {
    * @return sample Tag (InternalRef) entity.
    */
   public static InternalRef createTag(Random random) {
-    RefConsumer producer = ValueType.REF.newEntityProducer();
-    producer.id(createId(random))
+    return ValueType.REF.buildEntity((RefConsumer producer) -> producer.id(createId(random))
         .type(RefType.TAG)
         .name("tagName")
-        .commit(createId(random));
-    return ValueType.REF.buildFromProducer(producer);
+        .commit(createId(random)));
   }
 
   /**
@@ -145,10 +135,8 @@ public class SampleEntities {
    * @return sample CommitMetadata entity.
    */
   public static InternalCommitMetadata createCommitMetadata(Random random) {
-    CommitMetadataConsumer producer = ValueType.COMMIT_METADATA.newEntityProducer();
-    producer.id(createId(random))
-        .value(ByteString.copyFrom(createBinary(random, 6)));
-    return ValueType.COMMIT_METADATA.buildFromProducer(producer);
+    return ValueType.COMMIT_METADATA.buildEntity((CommitMetadataConsumer producer) -> producer.id(createId(random))
+        .value(ByteString.copyFrom(createBinary(random, 6))));
   }
 
   /**
@@ -157,10 +145,8 @@ public class SampleEntities {
    * @return sample Value entity.
    */
   public static InternalValue createValue(Random random) {
-    ValueConsumer producer = ValueType.VALUE.newEntityProducer();
-    producer.id(createId(random))
-        .value(ByteString.copyFrom(createBinary(random, 6)));
-    return ValueType.VALUE.buildFromProducer(producer);
+    return ValueType.VALUE.buildEntity((ValueConsumer producer) -> producer.id(createId(random))
+        .value(ByteString.copyFrom(createBinary(random, 6))));
   }
 
   /**

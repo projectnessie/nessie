@@ -368,10 +368,7 @@ public class DynamoStore implements Store {
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
-    HasIdConsumer producer = valueType.newEntityProducer();
-    loadSingle(valueType, id, producer);
-    V result = (V) valueType.buildFromProducer(producer);
-    return result;
+    return valueType.buildEntity(producer -> loadSingle(valueType, id, producer));
   }
 
   @Override

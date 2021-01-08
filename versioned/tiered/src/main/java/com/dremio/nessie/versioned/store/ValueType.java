@@ -17,6 +17,7 @@ package com.dremio.nessie.versioned.store;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
@@ -131,6 +132,9 @@ public enum ValueType {
    * set, be passed to {@link #buildFromProducer(HasIdConsumer)} to build the entity instance.
    * </p>
    * <p>
+   * Using {@link #buildEntity(Consumer)} is a simpler approach though.
+   * </p>
+   * <p>
    * Example:
    * </p>
    * <pre><code>
@@ -164,5 +168,27 @@ public enum ValueType {
     }
     @SuppressWarnings("unchecked") EntityBuilder<E> builder = (EntityBuilder<E>) producer;
     return builder.build();
+  }
+
+  /**
+   * Allows to create an entity instance of the type represented by this {@link ValueType}.
+   * This is a simplification of the code example mentioned in {@link #newEntityProducer()}.
+   * <p>
+   * Example:
+   * </p>
+   * <pre><code>
+   * InternalValue value = ValueType.VALUE.buildEntity(
+   *     (ValueConsumer producer) -&gt; producer.id(theId).value(someBytes));
+   * </code></pre>
+   *
+   * @param producerConsumer Java consumer that receives the producer created by {@link #newEntityProducer()}
+   * @param <E> the entity type
+   * @param <C> the consumer interface
+   * @return the built entity
+   */
+  public <E extends HasId, C extends HasIdConsumer<C>> E buildEntity(Consumer<C> producerConsumer) {
+    C producer = newEntityProducer();
+    producerConsumer.accept(producer);
+    return buildFromProducer(producer);
   }
 }

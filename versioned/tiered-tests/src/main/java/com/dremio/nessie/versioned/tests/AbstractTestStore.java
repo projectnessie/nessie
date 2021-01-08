@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
@@ -298,9 +297,7 @@ public abstract class AbstractTestStore<S extends Store> {
         assertEquals(saveOpValue, loadedValue);
 
         try {
-          HasIdConsumer producer = s.getType().newEntityProducer();
-          store.loadSingle(s.getType(), saveOpValue.getId(), producer);
-          loadedValue = s.getType().buildFromProducer(producer);
+          loadedValue = s.getType().buildEntity(producer -> store.loadSingle(s.getType(), saveOpValue.getId(), producer));
           assertEquals(
               schema.itemToMap(saveOpValue, true),
               schema.itemToMap(loadedValue, true));

@@ -30,7 +30,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
@@ -374,11 +373,10 @@ class PartialTree<V> {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private static <T extends MemoizedId<?>> Pointer<T> cloneInner(ValueType type, Pointer<T> value) {
     if (value.isDirty()) {
-      HasIdConsumer prod = type.newEntityProducer();
-      MemoizedId memoizedId = value.get();
-      memoizedId.applyToConsumer(prod);
-      T entity = (T) type.buildFromProducer(prod);
-      return new Pointer<>(entity);
+      return new Pointer<>(type.buildEntity(producer -> {
+        MemoizedId memoizedId = value.get();
+        memoizedId.applyToConsumer(producer);
+      }));
     } else {
       return value;
     }
