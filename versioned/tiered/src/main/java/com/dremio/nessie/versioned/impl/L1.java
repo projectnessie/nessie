@@ -311,11 +311,6 @@ public class L1 extends MemoizedId<L1Consumer> {
     }
 
     @Override
-    public Builder consumer() {
-      return this;
-    }
-
-    @Override
     public L1 build() {
       // null-id is allowed (will be generated)
       checkSet(metadataId, "metadataId");

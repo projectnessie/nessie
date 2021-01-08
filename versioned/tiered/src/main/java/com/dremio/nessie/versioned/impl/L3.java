@@ -255,11 +255,6 @@ public class L3 extends MemoizedId<L3Consumer> {
     }
 
     @Override
-    public Builder consumer() {
-      return this;
-    }
-
-    @Override
     public L3 build() {
       // null-id is allowed (will be generated)
       checkSet(keyDelta, "keyDelta");

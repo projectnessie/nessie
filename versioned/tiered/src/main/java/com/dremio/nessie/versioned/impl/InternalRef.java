@@ -219,11 +219,6 @@ public interface InternalRef extends HasId {
     }
 
     @Override
-    public Builder consumer() {
-      return this;
-    }
-
-    @Override
     public InternalRef build() {
       // null-id is allowed (will be generated)
       checkSet(refType, "refType");

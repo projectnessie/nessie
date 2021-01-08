@@ -138,11 +138,6 @@ public class Fragment extends MemoizedId<FragmentConsumer> {
     }
 
     @Override
-    public Builder consumer() {
-      return this;
-    }
-
-    @Override
     public Fragment build() {
       // null-id is allowed (will be generated)
       checkSet(keys, "keys");

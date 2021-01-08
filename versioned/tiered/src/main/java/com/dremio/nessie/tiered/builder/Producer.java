@@ -25,11 +25,14 @@ package com.dremio.nessie.tiered.builder;
 public interface Producer<E, C extends HasIdConsumer<C>> extends HasIdConsumer<C> {
 
   /**
-   * Convenience method to cast {@code this} to {@code C}.
+   * Convenience method to cast {@code this} to the consumer instance {@code C}.
    *
    * @return {@code this}
    */
-  C consumer();
+  @SuppressWarnings("unchecked")
+  default C consumer() {
+    return (C) this;
+  }
 
   /**
    * Build the entity representation.
