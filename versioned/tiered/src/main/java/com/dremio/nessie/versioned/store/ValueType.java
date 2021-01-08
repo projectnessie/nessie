@@ -191,4 +191,15 @@ public enum ValueType {
     producerConsumer.accept(producer);
     return buildFromProducer(producer);
   }
+
+  /**
+   * Check whether {@code value} is an instance of the entity class represented by this value-type.
+   *
+   * @param value entity instance to check
+   * @param <V> expected value type
+   * @return whether {@code value} is an instance of the entity class represented by this value-type
+   */
+  public <V extends HasId> boolean isEntityType(V value) {
+    return objectClass.isAssignableFrom(value.getClass());
+  }
 }

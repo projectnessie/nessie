@@ -247,8 +247,8 @@ public class MongoDBStore implements Store {
 
   @Override
   public <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
-    Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
-        "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
+    Preconditions.checkArgument(type.isEntityType(value),
+        "Value class %s is not value for ValueType %s.", value.getClass().getName(), type.name());
 
     // TODO: Handle ConditionExpressions.
     if (conditionUnAliased.isPresent()) {

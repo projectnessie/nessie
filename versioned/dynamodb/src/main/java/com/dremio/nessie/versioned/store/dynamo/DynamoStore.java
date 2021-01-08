@@ -282,8 +282,8 @@ public class DynamoStore implements Store {
 
   @Override
   public <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
-    Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
-        "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
+    Preconditions.checkArgument(type.isEntityType(value),
+        "Value class %s is not value for ValueType %s.", value.getClass().getName(), type.name());
     @SuppressWarnings("rawtypes") MemoizedId v = (MemoizedId) value;
     @SuppressWarnings("unchecked")
     Map<String, AttributeValue> attributes = serializeWithConsumer(type, v::applyToConsumer);
@@ -365,10 +365,13 @@ public class DynamoStore implements Store {
     }
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
+  @SuppressWarnings("unchecked")
   @Override
   public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
-    return valueType.buildEntity(producer -> loadSingle(valueType, id, producer));
+    return valueType.buildEntity(producer -> {
+      @SuppressWarnings("rawtypes") HasIdConsumer prod = producer;
+      loadSingle(valueType, id, prod);
+    });
   }
 
   @Override
