@@ -194,7 +194,6 @@ public class L1 extends MemoizedId<L1Consumer> {
   public L1Consumer applyToConsumer(L1Consumer consumer) {
     consumer.id(this.getId());
     consumer.commitMetadataId(this.metadataId);
-    //todo likely we want to change this interface to InternalKey
 
     for (KeyMutation mutation : this.keyList.getMutations()) {
       Key key = mutation.getKey().toKey();
