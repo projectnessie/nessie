@@ -168,11 +168,6 @@ public class L2 extends MemoizedId<L2Consumer> {
     }
 
     @Override
-    public Builder consumer() {
-      return this;
-    }
-
-    @Override
     public L2 build() {
       // null-id is allowed (will be generated)
       checkSet(children, "children");

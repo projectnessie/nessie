@@ -47,12 +47,6 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>>
     entity.put(ValueType.SCHEMA_TYPE, string(valueType.getValueName()));
   }
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public C consumer() {
-    return (C) this;
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   public C id(Id id) {

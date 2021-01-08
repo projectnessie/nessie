@@ -142,12 +142,6 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Memoi
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public C consumer() {
-      return (C) this;
-    }
-
-    @Override
     public E build() {
       // null-id is allowed (will be generated)
       checkSet(value, "value");
