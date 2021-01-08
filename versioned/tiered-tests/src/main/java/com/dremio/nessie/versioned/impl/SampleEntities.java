@@ -25,14 +25,12 @@ import com.dremio.nessie.tiered.builder.FragmentConsumer;
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.tiered.builder.L2Consumer;
 import com.dremio.nessie.tiered.builder.L3Consumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.tiered.builder.RefConsumer.BranchCommit;
 import com.dremio.nessie.tiered.builder.RefConsumer.BranchUnsavedDelta;
 import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -52,15 +50,14 @@ public class SampleEntities {
    * @return sample L1 entity.
    */
   public static L1 createL1(Random random) {
-    Producer<L1, L1Consumer> producer = ValueType.L1.newEntityProducer();
+    L1Consumer producer = ValueType.L1.newEntityProducer();
     Id id = L1.EMPTY.getId();
-    producer.consumer()
-        .commitMetadataId(createId(random))
+    producer.commitMetadataId(createId(random))
         .children(IntStream.range(0, L1.SIZE).mapToObj(x -> createId(random)))
         .ancestors(Stream.of(id, Id.EMPTY))
         .addKeyAddition(Key.of(createString(random, 8), createString(random, 9)))
         .incrementalKeyList(id, 1);
-    return producer.build();
+    return ValueType.L1.buildFromProducer(producer);
   }
 
   /**
@@ -69,10 +66,10 @@ public class SampleEntities {
    * @return sample L2 entity.
    */
   public static L2 createL2(Random random) {
-    Producer<L2, L2Consumer> producer = ValueType.L2.newEntityProducer();
+    L2Consumer producer = ValueType.L2.newEntityProducer();
     producer.id(createId(random))
         .children(IntStream.range(0, L2.SIZE).mapToObj(x -> createId(random)));
-    return producer.build();
+    return ValueType.L2.buildFromProducer(producer);
   }
 
   /**
@@ -81,11 +78,10 @@ public class SampleEntities {
    * @return sample L3 entity.
    */
   public static L3 createL3(Random random) {
-    Producer<L3, L3Consumer> producer = ValueType.L3.newEntityProducer();
-    producer.consumer()
-        .keyDelta(IntStream.range(0, 100)
+    L3Consumer producer = ValueType.L3.newEntityProducer();
+    producer.keyDelta(IntStream.range(0, 100)
             .mapToObj(i -> KeyDelta.of(Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)), createId(random))));
-    return producer.build();
+    return ValueType.L3.buildFromProducer(producer);
   }
 
   /**
@@ -94,11 +90,10 @@ public class SampleEntities {
    * @return sample Fragment entity.
    */
   public static Fragment createFragment(Random random) {
-    Producer<Fragment, FragmentConsumer> producer = ValueType.KEY_FRAGMENT.newEntityProducer();
-    producer.consumer()
-        .keys(IntStream.range(0, 10)
+    FragmentConsumer producer = ValueType.KEY_FRAGMENT.newEntityProducer();
+    producer.keys(IntStream.range(0, 10)
             .mapToObj(i -> Key.of(createString(random, 5), createString(random, 9), String.valueOf(i))));
-    return producer.build();
+    return ValueType.KEY_FRAGMENT.buildFromProducer(producer);
   }
 
   /**
@@ -109,7 +104,7 @@ public class SampleEntities {
   public static InternalRef createBranch(Random random) {
     final String name = createString(random, 10);
 
-    Producer<InternalRef, RefConsumer> producer = ValueType.REF.newEntityProducer();
+    RefConsumer producer = ValueType.REF.newEntityProducer();
     producer.id(Id.build(name))
         .type(RefType.BRANCH)
         .name(name)
@@ -127,7 +122,7 @@ public class SampleEntities {
                 Collections.singletonList(Key.of(createString(random, 8), createString(random, 8))),
                 Collections.emptyList())
         ));
-    return producer.build();
+    return ValueType.REF.buildFromProducer(producer);
   }
 
   /**
@@ -136,12 +131,12 @@ public class SampleEntities {
    * @return sample Tag (InternalRef) entity.
    */
   public static InternalRef createTag(Random random) {
-    Producer<InternalRef, RefConsumer> producer = ValueType.REF.newEntityProducer();
+    RefConsumer producer = ValueType.REF.newEntityProducer();
     producer.id(createId(random))
         .type(RefType.TAG)
         .name("tagName")
         .commit(createId(random));
-    return producer.build();
+    return ValueType.REF.buildFromProducer(producer);
   }
 
   /**
@@ -150,10 +145,10 @@ public class SampleEntities {
    * @return sample CommitMetadata entity.
    */
   public static InternalCommitMetadata createCommitMetadata(Random random) {
-    Producer<InternalCommitMetadata, CommitMetadataConsumer> producer = ValueType.COMMIT_METADATA.newEntityProducer();
+    CommitMetadataConsumer producer = ValueType.COMMIT_METADATA.newEntityProducer();
     producer.id(createId(random))
         .value(ByteString.copyFrom(createBinary(random, 6)));
-    return producer.build();
+    return ValueType.COMMIT_METADATA.buildFromProducer(producer);
   }
 
   /**
@@ -162,10 +157,10 @@ public class SampleEntities {
    * @return sample Value entity.
    */
   public static InternalValue createValue(Random random) {
-    Producer<InternalValue, ValueConsumer> producer = ValueType.VALUE.newEntityProducer();
+    ValueConsumer producer = ValueType.VALUE.newEntityProducer();
     producer.id(createId(random))
         .value(ByteString.copyFrom(createBinary(random, 6)));
-    return producer.build();
+    return ValueType.VALUE.buildFromProducer(producer);
   }
 
   /**
@@ -200,13 +195,5 @@ public class SampleEntities {
         .limit(numChars)
         .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
         .toString();
-  }
-
-  private static Entity createIdEntity(Random random) {
-    return Entity.ofBinary(createBinary(random, 20));
-  }
-
-  private static Entity createStringEntity(Random random, int numChars) {
-    return Entity.ofString(createString(random, numChars));
   }
 }

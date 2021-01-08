@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -43,9 +42,8 @@ public class InternalValue extends WrappedValueBean<ValueConsumer> {
       new WrappedValueBean.WrappedValueSchema<>(InternalValue.class, InternalValue::new);
 
   /**
-   * Create a new {@link Builder} instance that implements both
-   * {@link ValueConsumer} and a matching {@link Producer} that
-   * builds an {@link InternalValue} object.
+   * Create a new {@link Builder} instance that implements
+   * {@link ValueConsumer} to build an {@link InternalValue} object.
    *
    * @return new builder instance
    */
@@ -54,14 +52,12 @@ public class InternalValue extends WrappedValueBean<ValueConsumer> {
   }
 
   /**
-   * Implements both
-   * {@link ValueConsumer} and a matching {@link Producer} that
-   * builds an {@link InternalValue} object.
+   * Implements {@link ValueConsumer} to builds an {@link InternalValue} object.
    */
   // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   public static final class Builder
       extends WrappedValueBean.Builder<InternalValue, ValueConsumer>
-      implements ValueConsumer, Producer<InternalValue, ValueConsumer> {
+      implements ValueConsumer {
 
     Builder() {
       super(InternalValue::new);

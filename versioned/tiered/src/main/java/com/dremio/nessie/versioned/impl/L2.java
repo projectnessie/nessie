@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2Consumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -122,16 +121,13 @@ public class L2 extends MemoizedId<L2Consumer> {
 
   @Override
   public L2Consumer applyToConsumer(L2Consumer consumer) {
-    consumer.id(this.getId());
-    consumer.children(this.map.stream());
-
-    return consumer;
+    return super.applyToConsumer(consumer)
+        .children(this.map.stream());
   }
 
   /**
-   * Create a new {@link Builder} instance that implements both
-   * {@link L2Consumer} and a matching {@link Producer} that
-   * builds an {@link L2} object.
+   * Create a new {@link Builder} instance that implements
+   * {@link L2Consumer} to build an {@link L2} object.
    *
    * @return new builder instance
    */
@@ -140,12 +136,10 @@ public class L2 extends MemoizedId<L2Consumer> {
   }
 
   /**
-   * implements both
-   * {@link L2Consumer} and a matching {@link Producer} that
-   * builds an {@link L2} object.
+   * implements {@link L2Consumer} to build an {@link L2} object.
    */
   // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public static final class Builder implements L2Consumer, Producer<L2, L2Consumer> {
+  public static final class Builder extends EntityBuilder<L2> implements L2Consumer {
 
     private Id id;
     private Stream<Id> children;

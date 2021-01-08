@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L3Consumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
@@ -205,7 +204,7 @@ public class L3 extends MemoizedId<L3Consumer> {
 
   @Override
   public L3Consumer applyToConsumer(L3Consumer consumer) {
-    consumer.id(this.getId());
+    super.applyToConsumer(consumer);
 
     Stream<KeyDelta> keyDelta = this.map.entrySet().stream()
         .filter(e -> !e.getValue().getNewId().isEmpty())
@@ -216,9 +215,8 @@ public class L3 extends MemoizedId<L3Consumer> {
   }
 
   /**
-   * Create a new {@link Builder} instance that implements both
-   * {@link L3Consumer} and a matching {@link Producer} that
-   * builds an {@link L3} object.
+   * Create a new {@link Builder} instance that implements
+   * {@link L3Consumer} to build an {@link L3} object.
    *
    * @return new builder instance
    */
@@ -227,12 +225,10 @@ public class L3 extends MemoizedId<L3Consumer> {
   }
 
   /**
-   * Implements both
-   * {@link L3Consumer} and a matching {@link Producer} that
-   * builds an {@link L3} object.
+   * Implements {@link L3Consumer} to build an {@link L3} object.
    */
   // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public static final class Builder implements L3Consumer, Producer<L3, L3Consumer> {
+  public static final class Builder extends EntityBuilder<L3> implements L3Consumer {
 
     private Id id;
     private Stream<KeyDelta> keyDelta;

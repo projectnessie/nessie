@@ -39,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
@@ -286,8 +285,8 @@ public class DynamoStore implements Store {
     Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
     @SuppressWarnings("rawtypes") MemoizedId v = (MemoizedId) value;
-    @SuppressWarnings("Convert2MethodRef")
-    Map<String, AttributeValue> attributes = serializeWithConsumer(type, cons -> v.applyToConsumer(cons));
+    @SuppressWarnings("unchecked")
+    Map<String, AttributeValue> attributes = serializeWithConsumer(type, v::applyToConsumer);
 
     PutItemRequest.Builder builder = PutItemRequest.builder()
         .tableName(tableNames.get(type))
@@ -369,10 +368,10 @@ public class DynamoStore implements Store {
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
-    Producer<V, ?> producer = valueType.newEntityProducer();
-    HasIdConsumer consumer = producer;
-    loadSingle(valueType, id, consumer);
-    return producer.build();
+    HasIdConsumer producer = valueType.newEntityProducer();
+    loadSingle(valueType, id, producer);
+    V result = (V) valueType.buildFromProducer(producer);
+    return result;
   }
 
   @Override

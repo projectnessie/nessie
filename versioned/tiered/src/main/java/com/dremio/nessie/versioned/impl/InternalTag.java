@@ -110,7 +110,7 @@ class InternalTag extends MemoizedId<RefConsumer> implements InternalRef {
 
   @Override
   public RefConsumer applyToConsumer(RefConsumer consumer) {
-    return consumer.id(getId())
+    return super.applyToConsumer(consumer)
         .name(name)
         .type(RefType.TAG)
         .commit(commit);

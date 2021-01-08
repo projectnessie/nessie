@@ -25,10 +25,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
+import com.dremio.nessie.versioned.impl.MemoizedId.EntityBuilder;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
@@ -140,9 +140,9 @@ public interface InternalRef extends HasId {
   };
 
   /**
-   * Create a new {@link Builder} instance that implements both
-   * {@link RefConsumer} and a matching {@link Producer} that
-   * builds an {@link InternalRef} object.
+   * Create a new {@link Builder} instance that implements
+   * {@link RefConsumer} to
+   * build an {@link InternalRef} object.
    *
    * @return new builder instance
    */
@@ -151,12 +151,10 @@ public interface InternalRef extends HasId {
   }
 
   /**
-   * Implements both
-   * {@link RefConsumer} and a matching {@link Producer} that
-   * builds an {@link InternalRef} object.
+   * Implement {@link RefConsumer} to build an {@link InternalRef} object.
    */
   // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  final class Builder implements RefConsumer, Producer<InternalRef, RefConsumer> {
+  final class Builder extends EntityBuilder<InternalRef> implements RefConsumer {
 
     private Id id;
     private RefType refType;

@@ -111,7 +111,7 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   }
 
   @Override
-  public Map<String, AttributeValue> build() {
+  Map<String, AttributeValue> build() {
     addKeysSafe(MUTATIONS, list(keysMutations.stream()));
     if (!keys.isEmpty()) {
       addEntitySafe(KEY_LIST, map(keys));

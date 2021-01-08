@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
@@ -28,6 +27,8 @@ import com.dremio.nessie.versioned.impl.InternalValue;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
+import com.dremio.nessie.versioned.impl.MemoizedId;
+import com.dremio.nessie.versioned.impl.MemoizedId.EntityBuilder;
 
 public enum ValueType {
 
@@ -56,15 +57,15 @@ public enum ValueType {
   private final boolean immutable;
   private final String valueName;
   private final String defaultTableSuffix;
-  private final Supplier<Producer<?, ?>> producerSupplier;
+  private final Supplier<HasIdConsumer<?>> producerSupplier;
 
   ValueType(Class<?> objectClass, String valueName,
-      String defaultTableSuffix, Supplier<Producer<?, ?>> producerSupplier) {
+      String defaultTableSuffix, Supplier<HasIdConsumer<?>> producerSupplier) {
     this(objectClass, true, valueName, defaultTableSuffix, producerSupplier);
   }
 
   ValueType(Class<?> objectClass, boolean immutable, String valueName,
-      String defaultTableSuffix, Supplier<Producer<?, ?>> producerSupplier) {
+      String defaultTableSuffix, Supplier<HasIdConsumer<?>> producerSupplier) {
     this.objectClass = objectClass;
     this.immutable = immutable;
     this.valueName = valueName;
@@ -125,12 +126,43 @@ public enum ValueType {
 
   /**
    * Create a new "plain entity" producer for this type.
+   * <p>
+   * The instance returned from this function can, after all necessary properties have been
+   * set, be passed to {@link #buildFromProducer(HasIdConsumer)} to build the entity instance.
+   * </p>
+   * <p>
+   * Example:
+   * </p>
+   * <pre><code>
+   *   ValueConsumer producer = ValueType.VALUE.newEntityProducer();
+   *   producer.id(theId);
+   *   producer.value(someBytes);
+   *   InternalValue value = ValueType.VALUE.buildFromProducer(producer);
+   * </code></pre>
    *
+   * @param <C> the consumer interface
    * @return new created producer instance
    */
-  @SuppressWarnings("unchecked")
-  public <E extends HasId, C extends HasIdConsumer<C>> Producer<E, C> newEntityProducer() {
-    Producer<?, ?> p = producerSupplier.get();
-    return (Producer<E, C>) p;
+  public <C extends HasIdConsumer<C>> C newEntityProducer() {
+    @SuppressWarnings("unchecked") C p = (C) producerSupplier.get();
+    return p;
+  }
+
+  /**
+   * Used to create a new entity instance for this value-type using a consumer retrieved via
+   * {@link #newEntityProducer()}. Passing in an instance that has not been retrieved via
+   * {@link #newEntityProducer()} will result in an {@link IllegalArgumentException}.
+   *
+   * @param producer a producer retrieved via {@link #newEntityProducer()}
+   * @param <E> the entity type
+   * @param <C> the consumer interface
+   * @return the built entity
+   */
+  public <E extends HasId, C extends HasIdConsumer<C>> E buildFromProducer(HasIdConsumer<C> producer) {
+    if (!(producer instanceof MemoizedId.EntityBuilder)) {
+      throw new IllegalArgumentException("Given producer " + producer + " has not been created via ValueType.newEntityProducer()");
+    }
+    @SuppressWarnings("unchecked") EntityBuilder<E> builder = (EntityBuilder<E>) producer;
+    return builder.build();
   }
 }

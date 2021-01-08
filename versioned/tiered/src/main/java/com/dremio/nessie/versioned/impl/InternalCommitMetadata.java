@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.impl;
 
 import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.protobuf.ByteString;
@@ -40,9 +39,8 @@ public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsu
       new WrappedValueBean.WrappedValueSchema<>(InternalCommitMetadata.class, InternalCommitMetadata::new);
 
   /**
-   * Create a new {@link Builder} instance that implements both
-   * {@link CommitMetadataConsumer} and a matching {@link Producer} that
-   * builds an {@link InternalCommitMetadata} object.
+   * Create a new {@link Builder} instance that implements
+   * {@link CommitMetadataConsumer} to build an {@link InternalCommitMetadata} object.
    *
    * @return new builder instance
    */
@@ -51,14 +49,12 @@ public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsu
   }
 
   /**
-   * Implements both
-   * {@link CommitMetadataConsumer} and a matching {@link Producer} that
-   * builds an {@link InternalCommitMetadata} object.
+   * Implements {@link CommitMetadataConsumer} to build an {@link InternalCommitMetadata} object.
    */
   // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   public static final class Builder
       extends WrappedValueBean.Builder<InternalCommitMetadata, CommitMetadataConsumer>
-      implements CommitMetadataConsumer, Producer<InternalCommitMetadata, CommitMetadataConsumer> {
+      implements CommitMetadataConsumer {
 
     Builder() {
       super(InternalCommitMetadata::new);

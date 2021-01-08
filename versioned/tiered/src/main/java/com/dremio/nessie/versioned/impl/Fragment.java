@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.FragmentConsumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
@@ -97,15 +96,13 @@ public class Fragment extends MemoizedId<FragmentConsumer> {
 
   @Override
   public FragmentConsumer applyToConsumer(FragmentConsumer consumer) {
-    consumer.id(getId());
-    consumer.keys(keys.stream().map(InternalKey::toKey));
-    return consumer;
+    return super.applyToConsumer(consumer)
+        .keys(keys.stream().map(InternalKey::toKey));
   }
 
   /**
-   * Create a new {@link Builder} instance that implements both
-   * {@link FragmentConsumer} and a matching {@link Producer} that
-   * builds an {@link Fragment} object.
+   * Create a new {@link Builder} instance that implements
+   * {@link FragmentConsumer} to build a {@link Fragment} object.
    *
    * @return new builder instance
    */
@@ -114,12 +111,10 @@ public class Fragment extends MemoizedId<FragmentConsumer> {
   }
 
   /**
-   * Implements both
-   * {@link FragmentConsumer} and a matching {@link Producer} that
-   * builds an {@link Fragment} object.
+   * Implements {@link FragmentConsumer} to build a {@link Fragment} object.
    */
   // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public static class Builder implements FragmentConsumer, Producer<Fragment, FragmentConsumer> {
+  public static class Builder extends EntityBuilder<Fragment> implements FragmentConsumer {
 
     private Id id;
     private List<InternalKey> keys;

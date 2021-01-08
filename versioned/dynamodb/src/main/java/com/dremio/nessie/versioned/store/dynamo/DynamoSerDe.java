@@ -31,7 +31,6 @@ import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.tiered.builder.L2Consumer;
 import com.dremio.nessie.tiered.builder.L3Consumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.HasId;
@@ -124,11 +123,11 @@ final class DynamoSerDe {
    */
   public static <V extends HasId, C extends HasIdConsumer<C>> V deserialize(
       ValueType valueType, Map<String, AttributeValue> entity) {
-    Producer<V, C> producer = valueType.newEntityProducer();
+    HasIdConsumer<C> producer = valueType.newEntityProducer();
 
     deserializeToConsumer(valueType, entity, producer);
 
-    return producer.build();
+    return valueType.buildFromProducer(producer);
   }
 
   /**

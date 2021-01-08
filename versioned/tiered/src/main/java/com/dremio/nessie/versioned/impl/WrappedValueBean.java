@@ -22,9 +22,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
 import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.base.Preconditions;
@@ -108,7 +108,7 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Memoi
 
   @Override
   public C applyToConsumer(C consumer) {
-    return consumer.id(getId())
+    return super.applyToConsumer(consumer)
         .value(getBytes());
   }
 
@@ -116,8 +116,8 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Memoi
    * Base builder-implementation for both {@link InternalCommitMetadata} and {@link InternalValue}.
    */
   // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public abstract static class Builder<E, C extends WrappedValueConsumer<C>> implements WrappedValueConsumer<C>,
-      Producer<E, C> {
+  public abstract static class Builder<E extends HasId, C extends WrappedValueConsumer<C>>
+      extends EntityBuilder<E> implements WrappedValueConsumer<C> {
 
     private Id id;
     private ByteString value;
@@ -128,26 +128,28 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Memoi
       this.builder = builder;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public C id(Id id) {
       checkCalled(this.id, "id");
       this.id = id;
-      return consumer();
+      return (C) this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public C value(ByteString value) {
       checkCalled(this.value, "value");
       this.value = value;
-      return consumer();
+      return (C) this;
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
     public E build() {
       // null-id is allowed (will be generated)
       checkSet(value, "value");
 
-      return builder.apply(id, value);
+      return (E) builder.apply(id, value);
     }
   }
 }

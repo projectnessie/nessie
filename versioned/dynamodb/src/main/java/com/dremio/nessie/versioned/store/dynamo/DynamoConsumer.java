@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -33,8 +32,7 @@ import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-abstract class DynamoConsumer<C extends HasIdConsumer<C>>
-    implements HasIdConsumer<C>, Producer<Map<String, AttributeValue>, C> {
+abstract class DynamoConsumer<C extends HasIdConsumer<C>> implements HasIdConsumer<C> {
 
   static final String ID = Store.KEY_NAME;
 
@@ -75,8 +73,7 @@ abstract class DynamoConsumer<C extends HasIdConsumer<C>>
     return (C) this;
   }
 
-  @Override
-  public Map<String, AttributeValue> build() {
+  Map<String, AttributeValue> build() {
     checkPresent(ID, "id");
 
     return entity;

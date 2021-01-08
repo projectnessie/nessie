@@ -102,7 +102,7 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
   }
 
   @Override
-  public Map<String, AttributeValue> build() {
+  Map<String, AttributeValue> build() {
     checkPresent(NAME, "name");
     checkPresent(TYPE, "type");
 

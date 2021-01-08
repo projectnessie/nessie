@@ -41,7 +41,7 @@ class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer 
   }
 
   @Override
-  public Map<String, AttributeValue> build() {
+  Map<String, AttributeValue> build() {
     checkPresent(TREE, "children");
 
     return super.build();

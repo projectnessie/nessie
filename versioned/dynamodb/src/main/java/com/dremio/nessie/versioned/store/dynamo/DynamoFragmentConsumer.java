@@ -46,7 +46,7 @@ class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements
   }
 
   @Override
-  public Map<String, AttributeValue> build() {
+  Map<String, AttributeValue> build() {
     checkPresent(KEY_LIST, "keys");
 
     return super.build();

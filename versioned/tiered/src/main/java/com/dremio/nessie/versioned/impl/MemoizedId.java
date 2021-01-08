@@ -40,7 +40,9 @@ public abstract class MemoizedId<C extends HasIdConsumer<C>> implements HasId {
    * @param consumer consumer that will receive the properties of this entity
    * @return the consumer passed into the function
    */
-  public abstract C applyToConsumer(C consumer);
+  public C applyToConsumer(C consumer) {
+    return consumer.id(getId());
+  }
 
   @Override
   public final Id getId() {
@@ -54,5 +56,9 @@ public abstract class MemoizedId<C extends HasIdConsumer<C>> implements HasId {
     if (id != null) {
       assert id.equals(generateId());
     }
+  }
+
+  public abstract static class EntityBuilder<E extends HasId> {
+    public abstract E build();
   }
 }

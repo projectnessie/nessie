@@ -42,7 +42,7 @@ abstract class DynamoWrappedValueConsumer<C extends WrappedValueConsumer<C>> ext
   }
 
   @Override
-  public Map<String, AttributeValue> build() {
+  Map<String, AttributeValue> build() {
     checkPresent(VALUE, "value");
 
     return super.build();

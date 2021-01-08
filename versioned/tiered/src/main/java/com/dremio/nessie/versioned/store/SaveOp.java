@@ -48,7 +48,6 @@ public class SaveOp<V extends HasId> {
    */
   @SuppressWarnings({"rawtypes", "unchecked"})
   public <C extends HasIdConsumer<C>> void serialize(C consumer) {
-    // ah, lovely Java generics
     MemoizedId v = (MemoizedId) value;
     v.applyToConsumer(consumer);
   }

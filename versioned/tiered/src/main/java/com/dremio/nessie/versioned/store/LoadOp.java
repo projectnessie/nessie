@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collector;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.google.common.base.Preconditions;
 
 public class LoadOp<V extends HasId> {
@@ -60,9 +59,9 @@ public class LoadOp<V extends HasId> {
    * @param <C> the type of the Nessie-entity-consumer
    */
   public <C extends HasIdConsumer<C>> void deserialize(Consumer<HasIdConsumer<C>> deserilializer) {
-    Producer<V, C> prod = type.newEntityProducer();
+    HasIdConsumer<C> prod = type.newEntityProducer();
     deserilializer.accept(prod);
-    loaded(prod.build());
+    loaded(type.buildFromProducer(prod));
   }
 
   public Id getId() {

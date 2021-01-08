@@ -57,7 +57,7 @@ class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer 
   }
 
   @Override
-  public Map<String, AttributeValue> build() {
+  Map<String, AttributeValue> build() {
     checkPresent(TREE, "keyDelta");
 
     return super.build();

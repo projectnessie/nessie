@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1Consumer;
-import com.dremio.nessie.tiered.builder.Producer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
@@ -192,7 +191,7 @@ public class L1 extends MemoizedId<L1Consumer> {
 
   @Override
   public L1Consumer applyToConsumer(L1Consumer consumer) {
-    consumer.id(this.getId());
+    super.applyToConsumer(consumer);
     consumer.commitMetadataId(this.metadataId);
 
     for (KeyMutation mutation : this.keyList.getMutations()) {
@@ -219,9 +218,8 @@ public class L1 extends MemoizedId<L1Consumer> {
   }
 
   /**
-   * Create a new {@link Builder} instance that implements both
-   * {@link L1Consumer} and a matching {@link Producer} that
-   * builds an {@link L1} object.
+   * Create a new {@link Builder} instance that implement
+   * {@link L1Consumer} to build an {@link L1} object.
    *
    * @return new builder instance
    */
@@ -230,12 +228,10 @@ public class L1 extends MemoizedId<L1Consumer> {
   }
 
   /**
-   * Implements both
-   * {@link L1Consumer} and a matching {@link Producer} that
-   * builds an {@link L1} object.
+   * Implements {@link L1Consumer} to build an {@link L1} object.
    */
   // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public static final class Builder implements L1Consumer, Producer<L1, L1Consumer> {
+  public static final class Builder extends EntityBuilder<L1> implements L1Consumer {
 
     private Id metadataId;
     private Stream<Id> ancestors;
