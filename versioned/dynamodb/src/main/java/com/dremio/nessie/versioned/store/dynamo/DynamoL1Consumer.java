@@ -90,37 +90,8 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   }
 
   private DynamoL1Consumer addKeyMutation(boolean add, Key key) {
-    // TODO potentially peal out com.dremio.nessie.versioned.impl.KeyMutation.MutationType to get proper constants?
     String addRemove = add ? KEY_ADDITION : KEY_REMOVAL;
-
-    // TODO can we change the data model here?
-    // Current layout is:
-    // keys [ "mutations" ] :=
-    //    list(
-    //        map(
-    //            "a" / "d",
-    //            list ( key-elements )
-    //        )
-    //    )
-    //
-    // Proposal:
-    // keys [ "mutations-a" ] :=
-    //    list(
-    //        list ( key-elements )
-    //    )
-    // keys [ "mutations-d" ] :=
-    //    list(
-    //        list ( key-elements )
-    //    )
-    //
-    // Even better:
-    //    keys [ "mutations-a" ] := list ( byte-strings )
-    //    keys [ "mutations-d" ] := list ( byte-strings )
-    // And each "byte-string" is our custom serialzation of a key-path.
-    // TL;DR a quite flat structure.
-
     keysMutations.add(singletonMap(addRemove, keyElements(key)));
-
     return this;
   }
 
