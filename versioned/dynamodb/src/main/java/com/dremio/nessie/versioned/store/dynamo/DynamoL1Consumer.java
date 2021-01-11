@@ -134,7 +134,7 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void produceToConsumer(Map<String, AttributeValue> entity, L1Consumer consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, L1Consumer consumer) {
     consumer.id(deserializeId(entity, ID));
 
     if (entity.containsKey(METADATA)) {

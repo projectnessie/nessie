@@ -66,7 +66,7 @@ class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer 
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void produceToConsumer(Map<String, AttributeValue> entity, L3Consumer consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, L3Consumer consumer) {
     consumer.id(deserializeId(entity, ID));
 
     if (entity.containsKey(TREE)) {

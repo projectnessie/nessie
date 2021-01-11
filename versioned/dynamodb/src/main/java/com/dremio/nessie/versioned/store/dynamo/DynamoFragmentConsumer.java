@@ -55,7 +55,7 @@ class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void produceToConsumer(Map<String, AttributeValue> entity, FragmentConsumer consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, FragmentConsumer consumer) {
     consumer.id(deserializeId(entity, ID))
         .keys(mandatoryList(attributeValue(entity, KEY_LIST)).stream()
             .map(AttributeValueUtil::deserializeKey)
