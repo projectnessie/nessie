@@ -48,7 +48,7 @@ class AggBsonUpdateVisitor implements UpdateExpressionVisitor<List<Bson>> {
     @Override
     public StageOp visit(RemoveClause clause) {
       final String path = clause.getPath().getRoot().accept(BsonPathVisitor.INSTANCE_NO_QUOTE, true);
-      if (isArrayPath(clause.getPath())) {
+      if (isArray(clause.getPath())) {
         // Mongo has no way of deleting an element from an array, it by default leaves a NULL element. To remove the
         // element in one operation, splice together the array around the index to remove.
         final int lastIndex = path.lastIndexOf(".");
@@ -96,7 +96,7 @@ class AggBsonUpdateVisitor implements UpdateExpressionVisitor<List<Bson>> {
    * @param path the path to check.
    * @return true if the path is for an array element, false otherwise.
    */
-  static boolean isArrayPath(ExpressionPath path) {
+  static boolean isArray(ExpressionPath path) {
     ExpressionPath.PathSegment segment = path.getRoot();
     while (segment.getChild().isPresent()) {
       segment = segment.getChild().get();

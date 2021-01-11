@@ -105,8 +105,8 @@ public class ExpressionFunction implements Value {
   }
 
   @Override
-  public ExpressionFunction alias(AliasCollector c) {
-    return new ExpressionFunction(name, arguments.stream().map(v -> v.alias(c)).collect(ImmutableList.toImmutableList()));
+  public ExpressionFunction alias(AliasCollector aliasCollector) {
+    return new ExpressionFunction(name, arguments.stream().map(v -> v.alias(aliasCollector)).collect(ImmutableList.toImmutableList()));
   }
 
   @Override

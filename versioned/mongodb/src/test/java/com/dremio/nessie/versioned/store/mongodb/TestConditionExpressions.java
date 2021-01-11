@@ -94,7 +94,7 @@ class TestConditionExpressions {
     final String path = createPath();
     final Entity binaryEntity = Entity.ofBinary(SampleEntities.createBinary(RANDOM, 15));
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
-    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonConditionVisitor.toMongoExpr(binaryEntity)), ex);
+    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonConditionVisitor.toMongoExpression(binaryEntity)), ex);
   }
 
   // Single ExpressionFunction array equals tests
@@ -146,7 +146,7 @@ class TestConditionExpressions {
     final String path = createPathPos();
     final Entity binaryEntity = Entity.ofBinary(SampleEntities.createBinary(RANDOM, 8));
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
-    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonConditionVisitor.toMongoExpr(binaryEntity)), ex);
+    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonConditionVisitor.toMongoExpression(binaryEntity)), ex);
   }
 
   // Single ExpressionFunction array equals tests
@@ -199,7 +199,7 @@ class TestConditionExpressions {
     final String path = createPathName();
     final Entity binaryEntity = Entity.ofBinary(SampleEntities.createBinary(RANDOM, 24));
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
-    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonConditionVisitor.toMongoExpr(binaryEntity)), ex);
+    equals(String.format("{\"$and\": [{\"%s\": %s}]}", path, BsonConditionVisitor.toMongoExpression(binaryEntity)), ex);
   }
 
   // Single ExpressionFunction size tests
@@ -219,7 +219,8 @@ class TestConditionExpressions {
     final Entity id = SampleEntities.createId(RANDOM).toEntity();
     ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), id));
     ex = ex.and(ExpressionFunction.equals(ExpressionFunction.size(ofPath(path2)), Entity.ofNumber(1)));
-    equals(String.format("{\"$and\": [{\"%s\": %s}, {\"%s\": {\"$size\": 1}}]}", path, BsonConditionVisitor.toMongoExpr(id), path2), ex);
+    equals(String.format("{\"$and\": [{\"%s\": %s}, {\"%s\": {\"$size\": 1}}]}", path, BsonConditionVisitor.toMongoExpression(id), path2),
+        ex);
   }
 
   // Multiple ExpressionFunctions
@@ -279,7 +280,7 @@ class TestConditionExpressions {
   void binaryEquals() {
     final Entity id = SampleEntities.createId(RANDOM).toEntity();
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ExpressionPath.builder(Store.KEY_NAME).build(), id));
-    equals(String.format("{\"$and\": [{\"id\": %s}]}", BsonConditionVisitor.toMongoExpr(id)), ex);
+    equals(String.format("{\"$and\": [{\"id\": %s}]}", BsonConditionVisitor.toMongoExpression(id)), ex);
   }
 
   /**

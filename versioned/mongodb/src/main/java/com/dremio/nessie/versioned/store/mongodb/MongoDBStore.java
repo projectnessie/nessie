@@ -245,16 +245,16 @@ public class MongoDBStore implements Store {
         "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
 
     final MongoCollection<V> collection = getCollection(type);
-    final Bson idFilter = Filters.eq(Store.KEY_NAME, ((HasId) value).getId());
+    Bson filter = Filters.eq(Store.KEY_NAME, ((HasId) value).getId());
     if (conditionUnAliased.isPresent()) {
-      final Bson fullFilter = Filters.and(idFilter, conditionUnAliased.get().accept(CONDITION_VISITOR));
+      filter = Filters.and(filter, conditionUnAliased.get().accept(CONDITION_VISITOR));
 
-      if (1 != Mono.from(collection.replaceOne(fullFilter, value)).block(timeout).getModifiedCount()) {
+      if (1 != Mono.from(collection.replaceOne(filter, value)).block(timeout).getModifiedCount()) {
         throw new ConditionFailedException("Condition failed during put operation.");
       }
     } else {
       // Use upsert so that if an item does not exist, it will be inserted.
-      Mono.from(collection.replaceOne(idFilter, value, new ReplaceOptions().upsert(true))).block(timeout);
+      Mono.from(collection.replaceOne(filter, value, new ReplaceOptions().upsert(true))).block(timeout);
     }
   }
 
@@ -353,7 +353,7 @@ public class MongoDBStore implements Store {
       @Override
       public Boolean visit(RemoveClause clause) {
         // If there is a remove clause that operates on an array element, this must use the agg pipeline.
-        return AggBsonUpdateVisitor.isArrayPath(clause.getPath());
+        return AggBsonUpdateVisitor.isArray(clause.getPath());
       }
 
       @Override

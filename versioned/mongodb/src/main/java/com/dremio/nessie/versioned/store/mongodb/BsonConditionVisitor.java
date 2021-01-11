@@ -42,7 +42,7 @@ class BsonConditionVisitor implements ConditionExpressionVisitor<Bson> {
   private static class BsonValueVisitor implements ValueVisitor<String> {
     @Override
     public String visit(Value value) {
-      return toMongoExpr(value.getValue());
+      return toMongoExpression(value.getValue());
     }
 
     @Override
@@ -105,13 +105,13 @@ class BsonConditionVisitor implements ConditionExpressionVisitor<Bson> {
    * @param value the entity to convert.
    * @return the MongoDB string representation of the Entity.
    */
-  static String toMongoExpr(Entity value) {
+  static String toMongoExpression(Entity value) {
     switch (value.getType()) {
       case MAP:
-        return "{" + value.getMap().entrySet().stream().map(e -> String.format("\"%s\": %s", e.getKey(), toMongoExpr(e.getValue())))
+        return "{" + value.getMap().entrySet().stream().map(e -> String.format("\"%s\": %s", e.getKey(), toMongoExpression(e.getValue())))
           .collect(Collectors.joining(", ")) + "}";
       case LIST:
-        return "[" + value.getList().stream().map(BsonConditionVisitor::toMongoExpr).collect(Collectors.joining(", ")) + "]";
+        return "[" + value.getList().stream().map(BsonConditionVisitor::toMongoExpression).collect(Collectors.joining(", ")) + "]";
       case NUMBER:
         return String.valueOf(value.getNumber());
       case STRING:

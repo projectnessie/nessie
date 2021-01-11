@@ -68,7 +68,7 @@ class BsonUpdateVisitor implements UpdateExpressionVisitor<Bson> {
     @Override
     public Bson visit(RemoveClause clause) {
       final String path = clause.getPath().getRoot().accept(BsonPathVisitor.INSTANCE_NO_QUOTE, true);
-      if (isArrayPath(clause.getPath())) {
+      if (isArray(clause.getPath())) {
         // Mongo has no way of deleting an element from an array in on operation, it leaves a NULL element instead.
         // Use the AggBsonUpdateVisitor instead of the BsonUpdateVisitor to achieve this.
         throw new UnsupportedOperationException("Array element removal is not supported without the aggregation pipeline.");
@@ -99,7 +99,7 @@ class BsonUpdateVisitor implements UpdateExpressionVisitor<Bson> {
       throw new UnsupportedOperationException(String.format("Unsupported Set function: %s", function.getName()));
     }
 
-    private boolean isArrayPath(ExpressionPath path) {
+    private boolean isArray(ExpressionPath path) {
       ExpressionPath.PathSegment segment = path.getRoot();
       while (segment.getChild().isPresent()) {
         segment = segment.getChild().get();
