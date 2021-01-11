@@ -93,7 +93,7 @@ final class DynamoSerDe {
   }
 
   /**
-   * Serialize using the DynamoDB native consumer to the DynamoDB entity map.
+   * Serialize using a DynamoDB native consumer to a DynamoDB entity map.
    * <p>
    * The actual entity to serialize is not passed into this method, but this method calls
    * a Java {@link Consumer} that receives an instance of {@link DynamoConsumer} that receives
@@ -115,8 +115,10 @@ final class DynamoSerDe {
   }
 
   /**
-   * Convenience functionality that deserialized directly into a materialized entity instance,
-   * deserialize the given {@code entity} as the given {@link ValueType type}.
+   * Convenience functionality around {@link #deserializeToConsumer(ValueType, Map, HasIdConsumer)}
+   * that deserializes directly into a materialized entity instance,
+   * deserialize the given DynamoDB {@code entity}-map as the given {@link ValueType type}
+   * and returns a materialized object.
    *
    * @see #deserializeToConsumer(ValueType, Map, HasIdConsumer)
    */
