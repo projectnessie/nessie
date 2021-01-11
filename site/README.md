@@ -30,9 +30,9 @@ dependencies.
   # cd to the site/ directory
   cd site/
   # setup the virtual environment (only needed once)
-  virtualenv -p $(which python3) .
+  virtualenv -p $(which python3) venv
   # activate the virtual environment
-  . bin/activate
+  . venv/bin/activate
   # Install or update the dependencies as usual
   pip install -r ./requirements.txt
   ```
