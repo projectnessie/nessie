@@ -44,44 +44,46 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 final class DynamoSerDe {
 
-  private static final EnumMap<ValueType, Supplier<DynamoConsumer<?>>> dynamoConsumerSuppliers;
-  private static final EnumMap<ValueType, BiConsumer<Map<String, AttributeValue>, HasIdConsumer<?>>> dynamoProducerMethodss;
+  private static final EnumMap<ValueType, Supplier<DynamoConsumer<?>>> dynamoEntityMapProducers;
+  private static final EnumMap<ValueType, BiConsumer<Map<String, AttributeValue>, HasIdConsumer<?>>> deserializeToConsumer;
 
   static {
-    dynamoConsumerSuppliers = new EnumMap<>(ValueType.class);
-    dynamoProducerMethodss = new EnumMap<>(ValueType.class);
+    dynamoEntityMapProducers = new EnumMap<>(ValueType.class);
+    deserializeToConsumer = new EnumMap<>(ValueType.class);
 
-    dynamoConsumerSuppliers.put(ValueType.L1, DynamoL1Consumer::new);
-    dynamoProducerMethodss.put(ValueType.L1, (e, c) -> DynamoL1Consumer.produceToConsumer(e, (L1Consumer) c));
+    dynamoEntityMapProducers.put(ValueType.L1, DynamoL1Consumer::new);
+    deserializeToConsumer.put(ValueType.L1, (e, c) -> DynamoL1Consumer.toConsumer(e, (L1Consumer) c));
 
-    dynamoConsumerSuppliers.put(ValueType.L2, DynamoL2Consumer::new);
-    dynamoProducerMethodss.put(ValueType.L2, (e, c) -> DynamoL2Consumer.produceToConsumer(e, (L2Consumer) c));
+    dynamoEntityMapProducers.put(ValueType.L2, DynamoL2Consumer::new);
+    deserializeToConsumer.put(ValueType.L2, (e, c) -> DynamoL2Consumer.toConsumer(e, (L2Consumer) c));
 
-    dynamoConsumerSuppliers.put(ValueType.L3, DynamoL3Consumer::new);
-    dynamoProducerMethodss.put(ValueType.L3, (e, c) -> DynamoL3Consumer.produceToConsumer(e, (L3Consumer) c));
+    dynamoEntityMapProducers.put(ValueType.L3, DynamoL3Consumer::new);
+    deserializeToConsumer.put(ValueType.L3, (e, c) -> DynamoL3Consumer.toConsumer(e, (L3Consumer) c));
 
-    dynamoConsumerSuppliers.put(ValueType.COMMIT_METADATA, DynamoCommitMetadataConsumer::new);
-    dynamoProducerMethodss.put(ValueType.COMMIT_METADATA,
+    dynamoEntityMapProducers.put(ValueType.COMMIT_METADATA, DynamoCommitMetadataConsumer::new);
+    deserializeToConsumer.put(ValueType.COMMIT_METADATA,
         (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (CommitMetadataConsumer) c));
 
-    dynamoConsumerSuppliers.put(ValueType.VALUE, DynamoValueConsumer::new);
-    dynamoProducerMethodss.put(ValueType.VALUE, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (ValueConsumer) c));
+    dynamoEntityMapProducers.put(ValueType.VALUE, DynamoValueConsumer::new);
+    deserializeToConsumer
+        .put(ValueType.VALUE, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (ValueConsumer) c));
 
-    dynamoConsumerSuppliers.put(ValueType.REF, DynamoRefConsumer::new);
-    dynamoProducerMethodss.put(ValueType.REF, (e, c) -> DynamoRefConsumer.produceToConsumer(e, (RefConsumer) c));
+    dynamoEntityMapProducers.put(ValueType.REF, DynamoRefConsumer::new);
+    deserializeToConsumer.put(ValueType.REF, (e, c) -> DynamoRefConsumer.toConsumer(e, (RefConsumer) c));
 
-    dynamoConsumerSuppliers.put(ValueType.KEY_FRAGMENT, DynamoFragmentConsumer::new);
-    dynamoProducerMethodss.put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragmentConsumer.produceToConsumer(e, (FragmentConsumer) c));
+    dynamoEntityMapProducers.put(ValueType.KEY_FRAGMENT, DynamoFragmentConsumer::new);
+    deserializeToConsumer
+        .put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragmentConsumer.toConsumer(e, (FragmentConsumer) c));
 
-    if (!dynamoConsumerSuppliers.keySet().equals(dynamoProducerMethodss.keySet())) {
+    if (!dynamoEntityMapProducers.keySet().equals(deserializeToConsumer.keySet())) {
       throw new UnsupportedOperationException("The enum-maps dynamoConsumerSuppliers and dynamoProducerSuppliers "
           + "are not equal. This is a bug in the implementation of DynamoSerDe.");
     }
-    if (!dynamoConsumerSuppliers.keySet().containsAll(Arrays.asList(ValueType.values()))) {
+    if (!dynamoEntityMapProducers.keySet().containsAll(Arrays.asList(ValueType.values()))) {
       throw new UnsupportedOperationException(String.format("The implementation of the Dynamo backend does not have "
           + "implementations for all supported value-type. Supported by Dynamo: %s, available: %s. "
           + "This is a bug in the implementation of DynamoSerDe.",
-          dynamoConsumerSuppliers.keySet(),
+          dynamoEntityMapProducers.keySet(),
           Arrays.asList(ValueType.values())));
     }
   }
@@ -105,7 +107,7 @@ final class DynamoSerDe {
     Preconditions.checkNotNull(serializer, "serializer parameter is null");
 
     // No need for any 'type' validation - that's done in the static initializer
-    DynamoConsumer<C> consumer = (DynamoConsumer<C>) dynamoConsumerSuppliers.get(valueType).get();
+    DynamoConsumer<C> consumer = (DynamoConsumer<C>) dynamoEntityMapProducers.get(valueType).get();
 
     serializer.accept((C) consumer);
 
@@ -151,6 +153,6 @@ final class DynamoSerDe {
         id.getHash(), valueType.getValueName(), loadedType);
 
     // No need for any 'valueType' validation against the static map - that's done in the static initializer
-    dynamoProducerMethodss.get(valueType).accept(entity, consumer);
+    deserializeToConsumer.get(valueType).accept(entity, consumer);
   }
 }

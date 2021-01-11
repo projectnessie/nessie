@@ -159,7 +159,7 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void produceToConsumer(Map<String, AttributeValue> entity, RefConsumer consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, RefConsumer consumer) {
     consumer.id(deserializeId(entity, ID))
         .name(Preconditions.checkNotNull(attributeValue(entity, NAME).s()));
 

@@ -50,7 +50,7 @@ class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer 
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void produceToConsumer(Map<String, AttributeValue> entity, L2Consumer consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, L2Consumer consumer) {
     consumer.id(deserializeId(entity, ID));
 
     if (entity.containsKey(TREE)) {
