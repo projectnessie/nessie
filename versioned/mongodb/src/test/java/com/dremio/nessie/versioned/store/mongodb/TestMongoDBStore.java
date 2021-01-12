@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,5 +65,20 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   @Override
   protected void resetStoreState() {
     store.resetCollections();
+  }
+
+  @Override
+  public void load() {
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.load());
+  }
+
+  @Override
+  public void loadNone() {
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.loadNone());
+  }
+
+  @Override
+  public void loadInvalid() {
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.loadInvalid());
   }
 }

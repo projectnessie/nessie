@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.function.Consumer;
 
-import com.google.protobuf.ByteString;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +26,7 @@ import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 
 class TestValueSerDe {
   private static final Random RANDOM = new Random(16234910234034L);
@@ -65,9 +65,9 @@ class TestValueSerDe {
   @Test
   void testDeserializeMap() {
     testDeserialize(build(b -> b.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(ImmutableMap.of(
-      "key", build(n -> n.setNumber(5)),
-      "key2", build(n -> n.setBoolean(false)),
-      "key3", build(n -> n.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(ImmutableMap.of())))
+        "key", build(n -> n.setNumber(5)),
+        "key2", build(n -> n.setBoolean(false)),
+        "key3", build(n -> n.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(ImmutableMap.of())))
     )))));
   }
 
@@ -79,9 +79,9 @@ class TestValueSerDe {
   @Test
   void testDeserializeList() {
     testDeserialize(build(b -> b.setList(EntityProtos.EntityList.newBuilder().addAllValue(ImmutableList.of(
-      build(n -> n.setString("myValue")),
-      build(n -> n.setNumber(999)),
-      build(n -> n.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(ImmutableMap.of()))))))));
+        build(n -> n.setString("myValue")),
+        build(n -> n.setNumber(999)),
+        build(n -> n.setMap(EntityProtos.EntityMap.newBuilder().putAllValue(ImmutableMap.of()))))))));
   }
 
   @Test
@@ -133,6 +133,12 @@ class TestValueSerDe {
     testSerialize(Entity.ofList(Entity.ofString("myValue"), Entity.ofNumber(999), Entity.ofMap(ImmutableMap.of())));
   }
 
+  private EntityProtos.Entity build(Consumer<EntityProtos.Entity.Builder> func) {
+    final EntityProtos.Entity.Builder builder = EntityProtos.Entity.newBuilder();
+    func.accept(builder);
+    return builder.build();
+  }
+
   private Entity convert(EntityProtos.Entity entity) {
     switch (entity.getValueCase()) {
       case MAP:
@@ -155,12 +161,6 @@ class TestValueSerDe {
         Assertions.fail("Unknown Entity type.");
         throw new RuntimeException();
     }
-  }
-
-  private EntityProtos.Entity build(Consumer<EntityProtos.Entity.Builder> func) {
-    final EntityProtos.Entity.Builder builder = EntityProtos.Entity.newBuilder();
-    func.accept(builder);
-    return builder.build();
   }
 
   private EntityProtos.Entity convert(Entity entity) {
