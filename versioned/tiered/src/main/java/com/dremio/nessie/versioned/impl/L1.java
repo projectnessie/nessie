@@ -28,8 +28,6 @@ import java.util.stream.Stream;
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
-import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
-import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SimpleSchema;
@@ -191,21 +189,11 @@ public class L1 extends PersistentBase<L1Consumer> {
 
   @Override
   public L1Consumer applyToConsumer(L1Consumer consumer) {
-    super.applyToConsumer(consumer);
-    consumer.commitMetadataId(this.metadataId);
-
-    for (KeyMutation mutation : this.keyList.getMutations()) {
-      Key key = mutation.getKey().toKey();
-      if (mutation instanceof KeyAddition) {
-        consumer.addKeyAddition(key);
-      } else if (mutation instanceof KeyRemoval) {
-        consumer.addKeyRemoval(key);
-      }
-    }
-
-    consumer.children(this.tree.stream());
-
-    consumer.ancestors(parentList.getParents().stream());
+    super.applyToConsumer(consumer)
+        .commitMetadataId(this.metadataId)
+        .keyMutations(this.keyList.getMutations().stream().map(KeyMutation::toMutation))
+        .children(this.tree.stream())
+        .ancestors(parentList.getParents().stream());
 
     if (keyList.isFull()) {
       consumer.completeKeyList(keyList.getFragments().stream());
@@ -275,14 +263,9 @@ public class L1 extends PersistentBase<L1Consumer> {
     }
 
     @Override
-    public Builder addKeyAddition(Key key) {
-      keyChanges.add(KeyMutation.KeyAddition.of(new InternalKey(key)));
-      return this;
-    }
-
-    @Override
-    public Builder addKeyRemoval(Key key) {
-      keyChanges.add(KeyMutation.KeyRemoval.of(new InternalKey(key)));
+    public L1Consumer keyMutations(Stream<Key.Mutation> keyMutations) {
+      keyMutations.map(KeyMutation::fromMutation)
+          .forEach(keyChanges::add);
       return this;
     }
 

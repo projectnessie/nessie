@@ -23,16 +23,12 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deseri
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKeyMutations;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idsList;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.keyElements;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryMap;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.map;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.number;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.singletonMap;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.serializeKeyMutations;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -56,12 +52,10 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   static final String KEY_LIST = "keys";
 
   private final Map<String, AttributeValue> keys;
-  private final List<AttributeValue> keysMutations;
 
   DynamoL1Consumer() {
     super(ValueType.L1);
     keys = new HashMap<>();
-    keysMutations = new ArrayList<>();
   }
 
   @Override
@@ -80,18 +74,8 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   }
 
   @Override
-  public L1Consumer addKeyAddition(Key key) {
-    return addKeyMutation(true, key);
-  }
-
-  @Override
-  public L1Consumer addKeyRemoval(Key key) {
-    return addKeyMutation(false, key);
-  }
-
-  private DynamoL1Consumer addKeyMutation(boolean add, Key key) {
-    String addRemove = add ? KEY_ADDITION : KEY_REMOVAL;
-    keysMutations.add(singletonMap(addRemove, keyElements(key)));
+  public L1Consumer keyMutations(Stream<Key.Mutation> keyMutations) {
+    addKeysSafe(MUTATIONS, serializeKeyMutations(keyMutations));
     return this;
   }
 
@@ -112,7 +96,6 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
 
   @Override
   Map<String, AttributeValue> build() {
-    addKeysSafe(MUTATIONS, list(keysMutations.stream()));
     if (!keys.isEmpty()) {
       addEntitySafe(KEY_LIST, map(keys));
     }
@@ -164,8 +147,7 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
       deserializeKeyMutations(
           keys,
           MUTATIONS,
-          consumer::addKeyAddition,
-          consumer::addKeyRemoval
+          consumer::keyMutations
       );
     }
   }

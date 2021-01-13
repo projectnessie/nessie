@@ -44,6 +44,9 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
  */
 public final class AttributeValueUtil {
 
+  static final String KEY_ADDITION = "a";
+  static final String KEY_REMOVAL = "d";
+
   private AttributeValueUtil() {
     // empty
   }
@@ -169,41 +172,44 @@ public final class AttributeValueUtil {
   }
 
   /**
-   * Convenience method to produce a built {@link AttributeValue.Builder#m(Map)} with a single entry.
-   */
-  static AttributeValue singletonMap(String key, AttributeValue value) {
-    Preconditions.checkNotNull(key);
-    Preconditions.checkNotNull(value);
-    return builder().m(Collections.singletonMap(key, value)).build();
-  }
-
-  /**
    * Deserializes key-mutations the given {@code key} from {@code map} and passes
    * key-additions to {@code addConsumer} and key-removals to {@code removalConsumer}.
    */
   static void deserializeKeyMutations(
       Map<String, AttributeValue> map,
       String key,
-      Consumer<Key> addConsumer,
-      Consumer<Key> removalConsumer
+      Consumer<Stream<Key.Mutation>> consumer
   ) {
-    List<AttributeValue> mutations = mandatoryList(attributeValue(map, key));
-    for (AttributeValue mutation : mutations) {
-      Map<String, AttributeValue> m = mutation.m();
-      int sz = m.size();
-      AttributeValue raw = m.get(DynamoConsumer.KEY_ADDITION);
-      if (raw != null) {
-        addConsumer.accept(deserializeKey(raw));
-        sz--;
-      }
-      raw = m.get(DynamoConsumer.KEY_REMOVAL);
-      if (raw != null) {
-        removalConsumer.accept(deserializeKey(raw));
-        sz--;
-      }
-      if (sz > 0) {
-        throw new IllegalStateException("keys.mutations map has unsupported entries: " + m);
-      }
+    consumer.accept(mandatoryList(attributeValue(map, key)).stream()
+        .map(mutation -> {
+          Map<String, AttributeValue> m = mutation.m();
+          AttributeValue raw = m.get(KEY_ADDITION);
+          if (raw != null) {
+            return deserializeKey(raw).asAddition();
+          }
+          raw = m.get(KEY_REMOVAL);
+          if (raw != null) {
+            return deserializeKey(raw).asRemoval();
+          }
+          throw new IllegalStateException("keys.mutations map has unsupported entries: " + m);
+        }));
+  }
+
+  static AttributeValue serializeKeyMutations(Stream<Key.Mutation> keyMutations) {
+    return list(keyMutations.map(km -> map(Collections.singletonMap(
+        mutationName(km.getType()),
+        AttributeValueUtil.keyElements(km.getKey()))
+    )));
+  }
+
+  static String mutationName(Key.MutationType type) {
+    switch (type) {
+      case ADDITION:
+        return KEY_ADDITION;
+      case REMOVAL:
+        return KEY_REMOVAL;
+      default:
+        throw new IllegalArgumentException("unknown mutation type " + type);
     }
   }
 

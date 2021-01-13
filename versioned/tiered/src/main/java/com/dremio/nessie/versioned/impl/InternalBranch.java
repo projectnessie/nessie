@@ -594,9 +594,6 @@ class InternalBranch extends PersistentBase<RefConsumer> implements InternalRef 
             return new BranchCommit(c.id, c.commit, c.parent);
           }
 
-          List<Key> keyAdditions = new ArrayList<>();
-          List<Key> keyRemovals = new ArrayList<>();
-
           List<BranchUnsavedDelta> deltas = c.deltas.stream()
               .map(d -> new RefConsumer.BranchUnsavedDelta(
                   d.position,
@@ -605,25 +602,16 @@ class InternalBranch extends PersistentBase<RefConsumer> implements InternalRef 
               ))
               .collect(Collectors.toList());
 
-          c.keyMutationList.getMutations().forEach(km -> {
-            switch (km.getType()) {
-              case ADDITION:
-                keyAdditions.add(km.getKey().toKey());
-                break;
-              case REMOVAL:
-                keyRemovals.add(km.getKey().toKey());
-                break;
-              default:
-                throw new UnsupportedOperationException(km.getType().name());
-            }
-          });
+          List<Key.Mutation> keyMutations = c.keyMutationList.getMutations()
+              .stream()
+              .map(KeyMutation::toMutation)
+              .collect(Collectors.toList());
 
           return new BranchCommit(
               c.id,
               c.commit,
               deltas,
-              keyAdditions,
-              keyRemovals
+              keyMutations
           );
         }));
   }

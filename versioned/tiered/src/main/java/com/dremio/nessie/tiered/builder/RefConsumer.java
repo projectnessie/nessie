@@ -171,8 +171,7 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
     private final Id commit;
     private final Id parent;
     private final List<BranchUnsavedDelta> deltas;
-    private final List<Key> keyAdditions;
-    private final List<Key> keyRemovals;
+    private final List<Key.Mutation> keyMutations;
 
     /**
      * Constructor for a "saved" commit.
@@ -187,8 +186,7 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
       this.commit = commit;
       this.saved = true;
       this.deltas = Collections.emptyList();
-      this.keyAdditions = null;
-      this.keyRemovals = null;
+      this.keyMutations = null;
     }
 
     /**
@@ -197,17 +195,15 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
      * @param unsavedId the ID
      * @param commit commit ID
      * @param deltas unsaved deltas
-     * @param keyAdditions added keys
-     * @param keyRemovals removed keys
+     * @param keyMutations added and removed keys
      */
-    public BranchCommit(Id unsavedId, Id commit, List<BranchUnsavedDelta> deltas, List<Key> keyAdditions, List<Key> keyRemovals) {
+    public BranchCommit(Id unsavedId, Id commit, List<BranchUnsavedDelta> deltas, List<Key.Mutation> keyMutations) {
       super();
       this.saved = false;
       this.deltas = ImmutableList.copyOf(Preconditions.checkNotNull(deltas));
       this.commit = Preconditions.checkNotNull(commit);
       this.parent = null;
-      this.keyAdditions = Preconditions.checkNotNull(keyAdditions);
-      this.keyRemovals = Preconditions.checkNotNull(keyRemovals);
+      this.keyMutations = Preconditions.checkNotNull(keyMutations);
       this.id = Preconditions.checkNotNull(unsavedId);
     }
 
@@ -257,21 +253,12 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
     }
 
     /**
-     * Key-additions of this commit.
+     * Key additions and removals of this commit.
      *
-     * @return added keys
+     * @return added and removed keys
      */
-    public List<Key> getKeyAdditions() {
-      return keyAdditions;
-    }
-
-    /**
-     * Key-removals of this commit.
-     *
-     * @return removed keys
-     */
-    public List<Key> getKeyRemovals() {
-      return keyRemovals;
+    public List<Key.Mutation> getKeyMutations() {
+      return keyMutations;
     }
   }
 

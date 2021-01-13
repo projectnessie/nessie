@@ -19,6 +19,7 @@ import java.util.Map;
 
 import org.immutables.value.Value.Immutable;
 
+import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.google.common.collect.ImmutableMap;
 
@@ -39,6 +40,19 @@ abstract class KeyMutation {
 
   abstract MutationType getType();
 
+  static KeyMutation fromMutation(Key.Mutation km) {
+    switch (km.getType()) {
+      case ADDITION:
+        return KeyMutation.KeyAddition.of(new InternalKey(km.getKey()));
+      case REMOVAL:
+        return KeyMutation.KeyRemoval.of(new InternalKey(km.getKey()));
+      default:
+        throw new IllegalArgumentException("Unknown mutation-type " + km.getType());
+    }
+  }
+
+  abstract Key.Mutation toMutation();
+
   @Immutable
   public abstract static class KeyAddition extends KeyMutation {
 
@@ -49,6 +63,11 @@ abstract class KeyMutation {
 
     public static KeyAddition of(InternalKey key) {
       return ImmutableKeyAddition.builder().key(key).build();
+    }
+
+    @Override
+    Key.Mutation toMutation() {
+      return getKey().toKey().asAddition();
     }
   }
 
@@ -64,6 +83,10 @@ abstract class KeyMutation {
       return ImmutableKeyRemoval.builder().key(key).build();
     }
 
+    @Override
+    Key.Mutation toMutation() {
+      return getKey().toKey().asRemoval();
+    }
   }
 
   Entity toEntity() {

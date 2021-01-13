@@ -53,7 +53,7 @@ public class SampleEntities {
     return ValueType.L1.buildEntity((L1Consumer producer) -> producer.commitMetadataId(createId(random))
         .children(IntStream.range(0, L1.SIZE).mapToObj(x -> createId(random)))
         .ancestors(Stream.of(L1.EMPTY.getId(), Id.EMPTY))
-        .addKeyAddition(Key.of(createString(random, 8), createString(random, 9)))
+        .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
         .incrementalKeyList(L1.EMPTY.getId(), 1));
   }
 
@@ -112,8 +112,7 @@ public class SampleEntities {
                 createId(random),
                 createId(random),
                 Collections.singletonList(new BranchUnsavedDelta(1, createId(random), createId(random))),
-                Collections.singletonList(Key.of(createString(random, 8), createString(random, 8))),
-                Collections.emptyList())
+                Collections.singletonList(Key.of(createString(random, 8), createString(random, 8)).asAddition()))
         )));
   }
 

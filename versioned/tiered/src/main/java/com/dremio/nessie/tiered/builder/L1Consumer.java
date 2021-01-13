@@ -54,22 +54,14 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
   L1Consumer children(Stream<Id> ids);
 
   /**
-   * Add a key that was added as part of this commit.
+   * Keys that were added and removed as part of this commit.
    *
-   * <p>Can be called multiple times. The order of calling is unimportant and could change.
-   * @param key The key that was added.
-   * @return This consumer.
-   */
-  L1Consumer addKeyAddition(Key key);
+   * <p>Can only be called once.
 
-  /**
-   * Add a key that was removed as part of this commit.
-   *
-   * <p>Can be called multiple times. The order of calling is unimportant and could change.
-   * @param key The key that was added.
+   * @param keyMutations The key that was added.
    * @return This consumer.
    */
-  L1Consumer addKeyRemoval(Key key);
+  L1Consumer keyMutations(Stream<Key.Mutation> keyMutations);
 
   /**
    * States that this L1 has an incremental key list.

@@ -18,9 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -253,11 +251,10 @@ public interface InternalRef extends HasId {
       }
     }
 
-    private KeyMutationList keyMutations(BranchCommit bc) {
-      List<KeyMutation> mutations = new ArrayList<>();
-      bc.getKeyAdditions().stream().map(km -> KeyMutation.KeyAddition.of(new InternalKey(km))).forEach(mutations::add);
-      bc.getKeyRemovals().stream().map(km -> KeyMutation.KeyRemoval.of(new InternalKey(km))).forEach(mutations::add);
-      return KeyMutationList.of(mutations);
+    private static KeyMutationList keyMutations(BranchCommit bc) {
+      return KeyMutationList.of(bc.getKeyMutations().stream()
+          .map(KeyMutation::fromMutation)
+          .collect(Collectors.toList()));
     }
   }
 

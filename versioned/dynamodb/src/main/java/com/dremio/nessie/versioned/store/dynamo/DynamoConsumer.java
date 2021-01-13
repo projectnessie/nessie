@@ -36,9 +36,6 @@ abstract class DynamoConsumer<C extends BaseConsumer<C>> implements BaseConsumer
 
   static final String ID = Store.KEY_NAME;
 
-  static final String KEY_ADDITION = "a";
-  static final String KEY_REMOVAL = "d";
-
   final Map<String, AttributeValue> entity = new HashMap<>();
 
   DynamoConsumer(ValueType valueType) {

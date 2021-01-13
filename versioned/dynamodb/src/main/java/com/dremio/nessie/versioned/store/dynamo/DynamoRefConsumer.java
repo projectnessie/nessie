@@ -25,7 +25,7 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryList;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.map;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.number;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.singletonMap;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.serializeKeyMutations;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.string;
 
 import java.util.ArrayList;
@@ -135,14 +135,7 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
           .map(DynamoRefConsumer::serializeDelta);
       builder.put(DELTAS, list(deltas));
 
-      Stream<AttributeValue> keyMutations = Stream.concat(
-          c.getKeyAdditions().stream()
-              .map(AttributeValueUtil::keyElements)
-              .map(km -> singletonMap(KEY_ADDITION, km)),
-          c.getKeyRemovals().stream()
-              .map(AttributeValueUtil::keyElements)
-              .map(km -> singletonMap(KEY_REMOVAL, km)));
-      builder.put(KEY_LIST, list(keyMutations));
+      builder.put(KEY_LIST, serializeKeyMutations(c.getKeyMutations().stream()));
     }
 
     return map(builder);
@@ -205,22 +198,19 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
         .map(DynamoRefConsumer::deserializeUnsavedDelta)
         .collect(Collectors.toList());
 
-    List<Key> keyAdditions = new ArrayList<>();
-    List<Key> keyRemovals = new ArrayList<>();
+    List<Key.Mutation> keyMutations = new ArrayList<>();
 
     deserializeKeyMutations(
         map,
         KEY_LIST,
-        keyAdditions::add,
-        keyRemovals::add
+        km -> km.forEach(keyMutations::add)
     );
 
     return new BranchCommit(
         id,
         commit,
         deltas,
-        keyAdditions,
-        keyRemovals
+        keyMutations
     );
   }
 
