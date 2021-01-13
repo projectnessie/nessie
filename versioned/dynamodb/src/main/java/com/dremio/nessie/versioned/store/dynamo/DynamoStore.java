@@ -280,13 +280,15 @@ public class DynamoStore implements Store {
 
   }
 
+  @SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
   @Override
   public <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
     Preconditions.checkArgument(type.isEntityType(value),
         "Value class %s is not value for ValueType %s.", value.getClass().getName(), type.name());
-    @SuppressWarnings("rawtypes") PersistentBase v = (PersistentBase) value;
-    @SuppressWarnings("unchecked")
-    Map<String, AttributeValue> attributes = serializeWithConsumer(type, v::applyToConsumer);
+    PersistentBase v = (PersistentBase) value;
+    Map<String, AttributeValue> attributes = serializeWithConsumer(type, c -> {
+      v.applyToConsumer(c);
+    });
 
     PutItemRequest.Builder builder = PutItemRequest.builder()
         .tableName(tableNames.get(type))
@@ -342,10 +344,10 @@ public class DynamoStore implements Store {
 
       ListMultimap<String, SaveOp<?>> mm =
           Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
-      @SuppressWarnings("Convert2MethodRef")
+      @SuppressWarnings({"unchecked", "rawtypes"})
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save ->
           WriteRequest.builder().putRequest(PutRequest.builder().item(
-              serializeWithConsumer(save.getType(), cons -> save.serialize(cons))).build())
+              serializeWithConsumer(save.getType(), cons -> save.serialize((BaseConsumer) cons))).build())
                     .build());
       BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
       saves.add(async.batchWriteItem(batch));

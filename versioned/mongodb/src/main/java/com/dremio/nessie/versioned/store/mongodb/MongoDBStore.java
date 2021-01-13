@@ -203,12 +203,11 @@ public class MongoDBStore implements Store {
 
     // Use upsert so that a document is created if the filter does not match. The update operator is only $setOnInsert
     // so no action is triggered on a simple update, only on insert.
-    final UpdateResult result = Mono.from(
-        collection.updateOne(
-            Filters.eq(MongoConsumer.ID, value.getId()),
-            MongoSerDe.bsonForValueType(type, value, "$setOnInsert"),
-            new UpdateOptions().upsert(true)
-        )).block(timeout);
+    final UpdateResult result = Mono.from(collection.updateOne(
+        Filters.eq(MongoConsumer.ID, value.getId()),
+        MongoSerDe.bsonForValueType(type, value, "$setOnInsert"),
+        new UpdateOptions().upsert(true)
+    )).block(timeout);
     return result != null && result.getUpsertedId() != null;
   }
 
@@ -241,17 +240,25 @@ public class MongoDBStore implements Store {
     throw new UnsupportedOperationException();
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings("rawtypes")
   @Override
   public void save(List<SaveOp<?>> ops) {
     final ListMultimap<MongoCollection<HasId>, SaveOp<?>> mm = Multimaps.index(ops, l -> getCollection(l.getType()));
 
     Flux.fromIterable(Multimaps.asMap(mm).entrySet())
       .flatMap(entry -> {
-        final MongoCollection collection = entry.getKey();
+        final MongoCollection<HasId> collection = entry.getKey();
 
         // Ordering of the inserts doesn't matter, so set to unordered to give potential performance improvements.
-        List<HasId> entities = entry.getValue().stream().map(SaveOp::getValue).collect(Collectors.toList());
+        List<HasId> entities = entry.getValue().stream()
+            .map(saveOp -> (HasId) saveOp.getType().buildEntity(c -> {
+              // TODO this should really not use the deviation via a materialized entity but
+              //  serialize directly into a series of Bson. Couldn't get the 'insertMany' to
+              //  work though.
+              BaseConsumer cons = c;
+              saveOp.serialize(cons);
+            }))
+            .collect(Collectors.toList());
         return collection.insertMany(entities, new InsertManyOptions().ordered(false));
       })
         .blockLast(timeout);

@@ -256,7 +256,7 @@ class InternalBranch extends PersistentBase<RefConsumer> implements InternalRef 
       }
       lastL1 = lastL1.getChildWithTree(c.commit, tree, c.keyMutationList)
           .withCheckpointAsNecessary(store);
-      toSave.add(new SaveOp<L1>(ValueType.L1, lastL1));
+      toSave.add(ValueType.L1.createSaveOpForEntity(lastL1));
       lastId = c.id;
       if (lastUnsaved != c) {
         // update for next loop.

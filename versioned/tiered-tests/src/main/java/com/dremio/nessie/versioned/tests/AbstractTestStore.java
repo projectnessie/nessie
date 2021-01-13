@@ -17,6 +17,7 @@ package com.dremio.nessie.versioned.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -28,13 +29,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.versioned.impl.Fragment;
-import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
-import com.dremio.nessie.versioned.impl.InternalRef;
-import com.dremio.nessie.versioned.impl.InternalValue;
-import com.dremio.nessie.versioned.impl.L1;
-import com.dremio.nessie.versioned.impl.L2;
-import com.dremio.nessie.versioned.impl.L3;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.LoadOp;
@@ -263,43 +257,48 @@ public abstract class AbstractTestStore<S extends Store> {
     testPutIfAbsent(ValueType.VALUE, SampleEntities.createValue(random));
   }
 
+  static class EntitySaveOp {
+    final ValueType type;
+    final HasId entity;
+    final SaveOp<?> saveOp;
+
+    EntitySaveOp(ValueType type, HasId entity) {
+      this.type = type;
+      this.entity = entity;
+      this.saveOp = type.createSaveOpForEntity(entity);
+    }
+  }
+
   @Test
   void save() {
-    final L1 l1 = SampleEntities.createL1(random);
-    final L2 l2 = SampleEntities.createL2(random);
-    final L3 l3 = SampleEntities.createL3(random);
-    final Fragment fragment = SampleEntities.createFragment(random);
-    final InternalRef branch = SampleEntities.createBranch(random);
-    final InternalRef tag = SampleEntities.createTag(random);
-    final InternalCommitMetadata commitMetadata = SampleEntities.createCommitMetadata(random);
-    final InternalValue value = SampleEntities.createValue(random);
-    final List<SaveOp<?>> saveOps = ImmutableList.of(
-        new SaveOp<>(ValueType.L1, l1),
-        new SaveOp<>(ValueType.L2, l2),
-        new SaveOp<>(ValueType.L3, l3),
-        new SaveOp<>(ValueType.KEY_FRAGMENT, fragment),
-        new SaveOp<>(ValueType.COMMIT_METADATA, commitMetadata),
-        new SaveOp<>(ValueType.VALUE, value),
-        new SaveOp<>(ValueType.REF, branch),
-        new SaveOp<>(ValueType.REF, tag)
+    List<EntitySaveOp> entities = Arrays.asList(
+        new EntitySaveOp(ValueType.L1, SampleEntities.createL1(random)),
+        new EntitySaveOp(ValueType.L2, SampleEntities.createL2(random)),
+        new EntitySaveOp(ValueType.L3, SampleEntities.createL3(random)),
+        new EntitySaveOp(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random)),
+        new EntitySaveOp(ValueType.REF, SampleEntities.createBranch(random)),
+        new EntitySaveOp(ValueType.REF, SampleEntities.createTag(random)),
+        new EntitySaveOp(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random)),
+        new EntitySaveOp(ValueType.VALUE, SampleEntities.createValue(random))
     );
-    store.save(saveOps);
 
-    saveOps.forEach(s -> {
+    store.save(entities.stream().map(e -> e.saveOp).collect(Collectors.toList()));
+
+    entities.forEach(s -> {
       try {
-        HasId saveOpValue = s.getValue();
-        HasId loadedValue = store.loadSingle(s.getType(), saveOpValue.getId());
-        assertEquals(saveOpValue, loadedValue);
+        HasId saveOpValue = s.entity;
+        HasId loadedValue = store.loadSingle(s.type, saveOpValue.getId());
+        assertEquals(saveOpValue, loadedValue, "type " + s.type);
 
         try {
-          loadedValue = s.getType().buildEntity(producer -> store.loadSingle(s.getType(), saveOpValue.getId(), producer));
-          assertEquals(saveOpValue, loadedValue);
+          loadedValue = s.type.buildEntity(producer -> store.loadSingle(s.type, saveOpValue.getId(), producer));
+          assertEquals(saveOpValue, loadedValue, "type " + s.type);
         } catch (UnsupportedOperationException e) {
           // TODO ignore this for now
         }
 
       } catch (NotFoundException e) {
-        Assertions.fail(e);
+        Assertions.fail("type " + s.type, e);
       }
     });
   }

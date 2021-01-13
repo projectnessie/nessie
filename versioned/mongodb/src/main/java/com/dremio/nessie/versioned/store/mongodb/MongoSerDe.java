@@ -38,6 +38,7 @@ import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.PersistentBase;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
 
@@ -95,6 +96,28 @@ final class MongoSerDe {
 
   static MongoConsumer<?> newMongoConsumer(ValueType valueType, BsonWriter bsonWriter) {
     return consumerMap.get(valueType).apply(bsonWriter);
+  }
+
+  static Bson bsonForValueType(ValueType valueType, SaveOp<?> saveOp, String updateOperator) {
+    return new Bson() {
+      @Override
+      public <T> BsonDocument toBsonDocument(Class<T> clazz, CodecRegistry codecRegistry) {
+        final BsonDocumentWriter writer = new BsonDocumentWriter(new BsonDocument());
+
+        writer.writeStartDocument();
+        writer.writeName(updateOperator);
+
+        writer.writeStartDocument();
+        MongoConsumer consumer = newMongoConsumer(valueType, writer);
+        saveOp.serialize(consumer);
+        consumer.build();
+        writer.writeEndDocument();
+
+        writer.writeEndDocument();
+
+        return writer.getDocument();
+      }
+    };
   }
 
   static <E extends HasId> Bson bsonForValueType(ValueType valueType, E value, String updateOperator) {

@@ -71,7 +71,6 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
-import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
@@ -255,7 +254,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       store.save(
           Streams.concat(
               current.getMostSaveOps(),
-              Stream.of(new SaveOp<>(ValueType.COMMIT_METADATA, metadata))
+              Stream.of(ValueType.COMMIT_METADATA.createSaveOpForEntity(metadata))
           ).collect(Collectors.toList()));
 
       CommitOp commitOp = current.getCommitOp(

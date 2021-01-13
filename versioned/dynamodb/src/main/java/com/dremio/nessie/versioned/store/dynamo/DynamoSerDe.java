@@ -101,7 +101,7 @@ final class DynamoSerDe {
    */
   @SuppressWarnings("unchecked")
   public static <C extends BaseConsumer<C>> Map<String, AttributeValue> serializeWithConsumer(
-      ValueType valueType, Consumer<C> serializer) {
+      ValueType valueType, Consumer<BaseConsumer<C>> serializer) {
     Preconditions.checkNotNull(valueType, "valueType parameter is null");
     Preconditions.checkNotNull(serializer, "serializer parameter is null");
 

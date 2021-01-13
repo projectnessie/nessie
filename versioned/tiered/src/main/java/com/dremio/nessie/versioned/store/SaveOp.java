@@ -16,25 +16,36 @@
 package com.dremio.nessie.versioned.store;
 
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.impl.PersistentBase;
 
-public class SaveOp<V extends HasId> {
+public class SaveOp<C extends BaseConsumer<C>> {
   private final ValueType type;
-  private final V value;
+  private final Supplier<Id> idSupplier;
+  private final Consumer<BaseConsumer<C>> serializer;
 
-  public SaveOp(ValueType type, V value) {
+  /**
+   * Constructs a new save-operation for the given type, id and serializer.
+   *
+   * @param type value type
+   * @param idSupplier supplier for the entity's id
+   * @param serializer Java-consumer that will receive a consumer to serialize the entity to
+   */
+  public SaveOp(ValueType type, Supplier<Id> idSupplier, Consumer<BaseConsumer<C>> serializer) {
     this.type = type;
-    this.value = value;
+    this.idSupplier = idSupplier;
+    this.serializer = serializer;
   }
 
   public ValueType getType() {
     return type;
   }
 
-  public V getValue() {
-    return value;
+  public Id getId() {
+    return idSupplier.get();
   }
 
   /**
@@ -44,26 +55,19 @@ public class SaveOp<V extends HasId> {
    * </p>
    *
    * @param consumer the consumer that will receive the contents of {@code value}
-   * @param <C> the type of the consumer
    */
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public <C extends BaseConsumer<C>> void serialize(C consumer) {
-    PersistentBase v = (PersistentBase) value;
-    v.applyToConsumer(consumer);
+  public void serialize(BaseConsumer<C> consumer) {
+    serializer.accept(consumer);
   }
 
   @Override
   public String toString() {
-    return "SaveOp [type=" + type + ", id=" + value.getId() + "]";
+    return "SaveOp [type=" + type + ", id=" + idSupplier.get() + "]";
   }
 
   @Override
   public int hashCode() {
-    if (type.isImmutable()) {
-      return Objects.hash(type, value.getId());
-    }
-
-    return Objects.hash(type, value);
+    return Objects.hash(type, idSupplier.get());
   }
 
   @SuppressWarnings("unchecked")
@@ -77,14 +81,7 @@ public class SaveOp<V extends HasId> {
       return false;
     }
 
-    SaveOp<V> other = (SaveOp<V>) obj;
-    if (type.isImmutable()) {
-      // if the items are immutable, their id is sufficient to determine equality.
-      return type == other.type && Objects.equals(value.getId(), other.value.getId());
-    }
-
-    // otherwise, use the actual values for equality.
-    return type == other.type && Objects.equals(value, other.value);
+    SaveOp<C> other = (SaveOp<C>) obj;
+    return type == other.type && Objects.equals(idSupplier.get(), other.idSupplier.get());
   }
-
 }

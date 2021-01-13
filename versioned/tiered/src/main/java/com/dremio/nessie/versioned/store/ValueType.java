@@ -33,7 +33,7 @@ import com.dremio.nessie.versioned.impl.PersistentBase.EntityBuilder;
 
 public enum ValueType {
 
-  REF(InternalRef.class, false, "r", "refs", InternalRef::builder),
+  REF(InternalRef.class, "r", "refs", InternalRef::builder),
   L1(L1.class, "l1", "l1", com.dremio.nessie.versioned.impl.L1::builder),
   L2(L2.class, "l2", "l2", com.dremio.nessie.versioned.impl.L2::builder),
   L3(L3.class, "l3", "l3", com.dremio.nessie.versioned.impl.L3::builder),
@@ -55,20 +55,13 @@ public enum ValueType {
   }
 
   private final Class<?> objectClass;
-  private final boolean immutable;
   private final String valueName;
   private final String defaultTableSuffix;
   private final Supplier<BaseConsumer<?>> producerSupplier;
 
   ValueType(Class<?> objectClass, String valueName,
       String defaultTableSuffix, Supplier<BaseConsumer<?>> producerSupplier) {
-    this(objectClass, true, valueName, defaultTableSuffix, producerSupplier);
-  }
-
-  ValueType(Class<?> objectClass, boolean immutable, String valueName,
-      String defaultTableSuffix, Supplier<BaseConsumer<?>> producerSupplier) {
     this.objectClass = objectClass;
-    this.immutable = immutable;
     this.valueName = valueName;
     this.defaultTableSuffix = defaultTableSuffix;
     this.producerSupplier = producerSupplier;
@@ -119,10 +112,6 @@ public enum ValueType {
     }
 
     return prefix + defaultTableSuffix;
-  }
-
-  public boolean isImmutable() {
-    return immutable;
   }
 
   /**
@@ -201,5 +190,14 @@ public enum ValueType {
    */
   public <V extends HasId> boolean isEntityType(V value) {
     return objectClass.isAssignableFrom(value.getClass());
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public <C extends BaseConsumer<C>> SaveOp<C> createSaveOp(Supplier<Id> idSupplier, Consumer<C> serializer) {
+    return new SaveOp(this, idSupplier, serializer);
+  }
+
+  public <C extends BaseConsumer<C>, V extends HasId> SaveOp<C> createSaveOpForEntity(V value) {
+    return createSaveOp(value::getId, c -> ((PersistentBase) value).applyToConsumer(c));
   }
 }
