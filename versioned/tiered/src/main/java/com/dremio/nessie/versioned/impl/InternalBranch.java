@@ -61,7 +61,7 @@ import com.google.common.primitives.Ints;
  *
  * @see RefConsumer for a detailed description
  */
-class InternalBranch extends MemoizedId<RefConsumer> implements InternalRef {
+class InternalBranch extends PersistentBase<RefConsumer> implements InternalRef {
 
   static final String ID = "id";
   static final String NAME = "name";

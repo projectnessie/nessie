@@ -36,7 +36,7 @@ import com.google.protobuf.ByteString;
  *
  * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.</p>
  */
-abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends MemoizedId<C> {
+abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends PersistentBase<C> {
 
   private static final int MAX_SIZE = 1024 * 256;
   private final ByteString value;

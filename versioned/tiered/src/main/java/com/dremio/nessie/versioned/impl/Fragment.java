@@ -32,7 +32,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-public class Fragment extends MemoizedId<FragmentConsumer> {
+public class Fragment extends PersistentBase<FragmentConsumer> {
 
   private final List<InternalKey> keys;
 

@@ -18,7 +18,7 @@ package com.dremio.nessie.versioned.store;
 import java.util.Objects;
 
 import com.dremio.nessie.tiered.builder.HasIdConsumer;
-import com.dremio.nessie.versioned.impl.MemoizedId;
+import com.dremio.nessie.versioned.impl.PersistentBase;
 
 public class SaveOp<V extends HasId> {
   private final ValueType type;
@@ -40,7 +40,7 @@ public class SaveOp<V extends HasId> {
   /**
    * Apply the contents of this {@link SaveOp}'s {@code value} to the given {@code consumer}.
    * <p>
-   * Works only, if {@code value} is an instance of {@link MemoizedId}.
+   * Works only, if {@code value} is an instance of {@link PersistentBase}.
    * </p>
    *
    * @param consumer the consumer that will receive the contents of {@code value}
@@ -48,7 +48,7 @@ public class SaveOp<V extends HasId> {
    */
   @SuppressWarnings({"rawtypes", "unchecked"})
   public <C extends HasIdConsumer<C>> void serialize(C consumer) {
-    MemoizedId v = (MemoizedId) value;
+    PersistentBase v = (PersistentBase) value;
     v.applyToConsumer(consumer);
   }
 

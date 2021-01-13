@@ -25,7 +25,7 @@ import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 
-class InternalTag extends MemoizedId<RefConsumer> implements InternalRef {
+class InternalTag extends PersistentBase<RefConsumer> implements InternalRef {
 
   static final String ID = "id";
   static final String NAME = "name";

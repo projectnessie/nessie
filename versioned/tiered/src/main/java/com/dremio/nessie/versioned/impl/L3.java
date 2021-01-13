@@ -39,7 +39,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 
-public class L3 extends MemoizedId<L3Consumer> {
+public class L3 extends PersistentBase<L3Consumer> {
 
   private static final long HASH_SEED = 4604180344422375655L;
 

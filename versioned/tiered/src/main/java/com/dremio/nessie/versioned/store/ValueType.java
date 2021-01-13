@@ -28,8 +28,8 @@ import com.dremio.nessie.versioned.impl.InternalValue;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
-import com.dremio.nessie.versioned.impl.MemoizedId;
-import com.dremio.nessie.versioned.impl.MemoizedId.EntityBuilder;
+import com.dremio.nessie.versioned.impl.PersistentBase;
+import com.dremio.nessie.versioned.impl.PersistentBase.EntityBuilder;
 
 public enum ValueType {
 
@@ -163,7 +163,7 @@ public enum ValueType {
    * @return the built entity
    */
   public <E extends HasId, C extends HasIdConsumer<C>> E buildFromProducer(HasIdConsumer<C> producer) {
-    if (!(producer instanceof MemoizedId.EntityBuilder)) {
+    if (!(producer instanceof PersistentBase.EntityBuilder)) {
       throw new IllegalArgumentException("Given producer " + producer + " has not been created via ValueType.newEntityProducer()");
     }
     @SuppressWarnings("unchecked") EntityBuilder<E> builder = (EntityBuilder<E>) producer;

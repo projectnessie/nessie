@@ -28,7 +28,7 @@ import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 
-public class L2 extends MemoizedId<L2Consumer> {
+public class L2 extends PersistentBase<L2Consumer> {
 
   private static final long HASH_SEED = -6352836103271505167L;
 

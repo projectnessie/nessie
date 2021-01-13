@@ -371,11 +371,11 @@ class PartialTree<V> {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private static <T extends MemoizedId<?>> Pointer<T> cloneInner(ValueType type, Pointer<T> value) {
+  private static <T extends PersistentBase<?>> Pointer<T> cloneInner(ValueType type, Pointer<T> value) {
     if (value.isDirty()) {
       return new Pointer<>(type.buildEntity(producer -> {
-        MemoizedId memoizedId = value.get();
-        memoizedId.applyToConsumer(producer);
+        PersistentBase persistentBase = value.get();
+        persistentBase.applyToConsumer(producer);
       }));
     } else {
       return value;

@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
-import com.dremio.nessie.versioned.impl.MemoizedId.EntityBuilder;
+import com.dremio.nessie.versioned.impl.PersistentBase.EntityBuilder;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;

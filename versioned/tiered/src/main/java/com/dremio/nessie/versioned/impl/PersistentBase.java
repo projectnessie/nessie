@@ -19,16 +19,16 @@ import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 
-public abstract class MemoizedId<C extends HasIdConsumer<C>> implements HasId {
+public abstract class PersistentBase<C extends HasIdConsumer<C>> implements HasId {
 
   //unchanging but only generated once needed.
   private Id id;
 
-  MemoizedId() {
+  PersistentBase() {
     this.id = null;
   }
 
-  MemoizedId(Id id) {
+  PersistentBase(Id id) {
     this.id = id;
   }
 
