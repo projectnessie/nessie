@@ -174,7 +174,7 @@ public class L2 extends MemoizedId<L2Consumer> {
 
       return new L2(
           id,
-          IdMap.of(children));
+          IdMap.of(children, SIZE));
     }
   }
 }

@@ -319,7 +319,7 @@ public class L1 extends MemoizedId<L1Consumer> {
 
       return new L1(
           metadataId,
-          children.collect(IdMap.collector()),
+          children.collect(IdMap.collector(SIZE)),
           id,
           buildKeyList(),
           ParentList.of(ancestors));

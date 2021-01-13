@@ -235,7 +235,7 @@ public interface InternalRef extends HasId {
           return new InternalBranch(
               id,
               name,
-              IdMap.of(children),
+              IdMap.of(children, L1.SIZE),
               metadata,
               commits
                   .map(bc -> bc.isSaved()

@@ -132,20 +132,35 @@ class IdMap implements Iterable<Id> {
 
   /**
    * Constructs an {@link IdMap} from a list of {@link Id}s.
+   *
+   * @param expectedSize the size of the resulting {@link IdMap}
    */
-  public static IdMap of(Stream<Id> children) {
+  public static IdMap of(Stream<Id> children, int expectedSize) {
     AtomicInteger counter = new AtomicInteger();
     PositionDelta[] deltas = children.map(id -> PositionDelta.of(counter.getAndIncrement(), id))
         .toArray(PositionDelta[]::new);
+
+    if (deltas.length != expectedSize) {
+      throw new IllegalStateException("Must collect exactly " + expectedSize + " Id elements, "
+          + "but got " + deltas.length);
+    }
+
     return new IdMap(deltas);
   }
 
   /**
    * Constructs an {@link IdMap} from a list of {@link Id}s.
+   *
+   * @param expectedSize the size of the resulting {@link IdMap}
    */
-  public static IdMap of(List<Id> children) {
+  public static IdMap of(List<Id> children, int expectedSize) {
     int sz = children.size();
     PositionDelta[] deltas = new PositionDelta[sz];
+
+    if (sz != expectedSize) {
+      throw new IllegalStateException("Must collect exactly " + expectedSize + " Id elements, "
+          + "but got " + sz);
+    }
 
     for (int i = 0; i < sz; i++) {
       Id id = children.get(i);
@@ -173,9 +188,12 @@ class IdMap implements Iterable<Id> {
   }
 
   /**
-   * Collects a {@link Stream} of {@link Id}s as an {@link IdMap}.
+   * Collects a {@link Stream} of {@link Id}s as an {@link IdMap}, must collect exactly
+   * the expected number of {@link Id}s as given in the {@code expectedSize} parameter.
+   *
+   * @param expectedSize the size of the resulting {@link IdMap}
    */
-  public static Collector<Id, List<Id>, IdMap> collector() {
+  public static Collector<Id, List<Id>, IdMap> collector(int expectedSize) {
     return new Collector<Id, List<Id>, IdMap>() {
       @Override
       public Supplier<List<Id>> supplier() {
@@ -197,7 +215,7 @@ class IdMap implements Iterable<Id> {
 
       @Override
       public Function<List<Id>, IdMap> finisher() {
-        return IdMap::of;
+        return l -> IdMap.of(l, expectedSize);
       }
 
       @Override
