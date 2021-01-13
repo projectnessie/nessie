@@ -155,6 +155,7 @@ public interface InternalRef extends HasId {
    * {@link RefConsumer} and a matching {@link Producer} that
    * builds an {@link InternalRef} object.
    */
+  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   final class Builder implements RefConsumer, Producer<InternalRef, RefConsumer> {
 
     private Id id;

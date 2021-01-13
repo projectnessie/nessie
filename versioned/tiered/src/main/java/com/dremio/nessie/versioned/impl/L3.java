@@ -231,6 +231,7 @@ public class L3 extends MemoizedId<L3Consumer> {
    * {@link L3Consumer} and a matching {@link Producer} that
    * builds an {@link L3} object.
    */
+  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   public static final class Builder implements L3Consumer, Producer<L3, L3Consumer> {
 
     private Id id;

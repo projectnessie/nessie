@@ -55,6 +55,7 @@ public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsu
    * {@link CommitMetadataConsumer} and a matching {@link Producer} that
    * builds an {@link InternalCommitMetadata} object.
    */
+  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   public static final class Builder
       extends WrappedValueBean.Builder<InternalCommitMetadata, CommitMetadataConsumer>
       implements CommitMetadataConsumer, Producer<InternalCommitMetadata, CommitMetadataConsumer> {

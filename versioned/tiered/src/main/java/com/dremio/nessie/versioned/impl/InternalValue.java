@@ -58,6 +58,7 @@ public class InternalValue extends WrappedValueBean<ValueConsumer> {
    * {@link ValueConsumer} and a matching {@link Producer} that
    * builds an {@link InternalValue} object.
    */
+  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   public static final class Builder
       extends WrappedValueBean.Builder<InternalValue, ValueConsumer>
       implements ValueConsumer, Producer<InternalValue, ValueConsumer> {

@@ -118,6 +118,7 @@ public class Fragment extends MemoizedId<FragmentConsumer> {
    * {@link FragmentConsumer} and a matching {@link Producer} that
    * builds an {@link Fragment} object.
    */
+  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   public static class Builder implements FragmentConsumer, Producer<Fragment, FragmentConsumer> {
 
     private Id id;

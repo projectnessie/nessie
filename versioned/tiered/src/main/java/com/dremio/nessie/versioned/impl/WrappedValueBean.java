@@ -115,6 +115,7 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Memoi
   /**
    * Base builder-implementation for both {@link InternalCommitMetadata} and {@link InternalValue}.
    */
+  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   public abstract static class Builder<E, C extends WrappedValueConsumer<C>> implements WrappedValueConsumer<C>,
       Producer<E, C> {
 
