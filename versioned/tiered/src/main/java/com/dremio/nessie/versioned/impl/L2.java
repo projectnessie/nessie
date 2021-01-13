@@ -18,15 +18,11 @@ package com.dremio.nessie.versioned.impl;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2Consumer;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableMap;
 
 public class L2 extends PersistentBase<L2Consumer> {
 
@@ -64,29 +60,6 @@ public class L2 extends PersistentBase<L2Consumer> {
       map.forEach(id -> h.putBytes(id.getValue().asReadOnlyByteBuffer()));
     });
   }
-
-  public static final SimpleSchema<L2> SCHEMA = new SimpleSchema<L2>() {
-
-    private static final String ID = "id";
-    private static final String TREE = "tree";
-
-    @Override
-    public L2 deserialize(Map<String, Entity> attributeMap) {
-      return new L2(
-          Id.fromEntity(attributeMap.get(ID)),
-          IdMap.fromEntity(attributeMap.get(TREE), SIZE)
-      );
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(L2 item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(TREE, item.map.toEntity())
-          .put(ID, item.getId().toEntity())
-          .build();
-    }
-
-  };
 
   /**
    * return the number of positions that are non-empty.

@@ -17,7 +17,6 @@ package com.dremio.nessie.versioned.impl;
 
 import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.protobuf.ByteString;
 
 public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsumer> {
@@ -34,9 +33,6 @@ public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsu
   protected long getSeed() {
     return 2279557414590649190L;// an arbitrary but consistent seed to ensure no hash conflicts.
   }
-
-  public static final SimpleSchema<InternalCommitMetadata> SCHEMA =
-      new WrappedValueBean.WrappedValueSchema<>(InternalCommitMetadata.class, InternalCommitMetadata::new);
 
   /**
    * Create a new {@link Builder} instance that implements

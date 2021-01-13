@@ -18,8 +18,6 @@ package com.dremio.nessie.versioned.impl;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,8 +30,6 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.google.common.collect.Maps;
 
 /**
  * Generic class for reading a reference.
@@ -101,41 +97,6 @@ public interface InternalRef extends HasId {
   }
 
   Id getId();
-
-  static final SimpleSchema<InternalRef> SCHEMA = new SimpleSchema<InternalRef>() {
-
-    @Override
-    public InternalRef deserialize(Map<String, Entity> attributeMap) {
-      Type type = Type.getType(attributeMap.get(TYPE).getString());
-      Map<String, Entity> filtered = Maps.filterEntries(attributeMap, e -> !e.getKey().equals(TYPE));
-      switch (type) {
-        case BRANCH: return InternalBranch.SCHEMA.mapToItem(filtered);
-        case TAG: return InternalTag.SCHEMA.mapToItem(filtered);
-        default:
-          throw new UnsupportedOperationException();
-      }
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(InternalRef item, boolean ignoreNulls) {
-      Map<String, Entity> map = new HashMap<>();
-      map.put(TYPE, item.getType().toEntity());
-
-      switch (item.getType()) {
-        case BRANCH:
-          map.putAll(InternalBranch.SCHEMA.itemToMap(item.getBranch(), ignoreNulls));
-          break;
-        case TAG:
-          map.putAll(InternalTag.SCHEMA.itemToMap(item.getTag(), ignoreNulls));
-          break;
-        default:
-          throw new UnsupportedOperationException();
-      }
-
-      return map;
-    }
-
-  };
 
   /**
    * Create a new {@link Builder} instance that implements

@@ -41,7 +41,6 @@ import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
@@ -288,19 +287,12 @@ public abstract class AbstractTestStore<S extends Store> {
 
     saveOps.forEach(s -> {
       try {
-        final SimpleSchema<Object> schema = SimpleSchema.schemaFor(s.getType());
         HasId saveOpValue = s.getValue();
         HasId loadedValue = store.loadSingle(s.getType(), saveOpValue.getId());
-        assertEquals(
-            schema.itemToMap(saveOpValue, true),
-            schema.itemToMap(loadedValue, true));
         assertEquals(saveOpValue, loadedValue);
 
         try {
           loadedValue = s.getType().buildEntity(producer -> store.loadSingle(s.getType(), saveOpValue.getId(), producer));
-          assertEquals(
-              schema.itemToMap(saveOpValue, true),
-              schema.itemToMap(loadedValue, true));
           assertEquals(saveOpValue, loadedValue);
         } catch (UnsupportedOperationException e) {
           // TODO ignore this for now
@@ -343,8 +335,7 @@ public abstract class AbstractTestStore<S extends Store> {
   protected LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs, Optional<LoadStep> next) {
     return new LoadStep(
         objs.entries().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
-            r -> assertEquals(SimpleSchema.schemaFor(e.getKey()).itemToMap(e.getValue(), true),
-                SimpleSchema.schemaFor(e.getKey()).itemToMap(r, true)))
+            r -> assertEquals(e.getValue(), r))
         ).collect(Collectors.toList()),
         () -> next
     );
@@ -352,8 +343,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   protected <T extends HasId> void testLoadSingle(ValueType type, T sample) {
     final T read = store.loadSingle(type, sample.getId());
-    final SimpleSchema<T> schema = SimpleSchema.schemaFor(type);
-    assertEquals(schema.itemToMap(sample, true), schema.itemToMap(read, true));
+    assertEquals(sample, read);
   }
 
   protected <T extends HasId> void testPutIfAbsent(ValueType type, T sample) {

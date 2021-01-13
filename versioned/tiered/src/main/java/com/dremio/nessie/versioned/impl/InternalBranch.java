@@ -45,7 +45,6 @@ import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
@@ -54,7 +53,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.primitives.Ints;
 
 /**
  * Stores the current state of branch.
@@ -153,7 +151,7 @@ class InternalBranch extends PersistentBase<RefConsumer> implements InternalRef 
     }
 
     public Entity toEntity() {
-      return Entity.ofMap(SCHEMA.itemToMap(this, true));
+      return Entity.ofMap(itemToMap(this));
     }
 
     @Override
@@ -178,50 +176,24 @@ class InternalBranch extends PersistentBase<RefConsumer> implements InternalRef 
       return Objects.hashCode(saved, id, commit, parent, deltas, keyMutationList);
     }
 
-    static final SimpleSchema<Commit> SCHEMA = new SimpleSchema<Commit>() {
-
-      @Override
-      public Commit deserialize(Map<String, Entity> map) {
-        if (!map.containsKey(DELTAS)) {
-          return new Commit(Id.fromEntity(map.get(ID)), Id.fromEntity(map.get(COMMIT)),
-              Id.fromEntity(map.get(PARENT)));
-        }
-
-        List<UnsavedDelta> deltas = map.get(DELTAS)
-            .getList()
-            .stream()
-            .map(av -> UnsavedDelta.SCHEMA.mapToItem(av.getMap()))
-            .collect(Collectors.toList());
-        return new Commit(
-            Id.fromEntity(map.get(ID)),
-            Id.fromEntity(map.get(COMMIT)),
-            deltas,
-            KeyMutationList.fromEntity(map.get(KEY_MUTATIONS))
-            );
-
-      }
-
-      @Override
-      public Map<String, Entity> itemToMap(Commit item, boolean ignoreNulls) {
-        ImmutableMap.Builder<String, Entity> builder = ImmutableMap.builder();
-        builder
+    Map<String, Entity> itemToMap(Commit item) {
+      ImmutableMap.Builder<String, Entity> builder = ImmutableMap.builder();
+      builder
           .put(ID, item.getId().toEntity())
-            .put(COMMIT, item.commit.toEntity());
-        if (item.saved) {
-          builder.put(PARENT, item.parent.toEntity());
-        } else {
-          Entity deltas = Entity.ofList(
-              item.deltas.stream().map(
-                  d -> Entity.ofMap(
-                      UnsavedDelta.SCHEMA.itemToMap(d, true)
-                      )
-                  ).collect(Collectors.toList()));
-          builder.put(DELTAS, deltas);
-          builder.put(KEY_MUTATIONS, item.keyMutationList.toEntity());
-        }
-        return builder.build();
+          .put(COMMIT, item.commit.toEntity());
+      if (item.saved) {
+        builder.put(PARENT, item.parent.toEntity());
+      } else {
+        Entity deltas = Entity.ofList(
+            item.deltas.stream()
+                .map(UnsavedDelta::itemToMap)
+                .map(Entity::ofMap)
+                .collect(Collectors.toList()));
+        builder.put(DELTAS, deltas);
+        builder.put(KEY_MUTATIONS, item.keyMutationList.toEntity());
       }
-    };
+      return builder.build();
+    }
   }
 
   /**
@@ -499,58 +471,19 @@ class InternalBranch extends PersistentBase<RefConsumer> implements InternalRef 
       return Objects.hashCode(position, oldId, newId);
     }
 
-    static final SimpleSchema<UnsavedDelta> SCHEMA = new SimpleSchema<UnsavedDelta>() {
-
-      @Override
-      public UnsavedDelta deserialize(Map<String, Entity> map) {
-        return new UnsavedDelta(
-            Ints.saturatedCast(map.get(POSITION).getNumber()),
-            Id.of(map.get(OLD_ID).getBinary()),
-            Id.of(map.get(NEW_ID).getBinary())
-            );
-      }
-
-      @Override
-      public Map<String, Entity> itemToMap(UnsavedDelta item, boolean ignoreNulls) {
-        return ImmutableMap.<String, Entity>builder()
-            .put(POSITION, Entity.ofNumber(item.position))
-            .put(OLD_ID, item.oldId.toEntity())
-            .put(NEW_ID, item.newId.toEntity())
-            .build();
-      }
-    };
+    Map<String, Entity> itemToMap() {
+      return ImmutableMap.<String, Entity>builder()
+          .put(POSITION, Entity.ofNumber(position))
+          .put(OLD_ID, oldId.toEntity())
+          .put(NEW_ID, newId.toEntity())
+          .build();
+    }
   }
 
   @Override
   Id generateId() {
     return Id.build(name);
   }
-
-  static final SimpleSchema<InternalBranch> SCHEMA = new SimpleSchema<InternalBranch>() {
-
-    @Override
-    public InternalBranch deserialize(Map<String, Entity> attributeMap) {
-      return new InternalBranch(
-          Id.fromEntity(attributeMap.get(ID)),
-          attributeMap.get(NAME).getString(),
-          IdMap.fromEntity(attributeMap.get(TREE), L1.SIZE),
-          Id.fromEntity(attributeMap.get(METADATA)),
-          attributeMap.get(COMMITS).getList().stream().map(av -> Commit.SCHEMA.mapToItem(av.getMap())).collect(Collectors.toList())
-      );
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(InternalBranch item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(ID, item.getId().toEntity())
-          .put(NAME, Entity.ofString(item.name))
-          .put(METADATA, item.metadata.toEntity())
-          .put(COMMITS, Entity.ofList(item.commits.stream().map(Commit::toEntity).collect(Collectors.toList())))
-          .put(TREE, item.tree.toEntity())
-          .build();
-    }
-
-  };
 
   @Override
   public Type getType() {

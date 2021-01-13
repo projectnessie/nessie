@@ -17,7 +17,6 @@ package com.dremio.nessie.versioned.impl;
 
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.protobuf.ByteString;
 
 /**
@@ -37,9 +36,6 @@ public class InternalValue extends WrappedValueBean<ValueConsumer> {
   protected long getSeed() {
     return 2829568831168137780L; // an arbitrary but consistent seed to ensure no hash conflicts.
   }
-
-  public static final SimpleSchema<InternalValue> SCHEMA =
-      new WrappedValueBean.WrappedValueSchema<>(InternalValue.class, InternalValue::new);
 
   /**
    * Create a new {@link Builder} instance that implements

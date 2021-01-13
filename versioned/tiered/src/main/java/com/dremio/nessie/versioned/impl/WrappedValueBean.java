@@ -18,17 +18,13 @@ package com.dremio.nessie.versioned.impl;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
 import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 
 /**
@@ -80,30 +76,6 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Persi
     WrappedValueBean<?> other = (WrappedValueBean<?>) obj;
     return Objects.equals(getSeed(),  other.getSeed())
         && Objects.equals(value, other.value);
-  }
-
-  protected static class WrappedValueSchema<T extends WrappedValueBean<?>> extends SimpleSchema<T> {
-
-    private static final String ID = "id";
-    private static final String VALUE = "value";
-    private final BiFunction<Id, ByteString, T> deserializer;
-
-    protected WrappedValueSchema(Class<T> clazz, BiFunction<Id, ByteString, T> deserializer) {
-      this.deserializer = deserializer;
-    }
-
-    @Override
-    public T deserialize(Map<String, Entity> attributeMap) {
-      return deserializer.apply(Id.fromEntity(attributeMap.get(ID)), attributeMap.get(VALUE).getBinary());
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(T item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(ID, item.getId().toEntity())
-          .put(VALUE, Entity.ofBinary(item.getBytes()))
-          .build();
-    }
   }
 
   @Override

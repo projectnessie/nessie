@@ -18,8 +18,6 @@ package com.dremio.nessie.versioned.impl;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -30,12 +28,9 @@ import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyRemoval;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 
@@ -114,50 +109,6 @@ public class L3 extends PersistentBase<L3Consumer> {
       });
     });
   }
-
-
-  public static final SimpleSchema<L3> SCHEMA = new SimpleSchema<L3>() {
-
-    private static final String ID = "id";
-    private static final String TREE = "tree";
-    private static final String TREE_KEY = "key";
-    private static final String TREE_ID = "id";
-
-    @Override
-    public L3 deserialize(Map<String, Entity> attributeMap) {
-      TreeMap<InternalKey, PositionDelta> tree = attributeMap.get(TREE).getList().stream().map(av -> av.getMap()).collect(Collectors.toMap(
-          m -> InternalKey.fromEntity(m.get(TREE_KEY)),
-          m -> PositionDelta.of(0, Id.fromEntity(m.get(TREE_ID))),
-          (a,b) -> {
-            throw new UnsupportedOperationException();
-          },
-          TreeMap::new));
-
-      return new L3(
-          Id.fromEntity(attributeMap.get(ID)),
-          tree
-      );
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(L3 item, boolean ignoreNulls) {
-      List<Entity> values = item.map.entrySet().stream()
-          .filter(e -> !e.getValue().getNewId().isEmpty())
-          .map(e -> {
-            InternalKey key = e.getKey();
-            PositionDelta pm = e.getValue();
-            Map<String, Entity> pmm = ImmutableMap.of(
-                TREE_KEY, key.toEntity(),
-                TREE_ID, pm.getNewId().toEntity());
-            return Entity.ofMap(pmm);
-          }).collect(Collectors.toList());
-      return ImmutableMap.<String, Entity>builder()
-          .put(TREE, Entity.ofList(values))
-          .put(ID, item.getId().toEntity())
-          .build();
-    }
-
-  };
 
   Stream<KeyMutation> getMutations() {
     return map.entrySet().stream().filter(e -> e.getValue().wasAddedOrRemoved())

@@ -20,7 +20,6 @@ import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,11 +27,8 @@ import java.util.stream.Stream;
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
-import com.google.common.collect.ImmutableMap;
 
 public class L1 extends PersistentBase<L1Consumer> {
 
@@ -114,38 +110,6 @@ public class L1 extends PersistentBase<L1Consumer> {
   public List<PositionDelta> getChanges() {
     return tree.getChanges();
   }
-
-  public static final SimpleSchema<L1> SCHEMA = new SimpleSchema<L1>() {
-
-    private static final String ID = "id";
-    private static final String TREE = "tree";
-    private static final String METADATA = "metadata";
-    private static final String PARENTS = "parents";
-    private static final String KEY_LIST = "keys";
-
-    @Override
-    public L1 deserialize(Map<String, Entity> attributeMap) {
-      return new L1(
-          Id.fromEntity(attributeMap.get(METADATA)),
-          IdMap.fromEntity(attributeMap.get(TREE), SIZE),
-          Id.fromEntity(attributeMap.get(ID)),
-          KeyList.fromEntity(attributeMap.get(KEY_LIST)),
-          ParentList.fromEntity(attributeMap.get(PARENTS))
-      );
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(L1 item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(METADATA, item.metadataId.toEntity())
-          .put(TREE, item.tree.toEntity())
-          .put(ID, item.getId().toEntity())
-          .put(KEY_LIST, item.keyList.toEntity())
-          .put(PARENTS, item.parentList.toEntity())
-          .build();
-    }
-
-  };
 
   KeyList getKeyList() {
     return keyList;
