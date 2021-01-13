@@ -59,6 +59,7 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.dremio.nessie.versioned.util.AutoCloseables;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -176,31 +177,10 @@ public class DynamoStore implements Store {
 
   @Override
   public void close() {
-    Exception failure = null;
-    if (client != null) {
-      try {
-        client.close();
-      } catch (Exception e) {
-        failure = e;
-      } finally {
-        client = null;
-      }
-    }
-    if (async != null) {
-      try {
-        async.close();
-      } catch (Exception e) {
-        if (failure != null) {
-          failure.addSuppressed(e);
-        } else {
-          failure = e;
-        }
-      } finally {
-        async = null;
-      }
-    }
-    if (failure != null) {
-      throw new StoreOperationException("Failed to close store", failure);
+    try {
+      AutoCloseables.close(client, async);
+    } catch (Exception e) {
+      throw new StoreOperationException("Failed to close store", e);
     }
   }
 
