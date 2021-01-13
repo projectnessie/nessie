@@ -22,7 +22,7 @@ import com.dremio.nessie.versioned.Key;
 /**
  * Consumer for fragments.
  */
-public interface FragmentConsumer extends HasIdConsumer<FragmentConsumer> {
+public interface FragmentConsumer extends BaseConsumer<FragmentConsumer> {
 
   /**
    * The commit metadata id for this l1.

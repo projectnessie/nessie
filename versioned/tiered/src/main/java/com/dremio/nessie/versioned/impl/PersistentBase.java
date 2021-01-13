@@ -15,11 +15,11 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 
-public abstract class PersistentBase<C extends HasIdConsumer<C>> implements HasId {
+public abstract class PersistentBase<C extends BaseConsumer<C>> implements HasId {
 
   //unchanging but only generated once needed.
   private Id id;

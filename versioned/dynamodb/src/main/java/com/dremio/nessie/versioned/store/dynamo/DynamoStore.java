@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
@@ -369,13 +369,13 @@ public class DynamoStore implements Store {
   @Override
   public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
     return valueType.buildEntity(producer -> {
-      @SuppressWarnings("rawtypes") HasIdConsumer prod = producer;
+      @SuppressWarnings("rawtypes") BaseConsumer prod = producer;
       loadSingle(valueType, id, prod);
     });
   }
 
   @Override
-  public <C extends HasIdConsumer<C>> void loadSingle(ValueType valueType, Id id, C consumer) {
+  public <C extends BaseConsumer<C>> void loadSingle(ValueType valueType, Id id, C consumer) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
         .tableName(tableNames.get(valueType))
         .key(ImmutableMap.of(KEY_NAME, idValue(id)))

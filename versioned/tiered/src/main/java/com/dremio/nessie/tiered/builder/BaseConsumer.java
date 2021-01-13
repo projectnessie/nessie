@@ -23,7 +23,7 @@ import com.dremio.nessie.versioned.store.Id;
  * Do not implement this interface in non-abstract implementation classes!
  * </p>
  */
-public interface HasIdConsumer<T extends HasIdConsumer<T>> {
+public interface BaseConsumer<T extends BaseConsumer<T>> {
   /**
    * The id for this consumer.
    *

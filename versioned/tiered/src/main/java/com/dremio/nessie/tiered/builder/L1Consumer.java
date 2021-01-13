@@ -24,7 +24,7 @@ import com.dremio.nessie.versioned.store.Id;
  * Interface to create an L1 Builder. To be implemented by each
  * {@link com.dremio.nessie.versioned.store.Store} implementation.
  */
-public interface L1Consumer extends HasIdConsumer<L1Consumer> {
+public interface L1Consumer extends BaseConsumer<L1Consumer> {
 
   /**
    * The commit metadata id for this l1.

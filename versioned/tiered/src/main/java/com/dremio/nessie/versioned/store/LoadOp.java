@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collector;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.google.common.base.Preconditions;
 
 public class LoadOp<V extends HasId> {
@@ -55,12 +55,12 @@ public class LoadOp<V extends HasId> {
    * Store implementations call this method with a callback that must be called to
    * perform the actual deserialization. Calls {@link #loaded(HasId)}.
    *
-   * @param deserilializer callback that accepts a {@link HasIdConsumer HasIdConsumer}
+   * @param deserilializer callback that accepts a {@link BaseConsumer HasIdConsumer}
    * @param <C> the type of the Nessie-entity-consumer
    */
-  public <C extends HasIdConsumer<C>> void deserialize(Consumer<HasIdConsumer<C>> deserilializer) {
+  public <C extends BaseConsumer<C>> void deserialize(Consumer<BaseConsumer<C>> deserilializer) {
     loaded(type.buildEntity(producer -> {
-      @SuppressWarnings("unchecked") HasIdConsumer<C> prod = (HasIdConsumer<C>) producer;
+      @SuppressWarnings("unchecked") BaseConsumer<C> prod = (BaseConsumer<C>) producer;
       deserilializer.accept(prod);
     }));
   }

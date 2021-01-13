@@ -101,7 +101,7 @@ import com.google.common.collect.ImmutableList;
  * <li>The ids for all saved commits will exist in the L1 table.
  * </ol>
  */
-public interface RefConsumer extends HasIdConsumer<RefConsumer> {
+public interface RefConsumer extends BaseConsumer<RefConsumer> {
   enum RefType {
     TAG,
     BRANCH

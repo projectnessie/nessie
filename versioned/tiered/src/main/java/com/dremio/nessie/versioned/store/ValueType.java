@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
@@ -58,15 +58,15 @@ public enum ValueType {
   private final boolean immutable;
   private final String valueName;
   private final String defaultTableSuffix;
-  private final Supplier<HasIdConsumer<?>> producerSupplier;
+  private final Supplier<BaseConsumer<?>> producerSupplier;
 
   ValueType(Class<?> objectClass, String valueName,
-      String defaultTableSuffix, Supplier<HasIdConsumer<?>> producerSupplier) {
+      String defaultTableSuffix, Supplier<BaseConsumer<?>> producerSupplier) {
     this(objectClass, true, valueName, defaultTableSuffix, producerSupplier);
   }
 
   ValueType(Class<?> objectClass, boolean immutable, String valueName,
-      String defaultTableSuffix, Supplier<HasIdConsumer<?>> producerSupplier) {
+      String defaultTableSuffix, Supplier<BaseConsumer<?>> producerSupplier) {
     this.objectClass = objectClass;
     this.immutable = immutable;
     this.valueName = valueName;
@@ -129,7 +129,7 @@ public enum ValueType {
    * Create a new "plain entity" producer for this type.
    * <p>
    * The instance returned from this function can, after all necessary properties have been
-   * set, be passed to {@link #buildFromProducer(HasIdConsumer)} to build the entity instance.
+   * set, be passed to {@link #buildFromProducer(BaseConsumer)} to build the entity instance.
    * </p>
    * <p>
    * Using {@link #buildEntity(Consumer)} is a simpler approach though.
@@ -147,7 +147,7 @@ public enum ValueType {
    * @param <C> the consumer interface
    * @return new created producer instance
    */
-  public <C extends HasIdConsumer<C>> C newEntityProducer() {
+  public <C extends BaseConsumer<C>> C newEntityProducer() {
     @SuppressWarnings("unchecked") C p = (C) producerSupplier.get();
     return p;
   }
@@ -162,7 +162,7 @@ public enum ValueType {
    * @param <C> the consumer interface
    * @return the built entity
    */
-  public <E extends HasId, C extends HasIdConsumer<C>> E buildFromProducer(HasIdConsumer<C> producer) {
+  public <E extends HasId, C extends BaseConsumer<C>> E buildFromProducer(BaseConsumer<C> producer) {
     if (!(producer instanceof PersistentBase.EntityBuilder)) {
       throw new IllegalArgumentException("Given producer " + producer + " has not been created via ValueType.newEntityProducer()");
     }
@@ -186,7 +186,7 @@ public enum ValueType {
    * @param <C> the consumer interface
    * @return the built entity
    */
-  public <E extends HasId, C extends HasIdConsumer<C>> E buildEntity(Consumer<C> producerConsumer) {
+  public <E extends HasId, C extends BaseConsumer<C>> E buildEntity(Consumer<C> producerConsumer) {
     C producer = newEntityProducer();
     producerConsumer.accept(producer);
     return buildFromProducer(producer);

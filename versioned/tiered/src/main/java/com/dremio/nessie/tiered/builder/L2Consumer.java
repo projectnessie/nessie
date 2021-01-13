@@ -22,7 +22,7 @@ import com.dremio.nessie.versioned.store.Id;
 /**
  * Consumer for L2s.
  */
-public interface L2Consumer extends HasIdConsumer<L2Consumer> {
+public interface L2Consumer extends BaseConsumer<L2Consumer> {
 
   /**
    * Add a list of children ids indexed by position.

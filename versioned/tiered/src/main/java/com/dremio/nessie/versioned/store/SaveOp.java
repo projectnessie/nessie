@@ -17,7 +17,7 @@ package com.dremio.nessie.versioned.store;
 
 import java.util.Objects;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.impl.PersistentBase;
 
 public class SaveOp<V extends HasId> {
@@ -47,7 +47,7 @@ public class SaveOp<V extends HasId> {
    * @param <C> the type of the consumer
    */
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public <C extends HasIdConsumer<C>> void serialize(C consumer) {
+  public <C extends BaseConsumer<C>> void serialize(C consumer) {
     PersistentBase v = (PersistentBase) value;
     v.applyToConsumer(consumer);
   }

@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -32,7 +32,7 @@ import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-abstract class DynamoConsumer<C extends HasIdConsumer<C>> implements HasIdConsumer<C> {
+abstract class DynamoConsumer<C extends BaseConsumer<C>> implements BaseConsumer<C> {
 
   static final String ID = Store.KEY_NAME;
 

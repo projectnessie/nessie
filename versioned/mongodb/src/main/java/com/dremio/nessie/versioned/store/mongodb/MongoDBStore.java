@@ -34,7 +34,7 @@ import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.bson.conversions.Bson;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
@@ -294,7 +294,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <C extends HasIdConsumer<C>> void loadSingle(ValueType type, Id id, C consumer) {
+  public <C extends BaseConsumer<C>> void loadSingle(ValueType type, Id id, C consumer) {
     throw new UnsupportedOperationException("must be implemented"); // TODO implement
   }
 

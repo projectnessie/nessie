@@ -25,9 +25,9 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
 import com.dremio.nessie.tiered.builder.FragmentConsumer;
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
 import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.tiered.builder.L2Consumer;
 import com.dremio.nessie.tiered.builder.L3Consumer;
@@ -44,7 +44,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 final class DynamoSerDe {
 
   private static final EnumMap<ValueType, Supplier<DynamoConsumer<?>>> dynamoEntityMapProducers;
-  private static final EnumMap<ValueType, BiConsumer<Map<String, AttributeValue>, HasIdConsumer<?>>> deserializeToConsumer;
+  private static final EnumMap<ValueType, BiConsumer<Map<String, AttributeValue>, BaseConsumer<?>>> deserializeToConsumer;
 
   static {
     dynamoEntityMapProducers = new EnumMap<>(ValueType.class);
@@ -100,7 +100,7 @@ final class DynamoSerDe {
    * </p>
    */
   @SuppressWarnings("unchecked")
-  public static <C extends HasIdConsumer<C>> Map<String, AttributeValue> serializeWithConsumer(
+  public static <C extends BaseConsumer<C>> Map<String, AttributeValue> serializeWithConsumer(
       ValueType valueType, Consumer<C> serializer) {
     Preconditions.checkNotNull(valueType, "valueType parameter is null");
     Preconditions.checkNotNull(serializer, "serializer parameter is null");
@@ -114,14 +114,14 @@ final class DynamoSerDe {
   }
 
   /**
-   * Convenience functionality around {@link #deserializeToConsumer(ValueType, Map, HasIdConsumer)}
+   * Convenience functionality around {@link #deserializeToConsumer(ValueType, Map, BaseConsumer)}
    * that deserializes directly into a materialized entity instance,
    * deserialize the given DynamoDB {@code entity}-map as the given {@link ValueType type}
    * and returns a materialized object.
    *
-   * @see #deserializeToConsumer(ValueType, Map, HasIdConsumer)
+   * @see #deserializeToConsumer(ValueType, Map, BaseConsumer)
    */
-  public static <V extends HasId, C extends HasIdConsumer<C>> V deserialize(
+  public static <V extends HasId, C extends BaseConsumer<C>> V deserialize(
       ValueType valueType, Map<String, AttributeValue> entity) {
     return valueType.buildEntity(producer -> deserializeToConsumer(valueType, entity, producer));
   }
@@ -135,8 +135,8 @@ final class DynamoSerDe {
    * @param consumer consumer that receives the deserialized parts of the entity
    * @param <C> type of the consumer
    */
-  public static <C extends HasIdConsumer<C>> void deserializeToConsumer(
-      ValueType valueType, Map<String, AttributeValue> entity, HasIdConsumer<C> consumer) {
+  public static <C extends BaseConsumer<C>> void deserializeToConsumer(
+      ValueType valueType, Map<String, AttributeValue> entity, BaseConsumer<C> consumer) {
     Preconditions.checkNotNull(valueType, "valueType parameter is null");
     Preconditions.checkNotNull(entity, "entity parameter is null");
     Preconditions.checkNotNull(consumer, "consumer parameter is null");

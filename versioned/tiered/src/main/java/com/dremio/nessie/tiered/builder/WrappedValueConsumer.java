@@ -23,7 +23,7 @@ import com.google.protobuf.ByteString;
  * Do not implement this interface in non-abstract implementation classes!
  * </p>
  */
-public interface WrappedValueConsumer<C extends WrappedValueConsumer<C>> extends HasIdConsumer<C> {
+public interface WrappedValueConsumer<C extends WrappedValueConsumer<C>> extends BaseConsumer<C> {
   /**
    * The value for this bytes-value.
    *

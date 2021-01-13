@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.HasIdConsumer;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 
@@ -123,7 +123,7 @@ public interface Store extends AutoCloseable {
    * @param consumer consumer that will receive the properties
    * @param <C> type of the consumer
    */
-  <C extends HasIdConsumer<C>> void loadSingle(ValueType type, Id id, C consumer);
+  <C extends BaseConsumer<C>> void loadSingle(ValueType type, Id id, C consumer);
 
   /**
    * Do a conditional update. If the condition succeeds, return the values in the object. If it fails, return a Optional.empty().
