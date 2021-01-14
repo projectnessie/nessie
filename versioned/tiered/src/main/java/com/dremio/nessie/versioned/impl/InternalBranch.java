@@ -62,8 +62,6 @@ import com.google.common.collect.Lists;
 class InternalBranch extends InternalRef {
 
   static final String ID = "id";
-  static final String NAME = "name";
-  static final String METADATA = "metadata";
   static final String TREE = "tree";
   static final String COMMITS = "commits";
 

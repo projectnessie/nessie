@@ -37,12 +37,6 @@ abstract class KeyMutationList {
     return Entity.ofList(getMutations().stream().map(KeyMutation::toEntity).collect(Collectors.toList()));
   }
 
-  public static KeyMutationList fromEntity(Entity value) {
-    return ImmutableKeyMutationList.builder().addAllMutations(
-        value.getList().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
-        .build();
-  }
-
   /**
    * Compare the given {@link KeyMutationList}s but ignores the order of the mutations in both
    * lists.

@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.immutables.value.Value.Immutable;
@@ -54,10 +53,6 @@ abstract class ParentList {
 
   public Entity toEntity() {
     return Entity.ofList(getParents().stream().map(Id::toEntity));
-  }
-
-  public static ParentList fromEntity(Entity value) {
-    return ImmutableParentList.builder().addAllParents(value.getList().stream().map(Id::fromEntity).collect(Collectors.toList())).build();
   }
 
   /**

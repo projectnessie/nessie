@@ -15,8 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.Map;
-
 import org.immutables.value.Value.Immutable;
 
 import com.dremio.nessie.versioned.Key;
@@ -91,16 +89,5 @@ abstract class KeyMutation {
 
   Entity toEntity() {
     return Entity.ofMap(ImmutableMap.<String, Entity>of(getType().field, getKey().toEntity()));
-  }
-
-  public static KeyMutation fromEntity(Entity value) {
-    Map<String, Entity> mp = value.getMap();
-    if (mp.containsKey(MutationType.ADDITION.field)) {
-      return KeyAddition.of(InternalKey.fromEntity(mp.get(MutationType.ADDITION.field)));
-    } else if (mp.containsKey(MutationType.REMOVAL.field)) {
-      return KeyRemoval.of(InternalKey.fromEntity(mp.get(MutationType.REMOVAL.field)));
-    } else {
-      throw new UnsupportedOperationException();
-    }
   }
 }

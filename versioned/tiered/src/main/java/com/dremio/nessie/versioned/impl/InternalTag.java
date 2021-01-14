@@ -15,19 +15,13 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.Map;
-
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableMap;
 
 class InternalTag extends InternalRef {
 
-  static final String ID = "id";
-  static final String NAME = "name";
   static final String COMMIT = "commit";
 
   private String name;
@@ -50,10 +44,6 @@ class InternalTag extends InternalRef {
 
   public Id getCommit() {
     return commit;
-  }
-
-  public Map<String, Entity> conditionMap() {
-    return ImmutableMap.of(COMMIT, commit.toEntity());
   }
 
   @Override

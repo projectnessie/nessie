@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
@@ -27,7 +26,6 @@ import java.util.function.Consumer;
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.protobuf.ByteOutput;
@@ -194,16 +192,8 @@ public final class Id {
     return Entity.ofBinary(getValue());
   }
 
-  public void addToHash(Hasher hasher) {
-    hashByteString(getValue(), hasher);
-  }
-
   public Hash toHash() {
     return Hash.of(getValue());
-  }
-
-  public Map<String, Entity> toKeyMap() {
-    return ImmutableMap.of(Store.KEY_NAME, this.toEntity());
   }
 
   public static Id fromEntity(Entity value) {

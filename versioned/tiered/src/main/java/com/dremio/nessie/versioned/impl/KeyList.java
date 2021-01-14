@@ -19,33 +19,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.immutables.value.Value.Immutable;
 
 import com.dremio.nessie.versioned.impl.KeyMutation.MutationType;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.primitives.Ints;
 
 /**
  * Interface and implementations related to managing the key list within Dynamo.
  */
 abstract class KeyList {
-
-  private static final String IS_CHECKPOINT = "chk";
 
   public static final KeyList EMPTY = new CompleteList(Collections.emptyList(), ImmutableList.of());
 
@@ -76,16 +69,6 @@ abstract class KeyList {
   abstract List<KeyMutation> getMutations();
 
   abstract List<Id> getFragments();
-
-  abstract Entity toEntity();
-
-  static KeyList fromEntity(Entity value) {
-    if (value.getMap().get(IS_CHECKPOINT).getBoolean()) {
-      return CompleteList.fromEntity(value.getMap());
-    } else {
-      return IncrementalList.fromEntity(value.getMap());
-    }
-  }
 
   boolean isEmptyIncremental() {
     return getType() == Type.INCREMENTAL && ((IncrementalList) this).getMutations().isEmpty();
@@ -213,26 +196,8 @@ abstract class KeyList {
     }
 
     @Override
-    public Entity toEntity() {
-      return Entity.ofMap(ImmutableMap.<String, Entity>of(
-            IS_CHECKPOINT, Entity.ofBoolean(false),
-            MUTATIONS, Entity.ofList(getMutations().stream().map(KeyMutation::toEntity)),
-            ORIGIN, getPreviousCheckpoint().toEntity(),
-            DISTANCE, Entity.ofNumber(getDistanceFromCheckpointCommits())
-            ));
-    }
-
-    @Override
     public Type getType() {
       return Type.INCREMENTAL;
-    }
-
-    static KeyList fromEntity(Map<String, Entity> value) {
-      return ImmutableIncrementalList.builder()
-          .addAllMutations(value.get(MUTATIONS).getList().stream().map(KeyMutation::fromEntity).collect(Collectors.toList()))
-          .previousCheckpoint(Id.fromEntity(value.get(ORIGIN)))
-          .distanceFromCheckpointCommits(Ints.saturatedCast(value.get(DISTANCE).getNumber()))
-          .build();
     }
 
     private static class IterResult {
@@ -273,9 +238,6 @@ abstract class KeyList {
    * As such, over time the early fragments rarely if ever get restated.
    */
   static class CompleteList extends KeyList {
-    private static final String FRAGMENTS = "fragments";
-    private static final String MUTATIONS = "mutations";
-
     private final List<Id> fragmentIds;
     private final List<KeyMutation> mutations;
 
@@ -305,18 +267,6 @@ abstract class KeyList {
     }
 
     @Override
-    public Entity toEntity() {
-      return Entity.ofMap(ImmutableMap.<String, Entity>of(
-            IS_CHECKPOINT,
-            Entity.ofBoolean(true),
-            FRAGMENTS,
-            Entity.ofList(fragmentIds.stream().map(Id::toEntity).collect(ImmutableList.toImmutableList())),
-            MUTATIONS,
-            Entity.ofList(mutations.stream().map(KeyMutation::toEntity))
-            ));
-    }
-
-    @Override
     public boolean equals(Object o) {
       if (this == o) {
         return true;
@@ -336,12 +286,6 @@ abstract class KeyList {
       int result = fragmentIds != null ? fragmentIds.hashCode() : 0;
       result = 31 * result + (mutations != null ? mutations.hashCode() : 0);
       return result;
-    }
-
-    static KeyList fromEntity(Map<String, Entity> value) {
-      return new CompleteList(
-          value.get(FRAGMENTS).getList().stream().map(Id::fromEntity).collect(ImmutableList.toImmutableList()),
-          value.get(MUTATIONS).getList().stream().map(KeyMutation::fromEntity).collect(ImmutableList.toImmutableList()));
     }
 
     @Override
