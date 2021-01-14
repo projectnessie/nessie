@@ -39,6 +39,7 @@ import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.impl.L1;
 import com.dremio.nessie.versioned.impl.L2;
 import com.dremio.nessie.versioned.impl.L3;
+import com.dremio.nessie.versioned.impl.PersistentBase;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
@@ -181,7 +182,14 @@ public class MongoDBStore implements Store {
           if (null == loadOp) {
             sink.error(new StoreOperationException(String.format("Retrieved unexpected object with ID: %s", op.getId())));
           } else {
-            loadOp.loaded(op);
+            // TODO this is an unnecessary deviation and needs to be fixed:
+            //  instead of retrieving an already materialized entity from Mongo, retrieve a Bson
+            //  and call MongoSerDe.deserializeToConsumer() with 'c' in the lambda below
+            loadOp.deserialize(c -> {
+              PersistentBase p = (PersistentBase) op;
+              BaseConsumer cons = (BaseConsumer) c;
+              p.applyToConsumer(cons);
+            });
             sink.next(op);
           }
         })

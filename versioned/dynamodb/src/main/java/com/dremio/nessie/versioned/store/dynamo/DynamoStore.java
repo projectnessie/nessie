@@ -219,12 +219,12 @@ public class DynamoStore implements Store {
           }
 
           // unfortunately, responses don't come in the order of the requests so we need to map between ids.
-          Map<Id, LoadOp<? extends HasId>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
+          Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
           for (int i = 0; i < values.size(); i++) {
             Map<String, AttributeValue> item = values.get(i);
             ValueType valueType = ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
             Id id = deserializeId(item, ID);
-            LoadOp<? extends HasId> loadOp = opMap.get(id);
+            LoadOp<?> loadOp = opMap.get(id);
             if (loadOp == null) {
               throw new IllegalStateException("No load-op for loaded ID " + id);
             }

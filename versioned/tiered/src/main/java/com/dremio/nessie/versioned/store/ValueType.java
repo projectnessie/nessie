@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.versioned.impl.EntityLoadOps;
 import com.dremio.nessie.versioned.impl.Fragment;
 import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
 import com.dremio.nessie.versioned.impl.InternalRef;
@@ -199,5 +200,21 @@ public enum ValueType {
 
   public <C extends BaseConsumer<C>, V extends HasId> SaveOp<C> createSaveOpForEntity(V value) {
     return createSaveOp(value::getId, c -> ((PersistentBase) value).applyToConsumer(c));
+  }
+
+  /**
+   * Creates a new {@link LoadOp} for this value-type.
+   * <p>
+   * To load entity instances, use {@link EntityLoadOps}.
+   * </p>
+   *
+   * @param id the ID to load
+   * @param producer the {@link BaseConsumer instance} that receives the load-events of the entity
+   * @param produced Gets called with the value passed in as {@code producer}, when deserialization has finished.
+   * @param <C> consumer-type
+   * @return load operation
+   */
+  public <C extends BaseConsumer<C>> LoadOp<C> createLoadOp(Id id, C producer, Consumer<C> produced) {
+    return new LoadOp<>(this, id, producer, produced);
   }
 }

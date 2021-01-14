@@ -68,7 +68,6 @@ import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.store.ConditionFailedException;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.Store;
@@ -536,22 +535,22 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     {
       // load the related assets.
-      List<LoadOp<?>> loadOps = new ArrayList<>();
+      EntityLoadOps loadOps = new EntityLoadOps();
 
       // always load the l1 we're merging from.
-      loadOps.add(new LoadOp<L1>(ValueType.L1, Id.of(fromHash), l -> fromPtr.set(l)));
+      loadOps.load(ValueType.L1, L1.class, Id.of(fromHash), fromPtr::set);
       if (expectedBranchHash.isPresent()) {
         // if an expected branch hash is provided, use that l1 as the basic. Still load the branch to make sure it exists.
-        loadOps.add(new LoadOp<L1>(ValueType.L1, Id.of(expectedBranchHash.get()), l1 -> toPtr.set(l1)));
-        loadOps.add(new LoadOp<InternalRef>(ValueType.REF, branchId.getId(), r -> branch.set(r)));
+        loadOps.load(ValueType.L1, L1.class, Id.of(expectedBranchHash.get()), toPtr::set);
+        loadOps.load(ValueType.REF, InternalRef.class, branchId.getId(), branch::set);
       } else {
 
         // if no expected branch hash is provided, use the head of the branch as the basis for the rebase.
-        loadOps.add(new LoadOp<InternalRef>(ValueType.REF, branchId.getId(), r -> toPtr.set(ensureValidL1(r.getBranch()))));
+        loadOps.load(ValueType.REF, InternalRef.class, branchId.getId(), r -> toPtr.set(ensureValidL1(r.getBranch())));
       }
 
       try {
-        store.load(new LoadStep(loadOps));
+        store.load(loadOps.build());
       } catch (NotFoundException ex) {
         throw new ReferenceNotFoundException("Unable to find expected items.");
       }
@@ -734,18 +733,18 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     // For now, we'll load all the values at once. In the future, we should paginate diffs.
     Map<Id, InternalValue> values = new HashMap<>();
-    List<LoadOp<InternalValue>> loads = finder.getKeyDiffs()
+    EntityLoadOps loadOps = new EntityLoadOps();
+    finder.getKeyDiffs()
         .flatMap(k -> Stream.of(k.getFrom(), k.getTo()))
         .distinct()
         .filter(id -> !id.isEmpty())
-        .map(id -> new LoadOp<InternalValue>(ValueType.VALUE, id, val -> values.put(id, val)))
-        .collect(Collectors.toList());
-    store.load(LoadStep.of(loads.toArray(new LoadOp[loads.size()])));
+        .forEach(id -> loadOps.load(ValueType.VALUE, InternalValue.class, id, val -> values.put(id, val)));
+    store.load(loadOps.build());
 
     return finder.getKeyDiffs().map(kd -> Diff.of(
         kd.getKey().toKey(),
-        Optional.ofNullable(kd.getFrom()).map(id -> values.get(id)).map(v -> serializer.fromBytes(v.getBytes())),
-        Optional.ofNullable(kd.getTo()).map(id -> values.get(id)).map(v -> serializer.fromBytes(v.getBytes()))
+        Optional.ofNullable(kd.getFrom()).map(values::get).map(v -> serializer.fromBytes(v.getBytes())),
+        Optional.ofNullable(kd.getTo()).map(values::get).map(v -> serializer.fromBytes(v.getBytes()))
       )
     );
   }

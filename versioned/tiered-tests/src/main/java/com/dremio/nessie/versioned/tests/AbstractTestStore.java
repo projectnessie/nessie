@@ -29,9 +29,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.versioned.impl.EntityLoadOps;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.HasId;
-import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
@@ -332,12 +332,11 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   protected LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs, Optional<LoadStep> next) {
-    return new LoadStep(
-        objs.entries().stream().map(e -> new LoadOp<>(e.getKey(), e.getValue().getId(),
-            r -> assertEquals(e.getValue(), r))
-        ).collect(Collectors.toList()),
-        () -> next
-    );
+    EntityLoadOps loadOps = new EntityLoadOps();
+    objs.forEach((type, val) -> {
+      loadOps.load(type, val.getId(), r -> assertEquals(val, r));
+    });
+    return loadOps.build(() -> next);
   }
 
   protected <T extends HasId> void testLoadSingle(ValueType type, T sample) {

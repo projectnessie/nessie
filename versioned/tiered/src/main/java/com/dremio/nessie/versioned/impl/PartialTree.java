@@ -42,7 +42,6 @@ import com.dremio.nessie.versioned.impl.condition.SetClause;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -109,7 +108,8 @@ class PartialTree<V> {
       return getLoadStep1(loadType).get();
     }
 
-    LoadOp<InternalRef> op = new LoadOp<InternalRef>(ValueType.REF, refId.getId(), loadedRef -> {
+    EntityLoadOps loadOps = new EntityLoadOps();
+    loadOps.load(ValueType.REF, InternalRef.class, refId.getId(), loadedRef -> {
       refType = loadedRef.getType();
       if (loadedRef.getType() == Type.BRANCH) {
         L1 loaded = l1Converter.apply(loadedRef.getBranch());
@@ -121,7 +121,7 @@ class PartialTree<V> {
         throw new IllegalStateException("Unknown type of ref to be loaded from store.");
       }
     });
-    return new LoadStep(java.util.Collections.singleton(op), () -> getLoadStep1(loadType));
+    return loadOps.build(() -> getLoadStep1(loadType));
   }
 
   public L1 getCurrentL1() {
@@ -237,53 +237,46 @@ class PartialTree<V> {
       return loadFunc.get();
     }
 
-    LoadOp<L1> op = new LoadOp<L1>(ValueType.L1, rootId, l -> {
-      l1 = new Pointer<L1>(l);
-    });
-    return Optional.of(new LoadStep(java.util.Collections.singleton(op), loadFunc));
+    EntityLoadOps loadOps = new EntityLoadOps();
+    loadOps.load(ValueType.L1, L1.class, rootId, l -> l1 = new Pointer<>(l));
+    return Optional.of(loadOps.build(loadFunc));
   }
 
   private Optional<LoadStep> getLoadStep2(boolean includeValues) {
-    Collection<LoadOp<?>> loads = keys.stream()
-        .map(id -> {
-          Id l2Id = l1.get().getId(id.getL1Position());
-          return new LoadOp<L2>(ValueType.L2, l2Id, l -> {
-            l2s.putIfAbsent(id.getL1Position(), new Pointer<L2>(l));
-          });
-        })
-        .collect(Collectors.toList());
-
-    return Optional.of(new LoadStep(loads, (Supplier<Optional<LoadStep>>) (() -> getLoadStep3(includeValues))));
+    EntityLoadOps loadOps = new EntityLoadOps();
+    keys.forEach(id -> {
+      Id l2Id = l1.get().getId(id.getL1Position());
+      loadOps.load(ValueType.L2, L2.class, l2Id, l -> l2s.putIfAbsent(id.getL1Position(), new Pointer<>(l)));
+    });
+    return Optional.of(loadOps.build(() -> getLoadStep3(includeValues)));
   }
 
   private Optional<LoadStep> getLoadStep3(boolean includeValues) {
-    Collection<LoadOp<?>> loads = keys.stream().map(keyId -> {
+    EntityLoadOps loadOps = new EntityLoadOps();
+    keys.forEach(keyId -> {
       L2 l2 = l2s.get(keyId.getL1Position()).get();
       Id l3Id = l2.getId(keyId.getL2Position());
-      return new LoadOp<L3>(ValueType.L3, l3Id, l -> l3s.putIfAbsent(keyId.getPosition(), new Pointer<L3>(l)));
-    }).collect(Collectors.toList());
-    return Optional.of(new LoadStep(loads, () -> getLoadStep4(includeValues)));
+      loadOps.load(ValueType.L3, L3.class, l3Id, l -> l3s.putIfAbsent(keyId.getPosition(), new Pointer<>(l)));
+    });
+    return Optional.of(loadOps.build(() -> getLoadStep4(includeValues)));
   }
 
   private Optional<LoadStep> getLoadStep4(boolean includeValues) {
     if (!includeValues) {
       return Optional.empty();
     }
-    Collection<LoadOp<?>> loads = keys.stream().map(
+    EntityLoadOps loadOps = new EntityLoadOps();
+    keys.forEach(
         key -> {
           L3 l3 = l3s.get(key.getPosition()).get();
           Id id = l3.getId(key);
-          if (id.isEmpty()) {
+          if (!id.isEmpty()) {
             // no load needed for empty values.
-            return null;
+            loadOps.load(ValueType.VALUE, InternalValue.class, l3.getId(key),
+                (wvb) -> values.putIfAbsent(key, ValueHolder.of(serializer, wvb)));
           }
-          return new LoadOp<InternalValue>(ValueType.VALUE, l3.getId(key),
-              (wvb) -> {
-                values.putIfAbsent(key, ValueHolder.of(serializer, wvb));
-              });
-      }).filter(n -> n != null)
-        .collect(Collectors.toList());
-    return Optional.of(new LoadStep(loads, () -> Optional.empty()));
+      });
+    return loadOps.buildOptional();
   }
 
   public Optional<Id> getValueIdForKey(InternalKey key) {
