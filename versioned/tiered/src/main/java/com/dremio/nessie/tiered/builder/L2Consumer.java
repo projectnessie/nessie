@@ -26,8 +26,8 @@ public interface L2Consumer extends BaseConsumer<L2Consumer> {
 
   /**
    * Add a list of children ids indexed by position.
+   * <p>Must be called exactly once.</p>
    *
-   * <p>Can only be called once.
    * @param ids The list of ids
    * @return This consumer.
    */

@@ -26,8 +26,8 @@ public interface L3Consumer extends BaseConsumer<L3Consumer> {
 
   /**
    * Adds {@link KeyDelta}s for this L3.
+   * <p>Must be called exactly once.</p>
    *
-   * <p>Can only be called once.
    * @param keyDelta The stream providing the {@link KeyDelta}s of this L3
    * @return This consumer.
    */

@@ -26,8 +26,8 @@ import com.dremio.nessie.versioned.store.Id;
 public interface BaseConsumer<T extends BaseConsumer<T>> {
   /**
    * The id for this consumer.
+   * <p>Must be called exactly once.</p>
    *
-   * <p>Can only be called once.</p>
    * @param id The id.
    * @return This consumer.
    */

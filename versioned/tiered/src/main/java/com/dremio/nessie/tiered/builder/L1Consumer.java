@@ -28,8 +28,8 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
 
   /**
    * The commit metadata id for this l1.
+   * <p>Must be called exactly once.</p>
    *
-   * <p>Can only be called once.
    * @param id The id to reference.
    * @return This consumer.
    */
@@ -37,8 +37,8 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
 
   /**
    * Add ancestors associated with this L1.
+   * <p>Must be called exactly once.</p>
    *
-   * <p>Can only be called once.
    * @param ids A list of ancestors ordered by most recent recent first.
    * @return This consumer.
    */
@@ -46,8 +46,8 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
 
   /**
    * Add a list of children ids indexed by position.
+   * <p>Must be called exactly once.</p>
    *
-   * <p>Can only be called once.
    * @param ids The list of ids. List must be {@link com.dremio.nessie.versioned.impl.L1#SIZE} in length.
    * @return This consumer.
    */
@@ -55,9 +55,8 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
 
   /**
    * Keys that were added and removed as part of this commit.
+   * <p>Can only be called once.</p>
    *
-   * <p>Can only be called once.
-
    * @param keyMutations The key that was added.
    * @return This consumer.
    */
@@ -66,8 +65,7 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
   /**
    * States that this L1 has an incremental key list.
    * Can only be called once and cannot be called if {@link #completeKeyList(Stream)} is called.
-   *
-   * <p>Can only be called once.
+   * <p>Either this method or {@link #completeKeyList(Stream)} can only be called exactly once.</p>
    *
    * @param checkpointId The id of the last checkpoint.
    * @param distanceFromCheckpoint The number of commits between this commit and the last checkpoint.
@@ -77,7 +75,7 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
 
   /**
    * States that this L1 has a complete key list.
-   * Can only be called once and cannot be called if {@link #incrementalKeyList(Id, int)} is called.
+   * <p>Either this method or {@link #incrementalKeyList} can only be called exactly once.</p>
    *
    * <p>Add a list of fragments associated with this complete list of keys.
    * @param fragmentIds The ids of each of the key list fragments given in a meaningful/to be maintained order.

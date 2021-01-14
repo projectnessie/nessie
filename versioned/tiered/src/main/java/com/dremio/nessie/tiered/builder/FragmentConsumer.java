@@ -26,6 +26,7 @@ public interface FragmentConsumer extends BaseConsumer<FragmentConsumer> {
 
   /**
    * The commit metadata id for this l1.
+   * <p>Must be called exactly once.</p>
    *
    * @param keys The keys to add.
    * @return This consumer.

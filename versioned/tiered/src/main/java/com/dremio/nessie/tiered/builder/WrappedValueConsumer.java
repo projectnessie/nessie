@@ -26,8 +26,8 @@ import com.google.protobuf.ByteString;
 public interface WrappedValueConsumer<C extends WrappedValueConsumer<C>> extends BaseConsumer<C> {
   /**
    * The value for this bytes-value.
+   * <p>Must be called exactly once.</p>
    *
-   * <p>Can only be called once.
    * @param value The value to set.
    * @return This consumer.
    */

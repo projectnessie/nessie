@@ -109,8 +109,8 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
 
   /**
    * Set the type of the reference.
+   * <p>Must be called exactly once.</p>
    *
-   * <p>Can be called multiple times. The order of calling is unimportant and could change.
    * @param refType The type of the reference.
    * @return This consumer.
    */
@@ -118,8 +118,8 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
 
   /**
    * Set the name of the reference.
+   * <p>Must be called exactly once.</p>
    *
-   * <p>Can be called multiple times. The order of calling is unimportant and could change.
    * @param name The name of the reference.
    * @return This consumer.
    */
@@ -127,8 +127,8 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
 
   /**
    * Set the commit of the reference.
+   * <p>Must be called exactly once for {@link RefType#TAG}, never for {@link RefType#BRANCH}.</p>
    *
-   * <p>Can be called multiple times. The order of calling is unimportant and could change.
    * @param commit The commit of the reference.
    * @return This consumer.
    */
@@ -136,8 +136,8 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
 
   /**
    * Set the metadata of the reference.
+   * <p>Must be called exactly once for {@link RefType#BRANCH}, never for {@link RefType#TAG}.</p>
    *
-   * <p>Can be called multiple times. The order of calling is unimportant and could change.
    * @param metadata The metadata of the reference.
    * @return This consumer.
    */
@@ -145,8 +145,8 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
 
   /**
    * Set the children of the reference.
+   * <p>Must be called exactly once for {@link RefType#BRANCH}, never for {@link RefType#TAG}.</p>
    *
-   * <p>Can be called multiple times. The order of calling is unimportant and could change.
    * @param children The children of the reference.
    * @return This consumer.
    */
@@ -154,8 +154,8 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
 
   /**
    * Set the commits of the reference.
+   * <p>Must be called exactly once for {@link RefType#BRANCH}, never for {@link RefType#TAG}.</p>
    *
-   * <p>Can be called multiple times. The order of calling is unimportant and could change.
    * @param commits The commits of the reference.
    * @return This consumer.
    */
