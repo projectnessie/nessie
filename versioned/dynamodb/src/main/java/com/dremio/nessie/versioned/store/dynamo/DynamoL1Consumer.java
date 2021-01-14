@@ -23,10 +23,10 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deseri
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKeyMutations;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idsList;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryMap;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.map;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.number;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.serializeKeyMutations;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,7 +75,7 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
 
   @Override
   public L1Consumer keyMutations(Stream<Key.Mutation> keyMutations) {
-    addKeysSafe(MUTATIONS, serializeKeyMutations(keyMutations));
+    addKeysSafe(MUTATIONS, list(keyMutations.map(AttributeValueUtil::serializeKeyMutation)));
     return this;
   }
 

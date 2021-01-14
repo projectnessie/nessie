@@ -30,10 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.tiered.builder.RefConsumer;
-import com.dremio.nessie.tiered.builder.RefConsumer.BranchCommit;
-import com.dremio.nessie.tiered.builder.RefConsumer.BranchUnsavedDelta;
 import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
-import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
@@ -519,32 +516,26 @@ class InternalBranch extends InternalRef {
         .type(RefType.BRANCH)
         .metadata(metadata)
         .children(this.tree.stream())
-        .commits(commits.stream()
-        .map(c -> {
-          if (c.saved) {
-            return new BranchCommit(c.id, c.commit, c.parent);
+        .commits(cc -> {
+          for (Commit c : commits) {
+            cc.id(c.id)
+                .commit(c.commit);
+            if (c.saved) {
+              cc.parent(c.parent)
+                  .done();
+            } else {
+              c.deltas.forEach(d -> cc.delta(
+                      d.position,
+                      d.oldId,
+                      d.newId
+                  ));
+
+              c.keyMutationList.getMutations().forEach(km -> cc.keyMutation(km.toMutation()));
+
+              cc.done();
+            }
           }
-
-          List<BranchUnsavedDelta> deltas = c.deltas.stream()
-              .map(d -> new RefConsumer.BranchUnsavedDelta(
-                  d.position,
-                  d.oldId,
-                  d.newId
-              ))
-              .collect(Collectors.toList());
-
-          List<Key.Mutation> keyMutations = c.keyMutationList.getMutations()
-              .stream()
-              .map(KeyMutation::toMutation)
-              .collect(Collectors.toList());
-
-          return new BranchCommit(
-              c.id,
-              c.commit,
-              deltas,
-              keyMutations
-          );
-        }));
+        });
   }
 
 }

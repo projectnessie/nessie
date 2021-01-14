@@ -16,23 +16,22 @@
 package com.dremio.nessie.versioned.store;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
 
 public abstract class SaveOp<C extends BaseConsumer<C>> {
   private final ValueType type;
-  private final Supplier<Id> idSupplier;
+  private final Id id;
 
   /**
    * Constructs a new save-operation for the given type, id and serializer.
    *
    * @param type value type
-   * @param idSupplier supplier for the entity's id
+   * @param id the entity's id
    */
-  public SaveOp(ValueType type, Supplier<Id> idSupplier) {
+  public SaveOp(ValueType type, Id id) {
     this.type = type;
-    this.idSupplier = idSupplier;
+    this.id = id;
   }
 
   public ValueType getType() {
@@ -40,13 +39,12 @@ public abstract class SaveOp<C extends BaseConsumer<C>> {
   }
 
   public Id getId() {
-    return idSupplier.get();
+    return id;
   }
 
   /**
    * Called by store implementations instructing the implementation to serialize the properties
    * to the given {@link BaseConsumer}.
-   * <p>
    *
    * @param consumer the consumer that will receive the properties
    */
@@ -54,15 +52,14 @@ public abstract class SaveOp<C extends BaseConsumer<C>> {
 
   @Override
   public String toString() {
-    return "SaveOp [type=" + type + ", id=" + idSupplier.get() + "]";
+    return "SaveOp [type=" + type + ", id=" + id + "]";
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(type, idSupplier.get());
+    return Objects.hash(type, id);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public boolean equals(Object obj) {
     if (this == obj) {
@@ -74,6 +71,6 @@ public abstract class SaveOp<C extends BaseConsumer<C>> {
     }
 
     SaveOp<?> other = (SaveOp<?>) obj;
-    return type == other.type && Objects.equals(idSupplier.get(), other.idSupplier.get());
+    return type == other.type && Objects.equals(id, other.id);
   }
 }

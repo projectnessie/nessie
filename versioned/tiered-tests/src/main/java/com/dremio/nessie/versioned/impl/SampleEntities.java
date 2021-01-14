@@ -15,13 +15,10 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.Collections;
 import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.RefConsumer.BranchCommit;
-import com.dremio.nessie.tiered.builder.RefConsumer.BranchUnsavedDelta;
 import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
@@ -95,17 +92,17 @@ public class SampleEntities {
         .name(name)
         .children(IntStream.range(0, L1.SIZE).mapToObj(x -> createId(random)))
         .metadata(createId(random))
-        .commits(Stream.of(
-            new BranchCommit(
-                createId(random),
-                createId(random),
-                createId(random)),
-            new BranchCommit(
-                createId(random),
-                createId(random),
-                Collections.singletonList(new BranchUnsavedDelta(1, createId(random), createId(random))),
-                Collections.singletonList(Key.of(createString(random, 8), createString(random, 8)).asAddition()))
-        )));
+        .commits(bc -> {
+          bc.id(createId(random))
+              .commit(createId(random))
+              .parent(createId(random))
+              .done();
+          bc.id(createId(random))
+              .commit(createId(random))
+              .delta(1, createId(random), createId(random))
+              .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
+              .done();
+        }));
   }
 
   /**

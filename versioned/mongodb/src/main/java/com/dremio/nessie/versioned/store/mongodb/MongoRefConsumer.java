@@ -15,11 +15,10 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.bson.BsonReader;
@@ -57,7 +56,7 @@ final class MongoRefConsumer extends MongoConsumer<RefConsumer> implements RefCo
     PROPERTY_PRODUCERS.put(COMMIT, (c, r) -> c.commit(MongoSerDe.deserializeId(r)));
     PROPERTY_PRODUCERS.put(METADATA, (c, r) -> c.metadata(MongoSerDe.deserializeId(r)));
     PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.children(MongoSerDe.deserializeIds(r)));
-    PROPERTY_PRODUCERS.put(COMMITS, (c, r) -> c.commits(deserializeBranchCommits(r)));
+    PROPERTY_PRODUCERS.put(COMMITS, (c, r) -> c.commits(bc -> deserializeBranchCommits(bc, r)));
   }
 
   private RefType refType;
@@ -121,8 +120,91 @@ final class MongoRefConsumer extends MongoConsumer<RefConsumer> implements RefCo
   }
 
   @Override
-  public RefConsumer commits(Stream<BranchCommit> commits) {
-    serializeArray(COMMITS, commits, MongoRefConsumer::serializeBranchCommit);
+  public RefConsumer commits(Consumer<BranchCommitConsumer> commits) {
+    addProperty(COMMITS);
+    bsonWriter.writeStartArray(COMMITS);
+    commits.accept(new BranchCommitConsumer() {
+      int state;
+
+      @Override
+      public BranchCommitConsumer id(Id id) {
+        maybeStart();
+        assertState(1);
+        MongoSerDe.serializeId(bsonWriter, ID, id);
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer commit(Id commit) {
+        maybeStart();
+        assertState(1);
+        MongoSerDe.serializeId(bsonWriter, COMMIT, commit);
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer parent(Id parent) {
+        maybeStart();
+        assertState(1);
+        MongoSerDe.serializeId(bsonWriter, PARENT, parent);
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
+        maybeStart();
+        if (state == 1) {
+          state = 2;
+          bsonWriter.writeStartArray(DELTAS);
+        }
+        assertState(2);
+        serializeDelta(bsonWriter, position, oldId, newId);
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer keyMutation(Key.Mutation keyMutation) {
+        maybeStart();
+        if (state == 2) {
+          state = 1;
+          bsonWriter.writeEndArray();
+        }
+        if (state == 1) {
+          state = 3;
+          bsonWriter.writeStartArray(KEY_LIST);
+        }
+        assertState(3);
+        MongoSerDe.serializeKeyMutation(bsonWriter, keyMutation);
+        return this;
+      }
+
+      private void maybeStart() {
+        if (state == 0) {
+          bsonWriter.writeStartDocument();
+          state = 1;
+        }
+      }
+
+      private void assertState(int expected) {
+        if (state != expected) {
+          throw new IllegalStateException("Wrong order or consumer method invocations (" + expected + " != " + state + ". See Javadocs.");
+        }
+      }
+
+      @Override
+      public BranchCommitConsumer done() {
+        if (state == 3 || state == 2) {
+          bsonWriter.writeEndArray();
+          state = 1;
+        }
+        if (state == 1) {
+          bsonWriter.writeEndDocument();
+          state = 0;
+        }
+        return this;
+      }
+    });
+    bsonWriter.writeEndArray();
     return this;
   }
 
@@ -148,84 +230,57 @@ final class MongoRefConsumer extends MongoConsumer<RefConsumer> implements RefCo
     return super.build();
   }
 
-  private static void serializeBranchCommit(BsonWriter writer, BranchCommit c) {
+  private static void serializeDelta(BsonWriter writer, int position, Id oldId, Id newId) {
     writer.writeStartDocument();
-    MongoSerDe.serializeId(writer, ID, c.getId());
-    MongoSerDe.serializeId(writer, COMMIT, c.getCommit());
+    writer.writeInt64(POSITION, position);
+    MongoSerDe.serializeId(writer, OLD_ID, oldId);
+    MongoSerDe.serializeId(writer, NEW_ID, newId);
+    writer.writeEndDocument();
+  }
 
-    if (c.isSaved()) {
-      MongoSerDe.serializeId(writer, PARENT, c.getParent());
-    } else {
-      MongoSerDe.serializeArray(writer, DELTAS, c.getDeltas().stream(), MongoRefConsumer::serializeDelta);
-
-      MongoSerDe.serializeArray(writer, KEY_LIST, c.getKeyMutations().stream(), MongoSerDe::serializeKeyMutation);
+  private static void deserializeBranchCommits(BranchCommitConsumer consumer, BsonReader reader) {
+    reader.readStartArray();
+    while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
+      deserializeBranchCommit(consumer, reader);
     }
-
-    writer.writeEndDocument();
+    reader.readEndArray();
   }
 
-  private static void serializeDelta(BsonWriter writer, BranchUnsavedDelta d) {
-    writer.writeStartDocument();
-    writer.writeInt64(POSITION, d.getPosition());
-    MongoSerDe.serializeId(writer, OLD_ID, d.getOldId());
-    MongoSerDe.serializeId(writer, NEW_ID, d.getNewId());
-    writer.writeEndDocument();
-  }
-
-  private static Stream<BranchCommit> deserializeBranchCommits(BsonReader reader) {
-    return MongoSerDe.deserializeArray(reader, MongoRefConsumer::deserializeBranchCommit).stream();
-  }
-
-  private static BranchCommit deserializeBranchCommit(BsonReader reader) {
+  private static void deserializeBranchCommit(BranchCommitConsumer consumer, BsonReader reader) {
     reader.readStartDocument();
-
-    Id id = null;
-    Id commit = null;
-    Id parent = null;
-    List<BranchUnsavedDelta> deltas = null;
-    List<Key.Mutation> keyMutations = new ArrayList<>();
 
     while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
       String field = reader.readName();
       switch (field) {
         case ID:
-          id = MongoSerDe.deserializeId(reader);
-          break;
-        case PARENT:
-          parent = MongoSerDe.deserializeId(reader);
+          consumer.id(MongoSerDe.deserializeId(reader));
           break;
         case COMMIT:
-          commit = MongoSerDe.deserializeId(reader);
+          consumer.commit(MongoSerDe.deserializeId(reader));
+          break;
+        case PARENT:
+          consumer.parent(MongoSerDe.deserializeId(reader));
           break;
         case DELTAS:
-          deltas = MongoSerDe.deserializeArray(reader, MongoRefConsumer::deserializeUnsavedDelta);
+          MongoSerDe.deserializeArray(reader, r -> {
+            deserializeUnsavedDelta(consumer, r);
+            return null;
+          });
           break;
         case KEY_LIST:
-          keyMutations = MongoSerDe.deserializeKeyMutations(reader);
+          MongoSerDe.deserializeKeyMutations(reader).forEach(consumer::keyMutation);
           break;
         default:
           throw new IllegalArgumentException(String.format("Unsupported field '%s' for BranchCommit", field));
       }
     }
 
+    consumer.done();
+
     reader.readEndDocument();
-
-    if (deltas == null) {
-      return new BranchCommit(
-          id,
-          commit,
-          parent);
-    }
-
-    return new BranchCommit(
-        id,
-        commit,
-        deltas,
-        keyMutations
-    );
   }
 
-  private static BranchUnsavedDelta deserializeUnsavedDelta(BsonReader reader) {
+  private static void deserializeUnsavedDelta(BranchCommitConsumer consumer, BsonReader reader) {
     reader.readStartDocument();
 
     int position = 0;
@@ -251,6 +306,6 @@ final class MongoRefConsumer extends MongoConsumer<RefConsumer> implements RefCo
 
     reader.readEndDocument();
 
-    return new BranchUnsavedDelta(position, oldId, newId);
+    consumer.delta(position, oldId, newId);
   }
 }

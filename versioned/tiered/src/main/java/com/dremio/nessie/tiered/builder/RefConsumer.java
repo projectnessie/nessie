@@ -15,14 +15,11 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 
 /**
  * Reference-consumer for branches + tags.
@@ -40,8 +37,8 @@ import com.google.common.collect.ImmutableList;
  * <ul>
  * <li>{@link #id(Id)}</li>
  * <li>{@link #name(String)}</li>
- * <li>{@link #commits(Stream)} containing {@link BranchCommit} elements, that represents
- * the commit-log for the branch</li>
+ * <li>{@link #commits(Consumer)} receives a {@link BranchCommitConsumer} that must be used to
+ * immediately execute the callbacks that represent the commit-log for the branch</li>
  * <li>{@link #metadata(Id)}</li>
  * <li>{@link #children(Stream)} containing {@link Id} elements</li>
  * </ul>
@@ -155,160 +152,66 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
   /**
    * Set the commits of the reference.
    * <p>Must be called exactly once for {@link RefType#BRANCH}, never for {@link RefType#TAG}.</p>
+   * <p>Implementations must immediately execute the callbacks in the {@link BranchCommitConsumer}
+   * to construct the commit-log of the branch.</p>
    *
-   * @param commits The commits of the reference.
+   * @param commits The branch's commit-log receiver.
    * @return This consumer.
    */
-  RefConsumer commits(Stream<BranchCommit> commits);
+  RefConsumer commits(Consumer<BranchCommitConsumer> commits);
 
-  /**
-   * Represents a commit in a branch.
-   */
-  class BranchCommit {
-
-    private final boolean saved;
-    private final Id id;
-    private final Id commit;
-    private final Id parent;
-    private final List<BranchUnsavedDelta> deltas;
-    private final List<Key.Mutation> keyMutations;
+  interface BranchCommitConsumer {
 
     /**
-     * Constructor for a "saved" commit.
-     *
-     * @param id the ID
-     * @param commit commit ID
-     * @param parent parent's ID
+     * ID of the branch's commit.
+     * <p>Must be called exactly once for each branch-commit.</p>
+     * @param id ID of the branch's commit
+     * @return this consumer
      */
-    public BranchCommit(Id id, Id commit, Id parent) {
-      this.id = id;
-      this.parent = parent;
-      this.commit = commit;
-      this.saved = true;
-      this.deltas = Collections.emptyList();
-      this.keyMutations = null;
-    }
+    BranchCommitConsumer id(Id id);
 
     /**
-     * Constructor for an "unsaved" commit.
-     *
-     * @param unsavedId the ID
-     * @param commit commit ID
-     * @param deltas unsaved deltas
-     * @param keyMutations added and removed keys
+     * Commit of the branch's commit.
+     * <p>Must be called exactly once for each branch-commit.</p>
+     * @param commit Commit of the branch's commit
+     * @return this consumer
      */
-    public BranchCommit(Id unsavedId, Id commit, List<BranchUnsavedDelta> deltas, List<Key.Mutation> keyMutations) {
-      super();
-      this.saved = false;
-      this.deltas = ImmutableList.copyOf(Preconditions.checkNotNull(deltas));
-      this.commit = Preconditions.checkNotNull(commit);
-      this.parent = null;
-      this.keyMutations = Preconditions.checkNotNull(keyMutations);
-      this.id = Preconditions.checkNotNull(unsavedId);
-    }
+    BranchCommitConsumer commit(Id commit);
 
     /**
-     * Saved-flag of this commit.
-     *
-     * @return saved-flag
+     * Parent of the branch's commit.
+     * <p>Must be called exactly once for each branch-commit, but never with
+     * {@link #delta(int, Id, Id)} or {@link #keyMutation(Key.Mutation)}.</p>
+     * @param parent Parent of the branch's commit
+     * @return this consumer
      */
-    public boolean isSaved() {
-      return saved;
-    }
+    BranchCommitConsumer parent(Id parent);
 
     /**
-     * ID of this commit.
-     *
-     * @return ID
+     * Add a delta.
+     * <p>Can be called multiple times, but must be called after {@link #id(Id)} and {@link #commit(Id)}.</p>
+     * <p>Must not be combined with {@link #parent(Id)}</p>
+     * @param position delta-position
+     * @param oldId delta-old-id
+     * @param newId delta-new-id
+     * @return this consumer
      */
-    public Id getId() {
-      return id;
-    }
+    BranchCommitConsumer delta(int position, Id oldId, Id newId);
 
     /**
-     * Commit-ID of this commit.
-     *
-     * @return Commit-ID
+     * Add a key-mutation.
+     * <p>Can be called multiple times, but must be called after {@link #id(Id)} and {@link #commit(Id)}
+     * and {@link #delta(int, Id, Id)}.</p>
+     * <p>Must not be combined with {@link #parent(Id)}</p>
+     * @param keyMutation key-mutation
+     * @return this consumer
      */
-    public Id getCommit() {
-      return commit;
-    }
+    BranchCommitConsumer keyMutation(Key.Mutation keyMutation);
 
     /**
-     * Parent of this commit.
-     *
-     * @return parent-ID
+     * End the current commit.
+     * @return this consumer
      */
-    public Id getParent() {
-      return parent;
-    }
-
-    /**
-     * Deltas of this commit.
-     *
-     * @return unsaved deltas
-     */
-    public List<BranchUnsavedDelta> getDeltas() {
-      return deltas;
-    }
-
-    /**
-     * Key additions and removals of this commit.
-     *
-     * @return added and removed keys
-     */
-    public List<Key.Mutation> getKeyMutations() {
-      return keyMutations;
-    }
-  }
-
-  /**
-   * Represent the "unsaved delta" of a single commit in a branch's commit-log.
-   */
-  class BranchUnsavedDelta {
-    private final int position;
-    private final Id oldId;
-    private final Id newId;
-
-    /**
-     * Constructor.
-     *
-     * @param position position
-     * @param oldId old-ID
-     * @param newId new-ID
-     */
-    public BranchUnsavedDelta(int position, Id oldId, Id newId) {
-      this.position = position;
-      this.oldId = oldId;
-      this.newId = newId;
-    }
-
-    /**
-     * Position of this delta.
-     *
-     * @return position
-     */
-    public int getPosition() {
-      return position;
-    }
-
-    /**
-     * Old-ID of this delta.
-     *
-     * @return old-ID
-     *
-     */
-    public Id getOldId() {
-      return oldId;
-    }
-
-    /**
-     * New-ID of this delta.
-     *
-     * @return new-ID
-     */
-    public Id getNewId() {
-      return newId;
-    }
+    BranchCommitConsumer done();
   }
 }

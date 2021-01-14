@@ -25,14 +25,15 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryList;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.map;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.number;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.serializeKeyMutations;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.serializeKeyMutation;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.string;
+import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.builder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.RefConsumer;
@@ -97,8 +98,69 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
   }
 
   @Override
-  public RefConsumer commits(Stream<BranchCommit> commits) {
-    return addEntitySafe(COMMITS, list(commits.map(DynamoRefConsumer::commitToMap)));
+  public RefConsumer commits(Consumer<BranchCommitConsumer> commits) {
+    List<AttributeValue> commitsList = new ArrayList<>();
+    commits.accept(new BranchCommitConsumer() {
+      final Map<String, AttributeValue> builder = new HashMap<>();
+      List<AttributeValue> deltas = null;
+      List<AttributeValue> keyMutations = null;
+
+      @Override
+      public BranchCommitConsumer id(Id id) {
+        builder.put(ID, idValue(id));
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer commit(Id commit) {
+        builder.put(COMMIT, idValue(commit));
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer parent(Id parent) {
+        builder.put(PARENT, idValue(parent));
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
+        if (deltas == null) {
+          deltas = new ArrayList<>();
+        }
+        Map<String, AttributeValue> map = new HashMap<>();
+        map.put(POSITION, number(position));
+        map.put(OLD_ID, idValue(oldId));
+        map.put(NEW_ID, idValue(newId));
+        deltas.add(map(map));
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer keyMutation(Key.Mutation keyMutation) {
+        if (keyMutations == null) {
+          keyMutations = new ArrayList<>();
+        }
+        keyMutations.add(serializeKeyMutation(keyMutation));
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer done() {
+        if (deltas != null) {
+          builder.put(DELTAS, list(deltas.stream()));
+        }
+        if (keyMutations != null) {
+          builder.put(KEY_LIST, list(keyMutations.stream()));
+        }
+        commitsList.add(map(builder));
+        builder.clear();
+        deltas = null;
+        keyMutations = null;
+        return this;
+      }
+    });
+    return addEntitySafe(COMMITS, builder().l(commitsList).build());
   }
 
   @Override
@@ -123,32 +185,6 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
     return super.build();
   }
 
-  private static AttributeValue commitToMap(BranchCommit c) {
-    Map<String, AttributeValue> builder = new HashMap<>();
-    builder.put(ID, idValue(c.getId()));
-    builder.put(COMMIT, idValue(c.getCommit()));
-
-    if (c.isSaved()) {
-      builder.put(PARENT, idValue(c.getParent()));
-    } else {
-      Stream<AttributeValue> deltas = c.getDeltas().stream()
-          .map(DynamoRefConsumer::serializeDelta);
-      builder.put(DELTAS, list(deltas));
-
-      builder.put(KEY_LIST, serializeKeyMutations(c.getKeyMutations().stream()));
-    }
-
-    return map(builder);
-  }
-
-  private static AttributeValue serializeDelta(BranchUnsavedDelta d) {
-    Map<String, AttributeValue> map = new HashMap<>();
-    map.put(POSITION, number(d.getPosition()));
-    map.put(OLD_ID, idValue(d.getOldId()));
-    map.put(NEW_ID, idValue(d.getNewId()));
-    return map(map);
-  }
-
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
@@ -163,7 +199,7 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
 
         consumer.metadata(deserializeId(entity, METADATA))
             .children(deserializeIdStream(entity, TREE))
-            .commits(deserializeCommits(entity));
+            .commits(cc -> deserializeCommits(entity, cc));
 
         break;
       case REF_TYPE_TAG:
@@ -175,49 +211,35 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
     }
   }
 
-  private static Stream<BranchCommit> deserializeCommits(Map<String, AttributeValue> map) {
+  private static void deserializeCommits(Map<String, AttributeValue> map, BranchCommitConsumer cc) {
     AttributeValue raw = attributeValue(map, COMMITS);
-    return raw.l().stream()
+    raw.l().stream()
         .map(AttributeValue::m)
-        .map(DynamoRefConsumer::deserializeCommit);
+        .forEach(m -> deserializeCommit(m, cc));
   }
 
-  private static BranchCommit deserializeCommit(Map<String, AttributeValue> map) {
-    Id id = deserializeId(map, ID);
-    Id commit = deserializeId(map, COMMIT);
+  private static void deserializeCommit(Map<String, AttributeValue> map, BranchCommitConsumer cc) {
+    cc.id(deserializeId(map, ID))
+        .commit(deserializeId(map, COMMIT));
 
-    if (!map.containsKey(DELTAS)) {
-      return new BranchCommit(
-          id,
-          commit,
-          deserializeId(map, PARENT));
+    if (map.containsKey(PARENT)) {
+      cc.parent(deserializeId(map, PARENT));
+    } else {
+      if (map.containsKey(DELTAS)) {
+        mandatoryList(attributeValue(map, DELTAS)).forEach(av -> {
+          Map<String, AttributeValue> m = av.m();
+          cc.delta(deserializeInt(m, POSITION), deserializeId(m, OLD_ID), deserializeId(m, NEW_ID));
+        });
+      }
+
+      if (map.containsKey(KEY_LIST)) {
+        deserializeKeyMutations(
+            map,
+            KEY_LIST,
+            km -> km.forEach(cc::keyMutation)
+        );
+      }
     }
-
-    List<BranchUnsavedDelta> deltas = mandatoryList(attributeValue(map, DELTAS)).stream()
-        .map(AttributeValue::m)
-        .map(DynamoRefConsumer::deserializeUnsavedDelta)
-        .collect(Collectors.toList());
-
-    List<Key.Mutation> keyMutations = new ArrayList<>();
-
-    deserializeKeyMutations(
-        map,
-        KEY_LIST,
-        km -> km.forEach(keyMutations::add)
-    );
-
-    return new BranchCommit(
-        id,
-        commit,
-        deltas,
-        keyMutations
-    );
-  }
-
-  private static BranchUnsavedDelta deserializeUnsavedDelta(Map<String, AttributeValue> map) {
-    return new BranchUnsavedDelta(
-        deserializeInt(map, POSITION),
-        deserializeId(map, OLD_ID),
-        deserializeId(map, NEW_ID));
+    cc.done();
   }
 }

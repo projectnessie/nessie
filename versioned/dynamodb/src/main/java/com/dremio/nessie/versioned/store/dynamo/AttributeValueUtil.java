@@ -195,11 +195,11 @@ public final class AttributeValueUtil {
         }));
   }
 
-  static AttributeValue serializeKeyMutations(Stream<Key.Mutation> keyMutations) {
-    return list(keyMutations.map(km -> map(Collections.singletonMap(
+  static AttributeValue serializeKeyMutation(Key.Mutation km) {
+    return map(Collections.singletonMap(
         mutationName(km.getType()),
         AttributeValueUtil.keyElements(km.getKey()))
-    )));
+    );
   }
 
   static String mutationName(Key.MutationType type) {
@@ -325,7 +325,7 @@ public final class AttributeValueUtil {
   static long deserializeLong(Map<String, AttributeValue> map, String key) {
     AttributeValue raw = attributeValue(map, key);
     String b = Preconditions.checkNotNull(raw.n(), "mandatory number value is null");
-    return Long.parseLong(raw.n());
+    return Long.parseLong(b);
   }
 
   /**

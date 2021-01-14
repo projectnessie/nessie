@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import com.dremio.nessie.versioned.store.SaveOp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

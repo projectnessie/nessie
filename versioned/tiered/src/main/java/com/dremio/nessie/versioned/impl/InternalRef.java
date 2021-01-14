@@ -18,10 +18,13 @@ package com.dremio.nessie.versioned.impl;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
 import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
 
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
@@ -94,10 +97,6 @@ abstract class InternalRef extends PersistentBase<RefConsumer> {
     throw new IllegalArgumentException(String.format("%s cannot be treated as a tag.", this.getClass().getName()));
   }
 
-  Id getHash() {
-    throw new IllegalArgumentException(String.format("%s cannot be treated as a hash.", this.getClass().getName()));
-  }
-
   /**
    * Create a new {@link Builder} instance that implements
    * {@link RefConsumer} to
@@ -125,7 +124,7 @@ abstract class InternalRef extends PersistentBase<RefConsumer> {
     // branch only
     private Id metadata;
     private Stream<Id> children;
-    private Stream<BranchCommit> commits;
+    private List<Commit> commits;
 
     @Override
     public Builder id(Id id) {
@@ -170,9 +169,63 @@ abstract class InternalRef extends PersistentBase<RefConsumer> {
     }
 
     @Override
-    public Builder commits(Stream<BranchCommit> commits) {
+    public RefConsumer commits(Consumer<BranchCommitConsumer> commits) {
       checkCalled(this.commits, "commits");
-      this.commits = commits;
+      this.commits = new ArrayList<>();
+      commits.accept(new BranchCommitConsumer() {
+        private Id id;
+        private Id commit;
+        private Id parent;
+        private List<UnsavedDelta> unsavedDeltas = new ArrayList<>();
+        private List<KeyMutation> keyMutations = new ArrayList<>();
+
+        @Override
+        public BranchCommitConsumer done() {
+          if (parent != null) {
+            Builder.this.commits.add(new Commit(id, commit, parent));
+          } else {
+            Builder.this.commits.add(new Commit(id, commit, unsavedDeltas, KeyMutationList.of(keyMutations)));
+          }
+
+          id = null;
+          commit = null;
+          parent = null;
+          unsavedDeltas = new ArrayList<>();
+          keyMutations = new ArrayList<>();
+
+          return this;
+        }
+
+        @Override
+        public BranchCommitConsumer id(Id id) {
+          this.id = id;
+          return this;
+        }
+
+        @Override
+        public BranchCommitConsumer commit(Id commit) {
+          this.commit = commit;
+          return this;
+        }
+
+        @Override
+        public BranchCommitConsumer parent(Id parent) {
+          this.parent = parent;
+          return this;
+        }
+
+        @Override
+        public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
+          unsavedDeltas.add(new UnsavedDelta(position, oldId, newId));
+          return this;
+        }
+
+        @Override
+        public BranchCommitConsumer keyMutation(Key.Mutation keyMutation) {
+          keyMutations.add(KeyMutation.fromMutation(keyMutation));
+          return this;
+        }
+      });
       return this;
     }
 
@@ -195,27 +248,10 @@ abstract class InternalRef extends PersistentBase<RefConsumer> {
               name,
               IdMap.of(children, L1.SIZE),
               metadata,
-              commits
-                  .map(bc -> bc.isSaved()
-                      ? new Commit(bc.getId(), bc.getCommit(), bc.getParent())
-                      : new Commit(
-                          bc.getId(),
-                          bc.getCommit(),
-                          bc.getDeltas().stream()
-                            .map(d -> new UnsavedDelta(d.getPosition(), d.getOldId(), d.getNewId()))
-                            .collect(Collectors.toList()),
-                          keyMutations(bc)
-                          ))
-                  .collect(Collectors.toList()));
+              commits);
         default:
           throw new UnsupportedOperationException("Unknown ref-type " + refType);
       }
-    }
-
-    private static KeyMutationList keyMutations(BranchCommit bc) {
-      return KeyMutationList.of(bc.getKeyMutations().stream()
-          .map(KeyMutation::fromMutation)
-          .collect(Collectors.toList()));
     }
   }
 
