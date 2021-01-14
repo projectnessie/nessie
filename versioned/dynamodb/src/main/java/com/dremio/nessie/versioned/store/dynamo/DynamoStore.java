@@ -39,9 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.versioned.impl.L1;
-import com.dremio.nessie.versioned.impl.L2;
-import com.dremio.nessie.versioned.impl.L3;
+import com.dremio.nessie.versioned.impl.EntityTypeBridge;
 import com.dremio.nessie.versioned.impl.PersistentBase;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
@@ -159,9 +157,7 @@ public class DynamoStore implements Store {
             .forEach(table -> createIfMissing(table));
 
         // make sure we have an empty l1 (ignore result, doesn't matter)
-        putIfAbsent(ValueType.L1, L1.EMPTY);
-        putIfAbsent(ValueType.L2, L2.EMPTY);
-        putIfAbsent(ValueType.L3, L3.EMPTY);
+        EntityTypeBridge.storeMinimumEntities(this::putIfAbsent);
       }
 
     } catch (DynamoDbException ex) {
@@ -228,7 +224,9 @@ public class DynamoStore implements Store {
             if (loadOp == null) {
               throw new IllegalStateException("No load-op for loaded ID " + id);
             }
-            loadOp.deserialize(consumer -> deserializeToConsumer(valueType, item, consumer));
+
+            deserializeToConsumer(valueType, item, loadOp.getReceiver());
+            loadOp.done();
           }
         }
       }
@@ -283,8 +281,6 @@ public class DynamoStore implements Store {
   @SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
   @Override
   public <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
-    Preconditions.checkArgument(type.isEntityType(value),
-        "Value class %s is not value for ValueType %s.", value.getClass().getName(), type.name());
     PersistentBase v = (PersistentBase) value;
     Map<String, AttributeValue> attributes = serializeWithConsumer(type, c -> {
       v.applyToConsumer(c);
@@ -370,7 +366,7 @@ public class DynamoStore implements Store {
   @SuppressWarnings("unchecked")
   @Override
   public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
-    return valueType.buildEntity(producer -> {
+    return (V) EntityTypeBridge.buildEntity(valueType, producer -> {
       @SuppressWarnings("rawtypes") BaseConsumer prod = producer;
       loadSingle(valueType, id, prod);
     });

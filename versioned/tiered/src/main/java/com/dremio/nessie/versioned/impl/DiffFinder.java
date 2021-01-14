@@ -26,7 +26,6 @@ import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.Store;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.MapDifference.ValueDifference;
 
@@ -77,8 +76,8 @@ class DiffFinder {
         if (!a.equals(b)) {
           L2Diff d = new L2Diff();
           l2Diffs.add(d);
-          loadOps.load(ValueType.L2, a, d::from);
-          loadOps.load(ValueType.L2, b, d::to);
+          loadOps.load(EntityType.L2, a, d::from);
+          loadOps.load(EntityType.L2, b, d::to);
         }
       }
 
@@ -110,8 +109,8 @@ class DiffFinder {
           if (!a.equals(b)) {
             L3Diff d = new L3Diff();
             l3DiffsOutput.add(d);
-            loadOps.load(ValueType.L3, a, d::from);
-            loadOps.load(ValueType.L3, b, d::to);
+            loadOps.load(EntityType.L3, a, d::from);
+            loadOps.load(EntityType.L3, b, d::to);
           }
         }
       }

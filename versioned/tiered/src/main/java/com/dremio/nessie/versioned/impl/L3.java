@@ -34,14 +34,14 @@ import com.google.common.base.Objects;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 
-public class L3 extends PersistentBase<L3Consumer> {
+class L3 extends PersistentBase<L3Consumer> {
 
   private static final long HASH_SEED = 4604180344422375655L;
 
   private final TreeMap<InternalKey, PositionDelta> map;
 
-  public static L3 EMPTY = new L3(new TreeMap<>());
-  public static Id EMPTY_ID = EMPTY.getId();
+  static L3 EMPTY = new L3(new TreeMap<>());
+  static Id EMPTY_ID = EMPTY.getId();
 
   private L3(TreeMap<InternalKey, PositionDelta> keys) {
     this(null, keys);
@@ -171,15 +171,15 @@ public class L3 extends PersistentBase<L3Consumer> {
    *
    * @return new builder instance
    */
-  public static Builder builder() {
+  static Builder builder() {
     return new Builder();
   }
 
   /**
    * Implements {@link L3Consumer} to build an {@link L3} object.
    */
-  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public static final class Builder extends EntityBuilder<L3> implements L3Consumer {
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static final class Builder extends EntityBuilder<L3> implements L3Consumer {
 
     private Id id;
     private Stream<KeyDelta> keyDelta;

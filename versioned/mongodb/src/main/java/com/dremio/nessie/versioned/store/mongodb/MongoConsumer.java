@@ -45,7 +45,11 @@ public class MongoConsumer<C extends BaseConsumer<C>> implements BaseConsumer<C>
   @SuppressWarnings("unchecked")
   @Override
   public C id(Id id) {
-    serializeId(ID, id);
+    if (!properties.contains(ID)) {
+      // MongoSerDe calls this method as the very first one during serialization to satisfiy the
+      // deserialization requirement that the ID field is the first one being deserialized.
+      serializeId(ID, id);
+    }
     return (C) this;
   }
 

@@ -24,19 +24,21 @@ import java.util.stream.Stream;
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
-import com.dremio.nessie.versioned.impl.PersistentBase.EntityBuilder;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 
 /**
  * Generic class for reading a reference.
  */
-public interface InternalRef extends HasId {
+abstract class InternalRef extends PersistentBase<RefConsumer> {
 
   static final String TYPE = "type";
+
+  InternalRef(Id id) {
+    super(id);
+  }
 
   public static enum Type {
     BRANCH("b"),
@@ -82,21 +84,19 @@ public interface InternalRef extends HasId {
     }
   }
 
-  Type getType();
+  abstract Type getType();
 
-  default InternalBranch getBranch() {
+  InternalBranch getBranch() {
     throw new IllegalArgumentException(String.format("%s cannot be treated as a branch.", this.getClass().getName()));
   }
 
-  default InternalTag getTag() {
+  InternalTag getTag() {
     throw new IllegalArgumentException(String.format("%s cannot be treated as a tag.", this.getClass().getName()));
   }
 
-  default Id getHash() {
+  Id getHash() {
     throw new IllegalArgumentException(String.format("%s cannot be treated as a hash.", this.getClass().getName()));
   }
-
-  Id getId();
 
   /**
    * Create a new {@link Builder} instance that implements
@@ -112,8 +112,8 @@ public interface InternalRef extends HasId {
   /**
    * Implement {@link RefConsumer} to build an {@link InternalRef} object.
    */
-  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  final class Builder extends EntityBuilder<InternalRef> implements RefConsumer {
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static final class Builder extends EntityBuilder<InternalRef> implements RefConsumer {
 
     private Id id;
     private RefType refType;

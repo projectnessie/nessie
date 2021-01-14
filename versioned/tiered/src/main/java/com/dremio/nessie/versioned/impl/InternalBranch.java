@@ -59,7 +59,7 @@ import com.google.common.collect.Lists;
  *
  * @see RefConsumer for a detailed description
  */
-class InternalBranch extends PersistentBase<RefConsumer> implements InternalRef {
+class InternalBranch extends InternalRef {
 
   static final String ID = "id";
   static final String NAME = "name";
@@ -256,7 +256,7 @@ class InternalBranch extends PersistentBase<RefConsumer> implements InternalRef 
       }
       lastL1 = lastL1.getChildWithTree(c.commit, tree, c.keyMutationList)
           .withCheckpointAsNecessary(store);
-      toSave.add(ValueType.L1.createSaveOpForEntity(lastL1));
+      toSave.add(EntityType.L1.createSaveOpForEntity(lastL1));
       lastId = c.id;
       if (lastUnsaved != c) {
         // update for next loop.

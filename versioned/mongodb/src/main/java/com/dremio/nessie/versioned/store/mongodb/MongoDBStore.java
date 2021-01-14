@@ -23,12 +23,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.bson.BsonDocument;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
+import org.bson.Document;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
@@ -36,10 +37,7 @@ import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.versioned.impl.L1;
-import com.dremio.nessie.versioned.impl.L2;
-import com.dremio.nessie.versioned.impl.L3;
-import com.dremio.nessie.versioned.impl.PersistentBase;
+import com.dremio.nessie.versioned.impl.EntityTypeBridge;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
@@ -52,10 +50,7 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Multimaps;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.WriteConcern;
@@ -77,14 +72,15 @@ import reactor.core.publisher.Mono;
  * The MongoDbStore connects to an external MongoDB server.
  */
 public class MongoDBStore implements Store {
+
   /**
    * Pair of a collection to the set of IDs to be loaded.
    */
   private static class CollectionLoadIds {
-    final MongoCollection<? extends HasId> collection;
+    final MongoCollection<Document> collection;
     final List<Id> ids;
 
-    CollectionLoadIds(MongoCollection<? extends HasId> collection, List<Id> ops) {
+    CollectionLoadIds(MongoCollection<Document> collection, List<Id> ops) {
       this.collection = collection;
       this.ids = ops;
     }
@@ -96,15 +92,14 @@ public class MongoDBStore implements Store {
   @VisibleForTesting
   static final int LOAD_SIZE = 1_000;
 
-  private static final HasId FOUND_SENTINEL = () -> Id.EMPTY;
-
   private final MongoStoreConfig config;
   private final MongoClientSettings mongoClientSettings;
 
   private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
+  private final CodecRegistry codecRegistry;
   private final Duration timeout;
-  private Map<ValueType, MongoCollection<HasId>> collections;
+  private Map<ValueType, MongoCollection<Document>> collections;
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
@@ -114,7 +109,7 @@ public class MongoDBStore implements Store {
     this.config = config;
     this.timeout = Duration.ofMillis(config.getTimeoutMs());
     this.collections = new HashMap<>();
-    final CodecRegistry codecRegistry = CodecRegistries.fromProviders(
+    this.codecRegistry = CodecRegistries.fromProviders(
         new CodecProvider(),
         MongoClientSettings.getDefaultCodecRegistry());
     this.mongoClientSettings = MongoClientSettings.builder()
@@ -131,7 +126,6 @@ public class MongoDBStore implements Store {
    * either before they are used. This creates or retrieves collections that map 1:1 to the enumerates in
    * {@link com.dremio.nessie.versioned.store.ValueType}
    */
-  @SuppressWarnings("unchecked")
   @Override
   public void start() {
     mongoClient = MongoClients.create(mongoClientSettings);
@@ -139,19 +133,17 @@ public class MongoDBStore implements Store {
 
     // Initialise collections for each ValueType.
     collections = Stream.of(ValueType.values())
-        .collect(ImmutableMap.<ValueType, ValueType, MongoCollection<HasId>>toImmutableMap(
+        .collect(ImmutableMap.<ValueType, ValueType, MongoCollection<Document>>toImmutableMap(
             v -> v,
             v -> {
               String collectionName = v.getTableName(config.getTablePrefix());
-              return (MongoCollection<HasId>) mongoDatabase.getCollection(collectionName, v.getObjectClass());
+              return mongoDatabase.getCollection(collectionName);
             })
         );
 
     if (config.initializeDatabase()) {
       // make sure we have an empty l1 (ignore result, doesn't matter)
-      putIfAbsent(ValueType.L1, L1.EMPTY);
-      putIfAbsent(ValueType.L2, L2.EMPTY);
-      putIfAbsent(ValueType.L3, L3.EMPTY);
+      EntityTypeBridge.storeMinimumEntities(this::putIfAbsent);
     }
   }
 
@@ -166,33 +158,26 @@ public class MongoDBStore implements Store {
     }
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public void load(LoadStep loadstep) throws NotFoundException {
     for (LoadStep step = loadstep; step != null; step = step.getNext().orElse(null)) {
       final Map<Id, LoadOp<?>> idLoadOps = step.getOps().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
 
       Flux.fromStream(step.getOps())
-        .groupBy(op -> this.getCollection(op.getValueType()))
-        .flatMap(entry -> entry.map(LoadOp::getId).buffer(LOAD_SIZE).map(l -> new CollectionLoadIds(entry.key(), l)))
-        .flatMap(entry -> entry.collection.find(Filters.in(MongoConsumer.ID, entry.ids)))
-        .handle((op, sink) -> {
-          // Process each of the loaded entries.
-          final LoadOp loadOp = idLoadOps.remove(op.getId());
-          if (null == loadOp) {
-            sink.error(new StoreOperationException(String.format("Retrieved unexpected object with ID: %s", op.getId())));
-          } else {
-            // TODO this is an unnecessary deviation and needs to be fixed:
-            //  instead of retrieving an already materialized entity from Mongo, retrieve a Bson
-            //  and call MongoSerDe.deserializeToConsumer() with 'c' in the lambda below
-            loadOp.deserialize(c -> {
-              PersistentBase p = (PersistentBase) op;
-              BaseConsumer cons = (BaseConsumer) c;
-              p.applyToConsumer(cons);
-            });
-            sink.next(op);
-          }
+        .groupBy(LoadOp::getValueType)
+        .flatMap(entry -> {
+          ValueType type = entry.key();
+
+          MongoCollection<Document> collection = readCollection(
+              type,
+              id -> idLoadOps.get(id).getReceiver(),
+              id -> idLoadOps.remove(id).done());
+
+          return entry.map(LoadOp::getId)
+              .buffer(LOAD_SIZE)
+              .map(l -> new CollectionLoadIds(collection, l));
         })
+          .flatMap(entry -> entry.collection.find(Filters.in(MongoConsumer.ID, entry.ids)))
           .blockLast(timeout);
 
       // Check if there were any missed ops.
@@ -207,7 +192,7 @@ public class MongoDBStore implements Store {
 
   @Override
   public <V extends HasId> boolean putIfAbsent(ValueType type, V value) {
-    final MongoCollection<HasId> collection = getCollection(type);
+    final MongoCollection<Document> collection = getCollection(type);
 
     // Use upsert so that a document is created if the filter does not match. The update operator is only $setOnInsert
     // so no action is triggered on a simple update, only on insert.
@@ -221,15 +206,12 @@ public class MongoDBStore implements Store {
 
   @Override
   public <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
-    Preconditions.checkArgument(type.isEntityType(value),
-        "Value class %s is not value for ValueType %s.", value.getClass().getName(), type.name());
-
     // TODO: Handle ConditionExpressions.
     if (conditionUnAliased.isPresent()) {
       throw new UnsupportedOperationException("ConditionExpressions are not supported with MongoDB yet.");
     }
 
-    final MongoCollection<HasId> collection = getCollection(type);
+    final MongoCollection<Document> collection = getCollection(type);
 
     // Use upsert so that if an item does not exist, it will be insert.
     final UpdateResult result = Mono.from(
@@ -248,38 +230,54 @@ public class MongoDBStore implements Store {
     throw new UnsupportedOperationException();
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public void save(List<SaveOp<?>> ops) {
-    final ListMultimap<MongoCollection<HasId>, SaveOp<?>> mm = Multimaps.index(ops, l -> getCollection(l.getType()));
 
-    Flux.fromIterable(Multimaps.asMap(mm).entrySet())
+    Map<ValueType, List<SaveOp>> perType = ops.stream()
+        .collect(Collectors.groupingBy(SaveOp::getType));
+
+    Flux.fromIterable(perType.entrySet())
       .flatMap(entry -> {
-        final MongoCollection<HasId> collection = entry.getKey();
+        ValueType type = entry.getKey();
 
-        // Ordering of the inserts doesn't matter, so set to unordered to give potential performance improvements.
-        List<HasId> entities = entry.getValue().stream()
-            .map(saveOp -> (HasId) saveOp.getType().buildEntity(c -> {
-              // TODO this should really not use the deviation via a materialized entity but
-              //  serialize directly into a series of Bson. Couldn't get the 'insertMany' to
-              //  work though.
-              BaseConsumer cons = c;
-              saveOp.serialize(cons);
-            }))
-            .collect(Collectors.toList());
-        return collection.insertMany(entities, new InsertManyOptions().ordered(false));
+        Codec<SaveOp> codec = new Codec<SaveOp>() {
+          @Override
+          public SaveOp decode(BsonReader bsonReader, DecoderContext decoderContext) {
+            throw new UnsupportedOperationException();
+          }
+
+          @SuppressWarnings("unchecked")
+          @Override
+          public void encode(BsonWriter bsonWriter, SaveOp o, EncoderContext encoderContext) {
+            MongoSerDe.serializeEntity(bsonWriter, o.getId(), type, o::serialize);
+          }
+
+          @Override
+          public Class<SaveOp> getEncoderClass() {
+            return SaveOp.class;
+          }
+        };
+
+        MongoCollection collection = getCollection(type, codec);
+
+        return collection.insertMany(entry.getValue(), new InsertManyOptions().ordered(false));
       })
         .blockLast(timeout);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
-    return valueType.buildEntity(c -> loadSingle(valueType, id, c));
+    return EntityTypeBridge.buildEntity(valueType, c -> {
+      @SuppressWarnings("rawtypes") BaseConsumer cons = c;
+      loadSingle(valueType, id, cons);
+    });
   }
 
   @Override
   public <C extends BaseConsumer<C>> void loadSingle(ValueType valueType, Id id, C consumer) {
-    final MongoCollection<HasId> collection = readCollection(valueType, () -> consumer, c -> {});
+    final MongoCollection<Document> collection = readCollection(valueType, x -> consumer, x -> {});
 
     Object found = Mono.from(
         collection.find(Filters.eq(MongoConsumer.ID, id))
@@ -290,31 +288,26 @@ public class MongoDBStore implements Store {
   }
 
   @SuppressWarnings("rawtypes")
-  private MongoCollection<HasId> readCollection(
-      ValueType valueType, Supplier<BaseConsumer> consumerSupplier, Consumer<BaseConsumer> onRead) {
-    return getCollection(valueType).withCodecRegistry(CodecRegistries.fromCodecs(
-        CodecProvider.ID_CODEC_INSTANCE,
-        new Codec<HasId>() {
-          @SuppressWarnings({"unchecked", "rawtypes"})
-          @Override
-          public HasId decode(BsonReader reader, DecoderContext decoderContext) {
-            BaseConsumer consumer = consumerSupplier.get();
-            MongoSerDe.produceToConsumer(reader, valueType, consumer);
-            onRead.accept(consumer);
-            return FOUND_SENTINEL;
-          }
+  private MongoCollection<Document> readCollection(ValueType type, Function<Id, BaseConsumer> onIdParsed, Consumer<Id> parsed) {
+    Codec<Document> codec = new Codec<Document>() {
+      @Override
+      public Document decode(BsonReader bsonReader, DecoderContext decoderContext) {
+        MongoSerDe.produceToConsumer(bsonReader, type, onIdParsed, parsed);
+        return new Document();
+      }
 
-          @Override
-          public void encode(BsonWriter writer, HasId value, EncoderContext encoderContext) {
-            throw new UnsupportedOperationException();
-          }
+      @Override
+      public void encode(BsonWriter bsonWriter, Document o, EncoderContext encoderContext) {
+        throw new UnsupportedOperationException();
+      }
 
-          @SuppressWarnings("unchecked")
-          @Override
-          public Class<HasId> getEncoderClass() {
-            return (Class<HasId>) valueType.getObjectClass();
-          }
-        }));
+      @Override
+      public Class<Document> getEncoderClass() {
+        return Document.class;
+      }
+    };
+
+    return this.getCollection(type, codec);
   }
 
   @Override
@@ -323,12 +316,19 @@ public class MongoDBStore implements Store {
     throw new UnsupportedOperationException();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <V extends HasId> Stream<V> getValues(Class<V> valueClass, ValueType type) {
     // TODO: Can this be optimized to not collect the elements before streaming them?
     // TODO: Could this benefit from paging?
-    return (Stream<V>) Flux.from(this.getCollection(type).find()).toStream();
+    return Flux.from(this.getCollection(type).find()).toStream()
+        .map(d -> deserializeDocument(type, d));
+  }
+
+  private <V extends HasId> V deserializeDocument(ValueType type, Document d) {
+    return EntityTypeBridge.buildEntity(type, producer -> {
+      BsonDocument bsonDoc = d.toBsonDocument(Document.class, codecRegistry);
+      MongoSerDe.produceToConsumer(bsonDoc, type, producer);
+    });
   }
 
   /**
@@ -340,8 +340,27 @@ public class MongoDBStore implements Store {
   }
 
   @VisibleForTesting
-  MongoCollection<HasId> getCollection(ValueType valueType) {
-    final MongoCollection<HasId> collection = collections.get(valueType);
+  MongoCollection<Document> getCollection(ValueType valueType, Codec<?> codec) {
+    return getCollection(valueType).withCodecRegistry(
+        new CodecRegistry() {
+          @Override
+          public <T> Codec<T> get(Class<T> clazz, CodecRegistry codecRegistry) {
+            return get(clazz);
+          }
+
+          @SuppressWarnings("unchecked")
+          @Override
+          public <T> Codec<T> get(Class<T> clazz) {
+            if (clazz == Id.class) {
+              return (Codec<T>) CodecProvider.ID_CODEC_INSTANCE;
+            }
+            return (Codec<T>) codec;
+          }
+        });
+  }
+
+  MongoCollection<Document> getCollection(ValueType valueType) {
+    final MongoCollection<Document> collection = collections.get(valueType);
     if (null == collection) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
     }

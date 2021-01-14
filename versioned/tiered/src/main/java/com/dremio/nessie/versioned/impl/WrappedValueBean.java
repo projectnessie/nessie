@@ -43,7 +43,7 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Persi
     Preconditions.checkArgument(value.size() < MAX_SIZE, "Values and commit metadata must be less than 256K once serialized.");
   }
 
-  public ByteString getBytes() {
+  ByteString getBytes() {
     return value;
   }
 
@@ -87,8 +87,8 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Persi
   /**
    * Base builder-implementation for both {@link InternalCommitMetadata} and {@link InternalValue}.
    */
-  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public abstract static class Builder<E extends HasId, C extends WrappedValueConsumer<C>>
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  abstract static class Builder<E extends HasId, C extends WrappedValueConsumer<C>>
       extends EntityBuilder<E> implements WrappedValueConsumer<C> {
 
     private Id id;

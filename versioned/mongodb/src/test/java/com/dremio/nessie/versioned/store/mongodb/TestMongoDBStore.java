@@ -15,32 +15,12 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.bson.conversions.Bson;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.AdditionalAnswers;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
 
-import com.dremio.nessie.versioned.impl.InternalRef;
-import com.dremio.nessie.versioned.impl.SampleEntities;
-import com.dremio.nessie.versioned.store.HasId;
-import com.dremio.nessie.versioned.store.LoadStep;
-import com.dremio.nessie.versioned.store.StoreOperationException;
-import com.dremio.nessie.versioned.store.ValueType;
-import com.dremio.nessie.versioned.tests.AbstractTestStore;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
-import com.mongodb.reactivestreams.client.FindPublisher;
-import com.mongodb.reactivestreams.client.MongoCollection;
-
-import reactor.test.publisher.TestPublisher;
+import com.dremio.nessie.versioned.impl.AbstractTestStore;
 
 /**
  * A test class that contains MongoDB specific tests.
@@ -90,40 +70,6 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   @Override
   protected int loadSize() {
     return MongoDBStore.LOAD_SIZE;
-  }
-
-  @Test
-  void loadExtraInvalidEntity() {
-    // Set up the sample data and load it.
-    final InternalRef sampleBranch = SampleEntities.createBranch(random);
-    final Multimap<ValueType, HasId> objs = ImmutableMultimap.<ValueType, HasId>builder()
-        .put(ValueType.REF, sampleBranch)
-        .build();
-    objs.forEach(this::putThenLoad);
-    final LoadStep step = createTestLoadStep(objs);
-
-    // Set up the mocks.
-    final TestPublisher<InternalRef> publisher = TestPublisher.<InternalRef>createCold()
-        .next(sampleBranch, SampleEntities.createBranch(random))
-        .complete();
-    final FindPublisher<InternalRef> findPublisher = Mockito.mock(FindPublisher.class, AdditionalAnswers.delegatesTo(publisher));
-    final MongoCollection<InternalRef> mockCollection = Mockito.mock(MongoCollection.class);
-    Mockito.when(mockCollection.find(ArgumentMatchers.any(Bson.class))).thenReturn(findPublisher);
-
-    // Ensure the mocked collection is returned, which will then return the test publisher.
-    final AtomicBoolean hasReturnedCollection = new AtomicBoolean(false);
-    final MongoDBStore testStore = new MongoDBStore(createConfig()) {
-      @Override
-      MongoCollection<HasId> getCollection(ValueType valueType) {
-        try {
-          return (MongoCollection) mockCollection;
-        } finally {
-          hasReturnedCollection.set(true);
-        }
-      }
-    };
-
-    Assertions.assertThrows(StoreOperationException.class, () -> testStore.load(step));
   }
 
   private MongoStoreConfig createConfig() {

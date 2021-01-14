@@ -15,40 +15,35 @@
  */
 package com.dremio.nessie.versioned.store;
 
-import java.util.function.Consumer;
-
 import com.dremio.nessie.tiered.builder.BaseConsumer;
 
-public class LoadOp<C extends BaseConsumer<C>> {
+public abstract class LoadOp<C extends BaseConsumer<C>> {
   private final ValueType type;
   private final Id id;
-  private final C receiver;
-  private final Consumer<C> doneCallback;
 
   /**
    * Create a load op.
    * @param type The value type that will be loaded.
    * @param id The id of the value.
-   * @param receiver The {@link BaseConsumer instance} that will receive the entity load events.
-   * @param doneCallback Gets called with the value passed in as {@code producer}, when deserialization has finished.
    */
-  public LoadOp(ValueType type, Id id, C receiver, Consumer<C> doneCallback) {
+  public LoadOp(ValueType type, Id id) {
     this.type = type;
     this.id = id;
-    this.receiver = receiver;
-    this.doneCallback = doneCallback;
   }
 
   /**
-   * Store implementations call this method with a callback that must be called to
-   * perform the actual deserialization.
+   * Users of a {@link LoadOp} (the store implementations) can deserialize their representation
+   * into the {@link BaseConsumer} returned by this method and call {@link #done()} afterwards.
    *
-   * @param deserializer callback that accepts a {@link BaseConsumer}
+   * @return receiver of the "properties"
    */
-  public void deserialize(Consumer<C> deserializer) {
-    deserializer.accept(receiver);
-    doneCallback.accept(receiver);
-  }
+  public abstract C getReceiver();
+
+  /**
+   * Users of a {@link LoadOp} (the store implementations) can deserialize their representation
+   * into the {@link BaseConsumer} returned by {@link #getReceiver()} and call this method afterwards.
+   */
+  public abstract void done();
 
   public Id getId() {
     return id;

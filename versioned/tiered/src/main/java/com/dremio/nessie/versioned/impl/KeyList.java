@@ -400,7 +400,7 @@ abstract class KeyList {
         if (!presaved.contains(fragment.getId())) {
           // only save if we didn't save on the last checkpoint. This could still be a dupe of an older list but since the object
           // is hashed, the value will be a simple overwrite of the same data.
-          store.save(Collections.singletonList(ValueType.KEY_FRAGMENT.createSaveOpForEntity(fragment)));
+          store.save(Collections.singletonList(EntityType.KEY_FRAGMENT.createSaveOpForEntity(fragment)));
           fragmentIds.add(fragment.getId());
         }
       }

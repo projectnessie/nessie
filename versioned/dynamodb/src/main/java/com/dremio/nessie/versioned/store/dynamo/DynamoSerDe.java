@@ -33,6 +33,7 @@ import com.dremio.nessie.tiered.builder.L2Consumer;
 import com.dremio.nessie.tiered.builder.L3Consumer;
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
+import com.dremio.nessie.versioned.impl.EntityTypeBridge;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
@@ -121,9 +122,10 @@ final class DynamoSerDe {
    *
    * @see #deserializeToConsumer(ValueType, Map, BaseConsumer)
    */
+  @SuppressWarnings("unchecked")
   public static <V extends HasId, C extends BaseConsumer<C>> V deserialize(
       ValueType valueType, Map<String, AttributeValue> entity) {
-    return valueType.buildEntity(producer -> deserializeToConsumer(valueType, entity, producer));
+    return (V) EntityTypeBridge.buildEntity(valueType, producer -> deserializeToConsumer(valueType, entity, producer));
   }
 
   /**

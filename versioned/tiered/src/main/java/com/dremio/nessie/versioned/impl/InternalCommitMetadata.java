@@ -19,13 +19,13 @@ import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.protobuf.ByteString;
 
-public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsumer> {
+class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsumer> {
 
   private InternalCommitMetadata(Id id, ByteString value) {
     super(id, value);
   }
 
-  public static InternalCommitMetadata of(ByteString value) {
+  static InternalCommitMetadata of(ByteString value) {
     return new InternalCommitMetadata(null, value);
   }
 
@@ -40,15 +40,15 @@ public class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsu
    *
    * @return new builder instance
    */
-  public static Builder builder() {
+  static Builder builder() {
     return new Builder();
   }
 
   /**
    * Implements {@link CommitMetadataConsumer} to build an {@link InternalCommitMetadata} object.
    */
-  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public static final class Builder
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static final class Builder
       extends WrappedValueBean.Builder<InternalCommitMetadata, CommitMetadataConsumer>
       implements CommitMetadataConsumer {
 

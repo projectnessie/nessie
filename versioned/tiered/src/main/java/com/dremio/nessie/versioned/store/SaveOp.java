@@ -16,28 +16,23 @@
 package com.dremio.nessie.versioned.store;
 
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.versioned.impl.PersistentBase;
 
-public class SaveOp<C extends BaseConsumer<C>> {
+public abstract class SaveOp<C extends BaseConsumer<C>> {
   private final ValueType type;
   private final Supplier<Id> idSupplier;
-  private final Consumer<BaseConsumer<C>> serializer;
 
   /**
    * Constructs a new save-operation for the given type, id and serializer.
    *
    * @param type value type
    * @param idSupplier supplier for the entity's id
-   * @param serializer Java-consumer that will receive a consumer to serialize the entity to
    */
-  public SaveOp(ValueType type, Supplier<Id> idSupplier, Consumer<BaseConsumer<C>> serializer) {
+  public SaveOp(ValueType type, Supplier<Id> idSupplier) {
     this.type = type;
     this.idSupplier = idSupplier;
-    this.serializer = serializer;
   }
 
   public ValueType getType() {
@@ -49,16 +44,13 @@ public class SaveOp<C extends BaseConsumer<C>> {
   }
 
   /**
-   * Apply the contents of this {@link SaveOp}'s {@code value} to the given {@code consumer}.
+   * Called by store implementations instructing the implementation to serialize the properties
+   * to the given {@link BaseConsumer}.
    * <p>
-   * Works only, if {@code value} is an instance of {@link PersistentBase}.
-   * </p>
    *
-   * @param consumer the consumer that will receive the contents of {@code value}
+   * @param consumer the consumer that will receive the properties
    */
-  public void serialize(BaseConsumer<C> consumer) {
-    serializer.accept(consumer);
-  }
+  public abstract void serialize(BaseConsumer<C> consumer);
 
   @Override
   public String toString() {
@@ -81,7 +73,7 @@ public class SaveOp<C extends BaseConsumer<C>> {
       return false;
     }
 
-    SaveOp<C> other = (SaveOp<C>) obj;
+    SaveOp<?> other = (SaveOp<?>) obj;
     return type == other.type && Objects.equals(idSupplier.get(), other.idSupplier.get());
   }
 }

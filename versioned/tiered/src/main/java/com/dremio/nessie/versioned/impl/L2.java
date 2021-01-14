@@ -24,13 +24,13 @@ import com.dremio.nessie.tiered.builder.L2Consumer;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Objects;
 
-public class L2 extends PersistentBase<L2Consumer> {
+class L2 extends PersistentBase<L2Consumer> {
 
   private static final long HASH_SEED = -6352836103271505167L;
 
-  public static final int SIZE = 199;
-  public static L2 EMPTY = new L2(null, new IdMap(SIZE, L3.EMPTY_ID));
-  public static Id EMPTY_ID = EMPTY.getId();
+  static final int SIZE = 199;
+  static L2 EMPTY = new L2(null, new IdMap(SIZE, L3.EMPTY_ID));
+  static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap map;
 
@@ -65,7 +65,7 @@ public class L2 extends PersistentBase<L2Consumer> {
    * return the number of positions that are non-empty.
    * @return number of non-empty positions.
    */
-  public int size() {
+  int size() {
     int count = 0;
     for (Id id : map) {
       if (!id.equals(L3.EMPTY_ID)) {
@@ -104,15 +104,15 @@ public class L2 extends PersistentBase<L2Consumer> {
    *
    * @return new builder instance
    */
-  public static Builder builder() {
+  static Builder builder() {
     return new Builder();
   }
 
   /**
    * implements {@link L2Consumer} to build an {@link L2} object.
    */
-  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public static final class Builder extends EntityBuilder<L2> implements L2Consumer {
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static final class Builder extends EntityBuilder<L2> implements L2Consumer {
 
     private Id id;
     private Stream<Id> children;

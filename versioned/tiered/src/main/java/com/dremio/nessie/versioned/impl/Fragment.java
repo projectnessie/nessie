@@ -28,16 +28,16 @@ import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
-public class Fragment extends PersistentBase<FragmentConsumer> {
+class Fragment extends PersistentBase<FragmentConsumer> {
 
   private final List<InternalKey> keys;
 
-  public Fragment(List<InternalKey> keys) {
+  Fragment(List<InternalKey> keys) {
     super();
     this.keys = ImmutableList.copyOf(keys);
   }
 
-  public Fragment(Id id, List<InternalKey> keys) {
+  Fragment(Id id, List<InternalKey> keys) {
     super(id);
     this.keys = ImmutableList.copyOf(keys);
   }
@@ -49,7 +49,7 @@ public class Fragment extends PersistentBase<FragmentConsumer> {
     });
   }
 
-  public List<InternalKey> getKeys() {
+  List<InternalKey> getKeys() {
     return keys;
   }
 
@@ -82,15 +82,15 @@ public class Fragment extends PersistentBase<FragmentConsumer> {
    *
    * @return new builder instance
    */
-  public static Builder builder() {
+  static Builder builder() {
     return new Builder();
   }
 
   /**
    * Implements {@link FragmentConsumer} to build a {@link Fragment} object.
    */
-  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public static class Builder extends EntityBuilder<Fragment> implements FragmentConsumer {
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static class Builder extends EntityBuilder<Fragment> implements FragmentConsumer {
 
     private Id id;
     private List<InternalKey> keys;

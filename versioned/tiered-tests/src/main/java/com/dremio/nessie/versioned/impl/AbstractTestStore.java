@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.tests;
+package com.dremio.nessie.versioned.impl;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
@@ -29,8 +30,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.versioned.impl.EntityLoadOps;
-import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
@@ -259,13 +258,15 @@ public abstract class AbstractTestStore<S extends Store> {
 
   static class EntitySaveOp {
     final ValueType type;
-    final HasId entity;
+    final PersistentBase<?> entity;
     final SaveOp<?> saveOp;
 
-    EntitySaveOp(ValueType type, HasId entity) {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    EntitySaveOp(ValueType type, PersistentBase<?> entity) {
       this.type = type;
       this.entity = entity;
-      this.saveOp = type.createSaveOpForEntity(entity);
+      EntityType et = EntityType.forType(type);
+      this.saveOp = et.createSaveOpForEntity(entity);
     }
   }
 
@@ -284,14 +285,14 @@ public abstract class AbstractTestStore<S extends Store> {
 
     store.save(entities.stream().map(e -> e.saveOp).collect(Collectors.toList()));
 
-    entities.forEach(s -> {
+    assertAll(entities.stream().map(s -> () -> {
       try {
         HasId saveOpValue = s.entity;
         HasId loadedValue = store.loadSingle(s.type, saveOpValue.getId());
         assertEquals(saveOpValue, loadedValue, "type " + s.type);
 
         try {
-          loadedValue = s.type.buildEntity(producer -> store.loadSingle(s.type, saveOpValue.getId(), producer));
+          loadedValue = EntityType.forType(s.type).buildEntity(producer -> store.loadSingle(s.type, saveOpValue.getId(), producer));
           assertEquals(saveOpValue, loadedValue, "type " + s.type);
         } catch (UnsupportedOperationException e) {
           // TODO ignore this for now
@@ -300,7 +301,7 @@ public abstract class AbstractTestStore<S extends Store> {
       } catch (NotFoundException e) {
         Assertions.fail("type " + s.type, e);
       }
-    });
+    }));
   }
 
   @Test
@@ -331,10 +332,12 @@ public abstract class AbstractTestStore<S extends Store> {
     return createTestLoadStep(objs, Optional.empty());
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   protected LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs, Optional<LoadStep> next) {
     EntityLoadOps loadOps = new EntityLoadOps();
     objs.forEach((type, val) -> {
-      loadOps.load(type, val.getId(), r -> assertEquals(val, r));
+      EntityType et = EntityType.forType(type);
+      loadOps.load(et, val.getId(), r -> assertEquals(val, r));
     });
     return loadOps.build(() -> next);
   }

@@ -13,28 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.store;
+package com.dremio.nessie.versioned.impl;
 
-import java.util.Optional;
-import java.util.stream.Collector;
-import java.util.stream.Stream;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.ValueType;
 
-public interface LoadStep {
+final class EntitySaveOp<C extends BaseConsumer<C>, E extends PersistentBase<C>> extends SaveOp<C> {
 
-  Stream<LoadOp<?>> getOps();
+  private final E value;
 
-  /**
-   * Merge the current LoadStep with another to create a new compound LoadStep.
-   * @param other The second LoadStep to combine with this.
-   * @return A newly created combined LoadStep
-   */
-  LoadStep combine(LoadStep other);
-
-  Optional<LoadStep> getNext();
-
-  static Collector<LoadStep, ?, LoadStep> toLoadStep() {
-    return LoadStepCollector.COLLECTOR;
+  EntitySaveOp(ValueType type, E value) {
+    super(type, value::getId);
+    this.value = value;
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public void serialize(BaseConsumer<C> consumer) {
+    value.applyToConsumer((C) consumer);
+  }
 }
-

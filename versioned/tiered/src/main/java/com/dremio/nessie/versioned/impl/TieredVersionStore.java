@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.versioned.store.SaveOp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -247,13 +248,13 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
 
       // do updates.
-      holders.forEach(o -> o.apply());
+      holders.forEach(OperationHolder::apply);
 
       // save all but l1 and branch.
       store.save(
           Streams.concat(
               current.getMostSaveOps(),
-              Stream.of(ValueType.COMMIT_METADATA.createSaveOpForEntity(metadata))
+              Stream.of(EntityType.COMMIT_METADATA.createSaveOpForEntity(metadata))
           ).collect(Collectors.toList()));
 
       CommitOp commitOp = current.getCommitOp(
@@ -538,15 +539,15 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       EntityLoadOps loadOps = new EntityLoadOps();
 
       // always load the l1 we're merging from.
-      loadOps.load(ValueType.L1, L1.class, Id.of(fromHash), fromPtr::set);
+      loadOps.load(EntityType.L1, L1.class, Id.of(fromHash), fromPtr::set);
       if (expectedBranchHash.isPresent()) {
         // if an expected branch hash is provided, use that l1 as the basic. Still load the branch to make sure it exists.
-        loadOps.load(ValueType.L1, L1.class, Id.of(expectedBranchHash.get()), toPtr::set);
-        loadOps.load(ValueType.REF, InternalRef.class, branchId.getId(), branch::set);
+        loadOps.load(EntityType.L1, L1.class, Id.of(expectedBranchHash.get()), toPtr::set);
+        loadOps.load(EntityType.REF, InternalRef.class, branchId.getId(), branch::set);
       } else {
 
         // if no expected branch hash is provided, use the head of the branch as the basis for the rebase.
-        loadOps.load(ValueType.REF, InternalRef.class, branchId.getId(), r -> toPtr.set(ensureValidL1(r.getBranch())));
+        loadOps.load(EntityType.REF, InternalRef.class, branchId.getId(), r -> toPtr.set(ensureValidL1(r.getBranch())));
       }
 
       try {
@@ -738,7 +739,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         .flatMap(k -> Stream.of(k.getFrom(), k.getTo()))
         .distinct()
         .filter(id -> !id.isEmpty())
-        .forEach(id -> loadOps.load(ValueType.VALUE, InternalValue.class, id, val -> values.put(id, val)));
+        .forEach(id -> loadOps.load(EntityType.VALUE, InternalValue.class, id, val -> values.put(id, val)));
     store.load(loadOps.build());
 
     return finder.getKeyDiffs().map(kd -> Diff.of(

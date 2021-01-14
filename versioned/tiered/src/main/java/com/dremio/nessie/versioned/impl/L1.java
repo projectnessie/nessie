@@ -30,13 +30,13 @@ import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 
-public class L1 extends PersistentBase<L1Consumer> {
+class L1 extends PersistentBase<L1Consumer> {
 
   private static final long HASH_SEED = 3506039963025592061L;
 
-  public static final int SIZE = 43;
-  public static L1 EMPTY = new L1(Id.EMPTY, new IdMap(SIZE, L2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
-  public static Id EMPTY_ID = EMPTY.getId();
+  static final int SIZE = 43;
+  static L1 EMPTY = new L1(Id.EMPTY, new IdMap(SIZE, L2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
+  static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap tree;
 
@@ -65,7 +65,7 @@ public class L1 extends PersistentBase<L1Consumer> {
     return new L1(metadataId, tree, null, keyList, parents);
   }
 
-  public L1 withCheckpointAsNecessary(Store store) {
+  L1 withCheckpointAsNecessary(Store store) {
     return keyList.createCheckpointIfNeeded(this, store).map(keylist -> new L1(metadataId, tree, null, keylist, parentList)).orElse(this);
   }
 
@@ -107,7 +107,7 @@ public class L1 extends PersistentBase<L1Consumer> {
     return tree;
   }
 
-  public List<PositionDelta> getChanges() {
+  List<PositionDelta> getChanges() {
     return tree.getChanges();
   }
 
@@ -175,15 +175,15 @@ public class L1 extends PersistentBase<L1Consumer> {
    *
    * @return new builder instance
    */
-  public static Builder builder() {
+  static Builder builder() {
     return new Builder();
   }
 
   /**
    * Implements {@link L1Consumer} to build an {@link L1} object.
    */
-  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public static final class Builder extends EntityBuilder<L1> implements L1Consumer {
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static final class Builder extends EntityBuilder<L1> implements L1Consumer {
 
     private Id metadataId;
     private Stream<Id> ancestors;

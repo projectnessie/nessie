@@ -151,11 +151,11 @@ class HistoryRetriever {
         final HistoryItem item = new HistoryItem(parent);
         items.add(item);
         if (retrieveL1 || retrieveCommit || lastInList) {
-          loadOps.load(ValueType.L1, L1.class, parent, l1 -> item.l1 = l1);
+          loadOps.load(EntityType.L1, L1.class, parent, l1 -> item.l1 = l1);
         }
 
         if (retrieveCommit && !parent.equals(L1.EMPTY_ID)) {
-          secondOps.loadDeferred(ValueType.COMMIT_METADATA,
+          secondOps.loadDeferred(EntityType.COMMIT_METADATA,
               InternalCommitMetadata.class,
               () -> item.l1.getMetadataId(),
               cmd -> item.commitMetadata = cmd);

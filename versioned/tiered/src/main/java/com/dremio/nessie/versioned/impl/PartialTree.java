@@ -44,7 +44,6 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Streams;
 
@@ -109,7 +108,7 @@ class PartialTree<V> {
     }
 
     EntityLoadOps loadOps = new EntityLoadOps();
-    loadOps.load(ValueType.REF, InternalRef.class, refId.getId(), loadedRef -> {
+    loadOps.load(EntityType.REF, InternalRef.class, refId.getId(), loadedRef -> {
       refType = loadedRef.getType();
       if (loadedRef.getType() == Type.BRANCH) {
         L1 loaded = l1Converter.apply(loadedRef.getBranch());
@@ -134,10 +133,11 @@ class PartialTree<V> {
    */
   public Stream<SaveOp<?>> getMostSaveOps() {
     checkMutable();
-    return Streams.<SaveOp<?>>concat(
-        l2s.values().stream().filter(Pointer::isDirty).map(l2p -> ValueType.L2.createSaveOpForEntity(l2p.get())).distinct(),
-        l3s.values().stream().filter(Pointer::isDirty).map(l3p -> ValueType.L3.createSaveOpForEntity(l3p.get())).distinct(),
-        values.values().stream().map(v -> ValueType.VALUE.createSaveOpForEntity(v.getPersistentValue())).distinct()
+    return Streams.concat(
+        l2s.values().stream().filter(Pointer::isDirty).map(l2p -> EntityType.L2.createSaveOpForEntity(l2p.get())).distinct(),
+        l3s.values().stream().filter(Pointer::isDirty).map(l3p -> EntityType.L3.createSaveOpForEntity(l3p.get())).distinct(),
+        values.values().stream().map(v -> EntityType.VALUE.createSaveOpForEntity(
+            (InternalValue) v.getPersistentValue())).distinct()
         );
   }
 
@@ -238,7 +238,7 @@ class PartialTree<V> {
     }
 
     EntityLoadOps loadOps = new EntityLoadOps();
-    loadOps.load(ValueType.L1, L1.class, rootId, l -> l1 = new Pointer<>(l));
+    loadOps.load(EntityType.L1, L1.class, rootId, l -> l1 = new Pointer<>(l));
     return Optional.of(loadOps.build(loadFunc));
   }
 
@@ -246,7 +246,7 @@ class PartialTree<V> {
     EntityLoadOps loadOps = new EntityLoadOps();
     keys.forEach(id -> {
       Id l2Id = l1.get().getId(id.getL1Position());
-      loadOps.load(ValueType.L2, L2.class, l2Id, l -> l2s.putIfAbsent(id.getL1Position(), new Pointer<>(l)));
+      loadOps.load(EntityType.L2, L2.class, l2Id, l -> l2s.putIfAbsent(id.getL1Position(), new Pointer<>(l)));
     });
     return Optional.of(loadOps.build(() -> getLoadStep3(includeValues)));
   }
@@ -256,7 +256,7 @@ class PartialTree<V> {
     keys.forEach(keyId -> {
       L2 l2 = l2s.get(keyId.getL1Position()).get();
       Id l3Id = l2.getId(keyId.getL2Position());
-      loadOps.load(ValueType.L3, L3.class, l3Id, l -> l3s.putIfAbsent(keyId.getPosition(), new Pointer<>(l)));
+      loadOps.load(EntityType.L3, L3.class, l3Id, l -> l3s.putIfAbsent(keyId.getPosition(), new Pointer<>(l)));
     });
     return Optional.of(loadOps.build(() -> getLoadStep4(includeValues)));
   }
@@ -272,7 +272,7 @@ class PartialTree<V> {
           Id id = l3.getId(key);
           if (!id.isEmpty()) {
             // no load needed for empty values.
-            loadOps.load(ValueType.VALUE, InternalValue.class, l3.getId(key),
+            loadOps.load(EntityType.VALUE, InternalValue.class, l3.getId(key),
                 (wvb) -> values.putIfAbsent(key, ValueHolder.of(serializer, wvb)));
           }
       });
@@ -351,22 +351,22 @@ class PartialTree<V> {
   public PartialTree<V> cleanClone() {
     PartialTree<V> clone = new PartialTree<V>(serializer, refId, keys);
     this.l3s.entrySet().stream()
-            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(ValueType.L3, x.getValue())))
+            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(EntityType.L3, x.getValue())))
             .forEach(x -> clone.l3s.put(x.getKey(), x.getValue()));
     this.l2s.entrySet().stream()
-            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(ValueType.L2, x.getValue())))
+            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(EntityType.L2, x.getValue())))
             .forEach(x -> clone.l2s.put(x.getKey(), x.getValue()));
     this.values.forEach(clone.values::put);
     clone.refType = this.refType;
     clone.rootId = this.rootId;
-    clone.l1 = cloneInner(ValueType.L1, this.l1);
+    clone.l1 = cloneInner(EntityType.L1, this.l1);
     return clone;
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private static <T extends PersistentBase<?>> Pointer<T> cloneInner(ValueType type, Pointer<T> value) {
+  private static <T extends PersistentBase<?>> Pointer<T> cloneInner(EntityType<?, T> type, Pointer<T> value) {
     if (value.isDirty()) {
-      return new Pointer<>(type.buildEntity(producer -> {
+      return new Pointer(type.buildEntity(producer -> {
         PersistentBase persistentBase = value.get();
         persistentBase.applyToConsumer(producer);
       }));

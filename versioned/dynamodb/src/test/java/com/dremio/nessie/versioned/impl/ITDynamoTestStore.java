@@ -20,7 +20,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.dremio.nessie.versioned.LocalDynamoDB;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
-import com.dremio.nessie.versioned.tests.AbstractTestStore;
 
 /**
  * A test class that contains DynamoDB tests.

@@ -22,13 +22,13 @@ import com.google.protobuf.ByteString;
 /**
  * Holds a VersionStore binary value for interaction with the Store.
  */
-public class InternalValue extends WrappedValueBean<ValueConsumer> {
+class InternalValue extends WrappedValueBean<ValueConsumer> {
 
   private InternalValue(Id id, ByteString value) {
     super(id, value);
   }
 
-  public static InternalValue of(ByteString value) {
+  static InternalValue of(ByteString value) {
     return new InternalValue(null, value);
   }
 
@@ -43,15 +43,15 @@ public class InternalValue extends WrappedValueBean<ValueConsumer> {
    *
    * @return new builder instance
    */
-  public static Builder builder() {
+  static Builder builder() {
     return new Builder();
   }
 
   /**
    * Implements {@link ValueConsumer} to builds an {@link InternalValue} object.
    */
-  // Needs to be a public class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  public static final class Builder
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static final class Builder
       extends WrappedValueBean.Builder<InternalValue, ValueConsumer>
       implements ValueConsumer {
 
