@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.sql.DataSource;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -39,6 +40,7 @@ import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.server.config.ApplicationConfig;
 import com.dremio.nessie.server.config.ApplicationConfig.VersionStoreDynamoConfig;
+import com.dremio.nessie.server.config.ApplicationConfig.VersionStoreJdbcConfig;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.services.config.ServerConfig;
 import com.dremio.nessie.versioned.BranchName;
@@ -53,6 +55,9 @@ import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
+import com.dremio.nessie.versioned.store.jdbc.Dialect;
+import com.dremio.nessie.versioned.store.jdbc.JdbcStore;
+import com.dremio.nessie.versioned.store.jdbc.JdbcStoreConfig;
 
 import software.amazon.awssdk.regions.Region;
 
@@ -62,6 +67,9 @@ public class VersionStoreFactory {
   private static final Logger LOGGER = LoggerFactory.getLogger(VersionStoreFactory.class);
 
   private final ApplicationConfig config;
+
+  @Inject
+  DataSource dataSource;
 
   @Inject
   public VersionStoreFactory(ApplicationConfig config) {
@@ -86,19 +94,25 @@ public class VersionStoreFactory {
   @Singleton
   public VersionStore<Contents, CommitMeta> configuration(
       TableCommitMetaStoreWorker storeWorker, Repository repository, ServerConfig config) {
-    VersionStore<Contents, CommitMeta> store = getVersionStore(storeWorker, repository);
-    try (Stream<WithHash<NamedRef>> str = store.getNamedRefs()) {
-      if (!str.findFirst().isPresent()) {
-        // if this is a new database, create a branch with the default branch name.
-        try {
-          store.create(BranchName.of(config.getDefaultBranch()), Optional.empty());
-        } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
-          LOGGER.warn("Failed to create default branch of {}.", config.getDefaultBranch(), e);
+    try {
+      VersionStore<Contents, CommitMeta> store = getVersionStore(storeWorker, repository);
+      try (Stream<WithHash<NamedRef>> str = store.getNamedRefs()) {
+        if (!str.findFirst().isPresent()) {
+          // if this is a new database, create a branch with the default branch name.
+          try {
+            store.create(BranchName.of(config.getDefaultBranch()), Optional.empty());
+          } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
+            LOGGER.warn("Failed to create default branch of {}.", config.getDefaultBranch(), e);
+          }
         }
       }
-    }
 
-    return store;
+      return store;
+    } catch (Exception e) {
+      // Log any error here, because it may otherwise get not logged anywhere.
+      LOGGER.error("Error producing version-store", e);
+      throw new RuntimeException(e);
+    }
   }
 
   private VersionStore<Contents, CommitMeta> getVersionStore(TableCommitMetaStoreWorker storeWorker, Repository repository) {
@@ -106,6 +120,9 @@ public class VersionStoreFactory {
       case DYNAMO:
         LOGGER.info("Using Dyanmo Version store");
         return new TieredVersionStore<>(storeWorker, createDynamoConnection(), false);
+      case JDBC:
+        LOGGER.info("Using JDBC Version store");
+        return new TieredVersionStore<>(storeWorker, createJdbcStore(), false);
       case JGIT:
         LOGGER.info("Using JGit Version Store");
         return new JGitVersionStore<>(repository, storeWorker);
@@ -144,6 +161,30 @@ public class VersionStoreFactory {
           .build());
     dynamo.start();
     return dynamo;
+  }
+
+  /**
+   * Create a JDBC store.
+   */
+  private JdbcStore createJdbcStore() {
+    if (!config.getVersionStoreConfig().getVersionStoreType().equals(VersionStoreType.JDBC)) {
+      return null;
+    }
+
+    VersionStoreJdbcConfig in = config.getVersionStoreJdbcConfig();
+    JdbcStore jdbc = new JdbcStore(
+        JdbcStoreConfig.builder()
+          .initializeDatabase(in.isJdbcInitialize())
+          .tablePrefix(in.getTablePrefix())
+          .setupTables(in.isSetupTables())
+          .logCreateDDL(in.isLogCreateDDL())
+          .catalog(in.getCatalog().orElse(null))
+          .schema(in.getSchema().orElse(null))
+          .dialect(Dialect.valueOf(in.getDialect().name()))
+          .build(),
+        dataSource);
+    jdbc.start();
+    return jdbc;
   }
 
   /**

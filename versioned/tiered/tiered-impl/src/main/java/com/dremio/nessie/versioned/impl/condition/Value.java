@@ -81,6 +81,11 @@ public interface Value extends Aliasable<Value> {
     }
 
     @Override
+    public Entity getValue() {
+      return value;
+    }
+
+    @Override
     public String toString() {
       return value.toString();
     }

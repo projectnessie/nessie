@@ -51,6 +51,11 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-tiered-jdbc</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-memory</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -146,6 +151,28 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-amazon-dynamodb</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-agroal</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jdbc-h2</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jdbc-postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <version>${hsqldb.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.oracle.database.jdbc</groupId>
+      <artifactId>ojdbc8</artifactId>
+      <version>${oraclejdbc.version}</version>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -244,6 +271,28 @@
                     <MP_JWT_VERIFY_PUBLICKEY_LOCATION>${project.build.directory}/test-classes/META-INF/resources/publicKey.pem</MP_JWT_VERIFY_PUBLICKEY_LOCATION>
                     <QUARKUS_SMALLRYE_JWT_ENABLED>true</QUARKUS_SMALLRYE_JWT_ENABLED>
                     <NESSIE_VERSION_STORE_JGIT_TYPE>INMEMORY</NESSIE_VERSION_STORE_JGIT_TYPE>
+                  </environmentVariables>
+                  <systemPropertyVariables>
+                    <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+                  </systemPropertyVariables>
+                </configuration>
+              </execution>
+              <execution>
+                <id>jdbc</id>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+                <configuration>
+                  <environmentVariables>
+                    <QUARKUS_LOG_LEVEL>DEBUG</QUARKUS_LOG_LEVEL>
+                    <MP_JWT_VERIFY_PUBLICKEY_LOCATION>${project.build.directory}/test-classes/META-INF/resources/publicKey.pem</MP_JWT_VERIFY_PUBLICKEY_LOCATION>
+                    <QUARKUS_SMALLRYE_JWT_ENABLED>true</QUARKUS_SMALLRYE_JWT_ENABLED>
+                    <NESSIE_VERSION_STORE_TYPE>JDBC</NESSIE_VERSION_STORE_TYPE>
+                    <NESSIE_VERSION_STORE_JGIT_TYPE>INMEMORY</NESSIE_VERSION_STORE_JGIT_TYPE>
+                    <NESSIE_VERSION_STORE_JDBC_SETUPTABLES>true</NESSIE_VERSION_STORE_JDBC_SETUPTABLES>
+                    <NESSIE_VERSION_STORE_JDBC_INITIALIZE>true</NESSIE_VERSION_STORE_JDBC_INITIALIZE>
+                    <NESSIE_VERSION_STORE_JDBC_DIALECT>HSQL</NESSIE_VERSION_STORE_JDBC_DIALECT>
                   </environmentVariables>
                   <systemPropertyVariables>
                     <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>

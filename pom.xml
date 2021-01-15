@@ -124,6 +124,7 @@
     <guava.version>30.1-jre</guava.version>
     <hadoop.version>3.3.0</hadoop.version>
     <hamcrest.version>2.2</hamcrest.version>
+    <hsqldb.version>2.5.1</hsqldb.version>
     <iceberg.version>0.11.0</iceberg.version>
     <immutables.version>2.8.9-ea-1</immutables.version>
     <jackson.version>2.11.3</jackson.version>
@@ -135,6 +136,7 @@
     <jmeter.version>5.4.1</jmeter.version>
     <junit.version>5.7.0</junit.version>
     <logback.version>1.2.3</logback.version>
+    <oraclejdbc.version>21.1.0.0</oraclejdbc.version>
     <protobuf.version>3.14.0</protobuf.version>
     <mockito.version>3.7.7</mockito.version>
     <mongodb.version>4.1.1</mongodb.version>
@@ -149,6 +151,7 @@
     <spark3.version>3.0.1</spark3.version>
     <spark3.jackson.version>2.10.2</spark3.jackson.version>
     <sqlite.version>1.0.392</sqlite.version>
+    <testcontainers.version>1.15.1</testcontainers.version>
     <quarkus.version>1.11.1.Final</quarkus.version>
     <openapi.version>1.1.2</openapi.version>
     <jsr305.version>3.0.2</jsr305.version>
