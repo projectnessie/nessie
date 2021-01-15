@@ -52,7 +52,6 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.dremio.nessie.versioned.store.ValuesMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.ConnectionString;
@@ -268,15 +267,13 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType<C> type, ValuesMapper<C, V> valuesMapper) {
+  public <C extends BaseConsumer<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
     // TODO: Can this be optimized to not collect the elements before streaming them?
     // TODO: Could this benefit from paging?
     return Flux.from(this.getCollection(type).find()).toStream()
-        .map(d -> {
-          C producer = valuesMapper.producerForItem();
+        .map(d -> producer -> {
           BsonDocument bsonDoc = d.toBsonDocument(Document.class, mongoClientSettings.getCodecRegistry());
           MongoSerDe.produceToConsumer(bsonDoc, type, producer);
-          return valuesMapper.itemProduced(producer);
         });
   }
 

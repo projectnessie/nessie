@@ -73,7 +73,6 @@ import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.dremio.nessie.versioned.store.ValuesMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -314,17 +313,12 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return store.getValues(InternalRef.class, ValueType.REF, new ValuesMapper<RefConsumer, InternalRef>() {
-      @Override
-      public RefConsumer producerForItem() {
-        return EntityType.REF.newEntityProducer();
-      }
-
-      @Override
-      public InternalRef itemProduced(RefConsumer producer) {
-        return EntityType.REF.buildFromProducer(producer);
-      }
-    })
+    return store.getValues(ValueType.REF)
+        .map(acceptor -> {
+          RefConsumer producer = EntityType.REF.newEntityProducer();
+          acceptor.applyValue(producer);
+          return EntityType.REF.buildFromProducer(producer);
+        })
         .map(ir -> {
           if (ir.getType() == Type.TAG) {
             return WithHash.of(ir.getTag().getCommit().toHash(), ImmutableTagName.builder().name(ir.getTag().getName()).build());

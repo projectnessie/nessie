@@ -127,16 +127,16 @@ public interface Store extends AutoCloseable {
   <C extends BaseConsumer<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
       Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException;
 
+  interface Acceptor<C extends BaseConsumer<C>> {
+    void applyValue(C consumer);
+  }
+
   /**
    * Get a list of all available values of the requested value type.
    *
-   * @param valueClass The {@code Class} associated with requested value type. Should match {@code ValueType.getObjectClass()}.
-   * @param type The {@link ValueType} to load.
-   * @param valuesMapper mapper implementation that is responsible to construct the values emitted
-   *                     by the returned {@link Stream}
    * @param <C> the consumer type
-   * @param <V> the {@link ValuesMapper} results
-   * @return stream with the results of the values returned by {@link ValuesMapper}
+   * @param type The {@link ValueType} to load.
+   * @return stream with {@link Acceptor} instances that accept {@link BaseConsumer} instances to produce values
    */
-  <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType<C> type, ValuesMapper<C, V> valuesMapper);
+  <C extends BaseConsumer<C>> Stream<Acceptor<C>> getValues(ValueType<C> type);
 }

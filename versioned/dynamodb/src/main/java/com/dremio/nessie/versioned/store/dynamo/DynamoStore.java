@@ -53,7 +53,6 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.dremio.nessie.versioned.store.ValuesMapper;
 import com.dremio.nessie.versioned.util.AutoCloseables;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -407,15 +406,11 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType<C> type, ValuesMapper<C, V> valuesMapper) {
+  public <C extends BaseConsumer<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
     return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
         .stream()
         .flatMap(r -> r.items().stream())
-        .map(i -> {
-          C producer = valuesMapper.producerForItem();
-          deserializeToConsumer(type, i, producer);
-          return valuesMapper.itemProduced(producer);
-        });
+        .map(i -> consumer -> deserializeToConsumer(type, i, consumer));
   }
 
   private void createIfMissing(String name) {

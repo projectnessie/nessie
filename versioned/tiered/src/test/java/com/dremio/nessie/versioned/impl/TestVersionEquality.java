@@ -34,7 +34,6 @@ import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.dremio.nessie.versioned.store.ValuesMapper;
 
 class TestVersionEquality {
 
@@ -107,8 +106,7 @@ class TestVersionEquality {
     }
 
     @Override
-    public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType<C> type,
-        ValuesMapper<C, V> valuesMapper) {
+    public <C extends BaseConsumer<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
       return null;
     }
   }
