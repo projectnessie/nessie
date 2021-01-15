@@ -15,46 +15,57 @@
  */
 package com.dremio.nessie.versioned.store;
 
-import java.util.Map;
 import java.util.Objects;
 
-public class SaveOp<V extends HasId> {
-  private final ValueType type;
-  private final V value;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 
-  public SaveOp(ValueType type, V value) {
+/**
+ * Save operations push the properties of the value to save via the {@link BaseConsumer consumer}
+ * passed to the {@link #serialize(BaseConsumer)} method.
+ *
+ * @param <C> {@link BaseConsumer consumer} used to handle the save-operation
+ */
+public abstract class SaveOp<C extends BaseConsumer<C>> {
+  private final ValueType<C> type;
+  private final Id id;
+
+  /**
+   * Constructs a new save-operation for the given type, id and serializer.
+   *
+   * @param type value type
+   * @param id the entity's id
+   */
+  public SaveOp(ValueType<C> type, Id id) {
     this.type = type;
-    this.value = value;
+    this.id = id;
   }
 
-  public ValueType getType() {
+  public ValueType<C> getType() {
     return type;
   }
 
-  public V getValue() {
-    return value;
+  public Id getId() {
+    return id;
   }
 
-  public Map<String, Entity> toEntity() {
-    SimpleSchema<V> schema = type.getSchema();
-    return type.addType(schema.itemToMap(value, true));
-  }
+  /**
+   * Called by store implementations instructing the implementation to serialize the properties
+   * to the given {@link BaseConsumer}.
+   *
+   * @param consumer the consumer that will receive the properties
+   */
+  public abstract void serialize(C consumer);
 
   @Override
   public String toString() {
-    return "SaveOp [type=" + type + ", id=" + value.getId() + "]";
+    return "SaveOp [type=" + type + ", id=" + id + "]";
   }
 
   @Override
   public int hashCode() {
-    if (type.isImmutable()) {
-      return Objects.hash(type, value.getId());
-    }
-
-    return Objects.hash(type, value);
+    return Objects.hash(type, id);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public boolean equals(Object obj) {
     if (this == obj) {
@@ -65,14 +76,7 @@ public class SaveOp<V extends HasId> {
       return false;
     }
 
-    SaveOp<V> other = (SaveOp<V>) obj;
-    if (type.isImmutable()) {
-      // if the items are immutable, their id is sufficient to determine equality.
-      return type == other.type && Objects.equals(value.getId(), other.value.getId());
-    }
-
-    // otherwise, use the actual values for equality.
-    return type == other.type && Objects.equals(value, other.value);
+    SaveOp<?> other = (SaveOp<?>) obj;
+    return type == other.type && Objects.equals(id, other.id);
   }
-
 }

@@ -15,62 +15,84 @@
  */
 package com.dremio.nessie.versioned.store;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-import com.dremio.nessie.versioned.impl.Fragment;
-import com.dremio.nessie.versioned.impl.InternalCommitMetadata;
-import com.dremio.nessie.versioned.impl.InternalRef;
-import com.dremio.nessie.versioned.impl.InternalValue;
-import com.dremio.nessie.versioned.impl.L1;
-import com.dremio.nessie.versioned.impl.L2;
-import com.dremio.nessie.versioned.impl.L3;
-import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
-import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
-import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
+import com.dremio.nessie.tiered.builder.FragmentConsumer;
+import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.tiered.builder.L2Consumer;
+import com.dremio.nessie.tiered.builder.L3Consumer;
+import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.tiered.builder.ValueConsumer;
 
-public enum ValueType {
+public final class ValueType<C extends BaseConsumer<C>> {
 
-  REF(InternalRef.class, InternalRef.SCHEMA, false, "r", "refs"),
-  L1(L1.class, com.dremio.nessie.versioned.impl.L1.SCHEMA, "l1", "l1"),
-  L2(L2.class, com.dremio.nessie.versioned.impl.L2.SCHEMA, "l2", "l2"),
-  L3(L3.class, com.dremio.nessie.versioned.impl.L3.SCHEMA, "l3", "l3"),
-  VALUE(InternalValue.class, InternalValue.SCHEMA, "v", "values"),
-  KEY_FRAGMENT(Fragment.class, Fragment.SCHEMA, "k", "key_lists"),
-  COMMIT_METADATA(InternalCommitMetadata.class, InternalCommitMetadata.SCHEMA, "m", "commit_metadata");
+  public static final ValueType<RefConsumer> REF = new ValueType<>("r", "refs");
+  public static final ValueType<L1Consumer> L1 = new ValueType<>("l1", "l1");
+  public static final ValueType<L2Consumer> L2 = new ValueType<>("l2", "l2");
+  public static final ValueType<L3Consumer> L3 = new ValueType<>("l3", "l3");
+  public static final ValueType<ValueConsumer> VALUE = new ValueType<>("v", "values");
+  public static final ValueType<FragmentConsumer> KEY_FRAGMENT = new ValueType<>("k", "key_lists");
+  public static final ValueType<CommitMetadataConsumer> COMMIT_METADATA = new ValueType<>("m", "commit_metadata");
 
-  public static String SCHEMA_TYPE = "t";
+  private static final ValueType<?>[] ALL = new ValueType[]{REF, L1, L2, L3, VALUE, KEY_FRAGMENT, COMMIT_METADATA};
 
-  private final Class<?> objectClass;
-  private final SimpleSchema<?> schema;
-  private final boolean immutable;
-  private final Entity type;
-  private final String defaultTableSuffix;
+  /**
+   * Schema type field name "{@value #SCHEMA_TYPE}".
+   */
+  public static final String SCHEMA_TYPE = "t";
 
-  ValueType(Class<?> objectClass, SimpleSchema<?> schema, String valueName, String defaultTableSuffix) {
-    this(objectClass, schema, true, valueName, defaultTableSuffix);
+  private static final Map<String, ValueType<?>> byValueName = new HashMap<>();
+
+  static {
+    for (ValueType<?> type : ALL) {
+      byValueName.put(type.valueName, type);
+    }
   }
 
-  ValueType(Class<?> objectClass, SimpleSchema<?> schema, boolean immutable, String valueName, String defaultTableSuffix) {
-    this.objectClass = objectClass;
-    this.schema = schema;
-    this.immutable = immutable;
-    this.type = Entity.ofString(valueName);
+  private final String valueName;
+  private final String defaultTableSuffix;
+
+  private ValueType(String valueName, String defaultTableSuffix) {
+    this.valueName = valueName;
     this.defaultTableSuffix = defaultTableSuffix;
   }
 
+  public static List<ValueType<?>> values() {
+    return Arrays.asList(ALL);
+  }
+
   /**
-   * Get the object class associated with this {@code ValueType}.
-   * @return The object class for this {@code ValueType}.
+   * Get the {@link ValueType} by its {@code valueName} as given in the {@link #SCHEMA_TYPE} field.
+   *
+   * @param t the schema-type value
+   * @return the matching value-type
+   * @throws IllegalArgumentException if no value-type matches
    */
-  public Class<?> getObjectClass() {
-    return objectClass;
+  public static ValueType<?> byValueName(String t) {
+    ValueType<?> type = byValueName.get(t);
+    if (type == null) {
+      throw new IllegalArgumentException("No ValueType for table '" + t + "'");
+    }
+    return type;
+  }
+
+  /**
+   * Get the value of this {@link ValueType} as persisted in the {@link #SCHEMA_TYPE} field.
+   *
+   * @return value-name for this value-type
+   */
+  public String getValueName() {
+    return valueName;
   }
 
   /**
    * Get the name of the table for this object optionally added the provided prefix.
+   *
    * @param prefix The prefix to append (if defined and non-empty).
    * @return The complete table name for this {@code ValueType}.
    */
@@ -82,42 +104,29 @@ public enum ValueType {
     return prefix + defaultTableSuffix;
   }
 
-  /**
-   * Append this type to the provided attribute value map.
-   * @param map The map to append to
-   * @return A typed map.
-   */
-  public Map<String, Entity> addType(Map<String, Entity> map) {
-    return ImmutableMap.<String, Entity>builder()
-        .putAll(map)
-        .put(ValueType.SCHEMA_TYPE, type).build();
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ValueType<?> valueType = (ValueType<?>) o;
+    return valueName.equals(valueType.valueName);
   }
 
-  /**
-   * Validate that the provided map includes the expected type.
-   * @param map The map to check
-   * @return The map passed in (for chaining)
-   */
-  public Map<String, Entity> checkType(Map<String, Entity> map) {
-    Entity loadedType = map.get(SCHEMA_TYPE);
-    Id id = Id.fromEntity(map.get(Store.KEY_NAME));
-    Preconditions.checkNotNull(loadedType, "Missing type tag for schema for id %s.", id.getHash());
-    Preconditions.checkArgument(type.equals(loadedType),
-        "Expected schema for id %s to be of type '%s' but is actually '%s'.", id.getHash(), type.getString(), loadedType.getString());
-    return map;
+  @Override
+  public int hashCode() {
+    return valueName.hashCode();
   }
 
-  public ConditionExpression addTypeCheck(Optional<ConditionExpression> possibleExpression) {
-    final ExpressionFunction checkType = ExpressionFunction.equals(ExpressionPath.builder(SCHEMA_TYPE).build(), type);
-    return possibleExpression.map(ce -> ce.and(checkType)).orElse(ConditionExpression.of(checkType));
+  public String name() {
+    return defaultTableSuffix;
   }
 
-  @SuppressWarnings("unchecked")
-  public <T> SimpleSchema<T> getSchema() {
-    return (SimpleSchema<T>) schema;
-  }
-
-  public boolean isImmutable() {
-    return immutable;
+  @Override
+  public String toString() {
+    return defaultTableSuffix;
   }
 }

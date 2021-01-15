@@ -15,24 +15,21 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
+import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 
 /**
  * A base implementation of a opaque byte object stored in the VersionStore. Used for both for commit metadata and values.
  *
- * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.
- *
+ * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.</p>
  */
-abstract class WrappedValueBean extends MemoizedId {
+abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends PersistentBase<C> {
 
   private static final int MAX_SIZE = 1024 * 256;
   private final ByteString value;
@@ -43,7 +40,7 @@ abstract class WrappedValueBean extends MemoizedId {
     Preconditions.checkArgument(value.size() < MAX_SIZE, "Values and commit metadata must be less than 256K once serialized.");
   }
 
-  public ByteString getBytes() {
+  ByteString getBytes() {
     return value;
   }
 
@@ -73,33 +70,54 @@ abstract class WrappedValueBean extends MemoizedId {
     if (!(obj instanceof WrappedValueBean)) {
       return false;
     }
-    WrappedValueBean other = (WrappedValueBean) obj;
+    WrappedValueBean<?> other = (WrappedValueBean<?>) obj;
     return Objects.equals(getSeed(),  other.getSeed())
         && Objects.equals(value, other.value);
   }
 
-  protected static class WrappedValueSchema<T extends WrappedValueBean> extends SimpleSchema<T> {
+  @Override
+  C applyToConsumer(C consumer) {
+    return super.applyToConsumer(consumer)
+        .value(getBytes());
+  }
 
-    private static final String ID = "id";
-    private static final String VALUE = "value";
-    private final BiFunction<Id, ByteString, T> deserializer;
+  /**
+   * Base builder-implementation for both {@link InternalCommitMetadata} and {@link InternalValue}.
+   */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static class Builder<E extends HasId, C extends WrappedValueConsumer<C>>
+      extends EntityBuilder<E> implements WrappedValueConsumer<C> {
 
-    protected WrappedValueSchema(Class<T> clazz, BiFunction<Id, ByteString, T> deserializer) {
-      super(clazz);
-      this.deserializer = deserializer;
+    private Id id;
+    private ByteString value;
+
+    private final BiFunction<Id, ByteString, E> builder;
+
+    Builder(BiFunction<Id, ByteString, E> builder) {
+      this.builder = builder;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public T deserialize(Map<String, Entity> attributeMap) {
-      return deserializer.apply(Id.fromEntity(attributeMap.get(ID)), attributeMap.get(VALUE).getBinary());
+    public C id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return (C) this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Map<String, Entity> itemToMap(T item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(ID, item.getId().toEntity())
-          .put(VALUE, Entity.ofBinary(item.getBytes()))
-          .build();
+    public C value(ByteString value) {
+      checkCalled(this.value, "value");
+      this.value = value;
+      return (C) this;
+    }
+
+    E build() {
+      // null-id is allowed (will be generated)
+      checkSet(value, "value");
+
+      return builder.apply(id, value);
     }
   }
 }

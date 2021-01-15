@@ -52,6 +52,7 @@ import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.ImmutablePut;
 import com.dremio.nessie.versioned.ImmutableTagName;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.NamedRef;
 import com.dremio.nessie.versioned.Put;
 import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
@@ -248,8 +249,10 @@ class TestJGitVersionStore {
     impl.create(BranchName.of("b2"), Optional.empty());
     impl.create(TagName.of("t1"), baseCommit);
     impl.create(TagName.of("t2"), baseCommit);
-    assertEquals(ImmutableSet.of("b1", "b2", "t1", "t2"), impl.getNamedRefs()
-                                                              .map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));
+    try (Stream<WithHash<NamedRef>> str = impl.getNamedRefs()) {
+      assertEquals(ImmutableSet.of("b1", "b2", "t1", "t2"),
+          str.map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));
+    }
   }
 
   @ParameterizedTest
@@ -418,13 +421,17 @@ class TestJGitVersionStore {
     assertEquals(commits, impl.getCommits(tag).collect(Collectors.toList()));
     assertEquals(commits, impl.getCommits(commits.get(0).getHash()).collect(Collectors.toList()));
 
-    assertEquals(2, impl.getNamedRefs().count());
+    try (Stream<WithHash<NamedRef>> str = impl.getNamedRefs()) {
+      assertEquals(2, str.count());
+    }
 
     impl.create(branch2, Optional.of(commits.get(1).getHash()));
 
     impl.delete(branch, Optional.of(commits.get(0).getHash()));
 
-    assertEquals(2, impl.getNamedRefs().count());
+    try (Stream<WithHash<NamedRef>> str = impl.getNamedRefs()) {
+      assertEquals(2, str.count());
+    }
 
     assertEquals(v1, impl.getValue(branch2, p1));
 

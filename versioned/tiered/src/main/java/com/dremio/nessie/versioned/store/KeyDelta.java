@@ -13,37 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store;
 
-import com.dremio.nessie.versioned.store.HasId;
-import com.dremio.nessie.versioned.store.Id;
+import org.immutables.value.Value.Immutable;
 
-abstract class MemoizedId implements HasId {
+import com.dremio.nessie.versioned.Key;
 
-  //unchanging but only generated once needed.
-  private Id id;
+/**
+ * Key-deltas of an L3.
+ */
+@Immutable
+public interface KeyDelta {
+  Key getKey();
 
-  MemoizedId() {
-    this.id = null;
-  }
+  Id getId();
 
-  MemoizedId(Id id) {
-    this.id = id;
-  }
-
-  abstract Id generateId();
-
-  @Override
-  public final Id getId() {
-    if (id == null) {
-      id = generateId();
-    }
-    return id;
-  }
-
-  void ensureConsistentId() {
-    if (id != null) {
-      assert id.equals(generateId());
-    }
+  static KeyDelta of(Key key, Id id) {
+    return ImmutableKeyDelta.builder().key(key).id(id).build();
   }
 }

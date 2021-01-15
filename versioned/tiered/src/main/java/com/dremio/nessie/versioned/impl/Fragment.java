@@ -16,53 +16,90 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.tiered.builder.FragmentConsumer;
+import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
-public class Fragment extends MemoizedId {
+class Fragment extends PersistentBase<FragmentConsumer> {
 
   private final List<InternalKey> keys;
 
-  public Fragment(List<InternalKey> keys) {
+  Fragment(List<InternalKey> keys) {
     super();
+    this.keys = ImmutableList.copyOf(keys);
+  }
+
+  Fragment(Id id, List<InternalKey> keys) {
+    super(id);
     this.keys = ImmutableList.copyOf(keys);
   }
 
   @Override
   Id generateId() {
-    return Id.build(h -> {
-      keys.stream().forEach(k -> InternalKey.addToHasher(k, h));
-    });
+    return Id.build(h -> keys.forEach(k -> InternalKey.addToHasher(k, h)));
   }
 
-  public List<InternalKey> getKeys() {
+  List<InternalKey> getKeys() {
     return keys;
   }
 
-  public static final SimpleSchema<Fragment> SCHEMA = new SimpleSchema<Fragment>(Fragment.class) {
-    private static final String ID = "id";
-    private static final String KEYS = "keys";
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Fragment fragment = (Fragment) o;
+    return Objects.equal(keys, fragment.keys);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(keys);
+  }
+
+  @Override
+  FragmentConsumer applyToConsumer(FragmentConsumer consumer) {
+    return super.applyToConsumer(consumer)
+        .keys(keys.stream().map(InternalKey::toKey));
+  }
+
+  /**
+   * Implements {@link FragmentConsumer} to build a {@link Fragment} object.
+   */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static class Builder extends EntityBuilder<Fragment> implements FragmentConsumer {
+
+    private Id id;
+    private List<InternalKey> keys;
 
     @Override
-    public Fragment deserialize(Map<String, Entity> attributeMap) {
-      List<InternalKey> keys = attributeMap.get(KEYS).getList().stream().map(InternalKey::fromEntity).collect(Collectors.toList());
-      return new Fragment(keys);
+    public Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
     }
 
     @Override
-    public Map<String, Entity> itemToMap(Fragment item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(ID, item.getId().toEntity())
-          .put(KEYS, Entity.ofList(item.getKeys().stream().map(InternalKey::toEntity).collect(ImmutableList.toImmutableList())))
-          .build();
+    public Builder keys(Stream<Key> keys) {
+      checkCalled(this.keys, "keys");
+      this.keys = keys.map(InternalKey::new).collect(Collectors.toList());
+      return this;
     }
 
-  };
+    @Override
+    Fragment build() {
+      // null-id is allowed (will be generated)
+      checkSet(keys, "keys");
 
+      return new Fragment(id, keys);
+    }
+  }
 }

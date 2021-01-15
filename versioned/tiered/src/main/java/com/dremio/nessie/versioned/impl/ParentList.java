@@ -16,11 +16,11 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.immutables.value.Value.Immutable;
 
+import com.dremio.nessie.versioned.impl.ImmutableParentList.Builder;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.collect.ImmutableList;
@@ -55,8 +55,16 @@ abstract class ParentList {
     return Entity.ofList(getParents().stream().map(Id::toEntity));
   }
 
-  public static ParentList fromEntity(Entity value) {
-    return ImmutableParentList.builder().addAllParents(value.getList().stream().map(Id::fromEntity).collect(Collectors.toList())).build();
+  /**
+   * Construct a {@link ParentList} from a list of {@link Id}s.
+   */
+  public static ParentList of(Stream<Id> ancestors) {
+    return ancestors.collect(
+        ImmutableParentList::builder,
+        Builder::addParents,
+        (a, b) -> {
+          throw new UnsupportedOperationException();
+        }
+    ).build();
   }
-
 }

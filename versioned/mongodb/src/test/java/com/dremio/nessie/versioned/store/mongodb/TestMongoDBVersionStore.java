@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store.mongodb;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.dremio.nessie.versioned.LocalDynamoDB;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
@@ -30,14 +31,23 @@ import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
 
-@ExtendWith(LocalDynamoDB.class)
-public class ITDynamoDBVersionStore extends AbstractITVersionStore {
+@ExtendWith(LocalMongo.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Disabled("MongoDBStore not fully implemented")
+public class TestMongoDBVersionStore extends AbstractITVersionStore {
+  private static final String testDatabaseName = "mydb";
+  private String connectionString;
 
-  private DynamoStoreFixture fixture;
+  private MongoStoreFixture fixture;
+
+  @BeforeAll
+  void init(String connectionString) {
+    this.connectionString = connectionString;
+  }
 
   @BeforeEach
   void setup() {
-    fixture = new DynamoStoreFixture();
+    fixture = new MongoStoreFixture(connectionString, testDatabaseName);
   }
 
   @AfterEach

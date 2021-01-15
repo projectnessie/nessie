@@ -15,145 +15,53 @@
  */
 package com.dremio.nessie.versioned.store;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.stream.Collector;
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 
-import com.google.common.base.Preconditions;
-
-public class LoadOp<V extends HasId> {
-  private final ValueType type;
+/**
+ * Load operations in stores push the properties of the loaded values to the consumer
+ * returned by {@link #getReceiver()} and call {@link #done()} when the load represented by
+ * this load-operation is finished.
+ *
+ * @param <C> {@link BaseConsumer consumer} used to handle the load-operation
+ */
+public abstract class LoadOp<C extends BaseConsumer<C>> {
+  private final ValueType<C> type;
   private final Id id;
-  private final Consumer<V> consumer;
 
   /**
    * Create a load op.
    * @param type The value type that will be loaded.
    * @param id The id of the value.
-   * @param consumer The consumer who will consume the loaded value.
    */
-  public LoadOp(ValueType type, Id id, Consumer<V> consumer) {
+  public LoadOp(ValueType<C> type, Id id) {
     this.type = type;
     this.id = id;
-    this.consumer = consumer;
   }
 
-  public void loaded(Map<String, Entity> load) {
-    SimpleSchema<V> schema = type.getSchema();
-    consumer.accept(schema.mapToItem(type.checkType(load)));
-  }
+  /**
+   * Users of a {@link LoadOp} (the store implementations) can deserialize their representation
+   * into the {@link BaseConsumer} returned by this method and call {@link #done()} afterwards.
+   *
+   * @return receiver of the "properties"
+   */
+  public abstract C getReceiver();
+
+  /**
+   * Users of a {@link LoadOp} (the store implementations) can deserialize their representation
+   * into the {@link BaseConsumer} returned by {@link #getReceiver()} and call this method afterwards.
+   */
+  public abstract void done();
 
   public Id getId() {
     return id;
   }
 
-  public ValueType getValueType() {
+  public ValueType<C> getValueType() {
     return type;
   }
-
-  public static Collector<LoadOp<?>, ?, LoadOp<?>> toLoadOp() {
-    return COLLECTOR;
-  }
-
-  /**
-   * A collector that combines loadops of the same id and valuetype.
-   */
-  private static final Collector<LoadOp<?>, OpCollectorState, LoadOp<?>> COLLECTOR = Collector.of(
-      OpCollectorState::new,
-      (o1, l1) -> o1.plus(l1),
-      (o1, o2) -> o1.plus(o2),
-      o -> o.build()
-      );
-
-  private static class OpCollectorState {
-
-    private ValueType valueType;
-    private Id id;
-    private List<Consumer<?>> consumers = new ArrayList<>();
-
-    public OpCollectorState plus(OpCollectorState o) {
-      if (this.hasValues() && o.hasValues()) {
-        Preconditions.checkArgument(this.valueType == o.valueType);
-        Preconditions.checkArgument(this.id.equals(o.id));
-      }
-      OpCollectorState o2 = new OpCollectorState();
-
-      OpCollectorState withV = hasValues() ? this : o;
-      o2.valueType = withV.valueType;
-      o2.id = withV.id;
-      o2.consumers.addAll(this.consumers);
-      o2.consumers.addAll(o.consumers);
-      return o2;
-    }
-
-    public void plus(LoadOp<?> o) {
-      if (consumers.isEmpty()) {
-        this.valueType = o.getValueType();
-        this.id = o.getId();
-      } else {
-        Preconditions.checkArgument(this.valueType == o.type);
-        Preconditions.checkArgument(this.id.equals(o.id));
-      }
-      consumers.add(o.consumer);
-    }
-
-    public boolean hasValues() {
-      return !consumers.isEmpty();
-    }
-
-    @SuppressWarnings("unchecked")
-    public LoadOp<?> build() {
-      return new LoadOp<HasId>(valueType, id, v -> {
-        for (Consumer<?> c : consumers) {
-          ((Consumer<Object>)c).accept(v);
-        }
-      });
-    }
-  }
-
 
   @Override
   public String toString() {
     return "LoadOp [type=" + type + ", id=" + id + "]";
   }
-
-  public LoadOpKey toKey() {
-    return new LoadOpKey(type, id);
-  }
-
-  static class LoadOpKey {
-    private final ValueType type;
-    private final Id id;
-
-    public LoadOpKey(ValueType type, Id id) {
-      super();
-      this.type = type;
-      this.id = id;
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(id, type);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) {
-        return true;
-      }
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      LoadOpKey other = (LoadOpKey) obj;
-      return Objects.equals(id, other.id) && type == other.type;
-    }
-
-  }
-
 }

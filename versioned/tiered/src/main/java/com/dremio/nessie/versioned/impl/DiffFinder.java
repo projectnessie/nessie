@@ -22,12 +22,8 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
-import com.dremio.nessie.versioned.store.Store;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.MapDifference.ValueDifference;
 
@@ -56,12 +52,12 @@ class DiffFinder {
   }
 
   public Stream<KeyDiff> getKeyDiffs() {
-    return l3Diffs.stream().flatMap(l3 -> l3.getKeyDiffs());
+    return l3Diffs.stream().flatMap(L3Diff::getKeyDiffs);
   }
 
   private static class L1Diff {
-    private L1 from;
-    private L1 to;
+    private final L1 from;
+    private final L1 to;
 
     public L1Diff(L1 from, L1 to) {
       super();
@@ -71,19 +67,19 @@ class DiffFinder {
 
     public LoadStep getLoad(List<L3Diff> l3DiffsOutput) {
       List<L2Diff> l2Diffs = new ArrayList<>();
-      List<LoadOp<?>> loadOps = new ArrayList<>();
+      EntityLoadOps loadOps = new EntityLoadOps();
       for (int i = 0; i < L1.SIZE; i++) {
         Id a = from.getId(i);
         Id b = to.getId(i);
         if (!a.equals(b)) {
           L2Diff d = new L2Diff();
           l2Diffs.add(d);
-          loadOps.add(new LoadOp<L2>(ValueType.L2, a, d::from));
-          loadOps.add(new LoadOp<L2>(ValueType.L2, b, d::to));
+          loadOps.load(EntityType.L2, a, d::from);
+          loadOps.load(EntityType.L2, b, d::to);
         }
       }
 
-      return new LoadStep(loadOps, () -> L2Diff.loadStep(l2Diffs, l3DiffsOutput));
+      return loadOps.build(() -> L2Diff.loadStep(l2Diffs, l3DiffsOutput));
     }
 
   }
@@ -101,7 +97,7 @@ class DiffFinder {
     }
 
     public static Optional<LoadStep> loadStep(Collection<L2Diff> diffs, List<L3Diff> l3DiffsOutput) {
-      List<LoadOp<?>> loadOps = new ArrayList<>();
+      EntityLoadOps loadOps = new EntityLoadOps();
       for (L2Diff diff : diffs) {
         L2 from = diff.from;
         L2 to = diff.to;
@@ -111,12 +107,12 @@ class DiffFinder {
           if (!a.equals(b)) {
             L3Diff d = new L3Diff();
             l3DiffsOutput.add(d);
-            loadOps.add(new LoadOp<L3>(ValueType.L3, a, d::from));
-            loadOps.add(new LoadOp<L3>(ValueType.L3, b, d::to));
+            loadOps.load(EntityType.L3, a, d::from);
+            loadOps.load(EntityType.L3, b, d::to);
           }
         }
       }
-      return loadOps.isEmpty() ? Optional.empty() : Optional.of(new LoadStep(loadOps, () -> Optional.empty()));
+      return loadOps.buildOptional();
     }
   }
 
@@ -195,7 +191,7 @@ class DiffFinder {
 
   }
 
-  static List<DiffFinder> getFinders(List<L1> l1Ascending, Store store) throws ReferenceNotFoundException {
+  static List<DiffFinder> getFinders(List<L1> l1Ascending) {
     Preconditions.checkArgument(l1Ascending.size() > 1);
     L1 previous = null;
     List<DiffFinder> diffs = new ArrayList<>();

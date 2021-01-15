@@ -15,10 +15,20 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
@@ -76,6 +86,13 @@ class IdMap implements Iterable<Id> {
     return deltas.length;
   }
 
+  /**
+   * Returns the new-IDs of the deltas as a {@link Stream}.
+   */
+  public Stream<Id> stream() {
+    return Arrays.stream(deltas).map(PositionDelta::getNewId);
+  }
+
   @Override
   public Iterator<Id> iterator() {
     return Iterators.unmodifiableIterator(Arrays.stream(deltas).map(PositionDelta::getNewId).iterator());
@@ -113,6 +130,46 @@ class IdMap implements Iterable<Id> {
     return new IdMap(deltas);
   }
 
+  /**
+   * Constructs an {@link IdMap} from a list of {@link Id}s.
+   *
+   * @param expectedSize the size of the resulting {@link IdMap}
+   */
+  public static IdMap of(Stream<Id> children, int expectedSize) {
+    AtomicInteger counter = new AtomicInteger();
+    PositionDelta[] deltas = children.map(id -> PositionDelta.of(counter.getAndIncrement(), id))
+        .toArray(PositionDelta[]::new);
+
+    if (deltas.length != expectedSize) {
+      throw new IllegalStateException("Must collect exactly " + expectedSize + " Id elements, "
+          + "but got " + deltas.length);
+    }
+
+    return new IdMap(deltas);
+  }
+
+  /**
+   * Constructs an {@link IdMap} from a list of {@link Id}s.
+   *
+   * @param expectedSize the size of the resulting {@link IdMap}
+   */
+  public static IdMap of(List<Id> children, int expectedSize) {
+    int sz = children.size();
+    PositionDelta[] deltas = new PositionDelta[sz];
+
+    if (sz != expectedSize) {
+      throw new IllegalStateException("Must collect exactly " + expectedSize + " Id elements, "
+          + "but got " + sz);
+    }
+
+    for (int i = 0; i < sz; i++) {
+      Id id = children.get(i);
+      deltas[i] = PositionDelta.of(i, id);
+    }
+
+    return new IdMap(deltas);
+  }
+
   @Override
   public int hashCode() {
     return Arrays.hashCode(deltas);
@@ -130,4 +187,41 @@ class IdMap implements Iterable<Id> {
     return Arrays.equals(deltas, other.deltas);
   }
 
+  /**
+   * Collects a {@link Stream} of {@link Id}s as an {@link IdMap}, must collect exactly
+   * the expected number of {@link Id}s as given in the {@code expectedSize} parameter.
+   *
+   * @param expectedSize the size of the resulting {@link IdMap}
+   */
+  public static Collector<Id, List<Id>, IdMap> collector(int expectedSize) {
+    return new Collector<Id, List<Id>, IdMap>() {
+      @Override
+      public Supplier<List<Id>> supplier() {
+        return ArrayList::new;
+      }
+
+      @Override
+      public BiConsumer<List<Id>, Id> accumulator() {
+        return List::add;
+      }
+
+      @Override
+      public BinaryOperator<List<Id>> combiner() {
+        return (l1, l2) -> {
+          l1.addAll(l2);
+          return l1;
+        };
+      }
+
+      @Override
+      public Function<List<Id>, IdMap> finisher() {
+        return l -> IdMap.of(l, expectedSize);
+      }
+
+      @Override
+      public Set<Characteristics> characteristics() {
+        return EnumSet.noneOf(Characteristics.class);
+      }
+    };
+  }
 }

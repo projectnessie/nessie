@@ -20,6 +20,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -75,7 +76,9 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   @Override
   public List<Reference> getAllReferences() {
-    return getStore().getNamedRefs().map(TreeResource::makeNamedRef).collect(Collectors.toList());
+    try (Stream<WithHash<NamedRef>> str = getStore().getNamedRefs()) {
+      return str.map(TreeResource::makeNamedRef).collect(Collectors.toList());
+    }
   }
 
   @Override

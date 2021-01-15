@@ -15,25 +15,32 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
+import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
+import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.google.common.collect.Maps;
 
 /**
  * Generic class for reading a reference.
  */
-public interface InternalRef extends HasId {
+abstract class InternalRef extends PersistentBase<RefConsumer> {
 
   static final String TYPE = "type";
 
-  public static enum Type {
+  InternalRef(Id id) {
+    super(id);
+  }
+
+  public enum Type {
     BRANCH("b"),
     TAG("t"),
     HASH(null),
@@ -77,55 +84,161 @@ public interface InternalRef extends HasId {
     }
   }
 
-  Type getType();
+  abstract Type getType();
 
-  default InternalBranch getBranch() {
+  InternalBranch getBranch() {
     throw new IllegalArgumentException(String.format("%s cannot be treated as a branch.", this.getClass().getName()));
   }
 
-  default InternalTag getTag() {
+  InternalTag getTag() {
     throw new IllegalArgumentException(String.format("%s cannot be treated as a tag.", this.getClass().getName()));
   }
 
-  default Id getHash() {
-    throw new IllegalArgumentException(String.format("%s cannot be treated as a hash.", this.getClass().getName()));
-  }
+  /**
+   * Implement {@link RefConsumer} to build an {@link InternalRef} object.
+   */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static final class Builder extends EntityBuilder<InternalRef> implements RefConsumer {
 
-  Id getId();
+    private Id id;
+    private RefType refType;
+    private String name;
 
-  static final SimpleSchema<InternalRef> SCHEMA = new SimpleSchema<InternalRef>(InternalRef.class) {
+    // tag only
+    private Id commit;
+
+    // branch only
+    private Id metadata;
+    private Stream<Id> children;
+    private List<Commit> commits;
 
     @Override
-    public InternalRef deserialize(Map<String, Entity> attributeMap) {
-      Type type = Type.getType(attributeMap.get(TYPE).getString());
-      Map<String, Entity> filtered = Maps.filterEntries(attributeMap, e -> !e.getKey().equals(TYPE));
-      switch (type) {
-        case BRANCH: return InternalBranch.SCHEMA.mapToItem(filtered);
-        case TAG: return InternalTag.SCHEMA.mapToItem(filtered);
-        default:
-          throw new UnsupportedOperationException();
-      }
+    public Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
     }
 
     @Override
-    public Map<String, Entity> itemToMap(InternalRef item, boolean ignoreNulls) {
-      Map<String, Entity> map = new HashMap<>();
-      map.put(TYPE, item.getType().toEntity());
+    public Builder type(RefType refType) {
+      checkCalled(this.refType, "refType");
+      this.refType = refType;
+      return this;
+    }
 
-      switch (item.getType()) {
-        case BRANCH:
-          map.putAll(InternalBranch.SCHEMA.itemToMap(item.getBranch(), ignoreNulls));
-          break;
+    @Override
+    public Builder name(String name) {
+      checkCalled(this.name, "name");
+      this.name = name;
+      return this;
+    }
+
+    @Override
+    public Builder commit(Id commit) {
+      checkCalled(this.commit, "commit");
+      this.commit = commit;
+      return this;
+    }
+
+    @Override
+    public Builder metadata(Id metadata) {
+      checkCalled(this.metadata, "metadata");
+      this.metadata = metadata;
+      return this;
+    }
+
+    @Override
+    public Builder children(Stream<Id> children) {
+      checkCalled(this.children, "children");
+      this.children = children;
+      return this;
+    }
+
+    @Override
+    public RefConsumer commits(Consumer<BranchCommitConsumer> commits) {
+      checkCalled(this.commits, "commits");
+      this.commits = new ArrayList<>();
+      commits.accept(new BranchCommitConsumer() {
+        private Id id;
+        private Id commit;
+        private Id parent;
+        private List<UnsavedDelta> unsavedDeltas = new ArrayList<>();
+        private List<KeyMutation> keyMutations = new ArrayList<>();
+
+        @Override
+        public BranchCommitConsumer done() {
+          if (parent != null) {
+            Builder.this.commits.add(new Commit(id, commit, parent));
+          } else {
+            Builder.this.commits.add(new Commit(id, commit, unsavedDeltas, KeyMutationList.of(keyMutations)));
+          }
+
+          id = null;
+          commit = null;
+          parent = null;
+          unsavedDeltas = new ArrayList<>();
+          keyMutations = new ArrayList<>();
+
+          return this;
+        }
+
+        @Override
+        public BranchCommitConsumer id(Id id) {
+          this.id = id;
+          return this;
+        }
+
+        @Override
+        public BranchCommitConsumer commit(Id commit) {
+          this.commit = commit;
+          return this;
+        }
+
+        @Override
+        public BranchCommitConsumer parent(Id parent) {
+          this.parent = parent;
+          return this;
+        }
+
+        @Override
+        public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
+          unsavedDeltas.add(new UnsavedDelta(position, oldId, newId));
+          return this;
+        }
+
+        @Override
+        public BranchCommitConsumer keyMutation(Key.Mutation keyMutation) {
+          keyMutations.add(KeyMutation.fromMutation(keyMutation));
+          return this;
+        }
+      });
+      return this;
+    }
+
+    @Override
+    InternalRef build() {
+      // null-id is allowed (will be generated)
+      checkSet(refType, "refType");
+      checkSet(name, "name");
+
+      switch (refType) {
         case TAG:
-          map.putAll(InternalTag.SCHEMA.itemToMap(item.getTag(), ignoreNulls));
-          break;
+          checkSet(commit, "commit");
+          return new InternalTag(id, name, commit);
+        case BRANCH:
+          checkSet(metadata, "metadata");
+          checkSet(children, "children");
+          checkSet(commits, "commits");
+          return new InternalBranch(
+              id,
+              name,
+              IdMap.of(children, L1.SIZE),
+              metadata,
+              commits);
         default:
-          throw new UnsupportedOperationException();
+          throw new UnsupportedOperationException("Unknown ref-type " + refType);
       }
-
-      return map;
     }
-
-  };
+  }
 
 }

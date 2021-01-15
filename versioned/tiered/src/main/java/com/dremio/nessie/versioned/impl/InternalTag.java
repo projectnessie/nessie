@@ -15,21 +15,17 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.Map;
-
-import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.base.Objects;
 
-class InternalTag extends MemoizedId implements InternalRef {
+class InternalTag extends InternalRef {
 
-  static final String ID = "id";
-  static final String NAME = "name";
   static final String COMMIT = "commit";
 
-  private String name;
-  private Id commit;
+  private final String name;
+  private final Id commit;
 
   InternalTag(Id id, String name, Id commit) {
     super(id);
@@ -50,33 +46,6 @@ class InternalTag extends MemoizedId implements InternalRef {
     return commit;
   }
 
-  public Map<String, Entity> conditionMap() {
-    return ImmutableMap.of(COMMIT, commit.toEntity());
-  }
-
-  static final SimpleSchema<InternalTag> SCHEMA = new SimpleSchema<InternalTag>(InternalTag.class) {
-
-
-    @Override
-    public InternalTag deserialize(Map<String, Entity> attributeMap) {
-      return new InternalTag(
-          Id.fromEntity(attributeMap.get(ID)),
-          attributeMap.get(NAME).getString(),
-          Id.fromEntity(attributeMap.get(COMMIT))
-          );
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(InternalTag item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(ID, item.getId().toEntity())
-          .put(COMMIT, item.commit.toEntity())
-          .put(NAME, Entity.ofString(item.name))
-          .build();
-    }
-
-  };
-
   @Override
   public Type getType() {
     return Type.TAG;
@@ -85,6 +54,32 @@ class InternalTag extends MemoizedId implements InternalRef {
   @Override
   public InternalTag getTag() {
     return this;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    InternalTag that = (InternalTag) o;
+    return Objects.equal(name, that.name) && Objects
+        .equal(commit, that.commit);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(name, commit);
+  }
+
+  @Override
+  RefConsumer applyToConsumer(RefConsumer consumer) {
+    return super.applyToConsumer(consumer)
+        .name(name)
+        .type(RefType.TAG)
+        .commit(commit);
   }
 
 }

@@ -15,20 +15,20 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.protobuf.ByteString;
 
 /**
  * Holds a VersionStore binary value for interaction with the Store.
  */
-public class InternalValue extends WrappedValueBean {
+class InternalValue extends WrappedValueBean<ValueConsumer> {
 
   private InternalValue(Id id, ByteString value) {
     super(id, value);
   }
 
-  public static InternalValue of(ByteString value) {
+  static InternalValue of(ByteString value) {
     return new InternalValue(null, value);
   }
 
@@ -37,6 +37,14 @@ public class InternalValue extends WrappedValueBean {
     return 2829568831168137780L; // an arbitrary but consistent seed to ensure no hash conflicts.
   }
 
-  public static final SimpleSchema<InternalValue> SCHEMA =
-      new WrappedValueBean.WrappedValueSchema<>(InternalValue.class, InternalValue::new);
+  /**
+   * Implements {@link ValueConsumer} to builds an {@link InternalValue} object.
+   */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static final class Builder extends WrappedValueBean.Builder<InternalValue, ValueConsumer>
+      implements ValueConsumer {
+    Builder() {
+      super(InternalValue::new);
+    }
+  }
 }

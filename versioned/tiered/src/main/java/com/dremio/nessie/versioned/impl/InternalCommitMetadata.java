@@ -15,17 +15,17 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.google.protobuf.ByteString;
 
-public class InternalCommitMetadata extends WrappedValueBean {
+class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsumer> {
 
   private InternalCommitMetadata(Id id, ByteString value) {
     super(id, value);
   }
 
-  public static InternalCommitMetadata of(ByteString value) {
+  static InternalCommitMetadata of(ByteString value) {
     return new InternalCommitMetadata(null, value);
   }
 
@@ -34,6 +34,14 @@ public class InternalCommitMetadata extends WrappedValueBean {
     return 2279557414590649190L;// an arbitrary but consistent seed to ensure no hash conflicts.
   }
 
-  public static final SimpleSchema<InternalCommitMetadata> SCHEMA =
-      new WrappedValueBean.WrappedValueSchema<>(InternalCommitMetadata.class, InternalCommitMetadata::new);
+  /**
+   * Implements {@link CommitMetadataConsumer} to build an {@link InternalCommitMetadata} object.
+   */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static final class Builder extends WrappedValueBean.Builder<InternalCommitMetadata, CommitMetadataConsumer>
+      implements CommitMetadataConsumer {
+    Builder() {
+      super(InternalCommitMetadata::new);
+    }
+  }
 }

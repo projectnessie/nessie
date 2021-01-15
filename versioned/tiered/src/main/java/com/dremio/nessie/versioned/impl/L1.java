@@ -15,23 +15,25 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
-import com.google.common.collect.ImmutableMap;
 
-public class L1 extends MemoizedId {
+class L1 extends PersistentBase<L1Consumer> {
 
   private static final long HASH_SEED = 3506039963025592061L;
 
-  public static final int SIZE = 43;
-  public static L1 EMPTY = new L1(Id.EMPTY, new IdMap(SIZE, L2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
-  public static Id EMPTY_ID = EMPTY.getId();
+  static final int SIZE = 43;
+  static L1 EMPTY = new L1(Id.EMPTY, new IdMap(SIZE, L2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
+  static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap tree;
 
@@ -46,8 +48,12 @@ public class L1 extends MemoizedId {
     this.keyList = keyList;
     this.tree = tree;
 
-    assert tree.size() == SIZE;
-    assert id == null || id.equals(generateId());
+    if (tree.size() != SIZE) {
+      throw new AssertionError("tree.size(" + tree.size() + ") != " + SIZE);
+    }
+    if (id != null && !id.equals(generateId())) {
+      throw new AssertionError("wrong id=" + id + ", expected=" + generateId());
+    }
   }
 
   L1 getChildWithTree(Id metadataId, IdMap tree, KeyMutationList mutations) {
@@ -56,7 +62,7 @@ public class L1 extends MemoizedId {
     return new L1(metadataId, tree, null, keyList, parents);
   }
 
-  public L1 withCheckpointAsNecessary(Store store) {
+  L1 withCheckpointAsNecessary(Store store) {
     return keyList.createCheckpointIfNeeded(this, store).map(keylist -> new L1(metadataId, tree, null, keylist, parentList)).orElse(this);
   }
 
@@ -98,41 +104,9 @@ public class L1 extends MemoizedId {
     return tree;
   }
 
-  public List<PositionDelta> getChanges() {
+  List<PositionDelta> getChanges() {
     return tree.getChanges();
   }
-
-  public static final SimpleSchema<L1> SCHEMA = new SimpleSchema<L1>(L1.class) {
-
-    private static final String ID = "id";
-    private static final String TREE = "tree";
-    private static final String METADATA = "metadata";
-    private static final String PARENTS = "parents";
-    private static final String KEY_LIST = "keys";
-
-    @Override
-    public L1 deserialize(Map<String, Entity> attributeMap) {
-      return new L1(
-          Id.fromEntity(attributeMap.get(METADATA)),
-          IdMap.fromEntity(attributeMap.get(TREE), SIZE),
-          Id.fromEntity(attributeMap.get(ID)),
-          KeyList.fromEntity(attributeMap.get(KEY_LIST)),
-          ParentList.fromEntity(attributeMap.get(PARENTS))
-      );
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(L1 item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(METADATA, item.metadataId.toEntity())
-          .put(TREE, item.tree.toEntity())
-          .put(ID, item.getId().toEntity())
-          .put(KEY_LIST, item.keyList.toEntity())
-          .put(PARENTS, item.parentList.toEntity())
-          .build();
-    }
-
-  };
 
   KeyList getKeyList() {
     return keyList;
@@ -150,6 +124,150 @@ public class L1 extends MemoizedId {
       }
     }
     return count;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    L1 l1 = (L1) o;
+
+    return Objects.equals(tree, l1.tree)
+        && Objects.equals(metadataId, l1.metadataId)
+        && Objects.equals(keyList, l1.keyList)
+        && Objects.equals(parentList, l1.parentList);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(tree, metadataId, keyList, parentList);
+  }
+
+  @Override
+  L1Consumer applyToConsumer(L1Consumer consumer) {
+    super.applyToConsumer(consumer)
+        .commitMetadataId(this.metadataId)
+        .keyMutations(this.keyList.getMutations().stream().map(KeyMutation::toMutation))
+        .children(this.tree.stream())
+        .ancestors(parentList.getParents().stream());
+
+    if (keyList.isFull()) {
+      consumer.completeKeyList(keyList.getFragments().stream());
+    } else {
+      IncrementalList list = (IncrementalList) keyList;
+      consumer.incrementalKeyList(list.getPreviousCheckpoint(), list.getDistanceFromCheckpointCommits());
+    }
+
+    return consumer;
+  }
+
+  /**
+   * Implements {@link L1Consumer} to build an {@link L1} object.
+   */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  static final class Builder extends EntityBuilder<L1> implements L1Consumer {
+
+    private Id metadataId;
+    private Stream<Id> ancestors;
+    private Stream<Id> children;
+    private final List<KeyMutation> keyChanges = new ArrayList<>();
+    private Id id;
+    private Id checkpointId;
+    private int distanceFromCheckpoint;
+    private Stream<Id> fragmentIds;
+
+    Builder() {
+      // empty
+    }
+
+    @Override
+    public Builder commitMetadataId(Id id) {
+      checkCalled(this.metadataId, "commitMetadataId");
+      this.metadataId = id;
+      return this;
+    }
+
+    @Override
+    public Builder ancestors(Stream<Id> ids) {
+      checkCalled(this.ancestors, "addAncestors");
+      this.ancestors = ids;
+      return this;
+    }
+
+    @Override
+    public Builder children(Stream<Id> ids) {
+      checkCalled(this.children, "children");
+      this.children = ids;
+      return this;
+    }
+
+    @Override
+    public Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
+    }
+
+    @Override
+    public L1Consumer keyMutations(Stream<Key.Mutation> keyMutations) {
+      keyMutations.map(KeyMutation::fromMutation)
+          .forEach(keyChanges::add);
+      return this;
+    }
+
+    @Override
+    public Builder incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
+      checkCalled(this.checkpointId, "incrementalKeyList");
+      if (this.fragmentIds != null) {
+        throw new UnsupportedOperationException("Cannot call incrementalKeyList after completeKeyList.");
+      }
+      this.checkpointId = checkpointId;
+      this.distanceFromCheckpoint = distanceFromCheckpoint;
+      return this;
+    }
+
+    @Override
+    public Builder completeKeyList(Stream<Id> fragmentIds) {
+      checkCalled(this.fragmentIds, "completeKeyList");
+      if (this.checkpointId != null) {
+        throw new UnsupportedOperationException("Cannot call completeKeyList after incrementalKeyList.");
+      }
+      this.fragmentIds = fragmentIds;
+      return this;
+    }
+
+    @Override
+    L1 build() {
+      // null-id is allowed (will be generated)
+      checkSet(metadataId, "metadataId");
+      checkSet(children, "children");
+      checkSet(ancestors, "ancestors");
+
+      return new L1(
+          metadataId,
+          children.collect(IdMap.collector(SIZE)),
+          id,
+          buildKeyList(),
+          ParentList.of(ancestors));
+    }
+
+    private KeyList buildKeyList() {
+      if (checkpointId != null) {
+        return KeyList.incremental(checkpointId, keyChanges, distanceFromCheckpoint);
+      }
+      if (fragmentIds != null) {
+        return new KeyList.CompleteList(
+            fragmentIds.collect(Collectors.toList()),
+            keyChanges);
+      }
+      // todo what if its neither? Fail
+      throw new IllegalStateException("Neither a checkpoint nor a incremental key list were found.");
+    }
   }
 
 }

@@ -24,18 +24,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.LoadOp;
-import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.Store;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.AbstractIterator;
-import com.google.common.collect.ImmutableList;
 
 /**
  * Enables retrieval of L1 history.
@@ -108,7 +103,7 @@ class HistoryRetriever {
         HistoryItem item = new HistoryItem(start.getId());
         item.l1 = start;
         if (retrieveCommit && !start.getMetadataId().isEmpty()) {
-          item.commitMetadata = store.loadSingle(ValueType.COMMIT_METADATA, start.getMetadataId());
+          item.commitMetadata = EntityType.COMMIT_METADATA.loadSingle(store, start.getMetadataId());
         }
         this.currentIterator = Collections.singleton(item).iterator();
       }
@@ -136,8 +131,8 @@ class HistoryRetriever {
     private void calculateNextList(ParentList list) throws ReferenceNotFoundException {
       int max = list.getParents().size();
       final List<HistoryItem> items = new ArrayList<>();
-      final List<LoadOp<?>> loadOps = new ArrayList<>();
-      final List<Supplier<LoadOp<?>>> secondOps = new ArrayList<>();
+      final EntityLoadOps loadOps = new EntityLoadOps();
+      final EntityLoadOps secondOps = new EntityLoadOps();
       final List<Id> ids = list.getParents();
       for (int i = 0; i < max; i++) {
         final boolean lastInList = i == max - 1;
@@ -155,12 +150,14 @@ class HistoryRetriever {
         final HistoryItem item = new HistoryItem(parent);
         items.add(item);
         if (retrieveL1 || retrieveCommit || lastInList) {
-          loadOps.add(new LoadOp<L1>(ValueType.L1, parent, l1 -> item.l1 = l1));
+          loadOps.load(EntityType.L1, L1.class, parent, l1 -> item.l1 = l1);
         }
 
         if (retrieveCommit && !parent.equals(L1.EMPTY_ID)) {
-          secondOps.add(() -> new LoadOp<InternalCommitMetadata>(
-              ValueType.COMMIT_METADATA, item.l1.getMetadataId(), cmd -> item.commitMetadata = cmd));
+          secondOps.loadDeferred(EntityType.COMMIT_METADATA,
+              InternalCommitMetadata.class,
+              () -> item.l1.getMetadataId(),
+              cmd -> item.commitMetadata = cmd);
         }
 
         if (parent.equals(end)) {
@@ -175,13 +172,7 @@ class HistoryRetriever {
         return;
       }
 
-      store.load(new LoadStep(loadOps, () -> {
-        if (secondOps.isEmpty()) {
-          return Optional.empty();
-        }
-
-        return Optional.of(new LoadStep(secondOps.stream().map(Supplier::get).collect(ImmutableList.toImmutableList())));
-      }));
+      store.load(loadOps.build(secondOps::buildOptional));
       currentIterator = items.iterator();
     }
 

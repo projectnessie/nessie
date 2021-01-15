@@ -23,7 +23,7 @@ class ValueHolder<V> {
 
   private final Serializer<V> serializer;
   private V value;
-  private WrappedValueBean bean;
+  private WrappedValueBean<?> bean;
 
   public ValueHolder(Serializer<V> serializer, V value, InternalValue bean) {
     super();
@@ -39,7 +39,7 @@ class ValueHolder<V> {
     return value;
   }
 
-  public WrappedValueBean getPersistentValue() {
+  public WrappedValueBean<?> getPersistentValue() {
     if (bean == null) {
       bean = InternalValue.of(serializer.toBytes(value));
     }
@@ -51,10 +51,10 @@ class ValueHolder<V> {
   }
 
   public static <V> ValueHolder<V> of(Serializer<V> serializer, V value) {
-    return new ValueHolder<V>(serializer, value, null);
+    return new ValueHolder<>(serializer, value, null);
   }
 
   public static <V> ValueHolder<V> of(Serializer<V> serializer, InternalValue bean) {
-    return new ValueHolder<V>(serializer, null, bean);
+    return new ValueHolder<>(serializer, null, bean);
   }
 }

@@ -19,23 +19,20 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.impl.InternalRef;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.protobuf.ByteOutput;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 
-public final class Id implements InternalRef {
+public final class Id {
 
   public static final int LENGTH = 20;
   public static final Id EMPTY = new Id(ByteString.copyFrom(new byte[LENGTH]));
@@ -195,34 +192,15 @@ public final class Id implements InternalRef {
     return Entity.ofBinary(getValue());
   }
 
-  public void addToHash(Hasher hasher) {
-    hashByteString(getValue(), hasher);
-  }
-
   public Hash toHash() {
     return Hash.of(getValue());
-  }
-
-  public Map<String, Entity> toKeyMap() {
-    return ImmutableMap.of(Store.KEY_NAME, this.toEntity());
   }
 
   public static Id fromEntity(Entity value) {
     return Id.of(value.getBinary());
   }
 
-  @Override
-  public Type getType() {
-    return Type.HASH;
-  }
-
-  @Override
   public Id getHash() {
-    return this;
-  }
-
-  @Override
-  public Id getId() {
     return this;
   }
 

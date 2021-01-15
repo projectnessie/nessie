@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
@@ -40,77 +42,23 @@ import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.SimpleSchema;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.primitives.Ints;
 
 /**
  * Stores the current state of branch.
  *
- * <p>The branch state is a current snapshot of the L1 state. It may also include some changes which define how we arrived here.
- *
- * <p>This is basically an L1 but the id of the data and the parent is unknown until we finalize all commits.
- *
- * <p>This contains a commit log of non-finalized commits including deltas. These can be used to build up history of recent
- * commits just in case the L1's associated with each were not saved.
- *
- * <p>The initial structure of the commit log is:</p>
- *
- * <pre>[{id: &lt;EMPTY_COMMIT_ID&gt;, parent: &lt;EMPTY_COMMIT_ID&gt;}]</pre>
- *
- * <p>If a lot of commits come in at the same moment, the log may temporarily be represented like this:
- * <pre>
- * [
- *   {id: &lt;l1Id&gt;, parent: &lt;parent_l1id&gt;}
- *   {id: &lt;randomid&gt;, saved:false, deltas: [
- *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;},
- *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}
- *       ]
- *   }
- *   {id: &lt;randomid&gt;, saved:false, deltas: [{position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}]}
- *   {id: &lt;randomid&gt;, saved:false, deltas: [
- *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;},
- *       {position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}
- *       ]
- *   }
- *   {id: &lt;randomid&gt;, saved:false, deltas: [{position:&lt;pos&gt;, oldId: &lt;oldL2Id&gt;, newId: &lt;newL2Id&gt;}]}
- * ]
- * </pre>
- *
- * <p>In the state shown above, several concurrent commmiters have written their branch commits to the branch
- * but have yet to clean up. In those cases, any one of the committers may clean up some or all of the
- * non-finalized commits (including commits that potentially happened after their own).
- *
- * <p>Each time a commit happens, the committer will do the following:
- * <ol>
- * <li>The mutates the branch tree AND adds their change to the list of commits in the log.
- * <li>Save the tree state (and any other pending saves) based on the result of their mutations in step 1. (*)
- * <li>Remove all finalized commits from the log except the last one. Finalize the last one within the log. (*)
- * </ol>
- *
- * <p>A commit is complete once step (1) above is completed. While steps 2 and 3 are typically also done by the same actor as step 1,
- * they may not be. In situations where that actor dies or is slow, other actors are may "finalize" that commit. The commit <b>must</b>
- * be finalized before being exposed to outside consumers of the VersionStore.
- *
- * <p>The following things are always true about the commit log.
- * <ol>
- * <li>There must always be at least one finalized entry.
- * <li>There order of commits will always be &lt;finalized&gt;+&lt;unsaved&gt;*
- * (one or more saved followed by zero or more unsaved commits).
- * <li>The ids for all saved commits will exist in the L1 table.
- * </ol>
+ * @see RefConsumer for a detailed description
  */
-class InternalBranch extends MemoizedId implements InternalRef {
+class InternalBranch extends InternalRef {
 
   static final String ID = "id";
-  static final String NAME = "name";
-  static final String METADATA = "metadata";
   static final String TREE = "tree";
   static final String COMMITS = "commits";
 
@@ -141,7 +89,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
         ImmutableList.of(new Commit(target.getId(), target.getMetadataId(), target.getParentId())));
   }
 
-  private InternalBranch(Id id, String name, IdMap tree, Id metadata, List<Commit> commits) {
+  InternalBranch(Id id, String name, IdMap tree, Id metadata, List<Commit> commits) {
     super(id);
     this.metadata = metadata;
     this.name = name;
@@ -189,11 +137,6 @@ class InternalBranch extends MemoizedId implements InternalRef {
       this.id = Preconditions.checkNotNull(unsavedId);
     }
 
-    Id getParent() {
-      Preconditions.checkArgument(saved, "Can only retrieve parent on saved commits.");
-      return parent;
-    }
-
     Id getId() {
       return id;
     }
@@ -203,53 +146,49 @@ class InternalBranch extends MemoizedId implements InternalRef {
     }
 
     public Entity toEntity() {
-      return Entity.ofMap(SCHEMA.itemToMap(this, true));
+      return Entity.ofMap(itemToMap(this));
     }
 
-    static final SimpleSchema<Commit> SCHEMA = new SimpleSchema<Commit>(Commit.class) {
-
-      @Override
-      public Commit deserialize(Map<String, Entity> map) {
-        if (!map.containsKey(DELTAS)) {
-          return new Commit(Id.fromEntity(map.get(ID)), Id.fromEntity(map.get(COMMIT)),
-              Id.fromEntity(map.get(PARENT)));
-        }
-
-        List<UnsavedDelta> deltas = map.get(DELTAS)
-            .getList()
-            .stream()
-            .map(av -> UnsavedDelta.SCHEMA.mapToItem(av.getMap()))
-            .collect(Collectors.toList());
-        return new Commit(
-            Id.fromEntity(map.get(ID)),
-            Id.fromEntity(map.get(COMMIT)),
-            deltas,
-            KeyMutationList.fromEntity(map.get(KEY_MUTATIONS))
-            );
-
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
       }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      Commit commit1 = (Commit) o;
+      return Objects.equal(saved, commit1.saved)
+          && Objects.equal(id, commit1.id)
+          && Objects.equal(commit, commit1.commit)
+          && Objects.equal(parent, commit1.parent)
+          && Objects.equal(deltas, commit1.deltas)
+          && KeyMutationList.equalsIgnoreOrder(keyMutationList, commit1.keyMutationList);
+    }
 
-      @Override
-      public Map<String, Entity> itemToMap(Commit item, boolean ignoreNulls) {
-        ImmutableMap.Builder<String, Entity> builder = ImmutableMap.builder();
-        builder
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(saved, id, commit, parent, deltas, keyMutationList);
+    }
+
+    Map<String, Entity> itemToMap(Commit item) {
+      ImmutableMap.Builder<String, Entity> builder = ImmutableMap.builder();
+      builder
           .put(ID, item.getId().toEntity())
-            .put(COMMIT, item.commit.toEntity());
-        if (item.saved) {
-          builder.put(PARENT, item.parent.toEntity());
-        } else {
-          Entity deltas = Entity.ofList(
-              item.deltas.stream().map(
-                  d -> Entity.ofMap(
-                      UnsavedDelta.SCHEMA.itemToMap(d, true)
-                      )
-                  ).collect(Collectors.toList()));
-          builder.put(DELTAS, deltas);
-          builder.put(KEY_MUTATIONS, item.keyMutationList.toEntity());
-        }
-        return builder.build();
+          .put(COMMIT, item.commit.toEntity());
+      if (item.saved) {
+        builder.put(PARENT, item.parent.toEntity());
+      } else {
+        Entity deltas = Entity.ofList(
+            item.deltas.stream()
+                .map(UnsavedDelta::itemToMap)
+                .map(Entity::ofMap)
+                .collect(Collectors.toList()));
+        builder.put(DELTAS, deltas);
+        builder.put(KEY_MUTATIONS, item.keyMutationList.toEntity());
       }
-    };
+      return builder.build();
+    }
   }
 
   /**
@@ -288,7 +227,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
 
     IdMap tree = this.tree;
 
-    L1 lastSavedL1 = lastSavedCommit.id.isEmpty() ? L1.EMPTY : store.loadSingle(ValueType.L1, lastSavedCommit.id);
+    L1 lastSavedL1 = lastSavedCommit.id.isEmpty() ? L1.EMPTY : EntityType.L1.loadSingle(store, lastSavedCommit.id);
 
     if (unsavedCommits.isEmpty()) {
       return new UpdateState(Collections.emptyList(), deletes, lastSavedL1, 0, lastSavedL1.getId(), this);
@@ -312,7 +251,7 @@ class InternalBranch extends MemoizedId implements InternalRef {
       }
       lastL1 = lastL1.getChildWithTree(c.commit, tree, c.keyMutationList)
           .withCheckpointAsNecessary(store);
-      toSave.add(new SaveOp<L1>(ValueType.L1, lastL1));
+      toSave.add(EntityType.L1.createSaveOpForEntity(lastL1));
       lastId = c.id;
       if (lastUnsaved != c) {
         // update for next loop.
@@ -365,7 +304,6 @@ class InternalBranch extends MemoizedId implements InternalRef {
      *        before returning/failing. If false, the final collapse will be done in a separate thread.
      * @return
      */
-    @SuppressWarnings("unchecked")
     CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, int attempts, boolean waitOnCollapse) {
       if (saves.isEmpty()) {
         saved = true;
@@ -446,15 +384,16 @@ class InternalBranch extends MemoizedId implements InternalRef {
               .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toEntity()))
               .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
 
-          Optional<InternalRef> updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition));
-          if (updated.isPresent()) {
+          RefConsumer producer = EntityType.REF.newEntityProducer();
+          boolean updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer));
+          if (updated) {
             LOGGER.debug("Completed collapse update on attempt {}.", attempt);
-            return updated.get().getBranch();
+            return (InternalBranch) EntityType.REF.buildFromProducer(producer);
           }
 
           LOGGER.debug("Failed to collapse update on attempt {}.", attempt);
           // something must have changed, reload the branch.
-          final InternalRef ref = store.loadSingle(ValueType.REF, branch.getId());
+          final InternalRef ref = EntityType.REF.loadSingle(store, branch.getId());
           if (ref.getType() != Type.BRANCH) {
             throw new ReferenceNotFoundException("Failure while collapsing log. Former branch is now a " + ref.getType());
           }
@@ -510,58 +449,37 @@ class InternalBranch extends MemoizedId implements InternalRef {
       return tree.withId(position,  oldId);
     }
 
-    static final SimpleSchema<UnsavedDelta> SCHEMA = new SimpleSchema<UnsavedDelta>(UnsavedDelta.class) {
-
-      @Override
-      public UnsavedDelta deserialize(Map<String, Entity> map) {
-        return new UnsavedDelta(
-            Ints.saturatedCast(map.get(POSITION).getNumber()),
-            Id.of(map.get(OLD_ID).getBinary()),
-            Id.of(map.get(NEW_ID).getBinary())
-            );
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
       }
-
-      @Override
-      public Map<String, Entity> itemToMap(UnsavedDelta item, boolean ignoreNulls) {
-        return ImmutableMap.<String, Entity>builder()
-            .put(POSITION, Entity.ofNumber(item.position))
-            .put(OLD_ID, item.oldId.toEntity())
-            .put(NEW_ID, item.newId.toEntity())
-            .build();
+      if (o == null || getClass() != o.getClass()) {
+        return false;
       }
-    };
+      UnsavedDelta that = (UnsavedDelta) o;
+      return position == that.position && Objects.equal(oldId, that.oldId)
+          && Objects.equal(newId, that.newId);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(position, oldId, newId);
+    }
+
+    Map<String, Entity> itemToMap() {
+      return ImmutableMap.<String, Entity>builder()
+          .put(POSITION, Entity.ofNumber(position))
+          .put(OLD_ID, oldId.toEntity())
+          .put(NEW_ID, newId.toEntity())
+          .build();
+    }
   }
 
   @Override
   Id generateId() {
     return Id.build(name);
   }
-
-  static final SimpleSchema<InternalBranch> SCHEMA = new SimpleSchema<InternalBranch>(InternalBranch.class) {
-
-    @Override
-    public InternalBranch deserialize(Map<String, Entity> attributeMap) {
-      return new InternalBranch(
-          Id.fromEntity(attributeMap.get(ID)),
-          attributeMap.get(NAME).getString(),
-          IdMap.fromEntity(attributeMap.get(TREE), L1.SIZE),
-          Id.fromEntity(attributeMap.get(METADATA)),
-          attributeMap.get(COMMITS).getList().stream().map(av -> Commit.SCHEMA.mapToItem(av.getMap())).collect(Collectors.toList())
-      );
-    }
-
-    @Override
-    public Map<String, Entity> itemToMap(InternalBranch item, boolean ignoreNulls) {
-      return ImmutableMap.<String, Entity>builder()
-          .put(ID, item.getId().toEntity())
-          .put(NAME, Entity.ofString(item.name))
-          .put(METADATA, item.metadata.toEntity())
-          .put(COMMITS, Entity.ofList(item.commits.stream().map(Commit::toEntity).collect(Collectors.toList())))
-          .put(TREE, item.tree.toEntity())
-          .build();
-    }
-
-  };
 
   @Override
   public Type getType() {
@@ -571,6 +489,54 @@ class InternalBranch extends MemoizedId implements InternalRef {
   @Override
   public InternalBranch getBranch() {
     return this;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    InternalBranch that = (InternalBranch) o;
+    return Objects.equal(name, that.name) && Objects
+        .equal(tree, that.tree) && Objects.equal(metadata, that.metadata)
+        && Objects.equal(commits, that.commits);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(name, tree, metadata, commits);
+  }
+
+  @Override
+  RefConsumer applyToConsumer(RefConsumer consumer) {
+    return super.applyToConsumer(consumer)
+        .name(name)
+        .type(RefType.BRANCH)
+        .metadata(metadata)
+        .children(this.tree.stream())
+        .commits(cc -> {
+          for (Commit c : commits) {
+            cc.id(c.id)
+                .commit(c.commit);
+            if (c.saved) {
+              cc.parent(c.parent)
+                  .done();
+            } else {
+              c.deltas.forEach(d -> cc.delta(
+                      d.position,
+                      d.oldId,
+                      d.newId
+                  ));
+
+              c.keyMutationList.getMutations().forEach(km -> cc.keyMutation(km.toMutation()));
+
+              cc.done();
+            }
+          }
+        });
   }
 
 }
