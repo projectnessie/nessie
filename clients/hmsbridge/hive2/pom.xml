@@ -301,6 +301,11 @@
               <artifactId>nessie-quarkus</artifactId>
               <version>${project.version}</version>
             </dependency>
+             <dependency><!-- The Quarkus-application doesn't build without this dependency. -->
+               <groupId>io.quarkus</groupId>
+               <artifactId>quarkus-test-common</artifactId>
+               <version>${quarkus.version}</version>
+             </dependency>
            </dependencies>
            <executions>
              <execution>

@@ -24,9 +24,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import com.dremio.nessie.server.config.converters.BackendType;
 import com.dremio.nessie.server.config.converters.JGitStoreType;
+import com.dremio.nessie.server.config.converters.JdbcDialectType;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.services.config.ServerConfig;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
+import com.dremio.nessie.versioned.store.jdbc.JdbcStoreConfig;
 
 import io.quarkus.arc.config.ConfigProperties;
 
@@ -40,6 +42,7 @@ public class ApplicationConfig {
   private final VersionStoreConfig versionStoreConfig;
   private final VersionStoreJGitConfig versionStoreJGitConfig;
   private final VersionStoreDynamoConfig versionStoreDynamoConfig;
+  private final VersionStoreJdbcConfig versionStoreJdbcConfig;
 
   /**
    * inject all configs form config providers.
@@ -48,12 +51,14 @@ public class ApplicationConfig {
   public ApplicationConfig(BackendsConfig backendsConfig,
                            VersionStoreConfig versionStoreConfig,
                            VersionStoreJGitConfig versionStoreJGitConfig,
-                           VersionStoreDynamoConfig versionStoreDynamoConfig) {
+                           VersionStoreDynamoConfig versionStoreDynamoConfig,
+                           VersionStoreJdbcConfig versionStoreJdbcConfig) {
 
     this.backendsConfig = backendsConfig;
     this.versionStoreConfig = versionStoreConfig;
     this.versionStoreJGitConfig = versionStoreJGitConfig;
     this.versionStoreDynamoConfig = versionStoreDynamoConfig;
+    this.versionStoreJdbcConfig = versionStoreJdbcConfig;
   }
 
 
@@ -71,6 +76,10 @@ public class ApplicationConfig {
 
   public VersionStoreDynamoConfig getVersionStoreDynamoConfig() {
     return versionStoreDynamoConfig;
+  }
+
+  public VersionStoreJdbcConfig getVersionStoreJdbcConfig() {
+    return versionStoreJdbcConfig;
   }
 
   @ConfigProperties(prefix = "nessie.server")
@@ -111,6 +120,9 @@ public class ApplicationConfig {
     Optional<String> getJgitDirectory();
   }
 
+  /**
+   * See {@link DynamoStoreConfig}.
+   */
   @ConfigProperties(prefix = "nessie.version.store.dynamo")
   public interface VersionStoreDynamoConfig {
 
@@ -119,6 +131,35 @@ public class ApplicationConfig {
 
     @ConfigProperty(defaultValue = DynamoStoreConfig.TABLE_PREFIX)
     String getTablePrefix();
+
+  }
+
+  /**
+   * See {@link JdbcStoreConfig}.
+   */
+  @ConfigProperties(prefix = "nessie.version.store.jdbc")
+  public interface VersionStoreJdbcConfig {
+
+    @ConfigProperty(name = "initialize", defaultValue = "false")
+    boolean isJdbcInitialize();
+
+    @ConfigProperty(name = "setupTables", defaultValue = "false")
+    boolean isSetupTables();
+
+    @ConfigProperty(name = "logCreateDDL", defaultValue = "false")
+    boolean isLogCreateDDL();
+
+    @ConfigProperty(defaultValue = JdbcStoreConfig.TABLE_PREFIX)
+    String getTablePrefix();
+
+    @ConfigProperty
+    Optional<String> getCatalog();
+
+    @ConfigProperty
+    Optional<String> getSchema();
+
+    @ConfigProperty
+    JdbcDialectType getDialect();
 
   }
 }

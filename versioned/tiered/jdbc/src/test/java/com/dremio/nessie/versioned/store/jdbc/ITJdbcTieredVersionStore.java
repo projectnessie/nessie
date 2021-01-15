@@ -13,16 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.server.config.converters;
+package com.dremio.nessie.versioned.store.jdbc;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
+import org.junit.jupiter.api.AfterAll;
 
-@RegisterForReflection
-public enum VersionStoreType {
+import com.dremio.nessie.versioned.impl.AbstractITTieredVersionStore;
 
-  DYNAMO,
-  JDBC,
-  INMEMORY,
-  JGIT;
+class ITJdbcTieredVersionStore extends AbstractITTieredVersionStore {
 
+  @AfterAll
+  static void shutdown() {
+    JdbcFixture.cleanup();
+  }
+
+  @Override
+  protected JdbcFixture createNewFixture() {
+    return new JdbcFixture();
+  }
 }

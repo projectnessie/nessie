@@ -18,11 +18,12 @@ package com.dremio.nessie.server.config.converters;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection
-public enum VersionStoreType {
+public enum JdbcDialectType {
 
-  DYNAMO,
-  JDBC,
-  INMEMORY,
-  JGIT;
+  HSQL,
+  H2,
+  COCKROACH,
+  POSTGRESQL,
+  ORACLE;
 
 }

@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableList;
 
 public class ExpressionFunction implements Value {
 
-  private static enum FunctionName {
+  public enum FunctionName {
     LIST_APPEND("list_append", 2),
     IF_NOT_EXISTS("if_not_exists", 2),
     EQUALS("="),
@@ -128,4 +128,11 @@ public class ExpressionFunction implements Value {
     return this;
   }
 
+  public FunctionName getName() {
+    return name;
+  }
+
+  public List<Value> getArguments() {
+    return arguments;
+  }
 }
