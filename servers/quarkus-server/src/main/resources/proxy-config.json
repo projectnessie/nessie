@@ -1,0 +1,6 @@
+[
+  ["java.sql.Connection"],
+  ["java.sql.Statement"],
+  ["java.sql.PreparedStatement"],
+  ["java.sql.ResultSet"]
+]

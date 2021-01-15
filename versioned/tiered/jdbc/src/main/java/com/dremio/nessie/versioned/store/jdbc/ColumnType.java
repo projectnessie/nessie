@@ -13,16 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.server.config.converters;
+package com.dremio.nessie.versioned.store.jdbc;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
-
-@RegisterForReflection
-public enum VersionStoreType {
-
-  DYNAMO,
-  JDBC,
-  INMEMORY,
-  JGIT;
-
+/**
+ * Abstracts column types, so the actual {@link Dialect database-dialects} can implement the
+ * type handling in a database-native way.
+ */
+enum ColumnType {
+  ID,
+  DT,
+  SEQ,
+  BINARY,
+  BOOL,
+  LONG,
+  ID_LIST,
+  KEY_LIST,
+  KEY_MUTATION_LIST,
+  KEY_DELTA_LIST,
+  REF_TYPE,
+  REF_NAME
 }
