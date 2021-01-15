@@ -19,13 +19,13 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attrib
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoConsumer.ID;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserialize;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserializeToConsumer;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serializeWithConsumer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,14 +40,12 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.impl.EntityTypeBridge;
-import com.dremio.nessie.versioned.impl.PersistentBase;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.ConditionFailedException;
 import com.dremio.nessie.versioned.store.Entity;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
@@ -56,6 +54,7 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.dremio.nessie.versioned.store.ValuesMapper;
 import com.dremio.nessie.versioned.util.AutoCloseables;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -122,7 +121,7 @@ public class DynamoStore implements Store {
     this.tableNames = Stream.of(ValueType.values())
         .collect(ImmutableMap.toImmutableMap(v -> v, v -> v.getTableName(config.getTablePrefix())));
 
-    if (tableNames.size() != tableNames.values().stream().collect(Collectors.toSet()).size()) {
+    if (tableNames.size() != new HashSet<>(tableNames.values()).size()) {
       throw new IllegalArgumentException("Each Nessie dynamo table must be named distinctly.");
     }
   }
@@ -154,7 +153,7 @@ public class DynamoStore implements Store {
         Arrays.stream(ValueType.values())
           .map(tableNames::get)
           .collect(Collectors.toSet())
-            .forEach(table -> createIfMissing(table));
+            .forEach(this::createIfMissing);
 
         // make sure we have an empty l1 (ignore result, doesn't matter)
         EntityTypeBridge.storeMinimumEntities(this::putIfAbsent);
@@ -253,10 +252,10 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <V extends HasId> boolean putIfAbsent(ValueType type, V value) {
+  public <C extends BaseConsumer<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
     ConditionExpression condition = ConditionExpression.of(ExpressionFunction.attributeNotExists(ExpressionPath.builder(KEY_NAME).build()));
     try {
-      put(type, value, Optional.of(condition));
+      put(saveOp, Optional.of(condition));
       return true;
     } catch (ConditionFailedException ex) {
       return false;
@@ -268,7 +267,7 @@ public class DynamoStore implements Store {
    */
   @VisibleForTesting
   public void deleteTables() {
-    Arrays.stream(ValueType.values()).map(v -> tableNames.get(v)).collect(Collectors.toSet()).forEach(table -> {
+    Arrays.stream(ValueType.values()).map(tableNames::get).collect(Collectors.toSet()).forEach(table -> {
       try {
         client.deleteTable(DeleteTableRequest.builder().tableName(table).build());
       } catch (ResourceNotFoundException ex) {
@@ -278,16 +277,12 @@ public class DynamoStore implements Store {
 
   }
 
-  @SuppressWarnings({"Convert2MethodRef", "unchecked", "rawtypes"})
   @Override
-  public <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
-    PersistentBase v = (PersistentBase) value;
-    Map<String, AttributeValue> attributes = serializeWithConsumer(type, c -> {
-      v.applyToConsumer(c);
-    });
+  public <C extends BaseConsumer<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> conditionUnAliased) {
+    Map<String, AttributeValue> attributes = serializeWithConsumer(saveOp);
 
     PutItemRequest.Builder builder = PutItemRequest.builder()
-        .tableName(tableNames.get(type))
+        .tableName(tableNames.get(saveOp.getType()))
         .item(attributes);
     if (conditionUnAliased.isPresent()) {
       AliasCollectorImpl c = new AliasCollectorImpl();
@@ -340,11 +335,10 @@ public class DynamoStore implements Store {
 
       ListMultimap<String, SaveOp<?>> mm =
           Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
-      @SuppressWarnings({"unchecked", "rawtypes"})
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save ->
           WriteRequest.builder().putRequest(PutRequest.builder().item(
-              serializeWithConsumer(save.getType(), cons -> save.serialize((BaseConsumer) cons))).build())
-                    .build());
+              serializeWithConsumer(save)).build())
+              .build());
       BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
       saves.add(async.batchWriteItem(batch));
     }
@@ -363,15 +357,6 @@ public class DynamoStore implements Store {
     }
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
-    return (V) EntityTypeBridge.buildEntity(valueType, producer -> {
-      @SuppressWarnings("rawtypes") BaseConsumer prod = producer;
-      loadSingle(valueType, id, prod);
-    });
-  }
-
   @Override
   public <C extends BaseConsumer<C>> void loadSingle(ValueType valueType, Id id, C consumer) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
@@ -386,8 +371,8 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <V extends HasId> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
-      throws NotFoundException {
+  public <C extends BaseConsumer<C>> boolean update(ValueType type, Id id, UpdateExpression update,
+      Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException {
     try {
       AliasCollectorImpl collector = new AliasCollectorImpl();
       UpdateExpression aliased = update.alias(collector);
@@ -400,16 +385,17 @@ public class DynamoStore implements Store {
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
       UpdateItemRequest builtRequest = updateRequest.build();
       UpdateItemResponse response = client.updateItem(builtRequest);
-      return Optional.of(deserialize(type, response.attributes()));
+      consumer.ifPresent(c -> deserializeToConsumer(type, response.attributes(), c));
+      return true;
     } catch (ResourceNotFoundException ex) {
       throw new NotFoundException("Unable to find value.", ex);
     } catch (ConditionalCheckFailedException checkFailed) {
       LOGGER.debug("Conditional check failed.", checkFailed);
-      return Optional.empty();
+      return false;
     }
   }
 
-  private final boolean tableExists(String name) {
+  private boolean tableExists(String name) {
     try {
 
       DescribeTableResponse refTable = client.describeTable(DescribeTableRequest.builder().tableName(name).build());
@@ -423,20 +409,24 @@ public class DynamoStore implements Store {
 
 
   @Override
-  public <V extends HasId> Stream<V> getValues(Class<V> valueClass, ValueType type) {
+  public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType type, ValuesMapper<C, V> valuesMapper) {
     return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
         .stream()
         .flatMap(r -> r.items().stream())
-        .map(i -> deserialize(type, i));
+        .map(i -> {
+          C producer = valuesMapper.producerForItem();
+          deserializeToConsumer(type, i, producer);
+          return valuesMapper.itemProduced(producer);
+        });
   }
 
-  private final void createIfMissing(String name) {
+  private void createIfMissing(String name) {
     if (!tableExists(name)) {
       createTable(name);
     }
   }
 
-  private final void createTable(String name) {
+  private void createTable(String name) {
     client.createTable(CreateTableRequest.builder()
         .tableName(name)
         .attributeDefinitions(AttributeDefinition.builder()
@@ -455,7 +445,7 @@ public class DynamoStore implements Store {
         .build());
   }
 
-  private static final void verifyKeySchema(TableDescription description) {
+  private static void verifyKeySchema(TableDescription description) {
     List<KeySchemaElement> elements = description.keySchema();
 
     if (elements.size() == 1) {

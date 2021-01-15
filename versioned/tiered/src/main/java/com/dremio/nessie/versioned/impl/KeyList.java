@@ -49,7 +49,7 @@ abstract class KeyList {
 
   abstract KeyList plus(Id parent, List<KeyMutation> mutations);
 
-  abstract Optional<KeyList> createCheckpointIfNeeded(L1 startingPoint, Store store);
+  abstract Optional<KeyList> createCheckpointIfNeeded(L1 startingPoint, EntityStore store);
 
   abstract Type getType();
 
@@ -63,7 +63,7 @@ abstract class KeyList {
         .mutations(mutations).build();
   }
 
-  abstract Stream<InternalKey> getKeys(L1 startingPoint, Store store);
+  abstract Stream<InternalKey> getKeys(L1 startingPoint, EntityStore store);
 
 
   abstract List<KeyMutation> getMutations();
@@ -102,7 +102,7 @@ abstract class KeyList {
     }
 
     @Override
-    public Optional<KeyList> createCheckpointIfNeeded(L1 startingPoint, Store store) {
+    public Optional<KeyList> createCheckpointIfNeeded(L1 startingPoint, EntityStore store) {
       if (getDistanceFromCheckpointCommits() < MAX_DELTAS) {
         return Optional.empty();
       }
@@ -113,7 +113,7 @@ abstract class KeyList {
 
 
     @Override
-    Stream<InternalKey> getKeys(L1 startingPoint, Store store) {
+    Stream<InternalKey> getKeys(L1 startingPoint, EntityStore store) {
       IterResult keys = getKeysIter(startingPoint, store);
       if (keys.isChanged()) {
         return keys.keyList;
@@ -122,21 +122,21 @@ abstract class KeyList {
       return keys.list.getKeys(startingPoint, store);
     }
 
-    private CompleteList generateNewCheckpoint(L1 startingPoint, Store store) {
+    private CompleteList generateNewCheckpoint(L1 startingPoint, EntityStore store) {
 
       IterResult result = getKeysIter(startingPoint, store);
       if (!result.isChanged()) {
         return result.list;
       }
 
-      final KeyAccumulator accum = new KeyAccumulator(store, result.previousFragmentIds);
+      final KeyAccumulator accum = new KeyAccumulator(store.store, result.previousFragmentIds);
       result.keyList.forEach(accum::addKey);
       accum.close();
 
       return accum.getCompleteList(getMutations());
     }
 
-    private IterResult getKeysIter(L1 startingPoint, Store store) {
+    private IterResult getKeysIter(L1 startingPoint, EntityStore store) {
       HistoryRetriever retriever = new HistoryRetriever(store, startingPoint, getPreviousCheckpoint(), true, false, true);
       final CompleteList complete;
       // incrementals, from oldest to newest.
@@ -261,7 +261,7 @@ abstract class KeyList {
     }
 
     @Override
-    public Optional<KeyList> createCheckpointIfNeeded(L1 startingPoint, Store store) {
+    public Optional<KeyList> createCheckpointIfNeeded(L1 startingPoint, EntityStore store) {
       // checkpoint not needed, already a checkpoint.
       return Optional.empty();
     }
@@ -289,7 +289,7 @@ abstract class KeyList {
     }
 
     @Override
-    Stream<InternalKey> getKeys(L1 startingPoint, Store store) {
+    Stream<InternalKey> getKeys(L1 startingPoint, EntityStore store) {
       return fragmentIds.stream().flatMap(f -> {
         Fragment fragment = store.loadSingle(ValueType.KEY_FRAGMENT, f);
         return fragment.getKeys().stream();

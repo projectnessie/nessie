@@ -42,7 +42,6 @@ import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
@@ -195,7 +194,7 @@ class InternalBranch extends InternalRef {
    * Identify the list of intended commits that need to be completed.
    * @return
    */
-  public UpdateState getUpdateState(Store store)  {
+  public UpdateState getUpdateState(EntityStore store)  {
     // generate sublist of important commits.
     List<Commit> unsavedCommits = new ArrayList<>();
     Commit lastSavedCommit = null;
@@ -304,13 +303,13 @@ class InternalBranch extends InternalRef {
      *        before returning/failing. If false, the final collapse will be done in a separate thread.
      * @return
      */
-    CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, int attempts, boolean waitOnCollapse) {
+    CompletableFuture<InternalBranch> ensureAvailable(EntityStore store, Executor executor, int attempts, boolean waitOnCollapse) {
       if (saves.isEmpty()) {
         saved = true;
         return CompletableFuture.completedFuture(initialBranch);
       }
 
-      store.save(saves);
+      store.store.save(saves);
       saved = true;
 
       CompletableFuture<InternalBranch> future = CompletableFuture.supplyAsync(() -> {
@@ -353,7 +352,7 @@ class InternalBranch extends InternalRef {
      * @throws ReferenceNotFoundException when branch does not exist.
      * @throws ReferenceConflictException If attempts are depleted and operation cannot be applied due to heavy concurrency
      */
-    private static InternalBranch collapseIntentionLog(UpdateState initialState, Store store, InternalBranch branch, int attempts)
+    private static InternalBranch collapseIntentionLog(UpdateState initialState, EntityStore store, InternalBranch branch, int attempts)
         throws ReferenceNotFoundException, ReferenceConflictException {
       try {
         for (int attempt = 0; attempt < attempts; attempt++) {
@@ -384,10 +383,11 @@ class InternalBranch extends InternalRef {
               .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toEntity()))
               .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
 
-          Optional<InternalRef> updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition));
-          if (updated.isPresent()) {
+          RefConsumer producer = EntityType.REF.newEntityProducer();
+          boolean updated = store.store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer));
+          if (updated) {
             LOGGER.debug("Completed collapse update on attempt {}.", attempt);
-            return updated.get().getBranch();
+            return (InternalBranch) EntityType.REF.buildFromProducer(producer);
           }
 
           LOGGER.debug("Failed to collapse update on attempt {}.", attempt);

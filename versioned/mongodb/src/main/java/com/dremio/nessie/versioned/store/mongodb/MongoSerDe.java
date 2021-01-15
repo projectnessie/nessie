@@ -37,9 +37,8 @@ import org.bson.conversions.Bson;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.impl.PersistentBase;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
 
@@ -104,7 +103,7 @@ final class MongoSerDe {
     return consumerMap.get(valueType).apply(bsonWriter);
   }
 
-  static <E extends HasId> Bson bsonForValueType(ValueType valueType, E value, String updateOperator) {
+  static <C extends BaseConsumer<C>> Bson bsonForValueType(SaveOp<C> saveOp, String updateOperator) {
     return new Bson() {
       @Override
       public <T> BsonDocument toBsonDocument(Class<T> clazz, CodecRegistry codecRegistry) {
@@ -113,10 +112,7 @@ final class MongoSerDe {
         writer.writeStartDocument();
         writer.writeName(updateOperator);
 
-        serializeEntity(writer, value.getId(), valueType, c -> {
-          PersistentBase persistentBase = (PersistentBase) value;
-          persistentBase.applyToConsumer(c);
-        });
+        serializeEntity(writer, saveOp);
 
         writer.writeEndDocument();
 
@@ -125,11 +121,12 @@ final class MongoSerDe {
     };
   }
 
-  static void serializeEntity(BsonWriter writer, Id id, ValueType valueType, Consumer<BaseConsumer> producer) {
+  static <C extends BaseConsumer<C>> void serializeEntity(BsonWriter writer, SaveOp<C> saveOp) {
     writer.writeStartDocument();
-    MongoConsumer<?> consumer = newMongoConsumer(valueType, writer);
-    consumer.id(id);
-    producer.accept(consumer);
+    MongoConsumer<?> consumer = newMongoConsumer(saveOp.getType(), writer);
+    consumer.id(saveOp.getId());
+    BaseConsumer<C> c = (BaseConsumer<C>) consumer;
+    saveOp.serialize(c);
     consumer.build();
     writer.writeEndDocument();
   }

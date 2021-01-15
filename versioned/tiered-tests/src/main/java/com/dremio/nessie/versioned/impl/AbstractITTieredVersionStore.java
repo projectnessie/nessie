@@ -29,6 +29,8 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -57,9 +59,32 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 public abstract class AbstractITTieredVersionStore {
-  public abstract VersionStore<String, String> versionStore();
 
-  public abstract Store store();
+  private AbstractTieredStoreFixture<?, ?> fixture;
+
+  @BeforeEach
+  void setup() {
+    fixture = createNewFixture();
+  }
+
+  @AfterEach
+  void deleteResources() throws Exception {
+    fixture.close();
+  }
+
+  public VersionStore<String, String> versionStore() {
+    return fixture;
+  }
+
+  public Store store() {
+    return fixture.getStore();
+  }
+
+  public EntityStore entityStore() {
+    return fixture.getEntityStore();
+  }
+
+  protected abstract AbstractTieredStoreFixture<?, ?> createNewFixture();
 
   @Test
   void checkDuplicateValueCommit() throws Exception {
@@ -127,12 +152,12 @@ public abstract class AbstractITTieredVersionStore {
   void checkKeyList() throws Exception {
     BranchName branch = BranchName.of("my-key-list");
     versionStore().create(branch, Optional.empty());
-    assertEquals(0, store().<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
+    assertEquals(0, entityStore().<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"),
         Put.of(Key.of("no"), "world"),
         Put.of(Key.of("mad mad"), "world")));
-    assertEquals(0, store().<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
+    assertEquals(0, entityStore().<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
     assertThat(versionStore().getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
         Matchers.containsInAnyOrder("hi", "no", "mad mad"));
   }

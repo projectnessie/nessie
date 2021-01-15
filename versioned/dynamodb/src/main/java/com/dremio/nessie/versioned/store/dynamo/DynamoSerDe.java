@@ -33,9 +33,8 @@ import com.dremio.nessie.tiered.builder.L2Consumer;
 import com.dremio.nessie.tiered.builder.L3Consumer;
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
-import com.dremio.nessie.versioned.impl.EntityTypeBridge;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
@@ -102,30 +101,15 @@ final class DynamoSerDe {
    */
   @SuppressWarnings("unchecked")
   public static <C extends BaseConsumer<C>> Map<String, AttributeValue> serializeWithConsumer(
-      ValueType valueType, Consumer<BaseConsumer<C>> serializer) {
-    Preconditions.checkNotNull(valueType, "valueType parameter is null");
-    Preconditions.checkNotNull(serializer, "serializer parameter is null");
+      SaveOp<C> saveOp) {
+    Preconditions.checkNotNull(saveOp, "saveOp parameter is null");
 
     // No need for any 'type' validation - that's done in the static initializer
-    DynamoConsumer<C> consumer = (DynamoConsumer<C>) dynamoEntityMapProducers.get(valueType).get();
+    DynamoConsumer<C> consumer = (DynamoConsumer<C>) dynamoEntityMapProducers.get(saveOp.getType()).get();
 
-    serializer.accept((C) consumer);
+    saveOp.serialize(consumer);
 
     return consumer.build();
-  }
-
-  /**
-   * Convenience functionality around {@link #deserializeToConsumer(ValueType, Map, BaseConsumer)}
-   * that deserializes directly into a materialized entity instance,
-   * deserialize the given DynamoDB {@code entity}-map as the given {@link ValueType type}
-   * and returns a materialized object.
-   *
-   * @see #deserializeToConsumer(ValueType, Map, BaseConsumer)
-   */
-  @SuppressWarnings("unchecked")
-  public static <V extends HasId, C extends BaseConsumer<C>> V deserialize(
-      ValueType valueType, Map<String, AttributeValue> entity) {
-    return (V) EntityTypeBridge.buildEntity(valueType, producer -> deserializeToConsumer(valueType, entity, producer));
   }
 
   /**

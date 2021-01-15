@@ -34,6 +34,7 @@ import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Diff;
@@ -72,6 +73,7 @@ import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.dremio.nessie.versioned.store.ValuesMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -90,7 +92,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   private final Serializer<METADATA> metadataSerializer;
   private final StoreWorker<DATA,METADATA> storeWorker;
   private final ExecutorService executor;
-  private Store store;
+  private final Store store;
+  private final EntityStore entityStore;
   private final int commitRetryCount = 5;
   private final int p2commitRetry = 5;
   private final boolean waitOnCollapse;
@@ -106,6 +109,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
+    this.entityStore = new EntityStore(store);
     this.storeWorker = storeWorker;
     this.executor = Executors.newCachedThreadPool();
     this.waitOnCollapse = waitOnCollapse;
@@ -119,7 +123,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
 
       InternalBranch branch = new InternalBranch(ref.getName());
-      if (!store.putIfAbsent(ValueType.REF, branch)) {
+      if (!store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, branch))) {
         throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
       }
 
@@ -129,13 +133,13 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     // with a hash.
     final L1 l1;
     try {
-      l1 = store.loadSingle(ValueType.L1, Id.of(targetHash.get()));
+      l1 = entityStore.loadSingle(ValueType.L1, Id.of(targetHash.get()));
     } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException("Unable to find target hash.", ex);
     }
 
     InternalRef newRef = ref instanceof TagName ? new InternalTag(null, ref.getName(), l1.getId()) : new InternalBranch(ref.getName(), l1);
-    if (!store.putIfAbsent(ValueType.REF, newRef)) {
+    if (!store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, newRef))) {
       throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
     }
   }
@@ -143,7 +147,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   @Override
   public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
     try {
-      InternalRef ref = store.loadSingle(ValueType.REF, Id.build(refOfUnknownType));
+      InternalRef ref = entityStore.loadSingle(ValueType.REF, Id.build(refOfUnknownType));
       if (ref.getType() == Type.TAG) {
         return WithHash.of(ref.getTag().getCommit().toHash(), TagName.of(ref.getTag().getName()));
       }
@@ -156,7 +160,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     try {
       Hash hash = Hash.of(refOfUnknownType);
-      L1 l1 = store.loadSingle(ValueType.L1, Id.of(hash));
+      L1 l1 = entityStore.loadSingle(ValueType.L1, Id.of(hash));
       return WithHash.of(l1.getId().toHash(), l1.getId().toHash());
     } catch (RuntimeException ex) {
       // ignore.
@@ -172,7 +176,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     // load ref so we can figure out how to apply condition, and do first condition check.
     final InternalRef iref;
     try {
-      iref = store.loadSingle(ValueType.REF, id.getId());
+      iref = entityStore.loadSingle(ValueType.REF, id.getId());
     } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException(String.format("Unable to find '%s'.", ref.getName()), ex);
     }
@@ -262,9 +266,10 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           true,
           true);
 
-      Optional<InternalRef> updated = store.update(ValueType.REF, ref.getId(),
-          commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()));
-      if (!updated.isPresent()) {
+      RefConsumer producer = EntityType.REF.newEntityProducer();
+      boolean updated = store.update(ValueType.REF, ref.getId(),
+          commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(producer));
+      if (!updated) {
         if (loop++ < commitRetryCount) {
           continue;
         }
@@ -272,14 +277,14 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
             String.format("Unable to complete commit due to conflicting events. Retried %d times before failing.", commitRetryCount));
       }
 
-      updatedBranch = updated.get().getBranch();
+      updatedBranch = (InternalBranch) EntityType.REF.buildFromProducer(producer);
       break;
     }
 
     // Now we'll try to collapse the intention log. Note that this is done post official commit so we need to return
     // successfully even if this fails.
     try {
-      updatedBranch.getUpdateState(store).ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
+      updatedBranch.getUpdateState(entityStore).ensureAvailable(entityStore, executor, p2commitRetry, waitOnCollapse);
     } catch (Exception ex) {
       LOGGER.info("Failure while collapsing intention log after commit.", ex);
     }
@@ -292,17 +297,17 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       final L1 startingL1;
       if (id.getType() == Type.HASH) {
         // points to L1.
-        startingL1 = store.loadSingle(ValueType.L1, id.getId());
+        startingL1 = entityStore.loadSingle(ValueType.L1, id.getId());
       } else {
-        InternalRef iref = store.loadSingle(ValueType.REF, id.getId());
+        InternalRef iref = entityStore.loadSingle(ValueType.REF, id.getId());
         if (iref.getType() == Type.TAG) {
-          startingL1 = store.loadSingle(ValueType.L1, iref.getTag().getCommit());
+          startingL1 = entityStore.loadSingle(ValueType.L1, iref.getTag().getCommit());
         } else {
           startingL1 = ensureValidL1(iref.getBranch());
         }
       }
 
-      HistoryRetriever hr = new HistoryRetriever(store, startingL1, Id.EMPTY, false, true, false);
+      HistoryRetriever hr = new HistoryRetriever(entityStore, startingL1, Id.EMPTY, false, true, false);
       return hr.getStream().map(hi -> WithHash.of(hi.getId().toHash(), metadataSerializer.fromBytes(hi.getMetadata().getBytes())));
 
     } catch (NotFoundException ex) {
@@ -313,15 +318,25 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return store.getValues(InternalRef.class, ValueType.REF)
+    return store.getValues(InternalRef.class, ValueType.REF, new ValuesMapper<RefConsumer, InternalRef>() {
+      @Override
+      public RefConsumer producerForItem() {
+        return EntityType.REF.newEntityProducer();
+      }
+
+      @Override
+      public InternalRef itemProduced(RefConsumer producer) {
+        return EntityType.REF.buildFromProducer(producer);
+      }
+    })
         .map(ir -> {
           if (ir.getType() == Type.TAG) {
-            return WithHash.<NamedRef>of(ir.getTag().getCommit().toHash(), ImmutableTagName.builder().name(ir.getTag().getName()).build());
+            return WithHash.of(ir.getTag().getCommit().toHash(), ImmutableTagName.builder().name(ir.getTag().getName()).build());
           }
 
           InternalBranch branch = ir.getBranch();
           L1 l1 = ensureValidL1(branch);
-          return WithHash.<NamedRef>of(l1.getId().toHash(), ImmutableBranchName.builder().name(ir.getBranch().getName()).build());
+          return WithHash.of(l1.getId().toHash(), ImmutableBranchName.builder().name(ir.getBranch().getName()).build());
         });
   }
 
@@ -331,15 +346,15 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
    * @return The L1 that is guaranteed to be addressable.
    */
   private L1 ensureValidL1(InternalBranch branch) {
-    UpdateState updateState = branch.getUpdateState(store);
-    updateState.ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
+    UpdateState updateState = branch.getUpdateState(entityStore);
+    updateState.ensureAvailable(entityStore, executor, p2commitRetry, waitOnCollapse);
     return updateState.getL1();
   }
 
   @Override
   public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
     try {
-      InternalRef iref = store.loadSingle(ValueType.REF, InternalRefId.ofUnknownName(ref.getName()).getId());
+      InternalRef iref = entityStore.loadSingle(ValueType.REF, InternalRefId.ofUnknownName(ref.getName()).getId());
       if (iref.getType() == Type.BRANCH) {
         return ensureValidL1(iref.getBranch()).getId().toHash();
       } else {
@@ -368,7 +383,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     final L1 l1;
     try {
-      l1 = store.loadSingle(ValueType.L1, newId);
+      l1 = entityStore.loadSingle(ValueType.L1, newId);
     } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException("Unable to find target hash.");
     }
@@ -403,7 +418,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     }
 
     try {
-      store.put(ValueType.REF, toSave, Optional.of(condition));
+      store.put(new EntitySaveOp<>(ValueType.REF, toSave), Optional.of(condition));
     } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException("The current tag", ex);
     } catch (ConditionFailedException ex) {
@@ -429,22 +444,22 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     switch (refId.getType()) {
       case BRANCH:
-        InternalRef branchRef = store.loadSingle(ValueType.REF, refId.getId());
+        InternalRef branchRef = entityStore.loadSingle(ValueType.REF, refId.getId());
         start = ensureValidL1(branchRef.getBranch());
         break;
       case TAG:
-        InternalRef tagRef = store.loadSingle(ValueType.REF, refId.getId());
-        start = store.loadSingle(ValueType.L1, tagRef.getTag().getCommit());
+        InternalRef tagRef = entityStore.loadSingle(ValueType.REF, refId.getId());
+        start = entityStore.loadSingle(ValueType.L1, tagRef.getTag().getCommit());
         break;
       case HASH:
-        start = store.loadSingle(ValueType.L1, refId.getId());
+        start = entityStore.loadSingle(ValueType.L1, refId.getId());
         break;
       case UNKNOWN:
       default:
         throw new UnsupportedOperationException();
     }
 
-    return start.getKeys(store).map(InternalKey::toKey);
+    return start.getKeys(entityStore).map(InternalKey::toKey);
   }
 
   @Override
@@ -477,7 +492,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         true,
         (from, commonParent) -> {
           // first we need to validate that the actual history matches the provided sequence.
-          Stream<L1> historyStream = new HistoryRetriever(store, from, null, true, false, true).getStream().map(HistoryItem::getL1);
+          Stream<L1> historyStream = new HistoryRetriever(entityStore, from, null, true, false, true).getStream().map(HistoryItem::getL1);
           List<L1> l1s = Lists.reverse(takeUntilNext(historyStream, endTarget).collect(ImmutableList.toImmutableList()));
           List<Hash> hashes = l1s.stream().map(L1::getId).map(Id::toHash).skip(1).collect(Collectors.toList());
           if (!hashes.equals(sequenceToTransplant)) {
@@ -511,7 +526,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     internalTransplant(fromHash, toBranch, expectedBranchHash, false, (from, commonParent) -> {
-      return Lists.reverse(new HistoryRetriever(store, from, commonParent, true, false, true)
+      return Lists.reverse(new HistoryRetriever(entityStore, from, commonParent, true, false, true)
           .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
     });
   }
@@ -565,7 +580,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     final L1 to = toPtr.get();
 
     // let's find a common parent.
-    Id commonParent = HistoryRetriever.findCommonParent(store, from, to, MAX_MERGE_DEPTH);
+    Id commonParent = HistoryRetriever.findCommonParent(entityStore, from, to, MAX_MERGE_DEPTH);
 
     List<L1> fromL1s = historyHelper.getFromL1s(from, commonParent);
     if (fromL1s.size() == 1) {
@@ -593,7 +608,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       // more accurately represents a "rebase" operation where the new commits have to be replayed individually across the
       // new target branch as opposed to only the head of that branch.
 
-      List<L1> toL1s =  Lists.reverse(new HistoryRetriever(store, to, commonParent, true, false, true)
+      List<L1> toL1s =  Lists.reverse(new HistoryRetriever(entityStore, to, commonParent, true, false, true)
           .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
 
       if (toL1s.size() == 1) {
@@ -668,12 +683,12 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     // Do a conditional update that combines the commit intentions with the composite tree updates,
     // based on the composite tree conditions.
-    Optional<InternalRef> updated = store.update(ValueType.REF, branchId.getId(),
+    boolean updated = store.update(ValueType.REF, branchId.getId(),
         headCommit.getTreeUpdate().and(commitUpdate),
-        Optional.of(headCommit.getTreeCondition())
-        );
+        Optional.of(headCommit.getTreeCondition()),
+        Optional.empty());
 
-    if (!updated.isPresent()) {
+    if (!updated) {
       throw new ReferenceConflictException("Unable to complete commit.");
     }
   }

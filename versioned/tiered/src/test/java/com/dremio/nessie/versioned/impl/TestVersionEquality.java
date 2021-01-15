@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
-import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 
 class TestVersionEquality {
 
@@ -31,9 +30,9 @@ class TestVersionEquality {
   @Test
   void internalBranchL1IdEqualsEmpty() {
     InternalBranch b = new InternalBranch("n/a");
-    DynamoStore store = Mockito.mock(DynamoStore.class);
-    Mockito.when(store.loadSingle(Mockito.any(), Mockito.any())).thenReturn(L1.EMPTY);
-    UpdateState us = b.getUpdateState(store);
+    EntityStore entityStore = Mockito.mock(EntityStore.class);
+    Mockito.when(entityStore.loadSingle(Mockito.any(), Mockito.any())).thenReturn(L1.EMPTY);
+    UpdateState us = b.getUpdateState(entityStore);
     us.ensureAvailable(null, null, 1, true);
     assertEquals(L1.EMPTY_ID, us.getL1().getId());
   }

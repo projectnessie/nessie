@@ -54,13 +54,12 @@ public interface Store extends AutoCloseable {
   /**
    * Put a value if the record does not currently exist.
    *
-   * @param <V> The value type.
-   * @param type The {@link ValueType} to insert.
-   * @param value The value to insert. Should match {@code ValueType.getObjectClass()}.
+   * @param <C> the consumer type
+   * @param saveOp The {@link SaveOp} that describes the value to put.
    * @return Returns true if the item was absent and is now inserted.
    * @throws StoreOperationException Thrown if some kind of underlying operation fails.
    */
-  <V extends HasId> boolean putIfAbsent(ValueType type, V value);
+  <C extends BaseConsumer<C>> boolean putIfAbsent(SaveOp<C> saveOp);
 
   /**
    * Put a value in the store.
@@ -68,14 +67,13 @@ public interface Store extends AutoCloseable {
    * <p>This could be an insert or an update. A condition can be optionally provided that will be validated
    * before completing the put operation.
    *
-   * @param <V> The value type.
-   * @param type The {@link ValueType} to insert/update.
-   * @param value The value to insert. Should match {@code ValueType.getObjectClass()}.
+   * @param <C> the consumer type
+   * @param saveOp The {@link SaveOp} that describes the value to put.
    * @param condition The optional condition to check before doing the put operation.
    * @throws ConditionFailedException If the condition provided didn't match the current state of the value.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> condition);
+  <C extends BaseConsumer<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition);
 
   /**
    * Delete a value.
@@ -104,19 +102,7 @@ public interface Store extends AutoCloseable {
   void save(List<SaveOp<?>> ops);
 
   /**
-   * Retrieve a single value.
-   *
-   * @param <V> The value type.
-   * @param type The {@link ValueType} to load.
-   * @param id The id of the value.
-   * @return The value at the given Id.
-   * @throws NotFoundException If the value is not found.
-   * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
-   */
-  <V extends HasId> V loadSingle(ValueType type, Id id);
-
-  /**
-   * TODO this is just a proposal.
+   * Retrieve a single value and pass its properties to the given {@code consumer}.
    *
    * @param type the type to load
    * @param id id to load
@@ -126,25 +112,29 @@ public interface Store extends AutoCloseable {
   <C extends BaseConsumer<C>> void loadSingle(ValueType type, Id id, C consumer);
 
   /**
-   * Do a conditional update. If the condition succeeds, return the values in the object. If it fails, return a Optional.empty().
+   * Do a conditional update. If the condition succeeds, optionally return the values via a consumer.
    *
    * @param type The type of value the store is applied to.
    * @param id The id the update operation applies to
    * @param update The update expression to use.
    * @param condition The optional condition to consider before applying the update.
-   * @return The complete value if the update was successful, otherwise Optional.empty()
+   * @param consumer The consumer, if present, that will receive the updated value.
+   * @param <C> the consumer type
+   * @return {@code true} if successful
    * @throws NotFoundException Thrown if no value is found with the provided id.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <V extends HasId> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition);
+  <C extends BaseConsumer<C>> boolean update(ValueType type, Id id, UpdateExpression update,
+      Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException;
 
   /**
    * Get a list of all available values of the requested value type.
    *
-   * @param <V> The value type.
    * @param valueClass The {@code Class} associated with requested value type. Should match {@code ValueType.getObjectClass()}.
    * @param type The {@link ValueType} to load.
-   * @return
+   * @param <C> the consumer type
+   * @param <V> the {@link ValuesMapper} results
+   * @return stream with the results of the values returned by {@link ValuesMapper}
    */
-  <V extends HasId> Stream<V> getValues(Class<V> valueClass, ValueType type);
+  <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType type, ValuesMapper<C, V> valuesMapper);
 }

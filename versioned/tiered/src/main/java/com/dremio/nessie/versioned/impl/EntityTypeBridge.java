@@ -15,11 +15,11 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.ValueType;
 
 /**
@@ -38,9 +38,9 @@ public class EntityTypeBridge {
    *
    * @param consumer consumer that receives the value-type and instance
    */
-  public static void storeMinimumEntities(BiConsumer<ValueType, HasId> consumer) {
-    consumer.accept(ValueType.L1, L1.EMPTY);
-    consumer.accept(ValueType.L2, L2.EMPTY);
-    consumer.accept(ValueType.L3, L3.EMPTY);
+  public static void storeMinimumEntities(Consumer<SaveOp<?>> consumer) {
+    consumer.accept(new EntitySaveOp<>(ValueType.L1, L1.EMPTY));
+    consumer.accept(new EntitySaveOp<>(ValueType.L2, L2.EMPTY));
+    consumer.accept(new EntitySaveOp<>(ValueType.L3, L3.EMPTY));
   }
 }

@@ -28,7 +28,6 @@ import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
 import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.Store;
 
 class L1 extends PersistentBase<L1Consumer> {
 
@@ -65,7 +64,7 @@ class L1 extends PersistentBase<L1Consumer> {
     return new L1(metadataId, tree, null, keyList, parents);
   }
 
-  L1 withCheckpointAsNecessary(Store store) {
+  L1 withCheckpointAsNecessary(EntityStore store) {
     return keyList.createCheckpointIfNeeded(this, store).map(keylist -> new L1(metadataId, tree, null, keylist, parentList)).orElse(this);
   }
 
@@ -99,7 +98,7 @@ class L1 extends PersistentBase<L1Consumer> {
     });
   }
 
-  Stream<InternalKey> getKeys(Store store) {
+  Stream<InternalKey> getKeys(EntityStore store) {
     return keyList.getKeys(this, store);
   }
 

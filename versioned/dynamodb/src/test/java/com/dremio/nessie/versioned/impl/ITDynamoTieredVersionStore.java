@@ -15,34 +15,14 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.dremio.nessie.versioned.LocalDynamoDB;
-import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.store.Store;
 
 @ExtendWith(LocalDynamoDB.class)
 class ITDynamoTieredVersionStore extends AbstractITTieredVersionStore {
-  private DynamoStoreFixture fixture;
-
-  @BeforeEach
-  void setup() {
-    fixture = new DynamoStoreFixture();
-  }
-
-  @AfterEach
-  void deleteResources() {
-    fixture.close();
-  }
-
-  public VersionStore<String, String> versionStore() {
-    return fixture;
-  }
-
-  public Store store() {
-    return fixture.getStore();
+  @Override
+  protected DynamoStoreFixture createNewFixture() {
+    return new DynamoStoreFixture();
   }
 }

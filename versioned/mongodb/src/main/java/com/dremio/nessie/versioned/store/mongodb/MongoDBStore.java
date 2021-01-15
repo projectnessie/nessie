@@ -40,7 +40,6 @@ import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.impl.EntityTypeBridge;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
@@ -49,6 +48,7 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.dremio.nessie.versioned.store.ValuesMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.ConnectionString;
@@ -191,37 +191,37 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <V extends HasId> boolean putIfAbsent(ValueType type, V value) {
-    final MongoCollection<Document> collection = getCollection(type);
+  public <C extends BaseConsumer<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
+    final MongoCollection<Document> collection = getCollection(saveOp.getType());
 
     // Use upsert so that a document is created if the filter does not match. The update operator is only $setOnInsert
     // so no action is triggered on a simple update, only on insert.
     final UpdateResult result = Mono.from(collection.updateOne(
-        Filters.eq(MongoConsumer.ID, value.getId()),
-        MongoSerDe.bsonForValueType(type, value, "$setOnInsert"),
+        Filters.eq(MongoConsumer.ID, saveOp.getId()),
+        MongoSerDe.bsonForValueType(saveOp, "$setOnInsert"),
         new UpdateOptions().upsert(true)
     )).block(timeout);
     return result != null && result.getUpsertedId() != null;
   }
 
   @Override
-  public <V extends HasId> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
+  public <C extends BaseConsumer<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> conditionUnAliased) {
     // TODO: Handle ConditionExpressions.
     if (conditionUnAliased.isPresent()) {
       throw new UnsupportedOperationException("ConditionExpressions are not supported with MongoDB yet.");
     }
 
-    final MongoCollection<Document> collection = getCollection(type);
+    final MongoCollection<Document> collection = getCollection(saveOp.getType());
 
     // Use upsert so that if an item does not exist, it will be insert.
     final UpdateResult result = Mono.from(
         collection.updateOne(
-            Filters.eq(MongoConsumer.ID, value.getId()),
-            MongoSerDe.bsonForValueType(type, value, "$set"),
+            Filters.eq(MongoConsumer.ID, saveOp.getId()),
+            MongoSerDe.bsonForValueType(saveOp, "$set"),
             new UpdateOptions().upsert(true)
         )).block(timeout);
     if (result == null || result.getUpsertedId() == null) {
-      throw new StoreOperationException(String.format("Update of %s %s did not succeed", type.name(), value.getId()));
+      throw new StoreOperationException(String.format("Update of %s %s did not succeed", saveOp.getType().name(), saveOp.getId()));
     }
   }
 
@@ -250,7 +250,7 @@ public class MongoDBStore implements Store {
           @SuppressWarnings("unchecked")
           @Override
           public void encode(BsonWriter bsonWriter, SaveOp o, EncoderContext encoderContext) {
-            MongoSerDe.serializeEntity(bsonWriter, o.getId(), type, o::serialize);
+            MongoSerDe.serializeEntity(bsonWriter, o);
           }
 
           @Override
@@ -264,15 +264,6 @@ public class MongoDBStore implements Store {
         return collection.insertMany(entry.getValue(), new InsertManyOptions().ordered(false));
       })
         .blockLast(timeout);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public <V extends HasId> V loadSingle(ValueType valueType, Id id) {
-    return EntityTypeBridge.buildEntity(valueType, c -> {
-      @SuppressWarnings("rawtypes") BaseConsumer cons = c;
-      loadSingle(valueType, id, cons);
-    });
   }
 
   @Override
@@ -311,24 +302,22 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <V extends HasId> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
-      throws NotFoundException {
+  public <C extends BaseConsumer<C>> boolean update(ValueType type, Id id, UpdateExpression update,
+      Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public <V extends HasId> Stream<V> getValues(Class<V> valueClass, ValueType type) {
+  public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType type, ValuesMapper<C, V> valuesMapper) {
     // TODO: Can this be optimized to not collect the elements before streaming them?
     // TODO: Could this benefit from paging?
     return Flux.from(this.getCollection(type).find()).toStream()
-        .map(d -> deserializeDocument(type, d));
-  }
-
-  private <V extends HasId> V deserializeDocument(ValueType type, Document d) {
-    return EntityTypeBridge.buildEntity(type, producer -> {
-      BsonDocument bsonDoc = d.toBsonDocument(Document.class, codecRegistry);
-      MongoSerDe.produceToConsumer(bsonDoc, type, producer);
-    });
+        .map(d -> {
+          C producer = valuesMapper.producerForItem();
+          BsonDocument bsonDoc = d.toBsonDocument(Document.class, codecRegistry);
+          MongoSerDe.produceToConsumer(bsonDoc, type, producer);
+          return valuesMapper.itemProduced(producer);
+        });
   }
 
   /**

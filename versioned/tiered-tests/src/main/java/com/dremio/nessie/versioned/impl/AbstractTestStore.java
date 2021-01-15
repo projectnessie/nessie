@@ -58,6 +58,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   protected Random random;
   protected S store;
+  protected EntityStore entityStore;
 
   /**
    * Create and start the store, if not already done.
@@ -68,6 +69,7 @@ public abstract class AbstractTestStore<S extends Store> {
       this.store = createStore();
       this.store.start();
       random = new Random(getRandomSeed());
+      this.entityStore = new EntityStore(store);
     }
   }
 
@@ -173,7 +175,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @Test
   void loadSingleInvalid() {
-    Assertions.assertThrows(NotFoundException.class, () -> store.loadSingle(ValueType.REF, SampleEntities.createId(random)));
+    Assertions.assertThrows(NotFoundException.class, () -> entityStore.loadSingle(ValueType.REF, SampleEntities.createId(random)));
   }
 
   @Test
@@ -288,7 +290,7 @@ public abstract class AbstractTestStore<S extends Store> {
     assertAll(entities.stream().map(s -> () -> {
       try {
         HasId saveOpValue = s.entity;
-        HasId loadedValue = store.loadSingle(s.type, saveOpValue.getId());
+        HasId loadedValue = entityStore.loadSingle(s.type, saveOpValue.getId());
         assertEquals(saveOpValue, loadedValue, "type " + s.type);
 
         try {
@@ -320,7 +322,7 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   protected <T extends HasId> void putThenLoad(ValueType type, T sample) {
-    store.put(type, sample, Optional.empty());
+    store.put(new EntitySaveOp(type, (PersistentBase<?>) sample).saveOp, Optional.empty());
     testLoadSingle(type, sample);
   }
 
@@ -343,14 +345,14 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   protected <T extends HasId> void testLoadSingle(ValueType type, T sample) {
-    final T read = store.loadSingle(type, sample.getId());
+    final T read = entityStore.loadSingle(type, sample.getId());
     assertEquals(sample, read);
   }
 
   protected <T extends HasId> void testPutIfAbsent(ValueType type, T sample) {
-    Assertions.assertTrue(store.putIfAbsent(type, sample));
+    Assertions.assertTrue(store.putIfAbsent(new EntitySaveOp(type, (PersistentBase<?>) sample).saveOp));
     testLoadSingle(type, sample);
-    Assertions.assertFalse(store.putIfAbsent(type, sample));
+    Assertions.assertFalse(store.putIfAbsent(new EntitySaveOp(type, (PersistentBase<?>) sample).saveOp));
     testLoadSingle(type, sample);
   }
 }

@@ -20,7 +20,6 @@ import java.net.URISyntaxException;
 
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
-import com.dremio.nessie.versioned.tests.AbstractTieredStoreFixture;
 
 import software.amazon.awssdk.regions.Region;
 
@@ -45,6 +44,7 @@ public class DynamoStoreFixture extends AbstractTieredStoreFixture<DynamoStore, 
     }
   }
 
+  @Override
   public DynamoStore createStoreImpl() {
     return new DynamoStore(getConfig());
   }

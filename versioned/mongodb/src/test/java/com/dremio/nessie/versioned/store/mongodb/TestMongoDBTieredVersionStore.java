@@ -15,16 +15,12 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.impl.AbstractITTieredVersionStore;
-import com.dremio.nessie.versioned.store.Store;
 
 @ExtendWith(LocalMongo.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -33,30 +29,13 @@ class TestMongoDBTieredVersionStore extends AbstractITTieredVersionStore {
   private static final String testDatabaseName = "mydb";
   private String connectionString;
 
-  private MongoStoreFixture fixture;
-
   @BeforeAll
   void init(String connectionString) {
     this.connectionString = connectionString;
   }
 
-  @BeforeEach
-  void setup() {
-    fixture = new MongoStoreFixture(connectionString, testDatabaseName);
-  }
-
-  @AfterEach
-  void deleteResources() {
-    fixture.close();
-  }
-
   @Override
-  public VersionStore<String, String> versionStore() {
-    return fixture;
-  }
-
-  @Override
-  public Store store() {
-    return fixture.getStore();
+  protected MongoStoreFixture createNewFixture() {
+    return new MongoStoreFixture(connectionString, testDatabaseName);
   }
 }

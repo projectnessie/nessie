@@ -13,24 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.ValueType;
 
-final class EntitySaveOp<C extends BaseConsumer<C>, E extends PersistentBase<C>> extends SaveOp<C> {
+public interface ValuesMapper<C extends BaseConsumer<C>, V>  {
+  C producerForItem();
 
-  private final E value;
-
-  EntitySaveOp(ValueType type, E value) {
-    super(type, value.getId());
-    this.value = value;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public void serialize(BaseConsumer<C> consumer) {
-    value.applyToConsumer((C) consumer);
-  }
+  V itemProduced(C producer);
 }

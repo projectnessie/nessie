@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.tests;
+package com.dremio.nessie.versioned.impl;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +35,6 @@ import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.WithHash;
-import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.store.Store;
 
 public abstract class AbstractTieredStoreFixture<S extends Store, C> implements VersionStore<String, String>, AutoCloseable {
@@ -64,6 +63,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   private final S store;
   private final C config;
   private final VersionStore<String, String> impl;
+  private final EntityStore entityStore;
 
   /**
    * Create a new fixture.
@@ -73,6 +73,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
     store = createStoreImpl();
     store.start();
     impl = new TieredVersionStore<>(WORKER, store, true);
+    entityStore = new EntityStore(store);
   }
 
   public C getConfig() {
@@ -83,6 +84,10 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
 
   public S getStore() {
     return store;
+  }
+
+  public EntityStore getEntityStore() {
+    return entityStore;
   }
 
   public VersionStore<String, String> getWrapped() {

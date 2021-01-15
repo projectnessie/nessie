@@ -15,7 +15,7 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import com.dremio.nessie.versioned.tests.AbstractTieredStoreFixture;
+import com.dremio.nessie.versioned.impl.AbstractTieredStoreFixture;
 
 /**
  * MongoDB Store fixture.
