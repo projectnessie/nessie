@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
@@ -42,6 +43,7 @@ import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.ImmutablePut;
 import com.dremio.nessie.versioned.ImmutableTagName;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.NamedRef;
 import com.dremio.nessie.versioned.Put;
 import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
@@ -314,8 +316,10 @@ public abstract class AbstractITTieredVersionStore {
     versionStore().create(BranchName.of("b2"), Optional.empty());
     versionStore().create(TagName.of("t1"), Optional.of(L1.EMPTY_ID.toHash()));
     versionStore().create(TagName.of("t2"), Optional.of(L1.EMPTY_ID.toHash()));
-    assertEquals(ImmutableSet.of("b1", "b2", "t1", "t2"), versionStore().getNamedRefs()
-        .map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));
+    try (Stream<WithHash<NamedRef>> str = versionStore().getNamedRefs()) {
+      assertEquals(ImmutableSet.of("b1", "b2", "t1", "t2"), str
+          .map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));
+    }
   }
 
   @Test
@@ -488,13 +492,17 @@ public abstract class AbstractITTieredVersionStore {
     assertEquals(commits, versionStore().getCommits(tag).collect(Collectors.toList()));
     assertEquals(commits, versionStore().getCommits(commits.get(0).getHash()).collect(Collectors.toList()));
 
-    assertEquals(2, versionStore().getNamedRefs().count());
+    try (Stream<WithHash<NamedRef>> str = versionStore().getNamedRefs()) {
+      assertEquals(2, str.count());
+    }
 
     versionStore().create(branch2, Optional.of(commits.get(1).getHash()));
 
     versionStore().delete(branch, Optional.of(commits.get(0).getHash()));
 
-    assertEquals(2, versionStore().getNamedRefs().count());
+    try (Stream<WithHash<NamedRef>> str = versionStore().getNamedRefs()) {
+      assertEquals(2, str.count());
+    }
 
     assertEquals(v1, versionStore().getValue(branch2, p1));
 

@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +86,10 @@ public abstract class AbstractITVersionStore {
     final BranchName anotherAnotherBranch = BranchName.of("baz");
     store().create(anotherAnotherBranch, Optional.of(commitHash));
 
-    final List<WithHash<NamedRef>> namedRefs = store().getNamedRefs().collect(Collectors.toList());
+    List<WithHash<NamedRef>> namedRefs;
+    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
+      namedRefs = str.collect(Collectors.toList());
+    }
     assertThat(namedRefs, containsInAnyOrder(
         WithHash.of(hash, branch),
         WithHash.of(commitHash, anotherBranch),
@@ -103,7 +107,9 @@ public abstract class AbstractITVersionStore {
 
     store().delete(branch, Optional.of(hash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(branch));
-    assertThat(store().getNamedRefs().count(), is(2L)); // bar + baz
+    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
+      assertThat(str.count(), is(2L)); // bar + baz
+    }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(hash)));
   }
 
@@ -139,7 +145,10 @@ public abstract class AbstractITVersionStore {
     assertThat(store().toHash(tag), is(initialHash));
     assertThat(store().toHash(anotherTag), is(commitHash));
 
-    final List<WithHash<NamedRef>> namedRefs = store().getNamedRefs().collect(Collectors.toList());
+    List<WithHash<NamedRef>> namedRefs;
+    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
+      namedRefs = str.collect(Collectors.toList());
+    }
     assertThat(namedRefs, containsInAnyOrder(
         WithHash.of(commitHash, branch),
         WithHash.of(initialHash, tag),
@@ -153,7 +162,9 @@ public abstract class AbstractITVersionStore {
 
     store().delete(tag, Optional.of(initialHash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(tag));
-    assertThat(store().getNamedRefs().count(), is(2L)); // foo + another-tag
+    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
+      assertThat(str.count(), is(2L)); // foo + another-tag
+    }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(tag, Optional.of(initialHash)));
   }
 
@@ -188,7 +199,9 @@ public abstract class AbstractITVersionStore {
     assertThrows(ReferenceConflictException.class, () -> store().delete(branch, Optional.of(initialHash)));
     store().delete(branch, Optional.of(anotherCommitHash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(branch));
-    assertThat(store().getNamedRefs().count(), is(0L));
+    try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
+      assertThat(str.count(), is(0L));
+    }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(commitHash)));
   }
 

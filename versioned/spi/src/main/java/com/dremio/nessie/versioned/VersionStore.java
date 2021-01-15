@@ -155,6 +155,7 @@ public interface VersionStore<VALUE, METADATA> {
 
   /**
    * List named refs.
+   * <p><em>IMPORTANT NOTE:</em> The returned {@link Stream} <em>must be closed</em>!</p>
    * @return All refs and their associated hashes.
    */
   Stream<WithHash<NamedRef>> getNamedRefs();
