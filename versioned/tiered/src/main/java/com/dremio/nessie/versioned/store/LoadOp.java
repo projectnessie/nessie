@@ -25,7 +25,7 @@ import com.dremio.nessie.tiered.builder.BaseConsumer;
  * @param <C> {@link BaseConsumer consumer} used to handle the load-operation
  */
 public abstract class LoadOp<C extends BaseConsumer<C>> {
-  private final ValueType type;
+  private final ValueType<C> type;
   private final Id id;
 
   /**
@@ -33,7 +33,7 @@ public abstract class LoadOp<C extends BaseConsumer<C>> {
    * @param type The value type that will be loaded.
    * @param id The id of the value.
    */
-  public LoadOp(ValueType type, Id id) {
+  public LoadOp(ValueType<C> type, Id id) {
     this.type = type;
     this.id = id;
   }
@@ -56,7 +56,7 @@ public abstract class LoadOp<C extends BaseConsumer<C>> {
     return id;
   }
 
-  public ValueType getValueType() {
+  public ValueType<C> getValueType() {
     return type;
   }
 

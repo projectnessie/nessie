@@ -16,8 +16,8 @@
 package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -44,8 +44,8 @@ import com.google.protobuf.ByteString;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class MongoSerDe {
-  private static final EnumMap<ValueType, Function<BsonWriter, MongoConsumer>> consumerMap;
-  private static final EnumMap<ValueType, Map<String, BiConsumer<BaseConsumer, BsonReader>>> producerMap;
+  private static final Map<ValueType<?>, Function<BsonWriter, MongoConsumer>> consumerMap;
+  private static final Map<ValueType<?>, Map<String, BiConsumer<BaseConsumer, BsonReader>>> producerMap;
 
   private static final String MONGO_ID_NAME = "_id";
 
@@ -53,8 +53,8 @@ final class MongoSerDe {
   private static final String KEY_REMOVAL = "d";
 
   static {
-    consumerMap = new EnumMap<>(ValueType.class);
-    producerMap = new EnumMap<>(ValueType.class);
+    consumerMap = new HashMap<>();
+    producerMap = new HashMap<>();
 
     consumerMap.put(ValueType.L1, MongoL1Consumer::new);
     producerMap.put(ValueType.L1, (Map) MongoL1Consumer.PROPERTY_PRODUCERS);
@@ -71,10 +71,10 @@ final class MongoSerDe {
     consumerMap.put(ValueType.COMMIT_METADATA, MongoWrappedValueConsumer::new);
     producerMap.put(ValueType.COMMIT_METADATA, (Map) MongoWrappedValueConsumer.PROPERTY_PRODUCERS);
 
-    if (!producerMap.keySet().equals(EnumSet.allOf(ValueType.class))) {
+    if (!producerMap.keySet().equals(new HashSet<>(ValueType.values()))) {
       throw new UnsupportedOperationException(String.format("The enum-map producerMaps does not "
           + "have producer-maps matching the available value types (%s vs %s).",
-          producerMap.keySet(), EnumSet.allOf(ValueType.class)));
+          producerMap.keySet(), new HashSet<>(ValueType.values())));
     }
   }
 
@@ -85,19 +85,19 @@ final class MongoSerDe {
   /**
    * Deserialize a MongoDB entity into the given consumer.
    */
-  static <C extends BaseConsumer<C>> void produceToConsumer(BsonDocument entity, ValueType valueType, C consumer) {
+  static <C extends BaseConsumer<C>> void produceToConsumer(BsonDocument entity, ValueType<C> valueType, C consumer) {
     produceToConsumer(new BsonDocumentReader(entity), valueType, x -> consumer, x -> {});
   }
 
   /**
    * Deserialize a MongoDB entity into the given consumer.
    */
-  static void produceToConsumer(BsonReader entity, ValueType valueType, Function<Id, BaseConsumer> onIdParsed, Consumer<Id> parsed) {
+  static void produceToConsumer(BsonReader entity, ValueType<?> valueType, Function<Id, BaseConsumer> onIdParsed, Consumer<Id> parsed) {
     Map<String, BiConsumer<BaseConsumer, BsonReader>> propertyProducers = producerMap.get(valueType);
     deserializeToConsumer(entity, onIdParsed, parsed, propertyProducers);
   }
 
-  private static MongoConsumer<?> newMongoConsumer(ValueType valueType, BsonWriter bsonWriter) {
+  private static <C extends BaseConsumer<C>> MongoConsumer<C> newMongoConsumer(ValueType<C> valueType, BsonWriter bsonWriter) {
     return consumerMap.get(valueType).apply(bsonWriter);
   }
 
@@ -119,10 +119,9 @@ final class MongoSerDe {
 
   static <C extends BaseConsumer<C>> void serializeEntity(BsonWriter writer, SaveOp<C> saveOp) {
     writer.writeStartDocument();
-    MongoConsumer<?> consumer = newMongoConsumer(saveOp.getType(), writer);
+    MongoConsumer<C> consumer = newMongoConsumer(saveOp.getType(), writer);
     consumer.id(saveOp.getId());
-    BaseConsumer<C> c = (BaseConsumer<C>) consumer;
-    saveOp.serialize(c);
+    saveOp.serialize((C) consumer);
     consumer.build();
     writer.writeEndDocument();
   }

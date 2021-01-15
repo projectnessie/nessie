@@ -26,7 +26,7 @@ import com.dremio.nessie.tiered.builder.BaseConsumer;
  * @param <C> {@link BaseConsumer consumer} used to handle the save-operation
  */
 public abstract class SaveOp<C extends BaseConsumer<C>> {
-  private final ValueType type;
+  private final ValueType<C> type;
   private final Id id;
 
   /**
@@ -35,12 +35,12 @@ public abstract class SaveOp<C extends BaseConsumer<C>> {
    * @param type value type
    * @param id the entity's id
    */
-  public SaveOp(ValueType type, Id id) {
+  public SaveOp(ValueType<C> type, Id id) {
     this.type = type;
     this.id = id;
   }
 
-  public ValueType getType() {
+  public ValueType<C> getType() {
     return type;
   }
 
@@ -54,7 +54,7 @@ public abstract class SaveOp<C extends BaseConsumer<C>> {
    *
    * @param consumer the consumer that will receive the properties
    */
-  public abstract void serialize(BaseConsumer<C> consumer);
+  public abstract void serialize(C consumer);
 
   @Override
   public String toString() {

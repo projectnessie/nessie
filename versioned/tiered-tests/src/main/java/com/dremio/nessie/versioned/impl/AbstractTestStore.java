@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
@@ -47,10 +48,10 @@ import com.google.common.collect.Multimap;
  */
 public abstract class AbstractTestStore<S extends Store> {
   private static class CreatorPair {
-    final ValueType type;
+    final ValueType<?> type;
     final Supplier<HasId> supplier;
 
-    CreatorPair(ValueType type, Supplier<HasId> supplier) {
+    CreatorPair(ValueType<?> type, Supplier<HasId> supplier) {
       this.type = type;
       this.supplier = supplier;
     }
@@ -120,14 +121,14 @@ public abstract class AbstractTestStore<S extends Store> {
         .add(new CreatorPair(ValueType.KEY_FRAGMENT, () -> SampleEntities.createFragment(random)))
         .build();
 
-    final ImmutableMultimap.Builder<ValueType, HasId> builder = ImmutableMultimap.builder();
+    final ImmutableMultimap.Builder<ValueType<?>, HasId> builder = ImmutableMultimap.builder();
     for (int i = 0; i < 100; ++i) {
       final int index = i % creators.size();
       final HasId obj = creators.get(index).supplier.get();
       builder.put(creators.get(index).type, obj);
     }
 
-    final Multimap<ValueType, HasId> objs = builder.build();
+    final Multimap<ValueType<?>, HasId> objs = builder.build();
     objs.forEach(this::putThenLoad);
 
     testLoad(objs);
@@ -135,13 +136,13 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @Test
   void loadSteps() {
-    final Multimap<ValueType, HasId> objs = ImmutableMultimap.<ValueType, HasId>builder()
+    final Multimap<ValueType<?>, HasId> objs = ImmutableMultimap.<ValueType<?>, HasId>builder()
         .put(ValueType.REF, SampleEntities.createBranch(random))
         .put(ValueType.REF, SampleEntities.createBranch(random))
         .put(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random))
         .build();
 
-    final Multimap<ValueType, HasId> objs2 = ImmutableMultimap.<ValueType, HasId>builder()
+    final Multimap<ValueType<?>, HasId> objs2 = ImmutableMultimap.<ValueType<?>, HasId>builder()
         .put(ValueType.L3, SampleEntities.createL3(random))
         .put(ValueType.VALUE, SampleEntities.createValue(random))
         .put(ValueType.VALUE, SampleEntities.createValue(random))
@@ -166,7 +167,7 @@ public abstract class AbstractTestStore<S extends Store> {
   @Test
   void loadInvalid() {
     putThenLoad(ValueType.REF, SampleEntities.createBranch(random));
-    final Multimap<ValueType, HasId> objs = ImmutableMultimap.of(ValueType.REF, SampleEntities.createBranch(random));
+    final Multimap<ValueType<?>, HasId> objs = ImmutableMultimap.of(ValueType.REF, SampleEntities.createBranch(random));
 
     Assertions.assertThrows(NotFoundException.class, () -> testLoad(objs));
   }
@@ -256,30 +257,29 @@ public abstract class AbstractTestStore<S extends Store> {
     testPutIfAbsent(ValueType.VALUE, SampleEntities.createValue(random));
   }
 
-  static class EntitySaveOp {
-    final ValueType type;
-    final PersistentBase<?> entity;
-    final SaveOp<?> saveOp;
+  static class EntitySaveOp<C extends BaseConsumer<C>> {
+    final ValueType<C> type;
+    final PersistentBase<C> entity;
+    final SaveOp<C> saveOp;
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    EntitySaveOp(ValueType type, PersistentBase<?> entity) {
+    EntitySaveOp(ValueType<C> type, PersistentBase<C> entity) {
       this.type = type;
       this.entity = entity;
-      this.saveOp = ((EntityType) EntityType.forType(type)).createSaveOpForEntity(entity);
+      this.saveOp = EntityType.forType(type).createSaveOpForEntity(entity);
     }
   }
 
   @Test
   void save() {
-    List<EntitySaveOp> entities = Arrays.asList(
-        new EntitySaveOp(ValueType.L1, SampleEntities.createL1(random)),
-        new EntitySaveOp(ValueType.L2, SampleEntities.createL2(random)),
-        new EntitySaveOp(ValueType.L3, SampleEntities.createL3(random)),
-        new EntitySaveOp(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random)),
-        new EntitySaveOp(ValueType.REF, SampleEntities.createBranch(random)),
-        new EntitySaveOp(ValueType.REF, SampleEntities.createTag(random)),
-        new EntitySaveOp(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random)),
-        new EntitySaveOp(ValueType.VALUE, SampleEntities.createValue(random))
+    List<EntitySaveOp<?>> entities = Arrays.asList(
+        new EntitySaveOp<>(ValueType.L1, SampleEntities.createL1(random)),
+        new EntitySaveOp<>(ValueType.L2, SampleEntities.createL2(random)),
+        new EntitySaveOp<>(ValueType.L3, SampleEntities.createL3(random)),
+        new EntitySaveOp<>(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random)),
+        new EntitySaveOp<>(ValueType.REF, SampleEntities.createBranch(random)),
+        new EntitySaveOp<>(ValueType.REF, SampleEntities.createTag(random)),
+        new EntitySaveOp<>(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random)),
+        new EntitySaveOp<>(ValueType.VALUE, SampleEntities.createValue(random))
     );
 
     store.save(entities.stream().map(e -> e.saveOp).collect(Collectors.toList()));
@@ -291,7 +291,11 @@ public abstract class AbstractTestStore<S extends Store> {
         assertEquals(saveOpValue, loadedValue, "type " + s.type);
 
         try {
-          loadedValue = EntityType.forType(s.type).buildEntity(producer -> store.loadSingle(s.type, saveOpValue.getId(), producer));
+          loadedValue = EntityType.forType(s.type).buildEntity(producer -> {
+            @SuppressWarnings("rawtypes") ValueType t = s.type;
+            @SuppressWarnings("rawtypes") BaseConsumer p = producer;
+            store.loadSingle(t, saveOpValue.getId(), p);
+          });
           assertEquals(saveOpValue, loadedValue, "type " + s.type);
         } catch (UnsupportedOperationException e) {
           // TODO ignore this for now
@@ -305,49 +309,50 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @Test
   void loadPagination() {
-    final ImmutableMultimap.Builder<ValueType, HasId> builder = ImmutableMultimap.builder();
+    final ImmutableMultimap.Builder<ValueType<?>, HasId> builder = ImmutableMultimap.builder();
     for (int i = 0; i < (10 + loadSize()); ++i) {
       // Only create a single type as this is meant to test the pagination within Mongo, not the variety. Variety is
       // taken care of by a test in AbstractTestStore.
       builder.put(ValueType.REF, SampleEntities.createTag(random));
     }
 
-    final Multimap<ValueType, HasId> objs = builder.build();
+    final Multimap<ValueType<?>, HasId> objs = builder.build();
     objs.forEach(this::putThenLoad);
 
     testLoad(objs);
   }
 
-  protected <T extends HasId> void putThenLoad(ValueType type, T sample) {
-    store.put(new EntitySaveOp(type, (PersistentBase<?>) sample).saveOp, Optional.empty());
+  @SuppressWarnings("unchecked")
+  private <C extends BaseConsumer<C>> void putThenLoad(ValueType<C> type, HasId sample) {
+    store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, Optional.empty());
     testLoadSingle(type, sample);
   }
 
-  protected void testLoad(Multimap<ValueType, HasId> objs) {
+  protected void testLoad(Multimap<ValueType<?>, HasId> objs) {
     store.load(createTestLoadStep(objs));
   }
 
-  protected LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs) {
+  protected LoadStep createTestLoadStep(Multimap<ValueType<?>, HasId> objs) {
     return createTestLoadStep(objs, Optional.empty());
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  protected LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs, Optional<LoadStep> next) {
+  protected LoadStep createTestLoadStep(Multimap<ValueType<?>, HasId> objs, Optional<LoadStep> next) {
     EntityLoadOps loadOps = new EntityLoadOps();
     objs.forEach((type, val) -> loadOps.load(((EntityType) EntityType.forType(type)), val.getId(), r -> assertEquals(val, r)));
     return loadOps.build(() -> next);
   }
 
   @SuppressWarnings("unchecked")
-  protected <T extends HasId> void testLoadSingle(ValueType type, T sample) {
+  protected <T extends HasId> void testLoadSingle(ValueType<?> type, T sample) {
     final T read = (T) EntityType.forType(type).loadSingle(store, sample.getId());
     assertEquals(sample, read);
   }
 
-  protected <T extends HasId> void testPutIfAbsent(ValueType type, T sample) {
-    Assertions.assertTrue(store.putIfAbsent(new EntitySaveOp(type, (PersistentBase<?>) sample).saveOp));
+  protected <C extends BaseConsumer<C>, T extends PersistentBase<C>> void testPutIfAbsent(ValueType<C> type, T sample) {
+    Assertions.assertTrue(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));
     testLoadSingle(type, sample);
-    Assertions.assertFalse(store.putIfAbsent(new EntitySaveOp(type, (PersistentBase<?>) sample).saveOp));
+    Assertions.assertFalse(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));
     testLoadSingle(type, sample);
   }
 }

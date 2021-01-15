@@ -37,7 +37,7 @@ abstract class DynamoConsumer<C extends BaseConsumer<C>> implements BaseConsumer
 
   final Map<String, AttributeValue> entity = new HashMap<>();
 
-  DynamoConsumer(ValueType valueType) {
+  DynamoConsumer(ValueType<C> valueType) {
     entity.put(ValueType.SCHEMA_TYPE, string(valueType.getValueName()));
   }
 

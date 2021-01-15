@@ -23,7 +23,6 @@ import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserializeTo
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serializeWithConsumer;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -111,14 +110,14 @@ public class DynamoStore implements Store {
 
   private DynamoDbClient client;
   private DynamoDbAsyncClient async;
-  private final ImmutableMap<ValueType, String> tableNames;
+  private final ImmutableMap<ValueType<?>, String> tableNames;
 
   /**
    * create a DynamoStore.
    */
   public DynamoStore(DynamoStoreConfig config) {
     this.config = config;
-    this.tableNames = Stream.of(ValueType.values())
+    this.tableNames = ValueType.values().stream()
         .collect(ImmutableMap.toImmutableMap(v -> v, v -> v.getTableName(config.getTablePrefix())));
 
     if (tableNames.size() != new HashSet<>(tableNames.values()).size()) {
@@ -150,7 +149,7 @@ public class DynamoStore implements Store {
       async = b2.build();
 
       if (config.initializeDatabase()) {
-        Arrays.stream(ValueType.values())
+        ValueType.values().stream()
           .map(tableNames::get)
           .collect(Collectors.toSet())
             .forEach(this::createIfMissing);
@@ -203,7 +202,7 @@ public class DynamoStore implements Store {
           List<Map<String, AttributeValue>> values = responses.get(table);
           int missingResponses = loadList.size() - values.size();
           if (missingResponses != 0) {
-            ValueType loadType = loadList.get(0).getValueType();
+            ValueType<?> loadType = loadList.get(0).getValueType();
             if (loadType == ValueType.REF || loadType == ValueType.L1) {
               throw new NotFoundException("Unable to find requested ref.");
             }
@@ -216,7 +215,7 @@ public class DynamoStore implements Store {
           // unfortunately, responses don't come in the order of the requests so we need to map between ids.
           Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
           for (Map<String, AttributeValue> item : values) {
-            ValueType valueType = ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
+            @SuppressWarnings("rawtypes") ValueType valueType = ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
             Id id = deserializeId(item, ID);
             LoadOp<?> loadOp = opMap.get(id);
             if (loadOp == null) {
@@ -266,7 +265,7 @@ public class DynamoStore implements Store {
    */
   @VisibleForTesting
   public void deleteTables() {
-    Arrays.stream(ValueType.values()).map(tableNames::get).collect(Collectors.toSet()).forEach(table -> {
+    ValueType.values().stream().map(tableNames::get).collect(Collectors.toSet()).forEach(table -> {
       try {
         client.deleteTable(DeleteTableRequest.builder().tableName(table).build());
       } catch (ResourceNotFoundException ex) {
@@ -299,7 +298,7 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) {
+  public <C extends BaseConsumer<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     DeleteItemRequest.Builder delete = DeleteItemRequest.builder()
         .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
         .tableName(tableNames.get(type));
@@ -320,7 +319,7 @@ public class DynamoStore implements Store {
     }
   }
 
-  private static ConditionExpression addTypeCheck(ValueType type, Optional<ConditionExpression> possibleExpression) {
+  private static ConditionExpression addTypeCheck(ValueType<?> type, Optional<ConditionExpression> possibleExpression) {
     final ExpressionFunction checkType = ExpressionFunction.equals(
         ExpressionPath.builder(ValueType.SCHEMA_TYPE).build(),
         Entity.ofString(type.getValueName()));
@@ -358,7 +357,7 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> void loadSingle(ValueType valueType, Id id, C consumer) {
+  public <C extends BaseConsumer<C>> void loadSingle(ValueType<C> valueType, Id id, C consumer) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
         .tableName(tableNames.get(valueType))
         .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
@@ -371,7 +370,7 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> boolean update(ValueType type, Id id, UpdateExpression update,
+  public <C extends BaseConsumer<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
       Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException {
     try {
       AliasCollectorImpl collector = new AliasCollectorImpl();
@@ -408,7 +407,7 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType type, ValuesMapper<C, V> valuesMapper) {
+  public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType<C> type, ValuesMapper<C, V> valuesMapper) {
     return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
         .stream()
         .flatMap(r -> r.items().stream())

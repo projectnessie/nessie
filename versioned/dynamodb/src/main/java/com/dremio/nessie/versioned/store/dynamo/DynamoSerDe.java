@@ -18,8 +18,7 @@ package com.dremio.nessie.versioned.store.dynamo;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 
-import java.util.Arrays;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -43,12 +42,12 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 final class DynamoSerDe {
 
-  private static final EnumMap<ValueType, Supplier<DynamoConsumer<?>>> dynamoEntityMapProducers;
-  private static final EnumMap<ValueType, BiConsumer<Map<String, AttributeValue>, BaseConsumer<?>>> deserializeToConsumer;
+  private static final Map<ValueType<?>, Supplier<DynamoConsumer<?>>> dynamoEntityMapProducers;
+  private static final Map<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseConsumer<?>>> deserializeToConsumer;
 
   static {
-    dynamoEntityMapProducers = new EnumMap<>(ValueType.class);
-    deserializeToConsumer = new EnumMap<>(ValueType.class);
+    dynamoEntityMapProducers = new HashMap<>();
+    deserializeToConsumer = new HashMap<>();
 
     dynamoEntityMapProducers.put(ValueType.L1, DynamoL1Consumer::new);
     deserializeToConsumer.put(ValueType.L1, (e, c) -> DynamoL1Consumer.toConsumer(e, (L1Consumer) c));
@@ -76,12 +75,12 @@ final class DynamoSerDe {
       throw new UnsupportedOperationException("The enum-maps dynamoConsumerSuppliers and dynamoProducerSuppliers "
           + "are not equal. This is a bug in the implementation of DynamoSerDe.");
     }
-    if (!dynamoEntityMapProducers.keySet().containsAll(Arrays.asList(ValueType.values()))) {
+    if (!dynamoEntityMapProducers.keySet().containsAll(ValueType.values())) {
       throw new UnsupportedOperationException(String.format("The implementation of the Dynamo backend does not have "
           + "implementations for all supported value-type. Supported by Dynamo: %s, available: %s. "
           + "This is a bug in the implementation of DynamoSerDe.",
           dynamoEntityMapProducers.keySet(),
-          Arrays.asList(ValueType.values())));
+          ValueType.values()));
     }
   }
 
@@ -103,11 +102,11 @@ final class DynamoSerDe {
     Preconditions.checkNotNull(saveOp, "saveOp parameter is null");
 
     // No need for any 'type' validation - that's done in the static initializer
-    DynamoConsumer<C> consumer = (DynamoConsumer<C>) dynamoEntityMapProducers.get(saveOp.getType()).get();
+    C consumer = (C) dynamoEntityMapProducers.get(saveOp.getType()).get();
 
     saveOp.serialize(consumer);
 
-    return consumer.build();
+    return ((DynamoConsumer<C>) consumer).build();
   }
 
   /**
@@ -120,7 +119,7 @@ final class DynamoSerDe {
    * @param <C> type of the consumer
    */
   public static <C extends BaseConsumer<C>> void deserializeToConsumer(
-      ValueType valueType, Map<String, AttributeValue> entity, BaseConsumer<C> consumer) {
+      ValueType<C> valueType, Map<String, AttributeValue> entity, BaseConsumer<C> consumer) {
     Preconditions.checkNotNull(valueType, "valueType parameter is null");
     Preconditions.checkNotNull(entity, "entity parameter is null");
     Preconditions.checkNotNull(consumer, "consumer parameter is null");
@@ -131,7 +130,7 @@ final class DynamoSerDe {
         "Missing type tag for schema for id %s.", id.getHash());
     Preconditions.checkArgument(valueType.getValueName().equals(loadedType),
         "Expected schema for id %s to be of type '%s' but is actually '%s'.",
-        id.getHash(), valueType.getValueName(), loadedType);
+        id.getHash(), valueType.name(), loadedType);
 
     // No need for any 'valueType' validation against the static map - that's done in the static initializer
     deserializeToConsumer.get(valueType).accept(entity, consumer);

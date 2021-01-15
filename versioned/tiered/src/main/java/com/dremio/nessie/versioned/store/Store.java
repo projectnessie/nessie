@@ -85,7 +85,7 @@ public interface Store extends AutoCloseable {
    * @throws NotFoundException If no value was found for the specified Id.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition);
+  <C extends BaseConsumer<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition);
 
   /**
    * Batch put/save operation.
@@ -109,7 +109,7 @@ public interface Store extends AutoCloseable {
    * @param consumer consumer that will receive the properties
    * @param <C> type of the consumer
    */
-  <C extends BaseConsumer<C>> void loadSingle(ValueType type, Id id, C consumer);
+  <C extends BaseConsumer<C>> void loadSingle(ValueType<C> type, Id id, C consumer);
 
   /**
    * Do a conditional update. If the condition succeeds, optionally return the values via a consumer.
@@ -124,7 +124,7 @@ public interface Store extends AutoCloseable {
    * @throws NotFoundException Thrown if no value is found with the provided id.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <C extends BaseConsumer<C>> boolean update(ValueType type, Id id, UpdateExpression update,
+  <C extends BaseConsumer<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
       Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException;
 
   /**
@@ -138,5 +138,5 @@ public interface Store extends AutoCloseable {
    * @param <V> the {@link ValuesMapper} results
    * @return stream with the results of the values returned by {@link ValuesMapper}
    */
-  <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType type, ValuesMapper<C, V> valuesMapper);
+  <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType<C> type, ValuesMapper<C, V> valuesMapper);
 }

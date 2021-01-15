@@ -37,7 +37,7 @@ import com.dremio.nessie.versioned.store.ValueType;
  */
 final class EntityLoadOps {
   private final Map<EntityType<?, ?>, List<Deferred>> deferred = new HashMap<>();
-  private final Map<LoadOpKey, EntityLoadOp> direct = new HashMap<>();
+  private final Map<LoadOpKey, EntityLoadOp<?>> direct = new HashMap<>();
 
   EntityLoadOps() {
     // empty
@@ -68,8 +68,8 @@ final class EntityLoadOps {
    */
   <C extends BaseConsumer<C>, E extends PersistentBase<C>> void load(
       EntityType<C, E> valueType, Id id, Consumer<E> consumer) {
-    EntityLoadOp loadOp = direct
-        .computeIfAbsent(new LoadOpKey(valueType, id), k -> new EntityLoadOp(valueType.valueType, k.id));
+    EntityLoadOp<?> loadOp = direct
+        .computeIfAbsent(new LoadOpKey(valueType, id), k -> new EntityLoadOp<>(valueType.valueType, k.id));
     @SuppressWarnings({"unchecked", "rawtypes"}) Consumer<HasId> c = (Consumer) consumer;
     loadOp.consumers.add(c);
   }
@@ -201,27 +201,27 @@ final class EntityLoadOps {
   }
 
   @SuppressWarnings("rawtypes")
-  private static class EntityLoadOp extends LoadOp {
+  private static class EntityLoadOp<C extends BaseConsumer<C>> extends LoadOp<C> {
     private final List<Consumer<HasId>> consumers = new ArrayList<>();
-    private BaseConsumer receiver;
+    private C receiver;
 
-    EntityLoadOp(ValueType type, Id id) {
+    EntityLoadOp(ValueType<C> type, Id id) {
       super(type, id);
     }
 
     @Override
-    public BaseConsumer getReceiver() {
+    public C getReceiver() {
       receiver = EntityType.forType(getValueType()).newEntityProducer();
       return receiver;
     }
 
     @Override
     public void done() {
-      @SuppressWarnings("unchecked") PersistentBase entity = EntityType.forType(getValueType()).buildFromProducer(receiver);
+      PersistentBase entity = EntityType.forType(getValueType()).buildFromProducer(receiver);
       consumers.forEach(c -> c.accept(entity));
     }
 
-    EntityLoadOp combine(EntityLoadOp other) {
+    EntityLoadOp<C> combine(EntityLoadOp<C> other) {
       consumers.addAll(other.consumers);
       return this;
     }
@@ -236,9 +236,9 @@ final class EntityLoadOps {
   private static class EntityLoadStep implements LoadStep {
 
     private final Supplier<Optional<LoadStep>> next;
-    private final Map<LoadOpKey, EntityLoadOp> ops;
+    private final Map<LoadOpKey, EntityLoadOp<?>> ops;
 
-    EntityLoadStep(Map<LoadOpKey, EntityLoadOp> ops, Supplier<Optional<LoadStep>> next) {
+    EntityLoadStep(Map<LoadOpKey, EntityLoadOp<?>> ops, Supplier<Optional<LoadStep>> next) {
       this.next = next;
       this.ops = ops;
     }
@@ -259,7 +259,7 @@ final class EntityLoadOps {
     public LoadStep combine(LoadStep other) {
       EntityLoadStep o = (EntityLoadStep) other;
 
-      o.ops.forEach((id, op) -> this.ops.compute(id, (k, old) -> old != null ? old.combine(op) : op));
+      o.ops.forEach((id, op) -> this.ops.compute(id, (k, old) -> old != null ? old.combine((EntityLoadOp) op) : op));
 
       return new EntityLoadStep(ops, () -> {
         Optional<LoadStep> nextA = this.next.get();

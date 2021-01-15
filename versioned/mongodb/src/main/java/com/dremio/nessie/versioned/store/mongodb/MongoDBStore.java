@@ -101,7 +101,7 @@ public class MongoDBStore implements Store {
   private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
   private final Duration timeout;
-  private Map<ValueType, MongoCollection<Document>> collections;
+  private Map<ValueType<?>, MongoCollection<Document>> collections;
 
   /**
    * Creates a store ready for connection to a MongoDB instance.
@@ -139,8 +139,8 @@ public class MongoDBStore implements Store {
     mongoDatabase = mongoClient.getDatabase(config.getDatabaseName());
 
     // Initialise collections for each ValueType.
-    collections = Stream.of(ValueType.values())
-        .collect(ImmutableMap.<ValueType, ValueType, MongoCollection<Document>>toImmutableMap(
+    collections = ValueType.values().stream()
+        .collect(ImmutableMap.<ValueType<?>, ValueType<?>, MongoCollection<Document>>toImmutableMap(
             v -> v,
             v -> {
               String collectionName = v.getTableName(config.getTablePrefix());
@@ -173,7 +173,7 @@ public class MongoDBStore implements Store {
       Flux.fromStream(step.getOps())
         .groupBy(LoadOp::getValueType)
         .flatMap(entry -> {
-          ValueType type = entry.key();
+          ValueType<?> type = entry.key();
 
           MongoCollection<Document> collection = readCollection(
               type,
@@ -233,14 +233,14 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) {
+  public <C extends BaseConsumer<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     throw new UnsupportedOperationException();
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public void save(List<SaveOp<?>> ops) {
-    Map<ValueType, List<SaveOp>> perType = ops.stream()
+    Map<ValueType<?>, List<SaveOp>> perType = ops.stream()
         .collect(Collectors.groupingBy(SaveOp::getType));
 
     Flux.fromIterable(perType.entrySet())
@@ -250,7 +250,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> void loadSingle(ValueType valueType, Id id, C consumer) {
+  public <C extends BaseConsumer<C>> void loadSingle(ValueType<C> valueType, Id id, C consumer) {
     final MongoCollection<Document> collection = readCollection(valueType, x -> consumer, x -> {});
 
     Object found = Mono.from(
@@ -262,13 +262,13 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> boolean update(ValueType type, Id id, UpdateExpression update,
+  public <C extends BaseConsumer<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
       Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType type, ValuesMapper<C, V> valuesMapper) {
+  public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType<C> type, ValuesMapper<C, V> valuesMapper) {
     // TODO: Can this be optimized to not collect the elements before streaming them?
     // TODO: Could this benefit from paging?
     return Flux.from(this.getCollection(type).find()).toStream()
@@ -289,7 +289,7 @@ public class MongoDBStore implements Store {
   }
 
   @SuppressWarnings("rawtypes")
-  private MongoCollection<Document> writeCollection(ValueType type) {
+  private MongoCollection<Document> writeCollection(ValueType<?> type) {
     Codec<SaveOp> codec = new Codec<SaveOp>() {
       @Override
       public SaveOp decode(BsonReader bsonReader, DecoderContext decoderContext) {
@@ -312,7 +312,7 @@ public class MongoDBStore implements Store {
   }
 
   @SuppressWarnings("rawtypes")
-  private MongoCollection<Document> readCollection(ValueType type, Function<Id, BaseConsumer> onIdParsed, Consumer<Id> parsed) {
+  private MongoCollection<Document> readCollection(ValueType<?> type, Function<Id, BaseConsumer> onIdParsed, Consumer<Id> parsed) {
     Codec<Document> codec = new Codec<Document>() {
       @Override
       public Document decode(BsonReader bsonReader, DecoderContext decoderContext) {
@@ -334,7 +334,7 @@ public class MongoDBStore implements Store {
     return this.getCollection(type, codec);
   }
 
-  private MongoCollection<Document> getCollection(ValueType valueType, Codec<?> codec) {
+  private MongoCollection<Document> getCollection(ValueType<?> valueType, Codec<?> codec) {
     return getCollection(valueType).withCodecRegistry(
         new CodecRegistry() {
           @Override
@@ -350,7 +350,7 @@ public class MongoDBStore implements Store {
         });
   }
 
-  private MongoCollection<Document> getCollection(ValueType valueType) {
+  private MongoCollection<Document> getCollection(ValueType<?> valueType) {
     return checkNotNull(collections.get(valueType), "Unsupported Entity type: %s", valueType.name());
   }
 

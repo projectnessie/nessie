@@ -32,7 +32,7 @@ class DynamoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends Dyna
 
   static final String VALUE = "value";
 
-  DynamoWrappedValueConsumer(ValueType valueType) {
+  DynamoWrappedValueConsumer(ValueType<C> valueType) {
     super(valueType);
   }
 

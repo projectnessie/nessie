@@ -15,7 +15,7 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -38,7 +38,7 @@ import com.dremio.nessie.versioned.store.ValueType;
 
 final class EntityType<C extends BaseConsumer<C>, E extends PersistentBase<C>> {
 
-  static final Map<ValueType, EntityType<?, ?>> byValueType = new EnumMap<>(ValueType.class);
+  static final Map<ValueType<?>, EntityType<?, ?>> byValueType = new HashMap<>();
 
   static final EntityType<RefConsumer, InternalRef> REF = new EntityType<>(ValueType.REF, InternalRef.Builder::new);
   static final EntityType<L1Consumer, L1> L1 = new EntityType<>(ValueType.L1, com.dremio.nessie.versioned.impl.L1.Builder::new);
@@ -49,17 +49,17 @@ final class EntityType<C extends BaseConsumer<C>, E extends PersistentBase<C>> {
   static final EntityType<CommitMetadataConsumer, InternalCommitMetadata> COMMIT_METADATA = new EntityType<>(ValueType.COMMIT_METADATA,
       InternalCommitMetadata.Builder::new);
 
-  final ValueType valueType;
+  final ValueType<C> valueType;
   final Supplier<C> producerSupplier;
 
-  private EntityType(ValueType valueType, Supplier<C> producerSupplier) {
+  private EntityType(ValueType<C> valueType, Supplier<C> producerSupplier) {
     this.valueType = valueType;
     this.producerSupplier = producerSupplier;
     byValueType.put(valueType, this);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static <C extends BaseConsumer<C>, E extends PersistentBase<C>> EntityType<C, E> forType(ValueType type) {
+  static <C extends BaseConsumer<C>, E extends PersistentBase<C>> EntityType<C, E> forType(ValueType<C> type) {
     return (EntityType) byValueType.get(type);
   }
 

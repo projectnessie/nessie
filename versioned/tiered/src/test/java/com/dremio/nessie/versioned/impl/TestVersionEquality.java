@@ -46,9 +46,8 @@ class TestVersionEquality {
     InternalBranch b = new InternalBranch("n/a");
     Store store = new MockStore() {
       @Override
-      public <C extends BaseConsumer<C>> void loadSingle(ValueType type, Id id, C consumer) {
-        L1Consumer c = (L1Consumer) consumer;
-        L1.EMPTY.applyToConsumer(c);
+      public <C extends BaseConsumer<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
+        L1.EMPTY.applyToConsumer((L1Consumer) consumer);
       }
 
     };
@@ -88,7 +87,7 @@ class TestVersionEquality {
     }
 
     @Override
-    public boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) {
+    public <C extends BaseConsumer<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
       return false;
     }
 
@@ -97,18 +96,18 @@ class TestVersionEquality {
     }
 
     @Override
-    public <C extends BaseConsumer<C>> void loadSingle(ValueType type, Id id, C consumer) {
+    public <C extends BaseConsumer<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
     }
 
     @Override
-    public <C extends BaseConsumer<C>> boolean update(ValueType type, Id id,
+    public <C extends BaseConsumer<C>> boolean update(ValueType<C> type, Id id,
         UpdateExpression update, Optional<ConditionExpression> condition,
         Optional<BaseConsumer<C>> consumer) throws NotFoundException {
       return false;
     }
 
     @Override
-    public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType type,
+    public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType<C> type,
         ValuesMapper<C, V> valuesMapper) {
       return null;
     }
