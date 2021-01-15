@@ -58,7 +58,6 @@ public abstract class AbstractTestStore<S extends Store> {
 
   protected Random random;
   protected S store;
-  protected EntityStore entityStore;
 
   /**
    * Create and start the store, if not already done.
@@ -69,7 +68,6 @@ public abstract class AbstractTestStore<S extends Store> {
       this.store = createStore();
       this.store.start();
       random = new Random(getRandomSeed());
-      this.entityStore = new EntityStore(store);
     }
   }
 
@@ -175,7 +173,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @Test
   void loadSingleInvalid() {
-    Assertions.assertThrows(NotFoundException.class, () -> entityStore.loadSingle(ValueType.REF, SampleEntities.createId(random)));
+    Assertions.assertThrows(NotFoundException.class, () -> EntityType.REF.loadSingle(store, SampleEntities.createId(random)));
   }
 
   @Test
@@ -267,8 +265,7 @@ public abstract class AbstractTestStore<S extends Store> {
     EntitySaveOp(ValueType type, PersistentBase<?> entity) {
       this.type = type;
       this.entity = entity;
-      EntityType et = EntityType.forType(type);
-      this.saveOp = et.createSaveOpForEntity(entity);
+      this.saveOp = ((EntityType) EntityType.forType(type)).createSaveOpForEntity(entity);
     }
   }
 
@@ -290,7 +287,7 @@ public abstract class AbstractTestStore<S extends Store> {
     assertAll(entities.stream().map(s -> () -> {
       try {
         HasId saveOpValue = s.entity;
-        HasId loadedValue = entityStore.loadSingle(s.type, saveOpValue.getId());
+        HasId loadedValue = EntityType.forType(s.type).loadSingle(store, saveOpValue.getId());
         assertEquals(saveOpValue, loadedValue, "type " + s.type);
 
         try {
@@ -337,15 +334,13 @@ public abstract class AbstractTestStore<S extends Store> {
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected LoadStep createTestLoadStep(Multimap<ValueType, HasId> objs, Optional<LoadStep> next) {
     EntityLoadOps loadOps = new EntityLoadOps();
-    objs.forEach((type, val) -> {
-      EntityType et = EntityType.forType(type);
-      loadOps.load(et, val.getId(), r -> assertEquals(val, r));
-    });
+    objs.forEach((type, val) -> loadOps.load(((EntityType) EntityType.forType(type)), val.getId(), r -> assertEquals(val, r)));
     return loadOps.build(() -> next);
   }
 
+  @SuppressWarnings("unchecked")
   protected <T extends HasId> void testLoadSingle(ValueType type, T sample) {
-    final T read = entityStore.loadSingle(type, sample.getId());
+    final T read = (T) EntityType.forType(type).loadSingle(store, sample.getId());
     assertEquals(sample, read);
   }
 

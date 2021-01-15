@@ -38,23 +38,11 @@ class InternalValue extends WrappedValueBean<ValueConsumer> {
   }
 
   /**
-   * Create a new {@link Builder} instance that implements
-   * {@link ValueConsumer} to build an {@link InternalValue} object.
-   *
-   * @return new builder instance
-   */
-  static Builder builder() {
-    return new Builder();
-  }
-
-  /**
    * Implements {@link ValueConsumer} to builds an {@link InternalValue} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder
-      extends WrappedValueBean.Builder<InternalValue, ValueConsumer>
+  static final class Builder extends WrappedValueBean.Builder<InternalValue, ValueConsumer>
       implements ValueConsumer {
-
     Builder() {
       super(InternalValue::new);
     }

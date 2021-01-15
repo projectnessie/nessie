@@ -35,23 +35,11 @@ class InternalCommitMetadata extends WrappedValueBean<CommitMetadataConsumer> {
   }
 
   /**
-   * Create a new {@link Builder} instance that implements
-   * {@link CommitMetadataConsumer} to build an {@link InternalCommitMetadata} object.
-   *
-   * @return new builder instance
-   */
-  static Builder builder() {
-    return new Builder();
-  }
-
-  /**
    * Implements {@link CommitMetadataConsumer} to build an {@link InternalCommitMetadata} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder
-      extends WrappedValueBean.Builder<InternalCommitMetadata, CommitMetadataConsumer>
+  static final class Builder extends WrappedValueBean.Builder<InternalCommitMetadata, CommitMetadataConsumer>
       implements CommitMetadataConsumer {
-
     Builder() {
       super(InternalCommitMetadata::new);
     }

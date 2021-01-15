@@ -53,6 +53,8 @@ public final class AutoCloseables {
   /**
    * Returns a new {@link AutoCloseable} that calls {@link #close(Iterable)} on <code>autoCloseables</code>
    * when close is called.
+   * @param autoCloseables collection of {@link AutoCloseable} to wrap
+   * @return wrapping {@link AutoCloseable}
    */
   public static AutoCloseable all(final Collection<? extends AutoCloseable> autoCloseables) {
     return new AutoCloseable() {
@@ -88,6 +90,7 @@ public final class AutoCloseables {
   /**
    * Closes all autoCloseables if not null and suppresses subsequent exceptions if more than one.
    * @param autoCloseables the closeables to close
+   * @throws Exception see {@link #close(Iterable)}
    */
   public static void close(AutoCloseable... autoCloseables) throws Exception {
     close(Arrays.asList(autoCloseables));
@@ -96,6 +99,7 @@ public final class AutoCloseables {
   /**
    * Closes all autoCloseables if not null and suppresses subsequent exceptions if more than one.
    * @param ac the closeables to close
+   * @throws Exception see {@link AutoCloseable#close()}
    */
   public static void close(Iterable<? extends AutoCloseable> ac) throws Exception {
     // this method can be called on a single object if it implements Iterable<AutoCloseable>
@@ -128,6 +132,8 @@ public final class AutoCloseables {
 
   /**
    * Calls {@link #close(Iterable)} on the flattened list of closeables.
+   * @param closeables the closeables to close
+   * @throws Exception see {@link #close(Iterable)}
    */
   @SafeVarargs
   public static void close(Iterable<? extends AutoCloseable>...closeables) throws Exception {
@@ -138,6 +144,8 @@ public final class AutoCloseables {
 
   /**
    * Converts <code>ac</code> to a {@link Iterable} filtering out any null values.
+   * @param ac the closeables
+   * @return iterable over {@code ac} without {@code null} values
    */
   public static Iterable<AutoCloseable> iter(AutoCloseable... ac) {
     if (ac.length == 0) {
@@ -172,6 +180,7 @@ public final class AutoCloseables {
 
     /**
      * Add all of <code>list</code> to the rollback list.
+     * @param list autocloseables to add
      */
     public void addAll(AutoCloseable... list) {
       closeables.addAll(Arrays.asList(list));
@@ -179,6 +188,7 @@ public final class AutoCloseables {
 
     /**
      * Add all of <code>list</code> to the rollback list.
+     * @param list autocloseables to add
      */
     public void addAll(Iterable<? extends AutoCloseable> list) {
       for (AutoCloseable ac : list) {
@@ -201,6 +211,8 @@ public final class AutoCloseables {
 
   /**
    * Creates an {@link RollbackCloseable} from the given closeables.
+   * @param closeables autocloseables
+   * @return constructed rollback-closeable
    */
   public static RollbackCloseable rollbackable(AutoCloseable... closeables) {
     return new RollbackCloseable(closeables);

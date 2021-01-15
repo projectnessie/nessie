@@ -17,21 +17,13 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.function.Consumer;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.ValueType;
 
 /**
- * Ugly bridge class to hide the private entities from the outside world.
+ * Ugly bridge class to hide the private entities needed to initialize a store.
  */
-public class EntityTypeBridge {
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public static <C extends BaseConsumer<C>, E extends HasId> E buildEntity(ValueType valueType, Consumer<C> consumer) {
-    EntityType et = EntityType.forType(valueType);
-    return (E) et.buildEntity(consumer);
-  }
+public final class EntityStoreHelper {
 
   /**
    * Helper method for store implementations to create the initial entities.
@@ -43,4 +35,5 @@ public class EntityTypeBridge {
     consumer.accept(new EntitySaveOp<>(ValueType.L2, L2.EMPTY));
     consumer.accept(new EntitySaveOp<>(ValueType.L3, L3.EMPTY));
   }
+
 }

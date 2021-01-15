@@ -15,9 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -43,7 +40,7 @@ abstract class InternalRef extends PersistentBase<RefConsumer> {
     super(id);
   }
 
-  public static enum Type {
+  public enum Type {
     BRANCH("b"),
     TAG("t"),
     HASH(null),
@@ -95,17 +92,6 @@ abstract class InternalRef extends PersistentBase<RefConsumer> {
 
   InternalTag getTag() {
     throw new IllegalArgumentException(String.format("%s cannot be treated as a tag.", this.getClass().getName()));
-  }
-
-  /**
-   * Create a new {@link Builder} instance that implements
-   * {@link RefConsumer} to
-   * build an {@link InternalRef} object.
-   *
-   * @return new builder instance
-   */
-  static Builder builder() {
-    return new Builder();
   }
 
   /**
@@ -230,7 +216,7 @@ abstract class InternalRef extends PersistentBase<RefConsumer> {
     }
 
     @Override
-    public InternalRef build() {
+    InternalRef build() {
       // null-id is allowed (will be generated)
       checkSet(refType, "refType");
       checkSet(name, "name");

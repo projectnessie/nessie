@@ -15,9 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
-
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -154,7 +151,7 @@ class L3 extends PersistentBase<L3Consumer> {
   }
 
   @Override
-  public L3Consumer applyToConsumer(L3Consumer consumer) {
+  L3Consumer applyToConsumer(L3Consumer consumer) {
     super.applyToConsumer(consumer);
 
     Stream<KeyDelta> keyDelta = this.map.entrySet().stream()
@@ -166,16 +163,6 @@ class L3 extends PersistentBase<L3Consumer> {
   }
 
   /**
-   * Create a new {@link Builder} instance that implements
-   * {@link L3Consumer} to build an {@link L3} object.
-   *
-   * @return new builder instance
-   */
-  static Builder builder() {
-    return new Builder();
-  }
-
-  /**
    * Implements {@link L3Consumer} to build an {@link L3} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
@@ -184,7 +171,7 @@ class L3 extends PersistentBase<L3Consumer> {
     private Id id;
     private Stream<KeyDelta> keyDelta;
 
-    private Builder() {
+    Builder() {
       // empty
     }
 
@@ -203,7 +190,7 @@ class L3 extends PersistentBase<L3Consumer> {
     }
 
     @Override
-    public L3 build() {
+    L3 build() {
       // null-id is allowed (will be generated)
       checkSet(keyDelta, "keyDelta");
 

@@ -43,7 +43,14 @@ final class MongoFragmentConsumer extends MongoConsumer<FragmentConsumer> implem
 
   @Override
   public FragmentConsumer keys(Stream<Key> keys) {
-    serializeKeys(KEY_LIST, keys);
+    addProperty(KEY_LIST);
+    bsonWriter.writeStartArray(KEY_LIST);
+    keys.forEach(k -> {
+      bsonWriter.writeStartArray();
+      k.getElements().forEach(bsonWriter::writeString);
+      bsonWriter.writeEndArray();
+    });
+    bsonWriter.writeEndArray();
     return this;
   }
 

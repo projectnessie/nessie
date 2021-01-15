@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.bytes;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeBytes;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Map;
 
@@ -28,7 +28,7 @@ import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-abstract class DynamoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends DynamoConsumer<C> implements WrappedValueConsumer<C> {
+class DynamoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends DynamoConsumer<C> implements WrappedValueConsumer<C> {
 
   static final String VALUE = "value";
 
@@ -53,7 +53,7 @@ abstract class DynamoWrappedValueConsumer<C extends WrappedValueConsumer<C>> ext
    */
   static <C extends WrappedValueConsumer<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
     consumer.id(deserializeId(entity, ID))
-        .value(deserializeBytes(entity, VALUE));
+        .value(ByteString.copyFrom(checkNotNull(attributeValue(entity, VALUE).b(), "mandatory binary value is null")
+            .asByteArrayUnsafe()));
   }
-
 }

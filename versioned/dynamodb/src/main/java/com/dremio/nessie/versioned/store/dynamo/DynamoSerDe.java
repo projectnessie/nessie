@@ -59,20 +59,18 @@ final class DynamoSerDe {
     dynamoEntityMapProducers.put(ValueType.L3, DynamoL3Consumer::new);
     deserializeToConsumer.put(ValueType.L3, (e, c) -> DynamoL3Consumer.toConsumer(e, (L3Consumer) c));
 
-    dynamoEntityMapProducers.put(ValueType.COMMIT_METADATA, DynamoCommitMetadataConsumer::new);
+    dynamoEntityMapProducers.put(ValueType.COMMIT_METADATA, () -> new DynamoWrappedValueConsumer<>(ValueType.COMMIT_METADATA));
     deserializeToConsumer.put(ValueType.COMMIT_METADATA,
         (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (CommitMetadataConsumer) c));
 
-    dynamoEntityMapProducers.put(ValueType.VALUE, DynamoValueConsumer::new);
-    deserializeToConsumer
-        .put(ValueType.VALUE, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (ValueConsumer) c));
+    dynamoEntityMapProducers.put(ValueType.VALUE, () -> new DynamoWrappedValueConsumer<>(ValueType.VALUE));
+    deserializeToConsumer.put(ValueType.VALUE, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (ValueConsumer) c));
 
     dynamoEntityMapProducers.put(ValueType.REF, DynamoRefConsumer::new);
     deserializeToConsumer.put(ValueType.REF, (e, c) -> DynamoRefConsumer.toConsumer(e, (RefConsumer) c));
 
     dynamoEntityMapProducers.put(ValueType.KEY_FRAGMENT, DynamoFragmentConsumer::new);
-    deserializeToConsumer
-        .put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragmentConsumer.toConsumer(e, (FragmentConsumer) c));
+    deserializeToConsumer.put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragmentConsumer.toConsumer(e, (FragmentConsumer) c));
 
     if (!dynamoEntityMapProducers.keySet().equals(deserializeToConsumer.keySet())) {
       throw new UnsupportedOperationException("The enum-maps dynamoConsumerSuppliers and dynamoProducerSuppliers "

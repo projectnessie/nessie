@@ -29,27 +29,25 @@ import com.dremio.nessie.tiered.builder.L3Consumer;
 import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.tiered.builder.ValueConsumer;
 import com.dremio.nessie.versioned.impl.PersistentBase.EntityBuilder;
+import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 
 final class EntityType<C extends BaseConsumer<C>, E extends PersistentBase<C>> {
 
   static final Map<ValueType, EntityType<?, ?>> byValueType = new EnumMap<>(ValueType.class);
 
-  static final EntityType<RefConsumer, InternalRef> REF = new EntityType<>(ValueType.REF,
-      InternalRef::builder);
-  static final EntityType<L1Consumer, L1> L1 = new EntityType<>(ValueType.L1,
-      com.dremio.nessie.versioned.impl.L1::builder);
-  static final EntityType<L2Consumer, L2> L2 = new EntityType<>(ValueType.L2,
-      com.dremio.nessie.versioned.impl.L2::builder);
-  static final EntityType<L3Consumer, L3> L3 = new EntityType<>(ValueType.L3,
-      com.dremio.nessie.versioned.impl.L3::builder);
-  static final EntityType<ValueConsumer, InternalValue> VALUE = new EntityType<>(ValueType.VALUE,
-      InternalValue::builder);
-  static final EntityType<FragmentConsumer, Fragment> KEY_FRAGMENT = new EntityType<>(ValueType.KEY_FRAGMENT,
-      Fragment::builder);
+  static final EntityType<RefConsumer, InternalRef> REF = new EntityType<>(ValueType.REF, InternalRef.Builder::new);
+  static final EntityType<L1Consumer, L1> L1 = new EntityType<>(ValueType.L1, com.dremio.nessie.versioned.impl.L1.Builder::new);
+  static final EntityType<L2Consumer, L2> L2 = new EntityType<>(ValueType.L2, com.dremio.nessie.versioned.impl.L2.Builder::new);
+  static final EntityType<L3Consumer, L3> L3 = new EntityType<>(ValueType.L3, com.dremio.nessie.versioned.impl.L3.Builder::new);
+  static final EntityType<ValueConsumer, InternalValue> VALUE = new EntityType<>(ValueType.VALUE, InternalValue.Builder::new);
+  static final EntityType<FragmentConsumer, Fragment> KEY_FRAGMENT = new EntityType<>(ValueType.KEY_FRAGMENT, Fragment.Builder::new);
   static final EntityType<CommitMetadataConsumer, InternalCommitMetadata> COMMIT_METADATA = new EntityType<>(ValueType.COMMIT_METADATA,
-      InternalCommitMetadata::builder);
+      InternalCommitMetadata.Builder::new);
 
   final ValueType valueType;
   final Supplier<C> producerSupplier;
@@ -60,10 +58,22 @@ final class EntityType<C extends BaseConsumer<C>, E extends PersistentBase<C>> {
     byValueType.put(valueType, this);
   }
 
-  @SuppressWarnings({"UnnecessaryLocalVariable", "unchecked", "rawtypes"})
+  @SuppressWarnings({"unchecked", "rawtypes"})
   static <C extends BaseConsumer<C>, E extends PersistentBase<C>> EntityType<C, E> forType(ValueType type) {
-    EntityType r = byValueType.get(type);
-    return r;
+    return (EntityType) byValueType.get(type);
+  }
+
+  /**
+   * Retrieve a single value.
+   *
+   * @param store store to load the value from.
+   * @param id The id of the value.
+   * @return The value at the given Id.
+   * @throws NotFoundException If the value is not found.
+   * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
+   */
+  E loadSingle(Store store, Id id) {
+    return buildEntity(consumer -> store.loadSingle(valueType, id, consumer));
   }
 
   SaveOp<C> createSaveOpForEntity(E value) {

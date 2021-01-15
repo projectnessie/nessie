@@ -20,10 +20,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import org.immutables.value.Value;
 import org.immutables.value.Value.Immutable;
 
-@Value.Immutable
+@Immutable
 public abstract class Key implements Comparable<Key> {
 
   private static final ThreadLocal<Collator> COLLATOR = new ThreadLocal<Collator>() {

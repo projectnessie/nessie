@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.versioned.store.dynamo;
 
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
@@ -42,20 +41,16 @@ abstract class DynamoConsumer<C extends BaseConsumer<C>> implements BaseConsumer
     entity.put(ValueType.SCHEMA_TYPE, string(valueType.getValueName()));
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public C id(Id id) {
-    addEntitySafe(ID, idValue(id));
-    return (C) this;
+    return addEntitySafe(ID, idValue(id));
   }
 
   /**
    * Adds an {@link AttributeValue} that consists of a list of {@link Id}s.
    */
-  @SuppressWarnings("unchecked")
   C addIdList(String key, Stream<Id> ids) {
-    addEntitySafe(key, idsList(ids));
-    return (C) this;
+    return addEntitySafe(key, idsList(ids));
   }
 
   /**
@@ -72,19 +67,16 @@ abstract class DynamoConsumer<C extends BaseConsumer<C>> implements BaseConsumer
 
   Map<String, AttributeValue> build() {
     checkPresent(ID, "id");
-
     return entity;
   }
 
   void checkPresent(String id, String name) {
-    Preconditions.checkArgument(
-        entity.containsKey(id),
+    Preconditions.checkArgument(entity.containsKey(id),
         String.format("Method %s of consumer %s has not been called", name, getClass().getSimpleName()));
   }
 
   void checkNotPresent(String id, String name) {
-    Preconditions.checkArgument(
-        !entity.containsKey(id),
+    Preconditions.checkArgument(!entity.containsKey(id),
         String.format("Method %s of consumer %s must not be called", name, getClass().getSimpleName()));
   }
 

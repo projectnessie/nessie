@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.nessie.versioned.store.dynamo;
 
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryList;
 
 import java.util.Map;
 import java.util.stream.Stream;
@@ -48,7 +46,6 @@ class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements
   @Override
   Map<String, AttributeValue> build() {
     checkPresent(KEY_LIST, "keys");
-
     return super.build();
   }
 
@@ -57,8 +54,6 @@ class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements
    */
   static void toConsumer(Map<String, AttributeValue> entity, FragmentConsumer consumer) {
     consumer.id(deserializeId(entity, ID))
-        .keys(mandatoryList(attributeValue(entity, KEY_LIST)).stream()
-            .map(AttributeValueUtil::deserializeKey)
-        );
+        .keys(attributeValue(entity, KEY_LIST).l().stream().map(AttributeValueUtil::deserializeKey));
   }
 }

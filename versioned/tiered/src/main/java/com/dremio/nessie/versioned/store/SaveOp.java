@@ -19,6 +19,12 @@ import java.util.Objects;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
 
+/**
+ * Save operations push the properties of the value to save via the {@link BaseConsumer consumer}
+ * passed to the {@link #serialize(BaseConsumer)} method.
+ *
+ * @param <C> {@link BaseConsumer consumer} used to handle the save-operation
+ */
 public abstract class SaveOp<C extends BaseConsumer<C>> {
   private final ValueType type;
   private final Id id;

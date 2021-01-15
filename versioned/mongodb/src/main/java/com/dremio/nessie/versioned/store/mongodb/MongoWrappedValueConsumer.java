@@ -25,7 +25,7 @@ import org.bson.BsonWriter;
 import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
 import com.google.protobuf.ByteString;
 
-abstract class MongoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends MongoConsumer<C> implements WrappedValueConsumer<C> {
+class MongoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends MongoConsumer<C> implements WrappedValueConsumer<C> {
 
   static final String VALUE = "value";
 
@@ -52,7 +52,6 @@ abstract class MongoWrappedValueConsumer<C extends WrappedValueConsumer<C>> exte
   @Override
   BsonWriter build() {
     checkPresent(VALUE, "value");
-
     return super.build();
   }
 }

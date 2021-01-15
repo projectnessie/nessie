@@ -26,6 +26,5 @@ public interface AliasCollector {
 
   String escape(String unescaped);
 
-  // TODO refactor to prevent the use of `Entity` and replace with "plain types"
   String alias(Entity value);
 }

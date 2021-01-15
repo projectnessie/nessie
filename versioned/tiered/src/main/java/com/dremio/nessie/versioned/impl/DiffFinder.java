@@ -22,10 +22,8 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadStep;
-import com.dremio.nessie.versioned.store.Store;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.MapDifference.ValueDifference;
 
@@ -54,12 +52,12 @@ class DiffFinder {
   }
 
   public Stream<KeyDiff> getKeyDiffs() {
-    return l3Diffs.stream().flatMap(l3 -> l3.getKeyDiffs());
+    return l3Diffs.stream().flatMap(L3Diff::getKeyDiffs);
   }
 
   private static class L1Diff {
-    private L1 from;
-    private L1 to;
+    private final L1 from;
+    private final L1 to;
 
     public L1Diff(L1 from, L1 to) {
       super();
@@ -193,7 +191,7 @@ class DiffFinder {
 
   }
 
-  static List<DiffFinder> getFinders(List<L1> l1Ascending, Store store) throws ReferenceNotFoundException {
+  static List<DiffFinder> getFinders(List<L1> l1Ascending) {
     Preconditions.checkArgument(l1Ascending.size() > 1);
     L1 previous = null;
     List<DiffFinder> diffs = new ArrayList<>();

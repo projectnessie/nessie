@@ -24,12 +24,11 @@ import org.bson.BsonBinary;
 import org.bson.BsonWriter;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.google.common.base.Preconditions;
 
-public class MongoConsumer<C extends BaseConsumer<C>> implements BaseConsumer<C> {
+abstract class MongoConsumer<C extends BaseConsumer<C>> implements BaseConsumer<C> {
 
   static final String ID = Store.KEY_NAME;
 
@@ -94,17 +93,6 @@ public class MongoConsumer<C extends BaseConsumer<C>> implements BaseConsumer<C>
   void serializeString(String property, String str) {
     addProperty(property);
     bsonWriter.writeString(property, str);
-  }
-
-  void serializeKeys(String parameter, Stream<Key> keys) {
-    addProperty(parameter);
-    bsonWriter.writeStartArray(parameter);
-    keys.forEach(k -> {
-      bsonWriter.writeStartArray();
-      k.getElements().forEach(bsonWriter::writeString);
-      bsonWriter.writeEndArray();
-    });
-    bsonWriter.writeEndArray();
   }
 
   <X> void serializeArray(String prop, Stream<X> src, BiConsumer<BsonWriter, X> inner) {

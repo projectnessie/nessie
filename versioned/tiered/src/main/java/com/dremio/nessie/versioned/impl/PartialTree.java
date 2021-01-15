@@ -59,8 +59,8 @@ import com.google.common.collect.Streams;
  */
 class PartialTree<V> {
 
-  public static enum LoadType {
-    NO_VALUES, SELECT_VALUES;
+  public enum LoadType {
+    NO_VALUES, SELECT_VALUES
   }
 
   private final Serializer<V> serializer;
@@ -74,12 +74,12 @@ class PartialTree<V> {
   private final Collection<InternalKey> keys;
 
   static <V> PartialTree<V> of(Serializer<V> serializer, InternalRefId id, List<InternalKey> keys) {
-    return new PartialTree<V>(serializer, id, keys);
+    return new PartialTree<>(serializer, id, keys);
   }
 
   static <V> PartialTree<V> of(Serializer<V> serializer, InternalRef.Type refType, L1 l1, Collection<InternalKey> keys) {
-    PartialTree<V> tree = new PartialTree<V>(serializer, InternalRefId.ofHash(l1.getId()), keys);
-    tree.l1 = new Pointer<L1>(l1);
+    PartialTree<V> tree = new PartialTree<>(serializer, InternalRefId.ofHash(l1.getId()), keys);
+    tree.l1 = new Pointer<>(l1);
     tree.refType = refType;
     return tree;
   }
@@ -112,7 +112,7 @@ class PartialTree<V> {
       refType = loadedRef.getType();
       if (loadedRef.getType() == Type.BRANCH) {
         L1 loaded = l1Converter.apply(loadedRef.getBranch());
-        l1 = new Pointer<L1>(loaded);
+        l1 = new Pointer<>(loaded);
         rootId = loaded.getId();
       } else if (loadedRef.getType() == Type.TAG) {
         rootId = loadedRef.getTag().getCommit();
@@ -343,13 +343,8 @@ class PartialTree<V> {
     l1.apply(l -> l.set(key.getL1Position(), newL2Id));
   }
 
-  public Stream<InternalKey> getRetrievedKeys() {
-    return l3s.values().stream().flatMap(p -> p.get().getKeys());
-  }
-
-
   public PartialTree<V> cleanClone() {
-    PartialTree<V> clone = new PartialTree<V>(serializer, refId, keys);
+    PartialTree<V> clone = new PartialTree<>(serializer, refId, keys);
     this.l3s.entrySet().stream()
             .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(EntityType.L3, x.getValue())))
             .forEach(x -> clone.l3s.put(x.getKey(), x.getValue()));
@@ -366,10 +361,7 @@ class PartialTree<V> {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private static <T extends PersistentBase<?>> Pointer<T> cloneInner(EntityType<?, T> type, Pointer<T> value) {
     if (value.isDirty()) {
-      return new Pointer(type.buildEntity(producer -> {
-        PersistentBase persistentBase = value.get();
-        persistentBase.applyToConsumer(producer);
-      }));
+      return new Pointer(type.buildEntity(producer -> ((PersistentBase) value.get()).applyToConsumer(producer)));
     } else {
       return value;
     }

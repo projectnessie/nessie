@@ -21,7 +21,6 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deseri
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.keyElements;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryList;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.map;
 
 import java.util.HashMap;
@@ -70,10 +69,10 @@ class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer 
     consumer.id(deserializeId(entity, ID));
 
     if (entity.containsKey(TREE)) {
-      Stream<KeyDelta> keyDelta = mandatoryList(attributeValue(entity, TREE)).stream()
+      Stream<KeyDelta> keyDelta = attributeValue(entity, TREE).l().stream()
           .map(AttributeValue::m)
           .map(m -> KeyDelta.of(
-              deserializeKey(m, TREE_KEY),
+              deserializeKey(attributeValue(m, TREE_KEY)),
               deserializeId(m, TREE_ID)
           ));
 

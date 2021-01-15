@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableMap;
 
 abstract class KeyMutation {
 
-  static enum MutationType {
+  enum MutationType {
     ADDITION("a"),
     REMOVAL("d");
 
@@ -88,6 +88,6 @@ abstract class KeyMutation {
   }
 
   Entity toEntity() {
-    return Entity.ofMap(ImmutableMap.<String, Entity>of(getType().field, getKey().toEntity()));
+    return Entity.ofMap(ImmutableMap.of(getType().field, getKey().toEntity()));
   }
 }

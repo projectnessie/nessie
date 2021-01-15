@@ -24,7 +24,6 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deseri
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idsList;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryMap;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.map;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.number;
 
@@ -36,6 +35,7 @@ import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -130,7 +130,8 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
       consumer.ancestors(deserializeIdStream(entity, PARENTS));
     }
     if (entity.containsKey(KEY_LIST)) {
-      Map<String, AttributeValue> keys = mandatoryMap(attributeValue(entity, KEY_LIST));
+      Map<String, AttributeValue> keys = Preconditions.checkNotNull(
+          attributeValue(entity, KEY_LIST).m(), "mandatory map " + KEY_LIST + " is null");
       Boolean checkpoint = attributeValue(keys, IS_CHECKPOINT).bool();
       if (checkpoint != null) {
         if (checkpoint) {

@@ -160,6 +160,17 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
    */
   RefConsumer commits(Consumer<BranchCommitConsumer> commits);
 
+  /**
+   * Users of this consumers must call the methods in the following order.
+   * <ol>
+   *   <li>{@link #id(Id)} (mandatory), {@link #commit(Id)} (mandatory),
+   *   {@link #parent(Id)} (for "saved" branch-commits)</li>
+   *   <li>{@link #delta(int, Id, Id)} (for "unsaved" branch-commits)</li>
+   *   <li>{@link #keyMutation(Key.Mutation)} (int, Id, Id)} (for "unsaved" branch-commits)</li>
+   *   <li>{@link #done()} (mandatory)</li>
+   * </ol>
+   * , then
+   */
   interface BranchCommitConsumer {
 
     /**

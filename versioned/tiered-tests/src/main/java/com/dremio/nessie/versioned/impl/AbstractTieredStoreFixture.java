@@ -63,7 +63,6 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   private final S store;
   private final C config;
   private final VersionStore<String, String> impl;
-  private final EntityStore entityStore;
 
   /**
    * Create a new fixture.
@@ -73,7 +72,6 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
     store = createStoreImpl();
     store.start();
     impl = new TieredVersionStore<>(WORKER, store, true);
-    entityStore = new EntityStore(store);
   }
 
   public C getConfig() {
@@ -84,10 +82,6 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
 
   public S getStore() {
     return store;
-  }
-
-  public EntityStore getEntityStore() {
-    return entityStore;
   }
 
   public VersionStore<String, String> getWrapped() {

@@ -17,6 +17,16 @@ package com.dremio.nessie.versioned.store;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
 
+/**
+ * To handle or map the values retrieved in a batch-load operation like
+ * {@link Store#getValues(Class, ValueType, ValuesMapper)}, implementations of this interface
+ * provide the functionality to handle or map the loaded values by providing a new
+ * {@link BaseConsumer} via {@link #producerForItem()} and receiving the callback to
+ * {@link #itemProduced(BaseConsumer)} once all properties have been pushed to that consumer.
+ *
+ * @param <C> {@link BaseConsumer consumer} used to handle the load-operation
+ * @param <V> value type that will be passed through by the store-implementation
+ */
 public interface ValuesMapper<C extends BaseConsumer<C>, V>  {
   C producerForItem();
 

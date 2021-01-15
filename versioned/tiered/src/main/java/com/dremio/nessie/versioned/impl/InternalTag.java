@@ -24,8 +24,8 @@ class InternalTag extends InternalRef {
 
   static final String COMMIT = "commit";
 
-  private String name;
-  private Id commit;
+  private final String name;
+  private final Id commit;
 
   InternalTag(Id id, String name, Id commit) {
     super(id);
@@ -75,7 +75,7 @@ class InternalTag extends InternalRef {
   }
 
   @Override
-  public RefConsumer applyToConsumer(RefConsumer consumer) {
+  RefConsumer applyToConsumer(RefConsumer consumer) {
     return super.applyToConsumer(consumer)
         .name(name)
         .type(RefType.TAG)

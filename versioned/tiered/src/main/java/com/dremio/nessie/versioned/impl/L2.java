@@ -15,9 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
-
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2Consumer;
@@ -93,19 +90,9 @@ class L2 extends PersistentBase<L2Consumer> {
   }
 
   @Override
-  public L2Consumer applyToConsumer(L2Consumer consumer) {
+  L2Consumer applyToConsumer(L2Consumer consumer) {
     return super.applyToConsumer(consumer)
         .children(this.map.stream());
-  }
-
-  /**
-   * Create a new {@link Builder} instance that implements
-   * {@link L2Consumer} to build an {@link L2} object.
-   *
-   * @return new builder instance
-   */
-  static Builder builder() {
-    return new Builder();
   }
 
   /**
@@ -117,7 +104,7 @@ class L2 extends PersistentBase<L2Consumer> {
     private Id id;
     private Stream<Id> children;
 
-    private Builder() {
+    Builder() {
       // empty
     }
 
@@ -136,7 +123,7 @@ class L2 extends PersistentBase<L2Consumer> {
     }
 
     @Override
-    public L2 build() {
+    L2 build() {
       // null-id is allowed (will be generated)
       checkSet(children, "children");
 

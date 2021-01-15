@@ -20,7 +20,6 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.ValueType;
 
 final class EntitySaveOp<C extends BaseConsumer<C>, E extends PersistentBase<C>> extends SaveOp<C> {
-
   private final E value;
 
   EntitySaveOp(ValueType type, E value) {

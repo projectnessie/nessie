@@ -18,8 +18,9 @@ package com.dremio.nessie.versioned.impl;
 import com.dremio.nessie.tiered.builder.BaseConsumer;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
+import com.google.common.base.Preconditions;
 
-public abstract class PersistentBase<C extends BaseConsumer<C>> implements HasId {
+abstract class PersistentBase<C extends BaseConsumer<C>> implements HasId {
 
   //unchanging but only generated once needed.
   private Id id;
@@ -40,7 +41,7 @@ public abstract class PersistentBase<C extends BaseConsumer<C>> implements HasId
    * @param consumer consumer that will receive the properties of this entity
    * @return the consumer passed into the function
    */
-  public C applyToConsumer(C consumer) {
+  C applyToConsumer(C consumer) {
     return consumer.id(getId());
   }
 
@@ -53,12 +54,18 @@ public abstract class PersistentBase<C extends BaseConsumer<C>> implements HasId
   }
 
   void ensureConsistentId() {
-    if (id != null) {
-      assert id.equals(generateId());
-    }
+    assert id == null || id.equals(generateId());
   }
 
-  public abstract static class EntityBuilder<E extends HasId> {
-    public abstract E build();
+  abstract static class EntityBuilder<E extends HasId> {
+    abstract E build();
+  }
+
+  static void checkCalled(Object arg, String name) {
+    Preconditions.checkArgument(arg == null, String.format("Cannot call %s more than once", name));
+  }
+
+  static void checkSet(Object arg, String name) {
+    Preconditions.checkArgument(arg != null, String.format("Must call %s", name));
   }
 }

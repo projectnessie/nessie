@@ -132,6 +132,8 @@ public interface Store extends AutoCloseable {
    *
    * @param valueClass The {@code Class} associated with requested value type. Should match {@code ValueType.getObjectClass()}.
    * @param type The {@link ValueType} to load.
+   * @param valuesMapper mapper implementation that is responsible to construct the values emitted
+   *                     by the returned {@link Stream}
    * @param <C> the consumer type
    * @param <V> the {@link ValuesMapper} results
    * @return stream with the results of the values returned by {@link ValuesMapper}

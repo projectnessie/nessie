@@ -15,11 +15,11 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.builder;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -28,7 +28,6 @@ import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.primitives.Ints;
@@ -44,8 +43,8 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
  */
 public final class AttributeValueUtil {
 
-  static final String KEY_ADDITION = "a";
-  static final String KEY_REMOVAL = "d";
+  private static final String KEY_ADDITION = "a";
+  private static final String KEY_REMOVAL = "d";
 
   private AttributeValueUtil() {
     // empty
@@ -105,8 +104,7 @@ public final class AttributeValueUtil {
    * consist of a list of strings.
    */
   static AttributeValue keyElements(Key key) {
-    Preconditions.checkNotNull(key);
-    return list(key.getElements().stream().map(AttributeValueUtil::string));
+    return list(checkNotNull(key).getElements().stream().map(AttributeValueUtil::string));
   }
 
   /**
@@ -114,24 +112,21 @@ public final class AttributeValueUtil {
    * stream of {@link Id}s.
    */
   static AttributeValue idsList(Stream<Id> ids) {
-    Preconditions.checkNotNull(ids);
-    return list(ids.map(AttributeValueUtil::idValue));
+    return list(checkNotNull(ids).map(AttributeValueUtil::idValue));
   }
 
   /**
    * Convenience method to produce a built {@link Builder#b(SdkBytes)} for an {@link Id}.
    */
   static AttributeValue idValue(Id id) {
-    Preconditions.checkNotNull(id);
-    return bytes(id.getValue());
+    return bytes(checkNotNull(id).getValue());
   }
 
   /**
    * Convenience method to produce a built {@link Builder#b(SdkBytes)}.
    */
   static AttributeValue bytes(ByteString bytes) {
-    Preconditions.checkNotNull(bytes);
-    return builder().b(SdkBytes.fromByteBuffer(bytes.asReadOnlyByteBuffer())).build();
+    return builder().b(SdkBytes.fromByteBuffer(checkNotNull(bytes).asReadOnlyByteBuffer())).build();
   }
 
   /**
@@ -152,23 +147,21 @@ public final class AttributeValueUtil {
    * Convenience method to produce a built {@link Builder#s(String)}.
    */
   static AttributeValue string(String string) {
-    return builder().s(Preconditions.checkNotNull(string)).build();
+    return builder().s(checkNotNull(string)).build();
   }
 
   /**
    * Convenience method to produce a built {@link Builder#l()}.
    */
   static AttributeValue list(Stream<AttributeValue> list) {
-    Preconditions.checkNotNull(list);
-    return builder().l(list.collect(toList())).build();
+    return builder().l(checkNotNull(list).collect(toList())).build();
   }
 
   /**
    * Convenience method to produce a built {@link AttributeValue.Builder#m(Map)}.
    */
   static AttributeValue map(Map<String, AttributeValue> map) {
-    Preconditions.checkNotNull(map);
-    return builder().m(map).build();
+    return builder().m(checkNotNull(map)).build();
   }
 
   /**
@@ -180,7 +173,7 @@ public final class AttributeValueUtil {
       String key,
       Consumer<Stream<Key.Mutation>> consumer
   ) {
-    consumer.accept(mandatoryList(attributeValue(map, key)).stream()
+    consumer.accept(attributeValue(map, key).l().stream()
         .map(mutation -> {
           Map<String, AttributeValue> m = mutation.m();
           AttributeValue raw = m.get(KEY_ADDITION);
@@ -196,13 +189,10 @@ public final class AttributeValueUtil {
   }
 
   static AttributeValue serializeKeyMutation(Key.Mutation km) {
-    return map(Collections.singletonMap(
-        mutationName(km.getType()),
-        AttributeValueUtil.keyElements(km.getKey()))
-    );
+    return map(Collections.singletonMap(mutationName(km.getType()), keyElements(km.getKey())));
   }
 
-  static String mutationName(Key.MutationType type) {
+  private static String mutationName(Key.MutationType type) {
     switch (type) {
       case ADDITION:
         return KEY_ADDITION;
@@ -220,8 +210,8 @@ public final class AttributeValueUtil {
    * @throws NullPointerException if {@code key} or {@code map} are null.
    */
   static AttributeValue attributeValue(Map<String, AttributeValue> map, String key) {
-    Preconditions.checkNotNull(map);
-    Preconditions.checkNotNull(key);
+    checkNotNull(map);
+    checkNotNull(key);
     AttributeValue av = map.get(key);
     if (av == null) {
       throw new IllegalArgumentException("Missing mandatory attribute '" + key + "'");
@@ -230,46 +220,12 @@ public final class AttributeValueUtil {
   }
 
   /**
-   * Deserialize the given {@code key} from {@code map} as a {@link Key}.
-   *
-   * @throws IllegalArgumentException if {@code key} is not present.
-   * @throws NullPointerException if {@code key} or {@code map} are null.
-   * @see #deserializeKey(AttributeValue)
-   */
-  static Key deserializeKey(Map<String, AttributeValue> map, String key) {
-    AttributeValue raw = attributeValue(map, key);
-    return deserializeKey(raw);
-  }
-
-  /**
    * Deserialize a {@link Key} from the given {@code raw}.
    */
   static Key deserializeKey(AttributeValue raw) {
     ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
-    for (AttributeValue keyPart : mandatoryList(raw)) {
-      keyBuilder.addElements(Preconditions.checkNotNull(keyPart.s(), "mandatory part of key-list is not a string"));
-    }
+    raw.l().forEach(keyPart -> keyBuilder.addElements(keyPart.s()));
     return keyBuilder.build();
-  }
-
-  /**
-   * Extracts {@link AttributeValue#l() raw.l()}.
-   *
-   * @throws NullPointerException if {@code raw} or {@code raw.l()} are null.
-   */
-  static List<AttributeValue> mandatoryList(AttributeValue raw) {
-    Preconditions.checkNotNull(raw);
-    return Preconditions.checkNotNull(raw.l(), "mandatory list value is null");
-  }
-
-  /**
-   * Extracts {@link AttributeValue#m() raw.m()}.
-   *
-   * @throws NullPointerException if {@code raw} or {@code raw.l()} are null.
-   */
-  static Map<String, AttributeValue> mandatoryMap(AttributeValue raw) {
-    Preconditions.checkNotNull(raw);
-    return Preconditions.checkNotNull(raw.m(), "mandatory map value is null");
   }
 
   /**
@@ -279,10 +235,7 @@ public final class AttributeValueUtil {
    * @throws NullPointerException if {@code key} or {@code map} are null.
    */
   static Stream<Id> deserializeIdStream(Map<String, AttributeValue> map, String key) {
-    AttributeValue raw = attributeValue(map, key);
-    return raw.l()
-        .stream()
-        .map(AttributeValueUtil::deserializeId);
+    return attributeValue(map, key).l().stream().map(AttributeValueUtil::deserializeId);
   }
 
   /**
@@ -292,8 +245,7 @@ public final class AttributeValueUtil {
    * @throws NullPointerException if {@code key} or {@code map} are null.
    */
   static Id deserializeId(Map<String, AttributeValue> map, String key) {
-    AttributeValue raw = attributeValue(map, key);
-    return deserializeId(raw);
+    return deserializeId(attributeValue(map, key));
   }
 
   /**
@@ -301,9 +253,8 @@ public final class AttributeValueUtil {
    *
    * @throws NullPointerException if {@code raw} or {@code raw.b()} are null.
    */
-  static Id deserializeId(AttributeValue raw) {
-    SdkBytes b = Preconditions.checkNotNull(raw.b(), "mandatory binary value is null");
-    return Id.of(b.asByteArrayUnsafe());
+  private static Id deserializeId(AttributeValue raw) {
+    return Id.of(checkNotNull(raw.b(), "mandatory binary value is null").asByteArrayUnsafe());
   }
 
   /**
@@ -313,30 +264,6 @@ public final class AttributeValueUtil {
    * @throws NullPointerException if {@code key} or {@code map} are null.
    */
   static int deserializeInt(Map<String, AttributeValue> map, String key) {
-    return Ints.saturatedCast(deserializeLong(map, key));
-  }
-
-  /**
-   * Deserialize the given {@code key} from {@code map} as a {@code long}.
-   *
-   * @throws IllegalArgumentException if {@code key} is not present.
-   * @throws NullPointerException if {@code key} or {@code map} are null.
-   */
-  static long deserializeLong(Map<String, AttributeValue> map, String key) {
-    AttributeValue raw = attributeValue(map, key);
-    String b = Preconditions.checkNotNull(raw.n(), "mandatory number value is null");
-    return Long.parseLong(b);
-  }
-
-  /**
-   * Deserialize the given {@code key} from {@code map} as a {@link ByteString}.
-   *
-   * @throws IllegalArgumentException if {@code key} is not present.
-   * @throws NullPointerException if {@code key} or {@code map} are null.
-   */
-  static ByteString deserializeBytes(Map<String, AttributeValue> map, String key) {
-    AttributeValue raw = attributeValue(map, key);
-    SdkBytes b = Preconditions.checkNotNull(raw.b(), "mandatory binary value is null");
-    return ByteString.copyFrom(b.asByteArrayUnsafe());
+    return Ints.saturatedCast(Long.parseLong(checkNotNull(attributeValue(map, key).n(), "mandatory number value is null")));
   }
 }

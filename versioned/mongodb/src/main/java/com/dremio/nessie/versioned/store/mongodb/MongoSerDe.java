@@ -44,9 +44,7 @@ import com.google.protobuf.ByteString;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class MongoSerDe {
-  @SuppressWarnings("rawtypes")
   private static final EnumMap<ValueType, Function<BsonWriter, MongoConsumer>> consumerMap;
-  @SuppressWarnings("rawtypes")
   private static final EnumMap<ValueType, Map<String, BiConsumer<BaseConsumer, BsonReader>>> producerMap;
 
   private static final String MONGO_ID_NAME = "_id";
@@ -68,10 +66,10 @@ final class MongoSerDe {
     producerMap.put(ValueType.KEY_FRAGMENT, (Map) MongoFragmentConsumer.PROPERTY_PRODUCERS);
     consumerMap.put(ValueType.REF, MongoRefConsumer::new);
     producerMap.put(ValueType.REF, (Map) MongoRefConsumer.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.VALUE, MongoValueConsumer::new);
-    producerMap.put(ValueType.VALUE, (Map) MongoValueConsumer.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.COMMIT_METADATA, MongoCommitMetadataConsumer::new);
-    producerMap.put(ValueType.COMMIT_METADATA, (Map) MongoCommitMetadataConsumer.PROPERTY_PRODUCERS);
+    consumerMap.put(ValueType.VALUE, MongoWrappedValueConsumer::new);
+    producerMap.put(ValueType.VALUE, (Map) MongoWrappedValueConsumer.PROPERTY_PRODUCERS);
+    consumerMap.put(ValueType.COMMIT_METADATA, MongoWrappedValueConsumer::new);
+    producerMap.put(ValueType.COMMIT_METADATA, (Map) MongoWrappedValueConsumer.PROPERTY_PRODUCERS);
 
     if (!producerMap.keySet().equals(EnumSet.allOf(ValueType.class))) {
       throw new UnsupportedOperationException(String.format("The enum-map producerMaps does not "
@@ -111,9 +109,7 @@ final class MongoSerDe {
 
         writer.writeStartDocument();
         writer.writeName(updateOperator);
-
         serializeEntity(writer, saveOp);
-
         writer.writeEndDocument();
 
         return writer.getDocument();
@@ -173,9 +169,7 @@ final class MongoSerDe {
 
   static <X> void serializeArray(BsonWriter writer, String prop, Stream<X> src, BiConsumer<BsonWriter, X> inner) {
     writer.writeStartArray(prop);
-
     src.forEach(e -> inner.accept(writer, e));
-
     writer.writeEndArray();
   }
 

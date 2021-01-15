@@ -15,9 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,9 +41,7 @@ class Fragment extends PersistentBase<FragmentConsumer> {
 
   @Override
   Id generateId() {
-    return Id.build(h -> {
-      keys.stream().forEach(k -> InternalKey.addToHasher(k, h));
-    });
+    return Id.build(h -> keys.forEach(k -> InternalKey.addToHasher(k, h)));
   }
 
   List<InternalKey> getKeys() {
@@ -71,19 +66,9 @@ class Fragment extends PersistentBase<FragmentConsumer> {
   }
 
   @Override
-  public FragmentConsumer applyToConsumer(FragmentConsumer consumer) {
+  FragmentConsumer applyToConsumer(FragmentConsumer consumer) {
     return super.applyToConsumer(consumer)
         .keys(keys.stream().map(InternalKey::toKey));
-  }
-
-  /**
-   * Create a new {@link Builder} instance that implements
-   * {@link FragmentConsumer} to build a {@link Fragment} object.
-   *
-   * @return new builder instance
-   */
-  static Builder builder() {
-    return new Builder();
   }
 
   /**
@@ -110,7 +95,7 @@ class Fragment extends PersistentBase<FragmentConsumer> {
     }
 
     @Override
-    public Fragment build() {
+    Fragment build() {
       // null-id is allowed (will be generated)
       checkSet(keys, "keys");
 

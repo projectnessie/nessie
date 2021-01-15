@@ -15,9 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
-
 import java.util.Objects;
 import java.util.function.BiFunction;
 
@@ -79,7 +76,7 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Persi
   }
 
   @Override
-  public C applyToConsumer(C consumer) {
+  C applyToConsumer(C consumer) {
     return super.applyToConsumer(consumer)
         .value(getBytes());
   }
@@ -88,7 +85,7 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Persi
    * Base builder-implementation for both {@link InternalCommitMetadata} and {@link InternalValue}.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  abstract static class Builder<E extends HasId, C extends WrappedValueConsumer<C>>
+  static class Builder<E extends HasId, C extends WrappedValueConsumer<C>>
       extends EntityBuilder<E> implements WrappedValueConsumer<C> {
 
     private Id id;
@@ -116,12 +113,11 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Persi
       return (C) this;
     }
 
-    @SuppressWarnings("unchecked")
-    public E build() {
+    E build() {
       // null-id is allowed (will be generated)
       checkSet(value, "value");
 
-      return (E) builder.apply(id, value);
+      return builder.apply(id, value);
     }
   }
 }

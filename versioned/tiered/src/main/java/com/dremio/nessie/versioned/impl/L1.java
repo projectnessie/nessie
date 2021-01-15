@@ -15,9 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkCalled;
-import static com.dremio.nessie.versioned.impl.ValidationHelper.checkSet;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +25,7 @@ import com.dremio.nessie.tiered.builder.L1Consumer;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.Store;
 
 class L1 extends PersistentBase<L1Consumer> {
 
@@ -64,7 +62,7 @@ class L1 extends PersistentBase<L1Consumer> {
     return new L1(metadataId, tree, null, keyList, parents);
   }
 
-  L1 withCheckpointAsNecessary(EntityStore store) {
+  L1 withCheckpointAsNecessary(Store store) {
     return keyList.createCheckpointIfNeeded(this, store).map(keylist -> new L1(metadataId, tree, null, keylist, parentList)).orElse(this);
   }
 
@@ -98,7 +96,7 @@ class L1 extends PersistentBase<L1Consumer> {
     });
   }
 
-  Stream<InternalKey> getKeys(EntityStore store) {
+  Stream<InternalKey> getKeys(Store store) {
     return keyList.getKeys(this, store);
   }
 
@@ -151,7 +149,7 @@ class L1 extends PersistentBase<L1Consumer> {
   }
 
   @Override
-  public L1Consumer applyToConsumer(L1Consumer consumer) {
+  L1Consumer applyToConsumer(L1Consumer consumer) {
     super.applyToConsumer(consumer)
         .commitMetadataId(this.metadataId)
         .keyMutations(this.keyList.getMutations().stream().map(KeyMutation::toMutation))
@@ -169,16 +167,6 @@ class L1 extends PersistentBase<L1Consumer> {
   }
 
   /**
-   * Create a new {@link Builder} instance that implement
-   * {@link L1Consumer} to build an {@link L1} object.
-   *
-   * @return new builder instance
-   */
-  static Builder builder() {
-    return new Builder();
-  }
-
-  /**
    * Implements {@link L1Consumer} to build an {@link L1} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
@@ -193,7 +181,7 @@ class L1 extends PersistentBase<L1Consumer> {
     private int distanceFromCheckpoint;
     private Stream<Id> fragmentIds;
 
-    private Builder() {
+    Builder() {
       // empty
     }
 
@@ -254,7 +242,7 @@ class L1 extends PersistentBase<L1Consumer> {
     }
 
     @Override
-    public L1 build() {
+    L1 build() {
       // null-id is allowed (will be generated)
       checkSet(metadataId, "metadataId");
       checkSet(children, "children");

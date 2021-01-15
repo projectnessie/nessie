@@ -54,7 +54,6 @@ import com.dremio.nessie.versioned.WithHash;
 import com.dremio.nessie.versioned.impl.InconsistentValue.InconsistentValueException;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
-import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -78,10 +77,6 @@ public abstract class AbstractITTieredVersionStore {
 
   public Store store() {
     return fixture.getStore();
-  }
-
-  public EntityStore entityStore() {
-    return fixture.getEntityStore();
   }
 
   protected abstract AbstractTieredStoreFixture<?, ?> createNewFixture();
@@ -152,12 +147,12 @@ public abstract class AbstractITTieredVersionStore {
   void checkKeyList() throws Exception {
     BranchName branch = BranchName.of("my-key-list");
     versionStore().create(branch, Optional.empty());
-    assertEquals(0, entityStore().<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
+    assertEquals(0, EntityType.L2.loadSingle(store(), L2.EMPTY_ID).size());
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"),
         Put.of(Key.of("no"), "world"),
         Put.of(Key.of("mad mad"), "world")));
-    assertEquals(0, entityStore().<L2>loadSingle(ValueType.L2, L2.EMPTY_ID).size());
+    assertEquals(0, EntityType.L2.loadSingle(store(), L2.EMPTY_ID).size());
     assertThat(versionStore().getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
         Matchers.containsInAnyOrder("hi", "no", "mad mad"));
   }

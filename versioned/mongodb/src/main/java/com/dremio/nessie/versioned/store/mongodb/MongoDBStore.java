@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,6 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.bson.BsonBinary;
 import org.bson.BsonDocument;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
@@ -33,11 +36,12 @@ import org.bson.Document;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
+import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.versioned.impl.EntityTypeBridge;
+import com.dremio.nessie.versioned.impl.EntityStoreHelper;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Id;
@@ -72,7 +76,6 @@ import reactor.core.publisher.Mono;
  * The MongoDbStore connects to an external MongoDB server.
  */
 public class MongoDBStore implements Store {
-
   /**
    * Pair of a collection to the set of IDs to be loaded.
    */
@@ -97,7 +100,6 @@ public class MongoDBStore implements Store {
 
   private MongoClient mongoClient;
   private MongoDatabase mongoDatabase;
-  private final CodecRegistry codecRegistry;
   private final Duration timeout;
   private Map<ValueType, MongoCollection<Document>> collections;
 
@@ -109,12 +111,17 @@ public class MongoDBStore implements Store {
     this.config = config;
     this.timeout = Duration.ofMillis(config.getTimeoutMs());
     this.collections = new HashMap<>();
-    this.codecRegistry = CodecRegistries.fromProviders(
-        new CodecProvider(),
-        MongoClientSettings.getDefaultCodecRegistry());
     this.mongoClientSettings = MongoClientSettings.builder()
       .applyConnectionString(new ConnectionString(config.getConnectionString()))
-      .codecRegistry(codecRegistry)
+      .codecRegistry(CodecRegistries.fromProviders(
+          new CodecProvider() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public <T> Codec<T> get(Class<T> clazz, CodecRegistry registry) {
+              return clazz == Id.class ? (Codec<T>) ID_CODEC_INSTANCE : null;
+            }
+          },
+          MongoClientSettings.getDefaultCodecRegistry()))
       .writeConcern(WriteConcern.MAJORITY)
       .build();
   }
@@ -143,7 +150,7 @@ public class MongoDBStore implements Store {
 
     if (config.initializeDatabase()) {
       // make sure we have an empty l1 (ignore result, doesn't matter)
-      EntityTypeBridge.storeMinimumEntities(this::putIfAbsent);
+      EntityStoreHelper.storeMinimumEntities(this::putIfAbsent);
     }
   }
 
@@ -233,36 +240,12 @@ public class MongoDBStore implements Store {
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public void save(List<SaveOp<?>> ops) {
-
     Map<ValueType, List<SaveOp>> perType = ops.stream()
         .collect(Collectors.groupingBy(SaveOp::getType));
 
     Flux.fromIterable(perType.entrySet())
-      .flatMap(entry -> {
-        ValueType type = entry.getKey();
-
-        Codec<SaveOp> codec = new Codec<SaveOp>() {
-          @Override
-          public SaveOp decode(BsonReader bsonReader, DecoderContext decoderContext) {
-            throw new UnsupportedOperationException();
-          }
-
-          @SuppressWarnings("unchecked")
-          @Override
-          public void encode(BsonWriter bsonWriter, SaveOp o, EncoderContext encoderContext) {
-            MongoSerDe.serializeEntity(bsonWriter, o);
-          }
-
-          @Override
-          public Class<SaveOp> getEncoderClass() {
-            return SaveOp.class;
-          }
-        };
-
-        MongoCollection collection = getCollection(type, codec);
-
-        return collection.insertMany(entry.getValue(), new InsertManyOptions().ordered(false));
-      })
+      .flatMap(entry -> ((MongoCollection) writeCollection(entry.getKey()))
+          .insertMany(entry.getValue(), new InsertManyOptions().ordered(false)))
         .blockLast(timeout);
   }
 
@@ -276,6 +259,56 @@ public class MongoDBStore implements Store {
     if (null == found) {
       throw new NotFoundException(String.format("Unable to load item with ID: %s", id));
     }
+  }
+
+  @Override
+  public <C extends BaseConsumer<C>> boolean update(ValueType type, Id id, UpdateExpression update,
+      Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType type, ValuesMapper<C, V> valuesMapper) {
+    // TODO: Can this be optimized to not collect the elements before streaming them?
+    // TODO: Could this benefit from paging?
+    return Flux.from(this.getCollection(type).find()).toStream()
+        .map(d -> {
+          C producer = valuesMapper.producerForItem();
+          BsonDocument bsonDoc = d.toBsonDocument(Document.class, mongoClientSettings.getCodecRegistry());
+          MongoSerDe.produceToConsumer(bsonDoc, type, producer);
+          return valuesMapper.itemProduced(producer);
+        });
+  }
+
+  /**
+   * Clear the contents of all the Nessie collections. Only for testing purposes.
+   */
+  @VisibleForTesting
+  void resetCollections() {
+    Flux.fromIterable(collections.values()).flatMap(collection -> collection.deleteMany(Filters.ne("_id", "s"))).blockLast(timeout);
+  }
+
+  @SuppressWarnings("rawtypes")
+  private MongoCollection<Document> writeCollection(ValueType type) {
+    Codec<SaveOp> codec = new Codec<SaveOp>() {
+      @Override
+      public SaveOp decode(BsonReader bsonReader, DecoderContext decoderContext) {
+        throw new UnsupportedOperationException();
+      }
+
+      @SuppressWarnings("unchecked")
+      @Override
+      public void encode(BsonWriter bsonWriter, SaveOp o, EncoderContext encoderContext) {
+        MongoSerDe.serializeEntity(bsonWriter, o);
+      }
+
+      @Override
+      public Class<SaveOp> getEncoderClass() {
+        return SaveOp.class;
+      }
+    };
+
+    return this.getCollection(type, codec);
   }
 
   @SuppressWarnings("rawtypes")
@@ -301,35 +334,7 @@ public class MongoDBStore implements Store {
     return this.getCollection(type, codec);
   }
 
-  @Override
-  public <C extends BaseConsumer<C>> boolean update(ValueType type, Id id, UpdateExpression update,
-      Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType type, ValuesMapper<C, V> valuesMapper) {
-    // TODO: Can this be optimized to not collect the elements before streaming them?
-    // TODO: Could this benefit from paging?
-    return Flux.from(this.getCollection(type).find()).toStream()
-        .map(d -> {
-          C producer = valuesMapper.producerForItem();
-          BsonDocument bsonDoc = d.toBsonDocument(Document.class, codecRegistry);
-          MongoSerDe.produceToConsumer(bsonDoc, type, producer);
-          return valuesMapper.itemProduced(producer);
-        });
-  }
-
-  /**
-   * Clear the contents of all the Nessie collections. Only for testing purposes.
-   */
-  @VisibleForTesting
-  void resetCollections() {
-    Flux.fromIterable(collections.values()).flatMap(collection -> collection.deleteMany(Filters.ne("_id", "s"))).blockLast(timeout);
-  }
-
-  @VisibleForTesting
-  MongoCollection<Document> getCollection(ValueType valueType, Codec<?> codec) {
+  private MongoCollection<Document> getCollection(ValueType valueType, Codec<?> codec) {
     return getCollection(valueType).withCodecRegistry(
         new CodecRegistry() {
           @Override
@@ -340,19 +345,31 @@ public class MongoDBStore implements Store {
           @SuppressWarnings("unchecked")
           @Override
           public <T> Codec<T> get(Class<T> clazz) {
-            if (clazz == Id.class) {
-              return (Codec<T>) CodecProvider.ID_CODEC_INSTANCE;
-            }
-            return (Codec<T>) codec;
+            return (Codec<T>) (clazz == Id.class ? ID_CODEC_INSTANCE : codec);
           }
         });
   }
 
-  MongoCollection<Document> getCollection(ValueType valueType) {
-    final MongoCollection<Document> collection = collections.get(valueType);
-    if (null == collection) {
-      throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
-    }
-    return collection;
+  private MongoCollection<Document> getCollection(ValueType valueType) {
+    return checkNotNull(collections.get(valueType), "Unsupported Entity type: %s", valueType.name());
   }
+
+  private static class IdCodec implements Codec<Id> {
+    @Override
+    public Id decode(BsonReader bsonReader, DecoderContext decoderContext) {
+      return Id.of(bsonReader.readBinaryData().getData());
+    }
+
+    @Override
+    public void encode(BsonWriter bsonWriter, Id id, EncoderContext encoderContext) {
+      bsonWriter.writeBinaryData(new BsonBinary(id.toBytes()));
+    }
+
+    @Override
+    public Class<Id> getEncoderClass() {
+      return Id.class;
+    }
+  }
+
+  static final IdCodec ID_CODEC_INSTANCE = new IdCodec();
 }

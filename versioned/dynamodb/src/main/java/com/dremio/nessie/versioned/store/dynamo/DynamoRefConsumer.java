@@ -22,7 +22,6 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deseri
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKeyMutations;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.mandatoryList;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.map;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.number;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.serializeKeyMutation;
@@ -226,7 +225,7 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
       cc.parent(deserializeId(map, PARENT));
     } else {
       if (map.containsKey(DELTAS)) {
-        mandatoryList(attributeValue(map, DELTAS)).forEach(av -> {
+        attributeValue(map, DELTAS).l().forEach(av -> {
           Map<String, AttributeValue> m = av.m();
           cc.delta(deserializeInt(m, POSITION), deserializeId(m, OLD_ID), deserializeId(m, NEW_ID));
         });

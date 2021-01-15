@@ -17,6 +17,13 @@ package com.dremio.nessie.versioned.store;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
 
+/**
+ * Load operations in stores push the properties of the loaded values to the consumer
+ * returned by {@link #getReceiver()} and call {@link #done()} when the load represented by
+ * this load-operation is finished.
+ *
+ * @param <C> {@link BaseConsumer consumer} used to handle the load-operation
+ */
 public abstract class LoadOp<C extends BaseConsumer<C>> {
   private final ValueType type;
   private final Id id;

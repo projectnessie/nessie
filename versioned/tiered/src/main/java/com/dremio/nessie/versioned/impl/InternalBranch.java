@@ -42,6 +42,7 @@ import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
@@ -194,7 +195,7 @@ class InternalBranch extends InternalRef {
    * Identify the list of intended commits that need to be completed.
    * @return
    */
-  public UpdateState getUpdateState(EntityStore store)  {
+  public UpdateState getUpdateState(Store store)  {
     // generate sublist of important commits.
     List<Commit> unsavedCommits = new ArrayList<>();
     Commit lastSavedCommit = null;
@@ -226,7 +227,7 @@ class InternalBranch extends InternalRef {
 
     IdMap tree = this.tree;
 
-    L1 lastSavedL1 = lastSavedCommit.id.isEmpty() ? L1.EMPTY : store.loadSingle(ValueType.L1, lastSavedCommit.id);
+    L1 lastSavedL1 = lastSavedCommit.id.isEmpty() ? L1.EMPTY : EntityType.L1.loadSingle(store, lastSavedCommit.id);
 
     if (unsavedCommits.isEmpty()) {
       return new UpdateState(Collections.emptyList(), deletes, lastSavedL1, 0, lastSavedL1.getId(), this);
@@ -303,13 +304,13 @@ class InternalBranch extends InternalRef {
      *        before returning/failing. If false, the final collapse will be done in a separate thread.
      * @return
      */
-    CompletableFuture<InternalBranch> ensureAvailable(EntityStore store, Executor executor, int attempts, boolean waitOnCollapse) {
+    CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, int attempts, boolean waitOnCollapse) {
       if (saves.isEmpty()) {
         saved = true;
         return CompletableFuture.completedFuture(initialBranch);
       }
 
-      store.store.save(saves);
+      store.save(saves);
       saved = true;
 
       CompletableFuture<InternalBranch> future = CompletableFuture.supplyAsync(() -> {
@@ -352,7 +353,7 @@ class InternalBranch extends InternalRef {
      * @throws ReferenceNotFoundException when branch does not exist.
      * @throws ReferenceConflictException If attempts are depleted and operation cannot be applied due to heavy concurrency
      */
-    private static InternalBranch collapseIntentionLog(UpdateState initialState, EntityStore store, InternalBranch branch, int attempts)
+    private static InternalBranch collapseIntentionLog(UpdateState initialState, Store store, InternalBranch branch, int attempts)
         throws ReferenceNotFoundException, ReferenceConflictException {
       try {
         for (int attempt = 0; attempt < attempts; attempt++) {
@@ -384,7 +385,7 @@ class InternalBranch extends InternalRef {
               .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
 
           RefConsumer producer = EntityType.REF.newEntityProducer();
-          boolean updated = store.store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer));
+          boolean updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer));
           if (updated) {
             LOGGER.debug("Completed collapse update on attempt {}.", attempt);
             return (InternalBranch) EntityType.REF.buildFromProducer(producer);
@@ -392,7 +393,7 @@ class InternalBranch extends InternalRef {
 
           LOGGER.debug("Failed to collapse update on attempt {}.", attempt);
           // something must have changed, reload the branch.
-          final InternalRef ref = store.loadSingle(ValueType.REF, branch.getId());
+          final InternalRef ref = EntityType.REF.loadSingle(store, branch.getId());
           if (ref.getType() != Type.BRANCH) {
             throw new ReferenceNotFoundException("Failure while collapsing log. Former branch is now a " + ref.getType());
           }
@@ -510,7 +511,7 @@ class InternalBranch extends InternalRef {
   }
 
   @Override
-  public RefConsumer applyToConsumer(RefConsumer consumer) {
+  RefConsumer applyToConsumer(RefConsumer consumer) {
     return super.applyToConsumer(consumer)
         .name(name)
         .type(RefType.BRANCH)

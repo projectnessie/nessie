@@ -39,7 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.versioned.impl.EntityTypeBridge;
+import com.dremio.nessie.versioned.impl.EntityStoreHelper;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -156,7 +156,7 @@ public class DynamoStore implements Store {
             .forEach(this::createIfMissing);
 
         // make sure we have an empty l1 (ignore result, doesn't matter)
-        EntityTypeBridge.storeMinimumEntities(this::putIfAbsent);
+        EntityStoreHelper.storeMinimumEntities(this::putIfAbsent);
       }
 
     } catch (DynamoDbException ex) {
@@ -188,7 +188,7 @@ public class DynamoStore implements Store {
         Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
           List<LoadOp<?>> loadList = l.get(table);
           List<Map<String, AttributeValue>> keys = loadList.stream()
-              .map(load -> ImmutableMap.of(KEY_NAME, idValue(load.getId())))
+              .map(load -> Collections.singletonMap(DynamoConsumer.ID, idValue(load.getId())))
               .collect(Collectors.toList());
           return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
         }));
@@ -215,8 +215,7 @@ public class DynamoStore implements Store {
 
           // unfortunately, responses don't come in the order of the requests so we need to map between ids.
           Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
-          for (int i = 0; i < values.size(); i++) {
-            Map<String, AttributeValue> item = values.get(i);
+          for (Map<String, AttributeValue> item : values) {
             ValueType valueType = ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
             Id id = deserializeId(item, ID);
             LoadOp<?> loadOp = opMap.get(id);
@@ -336,9 +335,10 @@ public class DynamoStore implements Store {
       ListMultimap<String, SaveOp<?>> mm =
           Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
       ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save ->
-          WriteRequest.builder().putRequest(PutRequest.builder().item(
-              serializeWithConsumer(save)).build())
-              .build());
+          WriteRequest.builder().putRequest(PutRequest.builder()
+              .item(serializeWithConsumer(save))
+              .build()
+          ).build());
       BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
       saves.add(async.batchWriteItem(batch));
     }
@@ -361,7 +361,7 @@ public class DynamoStore implements Store {
   public <C extends BaseConsumer<C>> void loadSingle(ValueType valueType, Id id, C consumer) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
         .tableName(tableNames.get(valueType))
-        .key(ImmutableMap.of(KEY_NAME, idValue(id)))
+        .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
         .consistentRead(true)
         .build());
     if (!response.hasItem()) {
@@ -380,7 +380,7 @@ public class DynamoStore implements Store {
       UpdateItemRequest.Builder updateRequest = collector.apply(UpdateItemRequest.builder())
           .returnValues(ReturnValue.ALL_NEW)
           .tableName(tableNames.get(type))
-          .key(ImmutableMap.of(KEY_NAME, idValue(id)))
+          .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
           .updateExpression(aliased.toUpdateExpressionString());
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
       UpdateItemRequest builtRequest = updateRequest.build();
@@ -406,7 +406,6 @@ public class DynamoStore implements Store {
       return false;
     }
   }
-
 
   @Override
   public <C extends BaseConsumer<C>, V> Stream<V> getValues(Class<V> valueClass, ValueType type, ValuesMapper<C, V> valuesMapper) {
