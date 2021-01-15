@@ -34,11 +34,15 @@ import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.FlushOptions;
+import org.rocksdb.OptimisticTransactionDB;
+import org.rocksdb.OptimisticTransactionOptions;
 import org.rocksdb.Options;
+import org.rocksdb.ReadOptions;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.Status;
+import org.rocksdb.Transaction;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
@@ -78,6 +82,7 @@ public class RocksDBStore implements Store {
   }
 
   private final String dbDirectory;
+  private OptimisticTransactionDB transactionDB;
   private RocksDB rocksDB;
   private Map<ValueType, ColumnFamilyHandle> valueTypeToColumnFamily;
 
@@ -99,7 +104,8 @@ public class RocksDBStore implements Store {
       try (final DBOptions dbOptions = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true)) {
         // TODO: Consider setting WAL limits.
         final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
-        rocksDB = RocksDB.open(dbOptions, dbPath, columnFamilies, columnFamilyHandles);
+        transactionDB = OptimisticTransactionDB.open(dbOptions, dbPath, columnFamilies, columnFamilyHandles);
+        rocksDB = transactionDB.getBaseDB();
         valueTypeToColumnFamily = IntStream.rangeClosed(1, ValueType.values().length).boxed().collect(
             ImmutableMap.toImmutableMap(k -> ValueType.values()[k - 1], columnFamilyHandles::get));
         break;
@@ -180,7 +186,23 @@ public class RocksDBStore implements Store {
   @Override
   public <V> boolean putIfAbsent(ValueType type, V value) {
     typeCheck(type, value);
-    throw new UnsupportedOperationException();
+
+    final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
+    try {
+      final HasId valueAsHasId = (HasId)value;
+      final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions());
+      // Get exclusive access to key if it exists.
+      final byte[] buffer = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, valueAsHasId.getId().toBytes(), true);
+      if (null == buffer) {
+        transaction.put(columnFamilyHandle, valueAsHasId.getId().toBytes(), VALUE_SERDE.serialize(type, value));
+        transaction.commit();
+        return true;
+      }
+      // Id already exists.
+      return false;
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

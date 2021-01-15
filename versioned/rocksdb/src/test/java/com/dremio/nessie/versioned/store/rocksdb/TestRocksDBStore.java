@@ -22,7 +22,6 @@ import java.nio.file.Path;
 import java.util.Comparator;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -57,45 +56,5 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
   @Override
   protected void resetStoreState() {
     store.deleteAllData();
-  }
-
-  @Override
-  public void putIfAbsentBranch() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.putIfAbsentBranch());
-  }
-
-  @Override
-  public void putIfAbsentCommitMetadata() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.putIfAbsentCommitMetadata());
-  }
-
-  @Override
-  public void putIfAbsentFragment() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.putIfAbsentFragment());
-  }
-
-  @Override
-  public void putIfAbsentL1() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.putIfAbsentL1());
-  }
-
-  @Override
-  public void putIfAbsentL2() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.putIfAbsentL2());
-  }
-
-  @Override
-  public void putIfAbsentL3() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.putIfAbsentL3());
-  }
-
-  @Override
-  public void putIfAbsentTag() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.putIfAbsentTag());
-  }
-
-  @Override
-  public void putIfAbsentValue() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.putIfAbsentValue());
   }
 }
