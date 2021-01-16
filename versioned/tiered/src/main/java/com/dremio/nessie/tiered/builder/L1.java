@@ -48,7 +48,7 @@ public interface L1 extends BaseValue<L1> {
    * Add a list of children ids indexed by position.
    * <p>Must be called exactly once.</p>
    *
-   * @param ids The list of ids. List must be {@link com.dremio.nessie.versioned.impl.L1#SIZE} in length.
+   * @param ids The list of ids. List must be {@link com.dremio.nessie.versioned.impl.InternalL1#SIZE} in length.
    * @return This consumer.
    */
   L1 children(Stream<Id> ids);
