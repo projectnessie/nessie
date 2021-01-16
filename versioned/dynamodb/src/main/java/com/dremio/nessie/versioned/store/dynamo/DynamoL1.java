@@ -39,7 +39,7 @@ import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoL1Consumer extends DynamoConsumer<L1> implements L1 {
+class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
 
   static final String MUTATIONS = "mutations";
   static final String FRAGMENTS = "fragments";
@@ -53,7 +53,7 @@ class DynamoL1Consumer extends DynamoConsumer<L1> implements L1 {
 
   private final Map<String, AttributeValue> keys;
 
-  DynamoL1Consumer() {
+  DynamoL1() {
     super(ValueType.L1);
     keys = new HashMap<>();
   }

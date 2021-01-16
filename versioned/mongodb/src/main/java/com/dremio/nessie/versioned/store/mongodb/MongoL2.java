@@ -23,40 +23,33 @@ import java.util.stream.Stream;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.tiered.builder.Fragment;
-import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.tiered.builder.L2;
+import com.dremio.nessie.versioned.store.Id;
 
-final class MongoFragmentConsumer extends MongoConsumer<Fragment> implements Fragment {
+final class MongoL2 extends MongoBaseValue<L2> implements L2 {
 
-  static final String KEY_LIST = "keys";
+  static final String TREE = "tree";
 
-  static final Map<String, BiConsumer<Fragment, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiConsumer<L2, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(KEY_LIST, (c, r) -> c.keys(MongoSerDe.deserializeKeys(r)));
+    PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.children(MongoSerDe.deserializeIds(r)));
   }
 
-  MongoFragmentConsumer(BsonWriter bsonWriter) {
+  MongoL2(BsonWriter bsonWriter) {
     super(bsonWriter);
   }
 
   @Override
-  public Fragment keys(Stream<Key> keys) {
-    addProperty(KEY_LIST);
-    bsonWriter.writeStartArray(KEY_LIST);
-    keys.forEach(k -> {
-      bsonWriter.writeStartArray();
-      k.getElements().forEach(bsonWriter::writeString);
-      bsonWriter.writeEndArray();
-    });
-    bsonWriter.writeEndArray();
+  public L2 children(Stream<Id> ids) {
+    serializeIds(TREE, ids);
     return this;
   }
 
   @Override
   BsonWriter build() {
-    checkPresent(KEY_LIST, "keys");
+    checkPresent(TREE, "children");
 
     return super.build();
   }

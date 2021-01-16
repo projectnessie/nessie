@@ -43,7 +43,7 @@ import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoRefConsumer extends DynamoConsumer<Ref> implements Ref {
+class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
 
   static final String TYPE = "type";
   static final String NAME = "name";
@@ -60,7 +60,7 @@ class DynamoRefConsumer extends DynamoConsumer<Ref> implements Ref {
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
-  DynamoRefConsumer() {
+  DynamoRef() {
     super(ValueType.REF);
   }
 

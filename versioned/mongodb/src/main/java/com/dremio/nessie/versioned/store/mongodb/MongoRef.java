@@ -30,7 +30,7 @@ import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.primitives.Ints;
 
-final class MongoRefConsumer extends MongoConsumer<Ref> implements Ref {
+final class MongoRef extends MongoBaseValue<Ref> implements Ref {
 
   static final String TYPE = "type";
   static final String NAME = "name";
@@ -61,7 +61,7 @@ final class MongoRefConsumer extends MongoConsumer<Ref> implements Ref {
 
   private RefType refType;
 
-  MongoRefConsumer(BsonWriter bsonWriter) {
+  MongoRef(BsonWriter bsonWriter) {
     super(bsonWriter);
   }
 

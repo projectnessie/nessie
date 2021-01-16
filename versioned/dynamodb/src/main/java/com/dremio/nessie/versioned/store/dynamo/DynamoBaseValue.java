@@ -31,13 +31,13 @@ import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-abstract class DynamoConsumer<C extends BaseValue<C>> implements BaseValue<C> {
+abstract class DynamoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
   static final String ID = Store.KEY_NAME;
 
   final Map<String, AttributeValue> entity = new HashMap<>();
 
-  DynamoConsumer(ValueType<C> valueType) {
+  DynamoBaseValue(ValueType<C> valueType) {
     entity.put(ValueType.SCHEMA_TYPE, string(valueType.getValueName()));
   }
 

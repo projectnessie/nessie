@@ -29,7 +29,7 @@ import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.primitives.Ints;
 
-final class MongoL1Consumer extends MongoConsumer<L1> implements L1 {
+final class MongoL1 extends MongoBaseValue<L1> implements L1 {
 
   static final String MUTATIONS = "mutations";
   static final String FRAGMENTS = "fragments";
@@ -48,11 +48,11 @@ final class MongoL1Consumer extends MongoConsumer<L1> implements L1 {
     PROPERTY_PRODUCERS.put(PARENTS, (c, r) -> c.ancestors(MongoSerDe.deserializeIds(r)));
     PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.children(MongoSerDe.deserializeIds(r)));
     PROPERTY_PRODUCERS.put(METADATA, (c, r) -> c.commitMetadataId(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(KEY_LIST, MongoL1Consumer::deserializeKeyList);
-    PROPERTY_PRODUCERS.put(MUTATIONS, MongoL1Consumer::deserializeKeyMutations);
+    PROPERTY_PRODUCERS.put(KEY_LIST, MongoL1::deserializeKeyList);
+    PROPERTY_PRODUCERS.put(MUTATIONS, MongoL1::deserializeKeyMutations);
   }
 
-  MongoL1Consumer(BsonWriter bsonWriter) {
+  MongoL1(BsonWriter bsonWriter) {
     super(bsonWriter);
   }
 

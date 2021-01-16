@@ -44,7 +44,7 @@ import com.google.protobuf.ByteString;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class MongoSerDe {
-  private static final Map<ValueType<?>, Function<BsonWriter, MongoConsumer>> consumerMap;
+  private static final Map<ValueType<?>, Function<BsonWriter, MongoBaseValue>> consumerMap;
   private static final Map<ValueType<?>, Map<String, BiConsumer<BaseValue, BsonReader>>> producerMap;
 
   private static final String MONGO_ID_NAME = "_id";
@@ -56,20 +56,20 @@ final class MongoSerDe {
     consumerMap = new HashMap<>();
     producerMap = new HashMap<>();
 
-    consumerMap.put(ValueType.L1, MongoL1Consumer::new);
-    producerMap.put(ValueType.L1, (Map) MongoL1Consumer.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.L2, MongoL2Consumer::new);
-    producerMap.put(ValueType.L2, (Map) MongoL2Consumer.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.L3, MongoL3Consumer::new);
-    producerMap.put(ValueType.L3, (Map) MongoL3Consumer.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.KEY_FRAGMENT, MongoFragmentConsumer::new);
-    producerMap.put(ValueType.KEY_FRAGMENT, (Map) MongoFragmentConsumer.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.REF, MongoRefConsumer::new);
-    producerMap.put(ValueType.REF, (Map) MongoRefConsumer.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.VALUE, MongoWrappedValueConsumer::new);
-    producerMap.put(ValueType.VALUE, (Map) MongoWrappedValueConsumer.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.COMMIT_METADATA, MongoWrappedValueConsumer::new);
-    producerMap.put(ValueType.COMMIT_METADATA, (Map) MongoWrappedValueConsumer.PROPERTY_PRODUCERS);
+    consumerMap.put(ValueType.L1, MongoL1::new);
+    producerMap.put(ValueType.L1, (Map) MongoL1.PROPERTY_PRODUCERS);
+    consumerMap.put(ValueType.L2, MongoL2::new);
+    producerMap.put(ValueType.L2, (Map) MongoL2.PROPERTY_PRODUCERS);
+    consumerMap.put(ValueType.L3, MongoL3::new);
+    producerMap.put(ValueType.L3, (Map) MongoL3.PROPERTY_PRODUCERS);
+    consumerMap.put(ValueType.KEY_FRAGMENT, MongoFragment::new);
+    producerMap.put(ValueType.KEY_FRAGMENT, (Map) MongoFragment.PROPERTY_PRODUCERS);
+    consumerMap.put(ValueType.REF, MongoRef::new);
+    producerMap.put(ValueType.REF, (Map) MongoRef.PROPERTY_PRODUCERS);
+    consumerMap.put(ValueType.VALUE, MongoWrappedValue::new);
+    producerMap.put(ValueType.VALUE, (Map) MongoWrappedValue.PROPERTY_PRODUCERS);
+    consumerMap.put(ValueType.COMMIT_METADATA, MongoWrappedValue::new);
+    producerMap.put(ValueType.COMMIT_METADATA, (Map) MongoWrappedValue.PROPERTY_PRODUCERS);
 
     if (!producerMap.keySet().equals(new HashSet<>(ValueType.values()))) {
       throw new UnsupportedOperationException(String.format("The enum-map producerMaps does not "
@@ -97,7 +97,7 @@ final class MongoSerDe {
     deserializeToConsumer(entity, onIdParsed, parsed, propertyProducers);
   }
 
-  private static <C extends BaseValue<C>> MongoConsumer<C> newMongoConsumer(ValueType<C> valueType, BsonWriter bsonWriter) {
+  private static <C extends BaseValue<C>> MongoBaseValue<C> newMongoConsumer(ValueType<C> valueType, BsonWriter bsonWriter) {
     return consumerMap.get(valueType).apply(bsonWriter);
   }
 
@@ -119,7 +119,7 @@ final class MongoSerDe {
 
   static <C extends BaseValue<C>> void serializeEntity(BsonWriter writer, SaveOp<C> saveOp) {
     writer.writeStartDocument();
-    MongoConsumer<C> consumer = newMongoConsumer(saveOp.getType(), writer);
+    MongoBaseValue<C> consumer = newMongoConsumer(saveOp.getType(), writer);
     consumer.id(saveOp.getId());
     saveOp.serialize((C) consumer);
     consumer.build();
@@ -197,7 +197,7 @@ final class MongoSerDe {
         continue;
       }
 
-      if (MongoConsumer.ID.equals(name)) {
+      if (MongoBaseValue.ID.equals(name)) {
         id = MongoSerDe.deserializeId(reader);
         consumer = onIdParsed.apply(id);
         consumer.id(id);
@@ -206,7 +206,7 @@ final class MongoSerDe {
 
       if (consumer == null) {
         throw new IllegalStateException(
-            String.format("Got property '%s', but '%s' must be the first property in every document", name, MongoConsumer.ID));
+            String.format("Got property '%s', but '%s' must be the first property in every document", name, MongoBaseValue.ID));
       }
 
       BiConsumer<BaseValue, BsonReader> propertyProducer = propertyProducers.get(name);

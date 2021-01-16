@@ -28,11 +28,11 @@ import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoFragmentConsumer extends DynamoConsumer<Fragment> implements Fragment {
+class DynamoFragment extends DynamoBaseValue<Fragment> implements Fragment {
 
   static final String KEY_LIST = "keys";
 
-  DynamoFragmentConsumer() {
+  DynamoFragment() {
     super(ValueType.KEY_FRAGMENT);
   }
 

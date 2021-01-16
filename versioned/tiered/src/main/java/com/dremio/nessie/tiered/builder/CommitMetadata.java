@@ -18,5 +18,5 @@ package com.dremio.nessie.tiered.builder;
 /**
  * Consumer for commit-metadata.
  */
-public interface CommitMetadata extends WrappedValueConsumer<CommitMetadata> {
+public interface CommitMetadata extends BaseWrappedValue<CommitMetadata> {
 }

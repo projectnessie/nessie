@@ -22,17 +22,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Map;
 
-import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
+import com.dremio.nessie.tiered.builder.BaseWrappedValue;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends DynamoConsumer<C> implements WrappedValueConsumer<C> {
+class DynamoWrappedValue<C extends BaseWrappedValue<C>> extends DynamoBaseValue<C> implements BaseWrappedValue<C> {
 
   static final String VALUE = "value";
 
-  DynamoWrappedValueConsumer(ValueType<C> valueType) {
+  DynamoWrappedValue(ValueType<C> valueType) {
     super(valueType);
   }
 
@@ -51,7 +51,7 @@ class DynamoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends Dyna
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static <C extends WrappedValueConsumer<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
+  static <C extends BaseWrappedValue<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
     consumer.id(deserializeId(entity, ID))
         .value(ByteString.copyFrom(checkNotNull(attributeValue(entity, VALUE).b(), "mandatory binary value is null")
             .asByteArrayUnsafe()));

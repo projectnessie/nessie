@@ -18,5 +18,5 @@ package com.dremio.nessie.tiered.builder;
 /**
  * Consumer for binary values.
  */
-public interface Value extends WrappedValueConsumer<Value> {
+public interface Value extends BaseWrappedValue<Value> {
 }

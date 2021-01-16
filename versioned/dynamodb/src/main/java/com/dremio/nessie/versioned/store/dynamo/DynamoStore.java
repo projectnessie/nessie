@@ -18,7 +18,7 @@ package com.dremio.nessie.versioned.store.dynamo;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConsumer.ID;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoBaseValue.ID;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserializeToConsumer;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serializeWithConsumer;
 
@@ -186,7 +186,7 @@ public class DynamoStore implements Store {
         Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
           List<LoadOp<?>> loadList = l.get(table);
           List<Map<String, AttributeValue>> keys = loadList.stream()
-              .map(load -> Collections.singletonMap(DynamoConsumer.ID, idValue(load.getId())))
+              .map(load -> Collections.singletonMap(DynamoBaseValue.ID, idValue(load.getId())))
               .collect(Collectors.toList());
           return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
         }));
@@ -299,7 +299,7 @@ public class DynamoStore implements Store {
   @Override
   public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     DeleteItemRequest.Builder delete = DeleteItemRequest.builder()
-        .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
+        .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
         .tableName(tableNames.get(type));
 
     AliasCollectorImpl collector = new AliasCollectorImpl();
@@ -359,7 +359,7 @@ public class DynamoStore implements Store {
   public <C extends BaseValue<C>> void loadSingle(ValueType<C> valueType, Id id, C consumer) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
         .tableName(tableNames.get(valueType))
-        .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
+        .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
         .consistentRead(true)
         .build());
     if (!response.hasItem()) {
@@ -378,7 +378,7 @@ public class DynamoStore implements Store {
       UpdateItemRequest.Builder updateRequest = collector.apply(UpdateItemRequest.builder())
           .returnValues(ReturnValue.ALL_NEW)
           .tableName(tableNames.get(type))
-          .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
+          .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
           .updateExpression(aliased.toUpdateExpressionString());
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
       UpdateItemRequest builtRequest = updateRequest.build();

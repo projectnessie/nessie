@@ -18,40 +18,46 @@ package com.dremio.nessie.versioned.store.mongodb;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
-import com.google.protobuf.ByteString;
+import com.dremio.nessie.tiered.builder.Fragment;
+import com.dremio.nessie.versioned.Key;
 
-class MongoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends MongoConsumer<C> implements WrappedValueConsumer<C> {
+final class MongoFragment extends MongoBaseValue<Fragment> implements Fragment {
 
-  static final String VALUE = "value";
+  static final String KEY_LIST = "keys";
 
-  @SuppressWarnings("rawtypes")
-  static final Map<String, BiConsumer<WrappedValueConsumer, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiConsumer<Fragment, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(VALUE, (c, r) -> c.value(MongoSerDe.deserializeBytes(r)));
+    PROPERTY_PRODUCERS.put(KEY_LIST, (c, r) -> c.keys(MongoSerDe.deserializeKeys(r)));
   }
 
-  MongoWrappedValueConsumer(BsonWriter bsonWriter) {
+  MongoFragment(BsonWriter bsonWriter) {
     super(bsonWriter);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
-  public C value(ByteString value) {
-    addProperty(VALUE);
-    bsonWriter.writeBinaryData(VALUE, MongoSerDe.serializeBytes(value));
-    return (C) this;
+  public Fragment keys(Stream<Key> keys) {
+    addProperty(KEY_LIST);
+    bsonWriter.writeStartArray(KEY_LIST);
+    keys.forEach(k -> {
+      bsonWriter.writeStartArray();
+      k.getElements().forEach(bsonWriter::writeString);
+      bsonWriter.writeEndArray();
+    });
+    bsonWriter.writeEndArray();
+    return this;
   }
 
   @Override
   BsonWriter build() {
-    checkPresent(VALUE, "value");
+    checkPresent(KEY_LIST, "keys");
+
     return super.build();
   }
 }

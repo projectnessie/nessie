@@ -28,7 +28,7 @@ import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
 
-final class MongoL3Consumer extends MongoConsumer<L3> implements L3 {
+final class MongoL3 extends MongoBaseValue<L3> implements L3 {
 
   static final String TREE = "tree";
   static final String TREE_KEY = "key";
@@ -41,13 +41,13 @@ final class MongoL3Consumer extends MongoConsumer<L3> implements L3 {
     PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.keyDelta(deserializeKeyDeltas(r)));
   }
 
-  MongoL3Consumer(BsonWriter bsonWriter) {
+  MongoL3(BsonWriter bsonWriter) {
     super(bsonWriter);
   }
 
   @Override
   public L3 keyDelta(Stream<KeyDelta> keyDelta) {
-    serializeArray(TREE, keyDelta, MongoL3Consumer::serializeKeyDelta);
+    serializeArray(TREE, keyDelta, MongoL3::serializeKeyDelta);
     return this;
   }
 

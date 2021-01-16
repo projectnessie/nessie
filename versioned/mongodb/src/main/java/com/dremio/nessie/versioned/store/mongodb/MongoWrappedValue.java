@@ -18,39 +18,40 @@ package com.dremio.nessie.versioned.store.mongodb;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.stream.Stream;
 
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.tiered.builder.L2;
-import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.tiered.builder.BaseWrappedValue;
+import com.google.protobuf.ByteString;
 
-final class MongoL2Consumer extends MongoConsumer<L2> implements L2 {
+class MongoWrappedValue<C extends BaseWrappedValue<C>> extends MongoBaseValue<C> implements BaseWrappedValue<C> {
 
-  static final String TREE = "tree";
+  static final String VALUE = "value";
 
-  static final Map<String, BiConsumer<L2, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  @SuppressWarnings("rawtypes")
+  static final Map<String, BiConsumer<BaseWrappedValue, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.children(MongoSerDe.deserializeIds(r)));
+    PROPERTY_PRODUCERS.put(VALUE, (c, r) -> c.value(MongoSerDe.deserializeBytes(r)));
   }
 
-  MongoL2Consumer(BsonWriter bsonWriter) {
+  MongoWrappedValue(BsonWriter bsonWriter) {
     super(bsonWriter);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public L2 children(Stream<Id> ids) {
-    serializeIds(TREE, ids);
-    return this;
+  public C value(ByteString value) {
+    addProperty(VALUE);
+    bsonWriter.writeBinaryData(VALUE, MongoSerDe.serializeBytes(value));
+    return (C) this;
   }
 
   @Override
   BsonWriter build() {
-    checkPresent(TREE, "children");
-
+    checkPresent(VALUE, "value");
     return super.build();
   }
 }

@@ -42,34 +42,34 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 final class DynamoSerDe {
 
-  private static final Map<ValueType<?>, Supplier<DynamoConsumer<?>>> dynamoEntityMapProducers;
+  private static final Map<ValueType<?>, Supplier<DynamoBaseValue<?>>> dynamoEntityMapProducers;
   private static final Map<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseValue<?>>> deserializeToConsumer;
 
   static {
     dynamoEntityMapProducers = new HashMap<>();
     deserializeToConsumer = new HashMap<>();
 
-    dynamoEntityMapProducers.put(ValueType.L1, DynamoL1Consumer::new);
-    deserializeToConsumer.put(ValueType.L1, (e, c) -> DynamoL1Consumer.toConsumer(e, (L1) c));
+    dynamoEntityMapProducers.put(ValueType.L1, DynamoL1::new);
+    deserializeToConsumer.put(ValueType.L1, (e, c) -> DynamoL1.toConsumer(e, (L1) c));
 
-    dynamoEntityMapProducers.put(ValueType.L2, DynamoL2Consumer::new);
-    deserializeToConsumer.put(ValueType.L2, (e, c) -> DynamoL2Consumer.toConsumer(e, (L2) c));
+    dynamoEntityMapProducers.put(ValueType.L2, DynamoL2::new);
+    deserializeToConsumer.put(ValueType.L2, (e, c) -> DynamoL2.toConsumer(e, (L2) c));
 
-    dynamoEntityMapProducers.put(ValueType.L3, DynamoL3Consumer::new);
-    deserializeToConsumer.put(ValueType.L3, (e, c) -> DynamoL3Consumer.toConsumer(e, (L3) c));
+    dynamoEntityMapProducers.put(ValueType.L3, DynamoL3::new);
+    deserializeToConsumer.put(ValueType.L3, (e, c) -> DynamoL3.toConsumer(e, (L3) c));
 
-    dynamoEntityMapProducers.put(ValueType.COMMIT_METADATA, () -> new DynamoWrappedValueConsumer<>(ValueType.COMMIT_METADATA));
+    dynamoEntityMapProducers.put(ValueType.COMMIT_METADATA, () -> new DynamoWrappedValue<>(ValueType.COMMIT_METADATA));
     deserializeToConsumer.put(ValueType.COMMIT_METADATA,
-        (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (CommitMetadata) c));
+        (e, c) -> DynamoWrappedValue.produceToConsumer(e, (CommitMetadata) c));
 
-    dynamoEntityMapProducers.put(ValueType.VALUE, () -> new DynamoWrappedValueConsumer<>(ValueType.VALUE));
-    deserializeToConsumer.put(ValueType.VALUE, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (Value) c));
+    dynamoEntityMapProducers.put(ValueType.VALUE, () -> new DynamoWrappedValue<>(ValueType.VALUE));
+    deserializeToConsumer.put(ValueType.VALUE, (e, c) -> DynamoWrappedValue.produceToConsumer(e, (Value) c));
 
-    dynamoEntityMapProducers.put(ValueType.REF, DynamoRefConsumer::new);
-    deserializeToConsumer.put(ValueType.REF, (e, c) -> DynamoRefConsumer.toConsumer(e, (Ref) c));
+    dynamoEntityMapProducers.put(ValueType.REF, DynamoRef::new);
+    deserializeToConsumer.put(ValueType.REF, (e, c) -> DynamoRef.toConsumer(e, (Ref) c));
 
-    dynamoEntityMapProducers.put(ValueType.KEY_FRAGMENT, DynamoFragmentConsumer::new);
-    deserializeToConsumer.put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragmentConsumer.toConsumer(e, (Fragment) c));
+    dynamoEntityMapProducers.put(ValueType.KEY_FRAGMENT, DynamoFragment::new);
+    deserializeToConsumer.put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragment.toConsumer(e, (Fragment) c));
 
     if (!dynamoEntityMapProducers.keySet().equals(deserializeToConsumer.keySet())) {
       throw new UnsupportedOperationException("The enum-maps dynamoConsumerSuppliers and dynamoProducerSuppliers "
@@ -92,7 +92,7 @@ final class DynamoSerDe {
    * Serialize using a DynamoDB native consumer to a DynamoDB entity map.
    * <p>
    * The actual entity to serialize is not passed into this method, but this method calls
-   * a Java {@link Consumer} that receives an instance of {@link DynamoConsumer} that receives
+   * a Java {@link Consumer} that receives an instance of {@link DynamoBaseValue} that receives
    * the entity components.
    * </p>
    */
@@ -106,7 +106,7 @@ final class DynamoSerDe {
 
     saveOp.serialize(consumer);
 
-    return ((DynamoConsumer<C>) consumer).build();
+    return ((DynamoBaseValue<C>) consumer).build();
   }
 
   /**

@@ -27,11 +27,11 @@ import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoL2Consumer extends DynamoConsumer<L2> implements L2 {
+class DynamoL2 extends DynamoBaseValue<L2> implements L2 {
 
   static final String TREE = "tree";
 
-  DynamoL2Consumer() {
+  DynamoL2() {
     super(ValueType.L2);
   }
 
