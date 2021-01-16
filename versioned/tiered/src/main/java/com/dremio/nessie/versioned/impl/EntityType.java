@@ -53,7 +53,7 @@ final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B ex
   final Supplier<B> producerSupplier;
 
   private EntityType(ValueType<C> valueType, Supplier<B> producerSupplier) {
-    if (valueType.getValueClass().isInstance(producerSupplier.get())) {
+    if (!valueType.getValueClass().isInstance(producerSupplier.get())) {
       throw new IllegalStateException("While you can't formally expose a value instance as the subclass of "
           + "two separate generic parameters, this class does so internally. The builders provided must be of both C and B types.");
     }
