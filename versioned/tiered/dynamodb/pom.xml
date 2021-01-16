@@ -21,13 +21,13 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie-versioned</artifactId>
+    <artifactId>nessie-versioned-tiered</artifactId>
     <version>0.3.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-versioned-dynamodb</artifactId>
+  <artifactId>nessie-versioned-tiered-dynamodb</artifactId>
 
-  <name>Nessie - Versioned - DynamoDB</name>
+  <name>Nessie - Versioned - Tiered - DynamoDB</name>
 
   <dependencies>
     <dependency>
@@ -37,7 +37,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-tiered</artifactId>
+      <artifactId>nessie-versioned-tiered-impl</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

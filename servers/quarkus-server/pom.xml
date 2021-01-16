@@ -46,7 +46,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-dynamodb</artifactId>
+      <artifactId>nessie-versioned-tiered-dynamodb</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
