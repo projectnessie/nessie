@@ -63,7 +63,8 @@ class InternalL1 extends PersistentBase<L1> {
   }
 
   InternalL1 withCheckpointAsNecessary(Store store) {
-    return keyList.createCheckpointIfNeeded(this, store).map(keylist -> new InternalL1(metadataId, tree, null, keylist, parentList)).orElse(this);
+    return keyList.createCheckpointIfNeeded(this, store)
+        .map(keylist -> new InternalL1(metadataId, tree, null, keylist, parentList)).orElse(this);
   }
 
   Id getId(int position) {

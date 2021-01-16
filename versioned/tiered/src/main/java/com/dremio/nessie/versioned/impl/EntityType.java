@@ -40,14 +40,20 @@ final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B ex
 
   private static final Map<ValueType<?>, EntityType<?, ?, ?>> BY_VALUE_TYPE = new HashMap<>();
 
-  static final EntityType<Ref, InternalRef, InternalRef.Builder> REF = new EntityType<>(ValueType.REF, InternalRef.Builder::new);
-  static final EntityType<L1, InternalL1, InternalL1.Builder> L1 = new EntityType<>(ValueType.L1, com.dremio.nessie.versioned.impl.InternalL1.Builder::new);
-  static final EntityType<L2, InternalL2, InternalL2.Builder> L2 = new EntityType<>(ValueType.L2, com.dremio.nessie.versioned.impl.InternalL2.Builder::new);
-  static final EntityType<L3, InternalL3, InternalL3.Builder> L3 = new EntityType<>(ValueType.L3, com.dremio.nessie.versioned.impl.InternalL3.Builder::new);
-  static final EntityType<Value, InternalValue, InternalValue.Builder> VALUE = new EntityType<>(ValueType.VALUE, InternalValue.Builder::new);
-  static final EntityType<Fragment, InternalFragment, InternalFragment.Builder> KEY_FRAGMENT = new EntityType<>(ValueType.KEY_FRAGMENT, InternalFragment.Builder::new);
-  static final EntityType<CommitMetadata, InternalCommitMetadata, InternalCommitMetadata.Builder> COMMIT_METADATA = new EntityType<>(ValueType.COMMIT_METADATA,
-      InternalCommitMetadata.Builder::new);
+  static final EntityType<Ref, InternalRef, InternalRef.Builder> REF =
+      new EntityType<>(ValueType.REF, InternalRef.Builder::new);
+  static final EntityType<L1, InternalL1, InternalL1.Builder> L1 =
+      new EntityType<>(ValueType.L1, com.dremio.nessie.versioned.impl.InternalL1.Builder::new);
+  static final EntityType<L2, InternalL2, InternalL2.Builder> L2 =
+      new EntityType<>(ValueType.L2, com.dremio.nessie.versioned.impl.InternalL2.Builder::new);
+  static final EntityType<L3, InternalL3, InternalL3.Builder> L3 =
+      new EntityType<>(ValueType.L3, com.dremio.nessie.versioned.impl.InternalL3.Builder::new);
+  static final EntityType<Value, InternalValue, InternalValue.Builder> VALUE =
+      new EntityType<>(ValueType.VALUE, InternalValue.Builder::new);
+  static final EntityType<Fragment, InternalFragment, InternalFragment.Builder> KEY_FRAGMENT =
+      new EntityType<>(ValueType.KEY_FRAGMENT, InternalFragment.Builder::new);
+  static final EntityType<CommitMetadata, InternalCommitMetadata, InternalCommitMetadata.Builder> COMMIT_METADATA =
+      new EntityType<>(ValueType.COMMIT_METADATA, InternalCommitMetadata.Builder::new);
 
   final ValueType<C> valueType;
   final Supplier<B> producerSupplier;
