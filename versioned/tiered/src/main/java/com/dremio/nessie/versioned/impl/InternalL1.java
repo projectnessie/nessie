@@ -21,18 +21,18 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.KeyList.IncrementalList;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 
-class L1 extends PersistentBase<L1Consumer> {
+class InternalL1 extends PersistentBase<L1> {
 
   private static final long HASH_SEED = 3506039963025592061L;
 
   static final int SIZE = 43;
-  static L1 EMPTY = new L1(Id.EMPTY, new IdMap(SIZE, L2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
+  static InternalL1 EMPTY = new InternalL1(Id.EMPTY, new IdMap(SIZE, InternalL2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
   static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap tree;
@@ -41,7 +41,7 @@ class L1 extends PersistentBase<L1Consumer> {
   private final KeyList keyList;
   private final ParentList parentList;
 
-  private L1(Id commitId, IdMap tree, Id id, KeyList keyList, ParentList parentList) {
+  private InternalL1(Id commitId, IdMap tree, Id id, KeyList keyList, ParentList parentList) {
     super(id);
     this.metadataId = commitId;
     this.parentList = parentList;
@@ -56,14 +56,14 @@ class L1 extends PersistentBase<L1Consumer> {
     }
   }
 
-  L1 getChildWithTree(Id metadataId, IdMap tree, KeyMutationList mutations) {
+  InternalL1 getChildWithTree(Id metadataId, IdMap tree, KeyMutationList mutations) {
     KeyList keyList = this.keyList.plus(getId(), mutations.getMutations());
     ParentList parents = this.parentList.cloneWithAdditional(getId());
-    return new L1(metadataId, tree, null, keyList, parents);
+    return new InternalL1(metadataId, tree, null, keyList, parents);
   }
 
-  L1 withCheckpointAsNecessary(Store store) {
-    return keyList.createCheckpointIfNeeded(this, store).map(keylist -> new L1(metadataId, tree, null, keylist, parentList)).orElse(this);
+  InternalL1 withCheckpointAsNecessary(Store store) {
+    return keyList.createCheckpointIfNeeded(this, store).map(keylist -> new InternalL1(metadataId, tree, null, keylist, parentList)).orElse(this);
   }
 
   Id getId(int position) {
@@ -82,8 +82,8 @@ class L1 extends PersistentBase<L1Consumer> {
     return parentList.getParent();
   }
 
-  L1 set(int position, Id l2Id) {
-    return new L1(metadataId, tree.withId(position, l2Id), null, keyList, parentList);
+  InternalL1 set(int position, Id l2Id) {
+    return new InternalL1(metadataId, tree.withId(position, l2Id), null, keyList, parentList);
   }
 
   @Override
@@ -119,7 +119,7 @@ class L1 extends PersistentBase<L1Consumer> {
   int size() {
     int count = 0;
     for (Id id : tree) {
-      if (!id.equals(L2.EMPTY_ID)) {
+      if (!id.equals(InternalL2.EMPTY_ID)) {
         count++;
       }
     }
@@ -135,7 +135,7 @@ class L1 extends PersistentBase<L1Consumer> {
       return false;
     }
 
-    L1 l1 = (L1) o;
+    InternalL1 l1 = (InternalL1) o;
 
     return Objects.equals(tree, l1.tree)
         && Objects.equals(metadataId, l1.metadataId)
@@ -149,7 +149,7 @@ class L1 extends PersistentBase<L1Consumer> {
   }
 
   @Override
-  L1Consumer applyToConsumer(L1Consumer consumer) {
+  L1 applyToConsumer(L1 consumer) {
     super.applyToConsumer(consumer)
         .commitMetadataId(this.metadataId)
         .keyMutations(this.keyList.getMutations().stream().map(KeyMutation::toMutation))
@@ -167,10 +167,10 @@ class L1 extends PersistentBase<L1Consumer> {
   }
 
   /**
-   * Implements {@link L1Consumer} to build an {@link L1} object.
+   * Implements {@link L1} to build an {@link InternalL1} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<L1> implements L1Consumer {
+  static final class Builder extends EntityBuilder<InternalL1> implements L1 {
 
     private Id metadataId;
     private Stream<Id> ancestors;
@@ -214,7 +214,7 @@ class L1 extends PersistentBase<L1Consumer> {
     }
 
     @Override
-    public L1Consumer keyMutations(Stream<Key.Mutation> keyMutations) {
+    public L1 keyMutations(Stream<Key.Mutation> keyMutations) {
       keyMutations.map(KeyMutation::fromMutation)
           .forEach(keyChanges::add);
       return this;
@@ -242,13 +242,13 @@ class L1 extends PersistentBase<L1Consumer> {
     }
 
     @Override
-    L1 build() {
+    InternalL1 build() {
       // null-id is allowed (will be generated)
       checkSet(metadataId, "metadataId");
       checkSet(children, "children");
       checkSet(ancestors, "ancestors");
 
-      return new L1(
+      return new InternalL1(
           metadataId,
           children.collect(IdMap.collector(SIZE)),
           id,

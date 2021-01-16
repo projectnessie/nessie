@@ -15,22 +15,8 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import java.util.stream.Stream;
-
-import com.dremio.nessie.versioned.store.Id;
-
 /**
- * Consumer for L2s.
+ * Consumer for binary values.
  */
-public interface L2Consumer extends BaseConsumer<L2Consumer> {
-
-  /**
-   * Add a list of children ids indexed by position.
-   * <p>Must be called exactly once.</p>
-   *
-   * @param ids The list of ids
-   * @return This consumer.
-   */
-  L2Consumer children(Stream<Id> ids);
-
+public interface Value extends WrappedValueConsumer<Value> {
 }

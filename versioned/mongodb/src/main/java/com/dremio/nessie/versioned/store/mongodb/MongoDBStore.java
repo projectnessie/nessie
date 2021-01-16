@@ -40,7 +40,7 @@ import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.impl.EntityStoreHelper;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
@@ -197,7 +197,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
+  public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
     final MongoCollection<Document> collection = getCollection(saveOp.getType());
 
     // Use upsert so that a document is created if the filter does not match. The update operator is only $setOnInsert
@@ -211,7 +211,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> conditionUnAliased) {
+  public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> conditionUnAliased) {
     // TODO: Handle ConditionExpressions.
     if (conditionUnAliased.isPresent()) {
       throw new UnsupportedOperationException("ConditionExpressions are not supported with MongoDB yet.");
@@ -232,7 +232,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
+  public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     throw new UnsupportedOperationException();
   }
 
@@ -249,7 +249,7 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> void loadSingle(ValueType<C> valueType, Id id, C consumer) {
+  public <C extends BaseValue<C>> void loadSingle(ValueType<C> valueType, Id id, C consumer) {
     final MongoCollection<Document> collection = readCollection(valueType, x -> consumer, x -> {});
 
     Object found = Mono.from(
@@ -261,13 +261,13 @@ public class MongoDBStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
-      Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException {
+  public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
+      Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer) throws NotFoundException {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public <C extends BaseConsumer<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
+  public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
     // TODO: Can this be optimized to not collect the elements before streaming them?
     // TODO: Could this benefit from paging?
     return Flux.from(this.getCollection(type).find()).toStream()
@@ -309,7 +309,7 @@ public class MongoDBStore implements Store {
   }
 
   @SuppressWarnings("rawtypes")
-  private MongoCollection<Document> readCollection(ValueType<?> type, Function<Id, BaseConsumer> onIdParsed, Consumer<Id> parsed) {
+  private MongoCollection<Document> readCollection(ValueType<?> type, Function<Id, BaseValue> onIdParsed, Consumer<Id> parsed) {
     Codec<Document> codec = new Codec<Document>() {
       @Override
       public Document decode(BsonReader bsonReader, DecoderContext decoderContext) {

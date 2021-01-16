@@ -23,12 +23,12 @@ import java.util.stream.Stream;
 import org.bson.BsonBinary;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.google.common.base.Preconditions;
 
-abstract class MongoConsumer<C extends BaseConsumer<C>> implements BaseConsumer<C> {
+abstract class MongoConsumer<C extends BaseValue<C>> implements BaseValue<C> {
 
   static final String ID = Store.KEY_NAME;
 

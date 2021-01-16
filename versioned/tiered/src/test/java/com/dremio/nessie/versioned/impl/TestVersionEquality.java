@@ -23,8 +23,8 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
+import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.impl.InternalBranch.UpdateState;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
@@ -45,21 +45,21 @@ class TestVersionEquality {
     InternalBranch b = new InternalBranch("n/a");
     Store store = new MockStore() {
       @Override
-      public <C extends BaseConsumer<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
-        L1.EMPTY.applyToConsumer((L1Consumer) consumer);
+      public <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
+        InternalL1.EMPTY.applyToConsumer((L1) consumer);
       }
 
     };
     UpdateState us = b.getUpdateState(store);
     us.ensureAvailable(null, null, 1, true);
-    assertEquals(L1.EMPTY_ID, us.getL1().getId());
+    assertEquals(InternalL1.EMPTY_ID, us.getL1().getId());
   }
 
   @Test
   void correctSize() {
-    assertEquals(0, L1.EMPTY.size());
-    assertEquals(0, L2.EMPTY.size());
-    assertEquals(0, L3.EMPTY.size());
+    assertEquals(0, InternalL1.EMPTY.size());
+    assertEquals(0, InternalL2.EMPTY.size());
+    assertEquals(0, InternalL3.EMPTY.size());
   }
 
   private static class MockStore implements Store {
@@ -76,17 +76,17 @@ class TestVersionEquality {
     }
 
     @Override
-    public <C extends BaseConsumer<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
+    public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
       return false;
     }
 
     @Override
-    public <C extends BaseConsumer<C>> void put(SaveOp<C> saveOp,
+    public <C extends BaseValue<C>> void put(SaveOp<C> saveOp,
         Optional<ConditionExpression> condition) {
     }
 
     @Override
-    public <C extends BaseConsumer<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
+    public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
       return false;
     }
 
@@ -95,18 +95,18 @@ class TestVersionEquality {
     }
 
     @Override
-    public <C extends BaseConsumer<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
+    public <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
     }
 
     @Override
-    public <C extends BaseConsumer<C>> boolean update(ValueType<C> type, Id id,
+    public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id,
         UpdateExpression update, Optional<ConditionExpression> condition,
-        Optional<BaseConsumer<C>> consumer) throws NotFoundException {
+        Optional<BaseValue<C>> consumer) throws NotFoundException {
       return false;
     }
 
     @Override
-    public <C extends BaseConsumer<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
+    public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
       return null;
     }
   }

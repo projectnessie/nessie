@@ -17,27 +17,27 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.L2Consumer;
+import com.dremio.nessie.tiered.builder.L2;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Objects;
 
-class L2 extends PersistentBase<L2Consumer> {
+class InternalL2 extends PersistentBase<L2> {
 
   private static final long HASH_SEED = -6352836103271505167L;
 
   static final int SIZE = 199;
-  static L2 EMPTY = new L2(null, new IdMap(SIZE, L3.EMPTY_ID));
+  static InternalL2 EMPTY = new InternalL2(null, new IdMap(SIZE, InternalL3.EMPTY_ID));
   static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap map;
 
-  private L2(Id id, IdMap map) {
+  private InternalL2(Id id, IdMap map) {
     super(id);
     assert map.size() == SIZE;
     this.map = map;
   }
 
-  private L2(IdMap map) {
+  private InternalL2(IdMap map) {
     this(null, map);
   }
 
@@ -46,8 +46,8 @@ class L2 extends PersistentBase<L2Consumer> {
     return map.getId(position);
   }
 
-  L2 set(int position, Id l2Id) {
-    return new L2(map.withId(position, l2Id));
+  InternalL2 set(int position, Id l2Id) {
+    return new InternalL2(map.withId(position, l2Id));
   }
 
   @Override
@@ -65,7 +65,7 @@ class L2 extends PersistentBase<L2Consumer> {
   int size() {
     int count = 0;
     for (Id id : map) {
-      if (!id.equals(L3.EMPTY_ID)) {
+      if (!id.equals(InternalL3.EMPTY_ID)) {
         count++;
       }
     }
@@ -80,7 +80,7 @@ class L2 extends PersistentBase<L2Consumer> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    L2 l2 = (L2) o;
+    InternalL2 l2 = (InternalL2) o;
     return Objects.equal(map, l2.map);
   }
 
@@ -90,16 +90,16 @@ class L2 extends PersistentBase<L2Consumer> {
   }
 
   @Override
-  L2Consumer applyToConsumer(L2Consumer consumer) {
+  L2 applyToConsumer(L2 consumer) {
     return super.applyToConsumer(consumer)
         .children(this.map.stream());
   }
 
   /**
-   * implements {@link L2Consumer} to build an {@link L2} object.
+   * implements {@link L2} to build an {@link InternalL2} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<L2> implements L2Consumer {
+  static final class Builder extends EntityBuilder<InternalL2> implements L2 {
 
     private Id id;
     private Stream<Id> children;
@@ -109,25 +109,25 @@ class L2 extends PersistentBase<L2Consumer> {
     }
 
     @Override
-    public L2.Builder children(Stream<Id> ids) {
+    public InternalL2.Builder children(Stream<Id> ids) {
       checkCalled(this.children, "children");
       this.children = ids;
       return this;
     }
 
     @Override
-    public L2.Builder id(Id id) {
+    public InternalL2.Builder id(Id id) {
       checkCalled(this.id, "id");
       this.id = id;
       return this;
     }
 
     @Override
-    L2 build() {
+    InternalL2 build() {
       // null-id is allowed (will be generated)
       checkSet(children, "children");
 
-      return new L2(
+      return new InternalL2(
           id,
           IdMap.of(children, SIZE));
     }

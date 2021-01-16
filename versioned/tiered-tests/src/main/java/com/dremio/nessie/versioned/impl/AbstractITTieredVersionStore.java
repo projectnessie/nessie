@@ -149,12 +149,12 @@ public abstract class AbstractITTieredVersionStore {
   void checkKeyList() throws Exception {
     BranchName branch = BranchName.of("my-key-list");
     versionStore().create(branch, Optional.empty());
-    assertEquals(0, EntityType.L2.loadSingle(store(), L2.EMPTY_ID).size());
+    assertEquals(0, EntityType.L2.loadSingle(store(), InternalL2.EMPTY_ID).size());
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"),
         Put.of(Key.of("no"), "world"),
         Put.of(Key.of("mad mad"), "world")));
-    assertEquals(0, EntityType.L2.loadSingle(store(), L2.EMPTY_ID).size());
+    assertEquals(0, EntityType.L2.loadSingle(store(), InternalL2.EMPTY_ID).size());
     assertThat(versionStore().getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
         Matchers.containsInAnyOrder("hi", "no", "mad mad"));
   }
@@ -224,23 +224,23 @@ public abstract class AbstractITTieredVersionStore {
     assertThrows(IllegalArgumentException.class, () -> versionStore().create(tag,  Optional.empty()));
 
     // create a tag using the default empty hash.
-    versionStore().create(tag, Optional.of(L1.EMPTY_ID.toHash()));
-    assertEquals(L1.EMPTY_ID.toHash(), versionStore().toHash(tag));
+    versionStore().create(tag, Optional.of(InternalL1.EMPTY_ID.toHash()));
+    assertEquals(InternalL1.EMPTY_ID.toHash(), versionStore().toHash(tag));
 
     // avoid dupe
-    assertThrows(ReferenceAlreadyExistsException.class, () -> versionStore().create(tag, Optional.of(L1.EMPTY_ID.toHash())));
+    assertThrows(ReferenceAlreadyExistsException.class, () -> versionStore().create(tag, Optional.of(InternalL1.EMPTY_ID.toHash())));
 
     // delete without condition
     versionStore().delete(tag, Optional.empty());
 
     // create a tag using the default empty hash.
-    versionStore().create(tag, Optional.of(L1.EMPTY_ID.toHash()));
+    versionStore().create(tag, Optional.of(InternalL1.EMPTY_ID.toHash()));
 
     // check that wrong id is rejected
     assertThrows(ReferenceConflictException.class, () -> versionStore().delete(tag, Optional.of(Id.EMPTY.toHash())));
 
     // delete with correct id.
-    versionStore().delete(tag, Optional.of(L1.EMPTY_ID.toHash()));
+    versionStore().delete(tag, Optional.of(InternalL1.EMPTY_ID.toHash()));
 
 
     // avoid create to invalid l1.
@@ -255,8 +255,8 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch = BranchName.of("foo");
 
     // create a tag using the default empty hash.
-    versionStore().create(branch, Optional.of(L1.EMPTY_ID.toHash()));
-    assertEquals(L1.EMPTY_ID.toHash(), versionStore().toHash(branch));
+    versionStore().create(branch, Optional.of(InternalL1.EMPTY_ID.toHash()));
+    assertEquals(InternalL1.EMPTY_ID.toHash(), versionStore().toHash(branch));
 
     // delete without condition
     versionStore().delete(branch, Optional.empty());
@@ -266,13 +266,13 @@ public abstract class AbstractITTieredVersionStore {
 
     // avoid dupe
     assertThrows(ReferenceAlreadyExistsException.class, () -> versionStore().create(branch, Optional.empty()));
-    assertThrows(ReferenceAlreadyExistsException.class, () -> versionStore().create(branch, Optional.of(L1.EMPTY_ID.toHash())));
+    assertThrows(ReferenceAlreadyExistsException.class, () -> versionStore().create(branch, Optional.of(InternalL1.EMPTY_ID.toHash())));
 
     // check that wrong id is rejected for deletion (non-existing)
     assertThrows(ReferenceConflictException.class, () -> versionStore().delete(branch, Optional.of(Id.EMPTY.toHash())));
 
     // delete with correct id.
-    versionStore().delete(branch, Optional.of(L1.EMPTY_ID.toHash()));
+    versionStore().delete(branch, Optional.of(InternalL1.EMPTY_ID.toHash()));
 
     // avoid create to invalid l1
     assertThrows(ReferenceNotFoundException.class, () -> versionStore().create(branch, Optional.of(Id.generateRandom().toHash())));
@@ -283,7 +283,7 @@ public abstract class AbstractITTieredVersionStore {
     versionStore().create(branch, Optional.empty());
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
     // check that wrong id is rejected for deletion (valid but not matching)
-    assertThrows(ReferenceConflictException.class, () -> versionStore().delete(branch, Optional.of(L1.EMPTY_ID.toHash())));
+    assertThrows(ReferenceConflictException.class, () -> versionStore().delete(branch, Optional.of(InternalL1.EMPTY_ID.toHash())));
 
     // can't use tag delete on branch.
     assertThrows(ReferenceConflictException.class, () -> versionStore().delete(TagName.of("foo"), Optional.empty()));
@@ -314,8 +314,8 @@ public abstract class AbstractITTieredVersionStore {
   void checkRefs() throws Exception {
     versionStore().create(BranchName.of("b1"), Optional.empty());
     versionStore().create(BranchName.of("b2"), Optional.empty());
-    versionStore().create(TagName.of("t1"), Optional.of(L1.EMPTY_ID.toHash()));
-    versionStore().create(TagName.of("t2"), Optional.of(L1.EMPTY_ID.toHash()));
+    versionStore().create(TagName.of("t1"), Optional.of(InternalL1.EMPTY_ID.toHash()));
+    versionStore().create(TagName.of("t2"), Optional.of(InternalL1.EMPTY_ID.toHash()));
     try (Stream<WithHash<NamedRef>> str = versionStore().getNamedRefs()) {
       assertEquals(ImmutableSet.of("b1", "b2", "t1", "t2"), str
           .map(wh -> wh.getValue().getName()).collect(Collectors.toSet()));

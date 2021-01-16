@@ -22,13 +22,13 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.FragmentConsumer;
+import com.dremio.nessie.tiered.builder.Fragment;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements FragmentConsumer {
+class DynamoFragmentConsumer extends DynamoConsumer<Fragment> implements Fragment {
 
   static final String KEY_LIST = "keys";
 
@@ -37,7 +37,7 @@ class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements
   }
 
   @Override
-  public FragmentConsumer keys(Stream<Key> keys) {
+  public Fragment keys(Stream<Key> keys) {
     return addEntitySafe(
         KEY_LIST,
         list(keys.map(AttributeValueUtil::keyElements)));
@@ -52,7 +52,7 @@ class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void toConsumer(Map<String, AttributeValue> entity, FragmentConsumer consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, Fragment consumer) {
     consumer.id(deserializeId(entity, ID))
         .keys(attributeValue(entity, KEY_LIST).l().stream().map(AttributeValueUtil::deserializeKey));
   }

@@ -19,22 +19,22 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.FragmentConsumer;
+import com.dremio.nessie.tiered.builder.Fragment;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
-class Fragment extends PersistentBase<FragmentConsumer> {
+class InternalFragment extends PersistentBase<Fragment> {
 
   private final List<InternalKey> keys;
 
-  Fragment(List<InternalKey> keys) {
+  InternalFragment(List<InternalKey> keys) {
     super();
     this.keys = ImmutableList.copyOf(keys);
   }
 
-  Fragment(Id id, List<InternalKey> keys) {
+  InternalFragment(Id id, List<InternalKey> keys) {
     super(id);
     this.keys = ImmutableList.copyOf(keys);
   }
@@ -56,7 +56,7 @@ class Fragment extends PersistentBase<FragmentConsumer> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    Fragment fragment = (Fragment) o;
+    InternalFragment fragment = (InternalFragment) o;
     return Objects.equal(keys, fragment.keys);
   }
 
@@ -66,16 +66,16 @@ class Fragment extends PersistentBase<FragmentConsumer> {
   }
 
   @Override
-  FragmentConsumer applyToConsumer(FragmentConsumer consumer) {
+  Fragment applyToConsumer(Fragment consumer) {
     return super.applyToConsumer(consumer)
         .keys(keys.stream().map(InternalKey::toKey));
   }
 
   /**
-   * Implements {@link FragmentConsumer} to build a {@link Fragment} object.
+   * Implements {@link Fragment} to build a {@link InternalFragment} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static class Builder extends EntityBuilder<Fragment> implements FragmentConsumer {
+  static class Builder extends EntityBuilder<InternalFragment> implements Fragment {
 
     private Id id;
     private List<InternalKey> keys;
@@ -95,11 +95,11 @@ class Fragment extends PersistentBase<FragmentConsumer> {
     }
 
     @Override
-    Fragment build() {
+    InternalFragment build() {
       // null-id is allowed (will be generated)
       checkSet(keys, "keys");
 
-      return new Fragment(id, keys);
+      return new InternalFragment(id, keys);
     }
   }
 }

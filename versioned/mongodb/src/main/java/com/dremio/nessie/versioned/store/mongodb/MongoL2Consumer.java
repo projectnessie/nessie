@@ -23,14 +23,14 @@ import java.util.stream.Stream;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.tiered.builder.L2Consumer;
+import com.dremio.nessie.tiered.builder.L2;
 import com.dremio.nessie.versioned.store.Id;
 
-final class MongoL2Consumer extends MongoConsumer<L2Consumer> implements L2Consumer {
+final class MongoL2Consumer extends MongoConsumer<L2> implements L2 {
 
   static final String TREE = "tree";
 
-  static final Map<String, BiConsumer<L2Consumer, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiConsumer<L2, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
@@ -42,7 +42,7 @@ final class MongoL2Consumer extends MongoConsumer<L2Consumer> implements L2Consu
   }
 
   @Override
-  public L2Consumer children(Stream<Id> ids) {
+  public L2 children(Stream<Id> ids) {
     serializeIds(TREE, ids);
     return this;
   }

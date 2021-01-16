@@ -23,18 +23,18 @@ import java.util.stream.Stream;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.tiered.builder.L3Consumer;
+import com.dremio.nessie.tiered.builder.L3;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
 
-final class MongoL3Consumer extends MongoConsumer<L3Consumer> implements L3Consumer {
+final class MongoL3Consumer extends MongoConsumer<L3> implements L3 {
 
   static final String TREE = "tree";
   static final String TREE_KEY = "key";
   static final String TREE_ID = "id";
 
-  static final Map<String, BiConsumer<L3Consumer, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiConsumer<L3, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
@@ -46,7 +46,7 @@ final class MongoL3Consumer extends MongoConsumer<L3Consumer> implements L3Consu
   }
 
   @Override
-  public L3Consumer keyDelta(Stream<KeyDelta> keyDelta) {
+  public L3 keyDelta(Stream<KeyDelta> keyDelta) {
     serializeArray(TREE, keyDelta, MongoL3Consumer::serializeKeyDelta);
     return this;
   }

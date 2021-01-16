@@ -35,7 +35,7 @@ class DiffFinder {
   private final List<L3Diff> l3Diffs = new ArrayList<>();
   private final L1Diff l1Diff;
 
-  public DiffFinder(L1 first, L1 second) {
+  public DiffFinder(InternalL1 first, InternalL1 second) {
     this.l1Diff = new L1Diff(first, second);
   }
 
@@ -43,11 +43,11 @@ class DiffFinder {
     return l1Diff.getLoad(l3Diffs);
   }
 
-  public L1 getFrom() {
+  public InternalL1 getFrom() {
     return l1Diff.from;
   }
 
-  public L1 getTo() {
+  public InternalL1 getTo() {
     return l1Diff.to;
   }
 
@@ -56,10 +56,10 @@ class DiffFinder {
   }
 
   private static class L1Diff {
-    private final L1 from;
-    private final L1 to;
+    private final InternalL1 from;
+    private final InternalL1 to;
 
-    public L1Diff(L1 from, L1 to) {
+    public L1Diff(InternalL1 from, InternalL1 to) {
       super();
       this.from = from;
       this.to = to;
@@ -68,7 +68,7 @@ class DiffFinder {
     public LoadStep getLoad(List<L3Diff> l3DiffsOutput) {
       List<L2Diff> l2Diffs = new ArrayList<>();
       EntityLoadOps loadOps = new EntityLoadOps();
-      for (int i = 0; i < L1.SIZE; i++) {
+      for (int i = 0; i < InternalL1.SIZE; i++) {
         Id a = from.getId(i);
         Id b = to.getId(i);
         if (!a.equals(b)) {
@@ -85,23 +85,23 @@ class DiffFinder {
   }
 
   private static class L2Diff {
-    private L2 from;
-    private L2 to;
+    private InternalL2 from;
+    private InternalL2 to;
 
-    void from(L2 from) {
+    void from(InternalL2 from) {
       this.from = from;
     }
 
-    void to(L2 to) {
+    void to(InternalL2 to) {
       this.to = to;
     }
 
     public static Optional<LoadStep> loadStep(Collection<L2Diff> diffs, List<L3Diff> l3DiffsOutput) {
       EntityLoadOps loadOps = new EntityLoadOps();
       for (L2Diff diff : diffs) {
-        L2 from = diff.from;
-        L2 to = diff.to;
-        for (int i = 0; i < L2.SIZE; i++) {
+        InternalL2 from = diff.from;
+        InternalL2 to = diff.to;
+        for (int i = 0; i < InternalL2.SIZE; i++) {
           Id a = from.getId(i);
           Id b = to.getId(i);
           if (!a.equals(b)) {
@@ -117,19 +117,19 @@ class DiffFinder {
   }
 
   private static class L3Diff {
-    private L3 from;
-    private L3 to;
+    private InternalL3 from;
+    private InternalL3 to;
 
-    void from(L3 from) {
+    void from(InternalL3 from) {
       this.from = from;
     }
 
-    void to(L3 to) {
+    void to(InternalL3 to) {
       this.to = to;
     }
 
     Stream<KeyDiff> getKeyDiffs() {
-      return L3.compare(from, to);
+      return InternalL3.compare(from, to);
     }
 
   }
@@ -191,11 +191,11 @@ class DiffFinder {
 
   }
 
-  static List<DiffFinder> getFinders(List<L1> l1Ascending) {
+  static List<DiffFinder> getFinders(List<InternalL1> l1Ascending) {
     Preconditions.checkArgument(l1Ascending.size() > 1);
-    L1 previous = null;
+    InternalL1 previous = null;
     List<DiffFinder> diffs = new ArrayList<>();
-    for (L1 l1 : l1Ascending) {
+    for (InternalL1 l1 : l1Ascending) {
       if (previous != null) {
         DiffFinder finder = new DiffFinder(previous, l1);
         diffs.add(finder);

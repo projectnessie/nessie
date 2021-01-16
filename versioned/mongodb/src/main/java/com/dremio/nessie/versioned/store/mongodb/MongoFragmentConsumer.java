@@ -23,14 +23,14 @@ import java.util.stream.Stream;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.tiered.builder.FragmentConsumer;
+import com.dremio.nessie.tiered.builder.Fragment;
 import com.dremio.nessie.versioned.Key;
 
-final class MongoFragmentConsumer extends MongoConsumer<FragmentConsumer> implements FragmentConsumer {
+final class MongoFragmentConsumer extends MongoConsumer<Fragment> implements Fragment {
 
   static final String KEY_LIST = "keys";
 
-  static final Map<String, BiConsumer<FragmentConsumer, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiConsumer<Fragment, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
@@ -42,7 +42,7 @@ final class MongoFragmentConsumer extends MongoConsumer<FragmentConsumer> implem
   }
 
   @Override
-  public FragmentConsumer keys(Stream<Key> keys) {
+  public Fragment keys(Stream<Key> keys) {
     addProperty(KEY_LIST);
     bsonWriter.writeStartArray(KEY_LIST);
     keys.forEach(k -> {

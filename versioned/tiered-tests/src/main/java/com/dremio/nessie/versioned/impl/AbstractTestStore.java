@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
@@ -257,7 +257,7 @@ public abstract class AbstractTestStore<S extends Store> {
     testPutIfAbsent(ValueType.VALUE, SampleEntities.createValue(random));
   }
 
-  static class EntitySaveOp<C extends BaseConsumer<C>> {
+  static class EntitySaveOp<C extends BaseValue<C>> {
     final ValueType<C> type;
     final PersistentBase<C> entity;
     final SaveOp<C> saveOp;
@@ -293,7 +293,7 @@ public abstract class AbstractTestStore<S extends Store> {
         try {
           loadedValue = EntityType.forType(s.type).buildEntity(producer -> {
             @SuppressWarnings("rawtypes") ValueType t = s.type;
-            @SuppressWarnings("rawtypes") BaseConsumer p = producer;
+            @SuppressWarnings("rawtypes") BaseValue p = producer;
             store.loadSingle(t, saveOpValue.getId(), p);
           });
           assertEquals(saveOpValue, loadedValue, "type " + s.type);
@@ -323,7 +323,7 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @SuppressWarnings("unchecked")
-  private <C extends BaseConsumer<C>> void putThenLoad(ValueType<C> type, HasId sample) {
+  private <C extends BaseValue<C>> void putThenLoad(ValueType<C> type, HasId sample) {
     store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, Optional.empty());
     testLoadSingle(type, sample);
   }
@@ -349,7 +349,7 @@ public abstract class AbstractTestStore<S extends Store> {
     assertEquals(sample, read);
   }
 
-  protected <C extends BaseConsumer<C>, T extends PersistentBase<C>> void testPutIfAbsent(ValueType<C> type, T sample) {
+  protected <C extends BaseValue<C>, T extends PersistentBase<C>> void testPutIfAbsent(ValueType<C> type, T sample) {
     Assertions.assertTrue(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));
     testLoadSingle(type, sample);
     Assertions.assertFalse(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));

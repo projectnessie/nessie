@@ -21,13 +21,13 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deseri
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.L2Consumer;
+import com.dremio.nessie.tiered.builder.L2;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer {
+class DynamoL2Consumer extends DynamoConsumer<L2> implements L2 {
 
   static final String TREE = "tree";
 
@@ -36,7 +36,7 @@ class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer 
   }
 
   @Override
-  public L2Consumer children(Stream<Id> ids) {
+  public L2 children(Stream<Id> ids) {
     return addIdList(TREE, ids);
   }
 
@@ -50,7 +50,7 @@ class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer 
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void toConsumer(Map<String, AttributeValue> entity, L2Consumer consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, L2 consumer) {
     consumer.id(deserializeId(entity, ID));
 
     if (entity.containsKey(TREE)) {

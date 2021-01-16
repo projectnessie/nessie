@@ -20,24 +20,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
-import com.dremio.nessie.tiered.builder.FragmentConsumer;
-import com.dremio.nessie.tiered.builder.L1Consumer;
-import com.dremio.nessie.tiered.builder.L2Consumer;
-import com.dremio.nessie.tiered.builder.L3Consumer;
-import com.dremio.nessie.tiered.builder.RefConsumer;
-import com.dremio.nessie.tiered.builder.ValueConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
+import com.dremio.nessie.tiered.builder.CommitMetadata;
+import com.dremio.nessie.tiered.builder.Fragment;
+import com.dremio.nessie.tiered.builder.L1;
+import com.dremio.nessie.tiered.builder.L2;
+import com.dremio.nessie.tiered.builder.L3;
+import com.dremio.nessie.tiered.builder.Ref;
+import com.dremio.nessie.tiered.builder.Value;
 
-public final class ValueType<C extends BaseConsumer<C>> {
+public final class ValueType<C extends BaseValue<C>> {
 
-  public static final ValueType<RefConsumer> REF = new ValueType<>("r", "refs");
-  public static final ValueType<L1Consumer> L1 = new ValueType<>("l1", "l1");
-  public static final ValueType<L2Consumer> L2 = new ValueType<>("l2", "l2");
-  public static final ValueType<L3Consumer> L3 = new ValueType<>("l3", "l3");
-  public static final ValueType<ValueConsumer> VALUE = new ValueType<>("v", "values");
-  public static final ValueType<FragmentConsumer> KEY_FRAGMENT = new ValueType<>("k", "key_lists");
-  public static final ValueType<CommitMetadataConsumer> COMMIT_METADATA = new ValueType<>("m", "commit_metadata");
+  public static final ValueType<Ref> REF = new ValueType<>(Ref.class, "r", "refs");
+  public static final ValueType<L1> L1 = new ValueType<>(L1.class, "l1", "l1");
+  public static final ValueType<L2> L2 = new ValueType<>(L2.class, "l2", "l2");
+  public static final ValueType<L3> L3 = new ValueType<>(L3.class, "l3", "l3");
+  public static final ValueType<Value> VALUE = new ValueType<>(Value.class, "v", "values");
+  public static final ValueType<Fragment> KEY_FRAGMENT = new ValueType<>(Fragment.class, "k", "key_lists");
+  public static final ValueType<CommitMetadata> COMMIT_METADATA = new ValueType<>(CommitMetadata.class, "m", "commit_metadata");
 
   private static final ValueType<?>[] ALL = new ValueType[]{REF, L1, L2, L3, VALUE, KEY_FRAGMENT, COMMIT_METADATA};
 
@@ -46,20 +46,26 @@ public final class ValueType<C extends BaseConsumer<C>> {
    */
   public static final String SCHEMA_TYPE = "t";
 
-  private static final Map<String, ValueType<?>> byValueName = new HashMap<>();
+  private static final Map<String, ValueType<?>> BY_VALUE_NAME = new HashMap<>();
 
   static {
     for (ValueType<?> type : ALL) {
-      byValueName.put(type.valueName, type);
+      BY_VALUE_NAME.put(type.valueName, type);
     }
   }
 
   private final String valueName;
   private final String defaultTableSuffix;
+  private final Class<C> clazz;
 
-  private ValueType(String valueName, String defaultTableSuffix) {
+  private ValueType(Class<C> clazz, String valueName, String defaultTableSuffix) {
     this.valueName = valueName;
     this.defaultTableSuffix = defaultTableSuffix;
+    this.clazz = clazz;
+  }
+
+  public Class<C> getValueClass() {
+    return clazz;
   }
 
   public static List<ValueType<?>> values() {
@@ -74,7 +80,7 @@ public final class ValueType<C extends BaseConsumer<C>> {
    * @throws IllegalArgumentException if no value-type matches
    */
   public static ValueType<?> byValueName(String t) {
-    ValueType<?> type = byValueName.get(t);
+    ValueType<?> type = BY_VALUE_NAME.get(t);
     if (type == null) {
       throw new IllegalArgumentException("No ValueType for table '" + t + "'");
     }

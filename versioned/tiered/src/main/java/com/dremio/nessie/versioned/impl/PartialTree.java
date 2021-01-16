@@ -67,9 +67,9 @@ class PartialTree<V> {
   private final InternalRefId refId;
   private InternalRef.Type refType;
   private Id rootId;
-  private Pointer<L1> l1;
-  private final Map<Integer, Pointer<L2>> l2s = new HashMap<>();
-  private final Map<Position, Pointer<L3>> l3s = new HashMap<>();
+  private Pointer<InternalL1> l1;
+  private final Map<Integer, Pointer<InternalL2>> l2s = new HashMap<>();
+  private final Map<Position, Pointer<InternalL3>> l3s = new HashMap<>();
   private final Map<InternalKey, ValueHolder<V>> values = new HashMap<>();
   private final Collection<InternalKey> keys;
 
@@ -77,7 +77,7 @@ class PartialTree<V> {
     return new PartialTree<>(serializer, id, keys);
   }
 
-  static <V> PartialTree<V> of(Serializer<V> serializer, InternalRef.Type refType, L1 l1, Collection<InternalKey> keys) {
+  static <V> PartialTree<V> of(Serializer<V> serializer, InternalRef.Type refType, InternalL1 l1, Collection<InternalKey> keys) {
     PartialTree<V> tree = new PartialTree<>(serializer, InternalRefId.ofHash(l1.getId()), keys);
     tree.l1 = new Pointer<>(l1);
     tree.refType = refType;
@@ -96,7 +96,7 @@ class PartialTree<V> {
     this.keys = keys;
   }
 
-  public LoadStep getLoadChain(Function<InternalBranch, L1> l1Converter, LoadType loadType) {
+  public LoadStep getLoadChain(Function<InternalBranch, InternalL1> l1Converter, LoadType loadType) {
     if (refId.getType() == Type.HASH && l1 == null) {
       rootId = refId.getId();
       refType = Type.HASH;
@@ -111,7 +111,7 @@ class PartialTree<V> {
     loadOps.load(EntityType.REF, InternalRef.class, refId.getId(), loadedRef -> {
       refType = loadedRef.getType();
       if (loadedRef.getType() == Type.BRANCH) {
-        L1 loaded = l1Converter.apply(loadedRef.getBranch());
+        InternalL1 loaded = l1Converter.apply(loadedRef.getBranch());
         l1 = new Pointer<>(loaded);
         rootId = loaded.getId();
       } else if (loadedRef.getType() == Type.TAG) {
@@ -123,7 +123,7 @@ class PartialTree<V> {
     return loadOps.build(() -> getLoadStep1(loadType));
   }
 
-  public L1 getCurrentL1() {
+  public InternalL1 getCurrentL1() {
     return l1.get();
   }
 
@@ -186,7 +186,7 @@ class PartialTree<V> {
     if (includeCommitUpdates) {
       // Add the new commit
       commitIntention = new Commit(Id.generateRandom(), metadataId, deltas,
-          KeyMutationList.of(l3s.values().stream().map(Pointer::get).flatMap(L3::getMutations).collect(Collectors.toList())));
+          KeyMutationList.of(l3s.values().stream().map(Pointer::get).flatMap(InternalL3::getMutations).collect(Collectors.toList())));
     }
 
     return new CommitOp(
@@ -238,7 +238,7 @@ class PartialTree<V> {
     }
 
     EntityLoadOps loadOps = new EntityLoadOps();
-    loadOps.load(EntityType.L1, L1.class, rootId, l -> l1 = new Pointer<>(l));
+    loadOps.load(EntityType.L1, InternalL1.class, rootId, l -> l1 = new Pointer<>(l));
     return Optional.of(loadOps.build(loadFunc));
   }
 
@@ -246,7 +246,7 @@ class PartialTree<V> {
     EntityLoadOps loadOps = new EntityLoadOps();
     keys.forEach(id -> {
       Id l2Id = l1.get().getId(id.getL1Position());
-      loadOps.load(EntityType.L2, L2.class, l2Id, l -> l2s.putIfAbsent(id.getL1Position(), new Pointer<>(l)));
+      loadOps.load(EntityType.L2, InternalL2.class, l2Id, l -> l2s.putIfAbsent(id.getL1Position(), new Pointer<>(l)));
     });
     return Optional.of(loadOps.build(() -> getLoadStep3(includeValues)));
   }
@@ -254,9 +254,9 @@ class PartialTree<V> {
   private Optional<LoadStep> getLoadStep3(boolean includeValues) {
     EntityLoadOps loadOps = new EntityLoadOps();
     keys.forEach(keyId -> {
-      L2 l2 = l2s.get(keyId.getL1Position()).get();
+      InternalL2 l2 = l2s.get(keyId.getL1Position()).get();
       Id l3Id = l2.getId(keyId.getL2Position());
-      loadOps.load(EntityType.L3, L3.class, l3Id, l -> l3s.putIfAbsent(keyId.getPosition(), new Pointer<>(l)));
+      loadOps.load(EntityType.L3, InternalL3.class, l3Id, l -> l3s.putIfAbsent(keyId.getPosition(), new Pointer<>(l)));
     });
     return Optional.of(loadOps.build(() -> getLoadStep4(includeValues)));
   }
@@ -268,7 +268,7 @@ class PartialTree<V> {
     EntityLoadOps loadOps = new EntityLoadOps();
     keys.forEach(
         key -> {
-          L3 l3 = l3s.get(key.getPosition()).get();
+          InternalL3 l3 = l3s.get(key.getPosition()).get();
           Id id = l3.getId(key);
           if (!id.isEmpty()) {
             // no load needed for empty values.
@@ -303,9 +303,9 @@ class PartialTree<V> {
    */
   public void setValueIdForKey(InternalKey key, Optional<Id> id) {
     checkMutable();
-    final Pointer<L1> l1 = this.l1;
-    final Pointer<L2> l2 = l2s.get(key.getL1Position());
-    final Pointer<L3> l3 = l3s.get(key.getPosition());
+    final Pointer<InternalL1> l1 = this.l1;
+    final Pointer<InternalL2> l2 = l2s.get(key.getL1Position());
+    final Pointer<InternalL3> l3 = l3s.get(key.getPosition());
 
     // now we'll do the save.
     Id valueId;
@@ -323,9 +323,9 @@ class PartialTree<V> {
 
   public void setValueForKey(InternalKey key, Optional<V> value) {
     checkMutable();
-    final Pointer<L1> l1 = this.l1;
-    final Pointer<L2> l2 = l2s.get(key.getL1Position());
-    final Pointer<L3> l3 = l3s.get(key.getPosition());
+    final Pointer<InternalL1> l1 = this.l1;
+    final Pointer<InternalL2> l2 = l2s.get(key.getL1Position());
+    final Pointer<InternalL3> l3 = l3s.get(key.getPosition());
 
     // now we'll do the save.
     Id valueId;
@@ -359,7 +359,7 @@ class PartialTree<V> {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private static <T extends PersistentBase<?>> Pointer<T> cloneInner(EntityType<?, T> type, Pointer<T> value) {
+  private static <T extends PersistentBase<?>> Pointer<T> cloneInner(EntityType<?, T, ?> type, Pointer<T> value) {
     if (value.isDirty()) {
       return new Pointer(type.buildEntity(producer -> ((PersistentBase) value.get()).applyToConsumer(producer)));
     } else {

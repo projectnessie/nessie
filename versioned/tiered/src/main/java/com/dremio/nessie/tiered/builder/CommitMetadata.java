@@ -15,21 +15,8 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import java.util.stream.Stream;
-
-import com.dremio.nessie.versioned.Key;
-
 /**
- * Consumer for fragments.
+ * Consumer for commit-metadata.
  */
-public interface FragmentConsumer extends BaseConsumer<FragmentConsumer> {
-
-  /**
-   * The commit metadata id for this l1.
-   * <p>Must be called exactly once.</p>
-   *
-   * @param keys The keys to add.
-   * @return This consumer.
-   */
-  FragmentConsumer keys(Stream<Key> keys);
+public interface CommitMetadata extends WrappedValueConsumer<CommitMetadata> {
 }

@@ -19,7 +19,7 @@ import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
+import com.dremio.nessie.tiered.builder.Ref.RefType;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
@@ -38,12 +38,12 @@ public class SampleEntities {
    * @param random object to use for randomization of entity creation.
    * @return sample L1 entity.
    */
-  public static L1 createL1(Random random) {
+  public static InternalL1 createL1(Random random) {
     return EntityType.L1.buildEntity(producer -> producer.commitMetadataId(createId(random))
-        .children(IntStream.range(0, L1.SIZE).mapToObj(x -> createId(random)))
-        .ancestors(Stream.of(L1.EMPTY.getId(), Id.EMPTY))
+        .children(IntStream.range(0, InternalL1.SIZE).mapToObj(x -> createId(random)))
+        .ancestors(Stream.of(InternalL1.EMPTY.getId(), Id.EMPTY))
         .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
-        .incrementalKeyList(L1.EMPTY.getId(), 1));
+        .incrementalKeyList(InternalL1.EMPTY.getId(), 1));
   }
 
   /**
@@ -51,9 +51,9 @@ public class SampleEntities {
    * @param random object to use for randomization of entity creation.
    * @return sample L2 entity.
    */
-  public static L2 createL2(Random random) {
+  public static InternalL2 createL2(Random random) {
     return EntityType.L2.buildEntity(producer -> producer.id(createId(random))
-        .children(IntStream.range(0, L2.SIZE).mapToObj(x -> createId(random))));
+        .children(IntStream.range(0, InternalL2.SIZE).mapToObj(x -> createId(random))));
   }
 
   /**
@@ -61,7 +61,7 @@ public class SampleEntities {
    * @param random object to use for randomization of entity creation.
    * @return sample L3 entity.
    */
-  public static L3 createL3(Random random) {
+  public static InternalL3 createL3(Random random) {
     return EntityType.L3.buildEntity(producer -> producer.keyDelta(IntStream.range(0, 100)
         .mapToObj(i -> KeyDelta
             .of(Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)),
@@ -73,7 +73,7 @@ public class SampleEntities {
    * @param random object to use for randomization of entity creation.
    * @return sample Fragment entity.
    */
-  public static Fragment createFragment(Random random) {
+  public static InternalFragment createFragment(Random random) {
     return EntityType.KEY_FRAGMENT.buildEntity(producer -> producer.keys(IntStream.range(0, 10)
         .mapToObj(
             i -> Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)))));
@@ -90,7 +90,7 @@ public class SampleEntities {
     return EntityType.REF.buildEntity(producer -> producer.id(Id.build(name))
         .type(RefType.BRANCH)
         .name(name)
-        .children(IntStream.range(0, L1.SIZE).mapToObj(x -> createId(random)))
+        .children(IntStream.range(0, InternalL1.SIZE).mapToObj(x -> createId(random)))
         .metadata(createId(random))
         .commits(bc -> {
           bc.id(createId(random))

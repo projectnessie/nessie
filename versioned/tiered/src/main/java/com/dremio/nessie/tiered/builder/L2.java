@@ -15,8 +15,22 @@
  */
 package com.dremio.nessie.tiered.builder;
 
+import java.util.stream.Stream;
+
+import com.dremio.nessie.versioned.store.Id;
+
 /**
- * Consumer for commit-metadata.
+ * Consumer for L2s.
  */
-public interface CommitMetadataConsumer extends WrappedValueConsumer<CommitMetadataConsumer> {
+public interface L2 extends BaseValue<L2> {
+
+  /**
+   * Add a list of children ids indexed by position.
+   * <p>Must be called exactly once.</p>
+   *
+   * @param ids The list of ids
+   * @return This consumer.
+   */
+  L2 children(Stream<Id> ids);
+
 }

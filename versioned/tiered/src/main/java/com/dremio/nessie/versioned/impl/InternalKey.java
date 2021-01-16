@@ -128,8 +128,8 @@ class InternalKey implements Comparable<InternalKey>, HasId {
     private final int l2;
 
     private Position(Supplier<Id> idMemo) {
-      this(Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(0, 4).toByteArray()), L1.SIZE),
-          Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(4, 8).toByteArray()), L2.SIZE));
+      this(Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(0, 4).toByteArray()), InternalL1.SIZE),
+          Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(4, 8).toByteArray()), InternalL2.SIZE));
     }
 
     public Position(int l1, int l2) {

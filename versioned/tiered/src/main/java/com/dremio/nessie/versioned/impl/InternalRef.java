@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.InternalBranch.Commit;
 import com.dremio.nessie.versioned.impl.InternalBranch.UnsavedDelta;
@@ -32,7 +32,7 @@ import com.dremio.nessie.versioned.store.Id;
 /**
  * Generic class for reading a reference.
  */
-abstract class InternalRef extends PersistentBase<RefConsumer> {
+abstract class InternalRef extends PersistentBase<Ref> {
 
   static final String TYPE = "type";
 
@@ -95,10 +95,10 @@ abstract class InternalRef extends PersistentBase<RefConsumer> {
   }
 
   /**
-   * Implement {@link RefConsumer} to build an {@link InternalRef} object.
+   * Implement {@link Ref} to build an {@link InternalRef} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<InternalRef> implements RefConsumer {
+  static final class Builder extends EntityBuilder<InternalRef> implements Ref {
 
     private Id id;
     private RefType refType;
@@ -155,7 +155,7 @@ abstract class InternalRef extends PersistentBase<RefConsumer> {
     }
 
     @Override
-    public RefConsumer commits(Consumer<BranchCommitConsumer> commits) {
+    public Ref commits(Consumer<BranchCommitConsumer> commits) {
       checkCalled(this.commits, "commits");
       this.commits = new ArrayList<>();
       commits.accept(new BranchCommitConsumer() {
@@ -232,7 +232,7 @@ abstract class InternalRef extends PersistentBase<RefConsumer> {
           return new InternalBranch(
               id,
               name,
-              IdMap.of(children, L1.SIZE),
+              IdMap.of(children, InternalL1.SIZE),
               metadata,
               commits);
         default:

@@ -15,11 +15,11 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.ValueType;
 
-final class EntitySaveOp<C extends BaseConsumer<C>, E extends PersistentBase<C>> extends SaveOp<C> {
+final class EntitySaveOp<C extends BaseValue<C>, E extends PersistentBase<C>> extends SaveOp<C> {
   private final E value;
 
   EntitySaveOp(ValueType<C> type, E value) {

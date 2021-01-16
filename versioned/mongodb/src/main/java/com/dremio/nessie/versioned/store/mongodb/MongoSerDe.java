@@ -35,7 +35,7 @@ import org.bson.BsonWriter;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SaveOp;
@@ -45,7 +45,7 @@ import com.google.protobuf.ByteString;
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class MongoSerDe {
   private static final Map<ValueType<?>, Function<BsonWriter, MongoConsumer>> consumerMap;
-  private static final Map<ValueType<?>, Map<String, BiConsumer<BaseConsumer, BsonReader>>> producerMap;
+  private static final Map<ValueType<?>, Map<String, BiConsumer<BaseValue, BsonReader>>> producerMap;
 
   private static final String MONGO_ID_NAME = "_id";
 
@@ -85,23 +85,23 @@ final class MongoSerDe {
   /**
    * Deserialize a MongoDB entity into the given consumer.
    */
-  static <C extends BaseConsumer<C>> void produceToConsumer(BsonDocument entity, ValueType<C> valueType, C consumer) {
+  static <C extends BaseValue<C>> void produceToConsumer(BsonDocument entity, ValueType<C> valueType, C consumer) {
     produceToConsumer(new BsonDocumentReader(entity), valueType, x -> consumer, x -> {});
   }
 
   /**
    * Deserialize a MongoDB entity into the given consumer.
    */
-  static void produceToConsumer(BsonReader entity, ValueType<?> valueType, Function<Id, BaseConsumer> onIdParsed, Consumer<Id> parsed) {
-    Map<String, BiConsumer<BaseConsumer, BsonReader>> propertyProducers = producerMap.get(valueType);
+  static void produceToConsumer(BsonReader entity, ValueType<?> valueType, Function<Id, BaseValue> onIdParsed, Consumer<Id> parsed) {
+    Map<String, BiConsumer<BaseValue, BsonReader>> propertyProducers = producerMap.get(valueType);
     deserializeToConsumer(entity, onIdParsed, parsed, propertyProducers);
   }
 
-  private static <C extends BaseConsumer<C>> MongoConsumer<C> newMongoConsumer(ValueType<C> valueType, BsonWriter bsonWriter) {
+  private static <C extends BaseValue<C>> MongoConsumer<C> newMongoConsumer(ValueType<C> valueType, BsonWriter bsonWriter) {
     return consumerMap.get(valueType).apply(bsonWriter);
   }
 
-  static <C extends BaseConsumer<C>> Bson bsonForValueType(SaveOp<C> saveOp, String updateOperator) {
+  static <C extends BaseValue<C>> Bson bsonForValueType(SaveOp<C> saveOp, String updateOperator) {
     return new Bson() {
       @Override
       public <T> BsonDocument toBsonDocument(Class<T> clazz, CodecRegistry codecRegistry) {
@@ -117,7 +117,7 @@ final class MongoSerDe {
     };
   }
 
-  static <C extends BaseConsumer<C>> void serializeEntity(BsonWriter writer, SaveOp<C> saveOp) {
+  static <C extends BaseValue<C>> void serializeEntity(BsonWriter writer, SaveOp<C> saveOp) {
     writer.writeStartDocument();
     MongoConsumer<C> consumer = newMongoConsumer(saveOp.getType(), writer);
     consumer.id(saveOp.getId());
@@ -183,13 +183,13 @@ final class MongoSerDe {
   }
 
   static void deserializeToConsumer(BsonReader reader,
-      Function<Id, BaseConsumer> onIdParsed,
+      Function<Id, BaseValue> onIdParsed,
       Consumer<Id> parsed,
-      Map<String, BiConsumer<BaseConsumer, BsonReader>> propertyProducers) {
+      Map<String, BiConsumer<BaseValue, BsonReader>> propertyProducers) {
     reader.readStartDocument();
 
     Id id = null;
-    BaseConsumer consumer = null;
+    BaseValue consumer = null;
     while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
       final String name = reader.readName();
       if (name.equals(MONGO_ID_NAME)) {
@@ -209,7 +209,7 @@ final class MongoSerDe {
             String.format("Got property '%s', but '%s' must be the first property in every document", name, MongoConsumer.ID));
       }
 
-      BiConsumer<BaseConsumer, BsonReader> propertyProducer = propertyProducers.get(name);
+      BiConsumer<BaseValue, BsonReader> propertyProducer = propertyProducers.get(name);
       propertyProducer.accept(consumer, reader);
     }
 

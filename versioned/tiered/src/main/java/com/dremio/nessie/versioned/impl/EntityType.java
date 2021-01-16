@@ -20,14 +20,14 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
-import com.dremio.nessie.tiered.builder.FragmentConsumer;
-import com.dremio.nessie.tiered.builder.L1Consumer;
-import com.dremio.nessie.tiered.builder.L2Consumer;
-import com.dremio.nessie.tiered.builder.L3Consumer;
-import com.dremio.nessie.tiered.builder.RefConsumer;
-import com.dremio.nessie.tiered.builder.ValueConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
+import com.dremio.nessie.tiered.builder.CommitMetadata;
+import com.dremio.nessie.tiered.builder.Fragment;
+import com.dremio.nessie.tiered.builder.L1;
+import com.dremio.nessie.tiered.builder.L2;
+import com.dremio.nessie.tiered.builder.L3;
+import com.dremio.nessie.tiered.builder.Ref;
+import com.dremio.nessie.tiered.builder.Value;
 import com.dremio.nessie.versioned.impl.PersistentBase.EntityBuilder;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.NotFoundException;
@@ -36,31 +36,35 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 
-final class EntityType<C extends BaseConsumer<C>, E extends PersistentBase<C>> {
+final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> {
 
-  static final Map<ValueType<?>, EntityType<?, ?>> byValueType = new HashMap<>();
+  private static final Map<ValueType<?>, EntityType<?, ?, ?>> BY_VALUE_TYPE = new HashMap<>();
 
-  static final EntityType<RefConsumer, InternalRef> REF = new EntityType<>(ValueType.REF, InternalRef.Builder::new);
-  static final EntityType<L1Consumer, L1> L1 = new EntityType<>(ValueType.L1, com.dremio.nessie.versioned.impl.L1.Builder::new);
-  static final EntityType<L2Consumer, L2> L2 = new EntityType<>(ValueType.L2, com.dremio.nessie.versioned.impl.L2.Builder::new);
-  static final EntityType<L3Consumer, L3> L3 = new EntityType<>(ValueType.L3, com.dremio.nessie.versioned.impl.L3.Builder::new);
-  static final EntityType<ValueConsumer, InternalValue> VALUE = new EntityType<>(ValueType.VALUE, InternalValue.Builder::new);
-  static final EntityType<FragmentConsumer, Fragment> KEY_FRAGMENT = new EntityType<>(ValueType.KEY_FRAGMENT, Fragment.Builder::new);
-  static final EntityType<CommitMetadataConsumer, InternalCommitMetadata> COMMIT_METADATA = new EntityType<>(ValueType.COMMIT_METADATA,
+  static final EntityType<Ref, InternalRef, InternalRef.Builder> REF = new EntityType<>(ValueType.REF, InternalRef.Builder::new);
+  static final EntityType<L1, InternalL1, InternalL1.Builder> L1 = new EntityType<>(ValueType.L1, com.dremio.nessie.versioned.impl.InternalL1.Builder::new);
+  static final EntityType<L2, InternalL2, InternalL2.Builder> L2 = new EntityType<>(ValueType.L2, com.dremio.nessie.versioned.impl.InternalL2.Builder::new);
+  static final EntityType<L3, InternalL3, InternalL3.Builder> L3 = new EntityType<>(ValueType.L3, com.dremio.nessie.versioned.impl.InternalL3.Builder::new);
+  static final EntityType<Value, InternalValue, InternalValue.Builder> VALUE = new EntityType<>(ValueType.VALUE, InternalValue.Builder::new);
+  static final EntityType<Fragment, InternalFragment, InternalFragment.Builder> KEY_FRAGMENT = new EntityType<>(ValueType.KEY_FRAGMENT, InternalFragment.Builder::new);
+  static final EntityType<CommitMetadata, InternalCommitMetadata, InternalCommitMetadata.Builder> COMMIT_METADATA = new EntityType<>(ValueType.COMMIT_METADATA,
       InternalCommitMetadata.Builder::new);
 
   final ValueType<C> valueType;
-  final Supplier<C> producerSupplier;
+  final Supplier<B> producerSupplier;
 
-  private EntityType(ValueType<C> valueType, Supplier<C> producerSupplier) {
+  private EntityType(ValueType<C> valueType, Supplier<B> producerSupplier) {
+    if (valueType.getValueClass().isInstance(producerSupplier.get())) {
+      throw new IllegalStateException("While you can't formally expose a value instance as the subclass of "
+          + "two separate generic parameters, this class does so internally. The builders provided must be of both C and B types.");
+    }
     this.valueType = valueType;
     this.producerSupplier = producerSupplier;
-    byValueType.put(valueType, this);
+    BY_VALUE_TYPE.put(valueType, this);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static <C extends BaseConsumer<C>, E extends PersistentBase<C>> EntityType<C, E> forType(ValueType<C> type) {
-    return (EntityType) byValueType.get(type);
+  static <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> EntityType<C, E, B> forType(ValueType<C> type) {
+    return (EntityType) BY_VALUE_TYPE.get(type);
   }
 
   /**
@@ -84,7 +88,7 @@ final class EntityType<C extends BaseConsumer<C>, E extends PersistentBase<C>> {
    * Create a new "plain entity" producer for this type.
    * <p>
    * The instance returned from this function can, after all necessary properties have been
-   * set, be passed to {@link #buildFromProducer(BaseConsumer)} to build the entity instance.
+   * set, be passed to {@link #buildFromProducer(BaseValue)} to build the entity instance.
    * </p>
    * <p>
    * Using {@link #buildEntity(Consumer)} is a simpler approach though.
@@ -101,7 +105,7 @@ final class EntityType<C extends BaseConsumer<C>, E extends PersistentBase<C>> {
    *
    * @return new created producer instance
    */
-  C newEntityProducer() {
+  B newEntityProducer() {
     return producerSupplier.get();
   }
 
@@ -119,26 +123,11 @@ final class EntityType<C extends BaseConsumer<C>, E extends PersistentBase<C>> {
    * @param producerConsumer Java consumer that receives the producer created by {@link #newEntityProducer()}
    * @return the built entity
    */
+  @SuppressWarnings("unchecked")
   E buildEntity(Consumer<C> producerConsumer) {
-    C producer = newEntityProducer();
-    producerConsumer.accept(producer);
-    return buildFromProducer(producer);
-  }
-
-  /**
-   * Used to create a new entity instance for this value-type using a consumer retrieved via
-   * {@link #newEntityProducer()}. Passing in an instance that has not been retrieved via
-   * {@link #newEntityProducer()} will result in an {@link IllegalArgumentException}.
-   *
-   * @param producer a producer retrieved via {@link #newEntityProducer()}
-   * @return the built entity
-   */
-  E buildFromProducer(BaseConsumer<C> producer) {
-    if (!(producer instanceof PersistentBase.EntityBuilder)) {
-      throw new IllegalArgumentException("Given producer " + producer + " has not been created via ValueType.newEntityProducer()");
-    }
-    @SuppressWarnings("unchecked") EntityBuilder<E> builder = (EntityBuilder<E>) producer;
-    return builder.build();
+    B producer = newEntityProducer();
+    producerConsumer.accept((C) producer);
+    return producer.build();
   }
 
   @Override
@@ -149,7 +138,7 @@ final class EntityType<C extends BaseConsumer<C>, E extends PersistentBase<C>> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    EntityType<?, ?> that = (EntityType<?, ?>) o;
+    EntityType<?, ?, ?> that = (EntityType<?, ?, ?>) o;
     return valueType == that.valueType;
   }
 

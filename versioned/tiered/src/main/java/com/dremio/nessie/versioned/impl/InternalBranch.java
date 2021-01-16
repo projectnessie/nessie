@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.tiered.builder.RefConsumer;
-import com.dremio.nessie.tiered.builder.RefConsumer.RefType;
+import com.dremio.nessie.tiered.builder.Ref;
+import com.dremio.nessie.tiered.builder.Ref.RefType;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
@@ -54,7 +54,7 @@ import com.google.common.collect.Lists;
 /**
  * Stores the current state of branch.
  *
- * @see RefConsumer for a detailed description
+ * @see Ref for a detailed description
  */
 class InternalBranch extends InternalRef {
 
@@ -62,7 +62,7 @@ class InternalBranch extends InternalRef {
   static final String TREE = "tree";
   static final String COMMITS = "commits";
 
-  private static final List<Commit> SINGLE_EMPTY_COMMIT = ImmutableList.of(new Commit(L1.EMPTY_ID, Id.EMPTY, Id.EMPTY));
+  private static final List<Commit> SINGLE_EMPTY_COMMIT = ImmutableList.of(new Commit(InternalL1.EMPTY_ID, Id.EMPTY, Id.EMPTY));
 
   private static final Logger LOGGER = LoggerFactory.getLogger(InternalBranch.class);
 
@@ -76,7 +76,7 @@ class InternalBranch extends InternalRef {
    * @param name name of the branch.
    */
   public InternalBranch(String name) {
-    this(InternalRefId.ofBranch(name).getId(), name, L1.EMPTY.getMap(), Id.EMPTY, SINGLE_EMPTY_COMMIT);
+    this(InternalRefId.ofBranch(name).getId(), name, InternalL1.EMPTY.getMap(), Id.EMPTY, SINGLE_EMPTY_COMMIT);
   }
 
   /**
@@ -84,7 +84,7 @@ class InternalBranch extends InternalRef {
    * @param name name of the branch
    * @param target the L1 to target (should already be persisted)
    */
-  public InternalBranch(String name, L1 target) {
+  public InternalBranch(String name, InternalL1 target) {
     this(InternalRefId.ofBranch(name).getId(), name, target.getMap(), Id.EMPTY,
         ImmutableList.of(new Commit(target.getId(), target.getMetadataId(), target.getParentId())));
   }
@@ -95,7 +95,7 @@ class InternalBranch extends InternalRef {
     this.name = name;
     this.tree = tree;
     this.commits = commits;
-    assert tree.size() == L1.SIZE;
+    assert tree.size() == InternalL1.SIZE;
     ensureConsistentId();
   }
 
@@ -227,7 +227,7 @@ class InternalBranch extends InternalRef {
 
     IdMap tree = this.tree;
 
-    L1 lastSavedL1 = lastSavedCommit.id.isEmpty() ? L1.EMPTY : EntityType.L1.loadSingle(store, lastSavedCommit.id);
+    InternalL1 lastSavedL1 = lastSavedCommit.id.isEmpty() ? InternalL1.EMPTY : EntityType.L1.loadSingle(store, lastSavedCommit.id);
 
     if (unsavedCommits.isEmpty()) {
       return new UpdateState(Collections.emptyList(), deletes, lastSavedL1, 0, lastSavedL1.getId(), this);
@@ -240,7 +240,7 @@ class InternalBranch extends InternalRef {
       }
     }
 
-    L1 lastL1 = lastSavedL1;
+    InternalL1 lastL1 = lastSavedL1;
     int lastPos = unsavedStartOffset;
     Id lastId = null;
     final List<SaveOp<?>> toSave = new ArrayList<>();
@@ -268,7 +268,7 @@ class InternalBranch extends InternalRef {
     private volatile boolean saved = false;
     private final List<SaveOp<?>> saves;
     private final List<Delete> deletes;
-    private final L1 finalL1;
+    private final InternalL1 finalL1;
     private final int finalL1position;
     private final Id finalL1RandomId;
     private final InternalBranch initialBranch;
@@ -276,7 +276,7 @@ class InternalBranch extends InternalRef {
     private UpdateState(
         List<SaveOp<?>> saves,
         List<Delete> deletes,
-        L1 finalL1,
+        InternalL1 finalL1,
         int finalL1position,
         Id finalL1RandomId,
         InternalBranch initialBranch) {
@@ -384,11 +384,11 @@ class InternalBranch extends InternalRef {
               .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toEntity()))
               .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
 
-          RefConsumer producer = EntityType.REF.newEntityProducer();
+          InternalRef.Builder producer = EntityType.REF.newEntityProducer();
           boolean updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer));
           if (updated) {
             LOGGER.debug("Completed collapse update on attempt {}.", attempt);
-            return (InternalBranch) EntityType.REF.buildFromProducer(producer);
+            return producer.build().getBranch();
           }
 
           LOGGER.debug("Failed to collapse update on attempt {}.", attempt);
@@ -406,7 +406,7 @@ class InternalBranch extends InternalRef {
       throw new ReferenceConflictException(String.format("Unable to collapse intention log after %d attempts, giving up.", attempts));
     }
 
-    public L1 getL1() {
+    public InternalL1 getL1() {
       Preconditions.checkArgument(saved,
           "You must call UpdateState.ensureAvailable() before attempting to retrieve the L1 state of this branch.");
       return finalL1;
@@ -511,7 +511,7 @@ class InternalBranch extends InternalRef {
   }
 
   @Override
-  RefConsumer applyToConsumer(RefConsumer consumer) {
+  Ref applyToConsumer(Ref consumer) {
     return super.applyToConsumer(consumer)
         .name(name)
         .type(RefType.BRANCH)

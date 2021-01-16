@@ -25,12 +25,12 @@ import org.bson.BsonReader;
 import org.bson.BsonType;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.primitives.Ints;
 
-final class MongoRefConsumer extends MongoConsumer<RefConsumer> implements RefConsumer {
+final class MongoRefConsumer extends MongoConsumer<Ref> implements Ref {
 
   static final String TYPE = "type";
   static final String NAME = "name";
@@ -47,7 +47,7 @@ final class MongoRefConsumer extends MongoConsumer<RefConsumer> implements RefCo
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
-  static final Map<String, BiConsumer<RefConsumer, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiConsumer<Ref, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
@@ -66,7 +66,7 @@ final class MongoRefConsumer extends MongoConsumer<RefConsumer> implements RefCo
   }
 
   @Override
-  public RefConsumer type(RefType refType) {
+  public Ref type(RefType refType) {
     this.refType = refType;
     String t;
     switch (refType) {
@@ -96,31 +96,31 @@ final class MongoRefConsumer extends MongoConsumer<RefConsumer> implements RefCo
   }
 
   @Override
-  public RefConsumer name(String name) {
+  public Ref name(String name) {
     serializeString(NAME, name);
     return this;
   }
 
   @Override
-  public RefConsumer commit(Id commit) {
+  public Ref commit(Id commit) {
     serializeId(COMMIT, commit);
     return this;
   }
 
   @Override
-  public RefConsumer metadata(Id metadata) {
+  public Ref metadata(Id metadata) {
     serializeId(METADATA, metadata);
     return this;
   }
 
   @Override
-  public RefConsumer children(Stream<Id> children) {
+  public Ref children(Stream<Id> children) {
     serializeIds(TREE, children);
     return this;
   }
 
   @Override
-  public RefConsumer commits(Consumer<BranchCommitConsumer> commits) {
+  public Ref commits(Consumer<BranchCommitConsumer> commits) {
     addProperty(COMMITS);
     bsonWriter.writeStartArray(COMMITS);
     commits.accept(new BranchCommitConsumer() {
