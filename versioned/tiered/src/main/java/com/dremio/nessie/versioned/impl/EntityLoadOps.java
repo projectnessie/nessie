@@ -25,7 +25,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
+import com.dremio.nessie.versioned.impl.PersistentBase.EntityBuilder;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
@@ -36,8 +37,8 @@ import com.dremio.nessie.versioned.store.ValueType;
  * Builder to create {@link LoadOp}s in a {@link LoadStep}.
  */
 final class EntityLoadOps {
-  private final Map<EntityType<?, ?>, List<Deferred>> deferred = new HashMap<>();
-  private final Map<LoadOpKey, EntityLoadOp<?>> direct = new HashMap<>();
+  private final Map<EntityType<?, ?, ?>, List<Deferred>> deferred = new HashMap<>();
+  private final Map<LoadOpKey, EntityLoadOp<?, ?, ?>> direct = new HashMap<>();
 
   EntityLoadOps() {
     // empty
@@ -53,8 +54,8 @@ final class EntityLoadOps {
    * @param <E> entity type
    */
   @SuppressWarnings("unused")
-  <C extends BaseConsumer<C>, E extends PersistentBase<C>> void load(
-      EntityType<C, E> valueType, Class<E> entityType, Id id, Consumer<E> consumer) {
+  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> void load(
+      EntityType<C, E, B> valueType, Class<E> entityType, Id id, Consumer<E> consumer) {
     load(valueType, id, consumer);
   }
 
@@ -66,9 +67,9 @@ final class EntityLoadOps {
    * @param consumer consumer that will receive the loaded entity
    * @param <E> entity type
    */
-  <C extends BaseConsumer<C>, E extends PersistentBase<C>> void load(
-      EntityType<C, E> valueType, Id id, Consumer<E> consumer) {
-    EntityLoadOp<?> loadOp = direct
+  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> void load(
+      EntityType<C, E, B> valueType, Id id, Consumer<E> consumer) {
+    EntityLoadOp<?, ?, ?> loadOp = direct
         .computeIfAbsent(new LoadOpKey(valueType, id), k -> new EntityLoadOp<>(valueType.valueType, k.id));
     @SuppressWarnings({"unchecked", "rawtypes"}) Consumer<HasId> c = (Consumer) consumer;
     loadOp.consumers.add(c);
@@ -84,8 +85,8 @@ final class EntityLoadOps {
    * @param <E> entity type
    */
   @SuppressWarnings("unused")
-  <C extends BaseConsumer<C>, E extends PersistentBase<C>> void loadDeferred(
-      EntityType<C, E> valueType, Class<E> entityType, Supplier<Id> id, Consumer<E> consumer) {
+  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> void loadDeferred(
+      EntityType<C, E, B> valueType, Class<E> entityType, Supplier<Id> id, Consumer<E> consumer) {
     loadDeferred(valueType, id, consumer);
   }
 
@@ -98,8 +99,8 @@ final class EntityLoadOps {
    * @param consumer consumer that will receive the loaded entity
    * @param <E> entity type
    */
-  <C extends BaseConsumer<C>, E extends PersistentBase<C>> void loadDeferred(
-      EntityType<C, E> valueType, Supplier<Id> id, Consumer<E> consumer) {
+  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> void loadDeferred(
+      EntityType<C, E, B> valueType, Supplier<Id> id, Consumer<E> consumer) {
     List<Deferred> consumers = deferred.computeIfAbsent(valueType, k -> new ArrayList<>());
     @SuppressWarnings({"unchecked", "rawtypes"}) Consumer<HasId> c = (Consumer) consumer;
     consumers.add(new Deferred(id, c));
@@ -147,7 +148,7 @@ final class EntityLoadOps {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private void buildDeferred(EntityType<?, ?> type, Deferred d) {
+  private void buildDeferred(EntityType<?, ?, ?> type, Deferred d) {
     Consumer c = d.consumer;
     load(type, d.idSupplier.get(), c);
   }
@@ -163,10 +164,10 @@ final class EntityLoadOps {
   }
 
   private static final class LoadOpKey {
-    private final EntityType<?, ?> type;
+    private final EntityType<?, ?, ?> type;
     private final Id id;
 
-    LoadOpKey(EntityType<?, ?> type, Id id) {
+    LoadOpKey(EntityType<?, ?, ?> type, Id id) {
       super();
       this.type = type;
       this.id = id;
@@ -201,27 +202,28 @@ final class EntityLoadOps {
   }
 
   @SuppressWarnings("rawtypes")
-  private static class EntityLoadOp<C extends BaseConsumer<C>> extends LoadOp<C> {
+  private static class EntityLoadOp<C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> extends LoadOp<C> {
     private final List<Consumer<HasId>> consumers = new ArrayList<>();
-    private C receiver;
+    private B receiver;
 
     EntityLoadOp(ValueType<C> type, Id id) {
       super(type, id);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public C getReceiver() {
-      receiver = EntityType.forType(getValueType()).newEntityProducer();
-      return receiver;
+      receiver = (B) EntityType.forType(getValueType()).newEntityProducer();
+      return (C) receiver;
     }
 
     @Override
     public void done() {
-      PersistentBase entity = EntityType.forType(getValueType()).buildFromProducer(receiver);
+      PersistentBase entity = receiver.build();
       consumers.forEach(c -> c.accept(entity));
     }
 
-    EntityLoadOp<C> combine(EntityLoadOp<C> other) {
+    EntityLoadOp<C, E, B> combine(EntityLoadOp<C, E, B> other) {
       consumers.addAll(other.consumers);
       return this;
     }
@@ -236,9 +238,9 @@ final class EntityLoadOps {
   private static class EntityLoadStep implements LoadStep {
 
     private final Supplier<Optional<LoadStep>> next;
-    private final Map<LoadOpKey, EntityLoadOp<?>> ops;
+    private final Map<LoadOpKey, EntityLoadOp<?, ?, ?>> ops;
 
-    EntityLoadStep(Map<LoadOpKey, EntityLoadOp<?>> ops, Supplier<Optional<LoadStep>> next) {
+    EntityLoadStep(Map<LoadOpKey, EntityLoadOp<?, ?, ?>> ops, Supplier<Optional<LoadStep>> next) {
       this.next = next;
       this.ops = ops;
     }
@@ -254,7 +256,7 @@ final class EntityLoadOps {
       return ops.values().stream().map(LoadOp.class::cast);
     }
 
-    @SuppressWarnings("OptionalIsPresent")
+    @SuppressWarnings({ "OptionalIsPresent", "rawtypes", "unchecked" })
     @Override
     public LoadStep combine(LoadStep other) {
       EntityLoadStep o = (EntityLoadStep) other;

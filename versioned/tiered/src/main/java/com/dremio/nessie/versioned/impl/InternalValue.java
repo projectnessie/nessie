@@ -15,14 +15,14 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import com.dremio.nessie.tiered.builder.ValueConsumer;
+import com.dremio.nessie.tiered.builder.Value;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.protobuf.ByteString;
 
 /**
  * Holds a VersionStore binary value for interaction with the Store.
  */
-class InternalValue extends WrappedValueBean<ValueConsumer> {
+class InternalValue extends WrappedValueBean<Value> {
 
   private InternalValue(Id id, ByteString value) {
     super(id, value);
@@ -38,11 +38,11 @@ class InternalValue extends WrappedValueBean<ValueConsumer> {
   }
 
   /**
-   * Implements {@link ValueConsumer} to builds an {@link InternalValue} object.
+   * Implements {@link Value} to builds an {@link InternalValue} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends WrappedValueBean.Builder<InternalValue, ValueConsumer>
-      implements ValueConsumer {
+  static final class Builder extends WrappedValueBean.Builder<InternalValue, Value>
+      implements Value {
     Builder() {
       super(InternalValue::new);
     }

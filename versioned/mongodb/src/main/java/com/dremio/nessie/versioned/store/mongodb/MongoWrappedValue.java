@@ -22,22 +22,22 @@ import java.util.function.BiConsumer;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
+import com.dremio.nessie.tiered.builder.BaseWrappedValue;
 import com.google.protobuf.ByteString;
 
-class MongoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends MongoConsumer<C> implements WrappedValueConsumer<C> {
+class MongoWrappedValue<C extends BaseWrappedValue<C>> extends MongoBaseValue<C> implements BaseWrappedValue<C> {
 
   static final String VALUE = "value";
 
   @SuppressWarnings("rawtypes")
-  static final Map<String, BiConsumer<WrappedValueConsumer, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiConsumer<BaseWrappedValue, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
     PROPERTY_PRODUCERS.put(VALUE, (c, r) -> c.value(MongoSerDe.deserializeBytes(r)));
   }
 
-  MongoWrappedValueConsumer(BsonWriter bsonWriter) {
+  MongoWrappedValue(BsonWriter bsonWriter) {
     super(bsonWriter);
   }
 

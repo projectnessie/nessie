@@ -15,8 +15,21 @@
  */
 package com.dremio.nessie.tiered.builder;
 
+import com.dremio.nessie.versioned.store.Id;
+
 /**
- * Consumer for commit-metadata.
+ * Base interface for all consumers.
+ * <p>
+ * Do not implement this interface in non-abstract implementation classes!
+ * </p>
  */
-public interface CommitMetadataConsumer extends WrappedValueConsumer<CommitMetadataConsumer> {
+public interface BaseValue<T extends BaseValue<T>> {
+  /**
+   * The id for this consumer.
+   * <p>Must be called exactly once.</p>
+   *
+   * @param id The id.
+   * @return This consumer.
+   */
+  T id(Id id);
 }

@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 
@@ -59,7 +59,7 @@ public interface Store extends AutoCloseable {
    * @return Returns true if the item was absent and is now inserted.
    * @throws StoreOperationException Thrown if some kind of underlying operation fails.
    */
-  <C extends BaseConsumer<C>> boolean putIfAbsent(SaveOp<C> saveOp);
+  <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp);
 
   /**
    * Put a value in the store.
@@ -73,7 +73,7 @@ public interface Store extends AutoCloseable {
    * @throws ConditionFailedException If the condition provided didn't match the current state of the value.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <C extends BaseConsumer<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition);
+  <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition);
 
   /**
    * Delete a value.
@@ -85,7 +85,7 @@ public interface Store extends AutoCloseable {
    * @throws NotFoundException If no value was found for the specified Id.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <C extends BaseConsumer<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition);
+  <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition);
 
   /**
    * Batch put/save operation.
@@ -109,7 +109,7 @@ public interface Store extends AutoCloseable {
    * @param consumer consumer that will receive the properties
    * @param <C> type of the consumer
    */
-  <C extends BaseConsumer<C>> void loadSingle(ValueType<C> type, Id id, C consumer);
+  <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer);
 
   /**
    * Do a conditional update. If the condition succeeds, optionally return the values via a consumer.
@@ -124,10 +124,10 @@ public interface Store extends AutoCloseable {
    * @throws NotFoundException Thrown if no value is found with the provided id.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <C extends BaseConsumer<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
-      Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException;
+  <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
+      Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer) throws NotFoundException;
 
-  interface Acceptor<C extends BaseConsumer<C>> {
+  interface Acceptor<C extends BaseValue<C>> {
     void applyValue(C consumer);
   }
 
@@ -136,7 +136,7 @@ public interface Store extends AutoCloseable {
    *
    * @param <C> the consumer type
    * @param type The {@link ValueType} to load.
-   * @return stream with {@link Acceptor} instances that accept {@link BaseConsumer} instances to produce values
+   * @return stream with {@link Acceptor} instances that accept {@link BaseValue} instances to produce values
    */
-  <C extends BaseConsumer<C>> Stream<Acceptor<C>> getValues(ValueType<C> type);
+  <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type);
 }

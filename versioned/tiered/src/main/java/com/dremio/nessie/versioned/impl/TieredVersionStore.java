@@ -34,7 +34,6 @@ import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.tiered.builder.RefConsumer;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Delete;
 import com.dremio.nessie.versioned.Diff;
@@ -126,7 +125,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     }
 
     // with a hash.
-    final L1 l1;
+    final InternalL1 l1;
     try {
       l1 = EntityType.L1.loadSingle(store, Id.of(targetHash.get()));
     } catch (NotFoundException ex) {
@@ -155,7 +154,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     try {
       Hash hash = Hash.of(refOfUnknownType);
-      L1 l1 = EntityType.L1.loadSingle(store, Id.of(hash));
+      InternalL1 l1 = EntityType.L1.loadSingle(store, Id.of(hash));
       return WithHash.of(l1.getId().toHash(), l1.getId().toHash());
     } catch (RuntimeException ex) {
       // ignore.
@@ -261,9 +260,9 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           true,
           true);
 
-      RefConsumer producer = EntityType.REF.newEntityProducer();
+      InternalRef.Builder builder = EntityType.REF.newEntityProducer();
       boolean updated = store.update(ValueType.REF, ref.getId(),
-          commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(producer));
+          commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(builder));
       if (!updated) {
         if (loop++ < commitRetryCount) {
           continue;
@@ -272,7 +271,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
             String.format("Unable to complete commit due to conflicting events. Retried %d times before failing.", commitRetryCount));
       }
 
-      updatedBranch = (InternalBranch) EntityType.REF.buildFromProducer(producer);
+      updatedBranch = builder.build().getBranch();
       break;
     }
 
@@ -289,7 +288,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
     try {
       InternalRefId id = InternalRefId.of(ref);
-      final L1 startingL1;
+      final InternalL1 startingL1;
       if (id.getType() == Type.HASH) {
         // points to L1.
         startingL1 = EntityType.L1.loadSingle(store, id.getId());
@@ -315,9 +314,9 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   public Stream<WithHash<NamedRef>> getNamedRefs() {
     return store.getValues(ValueType.REF)
         .map(acceptor -> {
-          RefConsumer producer = EntityType.REF.newEntityProducer();
+          InternalRef.Builder producer = EntityType.REF.newEntityProducer();
           acceptor.applyValue(producer);
-          return EntityType.REF.buildFromProducer(producer);
+          return producer.build();
         })
         .map(ir -> {
           if (ir.getType() == Type.TAG) {
@@ -325,7 +324,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           }
 
           InternalBranch branch = ir.getBranch();
-          L1 l1 = ensureValidL1(branch);
+          InternalL1 l1 = ensureValidL1(branch);
           return WithHash.of(l1.getId().toHash(), ImmutableBranchName.builder().name(ir.getBranch().getName()).build());
         });
   }
@@ -335,7 +334,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
    * @param branch The branch that may have unsaved deltas.
    * @return The L1 that is guaranteed to be addressable.
    */
-  private L1 ensureValidL1(InternalBranch branch) {
+  private InternalL1 ensureValidL1(InternalBranch branch) {
     UpdateState updateState = branch.getUpdateState(store);
     updateState.ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
     return updateState.getL1();
@@ -371,7 +370,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       expectedId = null;
     }
 
-    final L1 l1;
+    final InternalL1 l1;
     try {
       l1 = EntityType.L1.loadSingle(store, newId);
     } catch (NotFoundException ex) {
@@ -430,7 +429,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
     // naive implementation.
     InternalRefId refId = InternalRefId.of(ref);
-    final L1 start;
+    final InternalL1 start;
 
     switch (refId.getType()) {
       case BRANCH:
@@ -482,9 +481,9 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         true,
         (from, commonParent) -> {
           // first we need to validate that the actual history matches the provided sequence.
-          Stream<L1> historyStream = new HistoryRetriever(store, from, null, true, false, true).getStream().map(HistoryItem::getL1);
-          List<L1> l1s = Lists.reverse(takeUntilNext(historyStream, endTarget).collect(ImmutableList.toImmutableList()));
-          List<Hash> hashes = l1s.stream().map(L1::getId).map(Id::toHash).skip(1).collect(Collectors.toList());
+          Stream<InternalL1> historyStream = new HistoryRetriever(store, from, null, true, false, true).getStream().map(HistoryItem::getL1);
+          List<InternalL1> l1s = Lists.reverse(takeUntilNext(historyStream, endTarget).collect(ImmutableList.toImmutableList()));
+          List<Hash> hashes = l1s.stream().map(InternalL1::getId).map(Id::toHash).skip(1).collect(Collectors.toList());
           if (!hashes.equals(sequenceToTransplant)) {
             throw new IllegalArgumentException("Provided are not sequential and consistent with history.");
           }
@@ -493,14 +492,14 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         });
   }
 
-  private static Stream<L1> takeUntilNext(Stream<L1> stream, Id endTarget) {
-    Spliterator<L1> iter = stream.spliterator();
+  private static Stream<InternalL1> takeUntilNext(Stream<InternalL1> stream, Id endTarget) {
+    Spliterator<InternalL1> iter = stream.spliterator();
 
-    return StreamSupport.stream(new AbstractSpliterator<L1>(iter.estimateSize(), 0) {
+    return StreamSupport.stream(new AbstractSpliterator<InternalL1>(iter.estimateSize(), 0) {
       boolean found = false;
       boolean delivered = false;
       @Override
-      public boolean tryAdvance(Consumer<? super L1> consumer) {
+      public boolean tryAdvance(Consumer<? super InternalL1> consumer) {
         boolean hasNext = iter.tryAdvance(l1 -> {
           delivered = found;
           found = l1.getId().equals(endTarget);
@@ -522,7 +521,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   private interface HistoryHelper {
-    List<L1> getFromL1s(L1 headL1, Id commonParent);
+    List<InternalL1> getFromL1s(InternalL1 headL1, Id commonParent);
   }
 
   private void internalTransplant(
@@ -534,8 +533,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     final InternalRefId branchId = InternalRefId.ofBranch(toBranch.getName());
-    Pointer<L1> fromPtr = new Pointer<>();
-    Pointer<L1> toPtr = new Pointer<>();
+    Pointer<InternalL1> fromPtr = new Pointer<>();
+    Pointer<InternalL1> toPtr = new Pointer<>();
     Pointer<InternalRef> branch = new Pointer<>();
 
     {
@@ -543,10 +542,10 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       EntityLoadOps loadOps = new EntityLoadOps();
 
       // always load the l1 we're merging from.
-      loadOps.load(EntityType.L1, L1.class, Id.of(fromHash), fromPtr::set);
+      loadOps.load(EntityType.L1, InternalL1.class, Id.of(fromHash), fromPtr::set);
       if (expectedBranchHash.isPresent()) {
         // if an expected branch hash is provided, use that l1 as the basic. Still load the branch to make sure it exists.
-        loadOps.load(EntityType.L1, L1.class, Id.of(expectedBranchHash.get()), toPtr::set);
+        loadOps.load(EntityType.L1, InternalL1.class, Id.of(expectedBranchHash.get()), toPtr::set);
         loadOps.load(EntityType.REF, InternalRef.class, branchId.getId(), branch::set);
       } else {
 
@@ -566,15 +565,15 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
     }
 
-    final L1 from = fromPtr.get();
-    final L1 to = toPtr.get();
+    final InternalL1 from = fromPtr.get();
+    final InternalL1 to = toPtr.get();
 
     // let's find a common parent.
     Id commonParent = HistoryRetriever.findCommonParent(store, from, to, MAX_MERGE_DEPTH);
 
-    List<L1> fromL1s = historyHelper.getFromL1s(from, commonParent);
+    List<InternalL1> fromL1s = historyHelper.getFromL1s(from, commonParent);
     if (fromL1s.size() == 1) {
-      Preconditions.checkArgument(fromL1s.get(0).getId().equals(L1.EMPTY_ID));
+      Preconditions.checkArgument(fromL1s.get(0).getId().equals(InternalL1.EMPTY_ID));
       // the from hash is the empty hash, no operations to merge.
       return;
     }
@@ -598,11 +597,11 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       // more accurately represents a "rebase" operation where the new commits have to be replayed individually across the
       // new target branch as opposed to only the head of that branch.
 
-      List<L1> toL1s =  Lists.reverse(new HistoryRetriever(store, to, commonParent, true, false, true)
+      List<InternalL1> toL1s =  Lists.reverse(new HistoryRetriever(store, to, commonParent, true, false, true)
           .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
 
       if (toL1s.size() == 1) {
-        Preconditions.checkArgument(toL1s.get(0).getId().equals(L1.EMPTY_ID));
+        Preconditions.checkArgument(toL1s.get(0).getId().equals(InternalL1.EMPTY_ID));
         // merging to an empty branch. Just do reassign.
         assign(toBranch, expectedBranchHash, fromHash);
         return;

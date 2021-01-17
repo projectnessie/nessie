@@ -24,7 +24,7 @@ import com.dremio.nessie.versioned.store.Id;
  * Interface to create an L1 Builder. To be implemented by each
  * {@link com.dremio.nessie.versioned.store.Store} implementation.
  */
-public interface L1Consumer extends BaseConsumer<L1Consumer> {
+public interface L1 extends BaseValue<L1> {
 
   /**
    * The commit metadata id for this l1.
@@ -33,7 +33,7 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
    * @param id The id to reference.
    * @return This consumer.
    */
-  L1Consumer commitMetadataId(Id id);
+  L1 commitMetadataId(Id id);
 
   /**
    * Add ancestors associated with this L1.
@@ -42,16 +42,16 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
    * @param ids A list of ancestors ordered by most recent recent first.
    * @return This consumer.
    */
-  L1Consumer ancestors(Stream<Id> ids);
+  L1 ancestors(Stream<Id> ids);
 
   /**
    * Add a list of children ids indexed by position.
    * <p>Must be called exactly once.</p>
    *
-   * @param ids The list of ids. List must be {@link com.dremio.nessie.versioned.impl.L1#SIZE} in length.
+   * @param ids The list of ids. List must be {@link com.dremio.nessie.versioned.impl.InternalL1#SIZE} in length.
    * @return This consumer.
    */
-  L1Consumer children(Stream<Id> ids);
+  L1 children(Stream<Id> ids);
 
   /**
    * Keys that were added and removed as part of this commit.
@@ -60,7 +60,7 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
    * @param keyMutations The key that was added.
    * @return This consumer.
    */
-  L1Consumer keyMutations(Stream<Key.Mutation> keyMutations);
+  L1 keyMutations(Stream<Key.Mutation> keyMutations);
 
   /**
    * States that this L1 has an incremental key list.
@@ -71,7 +71,7 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
    * @param distanceFromCheckpoint The number of commits between this commit and the last checkpoint.
    * @return This consumer.
    */
-  L1Consumer incrementalKeyList(Id checkpointId, int distanceFromCheckpoint);
+  L1 incrementalKeyList(Id checkpointId, int distanceFromCheckpoint);
 
   /**
    * States that this L1 has a complete key list.
@@ -81,6 +81,6 @@ public interface L1Consumer extends BaseConsumer<L1Consumer> {
    * @param fragmentIds The ids of each of the key list fragments given in a meaningful/to be maintained order.
    * @return This consumer.
    */
-  L1Consumer completeKeyList(Stream<Id> fragmentIds);
+  L1 completeKeyList(Stream<Id> fragmentIds);
 
 }

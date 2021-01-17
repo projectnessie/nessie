@@ -48,7 +48,7 @@ abstract class KeyList {
 
   abstract KeyList plus(Id parent, List<KeyMutation> mutations);
 
-  abstract Optional<KeyList> createCheckpointIfNeeded(L1 startingPoint, Store store);
+  abstract Optional<KeyList> createCheckpointIfNeeded(InternalL1 startingPoint, Store store);
 
   abstract Type getType();
 
@@ -62,7 +62,7 @@ abstract class KeyList {
         .mutations(mutations).build();
   }
 
-  abstract Stream<InternalKey> getKeys(L1 startingPoint, Store store);
+  abstract Stream<InternalKey> getKeys(InternalL1 startingPoint, Store store);
 
 
   abstract List<KeyMutation> getMutations();
@@ -97,7 +97,7 @@ abstract class KeyList {
     }
 
     @Override
-    public Optional<KeyList> createCheckpointIfNeeded(L1 startingPoint, Store store) {
+    public Optional<KeyList> createCheckpointIfNeeded(InternalL1 startingPoint, Store store) {
       if (getDistanceFromCheckpointCommits() < MAX_DELTAS) {
         return Optional.empty();
       }
@@ -108,7 +108,7 @@ abstract class KeyList {
 
 
     @Override
-    Stream<InternalKey> getKeys(L1 startingPoint, Store store) {
+    Stream<InternalKey> getKeys(InternalL1 startingPoint, Store store) {
       IterResult keys = getKeysIter(startingPoint, store);
       if (keys.isChanged()) {
         return keys.keyList;
@@ -117,7 +117,7 @@ abstract class KeyList {
       return keys.list.getKeys(startingPoint, store);
     }
 
-    private CompleteList generateNewCheckpoint(L1 startingPoint, Store store) {
+    private CompleteList generateNewCheckpoint(InternalL1 startingPoint, Store store) {
 
       IterResult result = getKeysIter(startingPoint, store);
       if (!result.isChanged()) {
@@ -131,7 +131,7 @@ abstract class KeyList {
       return accum.getCompleteList(getMutations());
     }
 
-    private IterResult getKeysIter(L1 startingPoint, Store store) {
+    private IterResult getKeysIter(InternalL1 startingPoint, Store store) {
       HistoryRetriever retriever = new HistoryRetriever(store, startingPoint, getPreviousCheckpoint(), true, false, true);
       final CompleteList complete;
       // incrementals, from oldest to newest.
@@ -256,7 +256,7 @@ abstract class KeyList {
     }
 
     @Override
-    public Optional<KeyList> createCheckpointIfNeeded(L1 startingPoint, Store store) {
+    public Optional<KeyList> createCheckpointIfNeeded(InternalL1 startingPoint, Store store) {
       // checkpoint not needed, already a checkpoint.
       return Optional.empty();
     }
@@ -284,9 +284,9 @@ abstract class KeyList {
     }
 
     @Override
-    Stream<InternalKey> getKeys(L1 startingPoint, Store store) {
+    Stream<InternalKey> getKeys(InternalL1 startingPoint, Store store) {
       return fragmentIds.stream().flatMap(f -> {
-        Fragment fragment = EntityType.KEY_FRAGMENT.loadSingle(store, f);
+        InternalFragment fragment = EntityType.KEY_FRAGMENT.loadSingle(store, f);
         return fragment.getKeys().stream();
       });
     }
@@ -333,7 +333,7 @@ abstract class KeyList {
 
     private void rotate(boolean always) {
       if (!currentList.isEmpty() && (always || aboveThreshold())) {
-        Fragment fragment = new Fragment(currentList);
+        InternalFragment fragment = new InternalFragment(currentList);
         currentList.clear();
         currentListSize = 0;
         if (!presaved.contains(fragment.getId())) {

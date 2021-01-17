@@ -22,7 +22,7 @@ import com.dremio.nessie.versioned.store.KeyDelta;
 /**
  * Consumer for L2s.
  */
-public interface L3Consumer extends BaseConsumer<L3Consumer> {
+public interface L3 extends BaseValue<L3> {
 
   /**
    * Adds {@link KeyDelta}s for this L3.
@@ -31,5 +31,5 @@ public interface L3Consumer extends BaseConsumer<L3Consumer> {
    * @param keyDelta The stream providing the {@link KeyDelta}s of this L3
    * @return This consumer.
    */
-  L3Consumer keyDelta(Stream<KeyDelta> keyDelta);
+  L3 keyDelta(Stream<KeyDelta> keyDelta);
 }

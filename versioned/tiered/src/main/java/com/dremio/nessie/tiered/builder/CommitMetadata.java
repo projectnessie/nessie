@@ -15,21 +15,8 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import com.google.protobuf.ByteString;
-
 /**
- * Base consumer implementation for commit-metadata and binary values.
- * <p>
- * Do not implement this interface in non-abstract implementation classes!
- * </p>
+ * Consumer for commit-metadata.
  */
-public interface WrappedValueConsumer<C extends WrappedValueConsumer<C>> extends BaseConsumer<C> {
-  /**
-   * The value for this bytes-value.
-   * <p>Must be called exactly once.</p>
-   *
-   * @param value The value to set.
-   * @return This consumer.
-   */
-  C value(ByteString value);
+public interface CommitMetadata extends BaseWrappedValue<CommitMetadata> {
 }

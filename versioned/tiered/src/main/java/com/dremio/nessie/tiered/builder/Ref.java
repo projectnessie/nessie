@@ -98,7 +98,7 @@ import com.dremio.nessie.versioned.store.Id;
  * <li>The ids for all saved commits will exist in the L1 table.
  * </ol>
  */
-public interface RefConsumer extends BaseConsumer<RefConsumer> {
+public interface Ref extends BaseValue<Ref> {
   enum RefType {
     TAG,
     BRANCH
@@ -111,7 +111,7 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
    * @param refType The type of the reference.
    * @return This consumer.
    */
-  RefConsumer type(RefType refType);
+  Ref type(RefType refType);
 
   /**
    * Set the name of the reference.
@@ -120,7 +120,7 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
    * @param name The name of the reference.
    * @return This consumer.
    */
-  RefConsumer name(String name);
+  Ref name(String name);
 
   /**
    * Set the commit of the reference.
@@ -129,7 +129,7 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
    * @param commit The commit of the reference.
    * @return This consumer.
    */
-  RefConsumer commit(Id commit);
+  Ref commit(Id commit);
 
   /**
    * Set the metadata of the reference.
@@ -138,7 +138,7 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
    * @param metadata The metadata of the reference.
    * @return This consumer.
    */
-  RefConsumer metadata(Id metadata);
+  Ref metadata(Id metadata);
 
   /**
    * Set the children of the reference.
@@ -147,7 +147,7 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
    * @param children The children of the reference.
    * @return This consumer.
    */
-  RefConsumer children(Stream<Id> children);
+  Ref children(Stream<Id> children);
 
   /**
    * Set the commits of the reference.
@@ -158,7 +158,7 @@ public interface RefConsumer extends BaseConsumer<RefConsumer> {
    * @param commits The branch's commit-log receiver.
    * @return This consumer.
    */
-  RefConsumer commits(Consumer<BranchCommitConsumer> commits);
+  Ref commits(Consumer<BranchCommitConsumer> commits);
 
   /**
    * Users of this consumers must call the methods in the following order.

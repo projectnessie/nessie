@@ -15,21 +15,21 @@
  */
 package com.dremio.nessie.tiered.builder;
 
-import com.dremio.nessie.versioned.store.Id;
+import com.google.protobuf.ByteString;
 
 /**
- * Base interface for all consumers.
+ * Base consumer implementation for commit-metadata and binary values.
  * <p>
  * Do not implement this interface in non-abstract implementation classes!
  * </p>
  */
-public interface BaseConsumer<T extends BaseConsumer<T>> {
+public interface BaseWrappedValue<C extends BaseWrappedValue<C>> extends BaseValue<C> {
   /**
-   * The id for this consumer.
+   * The value for this bytes-value.
    * <p>Must be called exactly once.</p>
    *
-   * @param id The id.
+   * @param value The value to set.
    * @return This consumer.
    */
-  T id(Id id);
+  C value(ByteString value);
 }

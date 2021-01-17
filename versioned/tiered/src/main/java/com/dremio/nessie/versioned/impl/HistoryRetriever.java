@@ -41,10 +41,10 @@ class HistoryRetriever {
   private final boolean retrieveCommit;
   private final boolean includeEndEmpty;
   private final Store store;
-  private final L1 start;
+  private final InternalL1 start;
   private final Id end;
 
-  public HistoryRetriever(Store store, L1 start, Id end, boolean retrieveL1, boolean retrieveCommit, boolean includeEndEmpty) {
+  public HistoryRetriever(Store store, InternalL1 start, Id end, boolean retrieveL1, boolean retrieveCommit, boolean includeEndEmpty) {
     super();
     this.store = store;
     this.start = start;
@@ -57,14 +57,14 @@ class HistoryRetriever {
   class HistoryItem {
 
     private Id id;
-    private L1 l1;
+    private InternalL1 l1;
     private InternalCommitMetadata commitMetadata;
 
     public HistoryItem(Id id) {
       this.id = id;
     }
 
-    public L1 getL1() {
+    public InternalL1 getL1() {
       return l1;
     }
 
@@ -96,7 +96,7 @@ class HistoryRetriever {
     public HistoryIterator() {
       this.previous = null;
 
-      if (start.getId().equals(L1.EMPTY_ID) && !includeEndEmpty) {
+      if (start.getId().equals(InternalL1.EMPTY_ID) && !includeEndEmpty) {
         this.currentIterator = Collections.emptyIterator();
         this.isLast = true;
       } else {
@@ -142,7 +142,7 @@ class HistoryRetriever {
           break;
         }
 
-        if (!includeEndEmpty && parent.equals(L1.EMPTY_ID)) {
+        if (!includeEndEmpty && parent.equals(InternalL1.EMPTY_ID)) {
           isLast = true;
           break;
         }
@@ -150,10 +150,10 @@ class HistoryRetriever {
         final HistoryItem item = new HistoryItem(parent);
         items.add(item);
         if (retrieveL1 || retrieveCommit || lastInList) {
-          loadOps.load(EntityType.L1, L1.class, parent, l1 -> item.l1 = l1);
+          loadOps.load(EntityType.L1, InternalL1.class, parent, l1 -> item.l1 = l1);
         }
 
-        if (retrieveCommit && !parent.equals(L1.EMPTY_ID)) {
+        if (retrieveCommit && !parent.equals(InternalL1.EMPTY_ID)) {
           secondOps.loadDeferred(EntityType.COMMIT_METADATA,
               InternalCommitMetadata.class,
               () -> item.l1.getMetadataId(),
@@ -178,7 +178,7 @@ class HistoryRetriever {
 
   }
 
-  public static Id findCommonParent(Store store, L1 head1, L1 head2, int maxDepth) {
+  public static Id findCommonParent(Store store, InternalL1 head1, InternalL1 head2, int maxDepth) {
     Iterator<Id> r1 = new HistoryRetriever(store, head1, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();
     Iterator<Id> r2 = new HistoryRetriever(store, head2, Id.EMPTY, false, false, true).getStream().map(HistoryItem::getId).iterator();
     Set<Id> r1Set = new LinkedHashSet<>();

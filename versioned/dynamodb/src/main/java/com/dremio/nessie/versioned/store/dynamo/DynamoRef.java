@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.RefConsumer;
+import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -43,7 +43,7 @@ import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsumer {
+class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
 
   static final String TYPE = "type";
   static final String NAME = "name";
@@ -60,12 +60,12 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
-  DynamoRefConsumer() {
+  DynamoRef() {
     super(ValueType.REF);
   }
 
   @Override
-  public RefConsumer type(RefType refType) {
+  public Ref type(RefType refType) {
     switch (refType) {
       case TAG:
         return addEntitySafe(TYPE, string(REF_TYPE_TAG));
@@ -77,27 +77,27 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
   }
 
   @Override
-  public RefConsumer name(String name) {
+  public Ref name(String name) {
     return addEntitySafe(NAME, string(name));
   }
 
   @Override
-  public RefConsumer commit(Id commit) {
+  public Ref commit(Id commit) {
     return addEntitySafe(COMMIT, idValue(commit));
   }
 
   @Override
-  public RefConsumer metadata(Id metadata) {
+  public Ref metadata(Id metadata) {
     return addEntitySafe(METADATA, idValue(metadata));
   }
 
   @Override
-  public RefConsumer children(Stream<Id> children) {
+  public Ref children(Stream<Id> children) {
     return addIdList(TREE, children);
   }
 
   @Override
-  public RefConsumer commits(Consumer<BranchCommitConsumer> commits) {
+  public Ref commits(Consumer<BranchCommitConsumer> commits) {
     List<AttributeValue> commitsList = new ArrayList<>();
     commits.accept(new BranchCommitConsumer() {
       final Map<String, AttributeValue> builder = new HashMap<>();
@@ -187,7 +187,7 @@ class DynamoRefConsumer extends DynamoConsumer<RefConsumer> implements RefConsum
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void toConsumer(Map<String, AttributeValue> entity, RefConsumer consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, Ref consumer) {
     consumer.id(deserializeId(entity, ID))
         .name(Preconditions.checkNotNull(attributeValue(entity, NAME).s()));
 

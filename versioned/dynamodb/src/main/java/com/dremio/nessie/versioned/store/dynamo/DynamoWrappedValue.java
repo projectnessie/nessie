@@ -15,34 +15,35 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.bytes;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdStream;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Map;
-import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.L2Consumer;
-import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.tiered.builder.BaseWrappedValue;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer {
+class DynamoWrappedValue<C extends BaseWrappedValue<C>> extends DynamoBaseValue<C> implements BaseWrappedValue<C> {
 
-  static final String TREE = "tree";
+  static final String VALUE = "value";
 
-  DynamoL2Consumer() {
-    super(ValueType.L2);
+  DynamoWrappedValue(ValueType<C> valueType) {
+    super(valueType);
   }
 
   @Override
-  public L2Consumer children(Stream<Id> ids) {
-    return addIdList(TREE, ids);
+  public C value(ByteString value) {
+    return addEntitySafe(VALUE, bytes(value));
   }
 
   @Override
   Map<String, AttributeValue> build() {
-    checkPresent(TREE, "children");
+    checkPresent(VALUE, "value");
 
     return super.build();
   }
@@ -50,11 +51,9 @@ class DynamoL2Consumer extends DynamoConsumer<L2Consumer> implements L2Consumer 
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void toConsumer(Map<String, AttributeValue> entity, L2Consumer consumer) {
-    consumer.id(deserializeId(entity, ID));
-
-    if (entity.containsKey(TREE)) {
-      consumer.children(deserializeIdStream(entity, TREE));
-    }
+  static <C extends BaseWrappedValue<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
+    consumer.id(deserializeId(entity, ID))
+        .value(ByteString.copyFrom(checkNotNull(attributeValue(entity, VALUE).b(), "mandatory binary value is null")
+            .asByteArrayUnsafe()));
   }
 }

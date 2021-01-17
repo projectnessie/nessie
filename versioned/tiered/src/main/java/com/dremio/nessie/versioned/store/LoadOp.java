@@ -15,16 +15,16 @@
  */
 package com.dremio.nessie.versioned.store;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
 
 /**
  * Load operations in stores push the properties of the loaded values to the consumer
  * returned by {@link #getReceiver()} and call {@link #done()} when the load represented by
  * this load-operation is finished.
  *
- * @param <C> {@link BaseConsumer consumer} used to handle the load-operation
+ * @param <C> {@link BaseValue consumer} used to handle the load-operation
  */
-public abstract class LoadOp<C extends BaseConsumer<C>> {
+public abstract class LoadOp<C extends BaseValue<C>> {
   private final ValueType<C> type;
   private final Id id;
 
@@ -40,7 +40,7 @@ public abstract class LoadOp<C extends BaseConsumer<C>> {
 
   /**
    * Users of a {@link LoadOp} (the store implementations) can deserialize their representation
-   * into the {@link BaseConsumer} returned by this method and call {@link #done()} afterwards.
+   * into the {@link BaseValue} returned by this method and call {@link #done()} afterwards.
    *
    * @return receiver of the "properties"
    */
@@ -48,7 +48,7 @@ public abstract class LoadOp<C extends BaseConsumer<C>> {
 
   /**
    * Users of a {@link LoadOp} (the store implementations) can deserialize their representation
-   * into the {@link BaseConsumer} returned by {@link #getReceiver()} and call this method afterwards.
+   * into the {@link BaseValue} returned by {@link #getReceiver()} and call this method afterwards.
    */
   public abstract void done();
 

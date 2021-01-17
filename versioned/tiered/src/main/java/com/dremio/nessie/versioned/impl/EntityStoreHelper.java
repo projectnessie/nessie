@@ -31,9 +31,9 @@ public final class EntityStoreHelper {
    * @param consumer consumer that receives the value-type and instance
    */
   public static void storeMinimumEntities(Consumer<SaveOp<?>> consumer) {
-    consumer.accept(new EntitySaveOp<>(ValueType.L1, L1.EMPTY));
-    consumer.accept(new EntitySaveOp<>(ValueType.L2, L2.EMPTY));
-    consumer.accept(new EntitySaveOp<>(ValueType.L3, L3.EMPTY));
+    consumer.accept(new EntitySaveOp<>(ValueType.L1, InternalL1.EMPTY));
+    consumer.accept(new EntitySaveOp<>(ValueType.L2, InternalL2.EMPTY));
+    consumer.accept(new EntitySaveOp<>(ValueType.L3, InternalL3.EMPTY));
   }
 
 }

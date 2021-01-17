@@ -15,45 +15,46 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdStream;
 
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.FragmentConsumer;
-import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.tiered.builder.L2;
+import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoFragmentConsumer extends DynamoConsumer<FragmentConsumer> implements FragmentConsumer {
+class DynamoL2 extends DynamoBaseValue<L2> implements L2 {
 
-  static final String KEY_LIST = "keys";
+  static final String TREE = "tree";
 
-  DynamoFragmentConsumer() {
-    super(ValueType.KEY_FRAGMENT);
+  DynamoL2() {
+    super(ValueType.L2);
   }
 
   @Override
-  public FragmentConsumer keys(Stream<Key> keys) {
-    return addEntitySafe(
-        KEY_LIST,
-        list(keys.map(AttributeValueUtil::keyElements)));
+  public L2 children(Stream<Id> ids) {
+    return addIdList(TREE, ids);
   }
 
   @Override
   Map<String, AttributeValue> build() {
-    checkPresent(KEY_LIST, "keys");
+    checkPresent(TREE, "children");
+
     return super.build();
   }
 
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void toConsumer(Map<String, AttributeValue> entity, FragmentConsumer consumer) {
-    consumer.id(deserializeId(entity, ID))
-        .keys(attributeValue(entity, KEY_LIST).l().stream().map(AttributeValueUtil::deserializeKey));
+  static void toConsumer(Map<String, AttributeValue> entity, L2 consumer) {
+    consumer.id(deserializeId(entity, ID));
+
+    if (entity.containsKey(TREE)) {
+      consumer.children(deserializeIdStream(entity, TREE));
+    }
   }
 }

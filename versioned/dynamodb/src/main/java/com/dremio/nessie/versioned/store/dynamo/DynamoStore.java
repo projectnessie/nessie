@@ -18,7 +18,7 @@ package com.dremio.nessie.versioned.store.dynamo;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
-import static com.dremio.nessie.versioned.store.dynamo.DynamoConsumer.ID;
+import static com.dremio.nessie.versioned.store.dynamo.DynamoBaseValue.ID;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserializeToConsumer;
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serializeWithConsumer;
 
@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.impl.EntityStoreHelper;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
@@ -186,7 +186,7 @@ public class DynamoStore implements Store {
         Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
           List<LoadOp<?>> loadList = l.get(table);
           List<Map<String, AttributeValue>> keys = loadList.stream()
-              .map(load -> Collections.singletonMap(DynamoConsumer.ID, idValue(load.getId())))
+              .map(load -> Collections.singletonMap(DynamoBaseValue.ID, idValue(load.getId())))
               .collect(Collectors.toList());
           return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
         }));
@@ -249,7 +249,7 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
+  public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
     ConditionExpression condition = ConditionExpression.of(ExpressionFunction.attributeNotExists(ExpressionPath.builder(KEY_NAME).build()));
     try {
       put(saveOp, Optional.of(condition));
@@ -275,7 +275,7 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> conditionUnAliased) {
+  public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> conditionUnAliased) {
     Map<String, AttributeValue> attributes = serializeWithConsumer(saveOp);
 
     PutItemRequest.Builder builder = PutItemRequest.builder()
@@ -297,9 +297,9 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
+  public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     DeleteItemRequest.Builder delete = DeleteItemRequest.builder()
-        .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
+        .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
         .tableName(tableNames.get(type));
 
     AliasCollectorImpl collector = new AliasCollectorImpl();
@@ -356,10 +356,10 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> void loadSingle(ValueType<C> valueType, Id id, C consumer) {
+  public <C extends BaseValue<C>> void loadSingle(ValueType<C> valueType, Id id, C consumer) {
     GetItemResponse response = client.getItem(GetItemRequest.builder()
         .tableName(tableNames.get(valueType))
-        .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
+        .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
         .consistentRead(true)
         .build());
     if (!response.hasItem()) {
@@ -369,8 +369,8 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
-      Optional<ConditionExpression> condition, Optional<BaseConsumer<C>> consumer) throws NotFoundException {
+  public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
+      Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer) throws NotFoundException {
     try {
       AliasCollectorImpl collector = new AliasCollectorImpl();
       UpdateExpression aliased = update.alias(collector);
@@ -378,7 +378,7 @@ public class DynamoStore implements Store {
       UpdateItemRequest.Builder updateRequest = collector.apply(UpdateItemRequest.builder())
           .returnValues(ReturnValue.ALL_NEW)
           .tableName(tableNames.get(type))
-          .key(Collections.singletonMap(DynamoConsumer.ID, idValue(id)))
+          .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
           .updateExpression(aliased.toUpdateExpressionString());
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
       UpdateItemRequest builtRequest = updateRequest.build();
@@ -406,7 +406,7 @@ public class DynamoStore implements Store {
   }
 
   @Override
-  public <C extends BaseConsumer<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
+  public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
     return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
         .stream()
         .flatMap(r -> r.items().stream())

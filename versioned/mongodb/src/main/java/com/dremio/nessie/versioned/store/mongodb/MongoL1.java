@@ -24,12 +24,12 @@ import org.bson.BsonReader;
 import org.bson.BsonType;
 import org.bson.BsonWriter;
 
-import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.primitives.Ints;
 
-final class MongoL1Consumer extends MongoConsumer<L1Consumer> implements L1Consumer {
+final class MongoL1 extends MongoBaseValue<L1> implements L1 {
 
   static final String MUTATIONS = "mutations";
   static final String FRAGMENTS = "fragments";
@@ -41,47 +41,47 @@ final class MongoL1Consumer extends MongoConsumer<L1Consumer> implements L1Consu
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
-  static final Map<String, BiConsumer<L1Consumer, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiConsumer<L1, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
     PROPERTY_PRODUCERS.put(PARENTS, (c, r) -> c.ancestors(MongoSerDe.deserializeIds(r)));
     PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.children(MongoSerDe.deserializeIds(r)));
     PROPERTY_PRODUCERS.put(METADATA, (c, r) -> c.commitMetadataId(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(KEY_LIST, MongoL1Consumer::deserializeKeyList);
-    PROPERTY_PRODUCERS.put(MUTATIONS, MongoL1Consumer::deserializeKeyMutations);
+    PROPERTY_PRODUCERS.put(KEY_LIST, MongoL1::deserializeKeyList);
+    PROPERTY_PRODUCERS.put(MUTATIONS, MongoL1::deserializeKeyMutations);
   }
 
-  MongoL1Consumer(BsonWriter bsonWriter) {
+  MongoL1(BsonWriter bsonWriter) {
     super(bsonWriter);
   }
 
   @Override
-  public L1Consumer commitMetadataId(Id id) {
+  public L1 commitMetadataId(Id id) {
     serializeId(METADATA, id);
     return this;
   }
 
   @Override
-  public L1Consumer ancestors(Stream<Id> ids) {
+  public L1 ancestors(Stream<Id> ids) {
     serializeIds(PARENTS, ids);
     return this;
   }
 
   @Override
-  public L1Consumer children(Stream<Id> ids) {
+  public L1 children(Stream<Id> ids) {
     serializeIds(TREE, ids);
     return this;
   }
 
   @Override
-  public L1Consumer keyMutations(Stream<Key.Mutation> keyMutations) {
+  public L1 keyMutations(Stream<Key.Mutation> keyMutations) {
     serializeArray(MUTATIONS, keyMutations, MongoSerDe::serializeKeyMutation);
     return this;
   }
 
   @Override
-  public L1Consumer incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
+  public L1 incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
     addProperty(KEY_LIST);
     bsonWriter.writeName(KEY_LIST);
     bsonWriter.writeStartDocument();
@@ -96,7 +96,7 @@ final class MongoL1Consumer extends MongoConsumer<L1Consumer> implements L1Consu
   }
 
   @Override
-  public L1Consumer completeKeyList(Stream<Id> fragmentIds) {
+  public L1 completeKeyList(Stream<Id> fragmentIds) {
     addProperty(KEY_LIST);
     bsonWriter.writeName(KEY_LIST);
     bsonWriter.writeStartDocument();
@@ -109,7 +109,7 @@ final class MongoL1Consumer extends MongoConsumer<L1Consumer> implements L1Consu
     return this;
   }
 
-  private static void deserializeKeyList(L1Consumer consumer, BsonReader reader) {
+  private static void deserializeKeyList(L1 consumer, BsonReader reader) {
     reader.readStartDocument();
 
     boolean chk = false;
@@ -148,7 +148,7 @@ final class MongoL1Consumer extends MongoConsumer<L1Consumer> implements L1Consu
     reader.readEndDocument();
   }
 
-  private static void deserializeKeyMutations(L1Consumer consumer, BsonReader bsonReader) {
+  private static void deserializeKeyMutations(L1 consumer, BsonReader bsonReader) {
     consumer.keyMutations(MongoSerDe.deserializeKeyMutations(bsonReader).stream());
   }
 

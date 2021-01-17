@@ -18,7 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
+import com.dremio.nessie.tiered.builder.BaseWrappedValue;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Preconditions;
@@ -29,7 +29,7 @@ import com.google.protobuf.ByteString;
  *
  * <p>Generates an Id based on the hash of the data plus a unique hash seed per object type.</p>
  */
-abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends PersistentBase<C> {
+abstract class WrappedValueBean<C extends BaseWrappedValue<C>> extends PersistentBase<C> {
 
   private static final int MAX_SIZE = 1024 * 256;
   private final ByteString value;
@@ -85,8 +85,8 @@ abstract class WrappedValueBean<C extends WrappedValueConsumer<C>> extends Persi
    * Base builder-implementation for both {@link InternalCommitMetadata} and {@link InternalValue}.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static class Builder<E extends HasId, C extends WrappedValueConsumer<C>>
-      extends EntityBuilder<E> implements WrappedValueConsumer<C> {
+  static class Builder<E extends HasId, C extends BaseWrappedValue<C>>
+      extends EntityBuilder<E> implements BaseWrappedValue<C> {
 
     private Id id;
     private ByteString value;

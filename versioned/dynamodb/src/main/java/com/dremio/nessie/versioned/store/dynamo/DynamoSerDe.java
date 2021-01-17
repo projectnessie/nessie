@@ -24,14 +24,14 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
-import com.dremio.nessie.tiered.builder.CommitMetadataConsumer;
-import com.dremio.nessie.tiered.builder.FragmentConsumer;
-import com.dremio.nessie.tiered.builder.L1Consumer;
-import com.dremio.nessie.tiered.builder.L2Consumer;
-import com.dremio.nessie.tiered.builder.L3Consumer;
-import com.dremio.nessie.tiered.builder.RefConsumer;
-import com.dremio.nessie.tiered.builder.ValueConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
+import com.dremio.nessie.tiered.builder.CommitMetadata;
+import com.dremio.nessie.tiered.builder.Fragment;
+import com.dremio.nessie.tiered.builder.L1;
+import com.dremio.nessie.tiered.builder.L2;
+import com.dremio.nessie.tiered.builder.L3;
+import com.dremio.nessie.tiered.builder.Ref;
+import com.dremio.nessie.tiered.builder.Value;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
@@ -42,34 +42,34 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 final class DynamoSerDe {
 
-  private static final Map<ValueType<?>, Supplier<DynamoConsumer<?>>> dynamoEntityMapProducers;
-  private static final Map<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseConsumer<?>>> deserializeToConsumer;
+  private static final Map<ValueType<?>, Supplier<DynamoBaseValue<?>>> dynamoEntityMapProducers;
+  private static final Map<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseValue<?>>> deserializeToConsumer;
 
   static {
     dynamoEntityMapProducers = new HashMap<>();
     deserializeToConsumer = new HashMap<>();
 
-    dynamoEntityMapProducers.put(ValueType.L1, DynamoL1Consumer::new);
-    deserializeToConsumer.put(ValueType.L1, (e, c) -> DynamoL1Consumer.toConsumer(e, (L1Consumer) c));
+    dynamoEntityMapProducers.put(ValueType.L1, DynamoL1::new);
+    deserializeToConsumer.put(ValueType.L1, (e, c) -> DynamoL1.toConsumer(e, (L1) c));
 
-    dynamoEntityMapProducers.put(ValueType.L2, DynamoL2Consumer::new);
-    deserializeToConsumer.put(ValueType.L2, (e, c) -> DynamoL2Consumer.toConsumer(e, (L2Consumer) c));
+    dynamoEntityMapProducers.put(ValueType.L2, DynamoL2::new);
+    deserializeToConsumer.put(ValueType.L2, (e, c) -> DynamoL2.toConsumer(e, (L2) c));
 
-    dynamoEntityMapProducers.put(ValueType.L3, DynamoL3Consumer::new);
-    deserializeToConsumer.put(ValueType.L3, (e, c) -> DynamoL3Consumer.toConsumer(e, (L3Consumer) c));
+    dynamoEntityMapProducers.put(ValueType.L3, DynamoL3::new);
+    deserializeToConsumer.put(ValueType.L3, (e, c) -> DynamoL3.toConsumer(e, (L3) c));
 
-    dynamoEntityMapProducers.put(ValueType.COMMIT_METADATA, () -> new DynamoWrappedValueConsumer<>(ValueType.COMMIT_METADATA));
+    dynamoEntityMapProducers.put(ValueType.COMMIT_METADATA, () -> new DynamoWrappedValue<>(ValueType.COMMIT_METADATA));
     deserializeToConsumer.put(ValueType.COMMIT_METADATA,
-        (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (CommitMetadataConsumer) c));
+        (e, c) -> DynamoWrappedValue.produceToConsumer(e, (CommitMetadata) c));
 
-    dynamoEntityMapProducers.put(ValueType.VALUE, () -> new DynamoWrappedValueConsumer<>(ValueType.VALUE));
-    deserializeToConsumer.put(ValueType.VALUE, (e, c) -> DynamoWrappedValueConsumer.produceToConsumer(e, (ValueConsumer) c));
+    dynamoEntityMapProducers.put(ValueType.VALUE, () -> new DynamoWrappedValue<>(ValueType.VALUE));
+    deserializeToConsumer.put(ValueType.VALUE, (e, c) -> DynamoWrappedValue.produceToConsumer(e, (Value) c));
 
-    dynamoEntityMapProducers.put(ValueType.REF, DynamoRefConsumer::new);
-    deserializeToConsumer.put(ValueType.REF, (e, c) -> DynamoRefConsumer.toConsumer(e, (RefConsumer) c));
+    dynamoEntityMapProducers.put(ValueType.REF, DynamoRef::new);
+    deserializeToConsumer.put(ValueType.REF, (e, c) -> DynamoRef.toConsumer(e, (Ref) c));
 
-    dynamoEntityMapProducers.put(ValueType.KEY_FRAGMENT, DynamoFragmentConsumer::new);
-    deserializeToConsumer.put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragmentConsumer.toConsumer(e, (FragmentConsumer) c));
+    dynamoEntityMapProducers.put(ValueType.KEY_FRAGMENT, DynamoFragment::new);
+    deserializeToConsumer.put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragment.toConsumer(e, (Fragment) c));
 
     if (!dynamoEntityMapProducers.keySet().equals(deserializeToConsumer.keySet())) {
       throw new UnsupportedOperationException("The enum-maps dynamoConsumerSuppliers and dynamoProducerSuppliers "
@@ -92,12 +92,12 @@ final class DynamoSerDe {
    * Serialize using a DynamoDB native consumer to a DynamoDB entity map.
    * <p>
    * The actual entity to serialize is not passed into this method, but this method calls
-   * a Java {@link Consumer} that receives an instance of {@link DynamoConsumer} that receives
+   * a Java {@link Consumer} that receives an instance of {@link DynamoBaseValue} that receives
    * the entity components.
    * </p>
    */
   @SuppressWarnings("unchecked")
-  public static <C extends BaseConsumer<C>> Map<String, AttributeValue> serializeWithConsumer(
+  public static <C extends BaseValue<C>> Map<String, AttributeValue> serializeWithConsumer(
       SaveOp<C> saveOp) {
     Preconditions.checkNotNull(saveOp, "saveOp parameter is null");
 
@@ -106,7 +106,7 @@ final class DynamoSerDe {
 
     saveOp.serialize(consumer);
 
-    return ((DynamoConsumer<C>) consumer).build();
+    return ((DynamoBaseValue<C>) consumer).build();
   }
 
   /**
@@ -118,8 +118,8 @@ final class DynamoSerDe {
    * @param consumer consumer that receives the deserialized parts of the entity
    * @param <C> type of the consumer
    */
-  public static <C extends BaseConsumer<C>> void deserializeToConsumer(
-      ValueType<C> valueType, Map<String, AttributeValue> entity, BaseConsumer<C> consumer) {
+  public static <C extends BaseValue<C>> void deserializeToConsumer(
+      ValueType<C> valueType, Map<String, AttributeValue> entity, BaseValue<C> consumer) {
     Preconditions.checkNotNull(valueType, "valueType parameter is null");
     Preconditions.checkNotNull(entity, "entity parameter is null");
     Preconditions.checkNotNull(consumer, "consumer parameter is null");

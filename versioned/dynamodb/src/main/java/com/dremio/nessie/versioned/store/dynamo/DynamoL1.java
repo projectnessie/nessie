@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.L1Consumer;
+import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -39,7 +39,7 @@ import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer {
+class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
 
   static final String MUTATIONS = "mutations";
   static final String FRAGMENTS = "fragments";
@@ -53,34 +53,34 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
 
   private final Map<String, AttributeValue> keys;
 
-  DynamoL1Consumer() {
+  DynamoL1() {
     super(ValueType.L1);
     keys = new HashMap<>();
   }
 
   @Override
-  public L1Consumer commitMetadataId(Id id) {
+  public L1 commitMetadataId(Id id) {
     return addEntitySafe(METADATA, idValue(id));
   }
 
   @Override
-  public L1Consumer ancestors(Stream<Id> ids) {
+  public L1 ancestors(Stream<Id> ids) {
     return addIdList(PARENTS, ids);
   }
 
   @Override
-  public L1Consumer children(Stream<Id> ids) {
+  public L1 children(Stream<Id> ids) {
     return addIdList(TREE, ids);
   }
 
   @Override
-  public L1Consumer keyMutations(Stream<Key.Mutation> keyMutations) {
+  public L1 keyMutations(Stream<Key.Mutation> keyMutations) {
     addKeysSafe(MUTATIONS, list(keyMutations.map(AttributeValueUtil::serializeKeyMutation)));
     return this;
   }
 
   @Override
-  public L1Consumer incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
+  public L1 incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
     addKeysSafe(IS_CHECKPOINT, bool(false));
     addKeysSafe(ORIGIN, idValue(checkpointId));
     addKeysSafe(DISTANCE, number(distanceFromCheckpoint));
@@ -88,7 +88,7 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   }
 
   @Override
-  public L1Consumer completeKeyList(Stream<Id> fragmentIds) {
+  public L1 completeKeyList(Stream<Id> fragmentIds) {
     addKeysSafe(IS_CHECKPOINT, bool(true));
     addKeysSafe(FRAGMENTS, idsList(fragmentIds));
     return this;
@@ -117,7 +117,7 @@ class DynamoL1Consumer extends DynamoConsumer<L1Consumer> implements L1Consumer 
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void toConsumer(Map<String, AttributeValue> entity, L1Consumer consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, L1 consumer) {
     consumer.id(deserializeId(entity, ID));
 
     if (entity.containsKey(METADATA)) {

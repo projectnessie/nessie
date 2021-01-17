@@ -16,44 +16,44 @@
 package com.dremio.nessie.versioned.store.dynamo;
 
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.bytes;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.WrappedValueConsumer;
+import com.dremio.nessie.tiered.builder.Fragment;
+import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoWrappedValueConsumer<C extends WrappedValueConsumer<C>> extends DynamoConsumer<C> implements WrappedValueConsumer<C> {
+class DynamoFragment extends DynamoBaseValue<Fragment> implements Fragment {
 
-  static final String VALUE = "value";
+  static final String KEY_LIST = "keys";
 
-  DynamoWrappedValueConsumer(ValueType<C> valueType) {
-    super(valueType);
+  DynamoFragment() {
+    super(ValueType.KEY_FRAGMENT);
   }
 
   @Override
-  public C value(ByteString value) {
-    return addEntitySafe(VALUE, bytes(value));
+  public Fragment keys(Stream<Key> keys) {
+    return addEntitySafe(
+        KEY_LIST,
+        list(keys.map(AttributeValueUtil::keyElements)));
   }
 
   @Override
   Map<String, AttributeValue> build() {
-    checkPresent(VALUE, "value");
-
+    checkPresent(KEY_LIST, "keys");
     return super.build();
   }
 
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static <C extends WrappedValueConsumer<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, Fragment consumer) {
     consumer.id(deserializeId(entity, ID))
-        .value(ByteString.copyFrom(checkNotNull(attributeValue(entity, VALUE).b(), "mandatory binary value is null")
-            .asByteArrayUnsafe()));
+        .keys(attributeValue(entity, KEY_LIST).l().stream().map(AttributeValueUtil::deserializeKey));
   }
 }

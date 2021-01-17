@@ -17,15 +17,15 @@ package com.dremio.nessie.versioned.store;
 
 import java.util.Objects;
 
-import com.dremio.nessie.tiered.builder.BaseConsumer;
+import com.dremio.nessie.tiered.builder.BaseValue;
 
 /**
- * Save operations push the properties of the value to save via the {@link BaseConsumer consumer}
- * passed to the {@link #serialize(BaseConsumer)} method.
+ * Save operations push the properties of the value to save via the {@link BaseValue consumer}
+ * passed to the {@link #serialize(BaseValue)} method.
  *
- * @param <C> {@link BaseConsumer consumer} used to handle the save-operation
+ * @param <C> {@link BaseValue consumer} used to handle the save-operation
  */
-public abstract class SaveOp<C extends BaseConsumer<C>> {
+public abstract class SaveOp<C extends BaseValue<C>> {
   private final ValueType<C> type;
   private final Id id;
 
@@ -50,7 +50,7 @@ public abstract class SaveOp<C extends BaseConsumer<C>> {
 
   /**
    * Called by store implementations instructing the implementation to serialize the properties
-   * to the given {@link BaseConsumer}.
+   * to the given {@link BaseValue}.
    *
    * @param consumer the consumer that will receive the properties
    */

@@ -20,7 +20,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.L3Consumer;
+import com.dremio.nessie.tiered.builder.L3;
 import com.dremio.nessie.versioned.ImmutableKey;
 import com.dremio.nessie.versioned.impl.DiffFinder.KeyDiff;
 import com.dremio.nessie.versioned.impl.KeyMutation.KeyAddition;
@@ -31,20 +31,20 @@ import com.google.common.base.Objects;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 
-class L3 extends PersistentBase<L3Consumer> {
+class InternalL3 extends PersistentBase<L3> {
 
   private static final long HASH_SEED = 4604180344422375655L;
 
   private final TreeMap<InternalKey, PositionDelta> map;
 
-  static L3 EMPTY = new L3(new TreeMap<>());
+  static InternalL3 EMPTY = new InternalL3(new TreeMap<>());
   static Id EMPTY_ID = EMPTY.getId();
 
-  private L3(TreeMap<InternalKey, PositionDelta> keys) {
+  private InternalL3(TreeMap<InternalKey, PositionDelta> keys) {
     this(null, keys);
   }
 
-  private L3(Id id, TreeMap<InternalKey, PositionDelta> keys) {
+  private InternalL3(Id id, TreeMap<InternalKey, PositionDelta> keys) {
     super(id);
     this.map = keys;
     ensureConsistentId();
@@ -72,7 +72,7 @@ class L3 extends PersistentBase<L3Consumer> {
   }
 
   @SuppressWarnings("unchecked")
-  L3 set(InternalKey key, Id valueId) {
+  InternalL3 set(InternalKey key, Id valueId) {
     TreeMap<InternalKey, PositionDelta> newMap = (TreeMap<InternalKey, PositionDelta>) map.clone();
     PositionDelta newDelta = newMap.get(key);
     if (newDelta == null) {
@@ -86,7 +86,7 @@ class L3 extends PersistentBase<L3Consumer> {
     } else {
       newMap.put(key, newDelta);
     }
-    return new L3(newMap);
+    return new InternalL3(newMap);
   }
 
   /**
@@ -141,7 +141,7 @@ class L3 extends PersistentBase<L3Consumer> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    L3 l3 = (L3) o;
+    InternalL3 l3 = (InternalL3) o;
     return Objects.equal(map, l3.map);
   }
 
@@ -151,7 +151,7 @@ class L3 extends PersistentBase<L3Consumer> {
   }
 
   @Override
-  L3Consumer applyToConsumer(L3Consumer consumer) {
+  L3 applyToConsumer(L3 consumer) {
     super.applyToConsumer(consumer);
 
     Stream<KeyDelta> keyDelta = this.map.entrySet().stream()
@@ -163,10 +163,10 @@ class L3 extends PersistentBase<L3Consumer> {
   }
 
   /**
-   * Implements {@link L3Consumer} to build an {@link L3} object.
+   * Implements {@link L3} to build an {@link InternalL3} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<L3> implements L3Consumer {
+  static final class Builder extends EntityBuilder<InternalL3> implements L3 {
 
     private Id id;
     private Stream<KeyDelta> keyDelta;
@@ -176,7 +176,7 @@ class L3 extends PersistentBase<L3Consumer> {
     }
 
     @Override
-    public L3.Builder id(Id id) {
+    public InternalL3.Builder id(Id id) {
       checkCalled(this.id, "id");
       this.id = id;
       return this;
@@ -190,11 +190,11 @@ class L3 extends PersistentBase<L3Consumer> {
     }
 
     @Override
-    L3 build() {
+    InternalL3 build() {
       // null-id is allowed (will be generated)
       checkSet(keyDelta, "keyDelta");
 
-      return new L3(
+      return new InternalL3(
           id,
           keyDelta.collect(
               Collectors.toMap(
@@ -219,7 +219,7 @@ class L3 extends PersistentBase<L3Consumer> {
    * @param to The final tree state.
    * @return The differences when going from initial to final state.
    */
-  public static Stream<KeyDiff> compare(L3 from, L3 to) {
+  public static Stream<KeyDiff> compare(InternalL3 from, InternalL3 to) {
     MapDifference<InternalKey, Id> difference =  Maps.difference(
         Maps.transformValues(from.map, p -> p.getNewId()),
         Maps.transformValues(to.map, p -> p.getNewId())

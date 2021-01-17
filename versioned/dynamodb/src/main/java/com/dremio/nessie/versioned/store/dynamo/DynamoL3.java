@@ -27,31 +27,31 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.L3Consumer;
+import com.dremio.nessie.tiered.builder.L3;
 import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.ValueType;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer {
+class DynamoL3 extends DynamoBaseValue<L3> implements L3 {
 
   static final String TREE = "tree";
   static final String TREE_KEY = "key";
   static final String TREE_ID = "id";
 
-  DynamoL3Consumer() {
+  DynamoL3() {
     super(ValueType.L3);
   }
 
   @Override
-  public L3Consumer keyDelta(Stream<KeyDelta> keyDelta) {
-    return addEntitySafe(TREE, list(keyDelta.map(DynamoL3Consumer::treeKeyId)));
+  public L3 keyDelta(Stream<KeyDelta> keyDelta) {
+    return addEntitySafe(TREE, list(keyDelta.map(DynamoL3::treeKeyId)));
   }
 
   private static AttributeValue treeKeyId(KeyDelta kd) {
     Map<String, AttributeValue> map = new HashMap<>();
-    map.put(DynamoL3Consumer.TREE_KEY, keyElements(kd.getKey()));
-    map.put(DynamoL3Consumer.TREE_ID, idValue(kd.getId()));
+    map.put(DynamoL3.TREE_KEY, keyElements(kd.getKey()));
+    map.put(DynamoL3.TREE_ID, idValue(kd.getId()));
     return map(map);
   }
 
@@ -65,7 +65,7 @@ class DynamoL3Consumer extends DynamoConsumer<L3Consumer> implements L3Consumer 
   /**
    * Deserialize a DynamoDB entity into the given consumer.
    */
-  static void toConsumer(Map<String, AttributeValue> entity, L3Consumer consumer) {
+  static void toConsumer(Map<String, AttributeValue> entity, L3 consumer) {
     consumer.id(deserializeId(entity, ID));
 
     if (entity.containsKey(TREE)) {
