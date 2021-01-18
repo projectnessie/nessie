@@ -98,23 +98,43 @@ abstract class InternalRef extends PersistentBase<Ref> {
    * Implement {@link Ref} to build an {@link InternalRef} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<InternalRef, Ref> implements Ref {
+  static final class Builder extends EntityBuilder<InternalRef, Ref> implements Ref, Ref.Tag, Ref.Branch {
 
-    private RefType refType;
+    private Id id;
     private String name;
 
     // tag only
+    private boolean tag;
     private Id commit;
 
     // branch only
+    private boolean branch;
     private Id metadata;
     private Stream<Id> children;
     private List<Commit> commits;
 
     @Override
-    public Builder type(RefType refType) {
-      checkCalled(this.refType, "refType");
-      this.refType = refType;
+    public Builder id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return this;
+    }
+
+    @Override
+    public Tag tag() {
+      if (branch) {
+        throw new IllegalStateException("branch() has already been called");
+      }
+      tag = true;
+      return this;
+    }
+
+    @Override
+    public Branch branch() {
+      if (tag) {
+        throw new IllegalStateException("tag() has already been called");
+      }
+      branch = true;
       return this;
     }
 
@@ -147,89 +167,105 @@ abstract class InternalRef extends PersistentBase<Ref> {
     }
 
     @Override
-    public Ref commits(Consumer<BranchCommitConsumer> commits) {
+    public Branch commits(Consumer<BranchCommit> commits) {
       checkCalled(this.commits, "commits");
       this.commits = new ArrayList<>();
-      commits.accept(new BranchCommitConsumer() {
-        private Id id;
-        private Id commit;
-        private Id parent;
-        private List<UnsavedDelta> unsavedDeltas = new ArrayList<>();
-        private List<KeyMutation> keyMutations = new ArrayList<>();
-
-        @Override
-        public BranchCommitConsumer done() {
-          if (parent != null) {
-            Builder.this.commits.add(new Commit(id, commit, parent));
-          } else {
-            Builder.this.commits.add(new Commit(id, commit, unsavedDeltas, KeyMutationList.of(keyMutations)));
-          }
-
-          id = null;
-          commit = null;
-          parent = null;
-          unsavedDeltas = new ArrayList<>();
-          keyMutations = new ArrayList<>();
-
-          return this;
-        }
-
-        @Override
-        public BranchCommitConsumer id(Id id) {
-          this.id = id;
-          return this;
-        }
-
-        @Override
-        public BranchCommitConsumer commit(Id commit) {
-          this.commit = commit;
-          return this;
-        }
-
-        @Override
-        public BranchCommitConsumer parent(Id parent) {
-          this.parent = parent;
-          return this;
-        }
-
-        @Override
-        public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
-          unsavedDeltas.add(new UnsavedDelta(position, oldId, newId));
-          return this;
-        }
-
-        @Override
-        public BranchCommitConsumer keyMutation(Key.Mutation keyMutation) {
-          keyMutations.add(KeyMutation.fromMutation(keyMutation));
-          return this;
-        }
-      });
+      commits.accept(new InternalBranchCommit());
       return this;
     }
 
     @Override
     InternalRef build() {
       // null-id is allowed (will be generated)
-      checkSet(refType, "refType");
       checkSet(name, "name");
 
-      switch (refType) {
-        case TAG:
-          checkSet(commit, "commit");
-          return new InternalTag(id, name, commit, dt);
-        case BRANCH:
-          checkSet(metadata, "metadata");
-          checkSet(children, "children");
-          checkSet(commits, "commits");
-          return new InternalBranch(
-              id,
-              name,
-              IdMap.of(children, InternalL1.SIZE),
-              metadata,
-              commits,
-              dt);
-        default:
-          throw new UnsupportedOperationException("Unknown ref-type " + refType);
+      if (tag) {
+        checkSet(commit, "commit");
+        return new InternalTag(id, name, commit, dt);
+      } else if (branch) {
+        checkSet(metadata, "metadata");
+        checkSet(children, "children");
+        checkSet(commits, "commits");
+        return new InternalBranch(
+            id,
+            name,
+            IdMap.of(children, InternalL1.SIZE),
+            metadata,
+            commits,
+            dt);
+      } else {
+        throw new IllegalStateException("Neither tag() nor branch() has been called");
+      }
+    }
+
+    private class InternalBranchCommit implements BranchCommit, SavedCommit,
+        UnsavedCommitDelta, UnsavedCommitMutations {
+      private Id id;
+      private Id commit;
+      private Id parent;
+      private List<UnsavedDelta> unsavedDeltas = new ArrayList<>();
+      private List<KeyMutation> keyMutations = new ArrayList<>();
+
+      @Override
+      public BranchCommit done() {
+        if (parent != null) {
+          Builder.this.commits.add(new Commit(id, commit, parent));
+        } else {
+          Builder.this.commits.add(new Commit(id, commit, unsavedDeltas, KeyMutationList.of(keyMutations)));
+        }
+
+        id = null;
+        commit = null;
+        parent = null;
+        unsavedDeltas = new ArrayList<>();
+        keyMutations = new ArrayList<>();
+
+        return this;
+      }
+
+      @Override
+      public BranchCommit id(Id id) {
+        this.id = id;
+        return this;
+      }
+
+      @Override
+      public BranchCommit commit(Id commit) {
+        this.commit = commit;
+        return this;
+      }
+
+      @Override
+      public SavedCommit saved() {
+        return this;
+      }
+
+      @Override
+      public UnsavedCommitDelta unsaved() {
+        return this;
+      }
+
+      @Override
+      public SavedCommit parent(Id parent) {
+        this.parent = parent;
+        return this;
+      }
+
+      @Override
+      public UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
+        unsavedDeltas.add(new UnsavedDelta(position, oldId, newId));
+        return this;
+      }
+
+      @Override
+      public UnsavedCommitMutations mutations() {
+        return this;
+      }
+
+      @Override
+      public UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
+        keyMutations.add(KeyMutation.fromMutation(keyMutation));
+        return this;
       }
     }
   }
