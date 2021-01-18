@@ -40,7 +40,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.client.NessieClient.AuthType;
 import com.dremio.nessie.client.tests.AbstractSparkTest;
 import com.dremio.nessie.iceberg.NessieCatalog;
 import com.dremio.nessie.model.Branch;
@@ -74,7 +73,7 @@ public class ITIcebergSpark extends AbstractSparkTest {
     hadoopConfig.set("fs.file.impl", fsImpl);
     catalog = new NessieCatalog(hadoopConfig);
     this.tableLocation = new Path(catalog.createTable(TABLE_IDENTIFIER, schema).location());
-    client = new NessieClient(AuthType.NONE, url, null, null);
+    client = NessieClient.none(url);
   }
 
   @AfterEach

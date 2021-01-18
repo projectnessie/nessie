@@ -1,0 +1,154 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.dremio.nessie.client.http;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+
+import com.dremio.nessie.client.http.HttpClient.Method;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+/**
+ * Class to hold an ongoing HTTP request and its parameters/filters.
+ */
+public class HttpRequest {
+
+  private final UriBuilder uriBuilder;
+  private final ObjectMapper mapper;
+  private final Map<String, Set<String>> headers = new HashMap<>();
+  private final List<RequestFilter> requestFilters;
+  private final List<ResponseFilter> responseFilters;
+  private SSLContext sslContext;
+
+  HttpRequest(String baseUri, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters,
+              List<ResponseFilter> responseFilters, SSLContext context) {
+    this.uriBuilder = new UriBuilder(baseUri);
+    this.mapper = mapper;
+    putHeader("Accept", accept, headers);
+    this.requestFilters = requestFilters;
+    this.responseFilters = responseFilters;
+    this.sslContext = context;
+  }
+
+  static void putHeader(String key, String value, Map<String, Set<String>> headers) {
+    if (!headers.containsKey(key)) {
+      headers.put(key, new HashSet<>());
+    }
+    headers.get(key).add(value);
+  }
+
+  public HttpRequest path(String path) {
+    this.uriBuilder.path(path);
+    return this;
+  }
+
+  public HttpRequest queryParam(String name, String value) {
+    this.uriBuilder.queryParam(name, value);
+    return this;
+  }
+
+  public HttpRequest header(String name, String value) {
+    putHeader(name, value, headers);
+    return this;
+  }
+
+  private HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
+    try {
+      String uri = uriBuilder.build();
+      URL url = new URL(uri);
+      HttpURLConnection con = (HttpURLConnection) url.openConnection();
+      if (con instanceof HttpsURLConnection) {
+        ((HttpsURLConnection) con).setSSLSocketFactory(sslContext.getSocketFactory());
+      }
+      RequestContext context = new RequestContext(headers, uri, method, body);
+      requestFilters.forEach(a -> a.filter(context));
+      headers.entrySet()
+             .stream()
+             .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
+             .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
+      con.setRequestMethod(method.name());
+      if (method.equals(Method.PUT) || method.equals(Method.POST)) {
+        // Need to set the Content-Type even if body==null, otherwise the server responds with
+        // RESTEASY003065: Cannot consume content type
+        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+        if (body != null) {
+          con.setDoOutput(true);
+          Class<?> bodyType = body.getClass();
+          if (bodyType != String.class) {
+            mapper.writerFor(bodyType).writeValue(con.getOutputStream(), body);
+          } else {
+            // This is mostly used for testing bad/broken JSON
+            con.getOutputStream().write(((String) body).getBytes(StandardCharsets.UTF_8));
+          }
+        }
+      }
+      con.connect();
+      con.getResponseCode(); // call to ensure http request is complete
+      ResponseContext responseContext = new ResponseContextImpl(con);
+      responseFilters.forEach(a -> a.filter(responseContext));
+      return new HttpResponse(responseContext, mapper);
+    } catch (ProtocolException e) {
+      throw new HttpClientException(String.format("Cannot perform request. Invalid protocol %s", method), e);
+    } catch (JsonGenerationException | JsonMappingException e) {
+      throw new HttpClientException(String.format("Cannot serialize body of request. Unable to serialize %s", body.getClass()), e);
+    } catch (MalformedURLException e) {
+      throw new HttpClientException(String.format("Cannot perform request. Malformed Url for %s", uriBuilder.build()), e);
+    } catch (IOException e) {
+      throw new HttpClientException(e);
+    }
+  }
+
+  public HttpRequest setSslContext(SSLContext context) {
+    this.sslContext = context;
+    return this;
+  }
+
+  public HttpResponse get() throws HttpClientException {
+    return executeRequest(Method.GET, null);
+  }
+
+  public HttpResponse delete() throws HttpClientException {
+    return executeRequest(Method.DELETE, null);
+  }
+
+  public HttpResponse post(Object obj) throws HttpClientException {
+    return executeRequest(Method.POST, obj);
+  }
+
+  public HttpResponse put(Object obj) throws HttpClientException {
+    return executeRequest(Method.PUT, obj);
+  }
+
+  public HttpRequest resolveTemplate(String name, String value) {
+    uriBuilder.resolveTemplate(name, value);
+    return this;
+  }
+}

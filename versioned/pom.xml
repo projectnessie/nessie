@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie</artifactId>
-    <version>0.2.2-SNAPSHOT</version>
+    <version>0.3.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-versioned</artifactId>
@@ -32,10 +32,10 @@
 
   <modules>
     <module>dynamodb</module>
-    <module>rocksdb</module>
     <module>jgit</module>
     <module>memory</module>
     <module>mongodb</module>
+    <module>rocksdb</module>
     <module>spi</module>
     <module>tests</module>
     <module>tiered</module>

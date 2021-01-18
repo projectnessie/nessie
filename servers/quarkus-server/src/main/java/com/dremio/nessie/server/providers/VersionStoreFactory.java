@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
@@ -37,13 +38,16 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.server.config.ApplicationConfig;
+import com.dremio.nessie.server.config.ApplicationConfig.VersionStoreDynamoConfig;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.services.config.ServerConfig;
 import com.dremio.nessie.versioned.BranchName;
+import com.dremio.nessie.versioned.NamedRef;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.VersionStore;
+import com.dremio.nessie.versioned.WithHash;
 import com.dremio.nessie.versioned.impl.JGitVersionStore;
 import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
@@ -83,12 +87,14 @@ public class VersionStoreFactory {
   public VersionStore<Contents, CommitMeta> configuration(
       TableCommitMetaStoreWorker storeWorker, Repository repository, ServerConfig config) {
     VersionStore<Contents, CommitMeta> store = getVersionStore(storeWorker, repository);
-    if (!store.getNamedRefs().findFirst().isPresent()) {
-      // if this is a new database, create a branch with the default branch name.
-      try {
-        store.create(BranchName.of(config.getDefaultBranch()), Optional.empty());
-      } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
-        LOGGER.warn("Failed to create default branch of {}.", config.getDefaultBranch(), e);
+    try (Stream<WithHash<NamedRef>> str = store.getNamedRefs()) {
+      if (!str.findFirst().isPresent()) {
+        // if this is a new database, create a branch with the default branch name.
+        try {
+          store.create(BranchName.of(config.getDefaultBranch()), Optional.empty());
+        } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
+          LOGGER.warn("Failed to create default branch of {}.", config.getDefaultBranch(), e);
+        }
       }
     }
 
@@ -122,20 +128,20 @@ public class VersionStoreFactory {
       return null;
     }
 
-    DynamoStore dynamo = new DynamoStore(DynamoStoreConfig.builder()
-                                            .endpoint(endpoint.map(e -> {
-                                              try {
-                                                return new URI(e);
-                                              } catch (URISyntaxException uriSyntaxException) {
-                                                throw new RuntimeException(uriSyntaxException);
-                                              }
-                                            }))
-                                            .region(Region.of(region))
-                                            .initializeDatabase(config.getVersionStoreDynamoConfig().isDynamoInitialize())
-                                            .refTableName(config.getVersionStoreDynamoConfig().getRefTableName())
-                                            .treeTableName(config.getVersionStoreDynamoConfig().getTreeTableName())
-                                            .valueTableName(config.getVersionStoreDynamoConfig().getValueTableName())
-                                            .build());
+    VersionStoreDynamoConfig in = config.getVersionStoreDynamoConfig();
+    DynamoStore dynamo = new DynamoStore(
+        DynamoStoreConfig.builder()
+          .endpoint(endpoint.map(e -> {
+            try {
+              return new URI(e);
+            } catch (URISyntaxException uriSyntaxException) {
+              throw new RuntimeException(uriSyntaxException);
+            }
+          }))
+          .region(Region.of(region))
+          .initializeDatabase(in.isDynamoInitialize())
+          .tablePrefix(in.getTablePrefix())
+          .build());
     dynamo.start();
     return dynamo;
   }

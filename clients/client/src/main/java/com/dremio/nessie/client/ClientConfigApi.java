@@ -15,21 +15,20 @@
  */
 package com.dremio.nessie.client;
 
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
 
 import com.dremio.nessie.api.ConfigApi;
+import com.dremio.nessie.client.http.HttpClient;
 import com.dremio.nessie.model.NessieConfiguration;
 
 class ClientConfigApi implements ConfigApi {
-  private final WebTarget target;
+  private final HttpClient client;
 
-  ClientConfigApi(WebTarget target) {
-    this.target = target;
+  ClientConfigApi(HttpClient client) {
+    this.client = client;
   }
 
   @Override
   public NessieConfiguration getConfig() {
-    return target.path("config").request().accept(MediaType.APPLICATION_JSON_TYPE).get(NessieConfiguration.class);
+    return client.newRequest().path("config").get().readEntity(NessieConfiguration.class);
   }
 }

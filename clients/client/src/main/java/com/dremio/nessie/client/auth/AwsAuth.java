@@ -17,17 +17,16 @@
 package com.dremio.nessie.client.auth;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-
+import com.dremio.nessie.client.http.HttpClient;
+import com.dremio.nessie.client.http.RequestContext;
+import com.dremio.nessie.client.http.RequestFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -37,49 +36,34 @@ import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.awssdk.regions.Region;
 
-public class AwsAuth implements ClientRequestFilter {
+public class AwsAuth implements RequestFilter {
 
-  private final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-                                                              .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+  private final ObjectMapper objectMapper;
   private final Aws4Signer signer;
   private final AwsCredentialsProvider awsCredentialsProvider;
   private final Region region = Region.US_WEST_2;
 
-  public AwsAuth() {
+  /**
+   * Construct AWS signer filter.
+   */
+  public AwsAuth(ObjectMapper objectMapper) {
     this.awsCredentialsProvider = DefaultCredentialsProvider.create();
     this.signer = Aws4Signer.create();
+    this.objectMapper = objectMapper;
   }
 
-  @Override
-  public void filter(ClientRequestContext clientRequestContext) throws IOException {
-    SdkHttpFullRequest modifiedRequest =
-        signer.sign(prepareRequest(clientRequestContext),
-                    Aws4SignerParams.builder()
-                                    .signingName("execute-api")
-                                    .awsCredentials(awsCredentialsProvider.resolveCredentials())
-                                    .signingRegion(region)
-                                    .build());
-    for (Map.Entry<String, List<String>> entry : modifiedRequest.toBuilder().headers().entrySet()) {
-      if (clientRequestContext.getHeaders().containsKey(entry.getKey())) {
-        continue;
-      }
-      clientRequestContext.getHeaders().put(entry.getKey(),
-                                            Arrays.asList(entry.getValue().toArray()));
-    }
-  }
-
-  private SdkHttpFullRequest prepareRequest(ClientRequestContext clientRequestContext) {
+  private SdkHttpFullRequest prepareRequest(String url, HttpClient.Method method, Optional<Object> entity) {
     try {
-      URI uri = clientRequestContext.getUri();
+      URI uri = new URI(url);
       SdkHttpFullRequest.Builder builder = SdkHttpFullRequest.builder()
                                                              .uri(uri)
-                                                             .method(SdkHttpMethod.fromValue(
-                                                               clientRequestContext.getMethod()));
+                                                             .method(SdkHttpMethod.fromValue(method.name()));
+
       Arrays.stream(uri.getQuery().split("&")).map(s -> s.split("=")).forEach(s -> builder.putRawQueryParameter(s[0], s[1]));
-      Object entity = clientRequestContext.getEntity();
-      if (entity != null) {
+
+      if (entity.isPresent()) {
         try {
-          byte[] bytes = objectMapper.writeValueAsBytes(entity);
+          byte[] bytes = objectMapper.writeValueAsBytes(entity.get());
           builder.contentStreamProvider(() -> new ByteArrayInputStream(bytes));
         } catch (Throwable t) {
           throw new RuntimeException(t);
@@ -88,6 +72,23 @@ public class AwsAuth implements ClientRequestFilter {
       return builder.build();
     } catch (Throwable t) {
       throw new RuntimeException(t);
+    }
+  }
+
+  @Override
+  public void filter(RequestContext context) {
+    SdkHttpFullRequest modifiedRequest =
+        signer.sign(prepareRequest(context.getUri(), context.getMethod(), context.getBody()),
+                  Aws4SignerParams.builder()
+                                  .signingName("execute-api")
+                                  .awsCredentials(awsCredentialsProvider.resolveCredentials())
+                                  .signingRegion(region)
+                                  .build());
+    for (Map.Entry<String, List<String>> entry : modifiedRequest.toBuilder().headers().entrySet()) {
+      if (context.getHeaders().containsKey(entry.getKey())) {
+        continue;
+      }
+      entry.getValue().forEach(a -> context.putHeader(entry.getKey(), a));
     }
   }
 }

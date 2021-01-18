@@ -17,7 +17,9 @@ package com.dremio.nessie.api;
 
 import java.util.List;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -45,6 +47,7 @@ import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Tag;
 import com.dremio.nessie.model.Transplant;
+import com.dremio.nessie.model.Validation;
 
 @Consumes(value = MediaType.APPLICATION_JSON)
 @Path("trees")
@@ -81,7 +84,11 @@ public interface TreeApi {
       @APIResponse(responseCode = "204", description = "Created successfully."),
       @APIResponse(responseCode = "409", description = "Reference already exists")
   })
-  void createReference(@NotNull @RequestBody(description = "Reference to create.") Reference reference)
+  void createReference(
+      @Valid
+      @NotNull
+      @RequestBody(description = "Reference to create.")
+          Reference reference)
       throws NessieNotFoundException, NessieConflictException;
 
   /**
@@ -96,7 +103,11 @@ public interface TreeApi {
       @APIResponse(responseCode = "404", description = "Ref not found")
     })
   Reference getReferenceByName(
-      @NotNull @Parameter(description = "name of ref to fetch") @PathParam("ref") String refName)
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
+      @Parameter(description = "name of ref to fetch")
+      @PathParam("ref")
+          String refName)
       throws NessieNotFoundException;
 
   /**
@@ -112,7 +123,11 @@ public interface TreeApi {
       @APIResponse(responseCode = "404", description = "Ref not found")}
   )
   public EntriesResponse getEntries(
-      @NotNull @Parameter(description = "name of ref to fetch from") @PathParam("ref") String refName)
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
+      @Parameter(description = "name of ref to fetch from")
+      @PathParam("ref")
+          String refName)
           throws NessieNotFoundException;
 
   /**
@@ -125,7 +140,11 @@ public interface TreeApi {
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Returned commits."),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists")})
-  LogResponse getCommitLog(@NotNull @Parameter(description = "ref to show log from") @PathParam("ref") String ref)
+  LogResponse getCommitLog(
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
+      @Parameter(description = "ref to show log from")
+      @PathParam("ref") String ref)
           throws NessieNotFoundException;
 
   /**
@@ -140,9 +159,20 @@ public interface TreeApi {
       @APIResponse(responseCode = "412", description = "Update conflict")
     })
   void assignTag(
-      @NotNull @Parameter(description = "Tag name to reassign") @PathParam("tagName") String tagName,
-      @NotNull @Parameter(description = "Expected previous hash of tag") @QueryParam("expectedHash") String oldHash,
-      @NotNull @RequestBody(description = "New tag content") Tag tag
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Parameter(description = "Tag name to reassign")
+      @PathParam("tagName")
+          String tagName,
+      @NotNull
+      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Parameter(description = "Expected previous hash of tag")
+      @QueryParam("expectedHash")
+          String oldHash,
+      @Valid
+      @NotNull
+      @RequestBody(description = "New tag content")
+          Tag tag
       ) throws NessieNotFoundException, NessieConflictException;
 
   /**
@@ -157,8 +187,15 @@ public interface TreeApi {
       @APIResponse(responseCode = "412", description = "update conflict"),
     })
   void deleteTag(
-      @NotNull @Parameter(description = "Tag to delete") @PathParam("tagName") String tagName,
-      @Parameter(description = "Expected hash of tag") @QueryParam("expectedHash") String hash
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Parameter(description = "Tag to delete")
+      @PathParam("tagName")
+          String tagName,
+      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Parameter(description = "Expected hash of tag")
+      @QueryParam("expectedHash")
+          String hash
       ) throws NessieConflictException, NessieNotFoundException;
 
   /**
@@ -173,9 +210,20 @@ public interface TreeApi {
       @APIResponse(responseCode = "412", description = "Update conflict")
     })
   void assignBranch(
-      @NotNull @Parameter(description = "Tag name to reassign") @PathParam("branchName") String branchName,
-      @NotNull @Parameter(description = "Expected previous hash of tag") @QueryParam("expectedHash") String oldHash,
-      @NotNull @RequestBody(description = "New branch content") Branch branch
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Parameter(description = "Tag name to reassign")
+      @PathParam("branchName")
+          String branchName,
+      @NotNull
+      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Parameter(description = "Expected previous hash of tag")
+      @QueryParam("expectedHash")
+          String oldHash,
+      @Valid
+      @NotNull
+      @RequestBody(description = "New branch content")
+          Branch branch
       ) throws NessieNotFoundException, NessieConflictException;
 
   /**
@@ -190,8 +238,16 @@ public interface TreeApi {
       @APIResponse(responseCode = "412", description = "update conflict"),
     })
   void deleteBranch(
-      @NotNull @Parameter(description = "Branch to delete") @PathParam("branchName") String branchName,
-      @NotNull @Parameter(description = "Expected hash of tag") @QueryParam("expectedHash") String hash
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Parameter(description = "Branch to delete")
+      @PathParam("branchName")
+          String branchName,
+      @NotNull
+      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Parameter(description = "Expected hash of tag")
+      @QueryParam("expectedHash")
+          String hash
       ) throws NessieConflictException, NessieNotFoundException;
 
   /**
@@ -207,10 +263,22 @@ public interface TreeApi {
       @APIResponse(responseCode = "412", description = "update conflict")}
   )
   void transplantCommitsIntoBranch(
-      @NotNull @Parameter(description = "Branch to transplant into") @PathParam("branchName") String branchName,
-      @NotNull @Parameter(description = "Expected hash of tag") @QueryParam("expectedHash") String hash,
-      @Parameter(description = "commit message") @QueryParam("message") String message,
-      @RequestBody(description = "Hashes to transplant") Transplant transplant)
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Parameter(description = "Branch to transplant into")
+      @PathParam("branchName")
+          String branchName,
+      @NotNull
+      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Parameter(description = "Expected hash of tag")
+      @QueryParam("expectedHash")
+          String hash,
+      @Parameter(description = "commit message")
+      @QueryParam("message")
+          String message,
+      @Valid
+      @RequestBody(description = "Hashes to transplant")
+          Transplant transplant)
           throws NessieNotFoundException, NessieConflictException;
 
   /**
@@ -226,9 +294,20 @@ public interface TreeApi {
       @APIResponse(responseCode = "412", description = "update conflict")}
   )
   void mergeRefIntoBranch(
-      @NotNull @Parameter(description = "Branch to merge into") @PathParam("branchName") String branchName,
-      @NotNull @Parameter(description = "Expected hash of tag") @QueryParam("expectedHash") String hash,
-      @NotNull @RequestBody(description = "Merge operation") Merge merge)
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Parameter(description = "Branch to merge into")
+      @PathParam("branchName")
+          String branchName,
+      @NotNull
+      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Parameter(description = "Expected hash of tag")
+      @QueryParam("expectedHash")
+          String hash,
+      @Valid
+      @NotNull
+      @RequestBody(description = "Merge operation")
+          Merge merge)
           throws NessieNotFoundException, NessieConflictException;
 
   @POST
@@ -240,9 +319,22 @@ public interface TreeApi {
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "Update conflict")})
   public void commitMultipleOperations(
-      @NotNull @Parameter(description = "Branch to change, defaults to default branch.") @PathParam("branchName") String branchName,
-      @NotNull @Parameter(description = "Expected hash of branch.") @QueryParam("expectedHash") String hash,
-      @Parameter(description = "Commit message") @QueryParam("message") String message,
-      @NotNull @RequestBody(description = "Operations") Operations operations)
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
+      @Parameter(description = "Branch to change, defaults to default branch.")
+      @PathParam("branchName")
+          String branchName,
+      @NotNull
+      @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
+      @Parameter(description = "Expected hash of branch.")
+      @QueryParam("expectedHash")
+          String hash,
+      @Parameter(description = "Commit message")
+      @QueryParam("message")
+          String message,
+      @Valid
+      @NotNull
+      @RequestBody(description = "Operations")
+          Operations operations)
       throws NessieNotFoundException, NessieConflictException;
 }

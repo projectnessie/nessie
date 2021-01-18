@@ -15,7 +15,7 @@
  */
 package com.dremio.nessie.iceberg;
 
-import static com.dremio.nessie.iceberg.NessieCatalog.CONF_NESSIE_REF;
+import static com.dremio.nessie.client.NessieConfigConstants.CONF_NESSIE_REF;
 
 import java.util.HashMap;
 import java.util.Map;

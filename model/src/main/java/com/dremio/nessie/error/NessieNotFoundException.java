@@ -15,16 +15,14 @@
  */
 package com.dremio.nessie.error;
 
-import javax.ws.rs.core.Response.Status;
-
 public class NessieNotFoundException extends BaseNessieClientServerException {
 
   public NessieNotFoundException(String message, Throwable cause) {
-    super(message, Status.NOT_FOUND, cause);
+    super(message, 404, "Not Found", cause);
   }
 
   public NessieNotFoundException(String message) {
-    super(message, Status.NOT_FOUND);
+    super(message, 404, "Not Found");
   }
 
   public NessieNotFoundException(NessieError error) {

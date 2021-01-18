@@ -26,6 +26,7 @@ import com.dremio.nessie.server.config.converters.BackendType;
 import com.dremio.nessie.server.config.converters.JGitStoreType;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.services.config.ServerConfig;
+import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
 
 import io.quarkus.arc.config.ConfigProperties;
 
@@ -85,7 +86,6 @@ public class ApplicationConfig {
 
   }
 
-
   @ConfigProperties(prefix = "nessie.backends")
   public interface BackendsConfig {
 
@@ -117,13 +117,8 @@ public class ApplicationConfig {
     @ConfigProperty(name = "initialize", defaultValue = "false")
     boolean isDynamoInitialize();
 
-    @ConfigProperty(name = "refTableName", defaultValue = "nessie_refs")
-    String getRefTableName();
+    @ConfigProperty(defaultValue = DynamoStoreConfig.TABLE_PREFIX)
+    String getTablePrefix();
 
-    @ConfigProperty(name = "treeTableName", defaultValue = "nessie_objects")
-    String getTreeTableName();
-
-    @ConfigProperty(name = "valueTableName", defaultValue = "nessie_objects")
-    String getValueTableName();
   }
 }

@@ -21,7 +21,7 @@
 
   <groupId>org.projectnessie</groupId>
   <artifactId>nessie</artifactId>
-  <version>0.2.2-SNAPSHOT</version>
+  <version>0.3.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Nessie</name>
@@ -114,14 +114,14 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
-    <awssdk.version>2.15.46</awssdk.version>
+    <awssdk.version>2.15.66</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
     <flapdoodle.version>3.0.0</flapdoodle.version>
-    <guava.version>30.1-jre</guava.version>
+    <guava.version>29.0-jre</guava.version>
     <hadoop.version>3.3.0</hadoop.version>
     <hamcrest.version>2.2</hamcrest.version>
     <iceberg.version>0.10.0</iceberg.version>
@@ -129,7 +129,6 @@
     <jackson.version>2.11.3</jackson.version>
     <javax.version>4.0.1</javax.version>
     <jaeger.version>1.3.2</jaeger.version>
-    <jersey.version>2.31</jersey.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jjwt.version>0.11.2</jjwt.version>
     <jgit.version>5.10.0.202012080955-r</jgit.version>
@@ -137,21 +136,21 @@
     <junit.version>5.7.0</junit.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.14.0</protobuf.version>
+    <mockito.version>3.7.7</mockito.version>
     <mongodb.version>4.1.1</mongodb.version>
     <prometheus.version>0.9.0</prometheus.version>
     <rocksdb.version>6.13.3</rocksdb.version>
+    <reactor.version>2020.0.3</reactor.version>
     <serverless.version>1.5</serverless.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <slf4j.version>1.7.30</slf4j.version>
-    <scala2.12.version>2.12.12</scala2.12.version>
+    <scala2.12.version>2.12.13</scala2.12.version>
     <spark2.version>2.4.2</spark2.version>
-    <spark2.jersey.version>2.22.2</spark2.jersey.version>
     <spark2.jackson.version>2.8.8</spark2.jackson.version>
     <spark3.version>3.0.1</spark3.version>
-    <spark3.jersey.version>2.30</spark3.jersey.version>
     <spark3.jackson.version>2.10.2</spark3.jackson.version>
     <sqlite.version>1.0.392</sqlite.version>
-    <quarkus.version>1.10.3.Final</quarkus.version>
+    <quarkus.version>1.11.0.Final</quarkus.version>
     <openapi.version>1.1.2</openapi.version>
     <jsr305.version>3.0.2</jsr305.version>
   </properties>
@@ -478,6 +477,19 @@
         <artifactId>rocksdbjni</artifactId>
         <version>${rocksdb.version}</version>
       </dependency>
+      <dependency>
+        <groupId>io.projectreactor</groupId>
+        <artifactId>reactor-bom</artifactId>
+        <version>${reactor.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mockito.version}</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -591,7 +603,7 @@
         <plugin>
           <groupId>com.github.eirslett</groupId>
           <artifactId>frontend-maven-plugin</artifactId>
-          <version>1.10.4</version>
+          <version>1.11.0</version>
           <configuration>
             <installDirectory>${project.build.directory}</installDirectory>
             <nodeVersion>v12.16.2</nodeVersion>

@@ -16,6 +16,8 @@
 
 package com.dremio.nessie.model;
 
+import static com.dremio.nessie.model.Validation.validateReferenceName;
+
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -30,6 +32,14 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableBranch.class)
 @JsonTypeName("BRANCH")
 public interface Branch extends Reference {
+
+  /**
+   * Validation rule using {@link com.dremio.nessie.model.Validation#validateReferenceName(String)}.
+   */
+  @Value.Check
+  default void checkName() {
+    validateReferenceName(getName());
+  }
 
   static ImmutableBranch.Builder builder() {
     return ImmutableBranch.builder();
