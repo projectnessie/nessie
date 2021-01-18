@@ -20,7 +20,6 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.bool;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdStream;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeInt;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKeyMutations;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idsList;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
@@ -118,16 +117,16 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, L1 consumer) {
-    consumer.id(deserializeId(entity, ID));
+    consumer = consumer.id(deserializeId(entity, ID));
 
     if (entity.containsKey(METADATA)) {
-      consumer.commitMetadataId(deserializeId(entity, METADATA));
+      consumer = consumer.commitMetadataId(deserializeId(entity, METADATA));
     }
     if (entity.containsKey(TREE)) {
-      consumer.children(deserializeIdStream(entity, TREE));
+      consumer = consumer.children(deserializeIdStream(entity, TREE));
     }
     if (entity.containsKey(PARENTS)) {
-      consumer.ancestors(deserializeIdStream(entity, PARENTS));
+      consumer = consumer.ancestors(deserializeIdStream(entity, PARENTS));
     }
     if (entity.containsKey(KEY_LIST)) {
       Map<String, AttributeValue> keys = Preconditions.checkNotNull(
@@ -135,9 +134,9 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
       Boolean checkpoint = attributeValue(keys, IS_CHECKPOINT).bool();
       if (checkpoint != null) {
         if (checkpoint) {
-          consumer.completeKeyList(deserializeIdStream(keys, FRAGMENTS));
+          consumer = consumer.completeKeyList(deserializeIdStream(keys, FRAGMENTS));
         } else {
-          consumer.incrementalKeyList(
+          consumer = consumer.incrementalKeyList(
               deserializeId(keys, ORIGIN),
               deserializeInt(keys, DISTANCE)
           );
@@ -145,11 +144,8 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
       }
       // See com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.addKeyMutation about a
       // proposal to simplify this one.
-      deserializeKeyMutations(
-          keys,
-          MUTATIONS,
-          consumer::keyMutations
-      );
+      consumer.keyMutations(attributeValue(keys, MUTATIONS).l().stream()
+          .map(AttributeValueUtil::deserializeKeyMutation));
     }
   }
 }

@@ -17,7 +17,7 @@ package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.bson.BsonReader;
@@ -41,7 +41,7 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
-  static final Map<String, BiConsumer<L1, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiFunction<L1, BsonReader, L1>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
@@ -109,7 +109,7 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
     return this;
   }
 
-  private static void deserializeKeyList(L1 consumer, BsonReader reader) {
+  private static L1 deserializeKeyList(L1 consumer, BsonReader reader) {
     reader.readStartDocument();
 
     boolean chk = false;
@@ -139,17 +139,19 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
 
     if (chk) {
       // complete key list
-      consumer.completeKeyList(fragments);
+      consumer = consumer.completeKeyList(fragments);
     } else {
       // incremental key list
-      consumer.incrementalKeyList(checkpointId, distance);
+      consumer = consumer.incrementalKeyList(checkpointId, distance);
     }
 
     reader.readEndDocument();
+
+    return consumer;
   }
 
-  private static void deserializeKeyMutations(L1 consumer, BsonReader bsonReader) {
-    consumer.keyMutations(MongoSerDe.deserializeKeyMutations(bsonReader).stream());
+  private static L1 deserializeKeyMutations(L1 consumer, BsonReader bsonReader) {
+    return consumer.keyMutations(MongoSerDe.deserializeKeyMutations(bsonReader).stream());
   }
 
   @Override

@@ -21,7 +21,6 @@ import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.buil
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.versioned.ImmutableKey;
@@ -165,27 +164,19 @@ public final class AttributeValueUtil {
   }
 
   /**
-   * Deserializes key-mutations the given {@code key} from {@code map} and passes
-   * key-additions to {@code addConsumer} and key-removals to {@code removalConsumer}.
+   * Deserializes a single key-mutation.
    */
-  static void deserializeKeyMutations(
-      Map<String, AttributeValue> map,
-      String key,
-      Consumer<Stream<Key.Mutation>> consumer
-  ) {
-    consumer.accept(attributeValue(map, key).l().stream()
-        .map(mutation -> {
-          Map<String, AttributeValue> m = mutation.m();
-          AttributeValue raw = m.get(KEY_ADDITION);
-          if (raw != null) {
-            return deserializeKey(raw).asAddition();
-          }
-          raw = m.get(KEY_REMOVAL);
-          if (raw != null) {
-            return deserializeKey(raw).asRemoval();
-          }
-          throw new IllegalStateException("keys.mutations map has unsupported entries: " + m);
-        }));
+  static Key.Mutation deserializeKeyMutation(AttributeValue mutation) {
+    Map<String, AttributeValue> m = mutation.m();
+    AttributeValue raw = m.get(KEY_ADDITION);
+    if (raw != null) {
+      return deserializeKey(raw).asAddition();
+    }
+    raw = m.get(KEY_REMOVAL);
+    if (raw != null) {
+      return deserializeKey(raw).asRemoval();
+    }
+    throw new IllegalStateException("keys.mutations map has unsupported entries: " + m);
   }
 
   static AttributeValue serializeKeyMutation(Key.Mutation km) {

@@ -17,7 +17,7 @@ package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.bson.BsonReader;
@@ -34,7 +34,7 @@ final class MongoL3 extends MongoBaseValue<L3> implements L3 {
   static final String TREE_KEY = "key";
   static final String TREE_ID = "id";
 
-  static final Map<String, BiConsumer<L3, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiFunction<L3, BsonReader, L3>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
