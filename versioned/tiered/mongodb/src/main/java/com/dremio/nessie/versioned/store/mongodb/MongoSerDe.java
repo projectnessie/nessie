@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -45,7 +46,7 @@ import com.google.protobuf.ByteString;
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class MongoSerDe {
   private static final Map<ValueType<?>, Function<BsonWriter, MongoBaseValue>> CONSUMERS;
-  private static final Map<ValueType<?>, Map<String, BiConsumer<BaseValue, BsonReader>>> DESERIALIZERS;
+  private static final Map<ValueType<?>, Map<String, BiFunction<BaseValue, BsonReader, BaseValue>>> DESERIALIZERS;
 
   private static final String MONGO_ID_NAME = "_id";
 
@@ -54,7 +55,7 @@ final class MongoSerDe {
 
   static {
     ImmutableMap.Builder<ValueType<?>, Function<BsonWriter, MongoBaseValue>> consumers = ImmutableMap.builder();
-    ImmutableMap.Builder<ValueType<?>, Map<String, BiConsumer<BaseValue, BsonReader>>> deserializers = ImmutableMap.builder();
+    ImmutableMap.Builder<ValueType<?>, Map<String, BiFunction<BaseValue, BsonReader, BaseValue>>> deserializers = ImmutableMap.builder();
 
     consumers.put(ValueType.L1, MongoL1::new);
     deserializers.put(ValueType.L1, (Map) MongoL1.PROPERTY_PRODUCERS);
@@ -100,7 +101,7 @@ final class MongoSerDe {
    * Deserialize a MongoDB entity into the given consumer.
    */
   static void produceToConsumer(BsonReader entity, ValueType<?> valueType, Function<Id, BaseValue> onIdParsed, Consumer<Id> parsed) {
-    Map<String, BiConsumer<BaseValue, BsonReader>> propertyProducers = DESERIALIZERS.get(valueType);
+    Map<String, BiFunction<BaseValue, BsonReader, BaseValue>> propertyProducers = DESERIALIZERS.get(valueType);
     deserializeToConsumer(entity, onIdParsed, parsed, propertyProducers);
   }
 
@@ -192,7 +193,7 @@ final class MongoSerDe {
   static void deserializeToConsumer(BsonReader reader,
       Function<Id, BaseValue> onIdParsed,
       Consumer<Id> parsed,
-      Map<String, BiConsumer<BaseValue, BsonReader>> propertyProducers) {
+      Map<String, BiFunction<BaseValue, BsonReader, BaseValue>> propertyProducers) {
     reader.readStartDocument();
 
     Id id = null;
@@ -216,8 +217,8 @@ final class MongoSerDe {
             String.format("Got property '%s', but '%s' must be the first property in every document", name, MongoBaseValue.ID));
       }
 
-      BiConsumer<BaseValue, BsonReader> propertyProducer = propertyProducers.get(name);
-      propertyProducer.accept(consumer, reader);
+      BiFunction<BaseValue, BsonReader, BaseValue> propertyProducer = propertyProducers.get(name);
+      consumer = propertyProducer.apply(consumer, reader);
     }
 
     reader.readEndDocument();

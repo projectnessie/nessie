@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.impl;
 
 import com.dremio.nessie.tiered.builder.Ref;
-import com.dremio.nessie.tiered.builder.Ref.RefType;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Objects;
 
@@ -78,7 +77,7 @@ class InternalTag extends InternalRef {
   Ref applyToConsumer(Ref consumer) {
     return super.applyToConsumer(consumer)
         .name(name)
-        .type(RefType.TAG)
+        .tag()
         .commit(commit);
   }
 

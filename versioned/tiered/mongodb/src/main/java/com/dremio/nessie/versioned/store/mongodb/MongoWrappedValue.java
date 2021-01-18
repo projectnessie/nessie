@@ -17,7 +17,7 @@ package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
@@ -30,11 +30,11 @@ class MongoWrappedValue<C extends BaseWrappedValue<C>> extends MongoBaseValue<C>
   static final String VALUE = "value";
 
   @SuppressWarnings("rawtypes")
-  static final Map<String, BiConsumer<BaseWrappedValue, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiFunction<BaseWrappedValue, BsonReader, BaseWrappedValue>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
-    PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
+    PROPERTY_PRODUCERS.put(ID, (c, r) -> (BaseWrappedValue) c.id(MongoSerDe.deserializeId(r)));
+    PROPERTY_PRODUCERS.put(DT, (c, r) -> (BaseWrappedValue) c.dt(r.readInt64()));
     PROPERTY_PRODUCERS.put(VALUE, (c, r) -> c.value(MongoSerDe.deserializeBytes(r)));
   }
 
