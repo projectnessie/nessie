@@ -36,7 +36,7 @@ abstract class InternalRef extends PersistentBase<Ref> {
 
   static final String TYPE = "type";
 
-  InternalRef(Id id, long dt) {
+  InternalRef(Id id, Long dt) {
     super(id, dt);
   }
 

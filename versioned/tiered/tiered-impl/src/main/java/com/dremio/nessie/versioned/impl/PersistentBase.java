@@ -47,7 +47,7 @@ abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
    * @return the consumer passed into the function
    */
   C applyToConsumer(C consumer) {
-    return consumer.id(getId());
+    return consumer.id(getId()).dt(dt);
   }
 
   @Override
