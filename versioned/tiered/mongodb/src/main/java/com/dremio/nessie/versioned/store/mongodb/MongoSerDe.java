@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,12 +39,13 @@ import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class MongoSerDe {
-  private static final Map<ValueType<?>, Function<BsonWriter, MongoBaseValue>> consumerMap;
-  private static final Map<ValueType<?>, Map<String, BiConsumer<BaseValue, BsonReader>>> producerMap;
+  private static final Map<ValueType<?>, Function<BsonWriter, MongoBaseValue>> CONSUMERS;
+  private static final Map<ValueType<?>, Map<String, BiConsumer<BaseValue, BsonReader>>> DESERIALIZERS;
 
   private static final String MONGO_ID_NAME = "_id";
 
@@ -53,28 +53,35 @@ final class MongoSerDe {
   private static final String KEY_REMOVAL = "d";
 
   static {
-    consumerMap = new HashMap<>();
-    producerMap = new HashMap<>();
+    ImmutableMap.Builder<ValueType<?>, Function<BsonWriter, MongoBaseValue>> consumers = ImmutableMap.builder();
+    ImmutableMap.Builder<ValueType<?>, Map<String, BiConsumer<BaseValue, BsonReader>>> deserializers = ImmutableMap.builder();
 
-    consumerMap.put(ValueType.L1, MongoL1::new);
-    producerMap.put(ValueType.L1, (Map) MongoL1.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.L2, MongoL2::new);
-    producerMap.put(ValueType.L2, (Map) MongoL2.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.L3, MongoL3::new);
-    producerMap.put(ValueType.L3, (Map) MongoL3.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.KEY_FRAGMENT, MongoFragment::new);
-    producerMap.put(ValueType.KEY_FRAGMENT, (Map) MongoFragment.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.REF, MongoRef::new);
-    producerMap.put(ValueType.REF, (Map) MongoRef.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.VALUE, MongoWrappedValue::new);
-    producerMap.put(ValueType.VALUE, (Map) MongoWrappedValue.PROPERTY_PRODUCERS);
-    consumerMap.put(ValueType.COMMIT_METADATA, MongoWrappedValue::new);
-    producerMap.put(ValueType.COMMIT_METADATA, (Map) MongoWrappedValue.PROPERTY_PRODUCERS);
+    consumers.put(ValueType.L1, MongoL1::new);
+    deserializers.put(ValueType.L1, (Map) MongoL1.PROPERTY_PRODUCERS);
+    consumers.put(ValueType.L2, MongoL2::new);
+    deserializers.put(ValueType.L2, (Map) MongoL2.PROPERTY_PRODUCERS);
+    consumers.put(ValueType.L3, MongoL3::new);
+    deserializers.put(ValueType.L3, (Map) MongoL3.PROPERTY_PRODUCERS);
+    consumers.put(ValueType.KEY_FRAGMENT, MongoFragment::new);
+    deserializers.put(ValueType.KEY_FRAGMENT, (Map) MongoFragment.PROPERTY_PRODUCERS);
+    consumers.put(ValueType.REF, MongoRef::new);
+    deserializers.put(ValueType.REF, (Map) MongoRef.PROPERTY_PRODUCERS);
+    consumers.put(ValueType.VALUE, MongoWrappedValue::new);
+    deserializers.put(ValueType.VALUE, (Map) MongoWrappedValue.PROPERTY_PRODUCERS);
+    consumers.put(ValueType.COMMIT_METADATA, MongoWrappedValue::new);
+    deserializers.put(ValueType.COMMIT_METADATA, (Map) MongoWrappedValue.PROPERTY_PRODUCERS);
 
-    if (!producerMap.keySet().equals(new HashSet<>(ValueType.values()))) {
+    CONSUMERS = consumers.build();
+    DESERIALIZERS = deserializers.build();
+
+    if (!CONSUMERS.keySet().equals(DESERIALIZERS.keySet())) {
+      throw new UnsupportedOperationException("The enum-maps ENTITY_MAP_PRODUCERS and DESERIALIZERS "
+          + "are not equal. This is a bug in the implementation of MongoSerDe.");
+    }
+    if (!DESERIALIZERS.keySet().equals(new HashSet<>(ValueType.values()))) {
       throw new UnsupportedOperationException(String.format("The enum-map producerMaps does not "
-          + "have producer-maps matching the available value types (%s vs %s).",
-          producerMap.keySet(), new HashSet<>(ValueType.values())));
+              + "have producer-maps matching the available value types (%s vs %s).",
+          DESERIALIZERS.keySet(), new HashSet<>(ValueType.values())));
     }
   }
 
@@ -93,12 +100,12 @@ final class MongoSerDe {
    * Deserialize a MongoDB entity into the given consumer.
    */
   static void produceToConsumer(BsonReader entity, ValueType<?> valueType, Function<Id, BaseValue> onIdParsed, Consumer<Id> parsed) {
-    Map<String, BiConsumer<BaseValue, BsonReader>> propertyProducers = producerMap.get(valueType);
+    Map<String, BiConsumer<BaseValue, BsonReader>> propertyProducers = DESERIALIZERS.get(valueType);
     deserializeToConsumer(entity, onIdParsed, parsed, propertyProducers);
   }
 
   private static <C extends BaseValue<C>> MongoBaseValue<C> newMongoConsumer(ValueType<C> valueType, BsonWriter bsonWriter) {
-    return consumerMap.get(valueType).apply(bsonWriter);
+    return CONSUMERS.get(valueType).apply(bsonWriter);
   }
 
   static <C extends BaseValue<C>> Bson bsonForValueType(SaveOp<C> saveOp, String updateOperator) {
