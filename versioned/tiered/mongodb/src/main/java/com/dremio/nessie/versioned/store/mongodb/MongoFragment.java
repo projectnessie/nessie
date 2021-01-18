@@ -17,7 +17,7 @@ package com.dremio.nessie.versioned.store.mongodb;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.bson.BsonReader;
@@ -30,7 +30,7 @@ final class MongoFragment extends MongoBaseValue<Fragment> implements Fragment {
 
   static final String KEY_LIST = "keys";
 
-  static final Map<String, BiConsumer<Fragment, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static final Map<String, BiFunction<Fragment, BsonReader, Fragment>> PROPERTY_PRODUCERS = new HashMap<>();
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));

@@ -30,7 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.tiered.builder.Ref;
-import com.dremio.nessie.tiered.builder.Ref.RefType;
+import com.dremio.nessie.tiered.builder.Ref.UnsavedCommitDelta;
+import com.dremio.nessie.tiered.builder.Ref.UnsavedCommitMutations;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
@@ -532,7 +533,7 @@ class InternalBranch extends InternalRef {
   Ref applyToConsumer(Ref consumer) {
     return super.applyToConsumer(consumer)
         .name(name)
-        .type(RefType.BRANCH)
+        .branch()
         .metadata(metadata)
         .children(this.tree.stream())
         .commits(cc -> {
@@ -540,18 +541,21 @@ class InternalBranch extends InternalRef {
             cc.id(c.id)
                 .commit(c.commit);
             if (c.saved) {
-              cc.parent(c.parent)
+              cc.saved()
+                  .parent(c.parent)
                   .done();
             } else {
-              c.deltas.forEach(d -> cc.delta(
+              UnsavedCommitDelta deltas = cc.unsaved();
+              c.deltas.forEach(d -> deltas.delta(
                       d.position,
                       d.oldId,
                       d.newId
                   ));
 
-              c.keyMutationList.getMutations().forEach(km -> cc.keyMutation(km.toMutation()));
+              UnsavedCommitMutations mutations = deltas.mutations();
+              c.keyMutationList.getMutations().forEach(km -> mutations.keyMutation(km.toMutation()));
 
-              cc.done();
+              mutations.done();
             }
           }
         });
