@@ -15,51 +15,36 @@
  */
 package com.dremio.nessie.versioned;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
-
 /**
- * A set of methods that a users of a VersionStore must implement.
+ * A set of helpers that users of a VersionStore must implement.
  *
  * @param <VALUE> The value type saved in the VersionStore.
  * @param <COMMIT_METADATA> The commit metadata type saved in the VersionStore.
  */
 public interface StoreWorker<VALUE, COMMIT_METADATA> {
 
-  Serializer<VALUE> getValueSerializer();
+  ValueWorker<VALUE> getValueWorker();
 
   Serializer<COMMIT_METADATA> getMetadataSerializer();
 
   /**
-   * Get a stream of AssetKeys associated with a particular value.
-   *
-   * @param value The value to retrieve asset keys for.
-   * @return The asset keys associated with this value (if any).
+   * Create StoreWorker for provided helpers.
    */
-  Stream<AssetKey> getAssetKeys(VALUE value);
+  static <VALUE, COMMIT_METADATA> StoreWorker<VALUE, COMMIT_METADATA>
+      of(ValueWorker<VALUE> valueWorker, Serializer<COMMIT_METADATA> commitSerializer) {
+    return new StoreWorker<VALUE, COMMIT_METADATA>() {
 
-  /**
-   * An idempotent deletion. Given the lack of consistency guarantees in deletion of external assets, Nessie may call
-   * this method multiple times on the same AssetKey.
-   */
-  CompletableFuture<Void> deleteAsset(AssetKey key);
+      @Override
+      public ValueWorker<VALUE> getValueWorker() {
+        return valueWorker;
+      }
 
-  /**
-   * An asset is an external object that is mapped to a value. As part of garbage collection, assets will be deleted as
-   * necessary to ensure assets are not existing if their references in Nessie are removed. This key is a unique pointer
-   * to that asset that implements equality and hashcode to ensure Nessie storage can determine the unique set of asset
-   * keys that must be deleted.
-   *
-   * <p>TODO: add some kind of mechanism for allowing Nessie to use BloomFilters with these keys.
-   */
-  interface AssetKey {
+      @Override
+      public Serializer<COMMIT_METADATA> getMetadataSerializer() {
+        return commitSerializer;
+      }
 
-    @Override
-    boolean equals(Object other);
-
-    @Override
-    int hashCode();
-
-
+    };
   }
+
 }

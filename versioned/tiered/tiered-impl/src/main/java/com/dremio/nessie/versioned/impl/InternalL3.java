@@ -41,11 +41,11 @@ class InternalL3 extends PersistentBase<L3> {
   static Id EMPTY_ID = EMPTY.getId();
 
   private InternalL3(TreeMap<InternalKey, PositionDelta> keys) {
-    this(null, keys);
+    this(null, keys, DT.now());
   }
 
-  private InternalL3(Id id, TreeMap<InternalKey, PositionDelta> keys) {
-    super(id);
+  private InternalL3(Id id, TreeMap<InternalKey, PositionDelta> keys, Long dt) {
+    super(id, dt);
     this.map = keys;
     ensureConsistentId();
   }
@@ -169,6 +169,7 @@ class InternalL3 extends PersistentBase<L3> {
   static final class Builder extends EntityBuilder<InternalL3> implements L3 {
 
     private Id id;
+    private Long dt;
     private Stream<KeyDelta> keyDelta;
 
     Builder() {
@@ -179,6 +180,13 @@ class InternalL3 extends PersistentBase<L3> {
     public InternalL3.Builder id(Id id) {
       checkCalled(this.id, "id");
       this.id = id;
+      return this;
+    }
+
+    @Override
+    public Builder dt(long dt) {
+      checkCalled(this.dt, "dt");
+      this.dt = dt;
       return this;
     }
 
@@ -206,7 +214,8 @@ class InternalL3 extends PersistentBase<L3> {
                   },
                   TreeMap::new
               )
-          ));
+          ),
+          dt);
     }
   }
 
@@ -229,5 +238,11 @@ class InternalL3 extends PersistentBase<L3> {
         Stream.concat(
             difference.entriesOnlyOnLeft().entrySet().stream().map(KeyDiff::onlyOnLeft),
             difference.entriesOnlyOnRight().entrySet().stream().map(KeyDiff::onlyOnRight)));
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public EntityType<L3, InternalL3, InternalL3.Builder> getEntityType() {
+    return EntityType.L3;
   }
 }

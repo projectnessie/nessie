@@ -32,7 +32,7 @@ class InternalL1 extends PersistentBase<L1> {
   private static final long HASH_SEED = 3506039963025592061L;
 
   static final int SIZE = 43;
-  static InternalL1 EMPTY = new InternalL1(Id.EMPTY, new IdMap(SIZE, InternalL2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY);
+  static InternalL1 EMPTY = new InternalL1(Id.EMPTY, new IdMap(SIZE, InternalL2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY, 0L);
   static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap tree;
@@ -41,8 +41,8 @@ class InternalL1 extends PersistentBase<L1> {
   private final KeyList keyList;
   private final ParentList parentList;
 
-  private InternalL1(Id commitId, IdMap tree, Id id, KeyList keyList, ParentList parentList) {
-    super(id);
+  private InternalL1(Id commitId, IdMap tree, Id id, KeyList keyList, ParentList parentList, Long dt) {
+    super(id, dt);
     this.metadataId = commitId;
     this.parentList = parentList;
     this.keyList = keyList;
@@ -59,12 +59,12 @@ class InternalL1 extends PersistentBase<L1> {
   InternalL1 getChildWithTree(Id metadataId, IdMap tree, KeyMutationList mutations) {
     KeyList keyList = this.keyList.plus(getId(), mutations.getMutations());
     ParentList parents = this.parentList.cloneWithAdditional(getId());
-    return new InternalL1(metadataId, tree, null, keyList, parents);
+    return new InternalL1(metadataId, tree, null, keyList, parents, DT.now());
   }
 
   InternalL1 withCheckpointAsNecessary(Store store) {
     return keyList.createCheckpointIfNeeded(this, store)
-        .map(keylist -> new InternalL1(metadataId, tree, null, keylist, parentList)).orElse(this);
+        .map(keylist -> new InternalL1(metadataId, tree, null, keylist, parentList, DT.now())).orElse(this);
   }
 
   Id getId(int position) {
@@ -84,7 +84,7 @@ class InternalL1 extends PersistentBase<L1> {
   }
 
   InternalL1 set(int position, Id l2Id) {
-    return new InternalL1(metadataId, tree.withId(position, l2Id), null, keyList, parentList);
+    return new InternalL1(metadataId, tree.withId(position, l2Id), null, keyList, parentList, DT.now());
   }
 
   @Override
@@ -178,6 +178,7 @@ class InternalL1 extends PersistentBase<L1> {
     private Stream<Id> children;
     private final List<KeyMutation> keyChanges = new ArrayList<>();
     private Id id;
+    private Long dt;
     private Id checkpointId;
     private int distanceFromCheckpoint;
     private Stream<Id> fragmentIds;
@@ -192,6 +193,7 @@ class InternalL1 extends PersistentBase<L1> {
       this.metadataId = id;
       return this;
     }
+
 
     @Override
     public Builder ancestors(Stream<Id> ids) {
@@ -211,6 +213,13 @@ class InternalL1 extends PersistentBase<L1> {
     public Builder id(Id id) {
       checkCalled(this.id, "id");
       this.id = id;
+      return this;
+    }
+
+    @Override
+    public Builder dt(long dt) {
+      checkCalled(this.dt, "dt");
+      this.dt = dt;
       return this;
     }
 
@@ -254,7 +263,8 @@ class InternalL1 extends PersistentBase<L1> {
           children.collect(IdMap.collector(SIZE)),
           id,
           buildKeyList(),
-          ParentList.of(ancestors));
+          ParentList.of(ancestors),
+          dt);
     }
 
     private KeyList buildKeyList() {
@@ -271,4 +281,9 @@ class InternalL1 extends PersistentBase<L1> {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public EntityType<L1, InternalL1, InternalL1.Builder> getEntityType() {
+    return EntityType.L1;
+  }
 }

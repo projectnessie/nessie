@@ -113,7 +113,7 @@ public class VersionStoreFactory {
         LOGGER.info("Using In Memory version store");
         return InMemoryVersionStore.<Contents, CommitMeta>builder()
             .metadataSerializer(storeWorker.getMetadataSerializer())
-            .valueSerializer(storeWorker.getValueSerializer())
+            .valueSerializer(storeWorker.getValueWorker())
             .build();
       default:
         throw new RuntimeException(String.format("unknown jgit repo type %s", config.getVersionStoreConfig().getVersionStoreType()));

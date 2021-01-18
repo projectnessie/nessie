@@ -33,6 +33,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 abstract class DynamoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
+  static final String DT = "dt";
   static final String ID = Store.KEY_NAME;
 
   final Map<String, AttributeValue> entity = new HashMap<>();
@@ -63,6 +64,11 @@ abstract class DynamoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
       throw new IllegalStateException("Duplicate '" + key + "' in 'entity' map. Old={" + old + "} current={" + value + "}");
     }
     return (C) this;
+  }
+
+  @Override
+  public C dt(long dt) {
+    return addEntitySafe(DT, AttributeValueUtil.number(dt));
   }
 
   Map<String, AttributeValue> build() {

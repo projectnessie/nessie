@@ -36,8 +36,8 @@ abstract class InternalRef extends PersistentBase<Ref> {
 
   static final String TYPE = "type";
 
-  InternalRef(Id id) {
-    super(id);
+  InternalRef(Id id, long dt) {
+    super(id, dt);
   }
 
   public enum Type {
@@ -101,6 +101,7 @@ abstract class InternalRef extends PersistentBase<Ref> {
   static final class Builder extends EntityBuilder<InternalRef> implements Ref {
 
     private Id id;
+    private Long dt;
     private RefType refType;
     private String name;
 
@@ -151,6 +152,13 @@ abstract class InternalRef extends PersistentBase<Ref> {
     public Builder children(Stream<Id> children) {
       checkCalled(this.children, "children");
       this.children = children;
+      return this;
+    }
+
+    @Override
+    public Builder dt(long dt) {
+      checkCalled(this.dt, "dt");
+      this.dt = dt;
       return this;
     }
 
@@ -224,7 +232,7 @@ abstract class InternalRef extends PersistentBase<Ref> {
       switch (refType) {
         case TAG:
           checkSet(commit, "commit");
-          return new InternalTag(id, name, commit);
+          return new InternalTag(id, name, commit, dt);
         case BRANCH:
           checkSet(metadata, "metadata");
           checkSet(children, "children");
@@ -234,7 +242,8 @@ abstract class InternalRef extends PersistentBase<Ref> {
               name,
               IdMap.of(children, InternalL1.SIZE),
               metadata,
-              commits);
+              commits,
+              dt);
         default:
           throw new UnsupportedOperationException("Unknown ref-type " + refType);
       }

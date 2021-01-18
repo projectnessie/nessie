@@ -51,6 +51,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
+    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
     PROPERTY_PRODUCERS.put(TYPE, (c, r) -> c.type(deserializeType(r)));
     PROPERTY_PRODUCERS.put(NAME, (c, r) -> c.name(r.readString()));
     PROPERTY_PRODUCERS.put(COMMIT, (c, r) -> c.commit(MongoSerDe.deserializeId(r)));

@@ -45,6 +45,7 @@ public final class AttributeValueUtil {
 
   private static final String KEY_ADDITION = "a";
   private static final String KEY_REMOVAL = "d";
+  private static final String DT = "dt";
 
   private AttributeValueUtil() {
     // empty
@@ -105,6 +106,15 @@ public final class AttributeValueUtil {
    */
   static AttributeValue keyElements(Key key) {
     return list(checkNotNull(key).getElements().stream().map(AttributeValueUtil::string));
+  }
+
+  static long getDt(Map<String, AttributeValue> map) {
+    AttributeValue av = map.get(DT);
+    if (av == null) {
+      return 0;
+    }
+
+    return Long.parseLong(av.n());
   }
 
   /**

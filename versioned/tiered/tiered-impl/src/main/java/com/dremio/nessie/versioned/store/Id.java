@@ -123,6 +123,10 @@ public final class Id {
     return this.equals(Id.EMPTY);
   }
 
+  public boolean isNonEmpty() {
+    return !isEmpty();
+  }
+
   @Override
   public int hashCode() {
     return getValue().hashCode();

@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SaveOp;
 import com.google.common.base.Preconditions;
 
 abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
@@ -25,12 +26,16 @@ abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
   //unchanging but only generated once needed.
   private Id id;
 
+  private long dt;
+
   PersistentBase() {
     this.id = null;
+    this.dt = DT.now();
   }
 
-  PersistentBase(Id id) {
+  PersistentBase(Id id, Long dt) {
     this.id = id;
+    this.dt = dt == null ? 0 : dt;
   }
 
   abstract Id generateId();
@@ -53,8 +58,18 @@ abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
     return id;
   }
 
+  abstract <E extends PersistentBase<C>> EntityType<C, E, ?> getEntityType();
+
+  SaveOp<C> toSaveOp() {
+    return getEntityType().createSaveOpForEntity(this);
+  }
+
   void ensureConsistentId() {
     assert id == null || id.equals(generateId());
+  }
+
+  public long getDt() {
+    return dt;
   }
 
   abstract static class EntityBuilder<E extends HasId> {

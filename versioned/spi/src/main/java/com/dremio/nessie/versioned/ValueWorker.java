@@ -13,32 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.tiered.builder;
+package com.dremio.nessie.versioned;
 
-import com.dremio.nessie.versioned.store.Id;
+import java.util.stream.Stream;
 
-/**
- * Base interface for all consumers.
- * <p>
- * Do not implement this interface in non-abstract implementation classes!
- * </p>
- */
-public interface BaseValue<T extends BaseValue<T>> {
+import com.google.common.hash.Funnel;
+
+public interface ValueWorker<VALUE> extends Serializer<VALUE> {
+
   /**
-   * The id for this consumer.
-   * <p>Must be called exactly once.</p>
+   * Get a stream of assets associated with a particular value.
+   * @return The asset keys associated with this value (if any).
+   */
+  Stream<? extends AssetKey> getAssetKeys(VALUE value);
+
+  /**
+   * Get a funnel for adding value items to a BloomFilter.
+   * @return
+   */
+  Funnel<VALUE> getFunnel();
+
+  /**
+   * Get a serializer for AssetKeys.
    *
-   * @param id The id.
-   * @return This consumer.
+   * @return
    */
-  T id(Id id);
+  Serializer<AssetKey> getAssetKeySerializer();
 
 
-
-  /**
-   * A datetime when this object was last inserted/updated.
-   * @param dt The time in microseconds
-   * @return This consumer.
-   */
-  T dt(long dt);
 }

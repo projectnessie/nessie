@@ -13,32 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.tiered.builder;
+package com.dremio.nessie.versioned.impl;
 
-import com.dremio.nessie.versioned.store.Id;
+import java.util.concurrent.TimeUnit;
 
-/**
- * Base interface for all consumers.
- * <p>
- * Do not implement this interface in non-abstract implementation classes!
- * </p>
- */
-public interface BaseValue<T extends BaseValue<T>> {
-  /**
-   * The id for this consumer.
-   * <p>Must be called exactly once.</p>
-   *
-   * @param id The id.
-   * @return This consumer.
-   */
-  T id(Id id);
+public class DT {
 
+  private DT() {
+  }
 
+  public static long now() {
+    return TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
+  }
 
-  /**
-   * A datetime when this object was last inserted/updated.
-   * @param dt The time in microseconds
-   * @return This consumer.
-   */
-  T dt(long dt);
 }

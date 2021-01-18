@@ -26,19 +26,19 @@ class InternalL2 extends PersistentBase<L2> {
   private static final long HASH_SEED = -6352836103271505167L;
 
   static final int SIZE = 199;
-  static InternalL2 EMPTY = new InternalL2(null, new IdMap(SIZE, InternalL3.EMPTY_ID));
+  static InternalL2 EMPTY = new InternalL2(null, new IdMap(SIZE, InternalL3.EMPTY_ID), 0L);
   static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap map;
 
-  private InternalL2(Id id, IdMap map) {
-    super(id);
+  private InternalL2(Id id, IdMap map, Long dt) {
+    super(id, dt);
     assert map.size() == SIZE;
     this.map = map;
   }
 
   private InternalL2(IdMap map) {
-    this(null, map);
+    this(null, map, DT.now());
   }
 
 
@@ -102,6 +102,7 @@ class InternalL2 extends PersistentBase<L2> {
   static final class Builder extends EntityBuilder<InternalL2> implements L2 {
 
     private Id id;
+    private Long dt;
     private Stream<Id> children;
 
     Builder() {
@@ -123,13 +124,27 @@ class InternalL2 extends PersistentBase<L2> {
     }
 
     @Override
+    public Builder dt(long dt) {
+      checkCalled(this.dt, "dt");
+      this.dt = dt;
+      return this;
+    }
+
+    @Override
     InternalL2 build() {
       // null-id is allowed (will be generated)
       checkSet(children, "children");
 
       return new InternalL2(
           id,
-          IdMap.of(children, SIZE));
+          IdMap.of(children, SIZE),
+          dt);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public EntityType<L2, InternalL2, InternalL2.Builder> getEntityType() {
+    return EntityType.L2;
   }
 }

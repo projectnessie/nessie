@@ -34,6 +34,7 @@ class MongoWrappedValue<C extends BaseWrappedValue<C>> extends MongoBaseValue<C>
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
+    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
     PROPERTY_PRODUCERS.put(VALUE, (c, r) -> c.value(MongoSerDe.deserializeBytes(r)));
   }
 
