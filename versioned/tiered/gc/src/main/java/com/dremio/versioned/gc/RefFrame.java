@@ -163,6 +163,7 @@ public class RefFrame implements Serializable {
           public BranchCommitConsumer done() {
             if (hasParent) {
               populated = true;
+              frame.id = IdFrame.of(id);
             }
             return this;
           }

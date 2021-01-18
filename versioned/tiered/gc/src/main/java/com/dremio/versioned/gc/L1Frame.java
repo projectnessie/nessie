@@ -17,6 +17,7 @@ package com.dremio.versioned.gc;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -202,10 +203,12 @@ public class L1Frame implements Serializable {
     return f;
   };
 
+  private static final byte[] EMPTY_L1_BYTES = Ids.getEmptyL1().toBytes();
+
   /**
    * A filter that excludes the "empty" L1.
    */
-  private static final Predicate<L1Frame> EXCLUDE_EMPTY_L1 = l -> !l.getId().getId().equals(Ids.getEmptyL1().toBytes());
+  private static final Predicate<L1Frame> EXCLUDE_EMPTY_L1 = l -> !Arrays.equals(EMPTY_L1_BYTES, l.getId().getId());
 
   public static Dataset<L1Frame> asDataset(Supplier<Store> store, SparkSession spark) {
     return ValueRetriever.dataset(store, ValueType.L1, L1Frame.class, Optional.of(EXCLUDE_EMPTY_L1), spark, BUILDER);

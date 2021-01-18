@@ -64,7 +64,7 @@ public class ValueFrame {
       @Override
       public Value dt(long dt) {
         f.dt = dt;
-        return null;
+        return this;
       }
     });
     return f;
