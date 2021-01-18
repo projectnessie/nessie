@@ -17,13 +17,11 @@ package com.dremio.nessie.versioned;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
 import com.dremio.nessie.versioned.AssetKey.NoOpAssetKey;
-import com.google.common.hash.Funnel;
 import com.google.protobuf.ByteString;
 
 /**
@@ -57,11 +55,6 @@ public final class StringSerializer implements ValueWorker<String> {
   @Override
   public Stream<AssetKey> getAssetKeys(String value) {
     return Stream.of();
-  }
-
-  @Override
-  public Funnel<String> getFunnel() {
-    return (val, sink) -> sink.putString(val, StandardCharsets.UTF_8);
   }
 
   @SuppressWarnings("unchecked")

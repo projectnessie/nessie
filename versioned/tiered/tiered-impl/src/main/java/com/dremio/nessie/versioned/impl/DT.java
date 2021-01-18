@@ -19,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 
 public class DT {
 
+  public static final long UNKNOWN = 0;
+
   private DT() {
   }
 

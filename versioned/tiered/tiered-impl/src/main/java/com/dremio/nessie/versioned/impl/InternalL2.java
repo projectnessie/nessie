@@ -26,7 +26,7 @@ class InternalL2 extends PersistentBase<L2> {
   private static final long HASH_SEED = -6352836103271505167L;
 
   static final int SIZE = 199;
-  static InternalL2 EMPTY = new InternalL2(null, new IdMap(SIZE, InternalL3.EMPTY_ID), 0L);
+  static InternalL2 EMPTY = new InternalL2(null, new IdMap(SIZE, InternalL3.EMPTY_ID), DT.UNKNOWN);
   static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap map;

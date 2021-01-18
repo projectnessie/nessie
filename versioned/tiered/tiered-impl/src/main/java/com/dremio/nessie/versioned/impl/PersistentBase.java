@@ -35,7 +35,7 @@ abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
 
   PersistentBase(Id id, Long dt) {
     this.id = id;
-    this.dt = dt == null ? 0 : dt;
+    this.dt = dt == null ? DT.UNKNOWN : dt;
   }
 
   abstract Id generateId();

@@ -17,8 +17,6 @@ package com.dremio.nessie.versioned;
 
 import java.util.stream.Stream;
 
-import com.google.common.hash.Funnel;
-
 public interface ValueWorker<VALUE> extends Serializer<VALUE> {
 
   /**
@@ -26,12 +24,6 @@ public interface ValueWorker<VALUE> extends Serializer<VALUE> {
    * @return The asset keys associated with this value (if any).
    */
   Stream<? extends AssetKey> getAssetKeys(VALUE value);
-
-  /**
-   * Get a funnel for adding value items to a BloomFilter.
-   * @return
-   */
-  Funnel<VALUE> getFunnel();
 
   /**
    * Get a serializer for AssetKeys.

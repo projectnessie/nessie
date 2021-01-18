@@ -16,7 +16,7 @@
 package com.dremio.nessie.versioned;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import com.google.protobuf.ByteString;
 
@@ -38,7 +38,7 @@ public abstract class AssetKey {
    * <li>Throw an exception if the asset could not be deleted.
    * </ul>
    */
-  public abstract CompletableFuture<Boolean> delete();
+  public abstract CompletionStage<Boolean> delete();
 
   /**
    * Expose a description of this object to be used for reporting purposes.

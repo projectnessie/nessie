@@ -49,7 +49,6 @@ import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.ValueWorker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.hash.Funnel;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.UnsafeByteOperations;
@@ -155,11 +154,6 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     @Override
     public Stream<AssetKey> getAssetKeys(Contents value) {
       return Stream.of();
-    }
-
-    @Override
-    public Funnel<Contents> getFunnel() {
-      throw new UnsupportedOperationException();
     }
 
     @Override
