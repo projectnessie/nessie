@@ -145,9 +145,13 @@ public class TestValueRetriever {
 
     IdCarrier carrier1 = single(IdCarrier
         .asDataset(ValueType.L2, () -> store, IdCarrier.L2_CONVERTER,
-            Optional.of(i -> i.getId().getId().equals(l2.getId().toBytes())), spark()));
+            Optional.of(i -> i.getId().equalsId(l2.getId())), spark()));
     Set<String> children = carrier1.getChildren().stream().map(IdFrame::toString).collect(Collectors.toSet());
     assertThat(children, containsInAnyOrder(l31.toString(), l32.toString(), InternalL3.EMPTY_ID.toString()));
+  }
+
+  public static boolean equals(IdFrame id1, Id id2) {
+    return Arrays.equals(id1.getId(), id2.toBytes());
   }
 
   @Test
@@ -159,7 +163,7 @@ public class TestValueRetriever {
 
     IdCarrier carrier1 = single(IdCarrier
         .asDataset(ValueType.L3, () -> store, IdCarrier.L3_CONVERTER,
-            Optional.of(i -> i.getId().getId().equals(l3.getId().toBytes())), spark()));
+            Optional.of(i -> i.getId().equalsId(l3.getId())), spark()));
     Set<String> children = carrier1.getChildren().stream().map(IdFrame::toString).collect(Collectors.toSet());
     assertThat(children, containsInAnyOrder(val1.toString(), val2.toString()));
   }
