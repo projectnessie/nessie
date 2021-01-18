@@ -16,6 +16,7 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.util.Objects;
+
 import com.dremio.nessie.tiered.builder.BaseWrappedValue;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;

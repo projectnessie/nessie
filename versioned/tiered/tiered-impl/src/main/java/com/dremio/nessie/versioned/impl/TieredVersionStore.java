@@ -132,7 +132,12 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       throw new ReferenceNotFoundException("Unable to find target hash.", ex);
     }
 
-    InternalRef newRef = ref instanceof TagName ? new InternalTag(null, ref.getName(), l1.getId(), DT.now()) : new InternalBranch(ref.getName(), l1);
+    InternalRef newRef;
+    if (ref instanceof TagName) {
+      newRef = new InternalTag(null, ref.getName(), l1.getId(), DT.now());
+    } else {
+      newRef = new InternalBranch(ref.getName(), l1);
+    }
     if (!store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, newRef))) {
       throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
     }
