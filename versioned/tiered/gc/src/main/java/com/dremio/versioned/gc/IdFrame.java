@@ -47,6 +47,10 @@ public class IdFrame {
     return Id.of(id).toString();
   }
 
+  public boolean equalsId(Id id) {
+    return Arrays.equals(this.id, id.toBytes());
+  }
+
   @Override
   public int hashCode() {
     final int prime = 31;

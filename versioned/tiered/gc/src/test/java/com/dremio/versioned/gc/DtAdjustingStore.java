@@ -73,6 +73,7 @@ class DtAdjustingStore implements Store {
   public class DtOverwrite implements java.lang.reflect.InvocationHandler {
 
     private final Object delegate;
+    private Object proxy;
 
     public DtOverwrite(Object delegate) {
       this.delegate = delegate;
@@ -81,9 +82,16 @@ class DtAdjustingStore implements Store {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       if (override != null && method.getName().equals("dt")) {
-        return method.invoke(delegate, new Object[] {override});
+        return wrap(method.invoke(delegate, new Object[] {override}));
       }
-      return method.invoke(delegate, args);
+      return wrap(method.invoke(delegate, args));
+    }
+
+    private Object wrap(Object ret) {
+      if (ret == delegate) {
+        return proxy;
+      }
+      return ret;
     }
 
   }
@@ -100,10 +108,12 @@ class DtAdjustingStore implements Store {
       @SuppressWarnings("unchecked")
       @Override
       public void serialize(C consumer) {
+        DtOverwrite handler = new DtOverwrite(consumer);
         C newProxy = (C) Proxy.newProxyInstance(
             Thread.currentThread().getContextClassLoader(),
             new Class<?>[] {iface},
-            new DtOverwrite(consumer));
+            handler);
+        handler.proxy = newProxy;
         op.serialize(newProxy);
       }
     };
