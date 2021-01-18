@@ -61,7 +61,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.hash.Funnel;
 import com.google.protobuf.ByteString;
 
 @ExtendWith(LocalDynamoDB.class)
@@ -210,11 +209,6 @@ public class TestIdentifyUnreferencedAssets {
     @Override
     public Stream<? extends AssetKey> getAssetKeys(DummyValue value) {
       return value.assets.stream();
-    }
-
-    @Override
-    public Funnel<DummyValue> getFunnel() {
-      return (value, sink) -> sink.putBytes(value.idAsBytes());
     }
 
     @SuppressWarnings("unchecked")
