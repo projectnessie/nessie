@@ -18,7 +18,6 @@ package com.dremio.nessie.versioned.store.dynamo;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -37,49 +36,52 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 final class DynamoSerDe {
 
-  private static final Map<ValueType<?>, Supplier<DynamoBaseValue<?>>> dynamoEntityMapProducers;
-  private static final Map<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseValue<?>>> deserializeToConsumer;
+  private static final Map<ValueType<?>, Supplier<DynamoBaseValue<?>>> ENTITY_MAP_PRODUCERS;
+  private static final Map<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseValue<?>>> DESERIALIZERS;
 
   static {
-    dynamoEntityMapProducers = new HashMap<>();
-    deserializeToConsumer = new HashMap<>();
+    ImmutableMap.Builder<ValueType<?>, Supplier<DynamoBaseValue<?>>> entityMapProducers = ImmutableMap.builder();
+    ImmutableMap.Builder<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseValue<?>>> deserializers = ImmutableMap.builder();
 
-    dynamoEntityMapProducers.put(ValueType.L1, DynamoL1::new);
-    deserializeToConsumer.put(ValueType.L1, (e, c) -> DynamoL1.toConsumer(e, (L1) c));
+    entityMapProducers.put(ValueType.L1, DynamoL1::new);
+    deserializers.put(ValueType.L1, (e, c) -> DynamoL1.toConsumer(e, (L1) c));
 
-    dynamoEntityMapProducers.put(ValueType.L2, DynamoL2::new);
-    deserializeToConsumer.put(ValueType.L2, (e, c) -> DynamoL2.toConsumer(e, (L2) c));
+    entityMapProducers.put(ValueType.L2, DynamoL2::new);
+    deserializers.put(ValueType.L2, (e, c) -> DynamoL2.toConsumer(e, (L2) c));
 
-    dynamoEntityMapProducers.put(ValueType.L3, DynamoL3::new);
-    deserializeToConsumer.put(ValueType.L3, (e, c) -> DynamoL3.toConsumer(e, (L3) c));
+    entityMapProducers.put(ValueType.L3, DynamoL3::new);
+    deserializers.put(ValueType.L3, (e, c) -> DynamoL3.toConsumer(e, (L3) c));
 
-    dynamoEntityMapProducers.put(ValueType.COMMIT_METADATA, () -> new DynamoWrappedValue<>(ValueType.COMMIT_METADATA));
-    deserializeToConsumer.put(ValueType.COMMIT_METADATA,
-        (e, c) -> DynamoWrappedValue.produceToConsumer(e, (CommitMetadata) c));
+    entityMapProducers.put(ValueType.COMMIT_METADATA, () -> new DynamoWrappedValue<>(ValueType.COMMIT_METADATA));
+    deserializers.put(ValueType.COMMIT_METADATA, (e, c) -> DynamoWrappedValue.produceToConsumer(e, (CommitMetadata) c));
 
-    dynamoEntityMapProducers.put(ValueType.VALUE, () -> new DynamoWrappedValue<>(ValueType.VALUE));
-    deserializeToConsumer.put(ValueType.VALUE, (e, c) -> DynamoWrappedValue.produceToConsumer(e, (Value) c));
+    entityMapProducers.put(ValueType.VALUE, () -> new DynamoWrappedValue<>(ValueType.VALUE));
+    deserializers.put(ValueType.VALUE, (e, c) -> DynamoWrappedValue.produceToConsumer(e, (Value) c));
 
-    dynamoEntityMapProducers.put(ValueType.REF, DynamoRef::new);
-    deserializeToConsumer.put(ValueType.REF, (e, c) -> DynamoRef.toConsumer(e, (Ref) c));
+    entityMapProducers.put(ValueType.REF, DynamoRef::new);
+    deserializers.put(ValueType.REF, (e, c) -> DynamoRef.toConsumer(e, (Ref) c));
 
-    dynamoEntityMapProducers.put(ValueType.KEY_FRAGMENT, DynamoFragment::new);
-    deserializeToConsumer.put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragment.toConsumer(e, (Fragment) c));
+    entityMapProducers.put(ValueType.KEY_FRAGMENT, DynamoFragment::new);
+    deserializers.put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragment.toConsumer(e, (Fragment) c));
 
-    if (!dynamoEntityMapProducers.keySet().equals(deserializeToConsumer.keySet())) {
-      throw new UnsupportedOperationException("The enum-maps dynamoConsumerSuppliers and dynamoProducerSuppliers "
+    ENTITY_MAP_PRODUCERS = entityMapProducers.build();
+    DESERIALIZERS = deserializers.build();
+
+    if (!ENTITY_MAP_PRODUCERS.keySet().equals(DESERIALIZERS.keySet())) {
+      throw new UnsupportedOperationException("The enum-maps ENTITY_MAP_PRODUCERS and DESERIALIZERS "
           + "are not equal. This is a bug in the implementation of DynamoSerDe.");
     }
-    if (!dynamoEntityMapProducers.keySet().containsAll(ValueType.values())) {
+    if (!ENTITY_MAP_PRODUCERS.keySet().containsAll(ValueType.values())) {
       throw new UnsupportedOperationException(String.format("The implementation of the Dynamo backend does not have "
-          + "implementations for all supported value-type. Supported by Dynamo: %s, available: %s. "
-          + "This is a bug in the implementation of DynamoSerDe.",
-          dynamoEntityMapProducers.keySet(),
+              + "implementations for all supported value-type. Supported by Dynamo: %s, available: %s. "
+              + "This is a bug in the implementation of DynamoSerDe.",
+          ENTITY_MAP_PRODUCERS.keySet(),
           ValueType.values()));
     }
   }
@@ -102,7 +104,7 @@ final class DynamoSerDe {
     Preconditions.checkNotNull(saveOp, "saveOp parameter is null");
 
     // No need for any 'type' validation - that's done in the static initializer
-    C consumer = (C) dynamoEntityMapProducers.get(saveOp.getType()).get();
+    C consumer = (C) ENTITY_MAP_PRODUCERS.get(saveOp.getType()).get();
 
     saveOp.serialize(consumer);
 
@@ -133,6 +135,6 @@ final class DynamoSerDe {
         id.getHash(), valueType.name(), loadedType);
 
     // No need for any 'valueType' validation against the static map - that's done in the static initializer
-    deserializeToConsumer.get(valueType).accept(entity, consumer);
+    DESERIALIZERS.get(valueType).accept(entity, consumer);
   }
 }
