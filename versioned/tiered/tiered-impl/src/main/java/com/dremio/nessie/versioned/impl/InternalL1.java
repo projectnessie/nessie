@@ -32,7 +32,8 @@ class InternalL1 extends PersistentBase<L1> {
   private static final long HASH_SEED = 3506039963025592061L;
 
   static final int SIZE = 43;
-  static InternalL1 EMPTY = new InternalL1(Id.EMPTY, new IdMap(SIZE, InternalL2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY, DT.UNKNOWN);
+  static InternalL1 EMPTY =
+      new InternalL1(Id.EMPTY, new IdMap(SIZE, InternalL2.EMPTY_ID), null, KeyList.EMPTY, ParentList.EMPTY, DT.UNKNOWN);
   static Id EMPTY_ID = EMPTY.getId();
 
   private final IdMap tree;
