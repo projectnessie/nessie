@@ -46,10 +46,8 @@ import com.dremio.nessie.versioned.Hash;
 import com.dremio.nessie.versioned.LocalDynamoDB;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
-import com.dremio.nessie.versioned.StringSerializer;
+import com.dremio.nessie.versioned.StringWorker;
 import com.dremio.nessie.versioned.ValueWorker;
-import com.dremio.nessie.versioned.gc.GcOptions;
-import com.dremio.nessie.versioned.gc.IdentifyUnreferencedAssets;
 import com.dremio.nessie.versioned.gc.IdentifyUnreferencedAssets.UnreferencedItem;
 import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.store.HasId;
@@ -173,7 +171,7 @@ public class ITTestIdentifyUnreferencedAssets {
 
     @Override
     public Serializer<String> getMetadataSerializer() {
-      return StringSerializer.getInstance();
+      return StringWorker.getInstance();
     }
   }
 
