@@ -26,7 +26,7 @@ abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
   //unchanging but only generated once needed.
   private Id id;
 
-  private long dt;
+  private final long dt;
 
   PersistentBase() {
     this.id = null;

@@ -25,12 +25,12 @@ import com.dremio.nessie.versioned.AssetKey.NoOpAssetKey;
 import com.google.protobuf.ByteString;
 
 /**
- * Serializer and ValueHelper implementation for {@code String class}.
+ * ValueWorker implementation for {@code String class}. Can also be used as simple {@link Serializer}.
  */
-public final class StringSerializer implements ValueWorker<String> {
-  private static final ValueWorker<String> INSTANCE = new StringSerializer();
+public final class StringWorker implements ValueWorker<String> {
+  private static final ValueWorker<String> INSTANCE = new StringWorker();
 
-  private StringSerializer() {
+  private StringWorker() {
   }
 
   /**
@@ -57,7 +57,6 @@ public final class StringSerializer implements ValueWorker<String> {
     return Stream.of();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public Serializer<AssetKey> getAssetKeySerializer() {
     return NoOpAssetKey.SERIALIZER;

@@ -17,14 +17,18 @@ package com.dremio.nessie.versioned.impl;
 
 import java.util.concurrent.TimeUnit;
 
-public class DT {
+final class DT {
 
   public static final long UNKNOWN = 0;
 
   private DT() {
   }
 
-  public static long now() {
+  /**
+   * The current time since epoch in microseconds.
+   * @return Micros since epoch.
+   */
+  static long now() {
     return TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
   }
 

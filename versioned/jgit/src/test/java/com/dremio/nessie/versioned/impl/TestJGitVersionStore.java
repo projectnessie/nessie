@@ -58,7 +58,7 @@ import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
 import com.dremio.nessie.versioned.StoreWorker;
-import com.dremio.nessie.versioned.StringSerializer;
+import com.dremio.nessie.versioned.StringWorker;
 import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
@@ -437,7 +437,7 @@ class TestJGitVersionStore {
   }
 
   private static final StoreWorker<String, String> WORKER =
-      StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
+      StoreWorker.of(StringWorker.getInstance(), StringWorker.getInstance());
 
 
   /**

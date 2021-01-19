@@ -17,7 +17,7 @@ package com.dremio.nessie.versioned.impl;
 
 import com.dremio.nessie.versioned.store.Id;
 
-public class Ids {
+public final class Ids {
 
   private Ids() {
   }

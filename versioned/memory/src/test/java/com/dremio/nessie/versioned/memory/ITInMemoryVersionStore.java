@@ -32,15 +32,15 @@ import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.ImmutablePut;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.StringSerializer;
+import com.dremio.nessie.versioned.StringWorker;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
 
 public class ITInMemoryVersionStore extends AbstractITVersionStore {
   private static final InMemoryVersionStore.Builder<String, String> BUILDER = InMemoryVersionStore.<String, String>builder()
-      .valueSerializer(StringSerializer.getInstance())
-      .metadataSerializer(StringSerializer.getInstance());
+      .valueSerializer(StringWorker.getInstance())
+      .metadataSerializer(StringWorker.getInstance());
 
   private VersionStore<String, String> store;
 

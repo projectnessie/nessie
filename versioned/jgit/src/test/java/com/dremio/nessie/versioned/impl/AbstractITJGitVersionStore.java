@@ -22,7 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 
 import com.dremio.nessie.versioned.StoreWorker;
-import com.dremio.nessie.versioned.StringSerializer;
+import com.dremio.nessie.versioned.StringWorker;
 import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
@@ -32,7 +32,7 @@ public abstract class AbstractITJGitVersionStore extends AbstractITVersionStore 
   protected VersionStore<String, String> store;
 
   protected static final StoreWorker<String, String> WORKER =
-      StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
+      StoreWorker.of(StringWorker.getInstance(), StringWorker.getInstance());
 
   abstract void setUp() throws IOException;
 
