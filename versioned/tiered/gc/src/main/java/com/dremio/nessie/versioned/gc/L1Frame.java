@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.versioned.gc;
+package com.dremio.nessie.versioned.gc;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -95,8 +95,7 @@ public class L1Frame implements Serializable {
   }
 
   private static List<L1Parent> toParents(Stream<Id> unfilteredParents) {
-    List<Id> pre = unfilteredParents.collect(Collectors.toList());
-    List<Id> parents = pre.stream().filter(Id::isNonEmpty).collect(Collectors.toList());
+    List<Id> parents = unfilteredParents.filter(Id::isNonEmpty).collect(Collectors.toList());
     List<L1Parent> values = new ArrayList<L1Parent>(parents.size());
     for (int i = 0; i < parents.size(); i++) {
       values.add(L1Parent.of(parents.get(i), i == parents.size() - 1));

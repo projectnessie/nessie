@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.versioned.gc;
+package com.dremio.nessie.versioned.gc;
 
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.functions;
@@ -25,7 +25,7 @@ import com.dremio.nessie.versioned.store.Id;
 /**
  * Spark function to convert binary ids into string guids.
  */
-class BytesToGuid implements org.apache.spark.sql.api.java.UDF1<byte[], String> {
+class BytesToGuid implements org.apache.spark.sql.api.java.UDF1<byte[], String> { // fully qualified due to checkstyle import ordering issue.
 
   private static final long serialVersionUID = -6415976956653691170L;
 

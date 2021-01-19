@@ -65,13 +65,7 @@
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_2.12</artifactId>
-      <version>3.0.1</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-catalyst_2.12</artifactId>
-      <version>3.0.1</version>
+      <version>${spark3.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -88,38 +82,11 @@
       <artifactId>logback-core</artifactId>
       <scope>test</scope>
     </dependency>    
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sketch_2.12</artifactId>
-      <version>3.0.1</version>
-    </dependency>
+
     <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-tests</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>dynamodb</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>software.amazon.awssdk</groupId>
-          <artifactId>apache-client</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>netty-nio-client</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>url-connection-client</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>dynamodb-enhanced</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -166,18 +133,6 @@
   </repositories>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>exec-maven-plugin</artifactId>
-          <version>${maven-exec-plugin.version}</version>
-          <configuration>
-            <cleanupDaemonThreads>false</cleanupDaemonThreads>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <!-- Ensure that the Maven jar plugin runs before the Maven
         shade plugin by listing the plugin higher within the file. -->

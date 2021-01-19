@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.versioned.gc;
+package com.dremio.nessie.versioned.gc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -48,6 +48,9 @@ import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.StringSerializer;
 import com.dremio.nessie.versioned.ValueWorker;
+import com.dremio.nessie.versioned.gc.GcOptions;
+import com.dremio.nessie.versioned.gc.IdentifyUnreferencedAssets;
+import com.dremio.nessie.versioned.gc.IdentifyUnreferencedAssets.UnreferencedItem;
 import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
@@ -55,7 +58,6 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
 import com.dremio.nessie.versioned.tests.CommitBuilder;
-import com.dremio.versioned.gc.IdentifyUnreferencedAssets.UnreferencedItem;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -102,7 +104,7 @@ public class ITTestIdentifyUnreferencedAssets {
     SparkSession spark = SparkSession
         .builder()
         .appName("test-nessie-gc-collection")
-        .master("local")
+        .master("local[2]")
         .getOrCreate();
 
     // now confirm that the unreferenced assets are marked for deletion. These are found based

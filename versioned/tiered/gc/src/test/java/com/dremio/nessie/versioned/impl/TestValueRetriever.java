@@ -35,13 +35,13 @@ import org.apache.spark.sql.SparkSession;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.gc.IdCarrier;
+import com.dremio.nessie.versioned.gc.IdFrame;
+import com.dremio.nessie.versioned.gc.L1Frame;
+import com.dremio.nessie.versioned.gc.RefFrame;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
-import com.dremio.versioned.gc.IdCarrier;
-import com.dremio.versioned.gc.IdFrame;
-import com.dremio.versioned.gc.L1Frame;
-import com.dremio.versioned.gc.RefFrame;
 
 public class TestValueRetriever {
 
@@ -51,7 +51,7 @@ public class TestValueRetriever {
     return SparkSession
         .builder()
         .appName("valueretriever")
-        .master("local")
+        .master("local[2]")
         .getOrCreate();
   }
 
