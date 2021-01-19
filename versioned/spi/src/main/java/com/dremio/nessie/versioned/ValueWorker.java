@@ -29,6 +29,7 @@ public interface ValueWorker<VALUE> extends Serializer<VALUE> {
    * Get a stream of assets associated with a particular value.
    *
    * <p>Values may have zero or more assets.
+   *
    * <p>Internally, an implementation may actually track multiple types of assets under a single AssetKey heading. For
    * example, an Iceberg table's assets would include: metadata file, manifest list for each snapshot, manifests and
    * Parquet files.
