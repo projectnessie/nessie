@@ -63,6 +63,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 
+import software.amazon.awssdk.regions.Region;
+
 @ExtendWith(LocalDynamoDB.class)
 public class ITTestIdentifyUnreferencedAssets {
   private static final long FIVE_DAYS_IN_PAST_MICROS = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis())
@@ -120,11 +122,16 @@ public class ITTestIdentifyUnreferencedAssets {
 
     private static final long serialVersionUID = 5030232198230089450L;
 
+    static DynamoStore createStore() throws URISyntaxException {
+      return new DynamoStore(DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000"))
+          .region(Region.US_WEST_2).build());
+    }
+
     @Override
     public Store get() {
       Store store;
       try {
-        store = new DynamoStore(DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000")).build());
+        store = createStore();
         store.start();
         return store;
       } catch (URISyntaxException e) {
@@ -137,7 +144,7 @@ public class ITTestIdentifyUnreferencedAssets {
   @BeforeEach
   void before() throws Exception {
     helper = new StoreW();
-    store = new DtAdjustingStore(new DynamoStore(DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000")).build()));
+    store = new DtAdjustingStore(DynamoSupplier.createStore());
     store.start();
     versionStore = new TieredVersionStore<>(helper, store, true);
     versionStore.create(BranchName.of("main"), Optional.empty());
