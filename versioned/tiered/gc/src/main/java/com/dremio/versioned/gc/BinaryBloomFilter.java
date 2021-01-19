@@ -41,7 +41,7 @@ import com.google.protobuf.ByteString;
  *
  * <p>Has two different serialization formats:
  * <ol>
- * <li>format used when exposing a result to a row (direct use of Guava's {@link BloomFilter.readfrom} operations)
+ * <li>format used when exposing a result to a row (direct use of Guava's {@code BloomFilter.readfrom} operations)
  * <li>internal format used when doing aggregation (based on {@link Externalizable})
  * </ol>
  *
