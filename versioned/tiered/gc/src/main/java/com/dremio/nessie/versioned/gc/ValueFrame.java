@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.versioned.gc;
+package com.dremio.nessie.versioned.gc;
 
 import java.util.Optional;
 import java.util.function.Function;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.versioned.gc;
+package com.dremio.nessie.versioned.gc;
 
 import java.io.Serializable;
 import java.util.List;
@@ -36,6 +36,11 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.Store.Acceptor;
 import com.dremio.nessie.versioned.store.ValueType;
 
+/**
+ * Utility object used to encapsulate an id object that references additional ids.
+ *
+ * <p>Example potential uses include the following relationships: L1 to L2, L2 to L3, L3 to value.
+ */
 public class IdCarrier implements Serializable {
 
   private static final long serialVersionUID = -1421784708484600778L;
@@ -80,6 +85,7 @@ public class IdCarrier implements Serializable {
 
       @Override
       public L2 dt(long dt) {
+        // IdCarrier doesn't currently need dt so dropping information.
         return this;
       }
 

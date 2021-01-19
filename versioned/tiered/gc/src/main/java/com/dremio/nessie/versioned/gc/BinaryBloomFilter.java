@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.versioned.gc;
+package com.dremio.nessie.versioned.gc;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -95,7 +95,7 @@ public class BinaryBloomFilter implements Externalizable {
         baos.flush();
         return baos.toByteArray();
       } catch (IOException e) {
-        throw new RuntimeException("Unexpected.", e);
+        throw new RuntimeException("Unexpected exception while serializing to byte array.", e);
       }
     }
 
@@ -185,9 +185,6 @@ public class BinaryBloomFilter implements Externalizable {
 
     @Override
     public boolean equals(Object obj) {
-      if (this == obj) {
-        return true;
-      }
       if (!(obj instanceof BinaryFunnel)) {
         return false;
       }

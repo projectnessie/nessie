@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.versioned.gc;
+package com.dremio.nessie.versioned.gc;
 
 import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.explode;
@@ -37,7 +37,7 @@ import com.dremio.nessie.versioned.store.ValueType;
  * <p>Given a particular item and a bloomfilter listing valid ids, determine if the current item is valid.
  * If the current item is valid, generate all the referenced children ids.
  */
-public class IdProducer {
+final class IdProducer {
 
   /**
    * Given a bloom filter and list of items that can produce addition Ids, get the next bloom filter.

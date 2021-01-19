@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.versioned.gc;
+package com.dremio.nessie.versioned.gc;
 
 import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.explode;
