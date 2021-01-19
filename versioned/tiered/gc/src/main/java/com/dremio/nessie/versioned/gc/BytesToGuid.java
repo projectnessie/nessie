@@ -25,7 +25,7 @@ import com.dremio.nessie.versioned.store.Id;
 /**
  * Spark function to convert binary ids into string guids.
  */
-class BytesToGuid implements org.apache.spark.sql.api.java.UDF1<byte[], String> { // fully qualified due to checkstyle import ordering issue.
+class BytesToGuid implements org.apache.spark.sql.api.java.UDF1<byte[], String> {
 
   private static final long serialVersionUID = -6415976956653691170L;
 
