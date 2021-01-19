@@ -122,7 +122,7 @@ public class RefFrame implements Serializable {
 
       @Override
       public Ref commits(Consumer<BranchCommitConsumer> commits) {
-        commits.accept(new BranchCommitConsumer(){
+        commits.accept(new BranchCommitConsumer() {
 
           private boolean populated;
           private Id id;
