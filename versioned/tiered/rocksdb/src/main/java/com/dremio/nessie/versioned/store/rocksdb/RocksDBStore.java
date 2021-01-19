@@ -29,6 +29,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import com.dremio.nessie.tiered.builder.BaseValue;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
@@ -48,7 +49,6 @@ import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.versioned.impl.InternalRef;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.HasId;
@@ -61,7 +61,6 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
@@ -78,13 +77,13 @@ public class RocksDBStore implements Store {
     RocksDB.loadLibrary();
     COLUMN_FAMILIES = Stream.concat(
       Stream.of(RocksDB.DEFAULT_COLUMN_FAMILY),
-      Arrays.stream(ValueType.values()).map(v -> v.name().getBytes(UTF_8))).collect(ImmutableList.toImmutableList());
+      ValueType.values().stream().map(v -> v.name().getBytes(UTF_8))).collect(ImmutableList.toImmutableList());
   }
 
   private final String dbDirectory;
   private OptimisticTransactionDB transactionDB;
   private RocksDB rocksDB;
-  private Map<ValueType, ColumnFamilyHandle> valueTypeToColumnFamily;
+  private Map<ValueType<?>, ColumnFamilyHandle> valueTypeToColumnFamily;
 
   /**
    * Creates a store ready for connection to RocksDB.
@@ -106,8 +105,7 @@ public class RocksDBStore implements Store {
         final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
         transactionDB = OptimisticTransactionDB.open(dbOptions, dbPath, columnFamilies, columnFamilyHandles);
         rocksDB = transactionDB.getBaseDB();
-        valueTypeToColumnFamily = IntStream.rangeClosed(1, ValueType.values().length).boxed().collect(
-            ImmutableMap.toImmutableMap(k -> ValueType.values()[k - 1], columnFamilyHandles::get));
+        valueTypeToColumnFamily = ValueType.values().stream().collect(Collectors.toMap(k -> k, v -> v.));
         break;
       } catch (RocksDBException e) {
         if (e.getStatus().getCode() != Status.Code.IOError || !e.getStatus().getState().contains("While lock")) {
@@ -184,10 +182,8 @@ public class RocksDBStore implements Store {
   }
 
   @Override
-  public <V> boolean putIfAbsent(ValueType type, V value) {
-    typeCheck(type, value);
-
-    final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
+  public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
+    final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
     try {
       final HasId valueAsHasId = (HasId)value;
       final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions());
@@ -207,8 +203,6 @@ public class RocksDBStore implements Store {
 
   @Override
   public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
-    typeCheck(type, value);
-
     // TODO: Handle ConditionExpressions.
     if (conditionUnAliased.isPresent()) {
       throw new UnsupportedOperationException("ConditionExpressions are not supported with RocksDB yet.");
@@ -225,13 +219,13 @@ public class RocksDBStore implements Store {
   }
 
   @Override
-  public boolean delete(ValueType type, Id id, Optional<ConditionExpression> condition) {
+  public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   public void save(List<SaveOp<?>> ops) {
-    final ListMultimap<ValueType, SaveOp<?>> mm = Multimaps.index(ops, l -> l.getType());
+    final Map<ValueType<?>, List<SaveOp<?>>> perType = ops.stream().collect(Collectors.groupingBy(SaveOp::getType));
 
     try {
       final WriteBatch batch = new WriteBatch();
@@ -267,7 +261,7 @@ public class RocksDBStore implements Store {
   }
 
   @Override
-  public Stream<InternalRef> getRefs() {
+  public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(ValueType.REF);
 
     // TODO: Do we need to lock the database at all?
@@ -318,18 +312,7 @@ public class RocksDBStore implements Store {
     }
   }
 
-  /**
-   * Check if a given value is represented by the given type.
-   * @param type the type of the value.
-   * @param value the value to check.
-   * @param <V> the type of the value.
-   */
-  static <V> void typeCheck(ValueType type, V value) {
-    Preconditions.checkArgument(type.getObjectClass().isAssignableFrom(value.getClass()),
-        "ValueType %s doesn't extend expected type %s.", value.getClass().getName(), type.getObjectClass().getName());
-  }
-
-  private ColumnFamilyHandle getColumnFamilyHandle(ValueType valueType) {
+  private <C extends BaseValue<C>> ColumnFamilyHandle getColumnFamilyHandle(ValueType<C> valueType) {
     final ColumnFamilyHandle columnFamilyHandle = valueTypeToColumnFamily.get(valueType);
     if (null == columnFamilyHandle) {
       throw new UnsupportedOperationException(String.format("Unsupported Entity type: %s", valueType.name()));
