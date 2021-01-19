@@ -64,7 +64,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 
 @ExtendWith(LocalDynamoDB.class)
-public class TestIdentifyUnreferencedAssets {
+public class ITTestIdentifyUnreferencedAssets {
   private static final long FIVE_DAYS_IN_PAST_MICROS = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis())
       - TimeUnit.DAYS.toMicros(5);
   private static final long ONE_DAY_OLD_MICROS = TimeUnit.DAYS.toMicros(1);
