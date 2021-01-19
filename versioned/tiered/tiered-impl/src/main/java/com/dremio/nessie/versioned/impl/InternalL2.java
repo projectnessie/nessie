@@ -99,10 +99,8 @@ class InternalL2 extends PersistentBase<L2> {
    * implements {@link L2} to build an {@link InternalL2} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<InternalL2> implements L2 {
+  static final class Builder extends EntityBuilder<InternalL2, L2> implements L2 {
 
-    private Id id;
-    private Long dt;
     private Stream<Id> children;
 
     Builder() {
@@ -113,20 +111,6 @@ class InternalL2 extends PersistentBase<L2> {
     public InternalL2.Builder children(Stream<Id> ids) {
       checkCalled(this.children, "children");
       this.children = ids;
-      return this;
-    }
-
-    @Override
-    public InternalL2.Builder id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return this;
-    }
-
-    @Override
-    public Builder dt(long dt) {
-      checkCalled(this.dt, "dt");
-      this.dt = dt;
       return this;
     }
 

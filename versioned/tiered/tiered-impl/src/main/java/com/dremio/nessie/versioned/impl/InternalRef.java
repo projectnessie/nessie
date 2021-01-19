@@ -98,10 +98,8 @@ abstract class InternalRef extends PersistentBase<Ref> {
    * Implement {@link Ref} to build an {@link InternalRef} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<InternalRef> implements Ref {
+  static final class Builder extends EntityBuilder<InternalRef, Ref> implements Ref {
 
-    private Id id;
-    private Long dt;
     private RefType refType;
     private String name;
 
@@ -112,13 +110,6 @@ abstract class InternalRef extends PersistentBase<Ref> {
     private Id metadata;
     private Stream<Id> children;
     private List<Commit> commits;
-
-    @Override
-    public Builder id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return this;
-    }
 
     @Override
     public Builder type(RefType refType) {
@@ -152,13 +143,6 @@ abstract class InternalRef extends PersistentBase<Ref> {
     public Builder children(Stream<Id> children) {
       checkCalled(this.children, "children");
       this.children = children;
-      return this;
-    }
-
-    @Override
-    public Builder dt(long dt) {
-      checkCalled(this.dt, "dt");
-      this.dt = dt;
       return this;
     }
 

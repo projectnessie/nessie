@@ -72,7 +72,26 @@ abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
     return dt;
   }
 
-  abstract static class EntityBuilder<E extends HasId> {
+  abstract static class EntityBuilder<E extends HasId, C extends BaseValue<C>> implements BaseValue<C> {
+    Id id;
+    Long dt;
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public C id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return (C) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public C dt(long dt) {
+      checkCalled(this.dt, "dt");
+      this.dt = dt;
+      return (C) this;
+    }
+
     abstract E build();
   }
 

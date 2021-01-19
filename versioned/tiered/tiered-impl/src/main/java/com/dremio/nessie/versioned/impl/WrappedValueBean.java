@@ -89,32 +89,14 @@ abstract class WrappedValueBean<C extends BaseWrappedValue<C>> extends Persisten
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   static class Builder<E extends HasId, C extends BaseWrappedValue<C>>
-      extends EntityBuilder<E> implements BaseWrappedValue<C> {
+      extends EntityBuilder<E, C> implements BaseWrappedValue<C> {
 
-    private Id id;
-    private Long dt;
     private ByteString value;
 
     private final Creator<E> builder;
 
     Builder(Creator<E> builder) {
       this.builder = builder;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public C id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return (C) this;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public C dt(long dt) {
-      checkCalled(this.dt, "dt");
-      this.dt = dt;
-      return (C) this;
     }
 
     @SuppressWarnings("unchecked")

@@ -172,14 +172,12 @@ class InternalL1 extends PersistentBase<L1> {
    * Implements {@link L1} to build an {@link InternalL1} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<InternalL1> implements L1 {
+  static final class Builder extends EntityBuilder<InternalL1, L1> implements L1 {
 
     private Id metadataId;
     private Stream<Id> ancestors;
     private Stream<Id> children;
     private final List<KeyMutation> keyChanges = new ArrayList<>();
-    private Id id;
-    private Long dt;
     private Id checkpointId;
     private int distanceFromCheckpoint;
     private Stream<Id> fragmentIds;
@@ -206,20 +204,6 @@ class InternalL1 extends PersistentBase<L1> {
     public Builder children(Stream<Id> ids) {
       checkCalled(this.children, "children");
       this.children = ids;
-      return this;
-    }
-
-    @Override
-    public Builder id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return this;
-    }
-
-    @Override
-    public Builder dt(long dt) {
-      checkCalled(this.dt, "dt");
-      this.dt = dt;
       return this;
     }
 

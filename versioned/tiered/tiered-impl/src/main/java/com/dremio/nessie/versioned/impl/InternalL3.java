@@ -166,28 +166,12 @@ class InternalL3 extends PersistentBase<L3> {
    * Implements {@link L3} to build an {@link InternalL3} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<InternalL3> implements L3 {
+  static final class Builder extends EntityBuilder<InternalL3, L3> implements L3 {
 
-    private Id id;
-    private Long dt;
     private Stream<KeyDelta> keyDelta;
 
     Builder() {
       // empty
-    }
-
-    @Override
-    public InternalL3.Builder id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return this;
-    }
-
-    @Override
-    public Builder dt(long dt) {
-      checkCalled(this.dt, "dt");
-      this.dt = dt;
-      return this;
     }
 
     @Override

@@ -75,25 +75,9 @@ class InternalFragment extends PersistentBase<Fragment> {
    * Implements {@link Fragment} to build a {@link InternalFragment} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static class Builder extends EntityBuilder<InternalFragment> implements Fragment {
+  static class Builder extends EntityBuilder<InternalFragment, Fragment> implements Fragment {
 
-    private Id id;
-    private Long dt;
     private List<InternalKey> keys;
-
-    @Override
-    public Builder id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return this;
-    }
-
-    @Override
-    public Builder dt(long dt) {
-      checkCalled(this.dt, "dt");
-      this.dt = dt;
-      return this;
-    }
 
     @Override
     public Builder keys(Stream<Key> keys) {
