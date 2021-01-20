@@ -15,13 +15,12 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiFunction;
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeKeys;
+
 import java.util.stream.Stream;
 
-import org.bson.BsonReader;
 import org.bson.BsonWriter;
+import org.bson.Document;
 
 import com.dremio.nessie.tiered.builder.Fragment;
 import com.dremio.nessie.versioned.Key;
@@ -30,12 +29,9 @@ final class MongoFragment extends MongoBaseValue<Fragment> implements Fragment {
 
   static final String KEY_LIST = "keys";
 
-  static final Map<String, BiFunction<Fragment, BsonReader, Fragment>> PROPERTY_PRODUCERS = new HashMap<>();
-
-  static {
-    PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
-    PROPERTY_PRODUCERS.put(KEY_LIST, (c, r) -> c.keys(MongoSerDe.deserializeKeys(r)));
+  static void produce(Document document, Fragment v) {
+    produceBase(document, v)
+        .keys(deserializeKeys(document, KEY_LIST));
   }
 
   MongoFragment(BsonWriter bsonWriter) {
