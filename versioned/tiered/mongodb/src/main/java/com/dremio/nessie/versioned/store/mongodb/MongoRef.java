@@ -231,9 +231,9 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     return super.build();
   }
 
-  private static void serializeDelta(BsonWriter writer, int position, Id oldId, Id newId) {
+  private void serializeDelta(BsonWriter writer, int position, Id oldId, Id newId) {
     writer.writeStartDocument();
-    writer.writeInt64(POSITION, position);
+    serializeLong(POSITION, position);
     MongoSerDe.serializeId(writer, OLD_ID, oldId);
     MongoSerDe.serializeId(writer, NEW_ID, newId);
     writer.writeEndDocument();

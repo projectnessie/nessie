@@ -30,9 +30,10 @@ public interface ValueWorker<VALUE> extends Serializer<VALUE> {
    *
    * <p>Values may have zero or more assets.
    *
-   * <p>Internally, an implementation may actually track multiple types of assets under a single AssetKey heading. For
-   * example, an Iceberg table's assets would include: metadata file, manifest list for each snapshot, manifests and
-   * Parquet files.
+   * <p>Internally, an implementation may actually have multiple implementations of AssetKey. For example,
+   * an Iceberg table may have separate implementations of AssetKey for each of metadata file, manifest list,
+   * manifests and Parquet files. This will work fine as long as the implementation of the asset key serializer
+   * is implemented to handle all types AND the equals/hashCode methods are implemented accurately.
    *
    * @return The asset keys associated with this value (if any).
    */

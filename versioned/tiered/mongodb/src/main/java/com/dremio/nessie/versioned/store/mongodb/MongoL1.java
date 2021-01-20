@@ -89,7 +89,7 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
 
     bsonWriter.writeBoolean(IS_CHECKPOINT, false);
     serializeId(ORIGIN, checkpointId);
-    bsonWriter.writeInt64(DISTANCE, distanceFromCheckpoint);
+    serializeLong(DISTANCE, distanceFromCheckpoint);
 
     bsonWriter.writeEndDocument();
 

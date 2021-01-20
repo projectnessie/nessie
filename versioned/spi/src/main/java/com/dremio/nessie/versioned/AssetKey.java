@@ -47,9 +47,12 @@ public abstract class AssetKey {
    */
   public abstract List<String> toReportableName();
 
+  // included to ensure that an implementor overrides.
   @Override
   public abstract boolean equals(Object other);
 
+
+  // included to ensure that an implementor overrides.
   @Override
   public abstract int hashCode();
 

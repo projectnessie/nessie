@@ -195,7 +195,6 @@ class InternalL1 extends PersistentBase<L1> {
       return this;
     }
 
-
     @Override
     public Builder ancestors(Stream<Id> ids) {
       checkCalled(this.ancestors, "addAncestors");
