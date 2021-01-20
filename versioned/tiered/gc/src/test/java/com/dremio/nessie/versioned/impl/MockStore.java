@@ -68,7 +68,7 @@ public class MockStore implements Store {
       throw new UnsupportedOperationException();
     }
     EntityType<C, ?, ?> et = EntityType.forType(saveOp.getType());
-    EntityBuilder<?> eb = et.newEntityProducer();
+    EntityBuilder<?, ?> eb = et.newEntityProducer();
     saveOp.serialize((C) eb);
     HasId h = eb.build();
     items.put(new ItemKey(et, h.getId()), h);
