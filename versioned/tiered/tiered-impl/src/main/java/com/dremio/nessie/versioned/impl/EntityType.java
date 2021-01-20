@@ -40,7 +40,7 @@ final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B ex
 
   private static final Map<ValueType<?>, EntityType<?, ?, ?>> BY_VALUE_TYPE = new HashMap<>();
 
-  static final EntityType<Ref, InternalRef, InternalRef.Builder> REF =
+  static final EntityType<Ref, InternalRef, InternalRef.Builder<?>> REF =
       new EntityType<>(ValueType.REF, InternalRef.Builder::new);
   static final EntityType<L1, InternalL1, InternalL1.Builder> L1 =
       new EntityType<>(ValueType.L1, com.dremio.nessie.versioned.impl.InternalL1.Builder::new);
@@ -93,10 +93,6 @@ final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B ex
 
   /**
    * Create a new "plain entity" producer for this type.
-   * <p>
-   * The instance returned from this function can, after all necessary properties have been
-   * set, be passed to {@link #buildFromProducer(BaseValue)} to build the entity instance.
-   * </p>
    * <p>
    * Using {@link #buildEntity(Consumer)} is a simpler approach though.
    * </p>

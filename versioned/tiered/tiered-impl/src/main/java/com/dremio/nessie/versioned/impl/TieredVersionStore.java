@@ -265,7 +265,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           true,
           true);
 
-      InternalRef.Builder builder = EntityType.REF.newEntityProducer();
+      InternalRef.Builder<?> builder = EntityType.REF.newEntityProducer();
       boolean updated = store.update(ValueType.REF, ref.getId(),
           commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(builder));
       if (!updated) {
@@ -319,7 +319,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   public Stream<WithHash<NamedRef>> getNamedRefs() {
     return store.getValues(ValueType.REF)
         .map(acceptor -> {
-          InternalRef.Builder producer = EntityType.REF.newEntityProducer();
+          InternalRef.Builder<?> producer = EntityType.REF.newEntityProducer();
           acceptor.applyValue(producer);
           return producer.build();
         })

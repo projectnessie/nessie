@@ -15,13 +15,10 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import org.bson.BsonReader;
 import org.bson.BsonWriter;
+import org.bson.Document;
 
 import com.dremio.nessie.tiered.builder.L2;
 import com.dremio.nessie.versioned.store.Id;
@@ -30,12 +27,9 @@ final class MongoL2 extends MongoBaseValue<L2> implements L2 {
 
   static final String TREE = "tree";
 
-  static final Map<String, BiFunction<L2, BsonReader, L2>> PROPERTY_PRODUCERS = new HashMap<>();
-
-  static {
-    PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
-    PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.children(MongoSerDe.deserializeIds(r)));
+  static void produce(Document document, L2 v) {
+    produceBase(document, v)
+        .children(MongoSerDe.deserializeIds(document, TREE));
   }
 
   MongoL2(BsonWriter bsonWriter) {
