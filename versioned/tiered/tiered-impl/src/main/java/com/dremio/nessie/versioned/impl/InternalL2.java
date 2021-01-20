@@ -128,7 +128,7 @@ class InternalL2 extends PersistentBase<L2> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public EntityType<L2, InternalL2, InternalL2.Builder> getEntityType() {
+  EntityType<L2, InternalL2, InternalL2.Builder> getEntityType() {
     return EntityType.L2;
   }
 }

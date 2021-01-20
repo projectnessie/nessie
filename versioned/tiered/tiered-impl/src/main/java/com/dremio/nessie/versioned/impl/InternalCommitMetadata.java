@@ -47,7 +47,7 @@ class InternalCommitMetadata extends WrappedValueBean<CommitMetadata> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public EntityType<CommitMetadata, InternalCommitMetadata, InternalCommitMetadata.Builder> getEntityType() {
+  EntityType<CommitMetadata, InternalCommitMetadata, InternalCommitMetadata.Builder> getEntityType() {
     return EntityType.COMMIT_METADATA;
   }
 }

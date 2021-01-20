@@ -234,4 +234,10 @@ abstract class InternalRef extends PersistentBase<Ref> {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  EntityType<Ref, InternalRef, InternalRef.Builder> getEntityType() {
+    return EntityType.REF;
+  }
+
 }

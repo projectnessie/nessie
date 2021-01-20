@@ -50,7 +50,7 @@ class InternalValue extends WrappedValueBean<Value> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public EntityType<Value, InternalValue, InternalValue.Builder> getEntityType() {
+  EntityType<Value, InternalValue, InternalValue.Builder> getEntityType() {
     return EntityType.VALUE;
   }
 }

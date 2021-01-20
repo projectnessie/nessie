@@ -117,12 +117,6 @@ class InternalBranch extends InternalRef {
     throw new IllegalStateException("Unable to determine last defined parent.");
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public EntityType<Ref, InternalRef, InternalRef.Builder> getEntityType() {
-    return EntityType.REF;
-  }
-
   public String getName() {
     return name;
   }

@@ -82,11 +82,6 @@ class InternalTag extends InternalRef {
         .commit(commit);
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public EntityType<Ref, InternalRef, InternalRef.Builder> getEntityType() {
-    return EntityType.REF;
-  }
 }
 
 
