@@ -115,14 +115,14 @@ public interface Ref extends BaseValue<Ref> {
    * <p>Either this function or {@link #branch()} must be called.</p>
    * @return consumer instance for tags.
    */
-  Ref.Tag tag();
+  Tag tag();
 
   /**
    * Specifies that this reference is a branch, not a tag.
    * <p>Either this function or {@link #tag()} must be called.</p>
    * @return consumer instance for branches.
    */
-  Ref.Branch branch();
+  Branch branch();
 
   interface Tag extends Ref {
     /**

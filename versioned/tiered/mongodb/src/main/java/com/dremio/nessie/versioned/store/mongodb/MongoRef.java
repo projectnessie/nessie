@@ -15,15 +15,16 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiFunction;
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeId;
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeIds;
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeKeyMutations;
+
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.bson.BsonReader;
-import org.bson.BsonType;
 import org.bson.BsonWriter;
+import org.bson.Document;
 
 import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
@@ -47,17 +48,23 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref, Ref.Tag, Ref.Br
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
-  static final Map<String, BiFunction<Ref, BsonReader, Ref>> PROPERTY_PRODUCERS = new HashMap<>();
-
-  static {
-    PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
-    PROPERTY_PRODUCERS.put(TYPE, MongoRef::handleType);
-    PROPERTY_PRODUCERS.put(NAME, (c, r) -> c.name(r.readString()));
-    PROPERTY_PRODUCERS.put(COMMIT, (c, r) -> ((Tag) c).commit(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(METADATA, (c, r) -> ((Branch) c).metadata(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(TREE, (c, r) -> ((Branch) c).children(MongoSerDe.deserializeIds(r)));
-    PROPERTY_PRODUCERS.put(COMMITS, (c, r) -> ((Branch) c).commits(bc -> deserializeBranchCommits(bc, r)));
+  static void produce(Document document, Ref v) {
+    v = produceBase(document, v)
+        .name(document.getString(NAME));
+    String t = document.getString(TYPE);
+    switch (t) {
+      case REF_TYPE_TAG:
+        v.tag().commit(deserializeId(document, COMMIT));
+        break;
+      case REF_TYPE_BRANCH:
+        v.branch()
+            .metadata(deserializeId(document, METADATA))
+            .children(deserializeIds(document, TREE))
+            .commits(bc -> deserializeBranchCommits(bc, document));
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown ref-type " + t);
+    }
   }
 
   private boolean tag;
@@ -85,18 +92,6 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref, Ref.Tag, Ref.Br
     branch = true;
     serializeString(TYPE, REF_TYPE_BRANCH);
     return this;
-  }
-
-  static Ref handleType(Ref ref, BsonReader r) {
-    String t = r.readString();
-    switch (t) {
-      case REF_TYPE_TAG:
-        return ref.tag();
-      case REF_TYPE_BRANCH:
-        return ref.branch();
-      default:
-        throw new IllegalArgumentException("Unknown ref-type " + t);
-    }
   }
 
   @Override
@@ -262,95 +257,30 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref, Ref.Tag, Ref.Br
     writer.writeEndDocument();
   }
 
-  private static void deserializeBranchCommits(BranchCommit consumer, BsonReader reader) {
-    reader.readStartArray();
-    while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
-      deserializeBranchCommit(consumer, reader);
-    }
-    reader.readEndArray();
+  static void deserializeBranchCommits(BranchCommit bc, Document d) {
+    List<Document> lst = (List<Document>) d.get(COMMITS);
+    lst.forEach(c -> deserializeBranchCommit(bc, c));
   }
 
-  private static void deserializeBranchCommit(BranchCommit consumer, BsonReader reader) {
-    reader.readStartDocument();
-
-    SavedCommit saved = null;
-    UnsavedCommitDelta deltas = null;
-    UnsavedCommitMutations mutations = null;
-
-    while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
-      String field = reader.readName();
-      switch (field) {
-        case ID:
-          consumer.id(MongoSerDe.deserializeId(reader));
-          break;
-        case COMMIT:
-          consumer.commit(MongoSerDe.deserializeId(reader));
-          break;
-        case PARENT:
-          saved = consumer.saved();
-          saved.parent(MongoSerDe.deserializeId(reader));
-          break;
-        case DELTAS:
-          deltas = consumer.unsaved();
-          UnsavedCommitDelta deltasFinal = deltas;
-          MongoSerDe.deserializeArray(reader, r -> {
-            deserializeUnsavedDelta(deltasFinal, r);
-            return null;
-          });
-          break;
-        case KEY_LIST:
-          if (deltas == null) {
-            deltas = consumer.unsaved();
-          }
-          mutations = deltas.mutations();
-          MongoSerDe.deserializeKeyMutations(reader).forEach(mutations::keyMutation);
-          break;
-        default:
-          throw new IllegalArgumentException(String.format("Unsupported field '%s' for BranchCommit", field));
-      }
-    }
-
-    if (saved != null) {
-      saved.done();
+  private static void deserializeBranchCommit(BranchCommit consumer, Document d) {
+    consumer = consumer.id(deserializeId(d, ID))
+        .commit(deserializeId(d, COMMIT));
+    if (d.containsKey(PARENT)) {
+      consumer.saved().parent(deserializeId(d, PARENT)).done();
     } else {
-      if (deltas == null) {
-        deltas = consumer.unsaved();
-      }
-      if (mutations == null) {
-        mutations = deltas.mutations();
-      }
+      UnsavedCommitDelta unsaved = consumer.unsaved();
+      List<Document> deltas = (List<Document>) d.get(DELTAS);
+      deltas.forEach(delta -> deserializeUnsavedDelta(unsaved, delta));
+      UnsavedCommitMutations mutations = unsaved.mutations();
+      deserializeKeyMutations(d, KEY_LIST).forEach(mutations::keyMutation);
       mutations.done();
     }
-
-    reader.readEndDocument();
   }
 
-  private static void deserializeUnsavedDelta(UnsavedCommitDelta consumer, BsonReader reader) {
-    reader.readStartDocument();
-
-    int position = 0;
-    Id oldId = null;
-    Id newId = null;
-
-    while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
-      String field = reader.readName();
-      switch (field) {
-        case POSITION:
-          position = Ints.saturatedCast(reader.readInt64());
-          break;
-        case OLD_ID:
-          oldId = MongoSerDe.deserializeId(reader);
-          break;
-        case NEW_ID:
-          newId = MongoSerDe.deserializeId(reader);
-          break;
-        default:
-          throw new IllegalArgumentException(String.format("Unsupported field '%s' for BranchCommit", field));
-      }
-    }
-
-    reader.readEndDocument();
-
+  private static void deserializeUnsavedDelta(UnsavedCommitDelta consumer, Document d) {
+    int position = Ints.saturatedCast(d.getLong(POSITION));
+    Id oldId = deserializeId(d, OLD_ID);
+    Id newId = deserializeId(d, NEW_ID);
     consumer.delta(position, oldId, newId);
   }
 }

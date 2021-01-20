@@ -403,7 +403,7 @@ class InternalBranch extends InternalRef {
               .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toEntity()))
               .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
 
-          InternalRef.Builder producer = EntityType.REF.newEntityProducer();
+          InternalRef.Builder<?> producer = EntityType.REF.newEntityProducer();
           boolean updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer));
           if (updated) {
             LOGGER.debug("Completed collapse update on attempt {}.", attempt);
