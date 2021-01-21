@@ -124,7 +124,7 @@ public interface Ref extends BaseValue<Ref> {
    */
   Branch branch();
 
-  interface Tag extends Ref {
+  interface Tag {
     /**
      * Set the commit of the reference.
      * <p>Must be called exactly once.</p>
@@ -135,7 +135,7 @@ public interface Ref extends BaseValue<Ref> {
     Tag commit(Id commit);
   }
 
-  interface Branch extends Ref {
+  interface Branch {
 
     /**
      * Set the metadata of the reference.
