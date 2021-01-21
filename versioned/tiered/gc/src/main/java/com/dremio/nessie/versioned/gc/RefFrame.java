@@ -81,8 +81,6 @@ public class RefFrame implements Serializable {
     RefFrame frame = new RefFrame();
     a.applyValue(new Ref() {
 
-      private RefType type;
-
       @Override
       public Ref id(Id id) {
         return this;
@@ -94,82 +92,112 @@ public class RefFrame implements Serializable {
       }
 
       @Override
-      public Ref type(RefType refType) {
-        return this;
-      }
-
-      @Override
       public Ref name(String name) {
         frame.name = name;
         return this;
       }
 
       @Override
-      public Ref commit(Id commit) {
-        frame.id = IdFrame.of(commit);
-        return this;
+      public Tag tag() {
+        return new Tag() {
+          @Override
+          public Tag commit(Id commit) {
+            frame.id = IdFrame.of(commit);
+            return this;
+          }
+        };
       }
 
       @Override
-      public Ref metadata(Id metadata) {
-        return this;
-      }
-
-      @Override
-      public Ref children(Stream<Id> children) {
-        return this;
-      }
-
-      @Override
-      public Ref commits(Consumer<BranchCommitConsumer> commits) {
-        commits.accept(new BranchCommitConsumer() {
-
-          private boolean populated;
-          private Id id;
-          private boolean hasParent;
-
+      public Branch branch() {
+        return new Branch() {
           @Override
-          public BranchCommitConsumer id(Id id) {
-            if (!populated) {
-              this.id = id;
-            }
+          public Branch metadata(Id metadata) {
             return this;
           }
 
           @Override
-          public BranchCommitConsumer commit(Id commit) {
+          public Branch children(Stream<Id> children) {
             return this;
           }
 
           @Override
-          public BranchCommitConsumer parent(Id parent) {
-            if (!populated) {
-              hasParent = true;
-            }
+          public Branch commits(Consumer<BranchCommit> commits) {
+            commits.accept(new BranchCommit() {
+
+              private boolean populated;
+              private Id id;
+              private boolean hasParent;
+
+              @Override
+              public BranchCommit id(Id id) {
+                if (!populated) {
+                  this.id = id;
+                }
+                return this;
+              }
+
+              @Override
+              public BranchCommit commit(Id commit) {
+                return this;
+              }
+
+              @Override
+              public SavedCommit saved() {
+                BranchCommit bc = this;
+                return new SavedCommit() {
+                  @Override
+                  public SavedCommit parent(Id parent) {
+                    if (!populated) {
+                      hasParent = true;
+                    }
+                    return this;
+                  }
+
+                  @Override
+                  public BranchCommit done() {
+                    if (hasParent) {
+                      populated = true;
+                      frame.id = IdFrame.of(id);
+                    }
+                    return bc;
+                  }
+                };
+              }
+
+              @Override
+              public UnsavedCommitDelta unsaved() {
+                BranchCommit bc = this;
+                return new UnsavedCommitDelta() {
+                  @Override
+                  public UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
+                    return this;
+                  }
+
+                  @Override
+                  public UnsavedCommitMutations mutations() {
+                    return new UnsavedCommitMutations() {
+                      @Override
+                      public UnsavedCommitMutations keyMutation(Mutation keyMutation) {
+                        return this;
+                      }
+
+                      @Override
+                      public BranchCommit done() {
+                        if (hasParent) {
+                          populated = true;
+                          frame.id = IdFrame.of(id);
+                        }
+                        return bc;
+                      }
+                    };
+                  }
+                };
+              }
+            });
             return this;
           }
-
-          @Override
-          public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
-            return this;
-          }
-
-          @Override
-          public BranchCommitConsumer keyMutation(Mutation keyMutation) {
-            return this;
-          }
-
-          @Override
-          public BranchCommitConsumer done() {
-            if (hasParent) {
-              populated = true;
-              frame.id = IdFrame.of(id);
-            }
-            return this;
-          }
-
-        });
-        return this;
+        };
       }
     });
 
