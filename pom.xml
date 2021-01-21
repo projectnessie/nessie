@@ -132,7 +132,7 @@
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jjwt.version>0.11.2</jjwt.version>
     <jgit.version>5.10.0.202012080955-r</jgit.version>
-    <jmeter.version>5.4</jmeter.version>
+    <jmeter.version>5.4.1</jmeter.version>
     <junit.version>5.7.0</junit.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.14.0</protobuf.version>
