@@ -33,6 +33,7 @@
   <modules>
     <module>dynamodb</module>
     <module>mongodb</module>
+    <module>rocksdb</module>
     <module>tiered-impl</module>
     <module>tiered-tests</module>
   </modules>
