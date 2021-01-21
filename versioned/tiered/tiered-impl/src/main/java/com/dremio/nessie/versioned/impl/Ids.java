@@ -13,30 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.tiered.builder;
+package com.dremio.nessie.versioned.impl;
 
 import com.dremio.nessie.versioned.store.Id;
 
-/**
- * Base interface for all consumers.
- * <p>
- * Do not implement this interface in non-abstract implementation classes!
- * </p>
- */
-public interface BaseValue<T extends BaseValue<T>> {
-  /**
-   * The id for this consumer.
-   * <p>Must be called exactly once.</p>
-   *
-   * @param id The id.
-   * @return This consumer.
-   */
-  T id(Id id);
+public final class Ids {
 
-  /**
-   * Set the date-time in microseconds since epoch when this object was last modified (inserted/updated).
-   * @param dt The date+time in microseconds since epoch.
-   * @return This consumer.
-   */
-  T dt(long dt);
+  private Ids() {
+  }
+
+  public static Id getEmptyL1() {
+    return InternalL1.EMPTY_ID;
+  }
+
+  public static Id getEmptyL2() {
+    return InternalL2.EMPTY_ID;
+  }
+
+  public static Id getEmptyL3() {
+    return InternalL3.EMPTY_ID;
+  }
 }

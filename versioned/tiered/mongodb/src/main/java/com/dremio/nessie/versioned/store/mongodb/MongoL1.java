@@ -45,6 +45,7 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
+    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
     PROPERTY_PRODUCERS.put(PARENTS, (c, r) -> c.ancestors(MongoSerDe.deserializeIds(r)));
     PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.children(MongoSerDe.deserializeIds(r)));
     PROPERTY_PRODUCERS.put(METADATA, (c, r) -> c.commitMetadataId(MongoSerDe.deserializeId(r)));
@@ -88,7 +89,7 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
 
     bsonWriter.writeBoolean(IS_CHECKPOINT, false);
     serializeId(ORIGIN, checkpointId);
-    bsonWriter.writeInt64(DISTANCE, distanceFromCheckpoint);
+    serializeLong(DISTANCE, distanceFromCheckpoint);
 
     bsonWriter.writeEndDocument();
 

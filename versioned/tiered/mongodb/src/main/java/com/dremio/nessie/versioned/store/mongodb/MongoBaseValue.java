@@ -31,6 +31,7 @@ import com.google.common.base.Preconditions;
 abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
   static final String ID = Store.KEY_NAME;
+  static final String DT = Store.DT_NAME;
 
   final BsonWriter bsonWriter;
 
@@ -52,8 +53,19 @@ abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
     return (C) this;
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public C dt(long dt) {
+    if (properties.contains(DT)) {
+      throw new IllegalStateException(String.format("Property '%s' already serialized.", DT));
+    }
+    serializeLong(DT, dt);
+    return (C) this;
+  }
+
   BsonWriter build() {
     checkPresent(ID, "id");
+    checkPresent(DT, "dt");
 
     return bsonWriter;
   }
@@ -79,6 +91,11 @@ abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   void serializeId(String property, Id id) {
     addProperty(property);
     MongoSerDe.serializeId(bsonWriter, property, id);
+  }
+
+  void serializeLong(String property, long value) {
+    addProperty(property);
+    bsonWriter.writeInt64(property, value);
   }
 
   void serializeIds(String property, Stream<Id> ids) {

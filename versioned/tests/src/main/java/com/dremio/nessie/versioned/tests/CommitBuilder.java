@@ -145,7 +145,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param branchName the branch name
    * @return the hash associated with the commit
    */
-  Hash toBranch(String branchName) throws ReferenceNotFoundException, ReferenceConflictException {
+  public Hash toBranch(String branchName) throws ReferenceNotFoundException, ReferenceConflictException {
     return toBranch(BranchName.of(branchName));
   }
 
@@ -154,7 +154,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param branchName the branch
    * @return the hash associated with the commit
    */
-  Hash toBranch(BranchName branchName) throws ReferenceNotFoundException, ReferenceConflictException {
+  public Hash toBranch(BranchName branchName) throws ReferenceNotFoundException, ReferenceConflictException {
     Optional<Hash> reference = fromLatest ? Optional.of(store.toHash(branchName)) : referenceHash;
     store.commit(branchName, reference, metadata, operations);
     return store.toHash(branchName);

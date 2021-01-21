@@ -102,7 +102,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
    * @param waitOnCollapse Whether to block on collapsing the InternalBranch commit log before returning valid L1s.
    */
   public TieredVersionStore(StoreWorker<DATA,METADATA> storeWorker, Store store, boolean waitOnCollapse) {
-    this.serializer = storeWorker.getValueSerializer();
+    this.serializer = storeWorker.getValueWorker();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
     this.executor = Executors.newCachedThreadPool();
@@ -132,7 +132,12 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       throw new ReferenceNotFoundException("Unable to find target hash.", ex);
     }
 
-    InternalRef newRef = ref instanceof TagName ? new InternalTag(null, ref.getName(), l1.getId()) : new InternalBranch(ref.getName(), l1);
+    InternalRef newRef;
+    if (ref instanceof TagName) {
+      newRef = new InternalTag(null, ref.getName(), l1.getId(), DT.now());
+    } else {
+      newRef = new InternalBranch(ref.getName(), l1);
+    }
     if (!store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, newRef))) {
       throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
     }
@@ -395,7 +400,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         condition = condition.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(),
             expectedId.toEntity()));
       }
-      toSave = new InternalTag(refId, namedRef.getName(), newId);
+      toSave = new InternalTag(refId, namedRef.getName(), newId, DT.now());
     } else {
       if (currentTarget.isPresent()) {
         condition = condition.and(

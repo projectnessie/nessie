@@ -24,12 +24,12 @@ import com.google.protobuf.ByteString;
  */
 class InternalValue extends WrappedValueBean<Value> {
 
-  private InternalValue(Id id, ByteString value) {
-    super(id, value);
+  private InternalValue(Id id, ByteString value, Long dt) {
+    super(id, value, dt);
   }
 
   static InternalValue of(ByteString value) {
-    return new InternalValue(null, value);
+    return new InternalValue(null, value, DT.now());
   }
 
   @Override
@@ -46,5 +46,11 @@ class InternalValue extends WrappedValueBean<Value> {
     Builder() {
       super(InternalValue::new);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  EntityType<Value, InternalValue, InternalValue.Builder> getEntityType() {
+    return EntityType.VALUE;
   }
 }

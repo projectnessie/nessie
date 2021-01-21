@@ -34,6 +34,7 @@ final class MongoFragment extends MongoBaseValue<Fragment> implements Fragment {
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
+    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
     PROPERTY_PRODUCERS.put(KEY_LIST, (c, r) -> c.keys(MongoSerDe.deserializeKeys(r)));
   }
 

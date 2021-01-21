@@ -189,6 +189,7 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
    */
   static void toConsumer(Map<String, AttributeValue> entity, Ref consumer) {
     consumer.id(deserializeId(entity, ID))
+        .dt(AttributeValueUtil.getDt(entity))
         .name(Preconditions.checkNotNull(attributeValue(entity, NAME).s()));
 
     String refType = Preconditions.checkNotNull(attributeValue(entity, TYPE).s());

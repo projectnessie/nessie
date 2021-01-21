@@ -36,7 +36,7 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 
-final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> {
+final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>> {
 
   private static final Map<ValueType<?>, EntityType<?, ?, ?>> BY_VALUE_TYPE = new HashMap<>();
 
@@ -69,7 +69,8 @@ final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B ex
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> EntityType<C, E, B> forType(ValueType<C> type) {
+  static <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>> EntityType<C, E, B>
+      forType(ValueType<C> type) {
     return (EntityType) BY_VALUE_TYPE.get(type);
   }
 

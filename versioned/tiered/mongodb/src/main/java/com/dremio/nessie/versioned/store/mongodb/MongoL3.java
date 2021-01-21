@@ -38,6 +38,7 @@ final class MongoL3 extends MongoBaseValue<L3> implements L3 {
 
   static {
     PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
+    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
     PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.keyDelta(deserializeKeyDeltas(r)));
   }
 

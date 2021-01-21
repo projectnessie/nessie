@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,9 +57,8 @@ import com.dremio.nessie.versioned.Ref;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
 import com.dremio.nessie.versioned.ReferenceConflictException;
 import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
-import com.dremio.nessie.versioned.StringSerializer;
+import com.dremio.nessie.versioned.StringWorker;
 import com.dremio.nessie.versioned.TagName;
 import com.dremio.nessie.versioned.Unchanged;
 import com.dremio.nessie.versioned.VersionStore;
@@ -438,28 +436,9 @@ class TestJGitVersionStore {
 
   }
 
-  private static final StoreWorker<String, String> WORKER = new StoreWorker<String, String>() {
+  private static final StoreWorker<String, String> WORKER =
+      StoreWorker.of(StringWorker.getInstance(), StringWorker.getInstance());
 
-    @Override
-    public Serializer<String> getValueSerializer() {
-      return StringSerializer.getInstance();
-    }
-
-    @Override
-    public Serializer<String> getMetadataSerializer() {
-      return StringSerializer.getInstance();
-    }
-
-    @Override
-    public Stream<AssetKey> getAssetKeys(String value) {
-      return Stream.of();
-    }
-
-    @Override
-    public CompletableFuture<Void> deleteAsset(AssetKey key) {
-      throw new UnsupportedOperationException();
-    }
-  };
 
   /**
    * convert RepoType to VersionStore for each parameterised test.
