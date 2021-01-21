@@ -54,7 +54,7 @@ final class EntityLoadOps {
    * @param <E> entity type
    */
   @SuppressWarnings("unused")
-  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> void load(
+  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>> void load(
       EntityType<C, E, B> valueType, Class<E> entityType, Id id, Consumer<E> consumer) {
     load(valueType, id, consumer);
   }
@@ -67,7 +67,7 @@ final class EntityLoadOps {
    * @param consumer consumer that will receive the loaded entity
    * @param <E> entity type
    */
-  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> void load(
+  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>> void load(
       EntityType<C, E, B> valueType, Id id, Consumer<E> consumer) {
     EntityLoadOp<?, ?, ?> loadOp = direct
         .computeIfAbsent(new LoadOpKey(valueType, id), k -> new EntityLoadOp<>(valueType.valueType, k.id));
@@ -85,7 +85,7 @@ final class EntityLoadOps {
    * @param <E> entity type
    */
   @SuppressWarnings("unused")
-  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> void loadDeferred(
+  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>> void loadDeferred(
       EntityType<C, E, B> valueType, Class<E> entityType, Supplier<Id> id, Consumer<E> consumer) {
     loadDeferred(valueType, id, consumer);
   }
@@ -99,7 +99,7 @@ final class EntityLoadOps {
    * @param consumer consumer that will receive the loaded entity
    * @param <E> entity type
    */
-  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> void loadDeferred(
+  <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>> void loadDeferred(
       EntityType<C, E, B> valueType, Supplier<Id> id, Consumer<E> consumer) {
     List<Deferred> consumers = deferred.computeIfAbsent(valueType, k -> new ArrayList<>());
     @SuppressWarnings({"unchecked", "rawtypes"}) Consumer<HasId> c = (Consumer) consumer;
@@ -202,7 +202,7 @@ final class EntityLoadOps {
   }
 
   @SuppressWarnings("rawtypes")
-  private static class EntityLoadOp<C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E>> extends LoadOp<C> {
+  private static class EntityLoadOp<C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>> extends LoadOp<C> {
     private final List<Consumer<HasId>> consumers = new ArrayList<>();
     private B receiver;
 

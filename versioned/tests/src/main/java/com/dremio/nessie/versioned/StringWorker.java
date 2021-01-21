@@ -17,17 +17,20 @@ package com.dremio.nessie.versioned;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.util.stream.Stream;
+
 import javax.annotation.Nonnull;
 
+import com.dremio.nessie.versioned.AssetKey.NoOpAssetKey;
 import com.google.protobuf.ByteString;
 
 /**
- * Serializer implementation for {@code String class}.
+ * ValueWorker implementation for {@code String class}. Can also be used as simple {@link Serializer}.
  */
-public final class StringSerializer implements Serializer<String> {
-  private static final Serializer<String> INSTANCE = new StringSerializer();
+public final class StringWorker implements ValueWorker<String> {
+  private static final ValueWorker<String> INSTANCE = new StringWorker();
 
-  private StringSerializer() {
+  private StringWorker() {
   }
 
   /**
@@ -35,7 +38,7 @@ public final class StringSerializer implements Serializer<String> {
    * @return the instance
    */
   @Nonnull
-  public static Serializer<String> getInstance() {
+  public static ValueWorker<String> getInstance() {
     return INSTANCE;
   }
 
@@ -47,5 +50,15 @@ public final class StringSerializer implements Serializer<String> {
   @Override
   public ByteString toBytes(String value) {
     return ByteString.copyFrom(value, UTF_8);
+  }
+
+  @Override
+  public Stream<AssetKey> getAssetKeys(String value) {
+    return Stream.of();
+  }
+
+  @Override
+  public Serializer<AssetKey> getAssetKeySerializer() {
+    return NoOpAssetKey.SERIALIZER;
   }
 }

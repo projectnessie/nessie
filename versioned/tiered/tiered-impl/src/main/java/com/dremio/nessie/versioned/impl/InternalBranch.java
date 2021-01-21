@@ -76,7 +76,7 @@ class InternalBranch extends InternalRef {
    * @param name name of the branch.
    */
   public InternalBranch(String name) {
-    this(InternalRefId.ofBranch(name).getId(), name, InternalL1.EMPTY.getMap(), Id.EMPTY, SINGLE_EMPTY_COMMIT);
+    this(InternalRefId.ofBranch(name).getId(), name, InternalL1.EMPTY.getMap(), Id.EMPTY, SINGLE_EMPTY_COMMIT, DT.now());
   }
 
   /**
@@ -86,17 +86,35 @@ class InternalBranch extends InternalRef {
    */
   public InternalBranch(String name, InternalL1 target) {
     this(InternalRefId.ofBranch(name).getId(), name, target.getMap(), Id.EMPTY,
-        ImmutableList.of(new Commit(target.getId(), target.getMetadataId(), target.getParentId())));
+        ImmutableList.of(new Commit(target.getId(), target.getMetadataId(), target.getParentId())), DT.now());
   }
 
-  InternalBranch(Id id, String name, IdMap tree, Id metadata, List<Commit> commits) {
-    super(id);
+  InternalBranch(Id id, String name, IdMap tree, Id metadata, List<Commit> commits, Long dt) {
+    super(id, dt);
     this.metadata = metadata;
     this.name = name;
     this.tree = tree;
     this.commits = commits;
     assert tree.size() == InternalL1.SIZE;
     ensureConsistentId();
+  }
+
+
+  /**
+   * Get the most recent saved parent within the list of commits.
+   *
+   * <p>This is useful for doing garbage collection reference tracking.
+   *
+   * @return The Id of the most recent saved parent. Could be L1.EMPTY.
+   */
+  Id getLastDefinedParent() {
+    for (Commit c : Lists.reverse(commits)) {
+      if (c.isSaved()) {
+        return c.id;
+      }
+    }
+
+    throw new IllegalStateException("Unable to determine last defined parent.");
   }
 
   public String getName() {

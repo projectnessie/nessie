@@ -34,8 +34,8 @@ class InternalFragment extends PersistentBase<Fragment> {
     this.keys = ImmutableList.copyOf(keys);
   }
 
-  InternalFragment(Id id, List<InternalKey> keys) {
-    super(id);
+  InternalFragment(Id id, List<InternalKey> keys, Long dt) {
+    super(id, dt);
     this.keys = ImmutableList.copyOf(keys);
   }
 
@@ -75,17 +75,9 @@ class InternalFragment extends PersistentBase<Fragment> {
    * Implements {@link Fragment} to build a {@link InternalFragment} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static class Builder extends EntityBuilder<InternalFragment> implements Fragment {
+  static class Builder extends EntityBuilder<InternalFragment, Fragment> implements Fragment {
 
-    private Id id;
     private List<InternalKey> keys;
-
-    @Override
-    public Builder id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return this;
-    }
 
     @Override
     public Builder keys(Stream<Key> keys) {
@@ -99,7 +91,13 @@ class InternalFragment extends PersistentBase<Fragment> {
       // null-id is allowed (will be generated)
       checkSet(keys, "keys");
 
-      return new InternalFragment(id, keys);
+      return new InternalFragment(id, keys, dt);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public EntityType<Fragment, InternalFragment, InternalFragment.Builder> getEntityType() {
+    return EntityType.KEY_FRAGMENT;
   }
 }

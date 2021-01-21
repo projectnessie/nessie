@@ -27,8 +27,8 @@ class InternalTag extends InternalRef {
   private final String name;
   private final Id commit;
 
-  InternalTag(Id id, String name, Id commit) {
-    super(id);
+  InternalTag(Id id, String name, Id commit, Long dt) {
+    super(id, dt);
     this.name = name;
     this.commit = commit;
   }

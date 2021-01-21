@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.impl;
 
 import java.util.Objects;
-import java.util.function.BiFunction;
 
 import com.dremio.nessie.tiered.builder.BaseWrappedValue;
 import com.dremio.nessie.versioned.store.HasId;
@@ -34,8 +33,8 @@ abstract class WrappedValueBean<C extends BaseWrappedValue<C>> extends Persisten
   private static final int MAX_SIZE = 1024 * 256;
   private final ByteString value;
 
-  protected WrappedValueBean(Id id, ByteString value) {
-    super(id);
+  protected WrappedValueBean(Id id, ByteString value, Long dt) {
+    super(id, dt);
     this.value = value;
     Preconditions.checkArgument(value.size() < MAX_SIZE, "Values and commit metadata must be less than 256K once serialized.");
   }
@@ -81,28 +80,23 @@ abstract class WrappedValueBean<C extends BaseWrappedValue<C>> extends Persisten
         .value(getBytes());
   }
 
+  public interface Creator<C> {
+    C create(Id id, ByteString value, Long dt);
+  }
+
   /**
    * Base builder-implementation for both {@link InternalCommitMetadata} and {@link InternalValue}.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   static class Builder<E extends HasId, C extends BaseWrappedValue<C>>
-      extends EntityBuilder<E> implements BaseWrappedValue<C> {
+      extends EntityBuilder<E, C> implements BaseWrappedValue<C> {
 
-    private Id id;
     private ByteString value;
 
-    private final BiFunction<Id, ByteString, E> builder;
+    private final Creator<E> builder;
 
-    Builder(BiFunction<Id, ByteString, E> builder) {
+    Builder(Creator<E> builder) {
       this.builder = builder;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public C id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return (C) this;
     }
 
     @SuppressWarnings("unchecked")
@@ -117,7 +111,7 @@ abstract class WrappedValueBean<C extends BaseWrappedValue<C>> extends Persisten
       // null-id is allowed (will be generated)
       checkSet(value, "value");
 
-      return builder.apply(id, value);
+      return builder.create(id, value, dt);
     }
   }
 }
