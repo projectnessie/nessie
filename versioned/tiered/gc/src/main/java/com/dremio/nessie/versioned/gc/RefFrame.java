@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.versioned.gc;
 
-import com.dremio.nessie.tiered.builder.base.AbstractRef;
 import java.io.Serializable;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -26,6 +25,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 
 import com.dremio.nessie.tiered.builder.Ref;
+import com.dremio.nessie.tiered.builder.base.AbstractRef;
 import com.dremio.nessie.versioned.Key.Mutation;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
