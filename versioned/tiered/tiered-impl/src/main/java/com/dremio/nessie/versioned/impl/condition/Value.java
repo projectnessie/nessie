@@ -80,5 +80,9 @@ public interface Value extends Aliasable<Value> {
       return Type.VALUE;
     }
 
+    @Override
+    public String toString() {
+      return value.toString();
+    }
   }
 }
