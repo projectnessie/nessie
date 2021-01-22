@@ -21,8 +21,8 @@ import com.dremio.nessie.versioned.store.Entity;
  * An expression that is asserted against an Entity.
  */
 public class Function {
-  static final String EQUALS = "equals";
-  static final String SIZE = "size";
+  public static final String EQUALS = "equals";
+  public static final String SIZE = "size";
 
   String operator;
   String path;
@@ -49,5 +49,17 @@ public class Function {
     return (this.operator.equals(ex.operator)
         && this.path.equals(ex.path)
         && this.value.equals(ex.value));
+  }
+
+  public String getOperator() {
+    return operator;
+  }
+
+  public String getPath() {
+    return path;
+  }
+
+  public Entity getValue() {
+    return value;
   }
 }
