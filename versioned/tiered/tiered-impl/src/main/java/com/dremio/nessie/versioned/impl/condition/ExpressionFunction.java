@@ -107,7 +107,15 @@ public class ExpressionFunction implements Value {
     if (name.binaryExpression) {
       return String.format("%s %s %s", arguments.get(0).asString(), name.protocolName, arguments.get(1).asString());
     }
-    return String.format("%s(%s)", name.protocolName, arguments.stream().map(v -> v.asString()).collect(Collectors.joining(", ")));
+    return String.format("%s(%s)", name.protocolName, arguments.stream().map(Value::asString).collect(Collectors.joining(", ")));
+  }
+
+  @Override
+  public String toString() {
+    if (name.binaryExpression) {
+      return String.format("%s %s %s", arguments.get(0).toString(), name.protocolName, arguments.get(1).toString());
+    }
+    return String.format("%s(%s)", name.protocolName, arguments.stream().map(Object::toString).collect(Collectors.joining(", ")));
   }
 
   @Override
