@@ -43,7 +43,7 @@ import com.google.common.base.Preconditions;
 
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoRef extends DynamoBaseValue<Ref> implements Ref, Ref.Tag, Ref.Branch {
+class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
 
   static final String TYPE = "type";
   static final String NAME = "name";
@@ -73,7 +73,8 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref, Ref.Tag, Ref.Branch
       throw new IllegalStateException("branch() has already been called");
     }
     tag = true;
-    return (Tag) addEntitySafe(TYPE, string(REF_TYPE_TAG));
+    addEntitySafe(TYPE, string(REF_TYPE_TAG));
+    return new DynamoTag();
   }
 
   @Override
@@ -82,34 +83,43 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref, Ref.Tag, Ref.Branch
       throw new IllegalStateException("tag() has already been called");
     }
     branch = true;
-    return (Branch) addEntitySafe(TYPE, string(REF_TYPE_BRANCH));
+    addEntitySafe(TYPE, string(REF_TYPE_BRANCH));
+    return new DynamoBranch();
+  }
+
+  class DynamoTag implements Tag {
+    @Override
+    public Tag commit(Id commit) {
+      addEntitySafe(COMMIT, idValue(commit));
+      return this;
+    }
+  }
+
+  class DynamoBranch implements Branch {
+    @Override
+    public Branch metadata(Id metadata) {
+      addEntitySafe(METADATA, idValue(metadata));
+      return this;
+    }
+
+    @Override
+    public Branch children(Stream<Id> children) {
+      addIdList(TREE, children);
+      return this;
+    }
+
+    @Override
+    public Branch commits(Consumer<BranchCommit> commits) {
+      DynamoBranchCommit serializedCommits = new DynamoBranchCommit();
+      commits.accept(serializedCommits);
+      addEntitySafe(COMMITS, builder().l(serializedCommits.commitsList).build());
+      return this;
+    }
   }
 
   @Override
   public Ref name(String name) {
     return addEntitySafe(NAME, string(name));
-  }
-
-  @Override
-  public Tag commit(Id commit) {
-    return (Tag) addEntitySafe(COMMIT, idValue(commit));
-  }
-
-  @Override
-  public Branch metadata(Id metadata) {
-    return (Branch) addEntitySafe(METADATA, idValue(metadata));
-  }
-
-  @Override
-  public Branch children(Stream<Id> children) {
-    return (Branch) addIdList(TREE, children);
-  }
-
-  @Override
-  public Branch commits(Consumer<BranchCommit> commits) {
-    DynamoBranchCommit serializedCommits = new DynamoBranchCommit();
-    commits.accept(serializedCommits);
-    return (Branch) addEntitySafe(COMMITS, builder().l(serializedCommits.commitsList).build());
   }
 
   private static class DynamoBranchCommit implements BranchCommit, SavedCommit,
