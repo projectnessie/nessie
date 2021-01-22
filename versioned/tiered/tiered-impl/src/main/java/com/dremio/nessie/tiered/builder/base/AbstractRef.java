@@ -16,13 +16,17 @@
 
 package com.dremio.nessie.tiered.builder.base;
 
-import com.dremio.nessie.versioned.Key.Mutation;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.Ref;
+import com.dremio.nessie.versioned.Key.Mutation;
 import com.dremio.nessie.versioned.store.Id;
 
+/**
+ * Abstract implementation of {@link Ref}, all methods return {@code this},
+ * {@link Ref#tag()} and {@link Ref#branch()} must be implemented.
+ */
 public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref {
 
   @Override
@@ -30,6 +34,9 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
     return this;
   }
 
+  /**
+   * Abstract implementation of {@link Tag}, all methods return {@code this}.
+   */
   public abstract static class AbstractTag implements Tag {
     @Override
     public Tag commit(Id commit) {
@@ -37,6 +44,9 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
     }
   }
 
+  /**
+   * Abstract implementation of {@link Branch}, all methods return {@code this}.
+   */
   public abstract static class AbstractBranch implements Branch {
     @Override
     public Branch metadata(Id metadata) {
@@ -54,6 +64,10 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
     }
   }
 
+  /**
+   * Abstract implementation of {@link UnsavedCommitMutations}, all methods return {@code this},
+   * keeps a reference to {@link com.dremio.nessie.tiered.builder.Ref.BranchCommit}.
+   */
   public abstract static class AbstractUnsavedCommitMutations implements UnsavedCommitMutations {
     protected final BranchCommit branchCommit;
 
@@ -72,6 +86,10 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
     }
   }
 
+  /**
+   * Abstract implementation of {@link UnsavedCommitDelta}, all methods return {@code this},
+   * keeps a reference to {@link com.dremio.nessie.tiered.builder.Ref.BranchCommit}.
+   */
   public abstract static class AbstractUnsavedCommitDelta implements UnsavedCommitDelta {
     protected final BranchCommit branchCommit;
 
@@ -85,6 +103,10 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
     }
   }
 
+  /**
+   * Abstract implementation of {@link SavedCommit}, all methods return {@code this},
+   * keeps a reference to {@link com.dremio.nessie.tiered.builder.Ref.BranchCommit}.
+   */
   public abstract static class AbstractSavedCommit implements SavedCommit {
     protected final BranchCommit branchCommit;
 

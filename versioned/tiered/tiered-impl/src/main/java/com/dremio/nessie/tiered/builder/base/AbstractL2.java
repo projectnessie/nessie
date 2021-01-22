@@ -16,10 +16,14 @@
 
 package com.dremio.nessie.tiered.builder.base;
 
-import com.dremio.nessie.tiered.builder.L2;
-import com.dremio.nessie.versioned.store.Id;
 import java.util.stream.Stream;
 
+import com.dremio.nessie.tiered.builder.L2;
+import com.dremio.nessie.versioned.store.Id;
+
+/**
+ * Abstract implementation of {@link L2}, all methods return {@code this}.
+ */
 public abstract class AbstractL2 extends AbstractBaseValue<L2> implements L2 {
   @Override
   public L2 children(Stream<Id> ids) {

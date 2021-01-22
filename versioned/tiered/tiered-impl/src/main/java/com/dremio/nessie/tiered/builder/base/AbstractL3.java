@@ -16,10 +16,14 @@
 
 package com.dremio.nessie.tiered.builder.base;
 
-import com.dremio.nessie.tiered.builder.L3;
-import com.dremio.nessie.versioned.store.KeyDelta;
 import java.util.stream.Stream;
 
+import com.dremio.nessie.tiered.builder.L3;
+import com.dremio.nessie.versioned.store.KeyDelta;
+
+/**
+ * Abstract implementation of {@link L3}, all methods return {@code this}.
+ */
 public abstract class AbstractL3 extends AbstractBaseValue<L3> implements L3 {
   @Override
   public L3 keyDelta(Stream<KeyDelta> keyDelta) {

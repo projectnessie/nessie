@@ -16,11 +16,15 @@
 
 package com.dremio.nessie.tiered.builder.base;
 
+import java.util.stream.Stream;
+
 import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.Key.Mutation;
 import com.dremio.nessie.versioned.store.Id;
-import java.util.stream.Stream;
 
+/**
+ * Abstract implementation of {@link L1}, all methods return {@code this}.
+ */
 public abstract class AbstractL1 extends AbstractBaseValue<L1> implements L1 {
   @Override
   public L1 commitMetadataId(Id id) {

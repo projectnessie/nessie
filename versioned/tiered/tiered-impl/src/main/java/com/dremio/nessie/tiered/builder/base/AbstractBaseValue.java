@@ -19,6 +19,10 @@ package com.dremio.nessie.tiered.builder.base;
 import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.store.Id;
 
+/**
+ * Abstract implementation of {@link BaseValue}, all methods return {@code this}.
+ * @param <C> consumer interface type
+ */
 public abstract class AbstractBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
   @SuppressWarnings("unchecked")
