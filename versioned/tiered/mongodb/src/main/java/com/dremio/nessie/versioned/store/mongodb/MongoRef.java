@@ -31,7 +31,7 @@ import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.primitives.Ints;
 
-final class MongoRef extends MongoBaseValue<Ref> implements Ref, Ref.Tag, Ref.Branch {
+final class MongoRef extends MongoBaseValue<Ref> implements Ref {
 
   static final String TYPE = "type";
   static final String NAME = "name";
@@ -81,7 +81,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref, Ref.Tag, Ref.Br
     }
     tag = true;
     serializeString(TYPE, REF_TYPE_TAG);
-    return this;
+    return new MongoTag();
   }
 
   @Override
@@ -91,7 +91,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref, Ref.Tag, Ref.Br
     }
     branch = true;
     serializeString(TYPE, REF_TYPE_BRANCH);
-    return this;
+    return new MongoBranch();
   }
 
   @Override
@@ -100,31 +100,35 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref, Ref.Tag, Ref.Br
     return this;
   }
 
-  @Override
-  public Tag commit(Id commit) {
-    serializeId(COMMIT, commit);
-    return this;
+  class MongoTag implements Tag {
+    @Override
+    public Tag commit(Id commit) {
+      serializeId(COMMIT, commit);
+      return this;
+    }
   }
 
-  @Override
-  public Branch metadata(Id metadata) {
-    serializeId(METADATA, metadata);
-    return this;
-  }
+  class MongoBranch implements Branch {
+    @Override
+    public Branch metadata(Id metadata) {
+      serializeId(METADATA, metadata);
+      return this;
+    }
 
-  @Override
-  public Branch children(Stream<Id> children) {
-    serializeIds(TREE, children);
-    return this;
-  }
+    @Override
+    public Branch children(Stream<Id> children) {
+      serializeIds(TREE, children);
+      return this;
+    }
 
-  @Override
-  public Branch commits(Consumer<BranchCommit> commits) {
-    addProperty(COMMITS);
-    bsonWriter.writeStartArray(COMMITS);
-    commits.accept(new MongoBranchCommit());
-    bsonWriter.writeEndArray();
-    return this;
+    @Override
+    public Branch commits(Consumer<BranchCommit> commits) {
+      addProperty(COMMITS);
+      bsonWriter.writeStartArray(COMMITS);
+      commits.accept(new MongoBranchCommit());
+      bsonWriter.writeEndArray();
+      return this;
+    }
   }
 
   private class MongoBranchCommit implements BranchCommit, SavedCommit, UnsavedCommitDelta, UnsavedCommitMutations {

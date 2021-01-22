@@ -15,12 +15,12 @@
  */
 package com.dremio.nessie.versioned.gc;
 
+import com.dremio.nessie.tiered.builder.base.AbstractRef;
 import java.io.Serializable;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
@@ -79,17 +79,7 @@ public class RefFrame implements Serializable {
    */
   private static final Function<Acceptor<Ref>, RefFrame> CONVERTER = a -> {
     RefFrame frame = new RefFrame();
-    a.applyValue(new Ref() {
-
-      @Override
-      public Ref id(Id id) {
-        return this;
-      }
-
-      @Override
-      public Ref dt(long dt) {
-        return this;
-      }
+    a.applyValue(new AbstractRef() {
 
       @Override
       public Ref name(String name) {
@@ -99,7 +89,7 @@ public class RefFrame implements Serializable {
 
       @Override
       public Tag tag() {
-        return new Tag() {
+        return new AbstractTag() {
           @Override
           public Tag commit(Id commit) {
             frame.id = IdFrame.of(commit);
@@ -110,17 +100,7 @@ public class RefFrame implements Serializable {
 
       @Override
       public Branch branch() {
-        return new Branch() {
-          @Override
-          public Branch metadata(Id metadata) {
-            return this;
-          }
-
-          @Override
-          public Branch children(Stream<Id> children) {
-            return this;
-          }
-
+        return new AbstractBranch() {
           @Override
           public Branch commits(Consumer<BranchCommit> commits) {
             commits.accept(new BranchCommit() {
@@ -167,16 +147,10 @@ public class RefFrame implements Serializable {
 
               @Override
               public UnsavedCommitDelta unsaved() {
-                BranchCommit bc = this;
-                return new UnsavedCommitDelta() {
-                  @Override
-                  public UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
-                    return this;
-                  }
-
+                return new AbstractUnsavedCommitDelta(this) {
                   @Override
                   public UnsavedCommitMutations mutations() {
-                    return new UnsavedCommitMutations() {
+                    return new AbstractUnsavedCommitMutations(branchCommit) {
                       @Override
                       public UnsavedCommitMutations keyMutation(Mutation keyMutation) {
                         return this;
@@ -188,7 +162,7 @@ public class RefFrame implements Serializable {
                           populated = true;
                           frame.id = IdFrame.of(id);
                         }
-                        return bc;
+                        return branchCommit;
                       }
                     };
                   }
