@@ -19,6 +19,9 @@ package com.dremio.nessie.tiered.builder.base;
 import com.dremio.nessie.tiered.builder.Value;
 import com.google.protobuf.ByteString;
 
+/**
+ * Abstract implementation of {@link Value}, all methods return {@code this}.
+ */
 public abstract class AbstractValue extends AbstractBaseValue<Value> implements Value {
   @Override
   public Value value(ByteString value) {

@@ -21,6 +21,9 @@ import java.util.stream.Stream;
 import com.dremio.nessie.tiered.builder.Fragment;
 import com.dremio.nessie.versioned.Key;
 
+/**
+ * Abstract implementation of {@link Fragment}, all methods return {@code this}.
+ */
 public abstract class AbstractFragment extends AbstractBaseValue<Fragment> implements Fragment {
   @Override
   public Fragment keys(Stream<Key> keys) {
