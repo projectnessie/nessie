@@ -19,6 +19,9 @@ package com.dremio.nessie.tiered.builder.base;
 import com.dremio.nessie.tiered.builder.CommitMetadata;
 import com.google.protobuf.ByteString;
 
+/**
+ * Abstract implementation of {@link CommitMetadata}, all methods return {@code this}.
+ */
 public abstract class AbstractCommitMetadata extends AbstractBaseValue<CommitMetadata> implements CommitMetadata {
   @Override
   public CommitMetadata value(ByteString value) {
