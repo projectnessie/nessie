@@ -164,7 +164,7 @@ public class SampleEntities {
    * @param numChars the size of the String.
    * @return the String of random characters.
    */
-  private static String createString(Random random, int numChars) {
+  public static String createString(Random random, int numChars) {
     return random.ints('a', 'z' + 1)
         .limit(numChars)
         .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)

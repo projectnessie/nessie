@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2020 Dremio
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.dremio.nessie.versioned.impl;
 
 import java.util.Arrays;
@@ -21,6 +36,9 @@ public class ConditionExecutor {
     return true;
   }
 
+  final L1Evaluator l1Evaluator = new L1Evaluator();
+  final RefEvaluator refEvaluator = new RefEvaluator();
+
   interface Evaluator<C extends BaseValue<C>> {
     public boolean evaluate(C saveOp, Condition condition);
   }
@@ -28,7 +46,7 @@ public class ConditionExecutor {
   // Within RocksDBStore we call
   // final L1 read = EntityType.L1.loadSingle(RocksDBStore, internalL1.getId());
   // l1Evaluator.evaluate(read, condition);
-  final class L1Evaluator<L1 extends BaseValue<L1>> implements Evaluator<L1> {
+  final public class L1Evaluator<L1 extends BaseValue<L1>> implements Evaluator<L1> {
     @Override
     public boolean evaluate(L1 value, Condition condition) {
       for (Function function: condition.functionList) {
@@ -42,10 +60,9 @@ public class ConditionExecutor {
     }
   }
 
-  final class RefEvaluator<Ref extends BaseValue<Ref>> implements Evaluator<Ref> {
+  final public class RefEvaluator<Ref extends BaseValue<Ref>> implements Evaluator<Ref> {
     @Override
     public boolean evaluate(Ref value, Condition condition) {
-      boolean result = true;
       // Retrieve entity at function.path
       // TODO: This is a workaround until I figure out how to get InternalRef from deserialized data.
       InternalRef internalRef = EntityType.REF.buildEntity(producer -> producer.id(Id.build("fred"))
@@ -98,18 +115,15 @@ public class ConditionExecutor {
               } else if (segment.equals(("commit"))) {
                 if (function.getOperator().equals(Function.EQUALS)) {
                   if (!internalTag.getCommit().equals(function.getValue().getBinary()))
-                  // TODO: We require a getCommit() accessor in internalTag
-                  return false;
+                    // TODO: We require a getCommit() accessor in internalTag
+                    return false;
                 }
               }
             }
-
+          }
         }
       }
-      return result;
+      return true;
     }
   }
-
-  final L1Evaluator l1Evaluator = new L1Evaluator();
-  final RefEvaluator refEvaluator = new RefEvaluator();
 }
