@@ -44,7 +44,7 @@ import scala.Function1;
 /**
  * Operation which identifies unreferenced assets.
  */
-public class IdentifyUnreferencedAssets<T extends HasId> {
+public class IdentifyUnreferencedAssets<T> {
 
   private final StoreWorker<T, ?> storeWorker;
   private final Supplier<Store> store;
@@ -96,8 +96,7 @@ public class IdentifyUnreferencedAssets<T extends HasId> {
     // for each value, determine if it is a valid value. If it is, generate a referenced asset. If not, generate a non-referenced asset.
     // this is a single output that has a categorization column
     AssetCategorizer<T> categorizer = new AssetCategorizer<T>(validValueIds, storeWorker.getValueWorker(), options.getTimeSlopMicros());
-    Dataset<CategorizedAssetKey> assets = values
-        .flatMap(categorizer, Encoders.bean(CategorizedAssetKey.class));
+    Dataset<CategorizedAssetKey> assets = values.flatMap(categorizer, Encoders.bean(CategorizedAssetKey.class));
 
     // generate a bloom filter of referenced items.
     final BinaryBloomFilter referencedAssets = BinaryBloomFilter.aggregate(assets.filter("referenced = true").select("data"), "data");
@@ -107,10 +106,14 @@ public class IdentifyUnreferencedAssets<T extends HasId> {
     // in the written file to avoid stale -> not stale -> stale values.
     Dataset<Row> unreferencedAssets = assets.filter("referenced = false").select("data").filter(new AssetFilter(referencedAssets));
 
+    // map the generic spark Row back to a concrete type.
     return unreferencedAssets.map(
         new UnreferencedItemConverter(valueWorker.getAssetKeySerializer()), Encoders.bean(UnreferencedItem.class));
   }
 
+  /**
+   * Spark filter to determine if a value is referenced by checking if the byte[] serialization is in a bloom filter.
+   */
   public static class AssetFilter implements FilterFunction<Row> {
 
     private static final long serialVersionUID = 2411246084016802962L;
@@ -132,6 +135,9 @@ public class IdentifyUnreferencedAssets<T extends HasId> {
 
   }
 
+  /**
+   * Pair of referenced state of an asset key and its byte[] representation.
+   */
   public static final class CategorizedAssetKey implements Serializable {
 
     private static final long serialVersionUID = -1466847843373432962L;
@@ -167,9 +173,11 @@ public class IdentifyUnreferencedAssets<T extends HasId> {
       return data;
     }
 
-
   }
 
+  /**
+   * Spark function to convert a Row into a concrete UnreferencedItem object.
+   */
   public static class UnreferencedItemConverter implements Function1<Row, UnreferencedItem>, Serializable {
     private static final long serialVersionUID = -5135625090051205329L;
 
@@ -191,6 +199,9 @@ public class IdentifyUnreferencedAssets<T extends HasId> {
 
   }
 
+  /**
+   * Unreferenced Item. Pair of name of unreferenced item and the byte[] representation of the underlying AssetKey.
+   */
   public static class UnreferencedItem implements Serializable {
     private static final long serialVersionUID = -5566256066143995534L;
 
@@ -215,6 +226,9 @@ public class IdentifyUnreferencedAssets<T extends HasId> {
 
   }
 
+  /**
+   * Spark flat map function to convert a value into an iterator of AssetKeys with their reference state.
+   */
   public static class AssetCategorizer<T> implements FlatMapFunction<ValueFrame, CategorizedAssetKey> {
 
     private static final long serialVersionUID = -4605489080345105845L;
@@ -225,6 +239,10 @@ public class IdentifyUnreferencedAssets<T extends HasId> {
 
     /**
      * Construct categorizer.
+     *
+     * @param bloomFilter bloom filter to determine if a value is referenced.
+     * @param valueWorker serde for values and their asset keys.
+     * @param maxSlopMicros minimum age of a value to consider it as being unreferenced.
      */
     public AssetCategorizer(BinaryBloomFilter bloomFilter, ValueWorker<T> valueWorker, long maxSlopMicros) {
       this.bloomFilter = bloomFilter;
