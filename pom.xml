@@ -325,6 +325,11 @@
         <version>${iceberg.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.apache.iceberg</groupId>
+        <artifactId>iceberg-spark3-runtime</artifactId>
+        <version>${iceberg.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>

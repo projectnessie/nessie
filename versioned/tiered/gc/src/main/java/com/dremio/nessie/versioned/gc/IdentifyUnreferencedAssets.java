@@ -33,7 +33,6 @@ import com.dremio.nessie.versioned.AssetKey;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.ValueWorker;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
@@ -44,7 +43,7 @@ import scala.Function1;
 /**
  * Operation which identifies unreferenced assets.
  */
-public class IdentifyUnreferencedAssets<T extends HasId> {
+public class IdentifyUnreferencedAssets<T> {
 
   private final StoreWorker<T, ?> storeWorker;
   private final Supplier<Store> store;
@@ -95,9 +94,8 @@ public class IdentifyUnreferencedAssets<T extends HasId> {
 
     // for each value, determine if it is a valid value. If it is, generate a referenced asset. If not, generate a non-referenced asset.
     // this is a single output that has a categorization column
-    AssetCategorizer<T> categorizer = new AssetCategorizer<T>(validValueIds, storeWorker.getValueWorker(), options.getTimeSlopMicros());
-    Dataset<CategorizedAssetKey> assets = values
-        .flatMap(categorizer, Encoders.bean(CategorizedAssetKey.class));
+    AssetCategorizer<T> categorizer = new AssetCategorizer<>(validValueIds, storeWorker.getValueWorker(), options.getTimeSlopMicros());
+    Dataset<CategorizedAssetKey> assets = values.flatMap(categorizer, Encoders.bean(CategorizedAssetKey.class));
 
     // generate a bloom filter of referenced items.
     final BinaryBloomFilter referencedAssets = BinaryBloomFilter.aggregate(assets.filter("referenced = true").select("data"), "data");
@@ -167,7 +165,6 @@ public class IdentifyUnreferencedAssets<T extends HasId> {
       return data;
     }
 
-
   }
 
   public static class UnreferencedItemConverter implements Function1<Row, UnreferencedItem>, Serializable {
@@ -235,9 +232,10 @@ public class IdentifyUnreferencedAssets<T extends HasId> {
     @Override
     public Iterator<CategorizedAssetKey> call(ValueFrame r) throws Exception {
       boolean referenced = r.getDt() > recentValues || bloomFilter.mightContain(r.getId());
-      final Serializer<AssetKey> serializer = valueWorker.getAssetKeySerializer();
-      T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getBytes()));
-      return valueWorker.getAssetKeys(contents).map(ak -> new CategorizedAssetKey(referenced, serializer.toBytes(ak))).iterator();
+      final ByteString bytes = ByteString.copyFrom(r.getBytes());
+      T contents = valueWorker.fromBytes(bytes);
+      Serializer<AssetKey> akSerializer = valueWorker.getAssetKeySerializer();
+      return valueWorker.getAssetKeys(contents).map(ak -> new CategorizedAssetKey(referenced, akSerializer.toBytes(ak))).iterator();
     }
 
   }

@@ -42,6 +42,21 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-quarkus</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.iceberg</groupId>
+      <artifactId>iceberg-nessie</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.iceberg</groupId>
+      <artifactId>iceberg-spark3-runtime</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_2.12</artifactId>
       <version>3.0.1</version>
@@ -81,7 +96,7 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
       <scope>test</scope>
-    </dependency>    
+    </dependency>
 
     <dependency>
       <groupId>org.projectnessie</groupId>
