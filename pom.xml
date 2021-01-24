@@ -140,6 +140,7 @@
     <mongodb.version>4.1.1</mongodb.version>
     <prometheus.version>0.9.0</prometheus.version>
     <reactor.version>2020.0.3</reactor.version>
+    <rocksdb.version>6.13.3</rocksdb.version>
     <serverless.version>1.5</serverless.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <slf4j.version>1.7.30</slf4j.version>
@@ -483,6 +484,11 @@
         <artifactId>mockito-core</artifactId>
         <version>${mockito.version}</version>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.rocksdb</groupId>
+        <artifactId>rocksdbjni</artifactId>
+        <version>${rocksdb.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

@@ -15,38 +15,67 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Id;
 
-public class RocksL1 extends RocksBaseValue<L1> implements L1 {
+public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
 
-  private Id commitMetadataId;
-  private Stream<Id> ancestors;
-  private Stream<Id> children;
+  static final int SIZE = 43;
+  private Id metadataId; // commitMetadataId
+  private Stream<Id> parentList; // ancestors
+  private Stream<Id> tree; // children
 
-  private Stream<Key.Mutation> keyMutations;
-  private Id checkpointId;
-  private int distanceFromCheckpoint;
-  private Stream<Id> fragmentIds;
+  private Stream<Key.Mutation> keyMutations; // keylist
+  private Id checkpointId; // incrementalKeyList
+  private int distanceFromCheckpoint; // incrementalKeyList
+  private Stream<Id> fragmentIds; // completeKeyList
+
+  static RocksL1 EMPTY =
+    new RocksL1(Id.EMPTY, null, null, null, null, null);
+
+  static Id EMPTY_ID = EMPTY.getId();
+
+  public RocksL1() {
+    super(EMPTY_ID, 0);
+  }
+
+  // TODO: convert streams to maps
+  private RocksL1(Id commitId, Stream<Id> tree, Id id, Stream<Key.Mutation> keyList, Stream<Id> parentList, Long dt) {
+    super(id, dt);
+    this.metadataId = commitId;
+    this.parentList = parentList;
+    this.keyMutations = keyList;
+    this.tree = tree;
+
+//    if (tree.size() != SIZE) {
+//      throw new AssertionError("tree.size(" + tree.size() + ") != " + SIZE);
+//    }
+//    if (id != null && !id.equals(generateId())) {
+//      throw new AssertionError("wrong id=" + id + ", expected=" + generateId());
+//    }
+  }
 
   @Override
   public L1 commitMetadataId(Id id) {
-    this.commitMetadataId = id;
+    this.metadataId = id;
     return this;
   }
 
   @Override
   public L1 ancestors(Stream<Id> ids) {
-    this.ancestors = ids;
+    this.parentList = ids;
     return this;
   }
 
   @Override
   public L1 children(Stream<Id> ids) {
-    this.children = ids;
+    this.tree = ids;
     return this;
   }
 
@@ -70,15 +99,24 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1 {
   }
 
   public Id getMetadataId() {
-    return commitMetadataId;
+    return metadataId;
+  }
+
+  @Override
+  public boolean evaluate(Condition condition) {
+    for (Function function: condition.functionList) {
+      // Retrieve entity at function.path
+      List<String> elements = Arrays.asList(function.getPath().split(Pattern.quote(".")));
+    }
+    return false;
   }
 
   public Stream<Id> getAncestors() {
-    return ancestors;
+    return parentList;
   }
 
   public Stream<Id> getChildren() {
-    return children;
+    return tree;
   }
 
   public Stream<Key.Mutation> getKeyMutations() {

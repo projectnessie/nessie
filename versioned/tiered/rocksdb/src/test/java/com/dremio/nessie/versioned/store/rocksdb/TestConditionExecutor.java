@@ -13,25 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.impl;
+package com.dremio.nessie.versioned.store.rocksdb;
 
 import java.util.Random;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.dremio.nessie.tiered.builder.L1;
+import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
+import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
-import com.dremio.nessie.versioned.store.ValueType;
-import com.dremio.nessie.versioned.store.rocksdb.Condition;
-import com.dremio.nessie.versioned.store.rocksdb.Function;
-import com.dremio.nessie.versioned.store.rocksdb.RocksDBStore;
-import com.dremio.nessie.versioned.store.rocksdb.RocksL1;
 
 public class TestConditionExecutor {
   private static final Random RANDOM = new Random(8612341233543L);
   private static final Entity TRUE_ENTITY = Entity.ofBoolean(true);
   private static final Entity FALSE_ENTITY = Entity.ofBoolean(false);
+  protected Random random;
+  protected Store store;
+
+  @BeforeEach
+  void setup() {
+    random = new Random(getRandomSeed());
+  }
+
+  protected long getRandomSeed() {
+    return -2938423452345L;
+  }
 
   @Test
   public void executorL1() {
@@ -40,8 +53,6 @@ public class TestConditionExecutor {
 
     final Condition expectedCondition = new Condition();
     expectedCondition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
-    Store store = new RocksDBStore();
-
   }
 
   @Test
@@ -51,9 +62,6 @@ public class TestConditionExecutor {
 
     final Condition expectedCondition = new Condition();
     expectedCondition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
-    Store store = new RocksDBStore();
-    RocksL1 rocksL1 = new RocksL1();
-    store.loadSingle(ValueType.L1, InternalL1.EMPTY.getId(), rocksL1);
   }
 
   /**
@@ -80,5 +88,53 @@ public class TestConditionExecutor {
 
   private static String createPath() {
     return SampleEntities.createString(RANDOM, RANDOM.nextInt(15) + 1);
+  }
+
+  /**
+   * Create a Sample L1 entity.
+   * @param random object to use for randomization of entity creation.
+   * @return sample L1 entity.
+   */
+  public static L1 createL1(Random random) {
+    return new RocksL1().commitMetadataId(createId(random))
+      .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> createId(random)))
+      .ancestors(Stream.of(RocksL1.EMPTY.getId(), Id.EMPTY))
+      .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
+      .incrementalKeyList(RocksL1.EMPTY.getId(), 1);
+  }
+
+
+  /**
+   * Create a Sample ID entity.
+   * @param random object to use for randomization of entity creation.
+   * @return sample ID entity.
+   */
+  public static Id createId(Random random) {
+    return Id.of(createBinary(random, 20));
+  }
+
+  /**
+   * Create an array of random bytes.
+   * @param random random number generator to use.
+   * @param numBytes the size of the array.
+   * @return the array of random bytes.
+   */
+  public static byte[] createBinary(Random random, int numBytes) {
+    final byte[] buffer = new byte[numBytes];
+    random.nextBytes(buffer);
+    return buffer;
+  }
+
+  /**
+   * Create a String of random characters.
+   * @param random random number generator to use.
+   * @param numChars the size of the String.
+   * @return the String of random characters.
+   */
+  public static String createString(Random random, int numChars) {
+    return random.ints('a', 'z' + 1)
+      .limit(numChars)
+      .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+      .toString();
   }
 }

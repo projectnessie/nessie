@@ -15,34 +15,11 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import com.dremio.nessie.tiered.builder.BaseValue;
-import com.dremio.nessie.versioned.store.Id;
-
-abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
-
-  private Id id;
-  private long dt;
-
-  RocksBaseValue(Id id, long dt) {
-    this.id = id;
-    this.dt = dt;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public C id(Id id) {
-    this.id = id;
-    return (C) this;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public C dt(long dt) {
-    this.dt = dt;
-    return (C) this;
-  }
-
-  Id getId() {
-    return id;
-  }
+public interface Evaluator {
+  /**
+   * Checks that each Function in the Condition is met by the implementing class.
+   * @param condition the condition to check
+   * @return true if the condition is met
+   */
+  boolean evaluate(Condition condition);
 }

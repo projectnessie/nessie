@@ -15,34 +15,5 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import com.dremio.nessie.tiered.builder.BaseValue;
-import com.dremio.nessie.versioned.store.Id;
-
-abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
-
-  private Id id;
-  private long dt;
-
-  RocksBaseValue(Id id, long dt) {
-    this.id = id;
-    this.dt = dt;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public C id(Id id) {
-    this.id = id;
-    return (C) this;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public C dt(long dt) {
-    this.dt = dt;
-    return (C) this;
-  }
-
-  Id getId() {
-    return id;
-  }
+public class RocksTag extends RocksRef {
 }

@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
@@ -28,8 +31,17 @@ import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.google.common.annotations.VisibleForTesting;
 
 public class RocksDBStore implements Store {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(RocksDBStore.class);
+
+
+  public RocksDBStore(String dbDirectory) {
+
+  }
+
   @Override
   public void start() {
 
@@ -78,5 +90,12 @@ public class RocksDBStore implements Store {
   @Override
   public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
     return null;
+  }
+
+  /**
+   * Delete all the data in all column families, used for testing only.
+   */
+  @VisibleForTesting
+  void deleteAllData() {
   }
 }
