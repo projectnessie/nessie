@@ -37,7 +37,7 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
   private Stream<Id> fragmentIds; // completeKeyList
 
   static RocksL1 EMPTY =
-    new RocksL1(Id.EMPTY, null, null, null, null, null);
+    new RocksL1(Id.EMPTY, null, null, null, null, 0L);
 
   static Id EMPTY_ID = EMPTY.getId();
 

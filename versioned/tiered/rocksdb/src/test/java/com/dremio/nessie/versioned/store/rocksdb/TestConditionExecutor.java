@@ -19,8 +19,10 @@ import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.Key;
@@ -30,6 +32,7 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestConditionExecutor {
   private static final Random RANDOM = new Random(8612341233543L);
   private static final Entity TRUE_ENTITY = Entity.ofBoolean(true);
@@ -48,20 +51,11 @@ public class TestConditionExecutor {
 
   @Test
   public void executorL1() {
-    ConditionExecutor conditionExecutor = new ConditionExecutor();
+    final Condition condition = new Condition();
     final String path = createPath();
-
-    final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
-  }
-
-  @Test
-  public void rocksL1PutLoad() {
-    ConditionExecutor conditionExecutor = new ConditionExecutor();
-    final String path = createPath();
-
-    final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
   }
 
   /**
