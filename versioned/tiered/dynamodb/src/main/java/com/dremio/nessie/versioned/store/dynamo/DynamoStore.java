@@ -147,12 +147,13 @@ public class DynamoStore implements Store {
       client = b1.build();
       async = b2.build();
 
-      if (config.initializeDatabase()) {
+      if (config.setupTables()) {
         ValueType.values().stream()
-          .map(tableNames::get)
-          .collect(Collectors.toSet())
+            .map(tableNames::get)
+            .collect(Collectors.toSet())
             .forEach(this::createIfMissing);
-
+      }
+      if (config.initializeDatabase()) {
         // make sure we have an empty l1 (ignore result, doesn't matter)
         EntityStoreHelper.storeMinimumEntities(this::putIfAbsent);
       }

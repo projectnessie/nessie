@@ -140,6 +140,7 @@ public class VersionStoreFactory {
           }))
           .region(Region.of(region))
           .initializeDatabase(in.isDynamoInitialize())
+          .setupTables(in.isSetupTables())
           .tablePrefix(in.getTablePrefix())
           .build());
     dynamo.start();

@@ -117,6 +117,9 @@ public class ApplicationConfig {
     @ConfigProperty(name = "initialize", defaultValue = "false")
     boolean isDynamoInitialize();
 
+    @ConfigProperty(name = "setupTables", defaultValue = "false")
+    boolean isSetupTables();
+
     @ConfigProperty(defaultValue = DynamoStoreConfig.TABLE_PREFIX)
     String getTablePrefix();
 
