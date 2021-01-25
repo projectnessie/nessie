@@ -28,17 +28,6 @@ public abstract class SetClause implements UpdateClause {
     return ImmutableSetClause.builder().path(path).value(Value.of(value)).build();
   }
 
-  /**
-   * Create a setClause that sets if the existence path does not exist.
-   * @param setPath The path to set the value to.
-   * @param existenceCheckPath The path to check for existence.
-   * @param valueToSet The value to set.
-   * @return The clause
-   */
-  public static SetClause ifNotExists(ExpressionPath setPath, ExpressionPath existenceCheckPath, Entity valueToSet) {
-    return ImmutableSetClause.builder().path(setPath).value(ExpressionFunction.ifNotExists(existenceCheckPath, valueToSet)).build();
-  }
-
   public static SetClause appendToList(ExpressionPath path, Entity value) {
     return ImmutableSetClause.builder().path(path).value(ExpressionFunction.appendToList(path, value)).build();
   }

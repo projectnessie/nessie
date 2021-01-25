@@ -51,6 +51,7 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
 
   /**
    * AND the existing condition with this newly provided condition.
+   *
    * @param function The function to AND with.
    * @return The new compound expression.
    */
@@ -63,6 +64,7 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
 
   /**
    * AND the existing condition with this newly provided condition.
+   *
    * @param expr The expression to AND with.
    * @return The new compound expression.
    */
@@ -85,7 +87,18 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
         o1.addAll(o2);
         return o1;
       },
-      o1 ->  ImmutableConditionExpression.builder().addAllFunctions(o1).build()
+      o1 -> ImmutableConditionExpression.builder().addAllFunctions(o1).build()
       );
+  }
+
+  /**
+   * Visit this object given the specific visitor.
+   *
+   * @param visitor the instance visiting.
+   * @param <T> The class to which ConditionExpression is converted.
+   * @return the converted class.
+   */
+  public <T> T accept(ConditionExpressionVisitor<T> visitor) {
+    return visitor.visit(this);
   }
 }
