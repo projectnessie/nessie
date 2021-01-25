@@ -37,7 +37,7 @@ public class TestConditionExecutor {
   private static final Random RANDOM = new Random(8612341233543L);
   private static final Entity TRUE_ENTITY = Entity.ofBoolean(true);
   private static final Entity FALSE_ENTITY = Entity.ofBoolean(false);
-  protected Random random;
+  protected static Random random;
   protected Store store;
 
   @BeforeEach
@@ -45,17 +45,26 @@ public class TestConditionExecutor {
     random = new Random(getRandomSeed());
   }
 
-  protected long getRandomSeed() {
+  protected static final long getRandomSeed() {
     return -2938423452345L;
   }
+  static final Id ID = createId(new Random(getRandomSeed()));
 
   @Test
-  public void executorL1() {
+  public void executorL1Empty() {
     final Condition condition = new Condition();
     final String path = createPath();
     condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
     RocksL1 l1 = (RocksL1) createL1(random);
     Assertions.assertFalse(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1CommitMetadata() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, "metadataId", ID.toEntity()));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
   }
 
   /**
@@ -90,8 +99,8 @@ public class TestConditionExecutor {
    * @return sample L1 entity.
    */
   public static L1 createL1(Random random) {
-    return new RocksL1().commitMetadataId(createId(random))
-      .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> createId(random)))
+    return new RocksL1().commitMetadataId(ID)
+      .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
       .ancestors(Stream.of(RocksL1.EMPTY.getId(), Id.EMPTY))
       .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
       .incrementalKeyList(RocksL1.EMPTY.getId(), 1);

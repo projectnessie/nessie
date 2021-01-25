@@ -36,6 +36,13 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
   private int distanceFromCheckpoint; // incrementalKeyList
   private Stream<Id> fragmentIds; // completeKeyList
 
+  private static final String COMMIT_METADATA = "metadataId";
+  private static final String ANCESTORS = "ancestors";
+  private static final String CHILDREN = "children";
+  private static final String KEY_LIST = "keylist";
+  private static final String INCREMENTAL_KEY_LIST = "incrementalKeyList";
+  private static final String COMPLETE_KEY_LIST = "completeKeyList";
+
   static RocksL1 EMPTY =
       new RocksL1(Id.EMPTY, null, null, null, null, 0L);
 
@@ -106,9 +113,29 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
   public boolean evaluate(Condition condition) {
     for (Function function: condition.functionList) {
       // Retrieve entity at function.path
-      List<String> elements = Arrays.asList(function.getPath().split(Pattern.quote(".")));
+      List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
+      for (String segment : path) {
+        if (segment.equals(COMMIT_METADATA)) {
+          if ((path.size() == 1)
+            && (function.getOperator().equals(Function.EQUALS))
+            && (!this.metadataId.toEntity().equals(function.getValue()))) {
+            return false;
+          }
+        } else if (segment.equals(ANCESTORS)) {
+          // Is a Stream
+
+        } else if (segment.equals(CHILDREN)) {
+          return false;
+        } else if (segment.equals(KEY_LIST)) {
+          return false;
+        } else if (segment.equals(INCREMENTAL_KEY_LIST)) {
+          return false;
+        } else if (segment.equals(COMPLETE_KEY_LIST)) {
+          return false;
+        }
+      }
     }
-    return false;
+    return true;
   }
 
   public Stream<Id> getAncestors() {
