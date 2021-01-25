@@ -37,7 +37,7 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
   private Stream<Id> fragmentIds; // completeKeyList
 
   static RocksL1 EMPTY =
-    new RocksL1(Id.EMPTY, null, null, null, null, 0L);
+      new RocksL1(Id.EMPTY, null, null, null, null, 0L);
 
   static Id EMPTY_ID = EMPTY.getId();
 
@@ -53,12 +53,12 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
     this.keyMutations = keyList;
     this.tree = tree;
 
-//    if (tree.size() != SIZE) {
-//      throw new AssertionError("tree.size(" + tree.size() + ") != " + SIZE);
-//    }
-//    if (id != null && !id.equals(generateId())) {
-//      throw new AssertionError("wrong id=" + id + ", expected=" + generateId());
-//    }
+    //    if (tree.size() != SIZE) {
+    //      throw new AssertionError("tree.size(" + tree.size() + ") != " + SIZE);
+    //    }
+    //    if (id != null && !id.equals(generateId())) {
+    //      throw new AssertionError("wrong id=" + id + ", expected=" + generateId());
+    //    }
   }
 
   @Override

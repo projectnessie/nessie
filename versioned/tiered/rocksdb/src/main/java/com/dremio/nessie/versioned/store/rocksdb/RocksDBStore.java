@@ -83,7 +83,10 @@ public class RocksDBStore implements Store {
   }
 
   @Override
-  public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update, Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer) throws NotFoundException {
+  public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id,
+                                                 UpdateExpression update,
+                                                 Optional<ConditionExpression> condition,
+                                                 Optional<BaseValue<C>> consumer) throws NotFoundException {
     return false;
   }
 

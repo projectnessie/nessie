@@ -28,7 +28,7 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
 
   // TODO: Create correct constuctor with all attributes.
   static RocksRef EMPTY =
-    new RocksRef();
+      new RocksRef();
 
   static Id EMPTY_ID = EMPTY.getId();
 
@@ -55,16 +55,16 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
 
         for (String segment : path) {
           if (segment.equals("type")
-            && (path.size() == 1)
-            && (function.getOperator().equals(Function.EQUALS))
-            && (internalBranch.type.toString() != function.getValue().getString())) {
+              && (path.size() == 1)
+              && (function.getOperator().equals(Function.EQUALS))
+              && (internalBranch.type.toString() != function.getValue().getString())) {
             return false;
           } else if (segment.equals("children")) {
             // Is a Stream
 
           } else if (segment.equals("metadata")
-            && (path.size() == 1)
-            && (function.getOperator().equals(Function.EQUALS))) {
+              && (path.size() == 1)
+              && (function.getOperator().equals(Function.EQUALS))) {
             // TODO: We require a getMetadata() accessor in InternalBranch
             return false;
           } else if (segment.equals(("commits"))) {
@@ -88,15 +88,16 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
 
           for (String segment : path) {
             if (segment.equals("type")
-              && (path.size() == 1)
-              && (function.getOperator().equals(Function.EQUALS))
-              && (rocksTag.type.toString() != function.getValue().getString())) {
+                && (path.size() == 1)
+                && (function.getOperator().equals(Function.EQUALS))
+                && (rocksTag.type.toString() != function.getValue().getString())) {
               return false;
             } else if (segment.equals(("commit"))) {
               if (function.getOperator().equals(Function.EQUALS)) {
-                if (!rocksTag.commit.equals(function.getValue().getBinary()))
+                if (!rocksTag.commit.equals(function.getValue().getBinary())) {
                   // TODO: We require a getCommit() accessor in internalTag
                   return false;
+                }
               }
             }
           }
