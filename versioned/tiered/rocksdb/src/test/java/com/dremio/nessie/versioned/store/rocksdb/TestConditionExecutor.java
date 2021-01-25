@@ -55,7 +55,7 @@ public class TestConditionExecutor {
     final String path = createPath();
     condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    Assertions.assertFalse(l1.evaluate(condition));
   }
 
   /**
