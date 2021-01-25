@@ -37,6 +37,11 @@ public abstract class DynamoStoreConfig {
   }
 
   @Default
+  public boolean setupTables() {
+    return true;
+  }
+
+  @Default
   public boolean initializeDatabase() {
     return true;
   }
