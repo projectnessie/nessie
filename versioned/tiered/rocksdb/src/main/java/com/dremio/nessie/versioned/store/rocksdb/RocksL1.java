@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -57,7 +56,6 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
     super(EMPTY_ID, 0);
   }
 
-  // TODO: convert streams to maps
   private RocksL1(Id commitId, Stream<Id> tree, Id id, Stream<Key.Mutation> keyList, Stream<Id> parentList, Long dt) {
     super(id, dt);
     this.metadataId = commitId;
@@ -133,17 +131,10 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
           if (function.getOperator().equals(Function.EQUALS)) {
             List<String> arguments = splitArrayString(segment);
             if (arguments.size() == 1) { // compare complete list
-              // TODO: There has to be a better way to compare lists.
-              List<Id> ids = tree.collect(Collectors.toList());
-              List<Entity> idsAsEntity = new ArrayList<>();
-              for (Id id : ids) {
-                idsAsEntity.add(id.toEntity());
-              }
-              return (Entity.ofList(idsAsEntity).equals(function.getValue()));
+              return (toEntity(tree).equals(function.getValue()));
             } else if (arguments.size() == 2) { // compare individual element of list
               int position = Integer.parseInt(arguments.get(1));
-              Id id = tree.collect(Collectors.toList()).get(position);
-              return (id.toEntity().equals(function.getValue()));
+              return (toEntity(tree, position).equals(function.getValue()));
             }
           } else if (function.getOperator().equals(Function.SIZE)) {
             return (tree.collect(Collectors.toList()).size() == (int)function.getValue().getNumber());
@@ -166,13 +157,6 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
     }
     return false;
   }
-
-  List<String> splitArrayString(String str) {
-    // Remove enclosing brackets
-    final String delimeters = "\\(|\\)";
-    return Arrays.asList(str.split(delimeters));
-  }
-
 
   public Stream<Id> getAncestors() {
     return parentList;

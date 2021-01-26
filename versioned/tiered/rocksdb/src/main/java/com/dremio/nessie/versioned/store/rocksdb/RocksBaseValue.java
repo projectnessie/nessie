@@ -15,7 +15,14 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.dremio.nessie.tiered.builder.BaseValue;
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 
 abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
@@ -44,5 +51,40 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
   Id getId() {
     return id;
+  }
+
+  /**
+   * Splits a string containing an identifier and an array position enclosed in parentheses into a list.
+   * @param str the string to split. Format: "value0(value1)"
+   * @return a list containing the values
+   */
+  List<String> splitArrayString(String str) {
+    // Remove enclosing brackets
+    final String delimeters = "\\(|\\)";
+    return Arrays.asList(str.split(delimeters));
+  }
+
+  /**
+   * Converts a Stream of Ids into a List Entity.
+   * @param idStream the stream of Id to convert.
+   * @return the List Entity.
+   */
+  Entity toEntity(Stream<Id> idStream) {
+    List<Id> idList = idStream.collect(Collectors.toList());
+    List<Entity> idsAsEntity = new ArrayList<>();
+    for (Id idElement : idList) {
+      idsAsEntity.add(idElement.toEntity());
+    }
+    return Entity.ofList(idsAsEntity);
+  }
+
+  /**
+   * Retrieves an Id at 'position' in a Stream of Ids as an Entity.
+   * @param idStream the stream of Id to convert.
+   * @param position the element in the Stream to retrieve.
+   * @return the List Entity.
+   */
+  Entity toEntity(Stream<Id> idStream, int position) {
+    return idStream.collect(Collectors.toList()).get(position).toEntity();
   }
 }
