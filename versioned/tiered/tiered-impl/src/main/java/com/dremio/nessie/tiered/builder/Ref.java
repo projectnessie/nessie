@@ -133,6 +133,12 @@ public interface Ref extends BaseValue<Ref> {
      * @return This consumer.
      */
     Tag commit(Id commit);
+
+    /**
+     * Convenience method to get back to the {@link Ref}.
+     * @return owning {@link Ref}
+     */
+    Ref toRef();
   }
 
   interface Branch {
@@ -166,6 +172,12 @@ public interface Ref extends BaseValue<Ref> {
      * @return This consumer.
      */
     Branch commits(Consumer<BranchCommit> commits);
+
+    /**
+     * Convenience method to get back to the {@link Ref}.
+     * @return owning {@link Ref}
+     */
+    Ref toRef();
   }
 
   /**

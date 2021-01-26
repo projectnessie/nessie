@@ -531,9 +531,9 @@ class InternalBranch extends InternalRef {
 
   @Override
   Ref applyToConsumer(Ref consumer) {
-    Ref ref = super.applyToConsumer(consumer)
-        .name(name);
-    ref.branch()
+    return super.applyToConsumer(consumer)
+        .name(name)
+        .branch()
         .metadata(metadata)
         .children(this.tree.stream())
         .commits(cc -> {
@@ -558,8 +558,8 @@ class InternalBranch extends InternalRef {
               mutations.done();
             }
           }
-        });
-    return ref;
+        })
+        .toRef();
   }
 
 }

@@ -38,9 +38,20 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
    * Abstract implementation of {@link Tag}, all methods return {@code this}.
    */
   public abstract static class AbstractTag implements Tag {
+    private final Ref ref;
+
+    protected AbstractTag(Ref ref) {
+      this.ref = ref;
+    }
+
     @Override
     public Tag commit(Id commit) {
       return this;
+    }
+
+    @Override
+    public Ref toRef() {
+      return ref;
     }
   }
 
@@ -48,6 +59,12 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
    * Abstract implementation of {@link Branch}, all methods return {@code this}.
    */
   public abstract static class AbstractBranch implements Branch {
+    private final Ref ref;
+
+    protected AbstractBranch(Ref ref) {
+      this.ref = ref;
+    }
+
     @Override
     public Branch metadata(Id metadata) {
       return this;
@@ -61,6 +78,11 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
     @Override
     public Branch commits(Consumer<BranchCommit> commits) {
       return this;
+    }
+
+    @Override
+    public Ref toRef() {
+      return ref;
     }
   }
 

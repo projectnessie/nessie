@@ -167,6 +167,11 @@ abstract class InternalRef extends PersistentBase<Ref> {
         checkSet(commit, "commit");
         return new InternalTag(id, name, commit, dt);
       }
+
+      @Override
+      public Ref toRef() {
+        return Builder.this;
+      }
     }
 
     private class BranchBuilder extends Builder<InternalBranch> implements Branch {
@@ -195,6 +200,11 @@ abstract class InternalRef extends PersistentBase<Ref> {
         this.commits = new ArrayList<>();
         commits.accept(new InternalBranchCommit());
         return this;
+      }
+
+      @Override
+      public Ref toRef() {
+        return Builder.this;
       }
 
       @Override
