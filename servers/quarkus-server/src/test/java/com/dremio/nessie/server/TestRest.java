@@ -401,7 +401,7 @@ class TestRest {
                         .put(different))
             ).getMessage(),
             startsWith("Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
-                + "`com.dremio.nessie.model.Tag`: known type ids = []\n"))
+                + "`com.dremio.nessie.model.Tag`: known type ids = [BRANCH, HASH, TAG]\n"))
     );
   }
 
