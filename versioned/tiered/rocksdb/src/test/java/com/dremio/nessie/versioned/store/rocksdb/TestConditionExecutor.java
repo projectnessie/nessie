@@ -37,8 +37,10 @@ public class TestConditionExecutor {
   private static final Random RANDOM = new Random(8612341233543L);
   private static final Entity TRUE_ENTITY = Entity.ofBoolean(true);
   private static final Entity FALSE_ENTITY = Entity.ofBoolean(false);
+  private static final Entity ONE = Entity.ofNumber(1L);
   protected static Random random;
   protected Store store;
+  private final String SEPARATOR = ".";
 
   @BeforeEach
   void setup() {
@@ -62,7 +64,25 @@ public class TestConditionExecutor {
   @Test
   public void executorL1CommitMetadata() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, "metadataId", ID.toEntity()));
+    condition.add(new Function(Function.EQUALS, RocksL1.COMMIT_METADATA, ID.toEntity()));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1IncrementalKeyListCheckpointId() {
+    final Condition condition = new Condition();
+    StringBuilder str = new StringBuilder().append(RocksL1.INCREMENTAL_KEY_LIST).append(SEPARATOR).append(RocksL1.CHECKPOINT_ID);
+    condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1IncrementalKeyListDistanceFromCheckpoint() {
+    final Condition condition = new Condition();
+    StringBuilder str = new StringBuilder().append(RocksL1.INCREMENTAL_KEY_LIST).append(SEPARATOR).append(RocksL1.DISTANCE_FROM_CHECKPOINT);
+    condition.add(new Function(Function.EQUALS, str.toString(), ONE));
     RocksL1 l1 = (RocksL1) createL1(random);
     Assertions.assertTrue(l1.evaluate(condition));
   }
@@ -103,7 +123,7 @@ public class TestConditionExecutor {
       .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
       .ancestors(Stream.of(RocksL1.EMPTY.getId(), Id.EMPTY))
       .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
-      .incrementalKeyList(RocksL1.EMPTY.getId(), 1);
+      .incrementalKeyList(ID, 1);
   }
 
 

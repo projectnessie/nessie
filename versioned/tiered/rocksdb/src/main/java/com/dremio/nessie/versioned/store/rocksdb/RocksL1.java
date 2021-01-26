@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 
 public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
@@ -36,12 +37,14 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
   private int distanceFromCheckpoint; // incrementalKeyList
   private Stream<Id> fragmentIds; // completeKeyList
 
-  private static final String COMMIT_METADATA = "metadataId";
-  private static final String ANCESTORS = "ancestors";
-  private static final String CHILDREN = "children";
-  private static final String KEY_LIST = "keylist";
-  private static final String INCREMENTAL_KEY_LIST = "incrementalKeyList";
-  private static final String COMPLETE_KEY_LIST = "completeKeyList";
+  public static final String COMMIT_METADATA = "metadataId";
+  public static final String ANCESTORS = "ancestors";
+  public static final String CHILDREN = "children";
+  public static final String KEY_LIST = "keylist";
+  public static final String INCREMENTAL_KEY_LIST = "incrementalKeyList";
+  public static final String COMPLETE_KEY_LIST = "completeKeyList";
+  public static final String CHECKPOINT_ID = "checkpointId";
+  public static final String DISTANCE_FROM_CHECKPOINT = "distanceFromCheckpoint";
 
   static RocksL1 EMPTY =
       new RocksL1(Id.EMPTY, null, null, null, null, 0L);
@@ -114,28 +117,31 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
     for (Function function: condition.functionList) {
       // Retrieve entity at function.path
       List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
-      for (String segment : path) {
-        if (segment.equals(COMMIT_METADATA)) {
-          if ((path.size() == 1)
-            && (function.getOperator().equals(Function.EQUALS))
-            && (!this.metadataId.toEntity().equals(function.getValue()))) {
-            return false;
-          }
-        } else if (segment.equals(ANCESTORS)) {
-          // Is a Stream
+      String segment = path.get(0);
+      if (segment.equals(COMMIT_METADATA)) {
+        return ((path.size() == 1)
+          && (function.getOperator().equals(Function.EQUALS))
+          && (this.metadataId.toEntity().equals(function.getValue())));
+      } else if (segment.equals(ANCESTORS)) {
+        // Is a Stream
 
-        } else if (segment.equals(CHILDREN)) {
-          return false;
-        } else if (segment.equals(KEY_LIST)) {
-          return false;
-        } else if (segment.equals(INCREMENTAL_KEY_LIST)) {
-          return false;
-        } else if (segment.equals(COMPLETE_KEY_LIST)) {
-          return false;
+      } else if (segment.equals(CHILDREN)) {
+        return false;
+      } else if (segment.equals(KEY_LIST)) {
+        return false;
+      } else if (segment.equals(INCREMENTAL_KEY_LIST)) {
+        if ((path.size() == 2) && (function.getOperator().equals(Function.EQUALS))) {
+          if (path.get(1).equals(CHECKPOINT_ID)) {
+            return (this.checkpointId.toEntity().equals(function.getValue()));
+          } else if (path.get(1).equals((DISTANCE_FROM_CHECKPOINT))) {
+            return (Entity.ofNumber(this.distanceFromCheckpoint).equals(function.getValue()));
+          }
         }
+      } else if (segment.equals(COMPLETE_KEY_LIST)) {
+        return false;
       }
     }
-    return true;
+    return false;
   }
 
   public Stream<Id> getAncestors() {
