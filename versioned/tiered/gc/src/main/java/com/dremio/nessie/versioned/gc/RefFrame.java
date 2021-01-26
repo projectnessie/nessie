@@ -89,7 +89,7 @@ public class RefFrame implements Serializable {
 
       @Override
       public Tag tag() {
-        return new AbstractTag() {
+        return new AbstractTag(this) {
           @Override
           public Tag commit(Id commit) {
             frame.id = IdFrame.of(commit);
@@ -100,7 +100,7 @@ public class RefFrame implements Serializable {
 
       @Override
       public Branch branch() {
-        return new AbstractBranch() {
+        return new AbstractBranch(this) {
           @Override
           public Branch commits(Consumer<BranchCommit> commits) {
             commits.accept(new BranchCommit() {

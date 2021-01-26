@@ -93,6 +93,11 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
       addEntitySafe(COMMIT, idValue(commit));
       return this;
     }
+
+    @Override
+    public Ref toRef() {
+      return DynamoRef.this;
+    }
   }
 
   class DynamoBranch implements Branch {
@@ -114,6 +119,11 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
       commits.accept(serializedCommits);
       addEntitySafe(COMMITS, builder().l(serializedCommits.commitsList).build());
       return this;
+    }
+
+    @Override
+    public Ref toRef() {
+      return DynamoRef.this;
     }
   }
 
