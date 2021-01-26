@@ -75,11 +75,11 @@ class InternalTag extends InternalRef {
 
   @Override
   Ref applyToConsumer(Ref consumer) {
-    Ref ref = super.applyToConsumer(consumer)
-        .name(name);
-    ref.tag()
-        .commit(commit);
-    return ref;
+    return super.applyToConsumer(consumer)
+        .name(name)
+        .tag()
+        .commit(commit)
+        .toRef();
   }
 
 }

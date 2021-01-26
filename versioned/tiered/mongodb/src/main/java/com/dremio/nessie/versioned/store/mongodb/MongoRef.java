@@ -106,6 +106,11 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
       serializeId(COMMIT, commit);
       return this;
     }
+
+    @Override
+    public Ref toRef() {
+      return MongoRef.this;
+    }
   }
 
   class MongoBranch implements Branch {
@@ -128,6 +133,11 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
       commits.accept(new MongoBranchCommit());
       bsonWriter.writeEndArray();
       return this;
+    }
+
+    @Override
+    public Ref toRef() {
+      return MongoRef.this;
     }
   }
 
