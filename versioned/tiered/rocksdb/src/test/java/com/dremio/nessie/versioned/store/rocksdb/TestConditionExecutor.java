@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -83,6 +85,39 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     StringBuilder str = new StringBuilder().append(RocksL1.INCREMENTAL_KEY_LIST).append(SEPARATOR).append(RocksL1.DISTANCE_FROM_CHECKPOINT);
     condition.add(new Function(Function.EQUALS, str.toString(), ONE));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1ChildrenSize() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.SIZE, RocksL1.CHILDREN, Entity.ofNumber(RocksL1.SIZE)));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1ChildrenEqualsList() {
+    List<Entity> idsAsEntity = new ArrayList<>(RocksL1.SIZE);
+    for (int i=0; i<RocksL1.SIZE; i++) {
+      idsAsEntity.add(ID.toEntity());
+    }
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksL1.CHILDREN, Entity.ofList(idsAsEntity)));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1ChildrenEqualsListPosition() {
+    List<Entity> idsAsEntity = new ArrayList<>(RocksL1.SIZE);
+    for (int i=0; i<RocksL1.SIZE; i++) {
+      idsAsEntity.add(ID.toEntity());
+    }
+    final Condition condition = new Condition();
+    StringBuilder str = new StringBuilder().append(RocksL1.CHILDREN).append("(").append("3").append(")");
+    condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
     RocksL1 l1 = (RocksL1) createL1(random);
     Assertions.assertTrue(l1.evaluate(condition));
   }

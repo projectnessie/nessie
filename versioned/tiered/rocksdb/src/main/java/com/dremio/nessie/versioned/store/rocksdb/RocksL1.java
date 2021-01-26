@@ -15,9 +15,11 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1;
@@ -121,20 +123,41 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
       if (segment.equals(COMMIT_METADATA)) {
         return ((path.size() == 1)
           && (function.getOperator().equals(Function.EQUALS))
-          && (this.metadataId.toEntity().equals(function.getValue())));
+          && (metadataId.toEntity().equals(function.getValue())));
       } else if (segment.equals(ANCESTORS)) {
         // Is a Stream
 
-      } else if (segment.equals(CHILDREN)) {
+      } else if (segment.startsWith(CHILDREN)) {
+        // Children are a list. EQUALS will either compare a specified position or the whole list.
+        if (path.size() == 1) {
+          if (function.getOperator().equals(Function.EQUALS)) {
+            List<String> arguments = splitArrayString(segment);
+            if (arguments.size() == 1) { // compare complete list
+              // TODO: There has to be a better way to compare lists.
+              List<Id> ids = tree.collect(Collectors.toList());
+              List<Entity> idsAsEntity = new ArrayList<>();
+              for (Id id : ids) {
+                idsAsEntity.add(id.toEntity());
+              }
+              return (Entity.ofList(idsAsEntity).equals(function.getValue()));
+            } else if (arguments.size() == 2) { // compare individual element of list
+              int position = Integer.parseInt(arguments.get(1));
+              Id id = tree.collect(Collectors.toList()).get(position);
+              return (id.toEntity().equals(function.getValue()));
+            }
+          } else if (function.getOperator().equals(Function.SIZE)) {
+            return (tree.collect(Collectors.toList()).size() == (int)function.getValue().getNumber());
+          }
+        }
         return false;
       } else if (segment.equals(KEY_LIST)) {
         return false;
       } else if (segment.equals(INCREMENTAL_KEY_LIST)) {
-        if ((path.size() == 2) && (function.getOperator().equals(Function.EQUALS))) {
+        if (path.size() == 2 && (function.getOperator().equals(Function.EQUALS))) {
           if (path.get(1).equals(CHECKPOINT_ID)) {
-            return (this.checkpointId.toEntity().equals(function.getValue()));
+            return (checkpointId.toEntity().equals(function.getValue()));
           } else if (path.get(1).equals((DISTANCE_FROM_CHECKPOINT))) {
-            return (Entity.ofNumber(this.distanceFromCheckpoint).equals(function.getValue()));
+            return (Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue()));
           }
         }
       } else if (segment.equals(COMPLETE_KEY_LIST)) {
@@ -143,6 +166,13 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
     }
     return false;
   }
+
+  List<String> splitArrayString(String str) {
+    // Remove enclosing brackets
+    final String delimeters = "\\(|\\)";
+    return Arrays.asList(str.split(delimeters));
+  }
+
 
   public Stream<Id> getAncestors() {
     return parentList;
