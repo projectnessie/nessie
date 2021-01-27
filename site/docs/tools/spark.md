@@ -15,8 +15,8 @@ for more info.
 
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
 the [Spark 2](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark/{{ versions.iceberg }}/iceberg-spark-{{ versions.iceberg }}.jar)
-or [Spark 3](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark3/{{ versions.iceberg }}/iceberg-spark3-{{ versions.iceberg }}.jar) Nessie plugin jar. This fat jar contains
-all Nessie **and** Apache Iceberg libraries required for operation.
+or [Spark 3](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark3/{{ versions.iceberg }}/iceberg-spark3-{{ versions.iceberg }}.jar) Nessie plugin jar. This fat jar
+is distributed by the Apache Iceberg project and contains all Apache Iceberg libraries required for operation, including the built in Nessie Catalog.
 
 In pyspark this would look like
 
