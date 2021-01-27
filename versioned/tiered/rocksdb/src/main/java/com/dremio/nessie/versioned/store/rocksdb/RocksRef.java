@@ -26,6 +26,12 @@ import com.dremio.nessie.versioned.store.Id;
 
 public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
 
+  public static final String TYPE = "type";
+  public static final String METADATA = "metadata";
+  public static final String COMMITS = "commits";
+  public static final String COMMIT = "commit";
+  public static final String CHILDREN = "children";
+
   // TODO: Create correct constuctor with all attributes.
   static RocksRef EMPTY =
       new RocksRef();
@@ -54,20 +60,19 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
         List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
 
         for (String segment : path) {
-          if (segment.equals("type")
+          if (segment.equals(TYPE)
               && (path.size() == 1)
               && (function.getOperator().equals(Function.EQUALS))
               && (internalBranch.type.toString() != function.getValue().getString())) {
             return false;
-          } else if (segment.equals("children")) {
-            // Is a Stream
-
-          } else if (segment.equals("metadata")
+          } else if (segment.equals(CHILDREN)) {
+            evaluateStream(function, children);
+          } else if (segment.equals(METADATA)
               && (path.size() == 1)
               && (function.getOperator().equals(Function.EQUALS))) {
             // TODO: We require a getMetadata() accessor in InternalBranch
             return false;
-          } else if (segment.equals(("commits"))) {
+          } else if (segment.equals(COMMITS)) {
             if (function.getOperator().equals(Function.SIZE)) {
               // Is a List
               // TODO: We require a getCommits() accessor in InternalBranch
@@ -87,12 +92,12 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
           List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
 
           for (String segment : path) {
-            if (segment.equals("type")
+            if (segment.equals(TYPE)
                 && (path.size() == 1)
                 && (function.getOperator().equals(Function.EQUALS))
                 && (rocksTag.type.toString() != function.getValue().getString())) {
               return false;
-            } else if (segment.equals(("commit"))) {
+            } else if (segment.equals(COMMIT)) {
               if (function.getOperator().equals(Function.EQUALS)) {
                 if (!rocksTag.commit.equals(function.getValue().getBinary())) {
                   // TODO: We require a getCommit() accessor in internalTag
