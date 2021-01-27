@@ -18,7 +18,6 @@ package com.dremio.nessie.versioned.store.rocksdb;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1;
@@ -114,33 +113,43 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
 
   @Override
   public boolean evaluate(Condition condition) {
+    boolean result = true;
     for (Function function: condition.functionList) {
       // Retrieve entity at function.path
       List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
       String segment = path.get(0);
       if (segment.equals(COMMIT_METADATA)) {
-        return ((path.size() == 1)
+        result &= ((path.size() == 1)
           && (function.getOperator().equals(Function.EQUALS))
           && (metadataId.toEntity().equals(function.getValue())));
       } else if (segment.startsWith(ANCESTORS)) {
-        return evaluateStream(function, parentList);
+        result &= evaluateStream(function, parentList);
       } else if (segment.startsWith(CHILDREN)) {
-        return evaluateStream(function, tree);
+        result &= evaluateStream(function, tree);
       } else if (segment.equals(KEY_LIST)) {
-        return false;
+        result &= false;
       } else if (segment.equals(INCREMENTAL_KEY_LIST)) {
         if (path.size() == 2 && (function.getOperator().equals(Function.EQUALS))) {
           if (path.get(1).equals(CHECKPOINT_ID)) {
-            return (checkpointId.toEntity().equals(function.getValue()));
+            result &= (checkpointId.toEntity().equals(function.getValue()));
           } else if (path.get(1).equals((DISTANCE_FROM_CHECKPOINT))) {
-            return (Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue()));
+            result &= (Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue()));
+          } else {
+            // Invalid Condition Function.
+            return false;
           }
+        } else {
+          // Invalid Condition Function.
+          return false;
         }
       } else if (segment.startsWith(COMPLETE_KEY_LIST)) {
-        return evaluateStream(function, fragmentIds);
+        result &= evaluateStream(function, fragmentIds);
+      } else {
+        // Invalid Condition Function.
+        return false;
       }
     }
-    return false;
+    return result;
   }
 
   public Stream<Id> getAncestors() {

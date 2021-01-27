@@ -40,7 +40,7 @@ import com.google.common.collect.Iterators;
  * Maintains a map of positions to ids. The map is immutable. Each operation, generates a new map. All maps keep track
  * of their original state so one can see what items changed over time.
  */
-class IdMap implements Iterable<Id> {
+public class IdMap implements Iterable<Id> {
 
   private final PositionDelta[] deltas;
 
