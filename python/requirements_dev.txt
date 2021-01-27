@@ -1,7 +1,7 @@
 -r requirements.txt
 bump2version==1.0.1
 codecov==2.1.11
-coverage==5.3.1
+coverage==5.4
 flake8==3.8.4
 pip==21.0
 pytest==6.2.2
