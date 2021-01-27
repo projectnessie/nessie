@@ -339,7 +339,7 @@ These are set as follows in code (or through other methods as described [here](h
     ``` python
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
-            .config("spark.jars", "../../clients/iceberg-spark3/target/nessie-iceberg-spark3-{{ versions.java}}.jar") \
+            .config("spark.jars", "../../clients/deltalake-spark3/target/nessie-deltalake-spark3-{{ versions.java}}.jar") \
             .config("spark.hadoop.nessie.url", "http://localhost:19120/api/v1") \
             .config("spark.hadoop.nessie.ref", "main") \
             .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
@@ -348,7 +348,7 @@ These are set as follows in code (or through other methods as described [here](h
             .config("spark.delta.logStore.class", "com.dremio.nessie.deltalake.NessieLogStore") \
             .getOrCreate()
     ```
-Note above we specified the option `spark.hadoop.nessie.ref`. This value sets the default branch that the iceberg
+Note above we specified the option `spark.hadoop.nessie.ref`. This value sets the default branch that the delta
 catalog will use. This can be changed by changing the `hadoopConfiguration` however best practice would be to use a
 single write context (branch) for the duration of the spark session.
 
