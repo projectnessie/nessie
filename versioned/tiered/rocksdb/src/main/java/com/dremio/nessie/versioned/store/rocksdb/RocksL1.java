@@ -122,25 +122,10 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
         return ((path.size() == 1)
           && (function.getOperator().equals(Function.EQUALS))
           && (metadataId.toEntity().equals(function.getValue())));
-      } else if (segment.equals(ANCESTORS)) {
-        // Is a Stream
-
+      } else if (segment.startsWith(ANCESTORS)) {
+        return evaluateStream(function, parentList);
       } else if (segment.startsWith(CHILDREN)) {
-        // Children are a list. EQUALS will either compare a specified position or the whole list.
-        if (path.size() == 1) {
-          if (function.getOperator().equals(Function.EQUALS)) {
-            List<String> arguments = splitArrayString(segment);
-            if (arguments.size() == 1) { // compare complete list
-              return (toEntity(tree).equals(function.getValue()));
-            } else if (arguments.size() == 2) { // compare individual element of list
-              int position = Integer.parseInt(arguments.get(1));
-              return (toEntity(tree, position).equals(function.getValue()));
-            }
-          } else if (function.getOperator().equals(Function.SIZE)) {
-            return (tree.collect(Collectors.toList()).size() == (int)function.getValue().getNumber());
-          }
-        }
-        return false;
+        return evaluateStream(function, tree);
       } else if (segment.equals(KEY_LIST)) {
         return false;
       } else if (segment.equals(INCREMENTAL_KEY_LIST)) {
@@ -151,8 +136,34 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
             return (Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue()));
           }
         }
-      } else if (segment.equals(COMPLETE_KEY_LIST)) {
-        return false;
+      } else if (segment.startsWith(COMPLETE_KEY_LIST)) {
+        return evaluateStream(function, fragmentIds);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Evaluates if the stream of Id meets the Condition Function
+   * @param function the function
+   * @param stream
+   * @return
+   */
+  boolean evaluateStream(Function function, Stream<Id> stream) {
+    // stream is a list. EQUALS will either compare a specified position or the whole list.
+    List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
+    String segment = path.get(0);
+    if (path.size() == 1) {
+      if (function.getOperator().equals(Function.EQUALS)) {
+        List<String> arguments = splitArrayString(segment);
+        if (arguments.size() == 1) { // compare complete list
+          return (toEntity(stream).equals(function.getValue()));
+        } else if (arguments.size() == 2) { // compare individual element of list
+          int position = Integer.parseInt(arguments.get(1));
+          return (toEntity(stream, position).equals(function.getValue()));
+        }
+      } else if (function.getOperator().equals(Function.SIZE)) {
+        return (tree.collect(Collectors.toList()).size() == (int)function.getValue().getNumber());
       }
     }
     return false;

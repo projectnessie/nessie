@@ -111,14 +111,68 @@ public class TestConditionExecutor {
 
   @Test
   public void executorL1ChildrenEqualsListPosition() {
+    final Condition condition = new Condition();
+    StringBuilder str = new StringBuilder().append(RocksL1.CHILDREN).append("(").append("3").append(")");
+    condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1AncestorsSize() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.SIZE, RocksL1.ANCESTORS, Entity.ofNumber(RocksL1.SIZE)));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1AncestorsEqualsList() {
     List<Entity> idsAsEntity = new ArrayList<>(RocksL1.SIZE);
     for (int i=0; i<RocksL1.SIZE; i++) {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = new Condition();
-    StringBuilder str = new StringBuilder().append(RocksL1.CHILDREN).append("(").append("3").append(")");
+    condition.add(new Function(Function.EQUALS, RocksL1.ANCESTORS, Entity.ofList(idsAsEntity)));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1AncestorsEqualsListPosition() {
+    final Condition condition = new Condition();
+    StringBuilder str = new StringBuilder().append(RocksL1.ANCESTORS).append("(").append("3").append(")");
     condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
     RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1FragmentsSize() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.SIZE, RocksL1.COMPLETE_KEY_LIST, Entity.ofNumber(RocksL1.SIZE)));
+    RocksL1 l1 = (RocksL1) createL1CompleteKeyList(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1FragmentsEqualsList() {
+    List<Entity> idsAsEntity = new ArrayList<>(RocksL1.SIZE);
+    for (int i=0; i<RocksL1.SIZE; i++) {
+      idsAsEntity.add(ID.toEntity());
+    }
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksL1.COMPLETE_KEY_LIST, Entity.ofList(idsAsEntity)));
+    RocksL1 l1 = (RocksL1) createL1CompleteKeyList(random);
+    Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1FragmentsEqualsListPosition() {
+    final Condition condition = new Condition();
+    StringBuilder str = new StringBuilder().append(RocksL1.COMPLETE_KEY_LIST).append("(").append("3").append(")");
+    condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
+    RocksL1 l1 = (RocksL1) createL1CompleteKeyList(random);
     Assertions.assertTrue(l1.evaluate(condition));
   }
 
@@ -156,9 +210,17 @@ public class TestConditionExecutor {
   public static L1 createL1(Random random) {
     return new RocksL1().commitMetadataId(ID)
       .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
-      .ancestors(Stream.of(RocksL1.EMPTY.getId(), Id.EMPTY))
+      .ancestors(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
       .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
       .incrementalKeyList(ID, 1);
+  }
+
+  public static L1 createL1CompleteKeyList(Random random) {
+    return new RocksL1().commitMetadataId(ID)
+      .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
+      .ancestors(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
+      .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
+      .completeKeyList(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID));
   }
 
 

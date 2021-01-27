@@ -25,6 +25,10 @@ import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 
+/**
+ * An implementation of @{BaseValue} used for ConditionExpression and UpdateExpression evaluation.
+ * @param <C> Specialization of a specific BaseValue interface.
+ */
 abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
   private Id id;
