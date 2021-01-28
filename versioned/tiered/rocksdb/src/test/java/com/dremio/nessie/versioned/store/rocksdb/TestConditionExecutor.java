@@ -22,7 +22,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -43,9 +42,9 @@ public class TestConditionExecutor {
   private static final Entity ONE = Entity.ofNumber(1L);
   protected static Random random = new Random(getRandomSeed());
   private static final String sampleName = createString(random, 10);
+  private static final String SEPARATOR = ".";
 
   protected Store store;
-  private final String SEPARATOR = ".";
 
   protected static final long getRandomSeed() {
     return -2938423452345L;
@@ -365,12 +364,12 @@ public class TestConditionExecutor {
         bc.id(ID)
           .commit(ID_2)
           .parent(ID_3)
-          .done();
+            .done();
         bc.id(ID_4)
           .commit(ID)
           .delta(1, ID_2, ID_3)
           .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
-          .done();
+            .done();
       });
   }
 
