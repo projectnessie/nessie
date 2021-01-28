@@ -37,8 +37,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +56,6 @@ import com.dremio.nessie.client.rest.NessieHttpResponseFilter;
 import com.dremio.nessie.error.NessieConflictException;
 import com.dremio.nessie.error.NessieNotFoundException;
 import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.ContentsKey;
 import com.dremio.nessie.model.EntriesResponse;
@@ -72,8 +69,6 @@ import com.dremio.nessie.model.MultiGetContentsResponse.ContentsWithKey;
 import com.dremio.nessie.model.Operations;
 import com.dremio.nessie.model.Reference;
 import com.dremio.nessie.model.Tag;
-import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -91,9 +86,6 @@ class TestRest {
   private ContentsApi contents;
   private HttpClient httpClient;
 
-  @Inject
-  VersionStore<Contents, CommitMeta> versionStore;
-
   @BeforeEach
   void init() {
     String path = "http://localhost:19121/api/v1";
@@ -105,10 +97,6 @@ class TestRest {
         .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     httpClient = HttpClient.builder().setBaseUri(path).setObjectMapper(mapper).build();
     httpClient.register(new NessieHttpResponseFilter(mapper));
-
-    if (versionStore instanceof InMemoryVersionStore) {
-      ((InMemoryVersionStore<?, ?>) versionStore).clearUnsafe();
-    }
   }
 
   @AfterEach
@@ -133,7 +121,9 @@ class TestRest {
     tree.createReference(Branch.of(branchName, someHash));
     tree.createReference(Branch.of(branchName2, someHash));
 
-    Map<String, Reference> references = tree.getAllReferences().stream().collect(Collectors.toMap(Reference::getName, Function.identity()));
+    Map<String, Reference> references = tree.getAllReferences().stream()
+        .filter(r -> "main".equals(r.getName()) || r.getName().endsWith(refNamePart))
+        .collect(Collectors.toMap(Reference::getName, Function.identity()));
     assertThat(references.values(), containsInAnyOrder(
         referenceWithNameAndType("main", Branch.class),
         referenceWithNameAndType(tagName, Tag.class),
