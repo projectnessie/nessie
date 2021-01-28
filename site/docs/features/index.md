@@ -27,8 +27,8 @@ works fine, because data files[^1] are immutable.
 * Changes to the contents of the data lake are
   [recorded in Nessie](#working-with-data-in-nessie) as *commits* without copying
   the actual data.
-* Add [meanings to the changes](#commit-messages-and-more) to your data lake.
-* [Always-consistent](#branches) view of all the data 
+* Add [meaning to the changes](#commit-messages-and-more) to your data lake.
+* [Always-consistent](#branches) view to all the data 
 * Sets of changes, like the whole [work of a distributed Spark job](#working-branches-for-analytics-jobs).
   or [experiments of data engineers](#working-branches-for-humans) are
   isolated in Nessie via *branches*. Failed jobs do not add additional harm to the data.
@@ -49,14 +49,14 @@ A common (mis)understanding of Data Lakes is "throw everything in and see
 what happens". This might work for some time, leaving data, especially large
 amounts of data, unorganized is a rather bad idea. A common best-practice
 is still to properly organize the (immutable) data files in directories that
-reflect both orgenizational (think: units/groups in your company) and
+reflect both organizational (think: units/groups in your company) and
 structural (think: table schema) aspects.
 
 New data files can be added to the set of files for a particular table.
 Data files can also contain updates to and deletions of existing data. For
 example: if you need to make changes to the data in data-file `A`, you
 basically have to read that data-file, apply the changes and write a new
-data-file `A'` with the changes, which makes `data-file-A` irrelevant.
+data-file `A'` with the changes, which makes data-file `A` irrelevant.
 
 The amount of data held in data lakes is rather huge (GBs, TBs, PBs), and so
 is the number of tables and data files (100s of thousands, millions).
@@ -93,6 +93,7 @@ the [About Git](https://git-scm.com/about) pages as a quick start.
 | Term | Meaning in Nessie
 | --- | ---
 | Commit | An atomic change to a set of data files.
+| Hash | Nessie-commits are identified by a SHA-hash.[^3]
 | (Multi-table) transaction | Since a Nessie commit can group data data files from many tables, you can think of a Nessie commit as a (multi-table) transaction.
 | Branch | Named reference to a commit. A new commit to a branch updates the branch to the new commit.
 | Tag | Named reference to a commit. Not automatically changed.
@@ -304,14 +305,8 @@ is that Nessie-commits have only parent (predecessor). Nessie-merge operations
 technically work a bit different: the changes in branch to be merged are replayed
 on top of the target branch.
 
-It would be nice to give the commits a meaningful commit messages, like
-`aggregate-financial-stuff 2020/12/24`, so people that look through the
-history of the data can grasp what that commit changes and why it's there.
-
-Before you actually merge the data from a working-branch into the "main" branch,
-it is possible to review all the changes made by your job - either programmatically,
-like running some process that validates the state of the branch, or asking a human
-to take a look.
+It is recommended to give a commit a [meaningful commit message](./best-practices/#commit-messages)
+and to let someone [review the changes](./best-practices/#reviews).
 
 As described above in [Transactions in Nessie](#transaction-in-nessie), the merge
 operation in the above example can be considered a *Nessie distributed transaction*. 
@@ -378,7 +373,9 @@ Nessie keeps track of unused data files and collects the garbage for you.
 
 [^2]: Apache, Hive, Spark, Iceberg, Parquet are trademarks of The Apache Software Foundation.
 
-[^3]: This is a SHA-hash. All commits in Nessie (and in Git) are identified using such a hash.
+[^3]: Nessie-commits are identified by a SHA-hash. All commits in Nessie (and in Git) are
+  identified using such a hash. The value of each hash is generated from the relevant contents
+  and attributes of each commit that are stored in Nessie.
 
 [^4]: There are distributed relational databases that are not implemented as a single monolith.
   Those "proper" distributed relational databases use distributed consensus algorithms like
