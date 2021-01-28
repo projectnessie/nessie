@@ -47,7 +47,7 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
   public static final String DISTANCE_FROM_CHECKPOINT = "distanceFromCheckpoint";
 
   static RocksL1 EMPTY =
-      new RocksL1(Id.EMPTY, null, null, null, null, 0L);
+      new RocksL1(Id.EMPTY, null, Id.EMPTY, null, null, 0L);
 
   static Id EMPTY_ID = EMPTY.getId();
 
@@ -118,7 +118,11 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
       // Retrieve entity at function.path
       List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
       String segment = path.get(0);
-      if (segment.equals(COMMIT_METADATA)) {
+      if (segment.equals(ID)) {
+        result &= ((path.size() == 1)
+          && (function.getOperator().equals(Function.EQUALS))
+          && (getId().toEntity().equals(function.getValue())));
+      } else if (segment.equals(COMMIT_METADATA)) {
         result &= ((path.size() == 1)
           && (function.getOperator().equals(Function.EQUALS))
           && (metadataId.toEntity().equals(function.getValue())));
@@ -127,7 +131,7 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
       } else if (segment.startsWith(CHILDREN)) {
         result &= evaluateStream(function, tree);
       } else if (segment.equals(KEY_LIST)) {
-        result &= false;
+        return false;
       } else if (segment.equals(INCREMENTAL_KEY_LIST)) {
         if (path.size() == 2 && (function.getOperator().equals(Function.EQUALS))) {
           if (path.get(1).equals(CHECKPOINT_ID)) {

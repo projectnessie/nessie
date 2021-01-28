@@ -47,7 +47,7 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
   static RocksRef EMPTY =
       new RocksRef();
 
-  static Id EMPTY_ID = EMPTY.getId();
+  static Id EMPTY_ID = Id.EMPTY;
 
   RefType type;
   String name;
@@ -71,23 +71,28 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
         // Branch evaluation
         List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
         String segment = path.get(0);
-        if (segment.equals(TYPE)) {
+        if (segment.equals(ID)) {
+          result &= ((path.size() == 1)
+            && (function.getOperator().equals(Function.EQUALS))
+            && (getId().toEntity().equals(function.getValue())));
+        }
+        else if (segment.equals(TYPE)) {
           result &= ((path.size() == 1)
                 && (function.getOperator().equals(Function.EQUALS))
-                && (!type.toString().equals(function.getValue().getString())));
-        } else if (segment.equals(CHILDREN)) {
+                && (type.toString().equals(function.getValue().getString())));
+        } else if (segment.startsWith(CHILDREN)) {
           evaluateStream(function, children);
         } else if (segment.equals(METADATA)) {
           result &= ((path.size() == 1)
                 && (function.getOperator().equals(Function.EQUALS)))
                 && (metadata.toEntity().equals(function.getValue()));
         } else if (segment.equals(COMMITS)) {
+          // TODO: refactor once jdbc-store Store changes are available.
           if (function.getOperator().equals(Function.SIZE)) {
             // Is a List
-            // TODO: We require a getCommits() accessor in InternalBranch
-            result &= false;
+            return false;
           } else if (function.getOperator().equals(Function.EQUALS)) {
-            // TODO: We require a getCommits() accessor in InternalBranch
+            return false;
           } else {
             return false;
           }
@@ -98,18 +103,27 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
         // Tag evaluation
         List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
         String segment = path.get(0);
-        if (segment.equals(TYPE)) {
-          result &= ((path.size() == 1)
+        switch (segment) {
+          case ID:
+            result &= ((path.size() == 1)
+              && (function.getOperator().equals(Function.EQUALS))
+              && (getId().toEntity().equals(function.getValue())));
+            break;
+          case TYPE:
+            result &= ((path.size() == 1)
               && (function.getOperator().equals(Function.EQUALS))
               && (type.toString().equals(function.getValue().getString())));
-        } else if (segment.equals(NAME)) {
-          result &= (function.getOperator().equals(Function.EQUALS)
+            break;
+          case NAME:
+            result &= (function.getOperator().equals(Function.EQUALS)
               && (name.equals(function.getValue().getString())));
-        } else if (segment.equals(COMMIT)) {
-          result &= (function.getOperator().equals(Function.EQUALS)
-            && (commit.toEntity().equals(function.getValue())));
-        } else {
-          return false;
+            break;
+          case COMMIT:
+            result &= (function.getOperator().equals(Function.EQUALS)
+              && (commit.toEntity().equals(function.getValue())));
+            break;
+          default:
+            return false;
         }
       }
     }

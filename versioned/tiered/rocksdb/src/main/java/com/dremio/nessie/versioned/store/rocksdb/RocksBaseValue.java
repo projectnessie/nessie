@@ -32,6 +32,8 @@ import com.dremio.nessie.versioned.store.Id;
  */
 abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
+  public static final String ID = "id";
+
   private Id id;
   private long dt;
 
@@ -100,7 +102,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    * @return
    */
   boolean evaluateStream(Function function, Stream<Id> stream) {
-    // stream is a list. EQUALS will either compare a specified position or the whole list.
+    // EQUALS will either compare a specified position or the whole stream as a List.
     List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
     String segment = path.get(0);
     if (path.size() == 1) {

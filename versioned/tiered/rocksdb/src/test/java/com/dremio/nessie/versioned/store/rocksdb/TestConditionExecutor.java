@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import com.dremio.nessie.tiered.builder.L1;
+import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -43,16 +44,22 @@ public class TestConditionExecutor {
   protected static Random random;
   protected Store store;
   private final String SEPARATOR = ".";
+  private static String NAME;
+
 
   @BeforeEach
   void setup() {
     random = new Random(getRandomSeed());
+    NAME = createString(random, 10);
   }
 
   protected static final long getRandomSeed() {
     return -2938423452345L;
   }
   static final Id ID = createId(new Random(getRandomSeed()));
+  static final Id ID_2 = createId(new Random(getRandomSeed()));
+  static final Id ID_3 = createId(new Random(getRandomSeed()));
+  static final Id ID_4 = createId(new Random(getRandomSeed()));
 
   @Test
   public void executorL1Empty() {
@@ -61,6 +68,14 @@ public class TestConditionExecutor {
     condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
     RocksL1 l1 = (RocksL1) createL1(random);
     Assertions.assertFalse(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL1ID() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksL1.ID, RocksL1.EMPTY_ID.toEntity()));
+    RocksL1 l1 = (RocksL1) createL1(random);
+    Assertions.assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -176,6 +191,102 @@ public class TestConditionExecutor {
     Assertions.assertTrue(l1.evaluate(condition));
   }
 
+  @Test
+  public void executorTagEmpty() {
+    final Condition condition = new Condition();
+    final String path = createPath();
+    condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    RocksRef ref = (RocksRef) createTag(random);
+    Assertions.assertFalse(ref.evaluate(condition));
+  }
+
+  @Test
+  public void executorTagID() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksRef.ID, RocksRef.EMPTY_ID.toEntity()));
+    RocksRef ref = (RocksRef) createTag(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
+  @Test
+  public void executorTagType() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksRef.TYPE, Entity.ofString(Ref.RefType.TAG.toString())));
+    RocksRef ref = (RocksRef) createTag(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
+  @Test
+  public void executorTagName() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksRef.NAME, Entity.ofString(NAME)));
+    RocksRef ref = (RocksRef) createTag(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
+  // Children do not exist for Tags
+  @Test
+  public void executorTagChildrenEqualsListPosition() {
+    final Condition condition = new Condition();
+    StringBuilder str = new StringBuilder().append(RocksRef.CHILDREN).append("(").append("6").append(")");
+    condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
+    RocksRef ref = (RocksRef) createTag(random);
+    Assertions.assertFalse(ref.evaluate(condition));
+  }
+
+  @Test
+  public void executorBranchID() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksRef.ID, RocksRef.EMPTY_ID.toEntity()));
+    RocksRef ref = (RocksRef) createBranch(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
+  @Test
+  public void executorBranchType() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksRef.TYPE, Entity.ofString(Ref.RefType.BRANCH.toString())));
+    RocksRef ref = (RocksRef) createBranch(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
+  @Test
+  public void executorBranchName() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksRef.NAME, Entity.ofString(NAME)));
+    RocksRef ref = (RocksRef) createBranch(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
+  @Test
+  public void executorBranchChildrenSize() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.SIZE, RocksBranch.CHILDREN, Entity.ofNumber(RocksL1.SIZE)));
+    RocksRef ref = (RocksRef) createBranch(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
+  @Test
+  public void executorBranchChildrenEqualsList() {
+    List<Entity> idsAsEntity = new ArrayList<>(RocksL1.SIZE);
+    for (int i=0; i<RocksL1.SIZE; i++) {
+      idsAsEntity.add(ID.toEntity());
+    }
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksBranch.CHILDREN, Entity.ofList(idsAsEntity)));
+    RocksRef ref = (RocksRef) createBranch(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
+  @Test
+  public void executorBranchChildrenEqualsListPosition() {
+    final Condition condition = new Condition();
+    StringBuilder str = new StringBuilder().append(RocksRef.CHILDREN).append("(").append("8").append(")");
+    condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
+    RocksRef ref = (RocksRef) createBranch(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
   /**
    * Create a path from a . delimited string.
    * @param path the input string where parts of the path are . delimited.
@@ -223,6 +334,31 @@ public class TestConditionExecutor {
       .completeKeyList(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID));
   }
 
+  public static Ref createBranch(Random random) {
+    return new RocksRef()
+      .type(Ref.RefType.BRANCH)
+      .name(NAME)
+      .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> createId(random)))
+      .metadata(ID)
+      .commits(bc -> {
+        bc.id(createId(random))
+          .commit(createId(random))
+          .parent(createId(random))
+          .done();
+        bc.id(createId(random))
+          .commit(createId(random))
+          .delta(1, createId(random), createId(random))
+          .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
+          .done();
+      });
+  }
+
+  public static Ref createTag(Random random) {
+    return new RocksRef()
+      .type(Ref.RefType.TAG)
+      .name(NAME)
+      .commit(createId(random));
+  }
 
   /**
    * Create a Sample ID entity.
