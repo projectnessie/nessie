@@ -26,12 +26,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import com.dremio.nessie.tiered.builder.L1;
+import com.dremio.nessie.tiered.builder.L2;
+import com.dremio.nessie.tiered.builder.L3;
 import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.Store;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -183,6 +186,74 @@ public class TestConditionExecutor {
     condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
     RocksL1 l1 = (RocksL1) createL1CompleteKeyList(random);
     Assertions.assertTrue(l1.evaluate(condition));
+  }
+
+  @Test
+  public void executorL2Empty() {
+    final Condition condition = new Condition();
+    final String path = createPath();
+    condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    RocksL2 l2 = (RocksL2) createL2();
+    Assertions.assertFalse(l2.evaluate(condition));
+  }
+
+  @Test
+  public void executorL2ID() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksL2.ID, RocksL2.EMPTY_ID.toEntity()));
+    RocksL2 l2 = (RocksL2) createL2();
+    Assertions.assertTrue(l2.evaluate(condition));
+  }
+
+  @Test
+  public void executorL2ChildrenSize() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.SIZE, RocksL1.CHILDREN, Entity.ofNumber(RocksL1.SIZE)));
+    RocksL2 l2 = (RocksL2) createL2();
+    Assertions.assertTrue(l2.evaluate(condition));
+  }
+
+  @Test
+  public void executorL2ChildrenEqualsList() {
+    List<Entity> idsAsEntity = new ArrayList<>(RocksL1.SIZE);
+    for (int i = 0; i < RocksL1.SIZE; i++) {
+      idsAsEntity.add(ID.toEntity());
+    }
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksL1.CHILDREN, Entity.ofList(idsAsEntity)));
+    RocksL2 l2 = (RocksL2) createL2();
+    Assertions.assertTrue(l2.evaluate(condition));
+  }
+
+  @Test
+  public void executorL2ChildrenEqualsListPosition() {
+    final Condition condition = new Condition();
+    StringBuilder str = new StringBuilder().append(RocksL1.CHILDREN).append("(").append("3").append(")");
+    condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
+    RocksL2 l2 = (RocksL2) createL2();
+    Assertions.assertTrue(l2.evaluate(condition));
+  }
+
+  @Test
+  public void executorL3Empty() {
+    final Condition condition = new Condition();
+    final String path = createPath();
+    condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    RocksL3 l3 = (RocksL3) createL3();
+    Assertions.assertFalse(l3.evaluate(condition));
+  }
+
+  @Test
+  public void executorL3ID() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksL3.ID, RocksL3.EMPTY_ID.toEntity()));
+    RocksL3 l3 = (RocksL3) createL3();
+    Assertions.assertTrue(l3.evaluate(condition));
+  }
+
+  @Test
+  public void executorL3KeyDelta() {
+    // TODO: expect false
   }
 
   @Test
@@ -347,6 +418,24 @@ public class TestConditionExecutor {
       .ancestors(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
       .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
       .completeKeyList(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID));
+  }
+
+  /**
+   * Create a Sample L2 entity.
+   * @return sample L2 entity.
+   */
+  public static L2 createL2() {
+    return new RocksL2().children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID));
+  }
+
+  /**
+   * Create a Sample L2 entity.
+   * @return sample L2 entity.
+   */
+  public static L3 createL3() {
+    return new RocksL3().keyDelta(Stream.of(KeyDelta.of(
+      Key.of(createString(random, 8), createString(random, 9)),
+      RocksL3.EMPTY_ID)));
   }
 
   /**
