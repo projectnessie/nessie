@@ -75,8 +75,7 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
           result &= ((path.size() == 1)
             && (function.getOperator().equals(Function.EQUALS))
             && (getId().toEntity().equals(function.getValue())));
-        }
-        else if (segment.equals(TYPE)) {
+        } else if (segment.equals(TYPE)) {
           result &= ((path.size() == 1)
                 && (function.getOperator().equals(Function.EQUALS))
                 && (type.toString().equals(function.getValue().getString())));

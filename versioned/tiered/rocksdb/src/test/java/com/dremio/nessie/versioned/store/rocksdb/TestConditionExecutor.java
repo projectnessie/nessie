@@ -41,21 +41,16 @@ public class TestConditionExecutor {
   private static final Entity TRUE_ENTITY = Entity.ofBoolean(true);
   private static final Entity FALSE_ENTITY = Entity.ofBoolean(false);
   private static final Entity ONE = Entity.ofNumber(1L);
-  protected static Random random;
+  protected static Random random = new Random(getRandomSeed());
+  private static final String sampleName = createString(random, 10);
+
   protected Store store;
   private final String SEPARATOR = ".";
-  private static String NAME;
-
-
-  @BeforeEach
-  void setup() {
-    random = new Random(getRandomSeed());
-    NAME = createString(random, 10);
-  }
 
   protected static final long getRandomSeed() {
     return -2938423452345L;
   }
+
   static final Id ID = createId(new Random(getRandomSeed()));
   static final Id ID_2 = createId(new Random(getRandomSeed()));
   static final Id ID_3 = createId(new Random(getRandomSeed()));
@@ -115,7 +110,7 @@ public class TestConditionExecutor {
   @Test
   public void executorL1ChildrenEqualsList() {
     List<Entity> idsAsEntity = new ArrayList<>(RocksL1.SIZE);
-    for (int i=0; i<RocksL1.SIZE; i++) {
+    for (int i = 0; i < RocksL1.SIZE; i++) {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = new Condition();
@@ -144,7 +139,7 @@ public class TestConditionExecutor {
   @Test
   public void executorL1AncestorsEqualsList() {
     List<Entity> idsAsEntity = new ArrayList<>(RocksL1.SIZE);
-    for (int i=0; i<RocksL1.SIZE; i++) {
+    for (int i = 0; i < RocksL1.SIZE; i++) {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = new Condition();
@@ -173,7 +168,7 @@ public class TestConditionExecutor {
   @Test
   public void executorL1FragmentsEqualsList() {
     List<Entity> idsAsEntity = new ArrayList<>(RocksL1.SIZE);
-    for (int i=0; i<RocksL1.SIZE; i++) {
+    for (int i = 0; i < RocksL1.SIZE; i++) {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = new Condition();
@@ -219,7 +214,7 @@ public class TestConditionExecutor {
   @Test
   public void executorTagName() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.NAME, Entity.ofString(NAME)));
+    condition.add(new Function(Function.EQUALS, RocksRef.NAME, Entity.ofString(sampleName)));
     RocksRef ref = (RocksRef) createTag(random);
     Assertions.assertTrue(ref.evaluate(condition));
   }
@@ -253,7 +248,7 @@ public class TestConditionExecutor {
   @Test
   public void executorBranchName() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.NAME, Entity.ofString(NAME)));
+    condition.add(new Function(Function.EQUALS, RocksRef.NAME, Entity.ofString(sampleName)));
     RocksRef ref = (RocksRef) createBranch(random);
     Assertions.assertTrue(ref.evaluate(condition));
   }
@@ -269,7 +264,7 @@ public class TestConditionExecutor {
   @Test
   public void executorBranchChildrenEqualsList() {
     List<Entity> idsAsEntity = new ArrayList<>(RocksL1.SIZE);
-    for (int i=0; i<RocksL1.SIZE; i++) {
+    for (int i = 0; i < RocksL1.SIZE; i++) {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = new Condition();
@@ -326,6 +321,11 @@ public class TestConditionExecutor {
       .incrementalKeyList(ID, 1);
   }
 
+  /**
+   * Create a sample L1 entity with a complete key list, aka Fragment.
+   * @param random  object to use for randomization of entity creation.
+   * @return sample L1 entity
+   */
   public static L1 createL1CompleteKeyList(Random random) {
     return new RocksL1().commitMetadataId(ID)
       .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
@@ -334,10 +334,15 @@ public class TestConditionExecutor {
       .completeKeyList(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID));
   }
 
+  /**
+   * Create a sample Branch (Ref) entity.
+   * @param random  object to use for randomization of entity creation.
+   * @return sample Ref entity
+   */
   public static Ref createBranch(Random random) {
     return new RocksRef()
       .type(Ref.RefType.BRANCH)
-      .name(NAME)
+      .name(sampleName)
       .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> createId(random)))
       .metadata(ID)
       .commits(bc -> {
@@ -353,10 +358,15 @@ public class TestConditionExecutor {
       });
   }
 
+  /**
+   * Create a sample Tag (Ref) entity.
+   * @param random  object to use for randomization of entity creation.
+   * @return sample Ref entity
+   */
   public static Ref createTag(Random random) {
     return new RocksRef()
       .type(Ref.RefType.TAG)
-      .name(NAME)
+      .name(sampleName)
       .commit(createId(random));
   }
 

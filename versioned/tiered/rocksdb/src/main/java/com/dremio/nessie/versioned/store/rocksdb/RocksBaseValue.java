@@ -96,10 +96,10 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   }
 
   /**
-   * Evaluates if the stream of Id meets the Condition Function
-   * @param function the function
-   * @param stream
-   * @return
+   * Evaluates if the stream of Id meets the Condition Function.
+   * @param function the function of the ConditionExpression to evaluate.
+   * @param stream The Ids to evaluate against the function
+   * @return true if the condition is met
    */
   boolean evaluateStream(Function function, Stream<Id> stream) {
     // EQUALS will either compare a specified position or the whole stream as a List.
