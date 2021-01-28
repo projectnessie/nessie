@@ -28,7 +28,7 @@ works fine, because data files[^1] are immutable.
   [recorded in Nessie](#working-with-data-in-nessie) as *commits* without copying
   the actual data.
 * Add [meaning to the changes](#commit-messages-and-more) to your data lake.
-* [Always-consistent](#branches) view to all the data 
+* [Always-consistent](#branches) view to all the data. 
 * Sets of changes, like the whole [work of a distributed Spark job](#working-branches-for-analytics-jobs).
   or [experiments of data engineers](#working-branches-for-humans) are
   isolated in Nessie via *branches*. Failed jobs do not add additional harm to the data.
