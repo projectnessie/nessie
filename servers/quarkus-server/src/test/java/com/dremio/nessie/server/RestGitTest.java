@@ -134,7 +134,7 @@ public class RestGitTest {
 
     rest().queryParam(
         "expectedHash",
-        "0011223344556677889900112233445566778899001122334455667788990011")
+        "0011223344556677889900112233445566778899001122334455667788990011".substring(0, b2.getHash().length()))
         .delete("trees/tag/tagtest").then().statusCode(409);
 
     rest().queryParam("expectedHash", b3.getHash())
