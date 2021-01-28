@@ -219,6 +219,14 @@ public class TestConditionExecutor {
     Assertions.assertTrue(ref.evaluate(condition));
   }
 
+  @Test
+  public void executorTagCommit() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksRef.COMMIT, ID_2.toEntity()));
+    RocksRef ref = (RocksRef) createTag(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
   // Children do not exist for Tags
   @Test
   public void executorTagChildrenEqualsListPosition() {
@@ -278,6 +286,14 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     StringBuilder str = new StringBuilder().append(RocksRef.CHILDREN).append("(").append("8").append(")");
     condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
+    RocksRef ref = (RocksRef) createBranch(random);
+    Assertions.assertTrue(ref.evaluate(condition));
+  }
+
+  @Test
+  public void executorBranchMetadata() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksRef.METADATA, ID.toEntity()));
     RocksRef ref = (RocksRef) createBranch(random);
     Assertions.assertTrue(ref.evaluate(condition));
   }
@@ -346,13 +362,13 @@ public class TestConditionExecutor {
       .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> createId(random)))
       .metadata(ID)
       .commits(bc -> {
-        bc.id(createId(random))
-          .commit(createId(random))
-          .parent(createId(random))
+        bc.id(ID)
+          .commit(ID_2)
+          .parent(ID_3)
           .done();
-        bc.id(createId(random))
-          .commit(createId(random))
-          .delta(1, createId(random), createId(random))
+        bc.id(ID_4)
+          .commit(ID)
+          .delta(1, ID_2, ID_3)
           .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
           .done();
       });
@@ -367,7 +383,7 @@ public class TestConditionExecutor {
     return new RocksRef()
       .type(Ref.RefType.TAG)
       .name(sampleName)
-      .commit(createId(random));
+      .commit(ID_2);
   }
 
   /**
