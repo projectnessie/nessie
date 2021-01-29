@@ -39,7 +39,11 @@ class ITJdbcVersionStore extends AbstractITVersionStore {
 
   @BeforeEach
   void setup() {
-    fixture = new JdbcFixture();
+    fixture = createFixture();
+  }
+
+  protected JdbcFixture createFixture() {
+    return new JdbcOssFixture();
   }
 
   @AfterEach

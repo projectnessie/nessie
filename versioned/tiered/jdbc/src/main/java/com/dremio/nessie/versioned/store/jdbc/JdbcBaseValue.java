@@ -39,9 +39,10 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   final Resources resources;
   final SQLChange change;
 
-  static <C extends BaseValue<C>> C produceToConsumer(Dialect dialect, ResultSet resultSet, C consumer) throws SQLException {
-    return consumer.id(dialect.getId(resultSet, JdbcEntity.ID))
-        .dt(dialect.getDt(resultSet, DT));
+  static <C extends BaseValue<C>> C produceToConsumer(DatabaseAdapter databaseAdapter,
+      ResultSet resultSet, C consumer) throws SQLException {
+    return consumer.id(databaseAdapter.getId(resultSet, JdbcEntity.ID))
+        .dt(databaseAdapter.getDt(resultSet, DT));
   }
 
   /**
@@ -68,14 +69,14 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   @SuppressWarnings("unchecked")
   @Override
   public C id(Id id) {
-    entity.dialect.setId(change, JdbcEntity.ID, id);
+    entity.databaseAdapter.setId(change, JdbcEntity.ID, id);
     return (C) this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public C dt(long dt) {
-    entity.dialect.setDt(change, DT, dt);
+    entity.databaseAdapter.setDt(change, DT, dt);
     return (C) this;
   }
 
@@ -132,7 +133,7 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
                   + entity.tableName
                   + " WHERE "
                   + JdbcEntity.ID + " = ?"));
-          entity.dialect.setId(checkStmt, 1, id);
+          entity.databaseAdapter.setId(checkStmt, 1, id);
           ResultSet rs = resources.add(checkStmt.executeQuery());
           throw rs.next()
               ? new ConditionFailedException(conditions.toString())
@@ -156,7 +157,8 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   void conditionValue(UpdateContext updateContext, Conditions conditions, ExpressionPath path, Entity value) {
     conditions.applicators.put(
         entity.equalsClause(updateContext, path),
-        (stmt, index) -> entity.dialect.setEntity(stmt, index, entity.propertyType(path), value));
+        (stmt, index) -> entity.databaseAdapter
+            .setEntity(stmt, index, entity.propertyType(path), value));
   }
 
   /**
@@ -166,7 +168,8 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   void updateValue(UpdateContext updateContext, ExpressionPath path, Entity value) {
     updateContext.change.setColumn(
         entity.equalsClause(updateContext, path),
-        (stmt, index) -> entity.dialect.setEntity(stmt, index, entity.propertyType(path), value));
+        (stmt, index) -> entity.databaseAdapter
+            .setEntity(stmt, index, entity.propertyType(path), value));
   }
 
   /**
@@ -194,6 +197,6 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   void removeValue(UpdateContext updateContext, ExpressionPath path) {
     updateContext.change.setColumn(
         entity.equalsClause(updateContext, path),
-        (stmt, index) -> entity.dialect.setNull(stmt, index, entity.propertyType(path)));
+        (stmt, index) -> entity.databaseAdapter.setNull(stmt, index, entity.propertyType(path)));
   }
 }

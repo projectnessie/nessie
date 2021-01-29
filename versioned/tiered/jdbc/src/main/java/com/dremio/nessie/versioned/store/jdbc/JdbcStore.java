@@ -73,24 +73,26 @@ public class JdbcStore implements Store {
 
   private final JdbcStoreConfig config;
   private final DataSource dataSource;
+  private final DatabaseAdapter databaseAdapter;
 
   private final Map<ValueType<?>, JdbcEntity<?>> entityDefinitions;
 
   /**
    * create a DynamoStore.
    */
-  public JdbcStore(JdbcStoreConfig config, DataSource dataSource) {
+  public JdbcStore(JdbcStoreConfig config, DataSource dataSource, DatabaseAdapter databaseAdapter) {
     this.config = config;
     this.dataSource = dataSource;
+    this.databaseAdapter = databaseAdapter;
 
     this.entityDefinitions = ImmutableMap.<ValueType<?>, JdbcEntity<?>>builder()
-        .put(ValueType.KEY_FRAGMENT, JdbcFragment.createEntity(config))
-        .put(ValueType.L1, JdbcL1.createEntity(config))
-        .put(ValueType.L2, JdbcL2.createEntity(config))
-        .put(ValueType.L3, JdbcL3.createEntity(config))
-        .put(ValueType.VALUE, JdbcWrappedValue.createEntity(ValueType.VALUE, config))
-        .put(ValueType.COMMIT_METADATA, JdbcWrappedValue.createEntity(ValueType.COMMIT_METADATA, config))
-        .put(ValueType.REF, JdbcRef.createEntity(config))
+        .put(ValueType.KEY_FRAGMENT, JdbcFragment.createEntity(databaseAdapter, config))
+        .put(ValueType.L1, JdbcL1.createEntity(databaseAdapter, config))
+        .put(ValueType.L2, JdbcL2.createEntity(databaseAdapter, config))
+        .put(ValueType.L3, JdbcL3.createEntity(databaseAdapter, config))
+        .put(ValueType.VALUE, JdbcWrappedValue.createEntity(ValueType.VALUE, databaseAdapter, config))
+        .put(ValueType.COMMIT_METADATA, JdbcWrappedValue.createEntity(ValueType.COMMIT_METADATA, databaseAdapter, config))
+        .put(ValueType.REF, JdbcRef.createEntity(databaseAdapter, config))
         .build();
 
     if (!entityDefinitions.keySet().equals(new HashSet<>(ValueType.values()))) {
@@ -101,19 +103,18 @@ public class JdbcStore implements Store {
 
   @Override
   public void start() {
-    Dialect dialect = config.getDialect();
     String catalog = config.getCatalog();
     String schema = config.getSchema();
 
-    LOGGER.info("Starting JDBC store using dialect {} against data source '{}'",
-        dialect.name(), dataSource);
+    LOGGER.info("Starting JDBC store using databaseAdapter {} against data source '{}'",
+        databaseAdapter.name(), dataSource);
 
     if (config.logCreateDDL()) {
       LOGGER.info("Config option 'logCreateDDL' is set to 'true', DDL statements to create the "
-          + "Nessie database objects for dialect {} are:\n{}",
-          dialect.name(),
+          + "Nessie database objects for databaseAdapter {} are:\n{}",
+          databaseAdapter.name(),
           Stream.concat(
-              dialect.additionalDDL().stream(),
+              databaseAdapter.additionalDDL().stream(),
               entityDefinitions.entrySet().stream().map(e -> createTableDDL(e.getKey().getTableName(config.getTablePrefix()), e.getValue()))
           ).collect(Collectors.joining("\n\n")));
     }
@@ -125,14 +126,14 @@ public class JdbcStore implements Store {
 
         try (Statement st = conn.createStatement()) {
           Stream<String> createTables = entityDefinitions.entrySet().stream()
-              .filter(e -> !tableExists(conn, dialect, catalog, schema, e.getKey().getTableName(config.getTablePrefix())))
+              .filter(e -> !tableExists(conn, databaseAdapter, catalog, schema, e.getKey().getTableName(config.getTablePrefix())))
               .map(e -> createTableDDL(e.getKey().getTableName(config.getTablePrefix()), e.getValue()));
 
-          if (dialect.batchDDL()) {
+          if (databaseAdapter.batchDDL()) {
             String ddl = createTables.map(s -> s + ";").collect(Collectors.joining("\n\n"));
             if (!ddl.isEmpty()) {
               ddl = "BEGIN;\n"
-                  + dialect.additionalDDL().stream().map(s -> s + ";").collect(Collectors.joining("\n\n"))
+                  + databaseAdapter.additionalDDL().stream().map(s -> s + ";").collect(Collectors.joining("\n\n"))
                   + ddl
                   + "END TRANSACTION;\n";
               LOGGER.debug("create-table: {}", ddl);
@@ -141,7 +142,7 @@ public class JdbcStore implements Store {
           } else {
             List<String> ddls = createTables.collect(Collectors.toList());
             if (!ddls.isEmpty()) {
-              for (String ddl : dialect.additionalDDL()) {
+              for (String ddl : databaseAdapter.additionalDDL()) {
                 LOGGER.debug("create-DDL: {}", ddl);
                 st.execute(ddl);
               }
@@ -163,8 +164,8 @@ public class JdbcStore implements Store {
     }
   }
 
-  private static boolean tableExists(Connection conn, Dialect dialect, String catalog, String schema, String table) {
-    if (dialect.metadataUpperCase()) {
+  private static boolean tableExists(Connection conn, DatabaseAdapter databaseAdapter, String catalog, String schema, String table) {
+    if (databaseAdapter.metadataUpperCase()) {
       catalog = catalog != null ? catalog.toUpperCase(Locale.ROOT) : null;
       schema = schema != null ? schema.toUpperCase(Locale.ROOT) : null;
       table = table != null ? table.toUpperCase(Locale.ROOT) : null;
@@ -182,9 +183,9 @@ public class JdbcStore implements Store {
             + ",\n    %s)",
         entity.tableName,
         entity.columnTypeMap.entrySet().stream()
-            .map(e -> String.format("%s %s", e.getKey(), entity.dialect.columnType(e.getValue())))
+            .map(e -> String.format("%s %s", e.getKey(), entity.databaseAdapter.columnType(e.getValue())))
             .collect(Collectors.joining(",\n    ")),
-        entity.dialect.primaryKey(rawTableName, JdbcEntity.ID)
+        entity.databaseAdapter.primaryKey(rawTableName, JdbcEntity.ID)
     );
   }
 
@@ -378,7 +379,7 @@ public class JdbcStore implements Store {
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
-      if (config.getDialect().isIntegrityConstraintViolation(e)) {
+      if (databaseAdapter.isIntegrityConstraintViolation(e)) {
         throw new ConditionFailedException(e.getMessage());
       }
       throw new StoreOperationException("SQL Exception caught for " + saveOp.getType() + ":" + saveOp.getId()
@@ -397,7 +398,7 @@ public class JdbcStore implements Store {
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
-      if (config.getDialect().isIntegrityConstraintViolation(e)) {
+      if (databaseAdapter.isIntegrityConstraintViolation(e)) {
         throw new ConditionFailedException(e.getMessage());
       }
       throw new StoreOperationException("SQL Exception caught", e);
@@ -423,7 +424,7 @@ public class JdbcStore implements Store {
     } else if (!condition.isPresent()) {
       @SuppressWarnings("unchecked") C cons = (C) value;
       saveOp.serialize(cons);
-      Conditions upsertConditions = new Conditions().addIdCondition(saveOp.getId(), entity.dialect);
+      Conditions upsertConditions = new Conditions().addIdCondition(saveOp.getId(), entity.databaseAdapter);
       value.executeUpdates(ExecuteUpdateStrategy.UPSERT, upsertConditions, saveOp.getId());
     } else {
       @SuppressWarnings("unchecked") C cons = (C) value;
@@ -466,7 +467,7 @@ public class JdbcStore implements Store {
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
-      if (config.getDialect().isIntegrityConstraintViolation(e)) {
+      if (databaseAdapter.isIntegrityConstraintViolation(e)) {
         throw new ConditionFailedException(e.getMessage());
       }
       throw new StoreOperationException("SQL Exception caught for " + update + ", condition " + condition, e);
@@ -481,7 +482,7 @@ public class JdbcStore implements Store {
       resources.connection.setAutoCommit(false);
 
       SQLChange change = entity.newDelete();
-      change.addCondition(JdbcEntity.ID, entity.dialect.idApplicator(id));
+      change.addCondition(JdbcEntity.ID, entity.databaseAdapter.idApplicator(id));
       JdbcBaseValue<C> value = entity.newValue(resources, change);
 
       UpdateContext updateContext = new UpdateContext(change, id);
@@ -495,7 +496,7 @@ public class JdbcStore implements Store {
     } catch (RuntimeException e) {
       throw e;
     } catch (Exception e) {
-      if (config.getDialect().isIntegrityConstraintViolation(e)) {
+      if (databaseAdapter.isIntegrityConstraintViolation(e)) {
         throw new ConditionFailedException(e.getMessage());
       }
       throw new StoreOperationException("SQL Exception caught for " + type + ":" + id + ", condition " + condition, e);
@@ -505,7 +506,7 @@ public class JdbcStore implements Store {
   @VisibleForTesting
   void truncateTables() {
     try (Connection conn = dataSource.getConnection(); Statement st = conn.createStatement()) {
-      if (config.getDialect().batchDDL()) {
+      if (databaseAdapter.batchDDL()) {
         String ddl = "BEGIN;\n"
             + entityDefinitions.values().stream().map(def -> "TRUNCATE TABLE " + def.tableName + ";").collect(Collectors.joining("\n"))
             + "\nEND TRANSACTION;\n";
@@ -559,10 +560,10 @@ public class JdbcStore implements Store {
               switch (functionName) {
                 /*
                 case EQUALS:
-                  colType = entityDefinition.columnType(dialect, path);
+                  colType = entityDefinition.columnType(databaseAdapter, path);
                   updates.put(
-                      dialect.equalsClause(path, positionOffset),
-                      dialect.valueForPreparedStatement(colType, arguments.get(1).getValue()));
+                      databaseAdapter.equalsClause(path, positionOffset),
+                      databaseAdapter.valueForPreparedStatement(colType, arguments.get(1).getValue()));
                   break;
                 */
                 case LIST_APPEND:
@@ -592,7 +593,7 @@ public class JdbcStore implements Store {
     Conditions conditions = new Conditions();
 
     if (condition.isPresent()) {
-      conditions.addIdCondition(updateContext.id, value.entity.dialect);
+      conditions.addIdCondition(updateContext.id, value.entity.databaseAdapter);
 
       for (ExpressionFunction function : condition.get().getFunctions()) {
         FunctionName functionName = function.getName();

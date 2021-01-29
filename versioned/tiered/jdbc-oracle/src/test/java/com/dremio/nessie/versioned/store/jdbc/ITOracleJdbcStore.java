@@ -15,19 +15,10 @@
  */
 package com.dremio.nessie.versioned.store.jdbc;
 
-import org.junit.jupiter.api.AfterAll;
-
-import com.dremio.nessie.versioned.impl.AbstractITTieredVersionStore;
-
-class ITJdbcTieredVersionStore extends AbstractITTieredVersionStore {
-
-  @AfterAll
-  static void shutdown() {
-    JdbcFixture.cleanup();
-  }
+public class ITOracleJdbcStore extends ITJdbcStore {
 
   @Override
-  protected JdbcFixture createNewFixture() {
-    return new JdbcOssFixture();
+  protected JdbcFixture createFixture() {
+    return new JdbcOracleFixture();
   }
 }

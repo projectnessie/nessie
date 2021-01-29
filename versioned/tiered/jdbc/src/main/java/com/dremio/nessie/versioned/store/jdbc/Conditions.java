@@ -31,11 +31,11 @@ final class Conditions {
   Map<String, ValueApplicator> applicators = new LinkedHashMap<>();
   boolean ifNotExists;
 
-  Conditions addIdCondition(Id id, Dialect dialect) {
+  Conditions addIdCondition(Id id, DatabaseAdapter databaseAdapter) {
     applicators.put(
         JdbcEntity.ID,
         (pstmt, index) -> {
-          dialect.setId(pstmt, index, id);
+          databaseAdapter.setId(pstmt, index, id);
           return 1;
         }
     );

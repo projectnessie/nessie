@@ -61,7 +61,7 @@ class JdbcEntity<C extends BaseValue<C>> {
     void produceToConsumer(ResultSet resultSet, C consumer) throws SQLException;
   }
 
-  final Dialect dialect;
+  final DatabaseAdapter databaseAdapter;
   final String tableName;
   final Map<String, ColumnType> columnTypeMap;
   final String queryAll;
@@ -71,9 +71,9 @@ class JdbcEntity<C extends BaseValue<C>> {
 
   private static final String IDS_MARKER = "__IDS__";
 
-  JdbcEntity(Dialect dialect, ValueType<C> type, JdbcStoreConfig config, Map<String, ColumnType> columnTypeMap,
+  JdbcEntity(DatabaseAdapter databaseAdapter, ValueType<C> type, JdbcStoreConfig config, Map<String, ColumnType> columnTypeMap,
       JdbcValueSupplier<C> jdbcValueSupplier, ProduceToConsumer<C> produceToConsumer) {
-    this.dialect = dialect;
+    this.databaseAdapter = databaseAdapter;
     String tableName = type.getTableName(config.getTablePrefix());
     if (config.getSchema() != null) {
       tableName = config.getSchema() + '.' + tableName;
@@ -203,7 +203,7 @@ class JdbcEntity<C extends BaseValue<C>> {
 
     int i = 1;
     for (Iterator<Id> idIter = ids.iterator(); idIter.hasNext(); i++) {
-      dialect.setId(pstmt, i, idIter.next());
+      databaseAdapter.setId(pstmt, i, idIter.next());
     }
 
     LOGGER.trace("query {}", pstmt);
@@ -212,7 +212,7 @@ class JdbcEntity<C extends BaseValue<C>> {
 
     int valueCount = 0;
     while (resultSet.next()) {
-      Id id = dialect.getId(resultSet, ID);
+      Id id = databaseAdapter.getId(resultSet, ID);
       produceToConsumer.produceToConsumer(resultSet, consumerSupplier.apply(id));
       finished.accept(id);
       valueCount++;

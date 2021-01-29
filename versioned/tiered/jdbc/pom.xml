@@ -73,12 +73,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.oracle.database.jdbc</groupId>
-      <artifactId>ojdbc8</artifactId>
-      <version>${oraclejdbc.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <scope>test</scope>
@@ -125,12 +119,6 @@
       <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>oracle-xe</artifactId>
-      <version>${testcontainers.version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
@@ -154,7 +142,7 @@
             <id>h2</id>
             <configuration>
               <systemPropertyVariables>
-                <it.nessie.store.jdbc.dialect>H2</it.nessie.store.jdbc.dialect>
+                <it.nessie.store.jdbc.databaseAdapter>H2</it.nessie.store.jdbc.databaseAdapter>
               </systemPropertyVariables>
             </configuration>
             <goals>
@@ -203,7 +191,7 @@
                   <reportsDirectory>target/surefire-reports-cockroach</reportsDirectory>
                   <systemPropertyVariables>
                     <it.nessie.store.jdbc.testcontainer>true</it.nessie.store.jdbc.testcontainer>
-                    <it.nessie.store.jdbc.dialect>COCKROACH</it.nessie.store.jdbc.dialect>
+                    <it.nessie.store.jdbc.databaseAdapter>Cockroach</it.nessie.store.jdbc.databaseAdapter>
                   </systemPropertyVariables>
                 </configuration>
                 <goals>
@@ -217,45 +205,7 @@
                   <reportsDirectory>target/surefire-reports-postgres</reportsDirectory>
                   <systemPropertyVariables>
                     <it.nessie.store.jdbc.testcontainer>true</it.nessie.store.jdbc.testcontainer>
-                    <it.nessie.store.jdbc.dialect>POSTGRESQL</it.nessie.store.jdbc.dialect>
-                  </systemPropertyVariables>
-                </configuration>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <!--
-      Oracle RDBMS requires you to explicitly accept license agreements before you can pull
-      the required Docker image to provide a custom built Docker image.
-      See: https://container-registry.oracle.com/
-      See: https://github.com/oracle/docker-images
-      Note that starting the Oracle container takes a very long time.
-
-      See versioned/tiered/jdbc/TESTING.md
-
-      You must provide extra system properties for integration testing against Oracle RDBMS!
-      -->
-      <id>commercialOracle</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>it-oracle</id>
-                <configuration>
-                  <reportsDirectory>target/surefire-reports-oracle</reportsDirectory>
-                  <systemPropertyVariables>
-                    <it.nessie.store.jdbc.testcontainer>true</it.nessie.store.jdbc.testcontainer>
-                    <it.nessie.store.jdbc.dialect>ORACLE</it.nessie.store.jdbc.dialect>
+                    <it.nessie.store.jdbc.databaseAdapter>PostgresQL</it.nessie.store.jdbc.databaseAdapter>
                   </systemPropertyVariables>
                 </configuration>
                 <goals>

@@ -47,7 +47,7 @@ nessie.version.store.jdbc.logCreateDDL=false
 nessie.version.store.jdbc.table-prefix=nessie_
 #quarkus.datasource.jdbc.initial-size=5
 # The type of database being used. Options are: HSQL, H2, COCKROACH, ORACLE, POSTGRESQL
-nessie.version.store.jdbc.dialect=HSQL
+nessie.version.store.jdbc.databaseAdapter=HSQL
 # In-memory JDBC
 #quarkus.datasource.db-kind=other
 #quarkus.datasource.jdbc.driver=org.hsqldb.jdbc.JDBCDriver

@@ -79,15 +79,6 @@ public abstract class JdbcStoreConfig {
     return null;
   }
 
-  /**
-   * The dialect to use. Defaults to {@link Dialect#H2}
-   * @return database dialect
-   */
-  @Default
-  public Dialect getDialect() {
-    return Dialect.H2;
-  }
-
   public static ImmutableJdbcStoreConfig.Builder builder() {
     return ImmutableJdbcStoreConfig.builder();
   }
