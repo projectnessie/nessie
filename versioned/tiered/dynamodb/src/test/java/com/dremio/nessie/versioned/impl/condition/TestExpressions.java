@@ -115,14 +115,13 @@ class TestExpressions {
   void updateSetClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
         SetClause.equals(p0, av0),
-        SetClause.ifNotExists(p1, p0, av1),
         SetClause.appendToList(p1, Entity.ofList(av1))
         ).build();
     AliasCollectorImpl c = new AliasCollectorImpl();
     UpdateExpression e0p = e0.alias(c);
-    assertEquals(" SET p0 = :v0, p1 = if_not_exists(p0, :v1), p1 = list_append(p1, :v2)", e0p.toUpdateExpressionString());
+    assertEquals(" SET p0 = :v0, p1 = list_append(p1, :v1)", e0p.toUpdateExpressionString());
     assertEquals(AttributeValueUtil.fromEntity(av0), c.getAttributesValues().get(":v0"));
-    assertEquals(AttributeValueUtil.fromEntity(av1), c.getAttributesValues().get(":v1"));
+    assertEquals(AttributeValueUtil.fromEntity(Entity.ofList(av1)), c.getAttributesValues().get(":v1"));
   }
 
   @Test
@@ -139,19 +138,17 @@ class TestExpressions {
   @Test
   void updateMultiClause() {
     UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
-        AddClause.addToSetOrNumber(p0, av2),
         SetClause.equals(p0, av0),
-        SetClause.ifNotExists(p1, p0, av1),
         SetClause.appendToList(p1, av1),
         RemoveClause.of(p0),
         RemoveClause.of(p2)
         ).build();
     AliasCollectorImpl c = new AliasCollectorImpl();
     UpdateExpression e0p = e0.alias(c);
-    assertEquals(" "
-        + "ADD p0 :v0 "
-        + "SET p0 = :v1, p1 = if_not_exists(p0, :v2), p1 = list_append(p1, :v3) "
-        + "REMOVE p0, p2[2]", e0p.toUpdateExpressionString());
+    String expected = new StringBuilder(" ")
+        .append("SET p0 = :v0, p1 = list_append(p1, :v1) ")
+        .append("REMOVE p0, p2[2]").toString();
+    assertEquals(expected, e0p.toUpdateExpressionString());
   }
 
 
