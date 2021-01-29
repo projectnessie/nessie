@@ -60,7 +60,7 @@ public class RocksCommitMetadata extends RocksBaseValue<CommitMetadata> implemen
       } else if (segment.equals(VALUE)) {
         result &= ((path.size() == 1)
           && (function.getOperator().equals(Function.EQUALS))
-          && (value.toString().equals(function.getValue().getString())));
+          && (value.toStringUtf8().equals(function.getValue().getString())));
       } else {
         // Invalid Condition Function.
         return false;

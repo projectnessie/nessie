@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -39,8 +40,6 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.Store;
 import com.google.protobuf.ByteString;
-
-import sun.nio.cs.UTF_8;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestConditionExecutor {
@@ -257,38 +256,47 @@ public class TestConditionExecutor {
   }
 
   @Test
-  public void executorL3KeyDelta() {
-    // TODO
-  }
-
-  @Test
   public void executorCommitMetadataId() {
     final Id id = Id.build("test-id");
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksCommitMetadata.ID, id.toEntity()));
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(
-      id, 0L, ByteString.EMPTY);
+        id, 0L, ByteString.EMPTY);
     assertTrue(meta.evaluate(condition));
   }
 
   @Test
   public void executorCommitMetadataValue() {
-    final ByteString value = ByteString.copyFrom("test-value", UTF_8.INSTANCE);
+    final ByteString value = ByteString.copyFromUtf8("test-value");
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksCommitMetadata.VALUE, Entity.ofBinary(value)));
+    condition.add(new Function(Function.EQUALS, RocksCommitMetadata.VALUE,
+        Entity.ofString(value.toStringUtf8())));
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(
-      RocksCommitMetadata.EMPTY_ID, 0L, value);
+        RocksCommitMetadata.EMPTY_ID, 0L, value);
     assertTrue(meta.evaluate(condition));
   }
 
   @Test
   public void executorCommitMetadataIdNoMatch() {
-    // TODO
+    final Id searchId = Id.build("search-id");
+    final Id actualId = Id.build("actual-id");
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksCommitMetadata.ID, searchId.toEntity()));
+    final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(
+        actualId, 0L, ByteString.EMPTY);
+    assertFalse(meta.evaluate(condition));
   }
 
   @Test
   public void executorCommitMetadataValueNoMatch() {
-    // TODO
+    final ByteString searchValue = ByteString.copyFromUtf8("search-value");
+    final ByteString actualValue = ByteString.copyFromUtf8("actual-value");
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksCommitMetadata.VALUE,
+        Entity.ofString(searchValue.toStringUtf8())));
+    final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(
+        RocksCommitMetadata.EMPTY_ID, 0L, actualValue);
+    assertFalse(meta.evaluate(condition));
   }
 
   @Test

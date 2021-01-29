@@ -28,17 +28,16 @@ import com.dremio.nessie.versioned.store.KeyDelta;
 public class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
   private static final String TREE = "tree";
 
-  private Stream<KeyDelta> keyDelta;
-
   static RocksL3 EMPTY = new RocksL3(Id.EMPTY, 0L);
-
   static Id EMPTY_ID = EMPTY.getId();
+
+  private Stream<KeyDelta> keyDelta;
 
   public RocksL3() {
     this(EMPTY_ID, 0L);
   }
 
-  RocksL3(Id id, long dt) {
+  private RocksL3(Id id, long dt) {
     super(id, dt);
   }
 
@@ -57,17 +56,15 @@ public class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
     boolean result = true;
     for (Function function: condition.functionList) {
       // Retrieve entity at function.path
-      List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
-      String segment = path.get(0);
+      final List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
+      final String segment = path.get(0);
       if (segment.equals(ID)) {
         result &= ((path.size() == 1)
           && (function.getOperator().equals(Function.EQUALS))
           && (getId().toEntity().equals(function.getValue())));
-      } else if (segment.startsWith(TREE)) {
-        // TODO: Does serialization of KeyDelta to Entity needs to be supported?
-        // TODO: If not, then this should return false.
-        return false;
       } else {
+        // TODO: ConditionExpression is currently not supported for TREE.
+        // TODO: Implement a case for TREE if serialization of a Stream of KeyDelta to Entity is supported.
         // Invalid Condition Function.
         return false;
       }

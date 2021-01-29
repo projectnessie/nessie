@@ -16,8 +16,6 @@
 
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import static com.dremio.nessie.versioned.store.rocksdb.RocksL1.CHILDREN;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -27,8 +25,10 @@ import com.dremio.nessie.tiered.builder.L2;
 import com.dremio.nessie.versioned.store.Id;
 
 public class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
-  static RocksL2 EMPTY = new RocksL2(Id.EMPTY, 0L);
+  private static final String CHILDREN = "children";
 
+  static final int SIZE = 199;
+  static RocksL2 EMPTY = new RocksL2(Id.EMPTY, 0L);
   static Id EMPTY_ID = EMPTY.getId();
 
   private Stream<Id> tree; // children
@@ -56,8 +56,8 @@ public class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
     boolean result = true;
     for (Function function: condition.functionList) {
       // Retrieve entity at function.path
-      List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
-      String segment = path.get(0);
+      final List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
+      final String segment = path.get(0);
       if (segment.equals(ID)) {
         result &= ((path.size() == 1)
           && (function.getOperator().equals(Function.EQUALS))
