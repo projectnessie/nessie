@@ -72,7 +72,11 @@ import software.amazon.awssdk.regions.Region;
 public class ITTestIdentifyUnreferencedAssets {
   private static final long FIVE_DAYS_IN_PAST_MICROS = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis())
       - TimeUnit.DAYS.toMicros(5);
+  private static final long TWO_HOURS_IN_PAST_MICROS = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis())
+      - TimeUnit.HOURS.toMicros(2);
+
   private static final long ONE_DAY_OLD_MICROS = TimeUnit.DAYS.toMicros(1);
+  private static final long ONE_HOUR_OLD_MICROS = TimeUnit.HOURS.toMicros(1);
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -89,8 +93,9 @@ public class ITTestIdentifyUnreferencedAssets {
     //The unique asset should be identified by the gc policy below since they are older than 1 day.
     store.setOverride(FIVE_DAYS_IN_PAST_MICROS);
     commit().put("k1", new DummyValue().add(-3).add(0).add(100)).withMetadata("cOld").toBranch(main);
-    store.clearOverride();
 
+    // work beyond slop but within gc allowed age.
+    store.setOverride(TWO_HOURS_IN_PAST_MICROS);
     // create commits that have time-valid assets. Create more commits than ParentList.MAX_PARENT_LIST to confirm recursion.
     for (int i = 0; i < 55; i++) {
       commit().put("k1", new DummyValue().add(i).add(i + 100)).withMetadata("c2").toBranch(main);
@@ -102,24 +107,13 @@ public class ITTestIdentifyUnreferencedAssets {
     Hash h = commit().put("k1", new DummyValue().add(-1).add(-2)).withMetadata("c1").toBranch(toBeDeleted);
     versionStore.delete(toBeDeleted, Optional.of(h));
 
+    store.clearOverride();
     {
       // Create a dangling value to ensure that the slop factor avoids deletion of the assets of this otherwise dangling value.
-      SaveOp<Value> danglingValue = new SaveOp<Value>(ValueType.VALUE, Id.generateRandom()) {
-        @Override
-        public void serialize(Value consumer) {
-          try {
-            consumer.dt(System.currentTimeMillis())
-                .id(Id.generateRandom())
-                .value(ByteString.copyFrom(
-                      MAPPER.writeValueAsBytes(
-                          new DummyValue().add(-50).add(-51))));
-          } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-          }
+      save(TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()), new DummyValue().add(-50).add(-51));
 
-        }
-      };
-      store.put(danglingValue, Optional.empty());
+      // create a dangling value that should be cleaned up.
+      save(TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) - TimeUnit.DAYS.toMicros(2), new DummyValue().add(-60).add(-61));
     }
 
     SparkSession spark = SparkSession
@@ -132,13 +126,30 @@ public class ITTestIdentifyUnreferencedAssets {
     // on the no-longer referenced commit as well as the old commit.
     GcOptions options = ImmutableGcOptions.builder()
         .bloomFilterCapacity(10_000_000)
-        .timeSlopMicros(0)
         .maxAgeMicros(ONE_DAY_OLD_MICROS)
+        .timeSlopMicros(ONE_HOUR_OLD_MICROS)
         .build();
     IdentifyUnreferencedAssets<DummyValue> app = new IdentifyUnreferencedAssets<DummyValue>(helper, new DynamoSupplier(), spark, options);
     Dataset<UnreferencedItem> items = app.identify();
     Set<String> unreferencedItems = items.collectAsList().stream().map(UnreferencedItem::getName).collect(Collectors.toSet());
-    assertThat(unreferencedItems, containsInAnyOrder("-1", "-2", "-3", "-50", "-51"));
+    assertThat(unreferencedItems, containsInAnyOrder("-1", "-2", "-3", "-60", "-61"));
+  }
+
+  private void save(long microsDt, DummyValue value) {
+    SaveOp<Value> saveOp = new SaveOp<Value>(ValueType.VALUE, Id.generateRandom()) {
+      @Override
+      public void serialize(Value consumer) {
+        try {
+          consumer.dt(microsDt)
+              .id(Id.generateRandom())
+              .value(ByteString.copyFrom(MAPPER.writeValueAsBytes(value)));
+        } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
+        }
+
+      }
+    };
+    store.put(saveOp, Optional.empty());
   }
 
   private static class DynamoSupplier implements Supplier<Store>, Serializable {
