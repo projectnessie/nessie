@@ -43,7 +43,7 @@ class JdbcL1 extends JdbcBaseValue<L1> implements L1 {
 
   static final String[] TREE_COLUMNS = IntStream.range(0, 43).mapToObj(i -> "tree_" + i).toArray(String[]::new);
 
-  static JdbcEntity<L1> createEntity(JdbcStoreConfig config) {
+  static JdbcEntity<L1> createEntity(DatabaseAdapter databaseAdapter, JdbcStoreConfig config) {
     Builder<String, ColumnType> columns = JdbcBaseValue.columnMapBuilder()
         .put(METADATA, ColumnType.ID)
         .put(PARENTS, ColumnType.ID_LIST)
@@ -56,32 +56,32 @@ class JdbcL1 extends JdbcBaseValue<L1> implements L1 {
       columns.put(treeColumn, ColumnType.ID);
     }
 
-    return new JdbcEntity<>(config.getDialect(), ValueType.L1, config,
+    return new JdbcEntity<>(databaseAdapter, ValueType.L1, config,
             columns.build(),
         JdbcL1::new,
-        (r, c) -> produceToConsumer(config.getDialect(), r, c));
+        (r, c) -> produceToConsumer(databaseAdapter, r, c));
   }
 
-  private static void produceToConsumer(Dialect dialect, ResultSet resultSet, L1 consumer) throws SQLException {
-    consumer = JdbcBaseValue.produceToConsumer(dialect, resultSet, consumer)
-        .commitMetadataId(dialect.getId(resultSet, METADATA))
-        .ancestors(dialect.getIds(resultSet, PARENTS));
+  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, L1 consumer) throws SQLException {
+    consumer = JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+        .commitMetadataId(databaseAdapter.getId(resultSet, METADATA))
+        .ancestors(databaseAdapter.getIds(resultSet, PARENTS));
     List<Mutation> mutations = new ArrayList<>();
-    dialect.getMutations(resultSet, MUTATIONS, mutations::add);
+    databaseAdapter.getMutations(resultSet, MUTATIONS, mutations::add);
     consumer = consumer.keyMutations(mutations.stream())
         .children(Stream.of(TREE_COLUMNS).map(c -> {
           try {
-            return dialect.getId(resultSet, c);
+            return databaseAdapter.getId(resultSet, c);
           } catch (SQLException e) {
             throw new RuntimeException(e);
           }
         }).collect(Collectors.toList()).stream());
-    if (dialect.getBool(resultSet, IS_CHECKPOINT)) {
-      consumer.completeKeyList(dialect.getIds(resultSet, FRAGMENTS));
+    if (databaseAdapter.getBool(resultSet, IS_CHECKPOINT)) {
+      consumer.completeKeyList(databaseAdapter.getIds(resultSet, FRAGMENTS));
     } else {
       consumer.incrementalKeyList(
-          dialect.getId(resultSet, ORIGIN),
-          Ints.saturatedCast(dialect.getLong(resultSet, DISTANCE))
+          databaseAdapter.getId(resultSet, ORIGIN),
+          Ints.saturatedCast(databaseAdapter.getLong(resultSet, DISTANCE))
       );
     }
   }
@@ -92,13 +92,13 @@ class JdbcL1 extends JdbcBaseValue<L1> implements L1 {
 
   @Override
   public L1 commitMetadataId(Id id) {
-    entity.dialect.setId(change, METADATA, id);
+    entity.databaseAdapter.setId(change, METADATA, id);
     return this;
   }
 
   @Override
   public L1 ancestors(Stream<Id> ancestors) {
-    entity.dialect.setIds(change, PARENTS, ancestors);
+    entity.databaseAdapter.setIds(change, PARENTS, ancestors);
     return this;
   }
 
@@ -109,29 +109,29 @@ class JdbcL1 extends JdbcBaseValue<L1> implements L1 {
       throw new IllegalArgumentException("Expected " + TREE_COLUMNS.length + " children, but got " + ch.size());
     }
     for (int i = 0; i < TREE_COLUMNS.length; i++) {
-      entity.dialect.setId(change, TREE_COLUMNS[i], ch.get(i));
+      entity.databaseAdapter.setId(change, TREE_COLUMNS[i], ch.get(i));
     }
     return this;
   }
 
   @Override
   public L1 keyMutations(Stream<Mutation> keyMutations) {
-    entity.dialect.setMutations(change, MUTATIONS, keyMutations);
+    entity.databaseAdapter.setMutations(change, MUTATIONS, keyMutations);
     return this;
   }
 
   @Override
   public L1 incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
-    entity.dialect.setBool(change, IS_CHECKPOINT, false);
-    entity.dialect.setId(change, ORIGIN, checkpointId);
-    entity.dialect.setLong(change, DISTANCE, (long) distanceFromCheckpoint);
+    entity.databaseAdapter.setBool(change, IS_CHECKPOINT, false);
+    entity.databaseAdapter.setId(change, ORIGIN, checkpointId);
+    entity.databaseAdapter.setLong(change, DISTANCE, (long) distanceFromCheckpoint);
     return this;
   }
 
   @Override
   public L1 completeKeyList(Stream<Id> fragmentIds) {
-    entity.dialect.setBool(change, IS_CHECKPOINT, true);
-    entity.dialect.setIds(change, FRAGMENTS, fragmentIds);
+    entity.databaseAdapter.setBool(change, IS_CHECKPOINT, true);
+    entity.databaseAdapter.setIds(change, FRAGMENTS, fragmentIds);
     return this;
   }
 }

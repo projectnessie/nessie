@@ -24,7 +24,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import com.dremio.nessie.server.config.converters.BackendType;
 import com.dremio.nessie.server.config.converters.JGitStoreType;
-import com.dremio.nessie.server.config.converters.JdbcDialectType;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.services.config.ServerConfig;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
@@ -158,8 +157,8 @@ public class ApplicationConfig {
     @ConfigProperty
     Optional<String> getSchema();
 
-    @ConfigProperty
-    JdbcDialectType getDialect();
+    @ConfigProperty(name = "databaseAdapter")
+    String getDatabaseAdapter();
 
   }
 }

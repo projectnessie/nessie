@@ -28,18 +28,18 @@ class JdbcFragment extends JdbcBaseValue<Fragment> implements Fragment {
 
   static final String KEY_LIST = "keys";
 
-  static JdbcEntity<Fragment> createEntity(JdbcStoreConfig config) {
-    return new JdbcEntity<>(config.getDialect(), ValueType.KEY_FRAGMENT, config,
+  static JdbcEntity<Fragment> createEntity(DatabaseAdapter databaseAdapter, JdbcStoreConfig config) {
+    return new JdbcEntity<>(databaseAdapter, ValueType.KEY_FRAGMENT, config,
         JdbcBaseValue.columnMapBuilder()
             .put(KEY_LIST, ColumnType.KEY_LIST)
             .build(),
         JdbcFragment::new,
-        (r, c) -> produceToConsumer(config.getDialect(), r, c));
+        (r, c) -> produceToConsumer(databaseAdapter, r, c));
   }
 
-  private static void produceToConsumer(Dialect dialect, ResultSet resultSet, Fragment consumer) throws SQLException {
-    JdbcBaseValue.produceToConsumer(dialect, resultSet, consumer)
-        .keys(dialect.getKeys(resultSet, KEY_LIST));
+  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, Fragment consumer) throws SQLException {
+    JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+        .keys(databaseAdapter.getKeys(resultSet, KEY_LIST));
   }
 
   JdbcFragment(Resources resources, SQLChange change, JdbcEntity<Fragment> entity) {
@@ -48,7 +48,7 @@ class JdbcFragment extends JdbcBaseValue<Fragment> implements Fragment {
 
   @Override
   public Fragment keys(Stream<Key> keys) {
-    entity.dialect.setKeys(change, KEY_LIST, keys);
+    entity.databaseAdapter.setKeys(change, KEY_LIST, keys);
     return this;
   }
 }

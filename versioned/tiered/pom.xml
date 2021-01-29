@@ -35,6 +35,7 @@
     <module>gc</module>
     <module>mongodb</module>
     <module>jdbc</module>
+    <module>jdbc-oracle</module>
     <module>tiered-impl</module>
     <module>tiered-tests</module>
   </modules>

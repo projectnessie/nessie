@@ -64,7 +64,7 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
 
   static final int MAX_COMMITS = 15;
 
-  static JdbcEntity<Ref> createEntity(JdbcStoreConfig config) {
+  static JdbcEntity<Ref> createEntity(DatabaseAdapter databaseAdapter, JdbcStoreConfig config) {
     Builder<String, ColumnType> columns = JdbcBaseValue.columnMapBuilder()
         .put(TYPE, ColumnType.REF_TYPE)
         .put(NAME, ColumnType.REF_NAME)
@@ -83,27 +83,27 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
           .put(C_KEY_LIST + suffix, ColumnType.KEY_MUTATION_LIST);
     }
 
-    return new JdbcEntity<>(config.getDialect(), ValueType.REF, config,
+    return new JdbcEntity<>(databaseAdapter, ValueType.REF, config,
         columns.build(),
         JdbcRef::new,
-        (r, c) -> produceToConsumer(config.getDialect(), r, c));
+        (r, c) -> produceToConsumer(databaseAdapter, r, c));
   }
 
   private static String makeSuffix(int i) {
     return "_" + i;
   }
 
-  private static void produceToConsumer(Dialect dialect, ResultSet resultSet, Ref consumer) throws SQLException {
-    JdbcBaseValue.produceToConsumer(dialect, resultSet, consumer)
-        .name(dialect.getString(resultSet, NAME));
-    String type = dialect.getString(resultSet, TYPE);
+  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, Ref consumer) throws SQLException {
+    JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+        .name(databaseAdapter.getString(resultSet, NAME));
+    String type = databaseAdapter.getString(resultSet, TYPE);
     switch (type) {
       case REF_TYPE_BRANCH:
         consumer.branch()
-            .metadata(dialect.getId(resultSet, METADATA))
+            .metadata(databaseAdapter.getId(resultSet, METADATA))
             .children(Stream.of(TREE_COLUMNS).map(c -> {
               try {
-                return dialect.getId(resultSet, c);
+                return databaseAdapter.getId(resultSet, c);
               } catch (SQLException e) {
                 throw new RuntimeException(e);
               }
@@ -113,21 +113,21 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
                 for (int i = 0; i < MAX_COMMITS; i++) {
                   String suffix = makeSuffix(i);
 
-                  Id commitId = dialect.getId(resultSet, C_ID + suffix);
+                  Id commitId = databaseAdapter.getId(resultSet, C_ID + suffix);
                   if (commitId == null) {
                     break;
                   }
 
                   bc.id(commitId)
-                      .commit(dialect.getId(resultSet, C_COMMIT + suffix));
-                  Id commitParent = dialect.getId(resultSet, C_PARENT + suffix);
+                      .commit(databaseAdapter.getId(resultSet, C_COMMIT + suffix));
+                  Id commitParent = databaseAdapter.getId(resultSet, C_PARENT + suffix);
                   if (commitParent != null) {
                     bc.saved().parent(commitParent).done();
                   } else {
                     UnsavedCommitDelta unsaved = bc.unsaved();
-                    dialect.getUnsavedDeltas(resultSet, C_DELTAS + suffix, unsaved);
+                    databaseAdapter.getUnsavedDeltas(resultSet, C_DELTAS + suffix, unsaved);
                     UnsavedCommitMutations mutations = unsaved.mutations();
-                    dialect.getMutations(resultSet, C_KEY_LIST + suffix, mutations::keyMutation);
+                    databaseAdapter.getMutations(resultSet, C_KEY_LIST + suffix, mutations::keyMutation);
                     mutations.done();
                   }
                 }
@@ -138,7 +138,7 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
         break;
       case REF_TYPE_TAG:
         consumer.tag()
-            .commit(dialect.getId(resultSet, COMMIT));
+            .commit(databaseAdapter.getId(resultSet, COMMIT));
         break;
       default:
         throw new IllegalStateException("Unknown ref-type " + type);
@@ -151,17 +151,17 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
 
   @Override
   public Ref name(String name) {
-    entity.dialect.setString(change, NAME, name);
+    entity.databaseAdapter.setString(change, NAME, name);
     return this;
   }
 
   @Override
   public Tag tag() {
-    entity.dialect.setString(change, TYPE, REF_TYPE_TAG);
+    entity.databaseAdapter.setString(change, TYPE, REF_TYPE_TAG);
     return new AbstractTag(this) {
       @Override
       public Tag commit(Id commit) {
-        entity.dialect.setId(change, COMMIT, commit);
+        entity.databaseAdapter.setId(change, COMMIT, commit);
         return this;
       }
     };
@@ -169,11 +169,11 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
 
   @Override
   public Branch branch() {
-    entity.dialect.setString(change, TYPE, REF_TYPE_BRANCH);
+    entity.databaseAdapter.setString(change, TYPE, REF_TYPE_BRANCH);
     return new AbstractBranch(this) {
       @Override
       public Branch metadata(Id metadata) {
-        entity.dialect.setId(change, METADATA, metadata);
+        entity.databaseAdapter.setId(change, METADATA, metadata);
         return this;
       }
 
@@ -184,7 +184,7 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
           throw new IllegalArgumentException("Expected " + TREE_COLUMNS.length + " ids, got " + ch.size());
         }
         for (int i = 0; i < TREE_COLUMNS.length; i++) {
-          entity.dialect.setId(change, TREE_COLUMNS[i], ch.get(i));
+          entity.databaseAdapter.setId(change, TREE_COLUMNS[i], ch.get(i));
         }
         return this;
       }
@@ -221,13 +221,13 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
 
     @Override
     public BranchCommit id(Id id) {
-      entity.dialect.setId(bcChange, C_ID + suffix, id);
+      entity.databaseAdapter.setId(bcChange, C_ID + suffix, id);
       return this;
     }
 
     @Override
     public BranchCommit commit(Id commit) {
-      entity.dialect.setId(bcChange, C_COMMIT + suffix, commit);
+      entity.databaseAdapter.setId(bcChange, C_COMMIT + suffix, commit);
       return this;
     }
 
@@ -238,13 +238,13 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
 
     @Override
     public SavedCommit parent(Id parent) {
-      entity.dialect.setId(bcChange, C_PARENT + suffix, parent);
+      entity.databaseAdapter.setId(bcChange, C_PARENT + suffix, parent);
       return this;
     }
 
     @Override
     public UnsavedCommitDelta unsaved() {
-      entity.dialect.setId(bcChange, C_PARENT + suffix, null);
+      entity.databaseAdapter.setId(bcChange, C_PARENT + suffix, null);
       return this;
     }
 
@@ -267,14 +267,14 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
       if (keyMutations == null) {
         keyMutations = new ArrayList<>();
       }
-      keyMutations.add(Dialect.mutationAsString(keyMutation));
+      keyMutations.add(DatabaseAdapter.mutationAsString(keyMutation));
       return this;
     }
 
     @Override
     public BranchCommit done() {
-      entity.dialect.setStrings(bcChange, C_DELTAS + suffix, deltas, ColumnType.KEY_DELTA_LIST);
-      entity.dialect.setStrings(bcChange, C_KEY_LIST + suffix, keyMutations, ColumnType.KEY_MUTATION_LIST);
+      entity.databaseAdapter.setStrings(bcChange, C_DELTAS + suffix, deltas, ColumnType.KEY_DELTA_LIST);
+      entity.databaseAdapter.setStrings(bcChange, C_KEY_LIST + suffix, keyMutations, ColumnType.KEY_MUTATION_LIST);
 
       deltas = null;
       keyMutations = null;
@@ -316,7 +316,7 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
         // value is a list of maps
         int offset = nextCommitIndex(updateContext.id);
         offset += updateContext.adjustedIndex(rootName);
-        updateContext.change.addCondition(JdbcEntity.ID, entity.dialect.idApplicator(updateContext.id));
+        updateContext.change.addCondition(JdbcEntity.ID, entity.databaseAdapter.idApplicator(updateContext.id));
         JdbcBranchCommit branchCommit = new JdbcBranchCommit(offset, updateContext.change);
 
         for (Entity entity : value.getList()) {
@@ -422,12 +422,12 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
               + entity.tableName
               + " WHERE "
               + JdbcEntity.ID + " = ?"));
-      entity.dialect.setId(selectStmt, 1, id);
+      entity.databaseAdapter.setId(selectStmt, 1, id);
       ResultSet rs = resources.add(selectStmt.executeQuery());
       int offset = 0;
       if (rs.next()) {
         for (int i = 0; i < MAX_COMMITS; i++) {
-          if (entity.dialect.getId(rs, C_ID + makeSuffix(i)) == null) {
+          if (entity.databaseAdapter.getId(rs, C_ID + makeSuffix(i)) == null) {
             break;
           }
           offset++;

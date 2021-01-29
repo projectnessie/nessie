@@ -28,18 +28,18 @@ class JdbcL3 extends JdbcBaseValue<L3> implements L3 {
 
   static final String TREE = "tree";
 
-  static JdbcEntity<L3> createEntity(JdbcStoreConfig config) {
-    return new JdbcEntity<>(config.getDialect(), ValueType.L3, config,
+  static JdbcEntity<L3> createEntity(DatabaseAdapter databaseAdapter, JdbcStoreConfig config) {
+    return new JdbcEntity<>(databaseAdapter, ValueType.L3, config,
         JdbcBaseValue.columnMapBuilder()
             .put(TREE, ColumnType.KEY_DELTA_LIST)
             .build(),
         JdbcL3::new,
-        (r, c) -> produceToConsumer(config.getDialect(), r, c));
+        (r, c) -> produceToConsumer(databaseAdapter, r, c));
   }
 
-  private static void produceToConsumer(Dialect dialect, ResultSet resultSet, L3 consumer) throws SQLException {
-    JdbcBaseValue.produceToConsumer(dialect, resultSet, consumer)
-        .keyDelta(dialect.getKeyDeltas(resultSet, TREE));
+  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, L3 consumer) throws SQLException {
+    JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+        .keyDelta(databaseAdapter.getKeyDeltas(resultSet, TREE));
   }
 
   JdbcL3(Resources resources, SQLChange change, JdbcEntity<L3> entity) {
@@ -48,7 +48,7 @@ class JdbcL3 extends JdbcBaseValue<L3> implements L3 {
 
   @Override
   public L3 keyDelta(Stream<KeyDelta> keyDelta) {
-    entity.dialect.setKeyDeltas(change, TREE, keyDelta);
+    entity.databaseAdapter.setKeyDeltas(change, TREE, keyDelta);
     return this;
   }
 }

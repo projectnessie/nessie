@@ -55,7 +55,7 @@ import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.memory.InMemoryVersionStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
-import com.dremio.nessie.versioned.store.jdbc.Dialect;
+import com.dremio.nessie.versioned.store.jdbc.DatabaseAdapter;
 import com.dremio.nessie.versioned.store.jdbc.JdbcStore;
 import com.dremio.nessie.versioned.store.jdbc.JdbcStoreConfig;
 
@@ -70,6 +70,9 @@ public class VersionStoreFactory {
 
   @Inject
   DataSource dataSource;
+
+  @Inject
+  DatabaseAdapter databaseAdapter;
 
   @Inject
   public VersionStoreFactory(ApplicationConfig config) {
@@ -180,9 +183,9 @@ public class VersionStoreFactory {
           .logCreateDDL(in.isLogCreateDDL())
           .catalog(in.getCatalog().orElse(null))
           .schema(in.getSchema().orElse(null))
-          .dialect(Dialect.valueOf(in.getDialect().name()))
           .build(),
-        dataSource);
+        dataSource,
+        databaseAdapter);
     jdbc.start();
     return jdbc;
   }

@@ -28,18 +28,18 @@ class JdbcL2 extends JdbcBaseValue<L2> implements L2 {
 
   static final String TREE = "tree";
 
-  static JdbcEntity<L2> createEntity(JdbcStoreConfig config) {
-    return new JdbcEntity<>(config.getDialect(), ValueType.L2, config,
+  static JdbcEntity<L2> createEntity(DatabaseAdapter databaseAdapter, JdbcStoreConfig config) {
+    return new JdbcEntity<>(databaseAdapter, ValueType.L2, config,
         JdbcBaseValue.columnMapBuilder()
             .put(TREE, ColumnType.ID_LIST)
             .build(),
         JdbcL2::new,
-        (r, c) -> produceToConsumer(config.getDialect(), r, c));
+        (r, c) -> produceToConsumer(databaseAdapter, r, c));
   }
 
-  private static void produceToConsumer(Dialect dialect, ResultSet resultSet, L2 consumer) throws SQLException {
-    JdbcBaseValue.produceToConsumer(dialect, resultSet, consumer)
-        .children(dialect.getIds(resultSet, TREE));
+  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, L2 consumer) throws SQLException {
+    JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+        .children(databaseAdapter.getIds(resultSet, TREE));
   }
 
   JdbcL2(Resources resources, SQLChange change, JdbcEntity<L2> entity) {
@@ -48,7 +48,7 @@ class JdbcL2 extends JdbcBaseValue<L2> implements L2 {
 
   @Override
   public L2 children(Stream<Id> ids) {
-    entity.dialect.setIds(change, TREE, ids);
+    entity.databaseAdapter.setIds(change, TREE, ids);
     return this;
   }
 }

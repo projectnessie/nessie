@@ -38,19 +38,23 @@ class ITJdbcStore extends AbstractTestStore<JdbcStore> {
     }
   }
 
+  protected JdbcFixture createFixture() {
+    return new JdbcOssFixture();
+  }
+
   /**
    * Creates an instance of MongoDBStore on which tests are executed.
    * @return the store to test.
    */
   @Override
   protected JdbcStore createStore() {
-    fixture = new JdbcFixture();
+    fixture = createFixture();
     return fixture.getStore();
   }
 
   @Override
   protected JdbcStore createRawStore() {
-    return new JdbcFixture().getStore();
+    return createFixture().getStore();
   }
 
   @Override

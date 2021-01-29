@@ -27,19 +27,21 @@ class JdbcWrappedValue<C extends BaseWrappedValue<C>> extends JdbcBaseValue<C> i
 
   static final String VALUE = "value";
 
-  static <V extends BaseWrappedValue<V>> JdbcEntity<V> createEntity(ValueType<V> value, JdbcStoreConfig config) {
-    return new JdbcEntity<>(config.getDialect(), value, config,
+  static <V extends BaseWrappedValue<V>> JdbcEntity<V> createEntity(ValueType<V> value,
+      DatabaseAdapter databaseAdapter, JdbcStoreConfig config) {
+    return new JdbcEntity<>(databaseAdapter, value, config,
         JdbcBaseValue.columnMapBuilder()
             .put(VALUE, ColumnType.BINARY)
             .build(),
         JdbcWrappedValue::new,
-        (r, c) -> produceToConsumer(config.getDialect(), r, c));
+        (r, c) -> produceToConsumer(databaseAdapter, r, c));
   }
 
-  private static <V extends BaseWrappedValue<V>> void produceToConsumer(Dialect dialect,
+  private static <V extends BaseWrappedValue<V>> void produceToConsumer(
+      DatabaseAdapter databaseAdapter,
       ResultSet resultSet, V consumer) throws SQLException {
-    JdbcBaseValue.produceToConsumer(dialect, resultSet, consumer)
-        .value(dialect.getBinary(resultSet, VALUE));
+    JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+        .value(databaseAdapter.getBinary(resultSet, VALUE));
   }
 
   JdbcWrappedValue(Resources resources, SQLChange change, JdbcEntity<C> entity) {
@@ -49,7 +51,7 @@ class JdbcWrappedValue<C extends BaseWrappedValue<C>> extends JdbcBaseValue<C> i
   @SuppressWarnings("unchecked")
   @Override
   public C value(ByteString value) {
-    entity.dialect.setBinary(change, VALUE, value);
+    entity.databaseAdapter.setBinary(change, VALUE, value);
     return (C) this;
   }
 }

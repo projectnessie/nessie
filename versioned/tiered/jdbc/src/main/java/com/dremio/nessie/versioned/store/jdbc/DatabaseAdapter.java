@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.jdbc;
 
 import java.sql.Array;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,9 +40,6 @@ import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.jdbc.JdbcEntity.SQLChange;
 import com.google.protobuf.ByteString;
 
-import io.agroal.pool.wrapper.ConnectionWrapper;
-import oracle.jdbc.OracleConnection;
-
 /**
  * Abstraction of database products like H2, CockroachDB and PostgresQL.
  * <p>Provides the actual {@link ColumnType} to database specific data type mapping and
@@ -51,8 +47,14 @@ import oracle.jdbc.OracleConnection;
  * optional batch-DDL operations or upper/lower-case database object checks.</p>
  */
 @SuppressWarnings("SameParameterValue")
-public enum Dialect {
-  HSQL() {
+public abstract class DatabaseAdapter {
+  public static class HSQL extends DatabaseAdapter {
+
+    @Override
+    String name() {
+      return "HSQL";
+    }
+
     @Override
     String columnType(ColumnType type) {
       switch (type) {
@@ -87,9 +89,15 @@ public enum Dialect {
     boolean metadataUpperCase() {
       return true;
     }
-  },
+  }
 
-  H2() {
+  public static class H2 extends DatabaseAdapter {
+
+    @Override
+    String name() {
+      return "H2";
+    }
+
     @Override
     String columnType(ColumnType type) {
       switch (type) {
@@ -130,9 +138,15 @@ public enum Dialect {
       }
       return super.isIntegrityConstraintViolation(e);
     }
-  },
+  }
 
-  COCKROACH() {
+  public static class Cockroach extends DatabaseAdapter {
+
+    @Override
+    String name() {
+      return "Cockroach";
+    }
+
     @Override
     String columnType(ColumnType type) {
       switch (type) {
@@ -176,9 +190,15 @@ public enum Dialect {
     boolean batchDDL() {
       return true;
     }
-  },
+  }
 
-  POSTGRESQL() {
+  public static class PostgresQL extends DatabaseAdapter {
+
+    @Override
+    String name() {
+      return "PostgresQL";
+    }
+
     @Override
     String columnType(ColumnType type) {
       switch (type) {
@@ -222,122 +242,9 @@ public enum Dialect {
     boolean batchDDL() {
       return true;
     }
-  },
+  }
 
-  ORACLE {
-    @Override
-    String columnType(ColumnType type) {
-      switch (type) {
-        case ID:
-          return "VARCHAR2(80)";
-        case DT:
-        case SEQ:
-        case LONG:
-          return "NUMBER(20,0)";
-        case BINARY:
-          return "BLOB";
-        case BOOL:
-        case REF_TYPE:
-          return "VARCHAR2(1)";
-        case REF_NAME:
-          return "VARCHAR2(4000)";
-        case KEY_MUTATION_LIST:
-          return "key_mutation_list_type";
-        case KEY_DELTA_LIST:
-          return "key_delta_list_type";
-        case KEY_LIST:
-          return "key_list_type";
-        case ID_LIST:
-          return "id_list_type";
-        default:
-          throw new IllegalArgumentException("Unknown column-type " + type);
-      }
-    }
-
-    @Override
-    boolean metadataUpperCase() {
-      return true;
-    }
-
-    @Override
-    String primaryKey(String rawTableName, String... primaryKeyColumns) {
-      return super.primaryKey(rawTableName, primaryKeyColumns) + " USING INDEX";
-    }
-
-    @Override
-    List<String> additionalDDL() {
-      return Arrays.asList(
-          "CREATE OR REPLACE TYPE key_mutation_list_type IS VARRAY(1000) of VARCHAR2(4102)",
-          "CREATE OR REPLACE TYPE key_delta_list_type IS VARRAY(1000) of VARCHAR2(8300)",
-          "CREATE OR REPLACE TYPE key_list_type IS VARRAY(1000) of VARCHAR2(4100)",
-          "CREATE OR REPLACE TYPE id_list_type IS VARRAY(1000) of VARCHAR2(80)"
-      );
-    }
-
-    private String typeForColumnType(ColumnType columnType) {
-      switch (columnType) {
-        case KEY_MUTATION_LIST:
-          return "KEY_MUTATION_LIST_TYPE";
-        case KEY_DELTA_LIST:
-          return "KEY_DELTA_LIST_TYPE";
-        case KEY_LIST:
-          return "KEY_LIST_TYPE";
-        case ID_LIST:
-          return "ID_LIST_TYPE";
-        default:
-          throw new IllegalArgumentException("ColumnType " + columnType + " is not an array type");
-      }
-    }
-
-    @Override
-    boolean getBool(ResultSet resultSet, String column) throws SQLException {
-      return "T".equals(getString(resultSet, column));
-    }
-
-    @Override
-    void setBool(PreparedStatement pstmt, int i, boolean bool) {
-      setString(pstmt, i, bool ? "T" : "F");
-    }
-
-    <T> Stream<T> getArray(ResultSet resultSet, String column,
-        Function<String, T> elementConverter) throws SQLException {
-      Array array = resultSet.getArray(column);
-      if (array != null) {
-        Object[] arr = (Object[]) array.getArray();
-        return Arrays.stream(arr).map(String.class::cast).map(elementConverter);
-      }
-      return Stream.empty();
-    }
-
-    <E, S> void setArray(SQLChange change, String column, Stream<E> contents, Function<E, S> converter, ColumnType columnType) {
-      if (contents == null) {
-        change.setColumn(column, (stmt, index) -> {
-          stmt.setNull(index, Types.ARRAY, typeForColumnType(columnType));
-          return 1;
-        });
-      } else {
-        String[] arr = contents.map(converter).map(x -> x != null ? x.toString() : null).toArray(String[]::new);
-        change.setColumn(column, (stmt, index) -> {
-          Connection conn = stmt.getConnection();
-
-          // This is just for Oracle...
-          // We need the wrapped connection to cast it to an OracleConnection to set an array. WTF!
-          // So we use the Agroal connection-pool here, because that's the one used by Quarkus,
-          // and it's therefore used in the JdbcFixture.
-          if (conn instanceof ConnectionWrapper) {
-            ConnectionWrapper cw = (ConnectionWrapper) conn;
-            conn = cw.getHandler().getConnection();
-          }
-
-          // Using ARRAYs in Oracle suc^Wis kinda interesting
-          OracleConnection oracleConnection = (OracleConnection) conn;
-          Array array = oracleConnection.createOracleArray(typeForColumnType(columnType), arr);
-          stmt.setArray(index, array);
-          return 1;
-        });
-      }
-    }
-  };
+  abstract String name();
 
   abstract String columnType(ColumnType value);
 
@@ -485,15 +392,15 @@ public enum Dialect {
   }
 
   Stream<Key> getKeys(ResultSet resultSet, String column) throws SQLException {
-    return getArray(resultSet, column, Dialect::fromFlattened);
+    return getArray(resultSet, column, DatabaseAdapter::fromFlattened);
   }
 
   void setKeys(SQLChange change, String column, Stream<Key> keys) {
-    setArray(change, column, keys, Dialect::flattenKey, ColumnType.KEY_LIST);
+    setArray(change, column, keys, DatabaseAdapter::flattenKey, ColumnType.KEY_LIST);
   }
 
   Stream<Id> getIds(ResultSet resultSet, String column) throws SQLException {
-    return getArray(resultSet, column, Dialect::stringToId);
+    return getArray(resultSet, column, DatabaseAdapter::stringToId);
   }
 
   void setIds(SQLChange change, String column, Stream<Id> ids) {
@@ -505,11 +412,11 @@ public enum Dialect {
   }
 
   Stream<KeyDelta> getKeyDeltas(ResultSet resultSet, String column) throws SQLException {
-    return getArray(resultSet, column, Dialect::deserializeKeyDelta);
+    return getArray(resultSet, column, DatabaseAdapter::deserializeKeyDelta);
   }
 
   void setKeyDeltas(SQLChange change, String column, Stream<KeyDelta> keyDeltas) {
-    setArray(change, column, keyDeltas, Dialect::serializeKeyDelta, ColumnType.KEY_DELTA_LIST);
+    setArray(change, column, keyDeltas, DatabaseAdapter::serializeKeyDelta, ColumnType.KEY_DELTA_LIST);
   }
 
   void getUnsavedDeltas(ResultSet resultSet, String column, UnsavedCommitDelta delta)
@@ -519,11 +426,11 @@ public enum Dialect {
 
   void getMutations(ResultSet resultSet, String column, Consumer<Mutation> keyMutation)
       throws SQLException {
-    getArray(resultSet, column, Dialect::mutationFromString).forEach(keyMutation);
+    getArray(resultSet, column, DatabaseAdapter::mutationFromString).forEach(keyMutation);
   }
 
   void setMutations(SQLChange change, String column, Stream<Mutation> mutations) {
-    setArray(change, column, mutations, Dialect::mutationAsString, ColumnType.KEY_MUTATION_LIST);
+    setArray(change, column, mutations, DatabaseAdapter::mutationAsString, ColumnType.KEY_MUTATION_LIST);
   }
 
   /**
@@ -733,6 +640,27 @@ public enum Dialect {
         stmt.setObject(index, arr);
         return 1;
       });
+    }
+  }
+
+  /**
+   * Create an instance of a {@link DatabaseAdapter} defined as an inner class:
+   * {@link H2}, {@link HSQL}, {@link Cockroach}, {@link PostgresQL}.
+   * @param name Name of the database-adapter, see above.
+   * @return created database-adapter
+   */
+  public static DatabaseAdapter create(String name) {
+    switch (name) {
+      case "H2":
+        return new H2();
+      case "HSQL":
+        return new HSQL();
+      case "Cockroach":
+        return new Cockroach();
+      case "PostgresQL":
+        return new PostgresQL();
+      default:
+        throw new IllegalArgumentException("Unknown DatabaseAdapter " + name);
     }
   }
 }

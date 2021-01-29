@@ -8,7 +8,7 @@ The following system properties control how integration tests are run:
 
 | System property | Meaning |
 | --------------- | ------- |
-| `it.nessie.store.jdbc.dialect` | The database being tested. One of `H2`, `HSQL`, `POSTGRESQL`, `COCKROACH`, `ORACLE` |
+| `it.nessie.store.jdbc.databaseAdapter` | The database being tested. One of `H2`, `HSQL`, `PostgresQL`, `Cockroach`, `Oracle` |
 | `it.nessie.store.jdbc.table_prefix` | The table prefix to use, set via `JdbcStoreConfig.tablePrefix`  |
 | `it.nessie.store.jdbc.schema` | The table prefix to use, set via `JdbcStoreConfig.schema` |
 | `it.nessie.store.jdbc.catalog` | The table prefix to use, set via `JdbcStoreConfig.catalog` | 
@@ -16,14 +16,14 @@ The following system properties control how integration tests are run:
 | `it.nessie.store.jdbc.url` | Valid w/o testcontainers: The JDBC connect URL |
 | `it.nessie.store.jdbc.username` | Valid w/o testcontainers: The JDBC connect username |
 | `it.nessie.store.jdbc.password` | Valid w/o testcontainers: The JDBC connect password |
-| `it.nessie.store.jdbc.container-image-version` | Valid w/ testcontainers: The Docker image version, valid for `POSTGRESQL` and `COCKROACH` |
-| `it.nessie.store.jdbc.container-image` | Valid w/ testcontainers & `ORACLE`: The Docker image name |
-| `it.nessie.store.jdbc.oracle-port` | Valid w/ testcontainers & `ORACLE`: Optional, the fixed connect TCP port (defaults to `1521`) |
-| `it.nessie.store.jdbc.oracle-sid` | Valid w/ testcontainers & `ORACLE`: Optional, the Oracle SID (defaults to `xe`) |
-| `it.nessie.store.jdbc.oracle-username` | Valid w/ testcontainers & `ORACLE`: Optional, the database user's name (defaults to `system`) |
-| `it.nessie.store.jdbc.oracle-password` | Valid w/ testcontainers & `ORACLE`: Optional, the database user's password (defaults to `oracle`) |
-| `it.nessie.store.jdbc.oracle-wait-regex` | Valid w/ testcontainers & `ORACLE`: Optional, the regex that must appear in the container's log output before the instance is considered "ready". Recommended to set to `.*DATABASE IS READY TO USE.*` for the vendor's image. |
-| `it.nessie.store.jdbc.oracle-container-ip-url` | Valid w/ testcontainers & `ORACLE`: Optional, use the container's IP address + unmapped in the JDBC connect URL instead of a mapped port, because some vendor images have issues when connecting via "localhost" |
+| `it.nessie.store.jdbc.container-image-version` | Valid w/ testcontainers: The Docker image version, valid for `PostgresQL` and `Cockroach` |
+| `it.nessie.store.jdbc.container-image` | Valid w/ testcontainers & `Oracle`: The Docker image name |
+| `it.nessie.store.jdbc.oracle-port` | Valid w/ testcontainers & `Oracle`: Optional, the fixed connect TCP port (defaults to `1521`) |
+| `it.nessie.store.jdbc.oracle-sid` | Valid w/ testcontainers & `Oracle`: Optional, the Oracle SID (defaults to `xe`) |
+| `it.nessie.store.jdbc.oracle-username` | Valid w/ testcontainers & `Oracle`: Optional, the database user's name (defaults to `system`) |
+| `it.nessie.store.jdbc.oracle-password` | Valid w/ testcontainers & `Oracle`: Optional, the database user's password (defaults to `oracle`) |
+| `it.nessie.store.jdbc.oracle-wait-regex` | Valid w/ testcontainers & `Oracle`: Optional, the regex that must appear in the container's log output before the instance is considered "ready". Recommended to set to `.*DATABASE IS READY TO USE.*` for the vendor's image. |
+| `it.nessie.store.jdbc.oracle-container-ip-url` | Valid w/ testcontainers & `Oracle`: Optional, use the container's IP address + unmapped in the JDBC connect URL instead of a mapped port, because some vendor images have issues when connecting via "localhost" |
 
 ## Testing in-JVM H2 & HSQL
 
@@ -34,7 +34,7 @@ Integration tests against h2 and hsql are executed and run in the local JVM.
 Integration testing via [testcontainers](https://www.testcontainers.org/) is straight forward:
 
 1. Set the system property `it.nessie.store.jdbc.testcontainer` to `true`
-2. Set the system property `it.nessie.store.jdbc.dialect` to `POSTGRESQL`/`COCKROACH`
+2. Set the system property `it.nessie.store.jdbc.databaseAdapter` to `PostgresQL`/`Cockroach`
 3. Optional: Set the system property `it.nessie.store.jdbc.container-image-version` to the desired version (PostgresQL tested w/ `9.6.12`, CockroachDB tested w/ `v20.1.11`)
 
 Note: Newer CockroachDB images (aka v20.2.x) have issues with testcontainers (or vice versa?)
@@ -54,7 +54,7 @@ This is not exactly straight forward. One approach that works is this:
    | System property | Value | Notes |
    | --------------- | ----- | ----- |
    | `it.nessie.store.jdbc.testcontainer` | `true` |  |
-   | `it.nessie.store.jdbc.dialect` | `ORACLE` |  |
+   | `it.nessie.store.jdbc.databaseAdapter` | `Oracle` |  |
    | `it.nessie.store.jdbc.container-image` | `oracle-testnessie` | (The image name you specified in step 2.3. above) |
    | `it.nessie.store.jdbc.oracle-password` | `oracle` | (The password you specified in step 2.1. above) |
    | `it.nessie.store.jdbc.oracle-sid` | `XE` | (The SID you specified in step 2.1. above) |
@@ -72,9 +72,11 @@ Integration tests against Oracle are exercised if the `commercialOracle` Maven p
 # Example intergration-tests invocation
 
 ```
-./mvnw clean install -DskipTests -pl :nessie-versioned-tiered-jdbc && \
-   ./mvnw integration-test -pl :nessie-versioned-tiered-jdbc \
-   -P ossDatabases \
+# All OSS databases
+./mvnw integration-test -pl :nessie-versioned-tiered-jdbc -P ossDatabases
+
+# Oracle
+./mvnw integration-test -pl :nessie-versioned-tiered-jdbc-oracle \
    -P commercialOracle \
    -Dit.nessie.store.jdbc.container-image=oracle-testnessie \
    -Dit.nessie.store.jdbc.oracle-password=oracle \
