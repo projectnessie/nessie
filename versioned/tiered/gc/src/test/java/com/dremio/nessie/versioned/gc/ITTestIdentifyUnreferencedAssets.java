@@ -40,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import com.dremio.nessie.tiered.builder.Value;
 import com.dremio.nessie.versioned.AssetKey;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.Hash;
@@ -52,7 +53,9 @@ import com.dremio.nessie.versioned.gc.IdentifyUnreferencedAssets.UnreferencedIte
 import com.dremio.nessie.versioned.impl.TieredVersionStore;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
 import com.dremio.nessie.versioned.tests.CommitBuilder;
@@ -99,6 +102,26 @@ public class ITTestIdentifyUnreferencedAssets {
     Hash h = commit().put("k1", new DummyValue().add(-1).add(-2)).withMetadata("c1").toBranch(toBeDeleted);
     versionStore.delete(toBeDeleted, Optional.of(h));
 
+    {
+      // Create a dangling value to ensure that the slop factor avoids deletion of the assets of this otherwise dangling value.
+      SaveOp<Value> danglingValue = new SaveOp<Value>(ValueType.VALUE, Id.generateRandom()) {
+        @Override
+        public void serialize(Value consumer) {
+          try {
+            consumer.dt(System.currentTimeMillis())
+                .id(Id.generateRandom())
+                .value(ByteString.copyFrom(
+                      MAPPER.writeValueAsBytes(
+                          new DummyValue().add(-50).add(-51))));
+          } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+          }
+
+        }
+      };
+      store.put(danglingValue, Optional.empty());
+    }
+
     SparkSession spark = SparkSession
         .builder()
         .appName("test-nessie-gc-collection")
@@ -115,7 +138,7 @@ public class ITTestIdentifyUnreferencedAssets {
     IdentifyUnreferencedAssets<DummyValue> app = new IdentifyUnreferencedAssets<DummyValue>(helper, new DynamoSupplier(), spark, options);
     Dataset<UnreferencedItem> items = app.identify();
     Set<String> unreferencedItems = items.collectAsList().stream().map(UnreferencedItem::getName).collect(Collectors.toSet());
-    assertThat(unreferencedItems, containsInAnyOrder("-1", "-2", "-3"));
+    assertThat(unreferencedItems, containsInAnyOrder("-1", "-2", "-3", "-50", "-51"));
   }
 
   private static class DynamoSupplier implements Supplier<Store>, Serializable {
