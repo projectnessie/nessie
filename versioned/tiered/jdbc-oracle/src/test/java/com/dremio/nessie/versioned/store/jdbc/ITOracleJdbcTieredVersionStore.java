@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.server.config.converters;
+package com.dremio.nessie.versioned.store.jdbc;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
+public class ITOracleJdbcTieredVersionStore extends ITJdbcTieredVersionStore {
 
-@RegisterForReflection
-public enum JdbcDialectType {
-
-  HSQL,
-  H2,
-  COCKROACH,
-  POSTGRESQL,
-  ORACLE;
-
+  @Override
+  protected JdbcFixture createNewFixture() {
+    return new JdbcOracleFixture();
+  }
 }

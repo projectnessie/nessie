@@ -16,7 +16,7 @@
 package com.dremio.nessie.versioned.store.jdbc;
 
 /**
- * Abstracts column types, so the actual {@link Dialect database-dialects} can implement the
+ * Abstracts column types, so the actual {@link DatabaseAdapter database-dialects} can implement the
  * type handling in a database-native way.
  */
 enum ColumnType {
