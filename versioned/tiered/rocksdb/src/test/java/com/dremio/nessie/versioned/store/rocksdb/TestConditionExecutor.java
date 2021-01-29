@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -36,6 +38,9 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.Store;
+import com.google.protobuf.ByteString;
+
+import sun.nio.cs.UTF_8;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestConditionExecutor {
@@ -72,7 +77,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksL1.ID, RocksL1.EMPTY_ID.toEntity()));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -80,7 +85,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksL1.COMMIT_METADATA, ID.toEntity()));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -89,7 +94,7 @@ public class TestConditionExecutor {
     StringBuilder str = new StringBuilder().append(RocksL1.INCREMENTAL_KEY_LIST).append(SEPARATOR).append(RocksL1.CHECKPOINT_ID);
     condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -98,7 +103,7 @@ public class TestConditionExecutor {
     StringBuilder str = new StringBuilder().append(RocksL1.INCREMENTAL_KEY_LIST).append(SEPARATOR).append(RocksL1.DISTANCE_FROM_CHECKPOINT);
     condition.add(new Function(Function.EQUALS, str.toString(), ONE));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -106,7 +111,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.SIZE, RocksL1.CHILDREN, Entity.ofNumber(RocksL1.SIZE)));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -118,7 +123,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksL1.CHILDREN, Entity.ofList(idsAsEntity)));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -127,7 +132,7 @@ public class TestConditionExecutor {
     StringBuilder str = new StringBuilder().append(RocksL1.CHILDREN).append("(").append("3").append(")");
     condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -135,7 +140,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.SIZE, RocksL1.ANCESTORS, Entity.ofNumber(RocksL1.SIZE)));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -147,7 +152,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksL1.ANCESTORS, Entity.ofList(idsAsEntity)));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -156,7 +161,7 @@ public class TestConditionExecutor {
     StringBuilder str = new StringBuilder().append(RocksL1.ANCESTORS).append("(").append("3").append(")");
     condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
     RocksL1 l1 = (RocksL1) createL1(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -164,7 +169,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.SIZE, RocksL1.COMPLETE_KEY_LIST, Entity.ofNumber(RocksL1.SIZE)));
     RocksL1 l1 = (RocksL1) createL1CompleteKeyList(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -176,7 +181,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksL1.COMPLETE_KEY_LIST, Entity.ofList(idsAsEntity)));
     RocksL1 l1 = (RocksL1) createL1CompleteKeyList(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -185,7 +190,7 @@ public class TestConditionExecutor {
     StringBuilder str = new StringBuilder().append(RocksL1.COMPLETE_KEY_LIST).append("(").append("3").append(")");
     condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
     RocksL1 l1 = (RocksL1) createL1CompleteKeyList(random);
-    Assertions.assertTrue(l1.evaluate(condition));
+    assertTrue(l1.evaluate(condition));
   }
 
   @Test
@@ -202,7 +207,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksL2.ID, RocksL2.EMPTY_ID.toEntity()));
     RocksL2 l2 = (RocksL2) createL2();
-    Assertions.assertTrue(l2.evaluate(condition));
+    assertTrue(l2.evaluate(condition));
   }
 
   @Test
@@ -210,7 +215,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.SIZE, RocksL1.CHILDREN, Entity.ofNumber(RocksL1.SIZE)));
     RocksL2 l2 = (RocksL2) createL2();
-    Assertions.assertTrue(l2.evaluate(condition));
+    assertTrue(l2.evaluate(condition));
   }
 
   @Test
@@ -222,7 +227,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksL1.CHILDREN, Entity.ofList(idsAsEntity)));
     RocksL2 l2 = (RocksL2) createL2();
-    Assertions.assertTrue(l2.evaluate(condition));
+    assertTrue(l2.evaluate(condition));
   }
 
   @Test
@@ -231,7 +236,7 @@ public class TestConditionExecutor {
     StringBuilder str = new StringBuilder().append(RocksL1.CHILDREN).append("(").append("3").append(")");
     condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
     RocksL2 l2 = (RocksL2) createL2();
-    Assertions.assertTrue(l2.evaluate(condition));
+    assertTrue(l2.evaluate(condition));
   }
 
   @Test
@@ -248,12 +253,42 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksL3.ID, RocksL3.EMPTY_ID.toEntity()));
     RocksL3 l3 = (RocksL3) createL3();
-    Assertions.assertTrue(l3.evaluate(condition));
+    assertTrue(l3.evaluate(condition));
   }
 
   @Test
   public void executorL3KeyDelta() {
-    // TODO: expect false
+    // TODO
+  }
+
+  @Test
+  public void executorCommitMetadataId() {
+    final Id id = Id.build("test-id");
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksCommitMetadata.ID, id.toEntity()));
+    final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(
+      id, 0L, ByteString.EMPTY);
+    assertTrue(meta.evaluate(condition));
+  }
+
+  @Test
+  public void executorCommitMetadataValue() {
+    final ByteString value = ByteString.copyFrom("test-value", UTF_8.INSTANCE);
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksCommitMetadata.VALUE, Entity.ofBinary(value)));
+    final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(
+      RocksCommitMetadata.EMPTY_ID, 0L, value);
+    assertTrue(meta.evaluate(condition));
+  }
+
+  @Test
+  public void executorCommitMetadataIdNoMatch() {
+    // TODO
+  }
+
+  @Test
+  public void executorCommitMetadataValueNoMatch() {
+    // TODO
   }
 
   @Test
@@ -270,7 +305,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksRef.ID, RocksRef.EMPTY_ID.toEntity()));
     RocksRef ref = (RocksRef) createTag(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   @Test
@@ -278,7 +313,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksRef.TYPE, Entity.ofString(Ref.RefType.TAG.toString())));
     RocksRef ref = (RocksRef) createTag(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   @Test
@@ -286,7 +321,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksRef.NAME, Entity.ofString(sampleName)));
     RocksRef ref = (RocksRef) createTag(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   @Test
@@ -294,7 +329,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksRef.COMMIT, ID_2.toEntity()));
     RocksRef ref = (RocksRef) createTag(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   // Children do not exist for Tags
@@ -312,7 +347,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksRef.ID, RocksRef.EMPTY_ID.toEntity()));
     RocksRef ref = (RocksRef) createBranch(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   @Test
@@ -320,7 +355,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksRef.TYPE, Entity.ofString(Ref.RefType.BRANCH.toString())));
     RocksRef ref = (RocksRef) createBranch(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   @Test
@@ -328,7 +363,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksRef.NAME, Entity.ofString(sampleName)));
     RocksRef ref = (RocksRef) createBranch(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   @Test
@@ -336,7 +371,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.SIZE, RocksBranch.CHILDREN, Entity.ofNumber(RocksL1.SIZE)));
     RocksRef ref = (RocksRef) createBranch(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   @Test
@@ -348,7 +383,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksBranch.CHILDREN, Entity.ofList(idsAsEntity)));
     RocksRef ref = (RocksRef) createBranch(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   @Test
@@ -357,7 +392,7 @@ public class TestConditionExecutor {
     StringBuilder str = new StringBuilder().append(RocksRef.CHILDREN).append("(").append("8").append(")");
     condition.add(new Function(Function.EQUALS, str.toString(), ID.toEntity()));
     RocksRef ref = (RocksRef) createBranch(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   @Test
@@ -365,7 +400,7 @@ public class TestConditionExecutor {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksRef.METADATA, ID.toEntity()));
     RocksRef ref = (RocksRef) createBranch(random);
-    Assertions.assertTrue(ref.evaluate(condition));
+    assertTrue(ref.evaluate(condition));
   }
 
   /**
