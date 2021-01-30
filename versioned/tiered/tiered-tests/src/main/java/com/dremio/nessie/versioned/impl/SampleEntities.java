@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.Ref.RefType;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
 import com.google.protobuf.ByteString;
@@ -164,10 +165,20 @@ public class SampleEntities {
    * @param numChars the size of the String.
    * @return the String of random characters.
    */
-  private static String createString(Random random, int numChars) {
+  public static String createString(Random random, int numChars) {
     return random.ints('a', 'z' + 1)
         .limit(numChars)
         .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
         .toString();
+  }
+
+  /**
+   * Create a String Entity of random characters.
+   * @param random random number generator to use.
+   * @param numChars the size of the String.
+   * @return the String Entity of random characters.
+   */
+  public static Entity createStringEntity(Random random, int numChars) {
+    return Entity.ofString(createString(random, numChars));
   }
 }
