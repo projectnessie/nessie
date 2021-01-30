@@ -36,8 +36,8 @@ abstract class InternalRef extends PersistentBase<Ref> {
 
   static final String TYPE = "type";
 
-  InternalRef(Id id) {
-    super(id);
+  InternalRef(Id id, Long dt) {
+    super(id, dt);
   }
 
   public enum Type {
@@ -98,9 +98,8 @@ abstract class InternalRef extends PersistentBase<Ref> {
    * Implement {@link Ref} to build an {@link InternalRef} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<InternalRef> implements Ref {
+  static final class Builder extends EntityBuilder<InternalRef, Ref> implements Ref {
 
-    private Id id;
     private RefType refType;
     private String name;
 
@@ -111,13 +110,6 @@ abstract class InternalRef extends PersistentBase<Ref> {
     private Id metadata;
     private Stream<Id> children;
     private List<Commit> commits;
-
-    @Override
-    public Builder id(Id id) {
-      checkCalled(this.id, "id");
-      this.id = id;
-      return this;
-    }
 
     @Override
     public Builder type(RefType refType) {
@@ -224,7 +216,7 @@ abstract class InternalRef extends PersistentBase<Ref> {
       switch (refType) {
         case TAG:
           checkSet(commit, "commit");
-          return new InternalTag(id, name, commit);
+          return new InternalTag(id, name, commit, dt);
         case BRANCH:
           checkSet(metadata, "metadata");
           checkSet(children, "children");
@@ -234,11 +226,18 @@ abstract class InternalRef extends PersistentBase<Ref> {
               name,
               IdMap.of(children, InternalL1.SIZE),
               metadata,
-              commits);
+              commits,
+              dt);
         default:
           throw new UnsupportedOperationException("Unknown ref-type " + refType);
       }
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  EntityType<Ref, InternalRef, InternalRef.Builder> getEntityType() {
+    return EntityType.REF;
   }
 
 }

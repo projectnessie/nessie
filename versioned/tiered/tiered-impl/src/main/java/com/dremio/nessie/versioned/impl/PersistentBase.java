@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.SaveOp;
 import com.google.common.base.Preconditions;
 
 abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
@@ -25,12 +26,16 @@ abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
   //unchanging but only generated once needed.
   private Id id;
 
+  private final long dt;
+
   PersistentBase() {
     this.id = null;
+    this.dt = DT.now();
   }
 
-  PersistentBase(Id id) {
+  PersistentBase(Id id, Long dt) {
     this.id = id;
+    this.dt = dt == null ? DT.UNKNOWN : dt;
   }
 
   abstract Id generateId();
@@ -42,7 +47,7 @@ abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
    * @return the consumer passed into the function
    */
   C applyToConsumer(C consumer) {
-    return consumer.id(getId());
+    return consumer.id(getId()).dt(dt);
   }
 
   @Override
@@ -53,11 +58,40 @@ abstract class PersistentBase<C extends BaseValue<C>> implements HasId {
     return id;
   }
 
+  abstract <E extends PersistentBase<C>> EntityType<C, E, ?> getEntityType();
+
+  SaveOp<C> toSaveOp() {
+    return getEntityType().createSaveOpForEntity(this);
+  }
+
   void ensureConsistentId() {
     assert id == null || id.equals(generateId());
   }
 
-  abstract static class EntityBuilder<E extends HasId> {
+  public long getDt() {
+    return dt;
+  }
+
+  abstract static class EntityBuilder<E extends HasId, C extends BaseValue<C>> implements BaseValue<C> {
+    Id id;
+    Long dt;
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public C id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
+      return (C) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public C dt(long dt) {
+      checkCalled(this.dt, "dt");
+      this.dt = dt;
+      return (C) this;
+    }
+
     abstract E build();
   }
 

@@ -32,6 +32,7 @@
 
   <modules>
     <module>dynamodb</module>
+    <module>gc</module>
     <module>mongodb</module>
     <module>rocksdb</module>
     <module>tiered-impl</module>

@@ -26,6 +26,7 @@ import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 public interface Store extends AutoCloseable {
 
   String KEY_NAME = "id";
+  String DT_NAME = "dt";
 
   /**
    * Start the store.

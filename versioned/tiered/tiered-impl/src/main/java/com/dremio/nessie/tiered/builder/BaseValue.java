@@ -32,4 +32,11 @@ public interface BaseValue<T extends BaseValue<T>> {
    * @return This consumer.
    */
   T id(Id id);
+
+  /**
+   * Set the date-time in microseconds since epoch when this object was last modified (inserted/updated).
+   * @param dt The date+time in microseconds since epoch.
+   * @return This consumer.
+   */
+  T dt(long dt);
 }

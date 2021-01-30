@@ -53,6 +53,7 @@ class DynamoWrappedValue<C extends BaseWrappedValue<C>> extends DynamoBaseValue<
    */
   static <C extends BaseWrappedValue<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
     consumer.id(deserializeId(entity, ID))
+        .dt(AttributeValueUtil.getDt(entity))
         .value(ByteString.copyFrom(checkNotNull(attributeValue(entity, VALUE).b(), "mandatory binary value is null")
             .asByteArrayUnsafe()));
   }

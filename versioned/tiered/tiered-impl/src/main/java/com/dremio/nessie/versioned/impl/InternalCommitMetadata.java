@@ -21,12 +21,12 @@ import com.google.protobuf.ByteString;
 
 class InternalCommitMetadata extends WrappedValueBean<CommitMetadata> {
 
-  private InternalCommitMetadata(Id id, ByteString value) {
-    super(id, value);
+  private InternalCommitMetadata(Id id, ByteString value, Long dt) {
+    super(id, value, dt);
   }
 
   static InternalCommitMetadata of(ByteString value) {
-    return new InternalCommitMetadata(null, value);
+    return new InternalCommitMetadata(null, value, DT.now());
   }
 
   @Override
@@ -43,5 +43,11 @@ class InternalCommitMetadata extends WrappedValueBean<CommitMetadata> {
     Builder() {
       super(InternalCommitMetadata::new);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  EntityType<CommitMetadata, InternalCommitMetadata, InternalCommitMetadata.Builder> getEntityType() {
+    return EntityType.COMMIT_METADATA;
   }
 }

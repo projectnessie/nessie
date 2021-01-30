@@ -16,7 +16,6 @@
 package com.dremio.nessie.server.providers;
 
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -43,8 +42,11 @@ import com.dremio.nessie.model.ImmutableIcebergTable;
 import com.dremio.nessie.model.ImmutableSqlView;
 import com.dremio.nessie.model.SqlView;
 import com.dremio.nessie.model.SqlView.Dialect;
+import com.dremio.nessie.versioned.AssetKey;
+import com.dremio.nessie.versioned.AssetKey.NoOpAssetKey;
 import com.dremio.nessie.versioned.Serializer;
 import com.dremio.nessie.versioned.StoreWorker;
+import com.dremio.nessie.versioned.ValueWorker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
@@ -54,125 +56,12 @@ import com.google.protobuf.UnsafeByteOperations;
 @Singleton
 public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitMeta> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
-  private final Serializer<Contents> tableSerializer = serializer();
-  private final Serializer<CommitMeta> metaSerializer = metadataSerializer();
 
-  private Serializer<Contents> serializer() {
-    //todo not handling TableMetadata at all...probably need to combine it w/ AssetKey
-    return new Serializer<Contents>() {
-      @Override
-      public ByteString toBytes(Contents value) {
-        PContents.Builder builder = PContents.newBuilder();
-        if (value instanceof IcebergTable) {
-          builder.setIcebergTable(
-              PIcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
-
-        } else if (value instanceof DeltaLakeTable) {
-
-          PDeltaLakeTable.Builder table = PDeltaLakeTable.newBuilder()
-              .addAllMetadataLocationHistory(((DeltaLakeTable) value).getMetadataLocationHistory())
-              .addAllCheckpointLocationHistory(((DeltaLakeTable) value).getCheckpointLocationHistory());
-          String lastCheckpoint = ((DeltaLakeTable) value).getLastCheckpoint();
-          if (lastCheckpoint != null) {
-            table.setLastCheckpoint(lastCheckpoint);
-          }
-          builder.setDeltaLakeTable(table);
-
-        } else if (value instanceof HiveTable) {
-          HiveTable ht = (HiveTable) value;
-          builder.setHiveTable(PHiveTable.newBuilder()
-              .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition())).addAllPartition(
-                  ht.getPartitions().stream().map(UnsafeByteOperations::unsafeWrap).collect(Collectors.toList())));
-
-        } else if (value instanceof HiveDatabase) {
-          builder.setHiveDatabase(PHiveDatabase.newBuilder()
-              .setDatabase(UnsafeByteOperations.unsafeWrap(((HiveDatabase) value).getDatabaseDefinition())));
-        } else if (value instanceof SqlView) {
-          SqlView view = (SqlView) value;
-          builder.setSqlView(PSqlView.newBuilder().setDialect(view.getDialect().name()).setSqlText(view.getSqlText()));
-        } else {
-          throw new IllegalArgumentException("Unknown type" + value);
-        }
-
-        return builder.build().toByteString();
-      }
-
-      @Override
-      public Contents fromBytes(ByteString bytes) {
-        PContents contents;
-        try {
-          contents = PContents.parseFrom(bytes);
-        } catch (InvalidProtocolBufferException e) {
-          throw new RuntimeException("Failure parsing data", e);
-        }
-        switch (contents.getObjectTypeCase()) {
-          case DELTA_LAKE_TABLE:
-            Builder builder = ImmutableDeltaLakeTable.builder()
-                .addAllMetadataLocationHistory(contents.getDeltaLakeTable().getMetadataLocationHistoryList())
-                .addAllCheckpointLocationHistory(contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
-            if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
-              builder.lastCheckpoint(contents.getDeltaLakeTable().getLastCheckpoint());
-            }
-            return builder.build();
-
-          case HIVE_DATABASE:
-            return ImmutableHiveDatabase.builder()
-                .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build();
-
-          case HIVE_TABLE:
-            return ImmutableHiveTable.builder()
-                .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray)
-                    .collect(Collectors.toList()))
-                .tableDefinition(contents.getHiveTable().getTable().toByteArray()).build();
-
-          case ICEBERG_TABLE:
-            return ImmutableIcebergTable.builder().metadataLocation(contents.getIcebergTable().getMetadataLocation())
-                .build();
-
-          case SQL_VIEW:
-            PSqlView view = contents.getSqlView();
-            return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
-                .build();
-
-          case OBJECTTYPE_NOT_SET:
-          default:
-            throw new IllegalArgumentException("Unknown type" + contents.getObjectTypeCase());
-
-        }
-      }
-    };
-  }
-
-  private Serializer<CommitMeta> metadataSerializer() {
-
-    return new Serializer<CommitMeta>() {
-      @Override
-      public ByteString toBytes(CommitMeta value) {
-        try {
-          return ByteString.copyFrom(MAPPER.writeValueAsBytes(value));
-        } catch (JsonProcessingException e) {
-          throw new RuntimeException(String.format("Couldn't serialize commit meta %s", value), e);
-        }
-      }
-
-      @Override
-      public CommitMeta fromBytes(ByteString bytes) {
-        try {
-          return MAPPER.readValue(bytes.toByteArray(), CommitMeta.class);
-        } catch (IOException e) {
-          return ImmutableCommitMeta.builder()
-                                    .message("unknown")
-                                    .commiter("unknown")
-                                    .email("unknown")
-                                    .hash("unknown")
-                                    .build();
-        }
-      }
-    };
-  }
+  private final ValueWorker<Contents> tableSerializer = new TableValueWorker();
+  private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
 
   @Override
-  public Serializer<Contents> getValueSerializer() {
+  public ValueWorker<Contents> getValueWorker() {
     return tableSerializer;
   }
 
@@ -181,13 +70,121 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     return metaSerializer;
   }
 
-  @Override
-  public Stream<AssetKey> getAssetKeys(Contents table) {
-    throw new UnsupportedOperationException("No serialization available for AssetKey");
+  private static class TableValueWorker implements ValueWorker<Contents> {
+    public ByteString toBytes(Contents value) {
+      PContents.Builder builder = PContents.newBuilder();
+      if (value instanceof IcebergTable) {
+        builder.setIcebergTable(
+            PIcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
+
+      } else if (value instanceof DeltaLakeTable) {
+
+        PDeltaLakeTable.Builder table = PDeltaLakeTable.newBuilder()
+            .addAllMetadataLocationHistory(((DeltaLakeTable) value).getMetadataLocationHistory())
+            .addAllCheckpointLocationHistory(((DeltaLakeTable) value).getCheckpointLocationHistory());
+        String lastCheckpoint = ((DeltaLakeTable) value).getLastCheckpoint();
+        if (lastCheckpoint != null) {
+          table.setLastCheckpoint(lastCheckpoint);
+        }
+        builder.setDeltaLakeTable(table);
+
+      } else if (value instanceof HiveTable) {
+        HiveTable ht = (HiveTable) value;
+        builder.setHiveTable(PHiveTable.newBuilder()
+            .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition())).addAllPartition(
+                ht.getPartitions().stream().map(UnsafeByteOperations::unsafeWrap).collect(Collectors.toList())));
+
+      } else if (value instanceof HiveDatabase) {
+        builder.setHiveDatabase(PHiveDatabase.newBuilder()
+            .setDatabase(UnsafeByteOperations.unsafeWrap(((HiveDatabase) value).getDatabaseDefinition())));
+      } else if (value instanceof SqlView) {
+        SqlView view = (SqlView) value;
+        builder.setSqlView(PSqlView.newBuilder().setDialect(view.getDialect().name()).setSqlText(view.getSqlText()));
+      } else {
+        throw new IllegalArgumentException("Unknown type" + value);
+      }
+
+      return builder.build().toByteString();
+    }
+
+    @Override
+    public Contents fromBytes(ByteString bytes) {
+      PContents contents;
+      try {
+        contents = PContents.parseFrom(bytes);
+      } catch (InvalidProtocolBufferException e) {
+        throw new RuntimeException("Failure parsing data", e);
+      }
+      switch (contents.getObjectTypeCase()) {
+        case DELTA_LAKE_TABLE:
+          Builder builder = ImmutableDeltaLakeTable.builder()
+              .addAllMetadataLocationHistory(contents.getDeltaLakeTable().getMetadataLocationHistoryList())
+              .addAllCheckpointLocationHistory(contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
+          if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
+            builder.lastCheckpoint(contents.getDeltaLakeTable().getLastCheckpoint());
+          }
+          return builder.build();
+
+        case HIVE_DATABASE:
+          return ImmutableHiveDatabase.builder()
+              .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build();
+
+        case HIVE_TABLE:
+          return ImmutableHiveTable.builder()
+              .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray)
+                  .collect(Collectors.toList()))
+              .tableDefinition(contents.getHiveTable().getTable().toByteArray()).build();
+
+        case ICEBERG_TABLE:
+          return ImmutableIcebergTable.builder().metadataLocation(contents.getIcebergTable().getMetadataLocation())
+              .build();
+
+        case SQL_VIEW:
+          PSqlView view = contents.getSqlView();
+          return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
+              .build();
+
+        case OBJECTTYPE_NOT_SET:
+        default:
+          throw new IllegalArgumentException("Unknown type" + contents.getObjectTypeCase());
+
+      }
+    }
+
+    @Override
+    public Stream<AssetKey> getAssetKeys(Contents value) {
+      return Stream.of();
+    }
+
+    @Override
+    public Serializer<AssetKey> getAssetKeySerializer() {
+      return NoOpAssetKey.SERIALIZER;
+    }
   }
 
-  @Override
-  public CompletableFuture<Void> deleteAsset(AssetKey key) {
-    throw new UnsupportedOperationException("No serialization available for AssetKey");
+  private static class MetadataSerializer implements Serializer<CommitMeta> {
+    @Override
+    public ByteString toBytes(CommitMeta value) {
+      try {
+        return ByteString.copyFrom(MAPPER.writeValueAsBytes(value));
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(String.format("Couldn't serialize commit meta %s", value), e);
+      }
+    }
+
+    @Override
+    public CommitMeta fromBytes(ByteString bytes) {
+      try {
+        return MAPPER.readValue(bytes.toByteArray(), CommitMeta.class);
+      } catch (IOException e) {
+        return ImmutableCommitMeta.builder()
+            .message("unknown")
+            .commiter("unknown")
+            .email("unknown")
+            .hash("unknown")
+            .build();
+      }
+    }
   }
+
 }
