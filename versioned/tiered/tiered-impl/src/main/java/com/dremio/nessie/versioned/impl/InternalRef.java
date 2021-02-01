@@ -169,7 +169,7 @@ abstract class InternalRef extends PersistentBase<Ref> {
       }
 
       @Override
-      public Ref toRef() {
+      public Ref backToRef() {
         return Builder.this;
       }
     }
@@ -203,7 +203,7 @@ abstract class InternalRef extends PersistentBase<Ref> {
       }
 
       @Override
-      public Ref toRef() {
+      public Ref backToRef() {
         return Builder.this;
       }
 

@@ -21,6 +21,9 @@ import com.dremio.nessie.versioned.Key;
 
 /**
  * Consumer for fragments.
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
  */
 public interface Fragment extends BaseValue<Fragment> {
 

@@ -23,6 +23,9 @@ import com.dremio.nessie.versioned.store.Id;
 /**
  * Interface to create an L1 Builder. To be implemented by each
  * {@link com.dremio.nessie.versioned.store.Store} implementation.
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
  */
 public interface L1 extends BaseValue<L1> {
 

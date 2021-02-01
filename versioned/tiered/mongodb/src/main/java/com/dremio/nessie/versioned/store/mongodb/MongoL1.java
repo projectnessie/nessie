@@ -51,11 +51,11 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
     Document keyList = (Document) document.get(KEY_LIST);
     boolean chk = keyList.getBoolean(IS_CHECKPOINT);
     if (chk) {
-      v = v.completeKeyList(deserializeIds(keyList, FRAGMENTS));
+      v.completeKeyList(deserializeIds(keyList, FRAGMENTS));
     } else {
       Id checkpointId = deserializeId(keyList, ORIGIN);
       int distanceFromCheckpoint = Ints.checkedCast(keyList.getLong(DISTANCE));
-      v = v.incrementalKeyList(checkpointId, distanceFromCheckpoint);
+      v.incrementalKeyList(checkpointId, distanceFromCheckpoint);
     }
   }
 

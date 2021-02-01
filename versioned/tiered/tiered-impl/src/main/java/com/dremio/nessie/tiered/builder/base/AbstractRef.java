@@ -50,7 +50,7 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
     }
 
     @Override
-    public Ref toRef() {
+    public Ref backToRef() {
       return ref;
     }
   }
@@ -81,7 +81,7 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
     }
 
     @Override
-    public Ref toRef() {
+    public Ref backToRef() {
       return ref;
     }
   }

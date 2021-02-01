@@ -17,7 +17,6 @@ package com.dremio.nessie.versioned.store.dynamo;
 
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attributeValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.bytes;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Map;
@@ -26,6 +25,7 @@ import com.dremio.nessie.tiered.builder.BaseWrappedValue;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
 
+import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class DynamoWrappedValue<C extends BaseWrappedValue<C>> extends DynamoBaseValue<C> implements BaseWrappedValue<C> {
@@ -52,9 +52,8 @@ class DynamoWrappedValue<C extends BaseWrappedValue<C>> extends DynamoBaseValue<
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static <C extends BaseWrappedValue<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
-    consumer.id(deserializeId(entity, ID))
-        .dt(AttributeValueUtil.getDt(entity))
-        .value(ByteString.copyFrom(checkNotNull(attributeValue(entity, VALUE).b(), "mandatory binary value is null")
-            .asByteArrayUnsafe()));
+    DynamoBaseValue.toConsumer(entity, consumer);
+    SdkBytes b = checkNotNull(attributeValue(entity, VALUE).b(), "mandatory binary value is null");
+    consumer.value(ByteString.copyFrom(b.asByteArrayUnsafe()));
   }
 }
