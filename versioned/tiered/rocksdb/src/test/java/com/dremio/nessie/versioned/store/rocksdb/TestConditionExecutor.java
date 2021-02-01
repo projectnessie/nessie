@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import com.dremio.nessie.tiered.builder.Fragment;
 import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.SampleEntities;
@@ -473,7 +474,7 @@ class TestConditionExecutor {
 
   /**
    * Create a sample Tag (Ref) entity.
-   * @param random  object to use for randomization of entity creation.
+   * @param random object to use for randomization of entity creation
    * @return sample Ref entity
    */
   static RocksRef createTag(Random random) {
@@ -482,6 +483,17 @@ class TestConditionExecutor {
       .type(Ref.RefType.TAG)
       .name(sampleName)
       .commit(ID_2);
+  }
+
+  /**
+   * Create a sample Fragment entity.
+   * @param random object to use for randomization of entity creation
+   * @return sample Fragment entity
+   */
+  public static Fragment createFragment(Random random) {
+    return new RocksFragment().keys(IntStream.range(0, 10)
+      .mapToObj(
+        i -> Key.of(createString(random, 5), createString(random, 9), String.valueOf(i))));
   }
 
   /**

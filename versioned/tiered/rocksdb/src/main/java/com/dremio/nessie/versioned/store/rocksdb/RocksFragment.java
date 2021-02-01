@@ -15,15 +15,18 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.Fragment;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
+class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evaluator {
   static final String KEY_LIST = "keys";
 
   private Stream<Key> keys;
@@ -62,5 +65,55 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
     } catch (InvalidProtocolBufferException e) {
       throw new StoreException("Corrupt Fragment value encountered when deserializing.", e);
     }
+  }
+
+  @Override
+  public boolean evaluate(Condition condition) {
+    boolean result = true;
+    for (Function function: condition.functionList) {
+      // Retrieve entity at function.path
+      List<String> path = Evaluator.splitPath(function.getPath());
+      String segment = path.get(0);
+      if (segment.equals(ID)) {
+        result &= ((path.size() == 1)
+          && (function.getOperator().equals(Function.EQUALS))
+          && (getId().toEntity().equals(function.getValue())));
+      } else if (segment.equals(KEY_LIST)) {
+        if (path.size() == 1) {
+          if (function.getOperator().equals(Function.EQUALS)) {
+            result &= (keysAsEntityList(keys).equals(function.getValue()));
+          } else if (function.getOperator().equals(Function.SIZE)) {
+            return (keys.count() == (int)function.getValue().getNumber());
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      } else {
+        // Invalid Condition Function.
+        return false;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Produces an Entity List of Entity Lists for keys.
+   * Each key is represented as an entity list of string entities.
+   * @param keys stream of keys to convert
+   * @return an entity list of keys
+   */
+  private Entity keysAsEntityList(Stream<Key> keys) {
+    List<Key> keyListIn = keys.collect(Collectors.toList());
+    List<Entity> resultList = new ArrayList<>();
+    for (Key key : keyListIn) {
+      List<Entity> entityElementList = new ArrayList<>();
+      for (String element : key.getElements()) {
+        entityElementList.add(Entity.ofString(element));
+      }
+      resultList.add(Entity.ofList(entityElementList));
+    }
+    return Entity.ofList(resultList);
   }
 }
