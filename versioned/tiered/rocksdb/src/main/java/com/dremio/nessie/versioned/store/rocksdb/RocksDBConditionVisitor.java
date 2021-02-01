@@ -143,7 +143,7 @@ class RocksDBConditionVisitor implements ConditionExpressionVisitor<Condition> {
   }
 
   /**
-   * Convert the Entity chain to an equivalent value that can be interpretted by RocksDB.
+   * Convert the Entity chain to an equivalent value that can be interpreted by RocksDB.
    * @param value the entity to convert.
    * @return the RocksDB string representation of the Entity.
    */

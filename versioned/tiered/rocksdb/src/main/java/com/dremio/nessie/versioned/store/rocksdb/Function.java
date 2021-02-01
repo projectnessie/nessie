@@ -24,9 +24,9 @@ public class Function {
   public static final String EQUALS = "equals";
   public static final String SIZE = "size";
 
-  String operator;
-  String path;
-  Entity value;
+  final String operator;
+  final String path;
+  final Entity value;
 
   /**
    * ExpressionFunction representation.

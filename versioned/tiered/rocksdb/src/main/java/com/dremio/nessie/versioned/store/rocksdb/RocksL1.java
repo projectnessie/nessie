@@ -15,59 +15,40 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.StoreException;
+import com.google.protobuf.InvalidProtocolBufferException;
 
-public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
+class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
 
   static final int SIZE = 43;
+  static final String COMMIT_METADATA = "metadataId";
+  static final String ANCESTORS = "ancestors";
+  static final String CHILDREN = "children";
+  static final String KEY_LIST = "keylist";
+  static final String INCREMENTAL_KEY_LIST = "incrementalKeyList";
+  static final String COMPLETE_KEY_LIST = "completeKeyList";
+  static final String CHECKPOINT_ID = "checkpointId";
+  static final String DISTANCE_FROM_CHECKPOINT = "distanceFromCheckpoint";
+
   private Id metadataId; // commitMetadataId
   private Stream<Id> parentList; // ancestors
   private Stream<Id> tree; // children
 
   private Stream<Key.Mutation> keyMutations; // keylist
-  private Id checkpointId; // incrementalKeyList
-  private int distanceFromCheckpoint; // incrementalKeyList
+  private Id checkpointId; // checkpointId
+  private int distanceFromCheckpoint; // distanceFromCheckpoint
   private Stream<Id> fragmentIds; // completeKeyList
 
-  public static final String COMMIT_METADATA = "metadataId";
-  public static final String ANCESTORS = "ancestors";
-  public static final String CHILDREN = "children";
-  public static final String KEY_LIST = "keylist";
-  public static final String INCREMENTAL_KEY_LIST = "incrementalKeyList";
-  public static final String COMPLETE_KEY_LIST = "completeKeyList";
-  public static final String CHECKPOINT_ID = "checkpointId";
-  public static final String DISTANCE_FROM_CHECKPOINT = "distanceFromCheckpoint";
-
-  static RocksL1 EMPTY =
-      new RocksL1(Id.EMPTY, null, Id.EMPTY, null, null, 0L);
-
-  static Id EMPTY_ID = EMPTY.getId();
-
-  public RocksL1() {
-    super(EMPTY_ID, 0);
-  }
-
-  private RocksL1(Id commitId, Stream<Id> tree, Id id, Stream<Key.Mutation> keyList, Stream<Id> parentList, Long dt) {
-    super(id, dt);
-    this.metadataId = commitId;
-    this.parentList = parentList;
-    this.keyMutations = keyList;
-    this.tree = tree;
-
-    //    if (tree.size() != SIZE) {
-    //      throw new AssertionError("tree.size(" + tree.size() + ") != " + SIZE);
-    //    }
-    //    if (id != null && !id.equals(generateId())) {
-    //      throw new AssertionError("wrong id=" + id + ", expected=" + generateId());
-    //    }
+  RocksL1() {
+    super();
   }
 
   @Override
@@ -107,17 +88,13 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
     return this;
   }
 
-  public Id getMetadataId() {
-    return metadataId;
-  }
-
   @Override
   public boolean evaluate(Condition condition) {
     boolean result = true;
     for (Function function: condition.functionList) {
       // Retrieve entity at function.path
-      List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
-      String segment = path.get(0);
+      final List<String> path = Evaluator.splitPath(function.getPath());
+      final String segment = path.get(0);
       if (segment.equals(ID)) {
         result &= ((path.size() == 1)
           && (function.getOperator().equals(Function.EQUALS))
@@ -156,27 +133,57 @@ public class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
     return result;
   }
 
-  public Stream<Id> getAncestors() {
-    return parentList;
+  @Override
+  byte[] build() {
+    checkPresent(metadataId, COMMIT_METADATA);
+    checkPresent(parentList, ANCESTORS);
+    checkPresent(tree, CHILDREN);
+    checkPresent(keyMutations, KEY_LIST);
+
+    final ValueProtos.L1.Builder builder = ValueProtos.L1.newBuilder()
+        .setBase(buildBase())
+        .setMetadataId(metadataId.getValue())
+        .addAllAncestors(buildIds(parentList))
+        .addAllTree(buildIds(tree))
+        .addAllKeyMutations(keyMutations.map(RocksBaseValue::buildKeyMutation).collect(Collectors.toList()));
+
+    if (null == fragmentIds) {
+      checkPresent(checkpointId, CHECKPOINT_ID);
+      builder.setIncrementalList(ValueProtos.IncrementalList.newBuilder()
+          .setCheckpointId(checkpointId.getValue())
+          .setDistanceFromCheckpointId(distanceFromCheckpoint)
+          .build());
+    } else {
+      checkPresent(fragmentIds, COMPLETE_KEY_LIST);
+      builder.addAllFragmentIds(buildIds(fragmentIds));
+    }
+
+    return builder.build().toByteArray();
   }
 
-  public Stream<Id> getChildren() {
-    return tree;
-  }
-
-  public Stream<Key.Mutation> getKeyMutations() {
-    return keyMutations;
-  }
-
-  public Id getCheckpointId() {
-    return checkpointId;
-  }
-
-  public int getDistanceFromCheckpoint() {
-    return distanceFromCheckpoint;
-  }
-
-  public Stream<Id> getFragmentIds() {
-    return fragmentIds;
+  /**
+   * Deserialize a RocksDB value into the given consumer.
+   *
+   * @param value the protobuf formatted value.
+   * @param consumer the consumer to put the value into.
+   */
+  static void toConsumer(byte[] value, L1 consumer) {
+    try {
+      final ValueProtos.L1 l1 = ValueProtos.L1.parseFrom(value);
+      setBase(consumer, l1.getBase());
+      consumer
+          .commitMetadataId(Id.of(l1.getMetadataId()))
+          .ancestors(l1.getAncestorsList().stream().map(Id::of))
+          .children(l1.getTreeList().stream().map(Id::of))
+          .keyMutations(l1.getKeyMutationsList().stream().map(RocksBaseValue::createKeyMutation));
+      if (l1.hasIncrementalList()) {
+        final ValueProtos.IncrementalList incList = l1.getIncrementalList();
+        consumer.incrementalKeyList(Id.of(incList.getCheckpointId()), incList.getDistanceFromCheckpointId());
+      } else {
+        consumer.completeKeyList(l1.getFragmentIdsList().stream().map(Id::of));
+      }
+    } catch (InvalidProtocolBufferException e) {
+      throw new StoreException("Corrupt L1 value encountered when deserializing.", e);
+    }
   }
 }

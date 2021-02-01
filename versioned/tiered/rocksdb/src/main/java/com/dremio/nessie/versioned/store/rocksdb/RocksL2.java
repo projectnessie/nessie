@@ -16,29 +16,21 @@
 
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2;
 import com.dremio.nessie.versioned.store.Id;
+import com.dremio.nessie.versioned.store.StoreException;
+import com.google.protobuf.InvalidProtocolBufferException;
 
-public class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
+class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
   private static final String CHILDREN = "children";
-
-  static final int SIZE = 199;
-  static RocksL2 EMPTY = new RocksL2(Id.EMPTY, 0L);
-  static Id EMPTY_ID = EMPTY.getId();
 
   private Stream<Id> tree; // children
 
-  public RocksL2() {
-    this(EMPTY_ID, 0L);
-  }
-
-  private RocksL2(Id id, long dt) {
-    super(id, dt);
+  RocksL2() {
+    super();
   }
 
   @Override
@@ -47,16 +39,12 @@ public class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
     return this;
   }
 
-  public Stream<Id> getChildren() {
-    return tree;
-  }
-
   @Override
   public boolean evaluate(Condition condition) {
     boolean result = true;
     for (Function function: condition.functionList) {
       // Retrieve entity at function.path
-      final List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
+      final List<String> path = Evaluator.splitPath(function.getPath());
       final String segment = path.get(0);
       if (segment.equals(ID)) {
         result &= ((path.size() == 1)
@@ -70,5 +58,31 @@ public class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
       }
     }
     return result;
+  }
+
+  @Override
+  byte[] build() {
+    checkPresent(tree, CHILDREN);
+    return ValueProtos.L2.newBuilder()
+      .setBase(buildBase())
+      .addAllTree(buildIds(tree))
+      .build()
+      .toByteArray();
+  }
+
+  /**
+   * Deserialize a RocksDB value into the given consumer.
+   *
+   * @param value the protobuf formatted value.
+   * @param consumer the consumer to put the value into.
+   */
+  static void toConsumer(byte[] value, L2 consumer) {
+    try {
+      final ValueProtos.L2 l2 = ValueProtos.L2.parseFrom(value);
+      setBase(consumer, l2.getBase());
+      consumer.children(l2.getTreeList().stream().map(Id::of));
+    } catch (InvalidProtocolBufferException e) {
+      throw new StoreException("Corrupt L2 value encountered when deserializing.", e);
+    }
   }
 }

@@ -16,29 +16,23 @@
 
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L3;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
+import com.dremio.nessie.versioned.store.StoreException;
+import com.google.protobuf.InvalidProtocolBufferException;
 
-public class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
+class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
   private static final String TREE = "tree";
-
-  static RocksL3 EMPTY = new RocksL3(Id.EMPTY, 0L);
-  static Id EMPTY_ID = EMPTY.getId();
 
   private Stream<KeyDelta> keyDelta;
 
-  public RocksL3() {
-    this(EMPTY_ID, 0L);
-  }
-
-  private RocksL3(Id id, long dt) {
-    super(id, dt);
+  RocksL3() {
+    super();
   }
 
   @Override
@@ -47,16 +41,12 @@ public class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
     return this;
   }
 
-  public Stream<KeyDelta> getKeyDelta() {
-    return this.keyDelta;
-  }
-
   @Override
   public boolean evaluate(Condition condition) {
     boolean result = true;
     for (Function function: condition.functionList) {
       // Retrieve entity at function.path
-      final List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
+      final List<String> path = Evaluator.splitPath(function.getPath());
       final String segment = path.get(0);
       if (segment.equals(ID)) {
         result &= ((path.size() == 1)
@@ -70,5 +60,34 @@ public class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
       }
     }
     return result;
+  }
+
+  @Override
+  byte[] build() {
+    checkPresent(keyDelta, TREE);
+    return ValueProtos.L3.newBuilder()
+      .setBase(buildBase())
+      .addAllKeyDelta(keyDelta.map(d ->
+        ValueProtos.KeyDelta.newBuilder().setId(d.getId().getValue()).setKey(buildKey(d.getKey())).build()).collect(Collectors.toList()))
+      .build()
+      .toByteArray();
+  }
+
+  /**
+   * Deserialize a RocksDB value into the given consumer.
+   *
+   * @param value the protobuf formatted value.
+   * @param consumer the consumer to put the value into.
+   */
+  static void toConsumer(byte[] value, L3 consumer) {
+    try {
+      final ValueProtos.L3 l3 = ValueProtos.L3.parseFrom(value);
+      setBase(consumer, l3.getBase());
+      consumer.keyDelta(l3.getKeyDeltaList()
+          .stream()
+          .map(d -> KeyDelta.of(createKey(d.getKey()), Id.of(d.getId()))));
+    } catch (InvalidProtocolBufferException e) {
+      throw new StoreException("Corrupt L3 value encountered when deserializing.", e);
+    }
   }
 }

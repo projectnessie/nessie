@@ -18,13 +18,15 @@ package com.dremio.nessie.versioned.store.rocksdb;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.BaseValue;
+import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
+import com.google.common.base.Preconditions;
+import com.google.protobuf.ByteString;
 
 /**
  * An implementation of @{BaseValue} used for ConditionExpression and UpdateExpression evaluation.
@@ -37,9 +39,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   private Id id;
   private long dt;
 
-  RocksBaseValue(Id id, long dt) {
-    this.id = id;
-    this.dt = dt;
+  RocksBaseValue() {
   }
 
   @SuppressWarnings("unchecked")
@@ -58,17 +58,6 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
   Id getId() {
     return id;
-  }
-
-  /**
-   * Splits a string containing an identifier and an array position enclosed in parentheses into a list.
-   * @param str the string to split. Format: "value0(value1)"
-   * @return a list containing the values
-   */
-  List<String> splitArrayString(String str) {
-    // Remove enclosing brackets
-    final String delimeters = "\\(|\\)";
-    return Arrays.asList(str.split(delimeters));
   }
 
   /**
@@ -103,11 +92,12 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    */
   boolean evaluateStream(Function function, Stream<Id> stream) {
     // EQUALS will either compare a specified position or the whole stream as a List.
-    List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
-    String segment = path.get(0);
+    final List<String> path = Evaluator.splitPath(function.getPath());
+    final String segment = path.get(0);
     if (path.size() == 1) {
       if (function.getOperator().equals(Function.EQUALS)) {
-        List<String> arguments = splitArrayString(segment);
+        // Remove enclosing brackets.
+        final List<String> arguments = Arrays.asList(segment.split("[()]"));
         if (arguments.size() == 1) { // compare complete list
           return (toEntity(stream).equals(function.getValue()));
         } else if (arguments.size() == 2) { // compare individual element of list
@@ -115,9 +105,88 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
           return (toEntity(stream, position).equals(function.getValue()));
         }
       } else if (function.getOperator().equals(Function.SIZE)) {
-        return (stream.collect(Collectors.toList()).size() == (int)function.getValue().getNumber());
+        return (stream.count() == (int)function.getValue().getNumber());
       }
     }
+
     return false;
+  }
+
+  /**
+   * Serialize the value to protobuf format.
+   * @return the value serialized as protobuf.
+   */
+  abstract byte[] build();
+
+  static ValueProtos.Key buildKey(Key key) {
+    return ValueProtos.Key.newBuilder().addAllElements(key.getElements()).build();
+  }
+
+  static ValueProtos.KeyMutation buildKeyMutation(Key.Mutation m) {
+    return ValueProtos.KeyMutation.newBuilder().setType(getType(m)).setKey(buildKey(m.getKey())).build();
+  }
+
+  private static ValueProtos.KeyMutation.MutationType getType(Key.Mutation mutation) {
+    switch (mutation.getType()) {
+      case ADDITION:
+        return ValueProtos.KeyMutation.MutationType.ADDITION;
+      case REMOVAL:
+        return ValueProtos.KeyMutation.MutationType.REMOVAL;
+      default:
+        throw new IllegalArgumentException("Unknown mutation type " + mutation.getType());
+    }
+  }
+
+  static List<ByteString> buildIds(Stream<Id> ids) {
+    return ids.map(Id::getValue).collect(Collectors.toList());
+  }
+
+  /**
+   * Build the base value as a protobuf entity.
+   * @return the protobuf entity for serialization.
+   */
+  ValueProtos.BaseValue buildBase() {
+    checkPresent(id, ID);
+    return ValueProtos.BaseValue.newBuilder()
+        .setId(id.getValue())
+        .setDt(dt)
+        .build();
+  }
+
+  /**
+   * Consume the base value attributes.
+   * @param consumer the base value consumer.
+   * @param base the protobuf base value object.
+   */
+  static <C extends BaseValue<C>> void setBase(BaseValue<C> consumer, ValueProtos.BaseValue base) {
+    consumer.id(Id.of(base.getId()));
+    consumer.dt(base.getDt());
+  }
+
+  static Key createKey(ValueProtos.Key key) {
+    return Key.of(key.getElementsList().toArray(new String[0]));
+  }
+
+  static Key.Mutation createKeyMutation(ValueProtos.KeyMutation k) {
+    switch (k.getType()) {
+      case ADDITION:
+        return createKey(k.getKey()).asAddition();
+      case REMOVAL:
+        return createKey(k.getKey()).asRemoval();
+      default:
+        throw new IllegalArgumentException("Unknown mutation type " + k.getType());
+    }
+  }
+
+  <E> void checkPresent(E element, String name) {
+    Preconditions.checkArgument(
+        null != element,
+        String.format("Method %s of consumer %s has not been called", name, getClass().getSimpleName()));
+  }
+
+  <E> void checkNotPresent(E element, String name) {
+    Preconditions.checkArgument(
+        null == element,
+        String.format("Method %s of consumer %s must not be called", name, getClass().getSimpleName()));
   }
 }

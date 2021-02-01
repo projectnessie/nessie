@@ -16,34 +16,19 @@
 
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import com.dremio.nessie.tiered.builder.CommitMetadata;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.protobuf.ByteString;
 
-public class RocksCommitMetadata extends RocksBaseValue<CommitMetadata> implements CommitMetadata, Evaluator {
-  public static final String ID = "id";
-  public static final String VALUE = "value";
-
-  static Id EMPTY_ID = Id.EMPTY;
-
+class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements Evaluator, CommitMetadata {
   static CommitMetadata of(Id id, long dt, ByteString value) {
-    return new RocksCommitMetadata(id, dt).value(value);
+    return new RocksCommitMetadata().id(id).dt(dt).value(value);
   }
 
-  private ByteString value; // The value of CommitMetadata serialized as a ByteString
-
-  private RocksCommitMetadata(Id id, long dt) {
-    super(id, dt);
-  }
-
-  @Override
-  public CommitMetadata value(ByteString value) {
-    this.value = value;
-    return this;
+  RocksCommitMetadata() {
+    super();
   }
 
   @Override
@@ -51,8 +36,8 @@ public class RocksCommitMetadata extends RocksBaseValue<CommitMetadata> implemen
     boolean result = true;
     for (Function function: condition.functionList) {
       // Retrieve entity at function.path
-      List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
-      String segment = path.get(0);
+      final List<String> path = Evaluator.splitPath(function.getPath());
+      final String segment = path.get(0);
       if (segment.equals(ID)) {
         result &= ((path.size() == 1)
           && (function.getOperator().equals(Function.EQUALS))
@@ -60,7 +45,7 @@ public class RocksCommitMetadata extends RocksBaseValue<CommitMetadata> implemen
       } else if (segment.equals(VALUE)) {
         result &= ((path.size() == 1)
           && (function.getOperator().equals(Function.EQUALS))
-          && (value.toStringUtf8().equals(function.getValue().getString())));
+          && (byteValue.toStringUtf8().equals(function.getValue().getString())));
       } else {
         // Invalid Condition Function.
         return false;

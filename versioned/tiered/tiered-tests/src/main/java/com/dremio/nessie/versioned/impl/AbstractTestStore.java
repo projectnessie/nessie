@@ -86,7 +86,9 @@ public abstract class AbstractTestStore<S extends Store> {
    */
   protected abstract S createStore();
 
-  protected abstract S createRawStore();
+  protected S createRawStore() {
+    return createStore();
+  }
 
   protected abstract long getRandomSeed();
 
@@ -289,6 +291,7 @@ public abstract class AbstractTestStore<S extends Store> {
         HasId saveOpValue = s.entity;
         HasId loadedValue = EntityType.forType(s.type).loadSingle(store, saveOpValue.getId());
         assertEquals(saveOpValue, loadedValue, "type " + s.type);
+        assertEquals(saveOpValue.getId(), loadedValue.getId(), "ID type " + s.type);
 
         try {
           loadedValue = EntityType.forType(s.type).buildEntity(producer -> {
@@ -297,6 +300,7 @@ public abstract class AbstractTestStore<S extends Store> {
             store.loadSingle(t, saveOpValue.getId(), p);
           });
           assertEquals(saveOpValue, loadedValue, "type " + s.type);
+          assertEquals(saveOpValue.getId(), loadedValue.getId(), "ID type " + s.type);
         } catch (UnsupportedOperationException e) {
           // TODO ignore this for now
         }
@@ -339,7 +343,10 @@ public abstract class AbstractTestStore<S extends Store> {
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected LoadStep createTestLoadStep(Multimap<ValueType<?>, HasId> objs, Optional<LoadStep> next) {
     EntityLoadOps loadOps = new EntityLoadOps();
-    objs.forEach((type, val) -> loadOps.load(((EntityType) EntityType.forType(type)), val.getId(), r -> assertEquals(val, r)));
+    objs.forEach((type, val) -> loadOps.load(((EntityType) EntityType.forType(type)), val.getId(), r -> {
+      assertEquals(val, r);
+      assertEquals(val.getId(), r.getId());
+    }));
     return loadOps.build(() -> next);
   }
 
@@ -347,6 +354,7 @@ public abstract class AbstractTestStore<S extends Store> {
   protected <T extends HasId> void testLoadSingle(ValueType<?> type, T sample) {
     final T read = (T) EntityType.forType(type).loadSingle(store, sample.getId());
     assertEquals(sample, read);
+    assertEquals(sample.getId(), read.getId());
   }
 
   protected <C extends BaseValue<C>, T extends PersistentBase<C>> void testPutIfAbsent(ValueType<C> type, T sample) {

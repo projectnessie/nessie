@@ -491,11 +491,6 @@
         <version>${mockito.version}</version>
         <scope>test</scope>
       </dependency>
-      <dependency>
-        <groupId>org.rocksdb</groupId>
-        <artifactId>rocksdbjni</artifactId>
-        <version>${rocksdb.version}</version>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 

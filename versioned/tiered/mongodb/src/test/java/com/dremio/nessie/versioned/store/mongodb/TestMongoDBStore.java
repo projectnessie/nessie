@@ -53,11 +53,6 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   }
 
   @Override
-  protected MongoDBStore createRawStore() {
-    return new MongoDBStore(createConfig());
-  }
-
-  @Override
   protected long getRandomSeed() {
     return 8612341233543L;
   }
@@ -65,21 +60,6 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   @Override
   protected void resetStoreState() {
     store.resetCollections();
-  }
-
-  @Override
-  public void load() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.load());
-  }
-
-  @Override
-  public void loadNone() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.loadNone());
-  }
-
-  @Override
-  public void loadInvalid() {
-    Assertions.assertThrows(UnsupportedOperationException.class, () -> super.loadInvalid());
   }
 
   protected int loadSize() {

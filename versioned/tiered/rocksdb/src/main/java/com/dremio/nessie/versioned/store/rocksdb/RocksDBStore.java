@@ -29,7 +29,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.dremio.nessie.tiered.builder.BaseValue;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
@@ -49,9 +48,9 @@ import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
-import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
@@ -60,18 +59,15 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
+import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Multimaps;
 
 public class RocksDBStore implements Store {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RocksDBStore.class);
   private static final long OPEN_SLEEP_MILLIS = 100L;
   private static final List<byte[]> COLUMN_FAMILIES;
-  private static final ValueSerDe VALUE_SERDE = new ValueSerDe();
 
   static {
     RocksDB.loadLibrary();
@@ -105,7 +101,8 @@ public class RocksDBStore implements Store {
         final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
         transactionDB = OptimisticTransactionDB.open(dbOptions, dbPath, columnFamilies, columnFamilyHandles);
         rocksDB = transactionDB.getBaseDB();
-        valueTypeToColumnFamily = ValueType.values().stream().collect(Collectors.toMap(k -> k, v -> v.));
+        valueTypeToColumnFamily = IntStream.rangeClosed(1, ValueType.values().size()).boxed().collect(
+          ImmutableMap.toImmutableMap(k -> ValueType.values().get(k - 1), columnFamilyHandles::get));
         break;
       } catch (RocksDBException e) {
         if (e.getStatus().getCode() != Status.Code.IOError || !e.getStatus().getState().contains("While lock")) {
@@ -175,8 +172,9 @@ public class RocksDBStore implements Store {
           throw new NotFoundException(String.format("Unable to find requested ref with ID: %s", loadOp.getId()));
         }
 
-        final ValueType type = loadOp.getValueType();
-        loadOp.loaded(type.addType(type.getSchema().itemToMap(VALUE_SERDE.deserialize(reads.get(i)), true)));
+        @SuppressWarnings("rawtypes") final ValueType type = loadOp.getValueType();
+        RocksSerDe.deserializeToConsumer(type, reads.get(i), loadOp.getReceiver());
+        loadOp.done();
       }
     }
   }
@@ -185,12 +183,11 @@ public class RocksDBStore implements Store {
   public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
     try {
-      final HasId valueAsHasId = (HasId)value;
       final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions());
       // Get exclusive access to key if it exists.
-      final byte[] buffer = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, valueAsHasId.getId().toBytes(), true);
+      final byte[] buffer = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, saveOp.getId().toBytes(), true);
       if (null == buffer) {
-        transaction.put(columnFamilyHandle, valueAsHasId.getId().toBytes(), VALUE_SERDE.serialize(type, value));
+        transaction.put(columnFamilyHandle, saveOp.getId().toBytes(), RocksSerDe.serializeWithConsumer(saveOp));
         transaction.commit();
         return true;
       }
@@ -202,17 +199,16 @@ public class RocksDBStore implements Store {
   }
 
   @Override
-  public <V> void put(ValueType type, V value, Optional<ConditionExpression> conditionUnAliased) {
+  public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
     // TODO: Handle ConditionExpressions.
-    if (conditionUnAliased.isPresent()) {
+    if (condition.isPresent()) {
       throw new UnsupportedOperationException("ConditionExpressions are not supported with RocksDB yet.");
     }
 
-    final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
-    final HasId valueAsHasId = (HasId)value;
+    final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
 
     try {
-      rocksDB.put(columnFamilyHandle, valueAsHasId.getId().toBytes(), VALUE_SERDE.serialize(type, value));
+      rocksDB.put(columnFamilyHandle, saveOp.getId().toBytes(), RocksSerDe.serializeWithConsumer(saveOp));
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
@@ -229,10 +225,10 @@ public class RocksDBStore implements Store {
 
     try {
       final WriteBatch batch = new WriteBatch();
-      for (Map.Entry<ValueType, SaveOp<?>> entry : mm.entries()) {
-        final SaveOp<?> op = entry.getValue();
-        batch.put(getColumnFamilyHandle(entry.getKey()), op.getValue().getId().toBytes(),
-            VALUE_SERDE.serialize(op.getType(), op.getValue()));
+      for (Map.Entry<ValueType<?>, List<SaveOp<?>>> entry : perType.entrySet()) {
+        for (SaveOp<?> op : entry.getValue()) {
+          batch.put(getColumnFamilyHandle(entry.getKey()), op.getId().toBytes(), RocksSerDe.serializeWithConsumer(op));
+        }
       }
       rocksDB.write(new WriteOptions(), batch);
     } catch (RocksDBException e) {
@@ -241,21 +237,22 @@ public class RocksDBStore implements Store {
   }
 
   @Override
-  public <V> V loadSingle(ValueType valueType, Id id) throws NotFoundException {
-    final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(valueType);
+  public <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
+    final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
     try {
       final byte[] buffer = rocksDB.get(columnFamilyHandle, id.toBytes());
       if (null == buffer) {
         throw new NotFoundException("Unable to load item with ID: " + id);
       }
-      return VALUE_SERDE.deserialize(buffer);
+      RocksSerDe.deserializeToConsumer(type, buffer, consumer);
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
   }
 
   @Override
-  public <V> Optional<V> update(ValueType type, Id id, UpdateExpression update, Optional<ConditionExpression> condition)
+  public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
+                                          Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer)
       throws NotFoundException {
     throw new UnsupportedOperationException();
   }
@@ -264,13 +261,12 @@ public class RocksDBStore implements Store {
   public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(ValueType.REF);
 
-    // TODO: Do we need to lock the database at all?
-    final Iterable<InternalRef> iterable = () -> new AbstractIterator<InternalRef>() {
+    final Iterable<Acceptor<C>> iterable = () -> new AbstractIterator<Acceptor<C>>() {
       private final RocksIterator itr = rocksDB.newIterator(columnFamilyHandle);
       private boolean isFirst = true;
 
       @Override
-      protected InternalRef computeNext() {
+      protected Acceptor<C> computeNext() {
         if (isFirst) {
           itr.seekToFirst();
           isFirst = false;
@@ -279,7 +275,7 @@ public class RocksDBStore implements Store {
         }
 
         if (itr.isValid()) {
-          return VALUE_SERDE.deserialize(itr.value());
+          return (consumer) -> RocksSerDe.deserializeToConsumer(type, itr.value(), consumer);
         }
 
         itr.close();

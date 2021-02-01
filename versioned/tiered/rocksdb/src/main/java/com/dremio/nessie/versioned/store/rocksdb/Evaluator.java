@@ -15,6 +15,10 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
+
 public interface Evaluator {
   /**
    * Checks that each Function in the Condition is met by the implementing class.
@@ -22,4 +26,13 @@ public interface Evaluator {
    * @return true if the condition is met
    */
   boolean evaluate(Condition condition);
+
+  /**
+   * Split a string path to it's separate parts.
+   * @param path the input string path.
+   * @return the split separate parts of the path.
+   */
+  static List<String> splitPath(String path) {
+    return Arrays.asList(path.split(Pattern.quote(".")));
+  }
 }

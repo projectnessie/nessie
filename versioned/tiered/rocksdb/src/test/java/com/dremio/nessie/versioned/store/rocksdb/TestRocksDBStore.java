@@ -25,7 +25,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.dremio.nessie.versioned.tests.AbstractTestStore;
+import com.dremio.nessie.versioned.impl.AbstractTestStore;
+import com.google.common.collect.ImmutableList;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
@@ -34,8 +35,10 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
 
   @AfterAll
   static void tearDown() throws IOException {
-    if (DB_PATH.toFile().exists()) {
-      Files.walk(DB_PATH).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+    for (Path path : ImmutableList.of(DB_PATH, getRawPath())) {
+      if (path.toFile().exists()) {
+        Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+      }
     }
   }
 
@@ -49,6 +52,18 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
   }
 
   @Override
+  protected RocksDBStore createRawStore() {
+    // Need to use a separate path to avoid reusing the file created by the normal store.
+    return new RocksDBStore(getRawPath().toString());
+  }
+
+  @Override
+  protected int loadSize() {
+    // There is no pagination in RocksDB.
+    return Integer.MAX_VALUE;
+  }
+
+  @Override
   protected long getRandomSeed() {
     return -2938423452345L;
   }
@@ -56,5 +71,10 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
   @Override
   protected void resetStoreState() {
     store.deleteAllData();
+  }
+
+
+  private static Path getRawPath() {
+    return DB_PATH.resolve("raw");
   }
 }

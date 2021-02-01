@@ -15,49 +15,35 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.impl.IdMap;
-import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.dremio.nessie.versioned.store.StoreException;
+import com.google.protobuf.InvalidProtocolBufferException;
 
-public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
+class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
 
-  public static final String TYPE = "type";
-  public static final String NAME = "name";
-  public static final String METADATA = "metadata";
-  public static final String COMMITS = "commits";
-  public static final String COMMIT = "commit";
-  public static final String CHILDREN = "children";
+  static final String TYPE = "type";
+  static final String NAME = "name";
+  static final String METADATA = "metadata";
+  static final String COMMITS = "commits";
+  static final String COMMIT = "commit";
+  static final String CHILDREN = "children";
 
-  // TODO: Create correct constuctor with all attributes.
-  static RocksRef EMPTY =
-      new RocksRef();
+  private RefType type;
+  private String name;
+  private Id commit;
+  private Id metadata;
+  private Stream<Id> children;
+  private List<ValueProtos.Commit> commits;
 
-  static Id EMPTY_ID = Id.EMPTY;
-
-  RefType type;
-  String name;
-  Id commit;
-  Id metadata;
-  Stream<Id> children;
-  private List<Commit> commits;
-
-  public RocksRef() {
-    super(EMPTY_ID, 0);
+  RocksRef() {
+    super();
   }
 
   @Override
@@ -69,8 +55,8 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
       // TODO: do we need to subtype?
       for (Function function: condition.functionList) {
         // Branch evaluation
-        List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
-        String segment = path.get(0);
+        final List<String> path = Evaluator.splitPath(function.getPath());
+        final String segment = path.get(0);
         if (segment.equals(ID)) {
           result &= ((path.size() == 1)
             && (function.getOperator().equals(Function.EQUALS))
@@ -100,8 +86,8 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
     } else if (this.type == RefType.TAG) {
       for (Function function: condition.functionList) {
         // Tag evaluation
-        List<String> path = Arrays.asList(function.getPath().split(Pattern.quote(".")));
-        String segment = path.get(0);
+        final List<String> path = Evaluator.splitPath(function.getPath());
+        final String segment = path.get(0);
         switch (segment) {
           case ID:
             result &= ((path.size() == 1)
@@ -160,174 +146,128 @@ public class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
   }
 
   @Override
-  public Ref commits(Consumer<BranchCommitConsumer> commits) {
+  byte[] build() {
+    checkPresent(name, NAME);
+    checkPresent(type, TYPE);
+
+    final ValueProtos.Ref.Builder builder = ValueProtos.Ref.newBuilder().setBase(buildBase()).setName(name);
+
+    if (type == RefType.TAG) {
+      checkPresent(commit, COMMIT);
+      checkNotPresent(commits, COMMITS);
+      checkNotPresent(children, CHILDREN);
+      checkNotPresent(metadata, METADATA);
+
+      builder.setTag(ValueProtos.Tag.newBuilder().setId(commit.getValue()).build());
+    } else {
+      // Branch
+      checkNotPresent(commit, COMMIT);
+      checkPresent(commits, COMMITS);
+      checkPresent(children, CHILDREN);
+      checkPresent(metadata, METADATA);
+
+      builder.setBranch(ValueProtos.Branch.newBuilder()
+          .addAllCommits(commits)
+          .addAllChildren(buildIds(children))
+          .setMetadataId(metadata.getValue()).build());
+    }
+
+    return builder.build().toByteArray();
+  }
+
+  /**
+   * Deserialize a RocksDB value into the given consumer.
+   *
+   * @param value the protobuf formatted value.
+   * @param consumer the consumer to put the value into.
+   */
+  static void toConsumer(byte[] value, Ref consumer) {
+    try {
+      final ValueProtos.Ref ref = ValueProtos.Ref.parseFrom(value);
+      setBase(consumer, ref.getBase());
+      consumer.name(ref.getName());
+      if (ref.hasTag()) {
+        consumer.type(RefType.TAG).commit(Id.of(ref.getTag().getId()));
+      } else {
+        // Branch
+        consumer
+            .type(RefType.BRANCH)
+            .commits(bc -> deserializeCommits(bc, ref.getBranch().getCommitsList()))
+            .children(ref.getBranch().getChildrenList().stream().map(Id::of))
+            .metadata(Id.of(ref.getBranch().getMetadataId()));
+
+      }
+    } catch (InvalidProtocolBufferException e) {
+      throw new StoreException("Corrupt Ref value encountered when deserializing.", e);
+    }
+  }
+
+  private static void deserializeCommits(BranchCommitConsumer consumer, List<ValueProtos.Commit> commitsList) {
+    for (ValueProtos.Commit commit : commitsList) {
+      consumer
+          .id(Id.of(commit.getId()))
+          .commit(Id.of(commit.getCommit()));
+
+      if (commit.getParent().isEmpty()) {
+        commit.getDeltaList().forEach(d -> consumer.delta(d.getPosition(), Id.of(d.getOldId()), Id.of(d.getNewId())));
+        commit.getKeyMutationList().forEach(km -> consumer.keyMutation(createKeyMutation(km)));
+      } else {
+        consumer.parent(Id.of(commit.getParent()));
+      }
+      consumer.done();
+    }
+  }
+
+  @Override
+  public Ref commits(Consumer<BranchCommitConsumer> commitsConsumer) {
+    if (null == this.commits) {
+      this.commits = new ArrayList<>();
+    }
+
+    commitsConsumer.accept(new BranchCommitConsumer() {
+      final ValueProtos.Commit.Builder builder = ValueProtos.Commit.newBuilder();
+
+      @Override
+      public BranchCommitConsumer id(Id id) {
+        builder.setId(id.getValue());
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer commit(Id commit) {
+        builder.setCommit(commit.getValue());
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer parent(Id parent) {
+        builder.setParent(parent.getValue());
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
+        builder.addDelta(ValueProtos.Delta.newBuilder()
+            .setPosition(position)
+            .setOldId(oldId.getValue())
+            .setNewId(newId.getValue())
+            .build());
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer keyMutation(Key.Mutation keyMutation) {
+        builder.addKeyMutation(buildKeyMutation(keyMutation));
+        return this;
+      }
+
+      @Override
+      public BranchCommitConsumer done() {
+        commits.add(builder.build());
+        builder.clear();
+        return this;
+      }
+    });
     return this;
   }
-
-  // Adapted from InternalBranch.Commit
-  public static final class Commit {
-
-    static final String ID = "id";
-    static final String COMMIT = "commit";
-    static final String DELTAS = "deltas";
-    static final String PARENT = "parent";
-    static final String KEY_MUTATIONS = "keys";
-
-    private final Boolean saved;
-    private final Id id;
-    private final Id commit;
-    private final Id parent;
-    private final List<UnsavedDelta> deltas;
-    private final List<Key.Mutation> keyMutationList;
-
-    /**
-     * Construct a commit without mutations.
-     * @param id the commit id
-     * @param commit the commit
-     * @param parent the parent of this commit
-     */
-    public Commit(Id id, Id commit, Id parent) {
-      this.id = id;
-      this.parent = parent;
-      this.commit = commit;
-      this.saved = true;
-      this.deltas = Collections.emptyList();
-      this.keyMutationList = null;
-    }
-
-    // TODO: Look at use of Key.Mutation instead of KeyMutationList. Taken from InternalRef
-
-    /**
-     * Construct a commit before it has been saved to the backing store. At this stage it is not know if
-     * it will succeed if another commit saves first.
-     * @param unsavedId id of the commit
-     * @param commit the commit
-     * @param deltas changes this commit will cause
-     * @param keyMutationList changes to the list of keys
-     */
-    public Commit(Id unsavedId, Id commit, List<UnsavedDelta> deltas, List<Key.Mutation> keyMutationList) {
-      super();
-      this.saved = false;
-      this.deltas = ImmutableList.copyOf(Preconditions.checkNotNull(deltas));
-      this.commit = Preconditions.checkNotNull(commit);
-      this.parent = null;
-      this.keyMutationList = Preconditions.checkNotNull(keyMutationList);
-      this.id = Preconditions.checkNotNull(unsavedId);
-    }
-
-    Id getId() {
-      return id;
-    }
-
-    public boolean isSaved() {
-      return saved;
-    }
-
-    public Entity toEntity() {
-      return Entity.ofMap(itemToMap(this));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      Commit commit1 = (Commit) o;
-      return Objects.equal(saved, commit1.saved)
-        && Objects.equal(id, commit1.id)
-        && Objects.equal(commit, commit1.commit)
-        && Objects.equal(parent, commit1.parent)
-        && Objects.equal(deltas, commit1.deltas);
-      // TODO: need to create local implementation of KeyMutationList
-      // && KeyMutationList.equalsIgnoreOrder(keyMutationList, commit1.keyMutationList);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hashCode(saved, id, commit, parent, deltas, keyMutationList);
-    }
-
-    Map<String, Entity> itemToMap(Commit item) {
-      ImmutableMap.Builder<String, Entity> builder = ImmutableMap.builder();
-      builder
-          .put(ID, item.getId().toEntity())
-          .put(COMMIT, item.commit.toEntity());
-      if (item.saved) {
-        builder.put(PARENT, item.parent.toEntity());
-      } else {
-        Entity deltas = Entity.ofList(
-            item.deltas.stream()
-            .map(UnsavedDelta::itemToMap)
-            .map(Entity::ofMap)
-            .collect(Collectors.toList()));
-        builder.put(DELTAS, deltas);
-        // TODO: need to create local implementation of KeyMutationList
-        // builder.put(KEY_MUTATIONS, item.keyMutationList.toEntity());
-      }
-      return builder.build();
-    }
-  }
-
-  // Adapted from InternalBranch.UnsavedDelta
-  public static class UnsavedDelta {
-
-    private static final String POSITION = "position";
-    private static final String NEW_ID = "new";
-    private static final String OLD_ID = "old";
-
-    private final int position;
-    private final Id oldId;
-    private final Id newId;
-
-
-    /**
-     * Representation of a change.
-     * @param position  the position where the change occurs
-     * @param oldId last id
-     * @param newId new id
-     */
-    public UnsavedDelta(int position, Id oldId, Id newId) {
-      this.position = position;
-      this.oldId = oldId;
-      this.newId = newId;
-    }
-
-    public IdMap apply(IdMap tree) {
-      return tree.withId(position, newId);
-    }
-
-    public IdMap reverse(IdMap tree) {
-      return tree.withId(position,  oldId);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      UnsavedDelta that = (UnsavedDelta) o;
-      return position == that.position && Objects.equal(oldId, that.oldId)
-        && Objects.equal(newId, that.newId);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hashCode(position, oldId, newId);
-    }
-
-    Map<String, Entity> itemToMap() {
-      return ImmutableMap.<String, Entity>builder()
-        .put(POSITION, Entity.ofNumber(position))
-        .put(OLD_ID, oldId.toEntity())
-        .put(NEW_ID, newId.toEntity())
-        .build();
-    }
-  }
-
 }
