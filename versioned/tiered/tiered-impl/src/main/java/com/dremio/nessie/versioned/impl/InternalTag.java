@@ -79,7 +79,7 @@ class InternalTag extends InternalRef {
         .name(name)
         .tag()
         .commit(commit)
-        .toRef();
+        .backToRef();
   }
 
 }

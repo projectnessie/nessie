@@ -66,7 +66,7 @@ class DynamoL3 extends DynamoBaseValue<L3> implements L3 {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, L3 consumer) {
-    consumer = consumer.id(deserializeId(entity, ID)).dt(AttributeValueUtil.getDt(entity));
+    DynamoBaseValue.toConsumer(entity, consumer);
 
     if (entity.containsKey(TREE)) {
       Stream<KeyDelta> keyDelta = attributeValue(entity, TREE).l().stream()
