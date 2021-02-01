@@ -44,6 +44,9 @@ class TestConditionExecutor {
   private static final Entity ONE = Entity.ofNumber(1L);
   protected static final Random random = new Random(getRandomSeed());
   private static final String sampleName = createString(random, 10);
+  private static final String sampleKey1 = createString(random, 5);
+  private static final String sampleKey2 = createString(random, 9);
+  private static final int keyListSize = 10;
   private static final String SEPARATOR = ".";
 
   protected static long getRandomSeed() {
@@ -393,6 +396,40 @@ class TestConditionExecutor {
     assertTrue(ref.evaluate(condition));
   }
 
+  @Test
+  void executorFragmentID() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksFragment.ID, Id.EMPTY.toEntity()));
+    final RocksFragment fragment = createFragment(random);
+    assertTrue(fragment.evaluate(condition));
+  }
+
+  @Test
+  void executorFragmentEqualsKeys() {
+    List<Entity> keysList = new ArrayList<>();
+    for (int i = 0; i < keyListSize; i++) {
+      Entity key1 = Entity.ofList(Entity.ofString(sampleKey1), Entity.ofString(sampleKey2), Entity.ofString(String.valueOf(i)));
+      keysList.add(key1);
+    }
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.EQUALS, RocksFragment.KEY_LIST, Entity.ofList(keysList)));
+    final RocksFragment fragment = createFragment(random);
+    assertTrue(fragment.evaluate(condition));
+  }
+
+  @Test
+  void executorFragmentSizeKeys() {
+    List<Entity> keysList = new ArrayList<>();
+    for (int i = 0; i < keyListSize; i++) {
+      Entity key1 = Entity.ofList(Entity.ofString(sampleKey1), Entity.ofString(sampleKey2), Entity.ofString(String.valueOf(i)));
+      keysList.add(key1);
+    }
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.SIZE, RocksFragment.KEY_LIST, Entity.ofNumber(keyListSize)));
+    final RocksFragment fragment = createFragment(random);
+    assertTrue(fragment.evaluate(condition));
+  }
+
   private static String createPath() {
     return SampleEntities.createString(RANDOM, RANDOM.nextInt(15) + 1);
   }
@@ -490,10 +527,11 @@ class TestConditionExecutor {
    * @param random object to use for randomization of entity creation
    * @return sample Fragment entity
    */
-  public static Fragment createFragment(Random random) {
-    return new RocksFragment().keys(IntStream.range(0, 10)
+  public static RocksFragment createFragment(Random random) {
+    return (RocksFragment) new RocksFragment().id(Id.EMPTY)
+      .keys(IntStream.range(0, keyListSize)
       .mapToObj(
-        i -> Key.of(createString(random, 5), createString(random, 9), String.valueOf(i))));
+        i -> Key.of(sampleKey1, sampleKey2, String.valueOf(i))));
   }
 
   /**

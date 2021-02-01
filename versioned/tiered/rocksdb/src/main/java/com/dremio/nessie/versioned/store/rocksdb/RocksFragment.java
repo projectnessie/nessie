@@ -83,7 +83,8 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evalua
           if (function.getOperator().equals(Function.EQUALS)) {
             result &= (keysAsEntityList(keys).equals(function.getValue()));
           } else if (function.getOperator().equals(Function.SIZE)) {
-            return (keys.count() == (int)function.getValue().getNumber());
+            long num = keys.count();
+            return (num == function.getValue().getNumber());
           } else {
             return false;
           }
