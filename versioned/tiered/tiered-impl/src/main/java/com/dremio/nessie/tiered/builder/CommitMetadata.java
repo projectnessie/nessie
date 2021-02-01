@@ -17,6 +17,9 @@ package com.dremio.nessie.tiered.builder;
 
 /**
  * Consumer for commit-metadata.
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
  */
 public interface CommitMetadata extends BaseWrappedValue<CommitMetadata> {
 }

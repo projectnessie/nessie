@@ -60,8 +60,11 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
-  private boolean tag;
-  private boolean branch;
+  private enum Type {
+    INIT, TAG, BRANCH
+  }
+
+  private Type type = Type.INIT;
 
   DynamoRef() {
     super(ValueType.REF);
@@ -69,20 +72,20 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
 
   @Override
   public Tag tag() {
-    if (branch) {
-      throw new IllegalStateException("branch() has already been called");
+    if (type != Type.INIT) {
+      throw new IllegalStateException("branch()/tag() has already been called");
     }
-    tag = true;
+    type = Type.TAG;
     addEntitySafe(TYPE, string(REF_TYPE_TAG));
     return new DynamoTag();
   }
 
   @Override
   public Branch branch() {
-    if (tag) {
-      throw new IllegalStateException("tag() has already been called");
+    if (type != Type.INIT) {
+      throw new IllegalStateException("branch()/tag() has already been called");
     }
-    branch = true;
+    type = Type.BRANCH;
     addEntitySafe(TYPE, string(REF_TYPE_BRANCH));
     return new DynamoBranch();
   }
@@ -95,7 +98,7 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
     }
 
     @Override
-    public Ref toRef() {
+    public Ref backToRef() {
       return DynamoRef.this;
     }
   }
@@ -122,7 +125,7 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
     }
 
     @Override
-    public Ref toRef() {
+    public Ref backToRef() {
       return DynamoRef.this;
     }
   }
@@ -215,18 +218,21 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
     checkPresent(NAME, "name");
     checkPresent(TYPE, "type");
 
-    if (tag) {
-      checkPresent(COMMIT, "commit");
-      checkNotPresent(COMMITS, "commits");
-      checkNotPresent(TREE, "tree");
-      checkNotPresent(METADATA, "metadata");
-    } else if (branch) {
-      checkNotPresent(COMMIT, "commit");
-      checkPresent(COMMITS, "commits");
-      checkPresent(TREE, "tree");
-      checkPresent(METADATA, "metadata");
-    } else {
-      throw new IllegalStateException("Neither tag() nor branch() has been called");
+    switch (type) {
+      case TAG:
+        checkPresent(COMMIT, "commit");
+        checkNotPresent(COMMITS, "commits");
+        checkNotPresent(TREE, "tree");
+        checkNotPresent(METADATA, "metadata");
+        break;
+      case BRANCH:
+        checkNotPresent(COMMIT, "commit");
+        checkPresent(COMMITS, "commits");
+        checkPresent(TREE, "tree");
+        checkPresent(METADATA, "metadata");
+        break;
+      default:
+        throw new IllegalStateException("Neither tag() nor branch() has been called");
     }
 
     return super.build();
@@ -236,9 +242,8 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, Ref consumer) {
-    consumer = consumer.id(deserializeId(entity, ID))
-        .dt(AttributeValueUtil.getDt(entity))
-        .name(Preconditions.checkNotNull(attributeValue(entity, NAME).s()));
+    DynamoBaseValue.toConsumer(entity, consumer);
+    consumer.name(Preconditions.checkNotNull(attributeValue(entity, NAME).s()));
 
     String refType = Preconditions.checkNotNull(attributeValue(entity, TYPE).s());
     switch (refType) {

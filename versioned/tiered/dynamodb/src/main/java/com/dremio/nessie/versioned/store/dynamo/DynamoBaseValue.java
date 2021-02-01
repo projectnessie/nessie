@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idsList;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.string;
@@ -84,6 +85,11 @@ abstract class DynamoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   void checkNotPresent(String id, String name) {
     Preconditions.checkArgument(!entity.containsKey(id),
         String.format("Method %s of consumer %s must not be called", name, getClass().getSimpleName()));
+  }
+
+  static <C extends BaseValue<C>> void toConsumer(Map<String, AttributeValue> entity, C consumer) {
+    consumer.id(deserializeId(entity, ID))
+        .dt(AttributeValueUtil.getDt(entity));
   }
 
 }

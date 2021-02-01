@@ -559,7 +559,7 @@ class InternalBranch extends InternalRef {
             }
           }
         })
-        .toRef();
+        .backToRef();
   }
 
 }

@@ -48,34 +48,31 @@ import com.google.protobuf.ByteString;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class MongoSerDe {
-  private static final Map<ValueType<?>, Function<BsonWriter, MongoBaseValue>> CONSUMERS;
-  private static final Map<ValueType<?>, BiConsumer<Document, BaseValue>> DESERIALIZERS;
+  private static final Map<ValueType<?>, Function<BsonWriter, MongoBaseValue>> CONSUMERS =
+      ImmutableMap.<ValueType<?>, Function<BsonWriter, MongoBaseValue>>builder()
+          .put(ValueType.L1, MongoL1::new)
+          .put(ValueType.L2, MongoL2::new)
+          .put(ValueType.L3, MongoL3::new)
+          .put(ValueType.KEY_FRAGMENT, MongoFragment::new)
+          .put(ValueType.REF, MongoRef::new)
+          .put(ValueType.VALUE, MongoWrappedValue::new)
+          .put(ValueType.COMMIT_METADATA, MongoWrappedValue::new)
+          .build();
+  private static final Map<ValueType<?>, BiConsumer<Document, BaseValue>> DESERIALIZERS =
+      ImmutableMap.<ValueType<?>, BiConsumer<Document, BaseValue>>builder()
+          .put(ValueType.L1, (d, c) -> MongoL1.produce(d, (L1) c))
+          .put(ValueType.L2, (d, c) -> MongoL2.produce(d, (L2) c))
+          .put(ValueType.L3, (d, c) -> MongoL3.produce(d, (L3) c))
+          .put(ValueType.KEY_FRAGMENT, (d, c) -> MongoFragment.produce(d, (Fragment) c))
+          .put(ValueType.REF, (d, c) -> MongoRef.produce(d, (Ref) c))
+          .put(ValueType.VALUE, (d, c) -> MongoWrappedValue.produce(d, (BaseWrappedValue) c))
+          .put(ValueType.COMMIT_METADATA, (d, c) -> MongoWrappedValue.produce(d, (BaseWrappedValue) c))
+          .build();
 
   private static final String KEY_ADDITION = "a";
   private static final String KEY_REMOVAL = "d";
 
   static {
-    ImmutableMap.Builder<ValueType<?>, Function<BsonWriter, MongoBaseValue>> consumers = ImmutableMap.builder();
-    ImmutableMap.Builder<ValueType<?>, BiConsumer<Document, BaseValue>> deserializers = ImmutableMap.builder();
-
-    consumers.put(ValueType.L1, MongoL1::new);
-    deserializers.put(ValueType.L1, (d, c) -> MongoL1.produce(d, (L1) c));
-    consumers.put(ValueType.L2, MongoL2::new);
-    deserializers.put(ValueType.L2, (d, c) -> MongoL2.produce(d, (L2) c));
-    consumers.put(ValueType.L3, MongoL3::new);
-    deserializers.put(ValueType.L3, (d, c) -> MongoL3.produce(d, (L3) c));
-    consumers.put(ValueType.KEY_FRAGMENT, MongoFragment::new);
-    deserializers.put(ValueType.KEY_FRAGMENT, (d, c) -> MongoFragment.produce(d, (Fragment) c));
-    consumers.put(ValueType.REF, MongoRef::new);
-    deserializers.put(ValueType.REF, (d, c) -> MongoRef.produce(d, (Ref) c));
-    consumers.put(ValueType.VALUE, MongoWrappedValue::new);
-    deserializers.put(ValueType.VALUE, (d, c) -> MongoWrappedValue.produce(d, (BaseWrappedValue) c));
-    consumers.put(ValueType.COMMIT_METADATA, MongoWrappedValue::new);
-    deserializers.put(ValueType.COMMIT_METADATA, (d, c) -> MongoWrappedValue.produce(d, (BaseWrappedValue) c));
-
-    CONSUMERS = consumers.build();
-    DESERIALIZERS = deserializers.build();
-
     if (!CONSUMERS.keySet().equals(DESERIALIZERS.keySet())) {
       throw new UnsupportedOperationException("The enum-maps ENTITY_MAP_PRODUCERS and DESERIALIZERS "
           + "are not equal. This is a bug in the implementation of MongoSerDe.");

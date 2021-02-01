@@ -117,16 +117,16 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, L1 consumer) {
-    consumer = consumer.id(deserializeId(entity, ID)).dt(AttributeValueUtil.getDt(entity));
+    DynamoBaseValue.toConsumer(entity, consumer);
 
     if (entity.containsKey(METADATA)) {
-      consumer = consumer.commitMetadataId(deserializeId(entity, METADATA));
+      consumer.commitMetadataId(deserializeId(entity, METADATA));
     }
     if (entity.containsKey(TREE)) {
-      consumer = consumer.children(deserializeIdStream(entity, TREE));
+      consumer.children(deserializeIdStream(entity, TREE));
     }
     if (entity.containsKey(PARENTS)) {
-      consumer = consumer.ancestors(deserializeIdStream(entity, PARENTS));
+      consumer.ancestors(deserializeIdStream(entity, PARENTS));
     }
     if (entity.containsKey(KEY_LIST)) {
       Map<String, AttributeValue> keys = Preconditions.checkNotNull(
@@ -134,9 +134,9 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
       Boolean checkpoint = attributeValue(keys, IS_CHECKPOINT).bool();
       if (checkpoint != null) {
         if (checkpoint) {
-          consumer = consumer.completeKeyList(deserializeIdStream(keys, FRAGMENTS));
+          consumer.completeKeyList(deserializeIdStream(keys, FRAGMENTS));
         } else {
-          consumer = consumer.incrementalKeyList(
+          consumer.incrementalKeyList(
               deserializeId(keys, ORIGIN),
               deserializeInt(keys, DISTANCE)
           );

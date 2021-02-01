@@ -99,6 +99,9 @@ import com.dremio.nessie.versioned.store.Id;
  * (one or more saved followed by zero or more unsaved commits).
  * <li>The ids for all saved commits will exist in the L1 table.
  * </ol>
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
  */
 public interface Ref extends BaseValue<Ref> {
   /**
@@ -136,9 +139,12 @@ public interface Ref extends BaseValue<Ref> {
 
     /**
      * Convenience method to get back to the {@link Ref}.
+     * <p>
+     * Implementations must return the shared state ({@code this}) from/for {@link Ref}.
+     * </p>
      * @return owning {@link Ref}
      */
-    Ref toRef();
+    Ref backToRef();
   }
 
   interface Branch {
@@ -175,9 +181,12 @@ public interface Ref extends BaseValue<Ref> {
 
     /**
      * Convenience method to get back to the {@link Ref}.
+     * <p>
+     * Implementations must return the shared state ({@code this}) from/for {@link Ref}.
+     * </p>
      * @return owning {@link Ref}
      */
-    Ref toRef();
+    Ref backToRef();
   }
 
   /**
@@ -230,6 +239,9 @@ public interface Ref extends BaseValue<Ref> {
 
     /**
      * End the current commit.
+     * <p>
+     * Implementations must return the shared state ({@code this}) from/for {@link BranchCommit}.
+     * </p>
      * @return this consumer
      */
     BranchCommit done();
@@ -267,6 +279,9 @@ public interface Ref extends BaseValue<Ref> {
 
     /**
      * End the current commit.
+     * <p>
+     * Implementations must return the shared state ({@code this}) from/for {@link BranchCommit}.
+     * </p>
      * @return this consumer
      */
     BranchCommit done();

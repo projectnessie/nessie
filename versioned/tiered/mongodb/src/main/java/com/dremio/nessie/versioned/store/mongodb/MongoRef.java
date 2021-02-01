@@ -67,8 +67,11 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     }
   }
 
-  private boolean tag;
-  private boolean branch;
+  private enum Type {
+    INIT, TAG, BRANCH
+  }
+
+  private Type type = Type.INIT;
 
   MongoRef(BsonWriter bsonWriter) {
     super(bsonWriter);
@@ -76,20 +79,20 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
 
   @Override
   public Tag tag() {
-    if (branch) {
-      throw new IllegalStateException("branch() has already been called");
+    if (type != Type.INIT) {
+      throw new IllegalStateException("branch()/tag() has already been called");
     }
-    tag = true;
+    type = Type.TAG;
     serializeString(TYPE, REF_TYPE_TAG);
     return new MongoTag();
   }
 
   @Override
   public Branch branch() {
-    if (tag) {
-      throw new IllegalStateException("tag() has already been called");
+    if (type != Type.INIT) {
+      throw new IllegalStateException("branch()/tag() has already been called");
     }
-    branch = true;
+    type = Type.BRANCH;
     serializeString(TYPE, REF_TYPE_BRANCH);
     return new MongoBranch();
   }
@@ -108,7 +111,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     }
 
     @Override
-    public Ref toRef() {
+    public Ref backToRef() {
       return MongoRef.this;
     }
   }
@@ -136,7 +139,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     }
 
     @Override
-    public Ref toRef() {
+    public Ref backToRef() {
       return MongoRef.this;
     }
   }
@@ -246,18 +249,21 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     checkPresent(NAME, "name");
     checkPresent(TYPE, "type");
 
-    if (tag) {
-      checkPresent(COMMIT, "commit");
-      checkNotPresent(COMMITS, "commits");
-      checkNotPresent(TREE, "tree");
-      checkNotPresent(METADATA, "metadata");
-    } else if (branch) {
-      checkNotPresent(COMMIT, "commit");
-      checkPresent(COMMITS, "commits");
-      checkPresent(TREE, "tree");
-      checkPresent(METADATA, "metadata");
-    } else {
-      throw new IllegalStateException("Neither tag() nor branch() has been called");
+    switch (type) {
+      case TAG:
+        checkPresent(COMMIT, "commit");
+        checkNotPresent(COMMITS, "commits");
+        checkNotPresent(TREE, "tree");
+        checkNotPresent(METADATA, "metadata");
+        break;
+      case BRANCH:
+        checkNotPresent(COMMIT, "commit");
+        checkPresent(COMMITS, "commits");
+        checkPresent(TREE, "tree");
+        checkPresent(METADATA, "metadata");
+        break;
+      default:
+        throw new IllegalStateException("Neither tag() nor branch() has been called");
     }
 
     return super.build();
@@ -272,7 +278,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
   }
 
   static void deserializeBranchCommits(BranchCommit bc, Document d) {
-    List<Document> lst = (List<Document>) d.get(COMMITS);
+    @SuppressWarnings("unchecked") List<Document> lst = (List<Document>) d.get(COMMITS);
     lst.forEach(c -> deserializeBranchCommit(bc, c));
   }
 
@@ -283,7 +289,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
       consumer.saved().parent(deserializeId(d, PARENT)).done();
     } else {
       UnsavedCommitDelta unsaved = consumer.unsaved();
-      List<Document> deltas = (List<Document>) d.get(DELTAS);
+      @SuppressWarnings("unchecked") List<Document> deltas = (List<Document>) d.get(DELTAS);
       deltas.forEach(delta -> deserializeUnsavedDelta(unsaved, delta));
       UnsavedCommitMutations mutations = unsaved.mutations();
       deserializeKeyMutations(d, KEY_LIST).forEach(mutations::keyMutation);

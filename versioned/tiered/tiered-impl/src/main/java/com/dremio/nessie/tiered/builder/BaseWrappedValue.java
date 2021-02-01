@@ -22,6 +22,9 @@ import com.google.protobuf.ByteString;
  * <p>
  * Do not implement this interface in non-abstract implementation classes!
  * </p>
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
  */
 public interface BaseWrappedValue<C extends BaseWrappedValue<C>> extends BaseValue<C> {
   /**
