@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import com.dremio.nessie.tiered.builder.Fragment;
 import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.SampleEntities;
@@ -392,6 +391,14 @@ class TestConditionExecutor {
   void executorBranchMetadata() {
     final Condition condition = new Condition();
     condition.add(new Function(Function.EQUALS, RocksRef.METADATA, ID.toEntity()));
+    final RocksRef ref = createBranch(random);
+    assertTrue(ref.evaluate(condition));
+  }
+
+  @Test
+  void executorBranchCommitsSize() {
+    final Condition condition = new Condition();
+    condition.add(new Function(Function.SIZE, RocksRef.COMMITS, Entity.ofNumber(2)));
     final RocksRef ref = createBranch(random);
     assertTrue(ref.evaluate(condition));
   }

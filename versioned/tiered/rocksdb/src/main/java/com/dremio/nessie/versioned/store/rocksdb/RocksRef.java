@@ -63,8 +63,12 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
             && (getId().toEntity().equals(function.getValue())));
         } else if (segment.equals(TYPE)) {
           result &= ((path.size() == 1)
-                && (function.getOperator().equals(Function.EQUALS))
-                && (type.toString().equals(function.getValue().getString())));
+            && (function.getOperator().equals(Function.EQUALS))
+            && (type.toString().equals(function.getValue().getString())));
+        } else if (segment.equals(NAME)) {
+          result &= ((path.size() == 1)
+            && (function.getOperator().equals(Function.EQUALS)
+            && (name.equals(function.getValue().getString()))));
         } else if (segment.startsWith(CHILDREN)) {
           evaluateStream(function, children);
         } else if (segment.equals(METADATA)) {
@@ -74,13 +78,16 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
         } else if (segment.equals(COMMITS)) {
           // TODO: refactor once jdbc-store Store changes are available.
           if (function.getOperator().equals(Function.SIZE)) {
-            // Is a List
-            return false;
+            result &= ((path.size() == 1)
+                && (function.getOperator().equals(Function.SIZE)
+                && (commits.size() == (int)function.getValue().getNumber())));
           } else if (function.getOperator().equals(Function.EQUALS)) {
             return false;
           } else {
             return false;
           }
+        } else {
+          return false;
         }
       }
     } else if (this.type == RefType.TAG) {
