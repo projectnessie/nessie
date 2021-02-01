@@ -281,14 +281,14 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
       if (map.containsKey(DELTAS)) {
         for (AttributeValue av : attributeValue(map, DELTAS).l()) {
           Map<String, AttributeValue> m = av.m();
-          deltas = deltas.delta(deserializeInt(m, POSITION), deserializeId(m, OLD_ID), deserializeId(m, NEW_ID));
+          deltas.delta(deserializeInt(m, POSITION), deserializeId(m, OLD_ID), deserializeId(m, NEW_ID));
         }
       }
 
       UnsavedCommitMutations mutations = deltas.mutations();
       if (map.containsKey(KEY_LIST)) {
         for (AttributeValue raw : attributeValue(map, KEY_LIST).l()) {
-          mutations = mutations.keyMutation(deserializeKeyMutation(raw));
+          mutations.keyMutation(deserializeKeyMutation(raw));
         }
       }
 
