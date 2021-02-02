@@ -24,14 +24,29 @@ import com.dremio.nessie.versioned.Key.Mutation;
 import com.dremio.nessie.versioned.store.Id;
 
 /**
- * Abstract implementation of {@link Ref}, all methods return {@code this},
- * {@link Ref#tag()} and {@link Ref#branch()} must be implemented.
+ * Abstract implementation of {@link Ref}, all methods return {@code this}.
+ * <p>All {@code Abstract*} classes in this package are meant to ease consumption of values loaded
+ * via {@link com.dremio.nessie.versioned.VersionStore}, so users do not have to implement every
+ * method.</p>
+ * <p>{@link Stream}s passed into the default method implementations are fully consumed when invoked.</p>
  */
 public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref {
 
   @Override
   public Ref name(String name) {
     return this;
+  }
+
+  @Override
+  public Tag tag() {
+    return new AbstractTag(this) {
+    };
+  }
+
+  @Override
+  public Branch branch() {
+    return new AbstractBranch(this) {
+    };
   }
 
   /**
@@ -57,6 +72,7 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
 
   /**
    * Abstract implementation of {@link Branch}, all methods return {@code this}.
+   * <p>{@link Stream}s passed into the default method implementations are fully consumed when invoked.</p>
    */
   public abstract static class AbstractBranch implements Branch {
     private final Ref ref;
@@ -72,6 +88,7 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
 
     @Override
     public Branch children(Stream<Id> children) {
+      children.forEach(ignored -> {});
       return this;
     }
 
@@ -83,6 +100,82 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
     @Override
     public Ref backToRef() {
       return ref;
+    }
+  }
+
+  /**
+   * Abstract implementation of {@link UnsavedCommitDelta}, all methods return {@code this},
+   * {@link #saved()} and {@link #unsaved()} return "empty" implementations of
+   * {@link Ref.SavedCommit} and {@link Ref.UnsavedCommitDelta}.
+   */
+  public abstract static class AbstractBranchCommit implements BranchCommit {
+
+    @Override
+    public BranchCommit id(Id id) {
+      return this;
+    }
+
+    @Override
+    public BranchCommit commit(Id commit) {
+      return this;
+    }
+
+    @Override
+    public SavedCommit saved() {
+      return new AbstractSavedCommit(this) {
+      };
+    }
+
+    @Override
+    public UnsavedCommitDelta unsaved() {
+      return new AbstractUnsavedCommitDelta(this) {
+      };
+    }
+  }
+
+  /**
+   * Abstract implementation of {@link UnsavedCommitDelta}, all methods return {@code this},
+   * {@link #mutations()} returns an "empty" implementation of {@link Ref.UnsavedCommitDelta},
+   * keeps a reference to {@link Ref.BranchCommit}.
+   */
+  public abstract static class AbstractUnsavedCommitDelta implements UnsavedCommitDelta {
+    protected final BranchCommit branchCommit;
+
+    protected AbstractUnsavedCommitDelta(BranchCommit branchCommit) {
+      this.branchCommit = branchCommit;
+    }
+
+    @Override
+    public UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
+      return this;
+    }
+
+    @Override
+    public UnsavedCommitMutations mutations() {
+      return new AbstractUnsavedCommitMutations(branchCommit) {
+      };
+    }
+  }
+
+  /**
+   * Abstract implementation of {@link SavedCommit}, all methods return {@code this},
+   * keeps a reference to {@link Ref.BranchCommit}.
+   */
+  public abstract static class AbstractSavedCommit implements SavedCommit {
+    protected final BranchCommit branchCommit;
+
+    protected AbstractSavedCommit(BranchCommit branchCommit) {
+      this.branchCommit = branchCommit;
+    }
+
+    @Override
+    public SavedCommit parent(Id parent) {
+      return this;
+    }
+
+    @Override
+    public BranchCommit done() {
+      return branchCommit;
     }
   }
 
@@ -99,45 +192,6 @@ public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref 
 
     @Override
     public UnsavedCommitMutations keyMutation(Mutation keyMutation) {
-      return this;
-    }
-
-    @Override
-    public BranchCommit done() {
-      return branchCommit;
-    }
-  }
-
-  /**
-   * Abstract implementation of {@link UnsavedCommitDelta}, all methods return {@code this},
-   * keeps a reference to {@link com.dremio.nessie.tiered.builder.Ref.BranchCommit}.
-   */
-  public abstract static class AbstractUnsavedCommitDelta implements UnsavedCommitDelta {
-    protected final BranchCommit branchCommit;
-
-    protected AbstractUnsavedCommitDelta(BranchCommit branchCommit) {
-      this.branchCommit = branchCommit;
-    }
-
-    @Override
-    public UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
-      return this;
-    }
-  }
-
-  /**
-   * Abstract implementation of {@link SavedCommit}, all methods return {@code this},
-   * keeps a reference to {@link com.dremio.nessie.tiered.builder.Ref.BranchCommit}.
-   */
-  public abstract static class AbstractSavedCommit implements SavedCommit {
-    protected final BranchCommit branchCommit;
-
-    protected AbstractSavedCommit(BranchCommit branchCommit) {
-      this.branchCommit = branchCommit;
-    }
-
-    @Override
-    public SavedCommit parent(Id parent) {
       return this;
     }
 

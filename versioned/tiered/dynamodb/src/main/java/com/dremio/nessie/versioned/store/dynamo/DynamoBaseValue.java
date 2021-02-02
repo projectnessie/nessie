@@ -87,8 +87,8 @@ abstract class DynamoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
         String.format("Method %s of consumer %s must not be called", name, getClass().getSimpleName()));
   }
 
-  static <C extends BaseValue<C>> void toConsumer(Map<String, AttributeValue> entity, C consumer) {
-    consumer.id(deserializeId(entity, ID))
+  static <C extends BaseValue<C>> C baseToConsumer(Map<String, AttributeValue> entity, C consumer) {
+    return consumer.id(deserializeId(entity, ID))
         .dt(AttributeValueUtil.getDt(entity));
   }
 

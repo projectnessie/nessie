@@ -52,8 +52,8 @@ class DynamoFragment extends DynamoBaseValue<Fragment> implements Fragment {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, Fragment consumer) {
-    DynamoBaseValue.toConsumer(entity, consumer);
-    consumer.keys(attributeValue(entity, KEY_LIST).l().stream().map(AttributeValueUtil::deserializeKey));
+    baseToConsumer(entity, consumer)
+        .keys(attributeValue(entity, KEY_LIST).l().stream().map(AttributeValueUtil::deserializeKey));
   }
 
 }

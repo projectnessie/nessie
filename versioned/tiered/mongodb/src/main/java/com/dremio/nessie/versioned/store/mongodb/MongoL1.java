@@ -49,8 +49,8 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
       .keyMutations(deserializeKeyMutations(document, MUTATIONS));
 
     Document keyList = (Document) document.get(KEY_LIST);
-    boolean chk = keyList.getBoolean(IS_CHECKPOINT);
-    if (chk) {
+    boolean checkpoint = keyList.getBoolean(IS_CHECKPOINT);
+    if (checkpoint) {
       v.completeKeyList(deserializeIds(keyList, FRAGMENTS));
     } else {
       Id checkpointId = deserializeId(keyList, ORIGIN);

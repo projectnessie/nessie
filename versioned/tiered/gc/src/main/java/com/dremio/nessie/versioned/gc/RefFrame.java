@@ -26,7 +26,6 @@ import org.apache.spark.sql.SparkSession;
 
 import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.tiered.builder.base.AbstractRef;
-import com.dremio.nessie.versioned.Key.Mutation;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.Store.Acceptor;
@@ -103,7 +102,7 @@ public class RefFrame implements Serializable {
         return new AbstractBranch(this) {
           @Override
           public Branch commits(Consumer<BranchCommit> commits) {
-            commits.accept(new BranchCommit() {
+            commits.accept(new AbstractBranchCommit() {
 
               private boolean populated;
               private Id id;
@@ -118,14 +117,8 @@ public class RefFrame implements Serializable {
               }
 
               @Override
-              public BranchCommit commit(Id commit) {
-                return this;
-              }
-
-              @Override
               public SavedCommit saved() {
-                BranchCommit bc = this;
-                return new SavedCommit() {
+                return new AbstractSavedCommit(this) {
                   @Override
                   public SavedCommit parent(Id parent) {
                     if (!populated) {
@@ -140,7 +133,7 @@ public class RefFrame implements Serializable {
                       populated = true;
                       frame.id = IdFrame.of(id);
                     }
-                    return bc;
+                    return branchCommit;
                   }
                 };
               }
@@ -151,11 +144,6 @@ public class RefFrame implements Serializable {
                   @Override
                   public UnsavedCommitMutations mutations() {
                     return new AbstractUnsavedCommitMutations(branchCommit) {
-                      @Override
-                      public UnsavedCommitMutations keyMutation(Mutation keyMutation) {
-                        return this;
-                      }
-
                       @Override
                       public BranchCommit done() {
                         if (hasParent) {

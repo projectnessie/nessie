@@ -23,10 +23,15 @@ import com.dremio.nessie.versioned.Key;
 
 /**
  * Abstract implementation of {@link Fragment}, all methods return {@code this}.
+ * <p>All {@code Abstract*} classes in this package are meant to ease consumption of values loaded
+ * via {@link com.dremio.nessie.versioned.VersionStore}, so users do not have to implement every
+ * method.</p>
+ * <p>{@link Stream}s passed into the default method implementations are fully consumed when invoked.</p>
  */
 public abstract class AbstractFragment extends AbstractBaseValue<Fragment> implements Fragment {
   @Override
   public Fragment keys(Stream<Key> keys) {
+    keys.forEach(ignored -> {});
     return this;
   }
 }
