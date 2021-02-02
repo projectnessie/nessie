@@ -37,7 +37,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   public static final String ID = "id";
 
   private Id id;
-  private long dt;
+  private long datetime;
 
   RocksBaseValue() {
   }
@@ -52,7 +52,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   @SuppressWarnings("unchecked")
   @Override
   public C dt(long dt) {
-    this.dt = dt;
+    this.datetime = dt;
     return (C) this;
   }
 
@@ -149,7 +149,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
     checkPresent(id, ID);
     return ValueProtos.BaseValue.newBuilder()
         .setId(id.getValue())
-        .setDt(dt)
+        .setDatetime(datetime)
         .build();
   }
 
@@ -160,7 +160,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    */
   static <C extends BaseValue<C>> void setBase(BaseValue<C> consumer, ValueProtos.BaseValue base) {
     consumer.id(Id.of(base.getId()));
-    consumer.dt(base.getDt());
+    consumer.dt(base.getDatetime());
   }
 
   static Key createKey(ValueProtos.Key key) {
