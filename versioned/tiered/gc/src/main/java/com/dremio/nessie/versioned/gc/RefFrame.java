@@ -72,100 +72,117 @@ public class RefFrame implements Serializable {
     this.id = id;
   }
 
-
   /**
    * For a stream of Refs, convert each to a RefFrame.
    */
   private static final Function<Acceptor<Ref>, RefFrame> CONVERTER = a -> {
-    RefFrame frame = new RefFrame();
-    a.applyValue(new AbstractRef() {
+    RefHandler handler = new RefHandler();
+    a.applyValue(handler);
+    return handler.frame;
+  };
+
+  private static final class RefHandler extends AbstractRef {
+    final RefFrame frame = new RefFrame();
+
+    @Override
+    public Ref name(String name) {
+      frame.name = name;
+      return this;
+    }
+
+    @Override
+    public Tag tag() {
+      return new RefTag();
+    }
+
+    @Override
+    public Branch branch() {
+      return new RefBranch();
+    }
+
+    private class RefTag extends AbstractTag {
+      protected RefTag() {
+        super(RefHandler.this);
+      }
 
       @Override
-      public Ref name(String name) {
-        frame.name = name;
+      public Tag commit(Id commit) {
+        frame.id = IdFrame.of(commit);
+        return this;
+      }
+    }
+
+    private class RefBranch extends AbstractBranch {
+      protected RefBranch() {
+        super(RefHandler.this);
+      }
+
+      @Override
+      public Branch commits(Consumer<BranchCommit> commits) {
+        commits.accept(new RefBranchCommit());
+        return this;
+      }
+    }
+
+    private class RefBranchCommit extends AbstractBranchCommit {
+      private boolean populated;
+      private Id id;
+      private boolean hasParent;
+
+      RefBranchCommit() {
+        // empty
+      }
+
+      @Override
+      public BranchCommit id(Id id) {
+        if (!populated) {
+          this.id = id;
+        }
         return this;
       }
 
       @Override
-      public Tag tag() {
-        return new AbstractTag(this) {
+      public SavedCommit saved() {
+        return new AbstractSavedCommit(this) {
           @Override
-          public Tag commit(Id commit) {
-            frame.id = IdFrame.of(commit);
+          public SavedCommit parent(Id parent) {
+            if (!populated) {
+              hasParent = true;
+            }
             return this;
+          }
+
+          @Override
+          public BranchCommit done() {
+            if (hasParent) {
+              populated = true;
+              frame.id = IdFrame.of(id);
+            }
+            return branchCommit;
           }
         };
       }
 
       @Override
-      public Branch branch() {
-        return new AbstractBranch(this) {
+      public UnsavedCommitDelta unsaved() {
+        return new AbstractUnsavedCommitDelta(this) {
           @Override
-          public Branch commits(Consumer<BranchCommit> commits) {
-            commits.accept(new AbstractBranchCommit() {
-
-              private boolean populated;
-              private Id id;
-              private boolean hasParent;
-
+          public UnsavedCommitMutations mutations() {
+            return new AbstractUnsavedCommitMutations(branchCommit) {
               @Override
-              public BranchCommit id(Id id) {
-                if (!populated) {
-                  this.id = id;
+              public BranchCommit done() {
+                if (hasParent) {
+                  populated = true;
+                  frame.id = IdFrame.of(id);
                 }
-                return this;
+                return branchCommit;
               }
-
-              @Override
-              public SavedCommit saved() {
-                return new AbstractSavedCommit(this) {
-                  @Override
-                  public SavedCommit parent(Id parent) {
-                    if (!populated) {
-                      hasParent = true;
-                    }
-                    return this;
-                  }
-
-                  @Override
-                  public BranchCommit done() {
-                    if (hasParent) {
-                      populated = true;
-                      frame.id = IdFrame.of(id);
-                    }
-                    return branchCommit;
-                  }
-                };
-              }
-
-              @Override
-              public UnsavedCommitDelta unsaved() {
-                return new AbstractUnsavedCommitDelta(this) {
-                  @Override
-                  public UnsavedCommitMutations mutations() {
-                    return new AbstractUnsavedCommitMutations(branchCommit) {
-                      @Override
-                      public BranchCommit done() {
-                        if (hasParent) {
-                          populated = true;
-                          frame.id = IdFrame.of(id);
-                        }
-                        return branchCommit;
-                      }
-                    };
-                  }
-                };
-              }
-            });
-            return this;
+            };
           }
         };
       }
-    });
-
-    return frame;
-
-  };
+    }
+  }
 
   /**
    * Generate spark dataset from store supplier.
