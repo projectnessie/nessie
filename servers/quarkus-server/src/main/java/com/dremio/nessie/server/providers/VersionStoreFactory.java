@@ -41,6 +41,7 @@ import com.dremio.nessie.server.config.ApplicationConfig;
 import com.dremio.nessie.server.config.ApplicationConfig.VersionStoreDynamoConfig;
 import com.dremio.nessie.server.config.converters.VersionStoreType;
 import com.dremio.nessie.services.config.ServerConfig;
+import com.dremio.nessie.services.providers.TableCommitMetaStoreWorker;
 import com.dremio.nessie.versioned.BranchName;
 import com.dremio.nessie.versioned.NamedRef;
 import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
