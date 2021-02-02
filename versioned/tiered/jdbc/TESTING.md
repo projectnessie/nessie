@@ -45,7 +45,11 @@ Both databases are exercised if the `ossDatabases` Maven profile is activated.
 
 This is not exactly straight forward. One approach that works is this:
 
-1. Go to [Oracle Container Registry](https://container-registry.oracle.com/), choose the RDBMS/enterprise image, accept the license agreement, and do the `docker pull`
+1. Go to [Oracle Container Registry](https://container-registry.oracle.com/)
+    1. Choose the RDBMS/enterprise image.
+    2. Accept the license agreement for the image you want to use.
+    3. Do the `docker login container-registry.oracle.com`.
+    4. Do the `docker pull` for the image you want to use.
 2. Prepare a pre-configured Docker image:
     1. Start the vendor image: `docker run -ti --name oracle -p 1521:1521 -e ORACLE_PWD=oracle -e ORACLE_SID=XE -e ORACLE_EDITION=standard container-registry.oracle.com/database/enterprise:latest`, this takes quite a while
     2. Once that's done, stop the Docker image
