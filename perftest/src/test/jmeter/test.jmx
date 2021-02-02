@@ -68,12 +68,12 @@
               </elementProp>
               <elementProp name="branch" elementType="Argument">
                 <stringProp name="Argument.name">branch</stringProp>
-                <stringProp name="Argument.value">master</stringProp>
+                <stringProp name="Argument.value">main</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
               <elementProp name="base_branch" elementType="Argument">
                 <stringProp name="Argument.name">base_branch</stringProp>
-                <stringProp name="Argument.value">master</stringProp>
+                <stringProp name="Argument.value">main</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
               </elementProp>
               <elementProp name="table" elementType="Argument">
