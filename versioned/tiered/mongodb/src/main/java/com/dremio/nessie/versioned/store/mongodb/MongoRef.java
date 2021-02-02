@@ -125,7 +125,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
 
     @Override
     public Branch children(Stream<Id> children) {
-      serializeIds(TREE, children);
+      serializeIds43(TREE, children);
       return this;
     }
 

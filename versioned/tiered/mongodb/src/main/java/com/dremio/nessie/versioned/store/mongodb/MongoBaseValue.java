@@ -19,6 +19,7 @@ import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeId
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
@@ -104,6 +105,22 @@ abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   void serializeLong(String property, long value) {
     addProperty(property);
     bsonWriter.writeInt64(property, value);
+  }
+
+  void serializeIds43(String property, Stream<Id> ids) {
+    addProperty(property);
+    bsonWriter.writeStartArray(property);
+
+    AtomicInteger counter = new AtomicInteger();
+    ids.forEach(id -> {
+      bsonWriter.writeBinaryData(new BsonBinary(id.toBytes()));
+      counter.incrementAndGet();
+    });
+    if (counter.get() != 43) {
+      throw new IllegalArgumentException(String.format("Expected %d ids, got %d", 43, counter.get()));
+    }
+
+    bsonWriter.writeEndArray();
   }
 
   void serializeIds(String property, Stream<Id> ids) {

@@ -112,7 +112,7 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
 
     @Override
     public Branch children(Stream<Id> children) {
-      addIdList(TREE, children);
+      addIdList43(TREE, children);
       return this;
     }
 

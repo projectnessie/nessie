@@ -15,8 +15,11 @@
  */
 package com.dremio.nessie.versioned.impl;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,6 +27,8 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -31,11 +36,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.tiered.builder.BaseValue;
+import com.dremio.nessie.tiered.builder.L1;
+import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.store.HasId;
+import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -169,12 +178,12 @@ public abstract class AbstractTestStore<S extends Store> {
     putThenLoad(ValueType.REF, SampleEntities.createBranch(random));
     final Multimap<ValueType<?>, HasId> objs = ImmutableMultimap.of(ValueType.REF, SampleEntities.createBranch(random));
 
-    Assertions.assertThrows(NotFoundException.class, () -> testLoad(objs));
+    assertThrows(NotFoundException.class, () -> testLoad(objs));
   }
 
   @Test
   void loadSingleInvalid() {
-    Assertions.assertThrows(NotFoundException.class, () -> EntityType.REF.loadSingle(store, SampleEntities.createId(random)));
+    assertThrows(NotFoundException.class, () -> EntityType.REF.loadSingle(store, SampleEntities.createId(random)));
   }
 
   @Test
@@ -267,6 +276,71 @@ public abstract class AbstractTestStore<S extends Store> {
       this.entity = entity;
       this.saveOp = EntityType.forType(type).createSaveOpForEntity(entity);
     }
+  }
+
+  @Test
+  void incorrectNumberOfL1Children() {
+    // must pass
+    saveForIncorrectNumberOfL1Children(43);
+
+    // 1 child + 42 children + 44 children must fail
+    assertAll(IntStream.of(1, 42, 44)
+        .mapToObj(numChildren -> () -> {
+          Throwable t = assertThrows(RuntimeException.class, () -> saveForIncorrectNumberOfL1Children(numChildren));
+          if (t instanceof StoreOperationException) {
+            t = t.getCause();
+          }
+          assertThat(t, instanceOf(IllegalArgumentException.class));
+        }));
+  }
+
+  private void saveForIncorrectNumberOfL1Children(int numChildren) {
+    Id id = Id.generateRandom();
+    store.putIfAbsent(new SaveOp<L1>(ValueType.L1, id) {
+      @Override
+      public void serialize(L1 consumer) {
+        consumer.id(id).dt(System.currentTimeMillis() * 1000L)
+            .commitMetadataId(Id.generateRandom())
+            .incrementalKeyList(Id.generateRandom(), 1)
+            .children(IntStream.range(0, numChildren).mapToObj(ignore -> Id.generateRandom()))
+            .ancestors(Stream.of(Id.generateRandom()));
+      }
+    });
+  }
+
+  @Test
+  void incorrectNumberOfRefBranchCommitChildren() {
+    // must pass
+    saveForIncorrectNumberOfRefBranchCommitChildren(43);
+
+    // 1 child + 42 children + 44 children must fail
+    assertAll(IntStream.of(1, 42, 44)
+        .mapToObj(numChildren -> () -> {
+          Throwable t = assertThrows(RuntimeException.class, () -> saveForIncorrectNumberOfRefBranchCommitChildren(numChildren));
+          if (t instanceof StoreOperationException) {
+            t = t.getCause();
+          }
+          assertThat(t, instanceOf(IllegalArgumentException.class));
+        }));
+  }
+
+  private void saveForIncorrectNumberOfRefBranchCommitChildren(int numChildren) {
+    Id id = Id.generateRandom();
+    store.putIfAbsent(new SaveOp<Ref>(ValueType.REF, id) {
+      @Override
+      public void serialize(Ref consumer) {
+        consumer.id(id).dt(System.currentTimeMillis() * 1000L)
+            .name("branch-with-" + numChildren)
+            .branch()
+            .metadata(Id.generateRandom())
+            .children(IntStream.range(0, numChildren).mapToObj(ignore -> Id.generateRandom()))
+            .commits(bc -> bc.id(Id.generateRandom())
+                .commit(Id.generateRandom())
+                .saved()
+                .parent(Id.generateRandom())
+                .done());
+      }
+    });
   }
 
   @Test

@@ -69,7 +69,7 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
 
   @Override
   public L1 children(Stream<Id> ids) {
-    return addIdList(TREE, ids);
+    return addIdList43(TREE, ids);
   }
 
   @Override
