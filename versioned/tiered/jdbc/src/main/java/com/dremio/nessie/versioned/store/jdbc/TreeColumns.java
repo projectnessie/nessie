@@ -42,7 +42,13 @@ final class TreeColumns {
   static void children(Stream<Id> children, DatabaseAdapter databaseAdapter, SQLChange change) {
     AtomicInteger count = children.collect(Collector.of(
         AtomicInteger::new,
-        (i, id) -> databaseAdapter.setId(change, TREE_COLUMNS[i.getAndIncrement()], id),
+        (i, id) -> {
+          int index = i.getAndIncrement();
+          if (index >= 43) {
+            throw new IllegalArgumentException(String.format("Expected %d ids, got %d", TREE_COLUMNS.length, index));
+          }
+          databaseAdapter.setId(change, TREE_COLUMNS[index], id);
+        },
         (i1, i2) -> new AtomicInteger(i1.get() + i2.get())
     ));
     if (count.get() != TREE_COLUMNS.length) {
