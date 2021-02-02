@@ -46,7 +46,6 @@ import com.google.protobuf.ByteString;
  * handling of getting/setting the different data types plus a view optimizations like
  * optional batch-DDL operations or upper/lower-case database object checks.</p>
  */
-@SuppressWarnings("SameParameterValue")
 public abstract class DatabaseAdapter {
   public static class HSQL extends DatabaseAdapter {
 
@@ -131,7 +130,10 @@ public abstract class DatabaseAdapter {
     }
 
     @Override
-    boolean isIntegrityConstraintViolation(Exception e) {
+    boolean isIntegrityConstraintViolation(Throwable e) {
+      if (e instanceof SQLError) {
+        e = e.getCause();
+      }
       if (e instanceof SQLException) {
         SQLException sqlException = (SQLException) e;
         return sqlException.getErrorCode() == 23505;
@@ -140,7 +142,7 @@ public abstract class DatabaseAdapter {
     }
   }
 
-  public static class Cockroach extends DatabaseAdapter {
+  public static class Cockroach extends PostgresQL {
 
     @Override
     String name() {
@@ -172,23 +174,6 @@ public abstract class DatabaseAdapter {
         default:
           throw new IllegalArgumentException("Unknown column-type " + type);
       }
-    }
-
-    @Override
-    boolean isIntegrityConstraintViolation(Exception e) {
-      if (super.isIntegrityConstraintViolation(e)) {
-        return true;
-      }
-      if (e instanceof SQLException) {
-        SQLException sql = (SQLException) e;
-        return "23505".equals(sql.getSQLState());
-      }
-      return false;
-    }
-
-    @Override
-    boolean batchDDL() {
-      return true;
     }
   }
 
@@ -227,9 +212,9 @@ public abstract class DatabaseAdapter {
     }
 
     @Override
-    boolean isIntegrityConstraintViolation(Exception e) {
-      if (super.isIntegrityConstraintViolation(e)) {
-        return true;
+    boolean isIntegrityConstraintViolation(Throwable e) {
+      if (e instanceof SQLError) {
+        e = e.getCause();
       }
       if (e instanceof SQLException) {
         SQLException sql = (SQLException) e;
@@ -276,14 +261,19 @@ public abstract class DatabaseAdapter {
     return "PRIMARY KEY (" + String.join(", ", primaryKeyColumns) + ")";
   }
 
-  boolean isIntegrityConstraintViolation(Exception e) {
+  boolean isIntegrityConstraintViolation(Throwable e) {
+    if (e instanceof SQLError) {
+      e = e.getCause();
+    }
     return e instanceof SQLIntegrityConstraintViolationException;
   }
 
-  long getDt(ResultSet resultSet, String column) throws SQLException {
+  @SuppressWarnings("SameParameterValue")
+  long getDt(ResultSet resultSet, String column) {
     return getLong(resultSet, column);
   }
 
+  @SuppressWarnings("SameParameterValue")
   void setDt(SQLChange change, String column, long dt) {
     setLong(change, column, dt);
   }
@@ -295,34 +285,28 @@ public abstract class DatabaseAdapter {
     };
   }
 
-  Id getId(ResultSet resultSet, String column) throws SQLException {
+  Id getId(ResultSet resultSet, String column) {
     return stringToId(getString(resultSet, column));
   }
 
   void setId(PreparedStatement pstmt, int index, Id id) {
-    try {
-      pstmt.setString(index, id != null ? id.toString() : null);
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
+    SQLError.run(() -> pstmt.setString(index, id != null ? id.toString() : null));
   }
 
   void setId(SQLChange change, String column, Id id) {
     change.setColumn(column, idApplicator(id));
   }
 
-  ByteString getBinary(ResultSet resultSet, String column) throws SQLException {
-    return ByteString.copyFrom(resultSet.getBytes(column));
+  @SuppressWarnings("SameParameterValue")
+  ByteString getBinary(ResultSet resultSet, String column) {
+    return SQLError.call(() -> ByteString.copyFrom(resultSet.getBytes(column)));
   }
 
   void setBinary(PreparedStatement pstmt, int i, ByteString binary) {
-    try {
-      pstmt.setBytes(i, binary != null ? binary.toByteArray() : null);
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
+    SQLError.run(() -> pstmt.setBytes(i, binary != null ? binary.toByteArray() : null));
   }
 
+  @SuppressWarnings("SameParameterValue")
   void setBinary(SQLChange change, String column, ByteString binary) {
     change.setColumn(column, (stmt, index) -> {
       setBinary(stmt, index, binary);
@@ -330,16 +314,12 @@ public abstract class DatabaseAdapter {
     });
   }
 
-  String getString(ResultSet resultSet, String column) throws SQLException {
-    return resultSet.getString(column);
+  String getString(ResultSet resultSet, String column) {
+    return SQLError.call(() -> resultSet.getString(column));
   }
 
   void setString(PreparedStatement pstmt, int index, String string) {
-    try {
-      pstmt.setString(index, string);
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
+    SQLError.run(() -> pstmt.setString(index, string));
   }
 
   void setString(SQLChange change, String column, String string) {
@@ -349,20 +329,18 @@ public abstract class DatabaseAdapter {
     });
   }
 
-  long getLong(ResultSet resultSet, String column) throws SQLException {
-    return resultSet.getLong(column);
+  long getLong(ResultSet resultSet, String column) {
+    return SQLError.call(() -> resultSet.getLong(column));
   }
 
   void setLong(PreparedStatement pstmt, int i, Long value) {
-    try {
+    SQLError.run(() -> {
       if (value == null) {
         pstmt.setNull(i, Types.BIGINT);
       } else {
         pstmt.setLong(i, value);
       }
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
+    });
   }
 
   void setLong(SQLChange change, String column, Long value) {
@@ -372,34 +350,34 @@ public abstract class DatabaseAdapter {
     });
   }
 
-  boolean getBool(ResultSet resultSet, String column) throws SQLException {
-    return resultSet.getBoolean(column);
+  @SuppressWarnings("SameParameterValue")
+  boolean getBoolean(ResultSet resultSet, String column) {
+    return SQLError.call(() -> resultSet.getBoolean(column));
   }
 
-  void setBool(PreparedStatement pstmt, int i, boolean bool) {
-    try {
-      pstmt.setBoolean(i, bool);
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
+  void setBoolean(PreparedStatement pstmt, int i, boolean bool) {
+    SQLError.run(() -> pstmt.setBoolean(i, bool));
   }
 
-  void setBool(SQLChange change, String column, boolean bool) {
+  @SuppressWarnings("SameParameterValue")
+  void setBoolean(SQLChange change, String column, boolean bool) {
     change.setColumn(column, (stmt, index) -> {
-      setBool(stmt, index, bool);
+      setBoolean(stmt, index, bool);
       return 1;
     });
   }
 
-  Stream<Key> getKeys(ResultSet resultSet, String column) throws SQLException {
+  @SuppressWarnings("SameParameterValue")
+  Stream<Key> getKeys(ResultSet resultSet, String column) {
     return getArray(resultSet, column, DatabaseAdapter::fromFlattened);
   }
 
+  @SuppressWarnings("SameParameterValue")
   void setKeys(SQLChange change, String column, Stream<Key> keys) {
     setArray(change, column, keys, DatabaseAdapter::flattenKey, ColumnType.KEY_LIST);
   }
 
-  Stream<Id> getIds(ResultSet resultSet, String column) throws SQLException {
+  Stream<Id> getIds(ResultSet resultSet, String column) {
     return getArray(resultSet, column, DatabaseAdapter::stringToId);
   }
 
@@ -411,24 +389,25 @@ public abstract class DatabaseAdapter {
     setArray(change, column, array != null ? array.stream() : null, Function.identity(), columnType);
   }
 
-  Stream<KeyDelta> getKeyDeltas(ResultSet resultSet, String column) throws SQLException {
+  @SuppressWarnings("SameParameterValue")
+  Stream<KeyDelta> getKeyDeltas(ResultSet resultSet, String column) {
     return getArray(resultSet, column, DatabaseAdapter::deserializeKeyDelta);
   }
 
+  @SuppressWarnings("SameParameterValue")
   void setKeyDeltas(SQLChange change, String column, Stream<KeyDelta> keyDeltas) {
     setArray(change, column, keyDeltas, DatabaseAdapter::serializeKeyDelta, ColumnType.KEY_DELTA_LIST);
   }
 
-  void getUnsavedDeltas(ResultSet resultSet, String column, UnsavedCommitDelta delta)
-      throws SQLException {
+  void getUnsavedDeltas(ResultSet resultSet, String column, UnsavedCommitDelta delta) {
     getArray(resultSet, column, Function.identity()).forEach(s -> unsavedDelta(s, delta));
   }
 
-  void getMutations(ResultSet resultSet, String column, Consumer<Mutation> keyMutation)
-      throws SQLException {
+  void getMutations(ResultSet resultSet, String column, Consumer<Mutation> keyMutation) {
     getArray(resultSet, column, DatabaseAdapter::mutationFromString).forEach(keyMutation);
   }
 
+  @SuppressWarnings("SameParameterValue")
   void setMutations(SQLChange change, String column, Stream<Mutation> mutations) {
     setArray(change, column, mutations, DatabaseAdapter::mutationAsString, ColumnType.KEY_MUTATION_LIST);
   }
@@ -604,7 +583,7 @@ public abstract class DatabaseAdapter {
         setLong(stmt, index, value.getNumber());
         return 1;
       case BOOL:
-        setBool(stmt, index, value.getBoolean());
+        setBoolean(stmt, index, value.getBoolean());
         return 1;
       case REF_TYPE:
         setString(stmt, index, value.getString());
@@ -618,26 +597,27 @@ public abstract class DatabaseAdapter {
     }
   }
 
-  <T> Stream<T> getArray(ResultSet resultSet, String column,
-      Function<String, T> elementConverter) throws SQLException {
-    Array array = resultSet.getArray(column);
-    if (array != null) {
-      Object[] arr = (Object[]) array.getArray();
-      return Arrays.stream(arr).map(String.class::cast).map(elementConverter);
-    }
-    return Stream.empty();
+  <T> Stream<T> getArray(ResultSet resultSet, String column, Function<String, T> elementConverter) {
+    return SQLError.call(() -> {
+      Array array = resultSet.getArray(column);
+      if (array != null) {
+        Object[] arr = (Object[]) array.getArray();
+        return Arrays.stream(arr).map(String.class::cast).map(elementConverter);
+      }
+      return Stream.empty();
+    });
   }
 
   <E, S> void setArray(SQLChange change, String column, Stream<E> contents, Function<E, S> converter, ColumnType columnType) {
     if (contents == null) {
       change.setColumn(column, (stmt, index) -> {
-        stmt.setObject(index, null);
+        SQLError.run(() -> stmt.setObject(index, null));
         return 1;
       });
     } else {
       @SuppressWarnings("unchecked") S[] arr = contents.map(converter).toArray(l -> (S[]) new String[l]);
       change.setColumn(column, (stmt, index) -> {
-        stmt.setObject(index, arr);
+        SQLError.run(() -> stmt.setObject(index, arr));
         return 1;
       });
     }

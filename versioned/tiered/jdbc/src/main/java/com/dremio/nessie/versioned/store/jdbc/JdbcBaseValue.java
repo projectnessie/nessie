@@ -15,9 +15,7 @@
  */
 package com.dremio.nessie.versioned.store.jdbc;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Optional;
 
 import com.dremio.nessie.tiered.builder.BaseValue;
@@ -35,12 +33,11 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
   static final String DT = "dt";
 
-  final JdbcEntity<C> entity;
-  final Resources resources;
-  final SQLChange change;
+  protected final JdbcEntity<C> entity;
+  protected final Resources resources;
+  protected final SQLChange change;
 
-  static <C extends BaseValue<C>> C produceToConsumer(DatabaseAdapter databaseAdapter,
-      ResultSet resultSet, C consumer) throws SQLException {
+  static <C extends BaseValue<C>> C baseToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, C consumer) {
     return consumer.id(databaseAdapter.getId(resultSet, JdbcEntity.ID))
         .dt(databaseAdapter.getDt(resultSet, DT));
   }
@@ -66,17 +63,21 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
         .put(DT, ColumnType.DT);
   }
 
+  DatabaseAdapter getDatabaseAdapter() {
+    return entity.getDatabaseAdapter();
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public C id(Id id) {
-    entity.databaseAdapter.setId(change, JdbcEntity.ID, id);
+    getDatabaseAdapter().setId(change, JdbcEntity.ID, id);
     return (C) this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public C dt(long dt) {
-    entity.databaseAdapter.setDt(change, DT, dt);
+    getDatabaseAdapter().setDt(change, DT, dt);
     return (C) this;
   }
 
@@ -89,14 +90,26 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
     UPSERT_MUST_DELETE(true, true, true),
     DELETE(true, false, true);
 
-    final boolean delete;
-    final boolean change;
-    final boolean deleteMustSucceed;
+    private final boolean delete;
+    private final boolean change;
+    private final boolean deleteMustSucceed;
 
     ExecuteUpdateStrategy(boolean delete, boolean change, boolean deleteMustSucceed) {
       this.delete = delete;
       this.change = change;
       this.deleteMustSucceed = deleteMustSucceed;
+    }
+
+    boolean isDelete() {
+      return delete;
+    }
+
+    boolean isChange() {
+      return change;
+    }
+
+    boolean isDeleteMustSucceed() {
+      return deleteMustSucceed;
     }
   }
 
@@ -107,43 +120,34 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    * @param conditions conditions for the change
    * @param id id (only relevant when an (additional) DELETE is executed (defined by {@code strategy}
    * @return number or rows affected
-   * @throws SQLException propagates SQL exceptions
    */
-  int executeUpdates(ExecuteUpdateStrategy strategy, Conditions conditions, Id id) throws SQLException {
+  int executeUpdates(ExecuteUpdateStrategy strategy, Conditions conditions, Id id) {
     int r = -1;
-    if (strategy.delete) {
+    if (strategy.isDelete()) {
       SQLDelete delete;
       if (change instanceof SQLDelete) {
         delete = (SQLDelete) change;
       } else {
         delete = entity.newDelete();
       }
-      conditions.applicators.forEach(delete::addCondition);
+      conditions.forEach(delete::addCondition);
       delete.prepareStatement(resources);
       r = delete.executeUpdate();
       if (r > 1) {
-        throw new IllegalArgumentException(delete.statement.toString() + " covers too many rows: " + r);
+        throw new IllegalArgumentException(delete.toString() + " covers too many rows: " + r);
       }
-      if (strategy.deleteMustSucceed && r != 1) {
-        try {
-          PreparedStatement checkStmt = resources
-              .add(resources.connection.prepareStatement("SELECT "
-                  + JdbcEntity.ID
-                  + " FROM "
-                  + entity.tableName
-                  + " WHERE "
-                  + JdbcEntity.ID + " = ?"));
-          entity.databaseAdapter.setId(checkStmt, 1, id);
-          ResultSet rs = resources.add(checkStmt.executeQuery());
-          throw rs.next()
-              ? new ConditionFailedException(conditions.toString())
-              : new NotFoundException(conditions.toString());
-        } catch (SQLException e) {
-          throw new RuntimeException(delete.statement.toString(), e);
-        }
+      if (strategy.isDeleteMustSucceed() && r != 1) {
+        String sql = String.format("SELECT %s FROM %s WHERE %s = ?",
+            JdbcEntity.ID,
+            entity.getTableName(),
+            JdbcEntity.ID);
+        ResultSet rs = resources.query(sql, checkStmt -> getDatabaseAdapter().setId(checkStmt, 1, id));
+        throw SQLError.call(rs::next)
+            ? new ConditionFailedException(conditions.toString())
+            : new NotFoundException(conditions.toString());
       }
     }
-    if (strategy.change) {
+    if (strategy.isChange()) {
       change.prepareStatement(resources);
       r = change.executeUpdate();
     }
@@ -155,9 +159,9 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    * the handling for some value-types and attributes.
    */
   void conditionValue(UpdateContext updateContext, Conditions conditions, ExpressionPath path, Entity value) {
-    conditions.applicators.put(
+    conditions.add(
         entity.equalsClause(updateContext, path),
-        (stmt, index) -> entity.databaseAdapter
+        (stmt, index) -> getDatabaseAdapter()
             .setEntity(stmt, index, entity.propertyType(path), value));
   }
 
@@ -166,9 +170,9 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    * the handling for some value-types and attributes.
    */
   void updateValue(UpdateContext updateContext, ExpressionPath path, Entity value) {
-    updateContext.change.setColumn(
+    updateContext.getChange().setColumn(
         entity.equalsClause(updateContext, path),
-        (stmt, index) -> entity.databaseAdapter
+        (stmt, index) -> getDatabaseAdapter()
             .setEntity(stmt, index, entity.propertyType(path), value));
   }
 
@@ -195,8 +199,8 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    * the handling for some value-types and attributes. The default implementation sets the column to {@code NULL}.
    */
   void removeValue(UpdateContext updateContext, ExpressionPath path) {
-    updateContext.change.setColumn(
+    updateContext.getChange().setColumn(
         entity.equalsClause(updateContext, path),
-        (stmt, index) -> entity.databaseAdapter.setNull(stmt, index, entity.propertyType(path)));
+        (stmt, index) -> getDatabaseAdapter().setNull(stmt, index, entity.propertyType(path)));
   }
 }

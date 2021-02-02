@@ -37,7 +37,7 @@ public abstract class JdbcStoreConfig {
    */
   @Default
   public boolean setupTables() {
-    return true;
+    return false;
   }
 
   /**

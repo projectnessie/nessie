@@ -43,7 +43,7 @@ class ITJdbcStore extends AbstractTestStore<JdbcStore> {
   }
 
   /**
-   * Creates an instance of MongoDBStore on which tests are executed.
+   * Creates an instance of JdbcStore on which tests are executed.
    * @return the store to test.
    */
   @Override

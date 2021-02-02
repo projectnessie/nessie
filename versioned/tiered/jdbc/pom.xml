@@ -62,15 +62,15 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.hsqldb</groupId>
-      <artifactId>hsqldb</artifactId>
-      <version>${hsqldb.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <version>${hsqldb.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
@@ -100,6 +100,7 @@
     <dependency><!-- This is the connection-pool used by Quarkus -->
       <groupId>io.agroal</groupId>
       <artifactId>agroal-pool</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
@@ -149,26 +150,6 @@
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-native-libraries</id>
-            <phase>process-test-resources</phase>
-            <goals>
-              <goal>copy-dependencies</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/native-libraries</outputDirectory>
-              <overWriteReleases>false</overWriteReleases>
-              <overWriteSnapshots>false</overWriteSnapshots>
-              <overWriteIfNewer>true</overWriteIfNewer>
-              <includeTypes>dll,so,dylib</includeTypes>
-            </configuration>
           </execution>
         </executions>
       </plugin>

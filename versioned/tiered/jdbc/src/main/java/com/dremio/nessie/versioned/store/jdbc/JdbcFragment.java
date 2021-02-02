@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.jdbc;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.Fragment;
@@ -34,11 +33,11 @@ class JdbcFragment extends JdbcBaseValue<Fragment> implements Fragment {
             .put(KEY_LIST, ColumnType.KEY_LIST)
             .build(),
         JdbcFragment::new,
-        (r, c) -> produceToConsumer(databaseAdapter, r, c));
+        (resultSet, consumer) -> produceToConsumer(databaseAdapter, resultSet, consumer));
   }
 
-  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, Fragment consumer) throws SQLException {
-    JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, Fragment consumer) {
+    baseToConsumer(databaseAdapter, resultSet, consumer)
         .keys(databaseAdapter.getKeys(resultSet, KEY_LIST));
   }
 
@@ -48,7 +47,7 @@ class JdbcFragment extends JdbcBaseValue<Fragment> implements Fragment {
 
   @Override
   public Fragment keys(Stream<Key> keys) {
-    entity.databaseAdapter.setKeys(change, KEY_LIST, keys);
+    getDatabaseAdapter().setKeys(change, KEY_LIST, keys);
     return this;
   }
 }

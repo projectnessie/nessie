@@ -19,7 +19,6 @@ import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
@@ -106,49 +105,41 @@ public class OracleDatabaseAdapter extends DatabaseAdapter {
   }
 
   @Override
-  boolean getBool(ResultSet resultSet, String column) throws SQLException {
+  boolean getBoolean(ResultSet resultSet, String column) {
     return "T".equals(getString(resultSet, column));
   }
 
   @Override
-  void setBool(PreparedStatement pstmt, int i, boolean bool) {
+  void setBoolean(PreparedStatement pstmt, int i, boolean bool) {
     setString(pstmt, i, bool ? "T" : "F");
-  }
-
-  <T> Stream<T> getArray(ResultSet resultSet, String column,
-      Function<String, T> elementConverter) throws SQLException {
-    Array array = resultSet.getArray(column);
-    if (array != null) {
-      Object[] arr = (Object[]) array.getArray();
-      return Arrays.stream(arr).map(String.class::cast).map(elementConverter);
-    }
-    return Stream.empty();
   }
 
   <E, S> void setArray(SQLChange change, String column, Stream<E> contents, Function<E, S> converter, ColumnType columnType) {
     if (contents == null) {
       change.setColumn(column, (stmt, index) -> {
-        stmt.setNull(index, Types.ARRAY, typeForColumnType(columnType));
+        SQLError.run(() -> stmt.setNull(index, Types.ARRAY, typeForColumnType(columnType)));
         return 1;
       });
     } else {
       String[] arr = contents.map(converter).map(x -> x != null ? x.toString() : null).toArray(String[]::new);
       change.setColumn(column, (stmt, index) -> {
-        Connection conn = stmt.getConnection();
+        SQLError.run(() -> {
+          Connection conn = stmt.getConnection();
 
-        // This is just for Oracle...
-        // We need the wrapped connection to cast it to an OracleConnection to set an array. WTF!
-        // So we use the Agroal connection-pool here, because that's the one used by Quarkus,
-        // and it's therefore used in the JdbcFixture.
-        if (conn instanceof ConnectionWrapper) {
-          ConnectionWrapper cw = (ConnectionWrapper) conn;
-          conn = cw.getHandler().getConnection();
-        }
+          // This is just for Oracle...
+          // We need the wrapped connection to cast it to an OracleConnection to set an array.
+          // So we use the Agroal connection-pool here, because that's the one used by Quarkus,
+          // and it's therefore used in the JdbcFixture.
+          if (conn instanceof ConnectionWrapper) {
+            ConnectionWrapper cw = (ConnectionWrapper) conn;
+            conn = cw.getHandler().getConnection();
+          }
 
-        // Using ARRAYs in Oracle suc^Wis kinda interesting
-        OracleConnection oracleConnection = (OracleConnection) conn;
-        Array array = oracleConnection.createOracleArray(typeForColumnType(columnType), arr);
-        stmt.setArray(index, array);
+          // Using ARRAYs in Oracle is kinda "interesting"
+          OracleConnection oracleConnection = (OracleConnection) conn;
+          Array array = oracleConnection.createOracleArray(typeForColumnType(columnType), arr);
+          stmt.setArray(index, array);
+        });
         return 1;
       });
     }
