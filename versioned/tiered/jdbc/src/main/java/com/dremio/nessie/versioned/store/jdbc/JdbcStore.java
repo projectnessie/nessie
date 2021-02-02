@@ -57,6 +57,7 @@ import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
 import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.StoreException;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.dremio.nessie.versioned.store.jdbc.JdbcBaseValue.ExecuteUpdateStrategy;
@@ -115,7 +116,7 @@ public class JdbcStore implements Store {
           databaseAdapter.name(),
           Stream.concat(
               databaseAdapter.additionalDDL().stream(),
-              entityDefinitions.entrySet().stream().map(e -> createTableDDL(e.getKey().getTableName(config.getTablePrefix()), e.getValue()))
+              entityDefinitions.entrySet().stream().map(e -> e.getValue().createTableDDL(e.getKey().getTableName(config.getTablePrefix())))
           ).collect(Collectors.joining("\n\n")));
     }
     if (config.setupTables()) {
@@ -127,7 +128,7 @@ public class JdbcStore implements Store {
         try (Statement st = conn.createStatement()) {
           Stream<String> createTables = entityDefinitions.entrySet().stream()
               .filter(e -> !tableExists(conn, databaseAdapter, catalog, schema, e.getKey().getTableName(config.getTablePrefix())))
-              .map(e -> createTableDDL(e.getKey().getTableName(config.getTablePrefix()), e.getValue()));
+              .map(e -> e.getValue().createTableDDL(e.getKey().getTableName(config.getTablePrefix())));
 
           if (databaseAdapter.batchDDL()) {
             String ddl = createTables.map(s -> s + ";").collect(Collectors.joining("\n\n"));
@@ -140,14 +141,14 @@ public class JdbcStore implements Store {
               st.execute(ddl);
             }
           } else {
-            List<String> ddls = createTables.collect(Collectors.toList());
-            if (!ddls.isEmpty()) {
+            List<String> ddlStatements = createTables.collect(Collectors.toList());
+            if (!ddlStatements.isEmpty()) {
               for (String ddl : databaseAdapter.additionalDDL()) {
                 LOGGER.debug("create-DDL: {}", ddl);
                 st.execute(ddl);
               }
             }
-            for (String ddl : ddls) {
+            for (String ddl : ddlStatements) {
               LOGGER.debug("create-table: {}", ddl);
               st.execute(ddl);
             }
@@ -174,19 +175,8 @@ public class JdbcStore implements Store {
     try (ResultSet tables = conn.getMetaData().getTables(catalog, schema, table, null)) {
       return tables.next();
     } catch (SQLException e) {
-      throw new RuntimeException(e);
+      throw new SQLError(e);
     }
-  }
-
-  private String createTableDDL(String rawTableName, JdbcEntity<?> entity) {
-    return String.format("CREATE TABLE %s (\n    %s"
-            + ",\n    %s)",
-        entity.tableName,
-        entity.columnTypeMap.entrySet().stream()
-            .map(e -> String.format("%s %s", e.getKey(), entity.databaseAdapter.columnType(e.getValue())))
-            .collect(Collectors.joining(",\n    ")),
-        entity.databaseAdapter.primaryKey(rawTableName, JdbcEntity.ID)
-    );
   }
 
   @Override
@@ -230,7 +220,7 @@ public class JdbcStore implements Store {
         loadstep = next.get();
         loadOpsByType.clear();
       }
-    } catch (RuntimeException e) {
+    } catch (StoreException e) {
       throw e;
     } catch (Exception e) {
       throw new StoreOperationException("SQL Exception caught", e);
@@ -255,15 +245,14 @@ public class JdbcStore implements Store {
   public <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
     try (Resources resources = new Resources(dataSource)) {
       doLoadSingle(type, id, consumer, resources);
-    } catch (RuntimeException e) {
+    } catch (StoreException e) {
       throw e;
     } catch (Exception e) {
       throw new StoreOperationException("Unhandled Exception caught for " + type + ":" + id, e);
     }
   }
 
-  private <C extends BaseValue<C>> void doLoadSingle(ValueType<C> type, Id id, C consumer,
-      Resources resources) throws Exception {
+  private <C extends BaseValue<C>> void doLoadSingle(ValueType<C> type, Id id, C consumer, Resources resources) {
     @SuppressWarnings("unchecked") JdbcEntity<C> entity = (JdbcEntity<C>) entityDefinitions.get(type);
 
     if (entity.query(resources, Collections.singleton(id), x -> consumer, x -> {}) == 0) {
@@ -285,7 +274,7 @@ public class JdbcStore implements Store {
           Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL) {
         @Override
         public boolean tryAdvance(Consumer<? super Acceptor<C>> action) {
-          if (resources.closed) {
+          if (resources.isClosed()) {
             return false;
           }
 
@@ -313,17 +302,13 @@ public class JdbcStore implements Store {
                 throw new IllegalStateException("A provided Acceptor.applyValue() was called without a row being fetched.");
               }
 
-              try {
-                queryIterator.produce(producer);
-              } catch (SQLException e) {
-                throw new RuntimeException(e);
-              }
+              queryIterator.produce(producer);
             };
 
             action.accept(acceptor);
 
             return true;
-          } catch (RuntimeException e) {
+          } catch (StoreException e) {
             try {
               resources.close();
             } catch (Exception ex) {
@@ -351,7 +336,7 @@ public class JdbcStore implements Store {
               throw new RuntimeException(e);
             }
           });
-    } catch (RuntimeException e) {
+    } catch (StoreException e) {
       throw e;
     } catch (Exception e) {
       throw new StoreOperationException("Unhandled Exception caught", e);
@@ -373,10 +358,10 @@ public class JdbcStore implements Store {
   @Override
   public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
     try (Resources resources = new Resources(dataSource)) {
-      resources.connection.setAutoCommit(false);
+      resources.getConnection().setAutoCommit(false);
       saveSingle(resources, saveOp, condition);
-      resources.connection.commit();
-    } catch (RuntimeException e) {
+      resources.getConnection().commit();
+    } catch (StoreException e) {
       throw e;
     } catch (Exception e) {
       if (databaseAdapter.isIntegrityConstraintViolation(e)) {
@@ -390,12 +375,12 @@ public class JdbcStore implements Store {
   @Override
   public void save(List<SaveOp<?>> ops) {
     try (Resources resources = new Resources(dataSource)) {
-      resources.connection.setAutoCommit(false);
+      resources.getConnection().setAutoCommit(false);
       for (SaveOp<?> op : ops) {
         saveSingle(resources, op, Optional.empty());
       }
-      resources.connection.commit();
-    } catch (RuntimeException e) {
+      resources.getConnection().commit();
+    } catch (StoreException e) {
       throw e;
     } catch (Exception e) {
       if (databaseAdapter.isIntegrityConstraintViolation(e)) {
@@ -406,15 +391,15 @@ public class JdbcStore implements Store {
   }
 
   private <C extends BaseValue<C>> void saveSingle(Resources resources, SaveOp<C> saveOp,
-      Optional<ConditionExpression> condition) throws SQLException {
+      Optional<ConditionExpression> condition) {
     @SuppressWarnings("unchecked") JdbcEntity<C> entity = (JdbcEntity<C>) entityDefinitions.get(saveOp.getType());
     SQLChange change = entity.newInsert();
     JdbcBaseValue<C> value = entity.newValue(resources, change);
 
     UpdateContext updateContext = new UpdateContext(change, saveOp.getId());
     Conditions conditions = sqlConditions(value, updateContext, condition);
-    if (conditions.ifNotExists) {
-      if (conditions.applicators.size() != 1) {
+    if (conditions.isIfNotExists()) {
+      if (conditions.size() != 1) {
         // 'WHERE ID=?' is added implicitly
         throw new IllegalArgumentException("attributeNotExists(ID) cannot be combined with other conditions");
       }
@@ -424,7 +409,7 @@ public class JdbcStore implements Store {
     } else if (!condition.isPresent()) {
       @SuppressWarnings("unchecked") C cons = (C) value;
       saveOp.serialize(cons);
-      Conditions upsertConditions = new Conditions().addIdCondition(saveOp.getId(), entity.databaseAdapter);
+      Conditions upsertConditions = new Conditions().addIdCondition(saveOp.getId(), entity.getDatabaseAdapter());
       value.executeUpdates(ExecuteUpdateStrategy.UPSERT, upsertConditions, saveOp.getId());
     } else {
       @SuppressWarnings("unchecked") C cons = (C) value;
@@ -436,12 +421,11 @@ public class JdbcStore implements Store {
   @SuppressWarnings("unchecked")
   @Override
   public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
-      Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer)
-      throws NotFoundException {
+      Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer) throws NotFoundException {
     JdbcEntity<C> entity = (JdbcEntity<C>) entityDefinitions.get(type);
 
     try (Resources resources = new Resources(dataSource)) {
-      resources.connection.setAutoCommit(false);
+      resources.getConnection().setAutoCommit(false);
 
       SQLUpdate change = entity.newUpdate();
       JdbcBaseValue<C> value = entity.newValue(resources, change);
@@ -450,7 +434,7 @@ public class JdbcStore implements Store {
       Conditions conditions = sqlConditions(value, updateContext, condition);
       UpdateContext updates = sqlUpdates(value, update, updateContext);
 
-      if (!updates.change.updates.isEmpty()) {
+      if (!updates.getChange().updates.isEmpty()) {
         entity.buildUpdate(resources, updates, conditions);
         if (change.executeUpdate() != 1) {
           return false;
@@ -461,10 +445,10 @@ public class JdbcStore implements Store {
         doLoadSingle(type, id, (C) consumer.get(), resources);
       }
 
-      resources.connection.commit();
+      resources.getConnection().commit();
 
       return true;
-    } catch (RuntimeException e) {
+    } catch (StoreException e) {
       throw e;
     } catch (Exception e) {
       if (databaseAdapter.isIntegrityConstraintViolation(e)) {
@@ -479,22 +463,20 @@ public class JdbcStore implements Store {
     @SuppressWarnings("unchecked") JdbcEntity<C> entity = (JdbcEntity<C>) entityDefinitions.get(type);
 
     try (Resources resources = new Resources(dataSource)) {
-      resources.connection.setAutoCommit(false);
+      resources.getConnection().setAutoCommit(false);
 
       SQLChange change = entity.newDelete();
-      change.addCondition(JdbcEntity.ID, entity.databaseAdapter.idApplicator(id));
+      change.addCondition(JdbcEntity.ID, entity.getDatabaseAdapter().idApplicator(id));
       JdbcBaseValue<C> value = entity.newValue(resources, change);
 
       UpdateContext updateContext = new UpdateContext(change, id);
       Conditions conditions = sqlConditions(value, updateContext, condition);
 
       boolean r = value.executeUpdates(ExecuteUpdateStrategy.DELETE, conditions, id) == 1;
-      resources.connection.commit();
+      resources.getConnection().commit();
       return r;
     } catch (NotFoundException | ConditionFailedException e) {
       return false;
-    } catch (RuntimeException e) {
-      throw e;
     } catch (Exception e) {
       if (databaseAdapter.isIntegrityConstraintViolation(e)) {
         throw new ConditionFailedException(e.getMessage());
@@ -508,15 +490,15 @@ public class JdbcStore implements Store {
     try (Connection conn = dataSource.getConnection(); Statement st = conn.createStatement()) {
       if (databaseAdapter.batchDDL()) {
         String ddl = "BEGIN;\n"
-            + entityDefinitions.values().stream().map(def -> "TRUNCATE TABLE " + def.tableName + ";").collect(Collectors.joining("\n"))
+            + entityDefinitions.values().stream().map(def -> "TRUNCATE TABLE " + def.getTableName() + ";").collect(Collectors.joining("\n"))
             + "\nEND TRANSACTION;\n";
         LOGGER.debug("Truncating {}", ddl);
         st.execute(ddl);
       } else {
         entityDefinitions.values().forEach(def -> {
           try {
-            LOGGER.debug("Truncating {}", def.tableName);
-            st.execute(String.format("TRUNCATE TABLE %s", def.tableName));
+            LOGGER.debug("Truncating {}", def.getTableName());
+            st.execute(String.format("TRUNCATE TABLE %s", def.getTableName()));
           } catch (SQLException e) {
             throw new StoreOperationException("SQL Exception caught", e);
           }
@@ -593,7 +575,7 @@ public class JdbcStore implements Store {
     Conditions conditions = new Conditions();
 
     if (condition.isPresent()) {
-      conditions.addIdCondition(updateContext.id, value.entity.databaseAdapter);
+      conditions.addIdCondition(updateContext.getId(), value.getDatabaseAdapter());
 
       for (ExpressionFunction function : condition.get().getFunctions()) {
         FunctionName functionName = function.getName();
@@ -626,9 +608,8 @@ public class JdbcStore implements Store {
             }
             break;
           case ATTRIBUTE_NOT_EXISTS:
-            conditions.ifNotExists = true;
             if (Store.KEY_NAME.equals(arguments.get(0).getPath().getRoot().getName())) {
-              conditions.ifNotExists = true;
+              conditions.setIfNotExists();
             } else {
               throw new IllegalArgumentException("Function " + function + " not supported");
             }

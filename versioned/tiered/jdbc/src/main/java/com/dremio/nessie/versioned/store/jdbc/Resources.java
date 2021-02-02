@@ -16,9 +16,11 @@
 package com.dremio.nessie.versioned.store.jdbc;
 
 import java.sql.Connection;
-import java.sql.SQLException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import javax.sql.DataSource;
 
@@ -31,17 +33,34 @@ import com.google.common.collect.Lists;
 final class Resources implements AutoCloseable {
 
   private final List<AutoCloseable> closeables = new ArrayList<>();
-  final Connection connection;
-  boolean closed;
+  private final Connection connection;
+  private boolean closed;
 
-  Resources(DataSource dataSource) throws SQLException {
-    this.connection = dataSource.getConnection();
-    add(connection);
+  Resources(DataSource dataSource) {
+    this.connection = add(SQLError.call(dataSource::getConnection));
+  }
+
+  ResultSet query(String sql, Consumer<PreparedStatement> prepareStatement) {
+    PreparedStatement preparedStatement = prepareStatement(sql);
+    prepareStatement.accept(preparedStatement);
+    return add(SQLError.call(preparedStatement::executeQuery));
+  }
+
+  PreparedStatement prepareStatement(String sql) {
+    return add(SQLError.call(() -> connection.prepareStatement(sql)));
   }
 
   <R extends AutoCloseable> R add(R closeable) {
     closeables.add(closeable);
     return closeable;
+  }
+
+  Connection getConnection() {
+    return connection;
+  }
+
+  boolean isClosed() {
+    return closed;
   }
 
   @Override

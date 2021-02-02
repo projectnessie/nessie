@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.store.jdbc;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
 import com.dremio.nessie.versioned.store.Id;
@@ -28,8 +29,28 @@ import com.dremio.nessie.versioned.store.ValueType;
  * UpdateExpression, Optional, Optional)}.
  */
 final class Conditions {
-  Map<String, ValueApplicator> applicators = new LinkedHashMap<>();
-  boolean ifNotExists;
+  private Map<String, ValueApplicator> applicators = new LinkedHashMap<>();
+  private boolean ifNotExists;
+
+  boolean isIfNotExists() {
+    return ifNotExists;
+  }
+
+  void setIfNotExists() {
+    this.ifNotExists = true;
+  }
+
+  void forEach(BiConsumer<String, ValueApplicator> action) {
+    applicators.forEach(action);
+  }
+
+  int size() {
+    return applicators.size();
+  }
+
+  void add(String column, ValueApplicator valueApplicator) {
+    applicators.put(column, valueApplicator);
+  }
 
   Conditions addIdCondition(Id id, DatabaseAdapter databaseAdapter) {
     applicators.put(

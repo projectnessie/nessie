@@ -45,6 +45,11 @@
       <artifactId>ojdbc8</artifactId>
       <version>${oraclejdbc.version}</version>
     </dependency>
+    <dependency><!-- This is the connection-pool used by Quarkus -->
+      <groupId>io.agroal</groupId>
+      <artifactId>agroal-pool</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-tiered-jdbc</artifactId>

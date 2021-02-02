@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.jdbc;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L3;
@@ -34,11 +33,11 @@ class JdbcL3 extends JdbcBaseValue<L3> implements L3 {
             .put(TREE, ColumnType.KEY_DELTA_LIST)
             .build(),
         JdbcL3::new,
-        (r, c) -> produceToConsumer(databaseAdapter, r, c));
+        (resultSet, consumer) -> produceToConsumer(databaseAdapter, resultSet, consumer));
   }
 
-  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, L3 consumer) throws SQLException {
-    JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, L3 consumer) {
+    baseToConsumer(databaseAdapter, resultSet, consumer)
         .keyDelta(databaseAdapter.getKeyDeltas(resultSet, TREE));
   }
 
@@ -48,7 +47,7 @@ class JdbcL3 extends JdbcBaseValue<L3> implements L3 {
 
   @Override
   public L3 keyDelta(Stream<KeyDelta> keyDelta) {
-    entity.databaseAdapter.setKeyDeltas(change, TREE, keyDelta);
+    getDatabaseAdapter().setKeyDeltas(change, TREE, keyDelta);
     return this;
   }
 }

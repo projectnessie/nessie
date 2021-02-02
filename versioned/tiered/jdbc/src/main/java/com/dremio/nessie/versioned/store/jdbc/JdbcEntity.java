@@ -17,12 +17,10 @@ package com.dremio.nessie.versioned.store.jdbc;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,6 +36,7 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionPath.PathSegment;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.dremio.nessie.versioned.store.jdbc.JdbcBaseValue.JdbcValueSupplier;
+import com.google.common.base.Preconditions;
 
 /**
  * Describes the JDBC-store entity for a {@link ValueType} and provides functionality to supply
@@ -58,16 +57,16 @@ class JdbcEntity<C extends BaseValue<C>> {
    */
   @FunctionalInterface
   interface ProduceToConsumer<C> {
-    void produceToConsumer(ResultSet resultSet, C consumer) throws SQLException;
+    void produceToConsumer(ResultSet resultSet, C consumer);
   }
 
-  final DatabaseAdapter databaseAdapter;
-  final String tableName;
-  final Map<String, ColumnType> columnTypeMap;
-  final String queryAll;
-  final String queryIds;
-  final JdbcValueSupplier<C> jdbcValueSupplier;
-  final ProduceToConsumer<C> produceToConsumer;
+  private final DatabaseAdapter databaseAdapter;
+  private final String tableName;
+  private final Map<String, ColumnType> columnTypeMap;
+  private final String queryAll;
+  private final String queryIds;
+  private final JdbcValueSupplier<C> jdbcValueSupplier;
+  private final ProduceToConsumer<C> produceToConsumer;
 
   private static final String IDS_MARKER = "__IDS__";
 
@@ -76,7 +75,7 @@ class JdbcEntity<C extends BaseValue<C>> {
     this.databaseAdapter = databaseAdapter;
     String tableName = type.getTableName(config.getTablePrefix());
     if (config.getSchema() != null) {
-      tableName = config.getSchema() + '.' + tableName;
+      tableName = String.format("%s.%s", config.getSchema(), tableName);
     }
     this.tableName = tableName;
     this.columnTypeMap = columnTypeMap;
@@ -85,27 +84,35 @@ class JdbcEntity<C extends BaseValue<C>> {
 
     String allColumns = String.join(", ", columnTypeMap.keySet());
 
-    String queryCondition = Stream.of(Optional.of(ID + " IN (" + IDS_MARKER + ")"))
-        .map(Optional::get)
-        .collect(Collectors.joining(" AND "));
+    this.queryAll = String.format("SELECT %s FROM %s", allColumns, tableName);
 
-    this.queryAll = "SELECT "
-        + allColumns
-        + " FROM "
-        + tableName;
-
-    this.queryIds = "SELECT "
-        + allColumns
-        + " FROM "
-        + tableName
-        + " WHERE "
-        + queryCondition;
+    this.queryIds = String.format("SELECT %s FROM %s WHERE %s IN (%s)",
+        allColumns, tableName, ID, IDS_MARKER);
   }
 
-  void buildUpdate(Resources resources, UpdateContext updates, Conditions conditions) throws SQLException {
-    conditions.applicators.forEach(updates.change::addCondition);
+  String createTableDDL(String rawTableName) {
+    return String.format("CREATE TABLE %s (\n    %s"
+            + ",\n    %s)",
+        tableName,
+        columnTypeMap.entrySet().stream()
+            .map(e -> String.format("%s %s", e.getKey(), databaseAdapter.columnType(e.getValue())))
+            .collect(Collectors.joining(",\n    ")),
+        databaseAdapter.primaryKey(rawTableName, JdbcEntity.ID)
+    );
+  }
 
-    updates.change.prepareStatement(resources);
+  DatabaseAdapter getDatabaseAdapter() {
+    return databaseAdapter;
+  }
+
+  String getTableName() {
+    return tableName;
+  }
+
+  void buildUpdate(Resources resources, UpdateContext updates, Conditions conditions) {
+    conditions.forEach(updates.getChange()::addCondition);
+
+    updates.getChange().prepareStatement(resources);
   }
 
   String equalsClause(UpdateContext updateContext, ExpressionPath path) {
@@ -123,7 +130,7 @@ class JdbcEntity<C extends BaseValue<C>> {
       if (!child.getChild().isPresent()) {
         // e.g. "tree[0]"
         if ("tree".equals(rootName)) {
-          return rootName + "_" + position;
+          return String.format("%s_%d", rootName, position);
         }
       } else {
         PathSegment childAttr = child.getChild().get();
@@ -131,7 +138,7 @@ class JdbcEntity<C extends BaseValue<C>> {
         if (childAttr.isName()) {
           String childAttrName = childAttr.asName().getName();
 
-          return "c_" + childAttrName + "_" + position;
+          return commitColumnName(childAttrName, position);
         }
       }
 
@@ -158,12 +165,11 @@ class JdbcEntity<C extends BaseValue<C>> {
       } else {
         if ("commits".equals(rootName) && child.isPosition()) {
           String attrName = child.getChild().get().asName().getName();
-          colName = "c_" + attrName + "_" + position;
+          colName = commitColumnName(attrName, position);
         } else {
           throw new IllegalArgumentException("Unsupported expression-path " + path);
         }
       }
-
     }
     ColumnType type = columnTypeMap.get(colName);
     if (type == null) {
@@ -172,46 +178,46 @@ class JdbcEntity<C extends BaseValue<C>> {
     return type;
   }
 
-  interface QueryIterator<C extends BaseValue<C>> {
-    boolean hasNext() throws SQLException;
-
-    void produce(C producer) throws SQLException;
+  private static String commitColumnName(String attrName, int position) {
+    return String.format("c_%s_%d", attrName, position);
   }
 
-  QueryIterator<C> queryAll(Resources resources) throws SQLException {
-    PreparedStatement pstmt = resources.add(resources.connection.prepareStatement(queryAll));
-    ResultSet resultSet = resources.add(pstmt.executeQuery());
+  interface QueryIterator<C extends BaseValue<C>> {
+    boolean hasNext();
+
+    void produce(C producer);
+  }
+
+  QueryIterator<C> queryAll(Resources resources) {
+    ResultSet resultSet = resources.query(queryAll, preparedStatement -> {});
 
     return new QueryIterator<C>() {
       @Override
-      public boolean hasNext() throws SQLException {
-        return resultSet.next();
+      public boolean hasNext() {
+        return SQLError.call(resultSet::next);
       }
 
-      public void produce(C producer) throws SQLException {
+      public void produce(C producer) {
         produceToConsumer.produceToConsumer(resultSet, producer);
       }
     };
   }
 
-  int query(Resources resources, Collection<Id> ids, Function<Id, C> consumerSupplier,
-      Consumer<Id> finished) throws SQLException {
+  private static String bindVariables(int numBinds) {
+    return IntStream.range(0, numBinds).mapToObj(ignore -> "?").collect(Collectors.joining(", "));
+  }
 
-    String idBinds = IntStream.range(0, ids.size()).mapToObj(x -> "?").collect(Collectors.joining(", "));
-    String sql = queryIds.replace(IDS_MARKER, idBinds);
-    PreparedStatement pstmt = resources.add(resources.connection.prepareStatement(sql));
-
-    int i = 1;
-    for (Iterator<Id> idIter = ids.iterator(); idIter.hasNext(); i++) {
-      databaseAdapter.setId(pstmt, i, idIter.next());
-    }
-
-    LOGGER.trace("query {}", pstmt);
-
-    ResultSet resultSet = resources.add(pstmt.executeQuery());
+  int query(Resources resources, Collection<Id> ids, Function<Id, C> consumerSupplier, Consumer<Id> finished) {
+    String sql = queryIds.replace(IDS_MARKER, bindVariables(ids.size()));
+    ResultSet resultSet = resources.query(sql, pstmt -> {
+      int i = 1;
+      for (Iterator<Id> idIter = ids.iterator(); idIter.hasNext(); i++) {
+        databaseAdapter.setId(pstmt, i, idIter.next());
+      }
+    });
 
     int valueCount = 0;
-    while (resultSet.next()) {
+    while (SQLError.call(resultSet::next)) {
       Id id = databaseAdapter.getId(resultSet, ID);
       produceToConsumer.produceToConsumer(resultSet, consumerSupplier.apply(id));
       finished.accept(id);
@@ -248,32 +254,32 @@ class JdbcEntity<C extends BaseValue<C>> {
      * <p>The map value is a {@link ValueApplicator} use to populate the bind variable of
      * the generated {@link PreparedStatement}.</p>
      */
-    final Map<String, ValueApplicator> updates = new LinkedHashMap<>();
+    protected final Map<String, ValueApplicator> updates = new LinkedHashMap<>();
     /**
      * "Static" column updates - either for {@code INSERT} or {@code UPDATE}.
      * <p>The map key is the column name.</p>
      * <p>The map value is the full expression including the column name, for example
      * {@code my_column = other_column} or {@code my_column = NULL}.</p>
      */
-    final Map<String, String> setExpressions = new LinkedHashMap<>();
+    protected final Map<String, String> setExpressions = new LinkedHashMap<>();
     /**
      * "Dynamic" column conditions - either for {@code DELETE} or {@code UPDATE}.
      * <p>The map key is the column name.</p>
      * <p>The map value is a {@link ValueApplicator} use to populate the bind variable of
      * the generated {@link PreparedStatement}.</p>
      */
-    final Map<String, ValueApplicator> conditions = new LinkedHashMap<>();
+    protected final Map<String, ValueApplicator> conditions = new LinkedHashMap<>();
     /**
      * "Static" column conditions - either for {@code DELETE} or {@code UPDATE}.
      * <p>The map key is the column name.</p>
      * <p>The map value is the full expression including the column name, for example
      * {@code my_column = other_column} or {@code my_column IS NOT NULL}.</p>
      */
-    final Map<String, String> conditionExpressions = new LinkedHashMap<>();
+    protected final Map<String, String> conditionExpressions = new LinkedHashMap<>();
     /**
      * The generated prepared statement.
      */
-    PreparedStatement statement;
+    private PreparedStatement statement;
 
     void setColumn(String column, ValueApplicator applicator) {
       updates.put(column, applicator);
@@ -291,14 +297,14 @@ class JdbcEntity<C extends BaseValue<C>> {
       conditionExpressions.put(column, expression);
     }
 
-    int executeUpdate() throws SQLException {
+    int executeUpdate() {
       LOGGER.trace("executeUpdate {}", statement);
-      return statement.executeUpdate();
+      return SQLError.call(statement::executeUpdate);
     }
 
-    void prepareStatement(Resources resources) throws SQLException {
+    void prepareStatement(Resources resources) {
       String sql = generateStatement();
-      statement = resources.add(resources.connection.prepareStatement(sql));
+      statement = resources.prepareStatement(sql);
       int i = 1;
       for (ValueApplicator value : updates.values()) {
         i += value.set(statement, i);
@@ -310,11 +316,27 @@ class JdbcEntity<C extends BaseValue<C>> {
 
     abstract String generateStatement();
 
+    String columnsExpression(Map<String, ValueApplicator> prepared, Map<String, String> unprepared, String delimiter) {
+      return Stream.concat(
+          prepared.keySet().stream().map(columnName -> columnName + " = ?"),
+          unprepared.values().stream())
+          .collect(Collectors.joining(delimiter));
+    }
+
+    String whereConditionSQL() {
+      return columnsExpression(conditions, conditionExpressions, " AND ");
+    }
+
     @Override
     public void close() throws Exception {
       if (statement != null) {
         statement.close();
       }
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s{statement=%s}", getClass().getSimpleName(), statement);
     }
   }
 
@@ -325,16 +347,13 @@ class JdbcEntity<C extends BaseValue<C>> {
 
     @Override
     String generateStatement() {
-      if (!conditions.isEmpty() || !conditionExpressions.isEmpty()) {
-        throw new IllegalStateException("collection of column-updates must be empty for a INSERT");
-      }
-      if (!setExpressions.isEmpty()) {
-        throw new IllegalStateException("collection of column-expressions must be empty for a INSERT");
-      }
-      return "INSERT INTO "
-          + tableName
-          + " (" + String.join(", ", updates.keySet()) + ") "
-          + " VALUES (" + IntStream.range(0, updates.size()).mapToObj(x -> "?").collect(Collectors.joining(", ")) + ")";
+      Preconditions.checkArgument(conditions.isEmpty() && conditionExpressions.isEmpty(),
+          "collection of column-updates must be empty for a INSERT");
+      Preconditions.checkArgument(setExpressions.isEmpty(), "collection of column-expressions must be empty for a INSERT");
+      return String.format("INSERT INTO %s (%s) VALUES (%s)",
+          tableName,
+          String.join(", ", updates.keySet()),
+          bindVariables(updates.size()));
     }
   }
 
@@ -344,18 +363,10 @@ class JdbcEntity<C extends BaseValue<C>> {
   class SQLUpdate extends SQLChange {
     @Override
     String generateStatement() {
-      return "UPDATE "
-          + tableName
-          + " SET "
-          + Stream.concat(
-              updates.keySet().stream().map(valueApplicator -> valueApplicator + " = ?"),
-              setExpressions.values().stream())
-            .collect(Collectors.joining(", "))
-          + " WHERE "
-          + Stream.concat(
-              conditions.keySet().stream().map(valueApplicator -> valueApplicator + " = ?"),
-              conditionExpressions.values().stream())
-            .collect(Collectors.joining(" AND "));
+      return String.format("UPDATE %s SET %s WHERE %s",
+          tableName,
+          columnsExpression(updates, setExpressions, ", "),
+          whereConditionSQL());
     }
 
     @Override
@@ -371,19 +382,11 @@ class JdbcEntity<C extends BaseValue<C>> {
   class SQLDelete extends SQLChange {
     @Override
     String generateStatement() {
-      if (!updates.isEmpty()) {
-        throw new IllegalStateException("collection of column-updates must be empty for a DELETE");
-      }
-      if (!setExpressions.isEmpty()) {
-        throw new IllegalStateException("collection of column-expressions must be empty for a DELETE");
-      }
-      return "DELETE FROM "
-          + tableName
-          + " WHERE "
-          + Stream.concat(
-              conditions.keySet().stream().map(valueApplicator -> valueApplicator + " = ?"),
-              conditionExpressions.values().stream())
-            .collect(Collectors.joining(" AND "));
+      Preconditions.checkArgument(updates.isEmpty(), "collection of column-updates must be empty for a DELETE");
+      Preconditions.checkArgument(setExpressions.isEmpty(), "collection of column-expressions must be empty for a DELETE");
+      return String.format("DELETE FROM %s WHERE %s",
+          tableName,
+          whereConditionSQL());
     }
   }
 }

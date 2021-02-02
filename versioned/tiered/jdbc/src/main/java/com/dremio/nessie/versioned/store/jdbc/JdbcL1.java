@@ -16,11 +16,8 @@
 package com.dremio.nessie.versioned.store.jdbc;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1;
@@ -41,8 +38,6 @@ class JdbcL1 extends JdbcBaseValue<L1> implements L1 {
   static final String PARENTS = "parents";
   static final String METADATA = "metadata";
 
-  static final String[] TREE_COLUMNS = IntStream.range(0, 43).mapToObj(i -> "tree_" + i).toArray(String[]::new);
-
   static JdbcEntity<L1> createEntity(DatabaseAdapter databaseAdapter, JdbcStoreConfig config) {
     Builder<String, ColumnType> columns = JdbcBaseValue.columnMapBuilder()
         .put(METADATA, ColumnType.ID)
@@ -52,31 +47,23 @@ class JdbcL1 extends JdbcBaseValue<L1> implements L1 {
         .put(DISTANCE, ColumnType.LONG)
         .put(MUTATIONS, ColumnType.KEY_MUTATION_LIST)
         .put(FRAGMENTS, ColumnType.ID_LIST);
-    for (String treeColumn : TREE_COLUMNS) {
-      columns.put(treeColumn, ColumnType.ID);
-    }
+    TreeColumns.forEntity(columns);
 
     return new JdbcEntity<>(databaseAdapter, ValueType.L1, config,
             columns.build(),
         JdbcL1::new,
-        (r, c) -> produceToConsumer(databaseAdapter, r, c));
+        (resultSet, consumer) -> produceToConsumer(databaseAdapter, resultSet, consumer));
   }
 
-  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, L1 consumer) throws SQLException {
-    consumer = JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, L1 consumer) {
+    baseToConsumer(databaseAdapter, resultSet, consumer)
         .commitMetadataId(databaseAdapter.getId(resultSet, METADATA))
         .ancestors(databaseAdapter.getIds(resultSet, PARENTS));
     List<Mutation> mutations = new ArrayList<>();
     databaseAdapter.getMutations(resultSet, MUTATIONS, mutations::add);
     consumer = consumer.keyMutations(mutations.stream())
-        .children(Stream.of(TREE_COLUMNS).map(c -> {
-          try {
-            return databaseAdapter.getId(resultSet, c);
-          } catch (SQLException e) {
-            throw new RuntimeException(e);
-          }
-        }).collect(Collectors.toList()).stream());
-    if (databaseAdapter.getBool(resultSet, IS_CHECKPOINT)) {
+        .children(TreeColumns.toConsumer(databaseAdapter, resultSet));
+    if (databaseAdapter.getBoolean(resultSet, IS_CHECKPOINT)) {
       consumer.completeKeyList(databaseAdapter.getIds(resultSet, FRAGMENTS));
     } else {
       consumer.incrementalKeyList(
@@ -92,46 +79,40 @@ class JdbcL1 extends JdbcBaseValue<L1> implements L1 {
 
   @Override
   public L1 commitMetadataId(Id id) {
-    entity.databaseAdapter.setId(change, METADATA, id);
+    getDatabaseAdapter().setId(change, METADATA, id);
     return this;
   }
 
   @Override
   public L1 ancestors(Stream<Id> ancestors) {
-    entity.databaseAdapter.setIds(change, PARENTS, ancestors);
+    getDatabaseAdapter().setIds(change, PARENTS, ancestors);
     return this;
   }
 
   @Override
   public L1 children(Stream<Id> children) {
-    List<Id> ch = children.collect(Collectors.toList());
-    if (ch.size() != TREE_COLUMNS.length) {
-      throw new IllegalArgumentException("Expected " + TREE_COLUMNS.length + " children, but got " + ch.size());
-    }
-    for (int i = 0; i < TREE_COLUMNS.length; i++) {
-      entity.databaseAdapter.setId(change, TREE_COLUMNS[i], ch.get(i));
-    }
+    TreeColumns.children(children, getDatabaseAdapter(), change);
     return this;
   }
 
   @Override
   public L1 keyMutations(Stream<Mutation> keyMutations) {
-    entity.databaseAdapter.setMutations(change, MUTATIONS, keyMutations);
+    getDatabaseAdapter().setMutations(change, MUTATIONS, keyMutations);
     return this;
   }
 
   @Override
   public L1 incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
-    entity.databaseAdapter.setBool(change, IS_CHECKPOINT, false);
-    entity.databaseAdapter.setId(change, ORIGIN, checkpointId);
-    entity.databaseAdapter.setLong(change, DISTANCE, (long) distanceFromCheckpoint);
+    getDatabaseAdapter().setBoolean(change, IS_CHECKPOINT, false);
+    getDatabaseAdapter().setId(change, ORIGIN, checkpointId);
+    getDatabaseAdapter().setLong(change, DISTANCE, (long) distanceFromCheckpoint);
     return this;
   }
 
   @Override
   public L1 completeKeyList(Stream<Id> fragmentIds) {
-    entity.databaseAdapter.setBool(change, IS_CHECKPOINT, true);
-    entity.databaseAdapter.setIds(change, FRAGMENTS, fragmentIds);
+    getDatabaseAdapter().setBoolean(change, IS_CHECKPOINT, true);
+    getDatabaseAdapter().setIds(change, FRAGMENTS, fragmentIds);
     return this;
   }
 }

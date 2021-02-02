@@ -60,6 +60,7 @@ public class TestMongoDBVersionStore extends AbstractITVersionStore {
     return fixture;
   }
 
+  // Need to repeat the @Disabled here, because JUnit fails to respect the @Disabled on the base method.
   @Disabled
   @Override
   public void commitWithInvalidReference() throws ReferenceNotFoundException,
@@ -70,6 +71,7 @@ public class TestMongoDBVersionStore extends AbstractITVersionStore {
   @Nested
   @DisplayName("when transplanting")
   class WhenTransplanting extends AbstractITVersionStore.WhenTransplanting {
+    // Need to repeat the @Disabled here, because JUnit fails to respect the @Disabled on the base method.
     @Disabled
     @Override
     protected void checkInvalidBranchHash() throws VersionStoreException {

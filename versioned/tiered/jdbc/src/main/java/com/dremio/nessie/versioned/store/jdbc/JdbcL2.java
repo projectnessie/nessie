@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.jdbc;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2;
@@ -34,11 +33,11 @@ class JdbcL2 extends JdbcBaseValue<L2> implements L2 {
             .put(TREE, ColumnType.ID_LIST)
             .build(),
         JdbcL2::new,
-        (r, c) -> produceToConsumer(databaseAdapter, r, c));
+        (resultSet, consumer) -> produceToConsumer(databaseAdapter, resultSet, consumer));
   }
 
-  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, L2 consumer) throws SQLException {
-    JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+  private static void produceToConsumer(DatabaseAdapter databaseAdapter, ResultSet resultSet, L2 consumer) {
+    baseToConsumer(databaseAdapter, resultSet, consumer)
         .children(databaseAdapter.getIds(resultSet, TREE));
   }
 
@@ -48,7 +47,7 @@ class JdbcL2 extends JdbcBaseValue<L2> implements L2 {
 
   @Override
   public L2 children(Stream<Id> ids) {
-    entity.databaseAdapter.setIds(change, TREE, ids);
+    getDatabaseAdapter().setIds(change, TREE, ids);
     return this;
   }
 }

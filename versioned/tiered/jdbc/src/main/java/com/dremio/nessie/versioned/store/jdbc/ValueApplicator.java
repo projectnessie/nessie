@@ -17,7 +17,6 @@
 package com.dremio.nessie.versioned.store.jdbc;
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 /**
  * Used to apply bind-variables of prepared statements at their calculated positions.
@@ -32,7 +31,6 @@ interface ValueApplicator {
    * @param pstmt prepared statement to populate the bind-variable to
    * @param index (start-)index
    * @return number of bound variables
-   * @throws SQLException in case a failure happens
    */
-  int set(PreparedStatement pstmt, int index) throws SQLException;
+  int set(PreparedStatement pstmt, int index);
 }

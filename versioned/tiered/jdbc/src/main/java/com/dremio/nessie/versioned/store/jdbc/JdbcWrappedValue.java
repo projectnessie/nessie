@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.jdbc;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 import com.dremio.nessie.tiered.builder.BaseWrappedValue;
 import com.dremio.nessie.versioned.store.ValueType;
@@ -34,13 +33,12 @@ class JdbcWrappedValue<C extends BaseWrappedValue<C>> extends JdbcBaseValue<C> i
             .put(VALUE, ColumnType.BINARY)
             .build(),
         JdbcWrappedValue::new,
-        (r, c) -> produceToConsumer(databaseAdapter, r, c));
+        (resultSet, consumer) -> produceToConsumer(databaseAdapter, resultSet, consumer));
   }
 
-  private static <V extends BaseWrappedValue<V>> void produceToConsumer(
-      DatabaseAdapter databaseAdapter,
-      ResultSet resultSet, V consumer) throws SQLException {
-    JdbcBaseValue.produceToConsumer(databaseAdapter, resultSet, consumer)
+  private static <V extends BaseWrappedValue<V>> void produceToConsumer(DatabaseAdapter databaseAdapter,
+      ResultSet resultSet, V consumer) {
+    baseToConsumer(databaseAdapter, resultSet, consumer)
         .value(databaseAdapter.getBinary(resultSet, VALUE));
   }
 
@@ -51,7 +49,7 @@ class JdbcWrappedValue<C extends BaseWrappedValue<C>> extends JdbcBaseValue<C> i
   @SuppressWarnings("unchecked")
   @Override
   public C value(ByteString value) {
-    entity.databaseAdapter.setBinary(change, VALUE, value);
+    getDatabaseAdapter().setBinary(change, VALUE, value);
     return (C) this;
   }
 }

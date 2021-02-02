@@ -31,9 +31,9 @@ import com.dremio.nessie.versioned.store.jdbc.JdbcEntity.SQLChange;
  * for each "delete branch-commit#N" operation, so following updates need to adjust the array-index.</p>
  */
 final class UpdateContext {
-  final SQLChange change;
-  final Id id;
-  final Map<String, Integer> indexAdjustments = new HashMap<>();
+  private final SQLChange change;
+  private final Id id;
+  private final Map<String, Integer> indexAdjustments = new HashMap<>();
 
   UpdateContext(SQLChange change, Id id) {
     this.change = change;
@@ -41,12 +41,18 @@ final class UpdateContext {
   }
 
   int adjustedIndex(String property) {
-    return indexAdjustments.compute(property,
-        (k, adj) -> adj != null ? adj : 0);
+    return indexAdjustments.compute(property, (k, adj) -> adj != null ? adj : 0);
   }
 
   void adjustIndex(String property) {
-    indexAdjustments.compute(property,
-        (k, adj) -> adj != null ? -1 + adj : -1);
+    indexAdjustments.compute(property, (k, adj) -> adj != null ? -1 + adj : -1);
+  }
+
+  Id getId() {
+    return id;
+  }
+
+  SQLChange getChange() {
+    return change;
   }
 }
