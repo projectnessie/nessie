@@ -31,6 +31,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.tiered.builder.BaseValue;
+import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
+import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
+import com.dremio.nessie.versioned.store.ConditionFailedException;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
@@ -312,6 +316,46 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
+  void putWithConditionValue() {
+    putWithCondition(ValueType.VALUE, SampleEntities.createValue(random));
+  }
+
+  @Test
+  void putWithConditionBranch() {
+    putWithCondition(ValueType.REF, SampleEntities.createBranch(random));
+  }
+
+  @Test
+  void putWithConditionTag() {
+    putWithCondition(ValueType.REF, SampleEntities.createTag(random));
+  }
+
+  @Test
+  void putWithConditionCommitMetadata() {
+    putWithCondition(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
+  }
+
+  @Test
+  void putWithConditionKeyFragment() {
+    putWithCondition(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random));
+  }
+
+  @Test
+  void putWithConditionL1() {
+    putWithCondition(ValueType.L1, SampleEntities.createL1(random));
+  }
+
+  @Test
+  void putWithConditionL2() {
+    putWithCondition(ValueType.L2, SampleEntities.createL2(random));
+  }
+
+  @Test
+  void putWithConditionL3() {
+    putWithCondition(ValueType.L3, SampleEntities.createL3(random));
+  }
+
+  @Test
   void loadPagination() {
     final ImmutableMultimap.Builder<ValueType<?>, HasId> builder = ImmutableMultimap.builder();
     for (int i = 0; i < (10 + loadSize()); ++i) {
@@ -324,6 +368,33 @@ public abstract class AbstractTestStore<S extends Store> {
     objs.forEach(this::putThenLoad);
 
     testLoad(objs);
+  }
+
+  private <T extends HasId> void putWithCondition(ValueType type, HasId sample) {
+    // Tests that attempt to put (update) an existing entry should only occur when the condition expression is met.
+    testPut(type, sample);
+
+    final ExpressionPath keyName = ExpressionPath.builder(Store.KEY_NAME).build();
+    final ConditionExpression conditionExpression = ConditionExpression.of(ExpressionFunction.equals(keyName, sample.getId().toEntity()));
+    putConditional(type, sample, true, Optional.of(conditionExpression));
+  }
+
+  protected <C extends BaseValue<C>> void putConditional(ValueType type, HasId sample, boolean shouldSucceed,
+                                                  Optional<ConditionExpression> conditionExpression) {
+    try {
+      store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, conditionExpression);
+      if (!shouldSucceed) {
+        Assertions.fail();
+      }
+      testLoadSingle(type, sample);
+    } catch (ConditionFailedException cfe) {
+      if (shouldSucceed) {
+        Assertions.fail(cfe);
+      }
+
+      // TODO: fix sample type.
+      //      Assertions.assertThrows(NotFoundException.class, () -> store.loadSingle(type, sample.getId(), sample));
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -361,6 +432,21 @@ public abstract class AbstractTestStore<S extends Store> {
     Assertions.assertTrue(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));
     testLoadSingle(type, sample);
     Assertions.assertFalse(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));
+    testLoadSingle(type, sample);
+  }
+
+  protected <C extends BaseValue<C>> void testPut(ValueType type, HasId sample) {
+    testPut(type, sample, Optional.empty());
+  }
+
+  private <C extends BaseValue<C>, T extends PersistentBase<C>> void testPut(ValueType type, HasId sample,
+                                                                             Optional<ConditionExpression> conditionExpression) {
+    try {
+      store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, conditionExpression);
+    } catch (ConditionFailedException e) {
+      Assertions.fail(e);
+    }
+
     testLoadSingle(type, sample);
   }
 }

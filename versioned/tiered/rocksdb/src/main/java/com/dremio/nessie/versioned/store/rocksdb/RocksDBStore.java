@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import com.dremio.nessie.versioned.store.ConditionFailedException;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.LoadOp;
 import com.dremio.nessie.versioned.store.LoadStep;
@@ -68,6 +69,7 @@ public class RocksDBStore implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(RocksDBStore.class);
   private static final long OPEN_SLEEP_MILLIS = 100L;
   private static final List<byte[]> COLUMN_FAMILIES;
+  private static final RocksDBConditionVisitor ROCKS_DB_CONDITION_EXPRESSION_VISITOR = new RocksDBConditionVisitor();
 
   static {
     RocksDB.loadLibrary();
@@ -200,9 +202,12 @@ public class RocksDBStore implements Store {
 
   @Override
   public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
-    // TODO: Handle ConditionExpressions.
     if (condition.isPresent()) {
-      throw new UnsupportedOperationException("ConditionExpressions are not supported with RocksDB yet.");
+      RocksBaseValue consumer = RocksSerDe.getConsumer(saveOp);
+      loadSingle(saveOp.getType(), saveOp.getId(), (C) consumer);
+      if (!(((Evaluator) consumer).evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR)))) {
+        throw new ConditionFailedException("Condition failed during put operation");
+      }
     }
 
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());

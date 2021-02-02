@@ -53,8 +53,8 @@ final class RocksSerDe {
     consumers.put(ValueType.COMMIT_METADATA, RocksCommitMetadata::new);
     deserializers.put(ValueType.COMMIT_METADATA, (e, c) -> RocksCommitMetadata.toConsumer(e, (CommitMetadata) c));
 
-    consumers.put(ValueType.VALUE, RocksWrappedValue::new);
-    deserializers.put(ValueType.VALUE, (e, c) -> RocksWrappedValue.toConsumer(e, (Value) c));
+    consumers.put(ValueType.VALUE, RocksValue::new);
+    deserializers.put(ValueType.VALUE, (e, c) -> RocksValue.toConsumer(e, (Value) c));
 
     consumers.put(ValueType.REF, RocksRef::new);
     deserializers.put(ValueType.REF, (e, c) -> RocksRef.toConsumer(e, (Ref) c));
@@ -102,6 +102,16 @@ final class RocksSerDe {
     saveOp.serialize(consumer);
 
     return ((RocksBaseValue<C>) consumer).build();
+  }
+
+  /**
+   * Get the Consumer for the provided saveOp.
+   * @param saveOp the saveOp for which a consumer if required
+   * @param <C> The consumer type
+   * @return the consumer
+   */
+  static <C extends BaseValue<C>> RocksBaseValue getConsumer(SaveOp<C> saveOp) {
+    return CONSUMERS.get(saveOp.getType()).get();
   }
 
   /**

@@ -17,6 +17,8 @@ package com.dremio.nessie.versioned.store.mongodb;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -41,6 +43,46 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
     if (null != store) {
       store.close();
     }
+  }
+
+  @Test
+  @Disabled
+  public void putWithConditionValue() {
+  }
+
+  @Test
+  @Disabled
+  void putWithConditionBranch() {
+  }
+
+  @Test
+  @Disabled
+  void putWithConditionTag() {
+  }
+
+  @Test
+  @Disabled
+  void putWithConditionCommitMetadata() {
+  }
+
+  @Test
+  @Disabled
+  void putWithConditionKeyFragment() {
+  }
+
+  @Test
+  @Disabled
+  void putWithConditionL1() {
+  }
+
+  @Test
+  @Disabled
+  void putWithConditionL2() {
+  }
+
+  @Test
+  @Disabled
+  void putWithConditionL3() {
   }
 
   /**
