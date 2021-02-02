@@ -117,7 +117,7 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, L1 consumer) {
-    DynamoBaseValue.toConsumer(entity, consumer);
+    baseToConsumer(entity, consumer);
 
     if (entity.containsKey(METADATA)) {
       consumer.commitMetadataId(deserializeId(entity, METADATA));

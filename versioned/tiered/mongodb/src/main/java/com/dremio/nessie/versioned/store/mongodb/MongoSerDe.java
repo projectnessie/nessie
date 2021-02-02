@@ -184,8 +184,8 @@ final class MongoSerDe {
   }
 
   static Stream<Key.Mutation> deserializeKeyMutations(Document d, String param) {
-    List<Document> kms = (List<Document>) d.get(param);
-    return kms.stream().map(MongoSerDe::deserializeKeyMutation);
+    List<Document> keyMutations = (List<Document>) d.get(param);
+    return keyMutations.stream().map(MongoSerDe::deserializeKeyMutation);
   }
 
   private static Key.Mutation deserializeKeyMutation(Document d) {

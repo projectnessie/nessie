@@ -52,8 +52,8 @@ class DynamoWrappedValue<C extends BaseWrappedValue<C>> extends DynamoBaseValue<
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static <C extends BaseWrappedValue<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
-    DynamoBaseValue.toConsumer(entity, consumer);
     SdkBytes b = checkNotNull(attributeValue(entity, VALUE).b(), "mandatory binary value is null");
-    consumer.value(ByteString.copyFrom(b.asByteArrayUnsafe()));
+    baseToConsumer(entity, consumer)
+        .value(ByteString.copyFrom(b.asByteArrayUnsafe()));
   }
 }

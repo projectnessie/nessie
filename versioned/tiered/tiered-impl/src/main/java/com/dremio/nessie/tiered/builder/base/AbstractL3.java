@@ -23,10 +23,15 @@ import com.dremio.nessie.versioned.store.KeyDelta;
 
 /**
  * Abstract implementation of {@link L3}, all methods return {@code this}.
+ * <p>All {@code Abstract*} classes in this package are meant to ease consumption of values loaded
+ * via {@link com.dremio.nessie.versioned.VersionStore}, so users do not have to implement every
+ * method.</p>
+ * <p>{@link Stream}s passed into the default method implementations are fully consumed when invoked.</p>
  */
 public abstract class AbstractL3 extends AbstractBaseValue<L3> implements L3 {
   @Override
   public L3 keyDelta(Stream<KeyDelta> keyDelta) {
+    keyDelta.forEach(ignored -> {});
     return this;
   }
 }

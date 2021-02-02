@@ -242,8 +242,8 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, Ref consumer) {
-    DynamoBaseValue.toConsumer(entity, consumer);
-    consumer.name(Preconditions.checkNotNull(attributeValue(entity, NAME).s()));
+    baseToConsumer(entity, consumer)
+        .name(Preconditions.checkNotNull(attributeValue(entity, NAME).s()));
 
     String refType = Preconditions.checkNotNull(attributeValue(entity, TYPE).s());
     switch (refType) {
@@ -264,16 +264,16 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
 
   private static void deserializeCommits(Map<String, AttributeValue> map, BranchCommit cc) {
     for (AttributeValue raw : attributeValue(map, COMMITS).l()) {
-      cc = deserializeCommit(raw.m(), cc);
+      deserializeCommit(raw.m(), cc);
     }
   }
 
-  private static BranchCommit deserializeCommit(Map<String, AttributeValue> map, BranchCommit cc) {
-    cc = cc.id(deserializeId(map, ID))
+  private static void deserializeCommit(Map<String, AttributeValue> map, BranchCommit cc) {
+    cc.id(deserializeId(map, ID))
         .commit(deserializeId(map, COMMIT));
 
     if (map.containsKey(PARENT)) {
-      return cc.saved()
+      cc.saved()
           .parent(deserializeId(map, PARENT))
           .done();
     } else {
@@ -292,7 +292,7 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
         }
       }
 
-      return mutations.done();
+      mutations.done();
     }
   }
 }

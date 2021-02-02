@@ -50,7 +50,7 @@ class DynamoL2 extends DynamoBaseValue<L2> implements L2 {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, L2 consumer) {
-    DynamoBaseValue.toConsumer(entity, consumer);
+    baseToConsumer(entity, consumer);
 
     if (entity.containsKey(TREE)) {
       consumer.children(deserializeIdStream(entity, TREE));

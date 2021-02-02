@@ -24,6 +24,10 @@ import com.dremio.nessie.versioned.store.Id;
 
 /**
  * Abstract implementation of {@link L1}, all methods return {@code this}.
+ * <p>All {@code Abstract*} classes in this package are meant to ease consumption of values loaded
+ * via {@link com.dremio.nessie.versioned.VersionStore}, so users do not have to implement every
+ * method.</p>
+ * <p>{@link Stream}s passed into the default method implementations are fully consumed when invoked.</p>
  */
 public abstract class AbstractL1 extends AbstractBaseValue<L1> implements L1 {
   @Override
@@ -33,16 +37,19 @@ public abstract class AbstractL1 extends AbstractBaseValue<L1> implements L1 {
 
   @Override
   public L1 ancestors(Stream<Id> ids) {
+    ids.forEach(ignored -> {});
     return this;
   }
 
   @Override
   public L1 children(Stream<Id> ids) {
+    ids.forEach(ignored -> {});
     return this;
   }
 
   @Override
   public L1 keyMutations(Stream<Mutation> keyMutations) {
+    keyMutations.forEach(ignored -> {});
     return this;
   }
 
@@ -53,6 +60,7 @@ public abstract class AbstractL1 extends AbstractBaseValue<L1> implements L1 {
 
   @Override
   public L1 completeKeyList(Stream<Id> fragmentIds) {
+    fragmentIds.forEach(ignored -> {});
     return this;
   }
 }

@@ -21,6 +21,9 @@ import com.google.protobuf.ByteString;
 
 /**
  * Abstract implementation of {@link Value}, all methods return {@code this}.
+ * <p>All {@code Abstract*} classes in this package are meant to ease consumption of values loaded
+ * via {@link com.dremio.nessie.versioned.VersionStore}, so users do not have to implement every
+ * method.</p>
  */
 public abstract class AbstractValue extends AbstractBaseValue<Value> implements Value {
   @Override

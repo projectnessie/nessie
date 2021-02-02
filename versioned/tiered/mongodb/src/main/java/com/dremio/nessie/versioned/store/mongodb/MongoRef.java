@@ -51,8 +51,8 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
   static void produce(Document document, Ref v) {
     v = produceBase(document, v)
         .name(document.getString(NAME));
-    String t = document.getString(TYPE);
-    switch (t) {
+    String type = document.getString(TYPE);
+    switch (type) {
       case REF_TYPE_TAG:
         v.tag().commit(deserializeId(document, COMMIT));
         break;
@@ -63,7 +63,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
             .commits(bc -> deserializeBranchCommits(bc, document));
         break;
       default:
-        throw new IllegalArgumentException("Unknown ref-type " + t);
+        throw new IllegalArgumentException("Unknown ref-type " + type);
     }
   }
 

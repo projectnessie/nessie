@@ -21,6 +21,9 @@ import com.dremio.nessie.versioned.store.Id;
 
 /**
  * Abstract implementation of {@link BaseValue}, all methods return {@code this}.
+ * <p>All {@code Abstract*} classes in this package are meant to ease consumption of values loaded
+ * via {@link com.dremio.nessie.versioned.VersionStore}, so users do not have to implement every
+ * method.</p>
  * @param <C> consumer interface type
  */
 public abstract class AbstractBaseValue<C extends BaseValue<C>> implements BaseValue<C> {

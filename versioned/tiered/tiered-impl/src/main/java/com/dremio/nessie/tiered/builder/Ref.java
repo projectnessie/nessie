@@ -102,6 +102,9 @@ import com.dremio.nessie.versioned.store.Id;
  * <p>
  * Implementations must return a shared state ({@code this}) from its method.
  * </p>
+ * <p>For efficient serialization (think: serializing a value to for example to JSON without
+ * buffering data, some store implementations require a strict ordering and in turn a strict
+ * sequence of method invocations.</p>
  */
 public interface Ref extends BaseValue<Ref> {
   /**
@@ -170,9 +173,11 @@ public interface Ref extends BaseValue<Ref> {
     /**
      * Set the commits of the reference.
      * <p>Must be called exactly once.</p>
-     * <p>Implementations must immediately execute the callbacks in the {@link
-     * BranchCommit}
+     * <p>Implementations must immediately execute the callbacks in the {@link BranchCommit}
      * to construct the commit-log of the branch.</p>
+     * <p>For efficient serialization (think: serializing a value to for example to JSON without
+     * buffering data, some store implementations require a strict ordering and in turn a strict
+     * sequence of method invocations.</p>
      *
      * @param commits The branch's commit-log receiver.
      * @return This consumer.
@@ -196,6 +201,9 @@ public interface Ref extends BaseValue<Ref> {
    *   <li>Either {@link #saved()} or {@link #unsaved()}</li>
    *   <li>Each saved and unsaved branch-commit must be terminated with its {@code done()} method</li>
    * </ol>
+   * <p>For efficient serialization (think: serializing a value to for example to JSON without
+   * buffering data, some store implementations require a strict ordering and in turn a strict
+   * sequence of method invocations.</p>
    */
   interface BranchCommit {
 
@@ -217,12 +225,18 @@ public interface Ref extends BaseValue<Ref> {
 
     /**
      * Continue with this branch-commit as a saved commit.
+     * <p>For efficient serialization (think: serializing a value to for example to JSON without
+     * buffering data, some store implementations require a strict ordering and in turn a strict
+     * sequence of method invocations.</p>
      * @return consumer that takes the parent for the saved-commit.
      */
     SavedCommit saved();
 
     /**
      * Continue with this branch-commit as an unsaved commit.
+     * <p>For efficient serialization (think: serializing a value to for example to JSON without
+     * buffering data, some store implementations require a strict ordering and in turn a strict
+     * sequence of method invocations.</p>
      * @return consumer that takes the deltas and later the mutations for the unsaved-commit.
      */
     UnsavedCommitDelta unsaved();
