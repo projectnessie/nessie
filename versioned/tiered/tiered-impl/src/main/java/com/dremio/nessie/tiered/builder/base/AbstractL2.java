@@ -28,7 +28,17 @@ import com.dremio.nessie.versioned.store.Id;
  * method.</p>
  * <p>{@link Stream}s passed into the default method implementations are fully consumed when invoked.</p>
  */
-public abstract class AbstractL2 extends AbstractBaseValue<L2> implements L2 {
+public abstract class AbstractL2 implements L2 {
+  @Override
+  public L2 id(Id id) {
+    return this;
+  }
+
+  @Override
+  public L2 dt(long dt) {
+    return this;
+  }
+
   @Override
   public L2 children(Stream<Id> ids) {
     ids.forEach(ignored -> {});

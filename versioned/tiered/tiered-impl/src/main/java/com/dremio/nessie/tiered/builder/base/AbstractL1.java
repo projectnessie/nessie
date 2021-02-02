@@ -29,7 +29,17 @@ import com.dremio.nessie.versioned.store.Id;
  * method.</p>
  * <p>{@link Stream}s passed into the default method implementations are fully consumed when invoked.</p>
  */
-public abstract class AbstractL1 extends AbstractBaseValue<L1> implements L1 {
+public abstract class AbstractL1 implements L1 {
+  @Override
+  public L1 id(Id id) {
+    return this;
+  }
+
+  @Override
+  public L1 dt(long dt) {
+    return this;
+  }
+
   @Override
   public L1 commitMetadataId(Id id) {
     return this;

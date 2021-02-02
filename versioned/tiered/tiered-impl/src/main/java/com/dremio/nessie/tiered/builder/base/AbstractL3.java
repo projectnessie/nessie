@@ -19,6 +19,7 @@ package com.dremio.nessie.tiered.builder.base;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L3;
+import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
 
 /**
@@ -28,7 +29,17 @@ import com.dremio.nessie.versioned.store.KeyDelta;
  * method.</p>
  * <p>{@link Stream}s passed into the default method implementations are fully consumed when invoked.</p>
  */
-public abstract class AbstractL3 extends AbstractBaseValue<L3> implements L3 {
+public abstract class AbstractL3 implements L3 {
+  @Override
+  public L3 id(Id id) {
+    return this;
+  }
+
+  @Override
+  public L3 dt(long dt) {
+    return this;
+  }
+
   @Override
   public L3 keyDelta(Stream<KeyDelta> keyDelta) {
     keyDelta.forEach(ignored -> {});

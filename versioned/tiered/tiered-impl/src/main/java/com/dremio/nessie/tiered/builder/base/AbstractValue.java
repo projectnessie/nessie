@@ -17,6 +17,7 @@
 package com.dremio.nessie.tiered.builder.base;
 
 import com.dremio.nessie.tiered.builder.Value;
+import com.dremio.nessie.versioned.store.Id;
 import com.google.protobuf.ByteString;
 
 /**
@@ -25,7 +26,17 @@ import com.google.protobuf.ByteString;
  * via {@link com.dremio.nessie.versioned.VersionStore}, so users do not have to implement every
  * method.</p>
  */
-public abstract class AbstractValue extends AbstractBaseValue<Value> implements Value {
+public abstract class AbstractValue implements Value {
+  @Override
+  public Value id(Id id) {
+    return this;
+  }
+
+  @Override
+  public Value dt(long dt) {
+    return this;
+  }
+
   @Override
   public Value value(ByteString value) {
     return this;
