@@ -56,6 +56,17 @@ abstract class DynamoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   }
 
   /**
+   * Adds an {@link AttributeValue} that consists of a list of {@link Id}s.
+   */
+  C addIdList43(String key, Stream<Id> ids) {
+    AttributeValue list = idsList(ids);
+    if (list.l().size() != 43) {
+      throw new IllegalArgumentException(String.format("Expected %d ids, got %d", 43, list.l().size()));
+    }
+    return addEntitySafe(key, list);
+  }
+
+  /**
    * Adds the {@link AttributeValue} for the given key for the final entity.
    */
   @SuppressWarnings("unchecked")

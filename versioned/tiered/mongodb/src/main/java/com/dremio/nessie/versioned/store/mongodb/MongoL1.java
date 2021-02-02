@@ -77,7 +77,7 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
 
   @Override
   public L1 children(Stream<Id> ids) {
-    serializeIds(TREE, ids);
+    serializeIds43(TREE, ids);
     return this;
   }
 
