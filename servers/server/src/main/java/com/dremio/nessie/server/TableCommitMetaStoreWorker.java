@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.server.providers;
+package com.dremio.nessie.server;
 
 import java.io.IOException;
 import java.util.stream.Collectors;
@@ -21,12 +21,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Singleton;
 
-import com.dremio.nessie.jgit.ObjectTypes.PContents;
-import com.dremio.nessie.jgit.ObjectTypes.PDeltaLakeTable;
-import com.dremio.nessie.jgit.ObjectTypes.PHiveDatabase;
-import com.dremio.nessie.jgit.ObjectTypes.PHiveTable;
-import com.dremio.nessie.jgit.ObjectTypes.PIcebergTable;
-import com.dremio.nessie.jgit.ObjectTypes.PSqlView;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.DeltaLakeTable;
@@ -42,6 +36,12 @@ import com.dremio.nessie.model.ImmutableIcebergTable;
 import com.dremio.nessie.model.ImmutableSqlView;
 import com.dremio.nessie.model.SqlView;
 import com.dremio.nessie.model.SqlView.Dialect;
+import com.dremio.nessie.server.model.ObjectTypes.PContents;
+import com.dremio.nessie.server.model.ObjectTypes.PDeltaLakeTable;
+import com.dremio.nessie.server.model.ObjectTypes.PHiveDatabase;
+import com.dremio.nessie.server.model.ObjectTypes.PHiveTable;
+import com.dremio.nessie.server.model.ObjectTypes.PIcebergTable;
+import com.dremio.nessie.server.model.ObjectTypes.PSqlView;
 import com.dremio.nessie.versioned.AssetKey;
 import com.dremio.nessie.versioned.AssetKey.NoOpAssetKey;
 import com.dremio.nessie.versioned.Serializer;

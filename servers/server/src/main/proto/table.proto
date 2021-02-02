@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 syntax = "proto3";
-package com.dremio.plugin.partsyn;
+package com.dremio.nessie.model;
 
-option java_package = "com.dremio.nessie.jgit";
+option java_package = "com.dremio.nessie.server.model";
 option java_outer_classname = "ObjectTypes";
 option java_generate_equals_and_hash = true;
 

@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
+import com.dremio.nessie.server.TableCommitMetaStoreWorker;
 import com.dremio.nessie.server.config.ApplicationConfig;
 import com.dremio.nessie.server.config.ApplicationConfig.VersionStoreDynamoConfig;
 import com.dremio.nessie.server.config.converters.VersionStoreType;

@@ -34,5 +34,6 @@
     <module>services</module>
     <module>quarkus-server</module>
     <module>lambda</module>
+    <module>server</module>
   </modules>
 </project>
