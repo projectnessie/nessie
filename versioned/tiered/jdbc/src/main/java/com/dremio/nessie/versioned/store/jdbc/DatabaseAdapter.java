@@ -58,26 +58,33 @@ public abstract class DatabaseAdapter {
     String columnType(ColumnType type) {
       switch (type) {
         case ID:
+          // The commit-hashes can be up to 40 bytes -> 80 hex chars
           return "VARCHAR(80)";
         case DT:
         case SEQ:
         case LONG:
           return "BIGINT";
         case BINARY:
+          // 250000 is actually an arbitrarily chosen number - like: "this is hopefully enough"
           return "VARBINARY(250000)";
         case BOOL:
           return "BOOLEAN";
         case REF_TYPE:
           return "VARCHAR(1)";
         case REF_NAME:
+          // We use reference names up to this size in our tests
           return "VARCHAR(4100)";
         case KEY_MUTATION_LIST:
+          // We use reference names up to this size in our tests (+ 2 chars for 'a:' or 'd:')
           return "VARCHAR(4102) ARRAY";
         case KEY_DELTA_LIST:
+          // We require this size for our tests
           return "VARCHAR(8300) ARRAY";
         case KEY_LIST:
+          // We use reference names up to this size in our tests
           return "VARCHAR(4100) ARRAY";
         case ID_LIST:
+          // The commit-hashes can be up to 40 bytes -> 80 hex chars
           return "VARCHAR(80) ARRAY";
         default:
           throw new IllegalArgumentException("Unknown column-type " + type);
@@ -101,23 +108,27 @@ public abstract class DatabaseAdapter {
     String columnType(ColumnType type) {
       switch (type) {
         case ID:
+          // The commit-hashes can be up to 40 bytes -> 80 hex chars
           return "VARCHAR(80)";
         case DT:
         case SEQ:
         case LONG:
           return "BIGINT";
         case BINARY:
+          // 250000 is actually an arbitrarily chosen number - like: "this is hopefully enough"
           return "VARBINARY(250000)";
         case BOOL:
           return "BOOLEAN";
         case REF_TYPE:
           return "VARCHAR(1)";
         case REF_NAME:
+          // We use reference names up to this size in our tests
           return "VARCHAR(4100)";
         case KEY_MUTATION_LIST:
         case KEY_DELTA_LIST:
         case KEY_LIST:
         case ID_LIST:
+          // H2 doesn't have typed arrays
           return "ARRAY";
         default:
           throw new IllegalArgumentException("Unknown column-type " + type);
@@ -188,6 +199,7 @@ public abstract class DatabaseAdapter {
     String columnType(ColumnType type) {
       switch (type) {
         case ID:
+          // The commit-hashes can be up to 40 bytes -> 80 hex chars
           return "VARCHAR(80)";
         case DT:
         case SEQ:
