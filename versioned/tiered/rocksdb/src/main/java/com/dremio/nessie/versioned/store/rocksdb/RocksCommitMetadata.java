@@ -33,24 +33,31 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements E
 
   @Override
   public boolean evaluate(Condition condition) {
-    boolean result = true;
-    for (Function function: condition.functionList) {
+    for (Function function: condition.getFunctionList()) {
       // Retrieve entity at function.path
       final List<String> path = Evaluator.splitPath(function.getPath());
       final String segment = path.get(0);
-      if (segment.equals(ID)) {
-        result &= ((path.size() == 1)
-          && (function.getOperator().equals(Function.EQUALS))
-          && (getId().toEntity().equals(function.getValue())));
-      } else if (segment.equals(VALUE)) {
-        result &= ((path.size() == 1)
-          && (function.getOperator().equals(Function.EQUALS))
-          && (byteValue.toStringUtf8().equals(function.getValue().getString())));
-      } else {
-        // Invalid Condition Function.
-        return false;
+      switch (segment) {
+        case ID:
+          if (!(path.size() == 1
+              && function.getOperator().equals(Function.EQUALS)
+              && getId().toEntity().equals(function.getValue()))) {
+            return false;
+          }
+          break;
+        case VALUE:
+          if (!(path.size() == 1
+              && function.getOperator().equals(Function.EQUALS)
+              && byteValue.toStringUtf8().equals(function.getValue().getString()))) {
+            return false;
+          }
+          break;
+        default:
+          // Invalid Condition Function.
+          return false;
       }
     }
-    return result;
+    // All functions have passed the test.
+    return true;
   }
 }

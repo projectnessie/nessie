@@ -19,6 +19,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * Provides evaluation of a {@link com.dremio.nessie.versioned.store.rocksdb.Condition} against the implementing class.
+ */
 public interface Evaluator {
   /**
    * Checks that each Function in the Condition is met by the implementing class.

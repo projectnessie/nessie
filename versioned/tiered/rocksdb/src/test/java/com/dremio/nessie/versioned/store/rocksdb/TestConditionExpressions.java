@@ -373,7 +373,7 @@ class TestConditionExpressions {
 
     final Function expectedFunction = new Function(Function.EQUALS, path, strEntity);
 
-    Assertions.assertTrue(expectedFunction.equals(ex.accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR).functionList.get(0)));
+    Assertions.assertTrue(expectedFunction.equals(ex.accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR).getFunctionList().get(0)));
   }
 
   /**
@@ -413,7 +413,7 @@ class TestConditionExpressions {
 
   private static void equals(Condition expected, ConditionExpression input) {
     Condition actual = input.accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR);
-    Assertions.assertTrue(actual.functionList.get(0).equals(expected.functionList.get(0)));
+    Assertions.assertTrue(actual.getFunctionList().get(0).equals(expected.getFunctionList().get(0)));
   }
 
   private static void failsUnsupportedOperationException(ConditionExpression input) {

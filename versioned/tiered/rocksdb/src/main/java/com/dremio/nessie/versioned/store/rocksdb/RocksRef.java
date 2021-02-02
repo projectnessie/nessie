@@ -53,7 +53,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
     // Retrieve entity at function.path
     if (type == RefType.BRANCH) {
       // TODO: do we need to subtype?
-      for (Function function: condition.functionList) {
+      for (Function function: condition.getFunctionList()) {
         // Branch evaluation
         final List<String> path = Evaluator.splitPath(function.getPath());
         final String segment = path.get(0);
@@ -91,28 +91,28 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
         }
       }
     } else if (this.type == RefType.TAG) {
-      for (Function function: condition.functionList) {
+      for (Function function: condition.getFunctionList()) {
         // Tag evaluation
         final List<String> path = Evaluator.splitPath(function.getPath());
         final String segment = path.get(0);
         switch (segment) {
           case ID:
-            result &= ((path.size() == 1)
-              && (function.getOperator().equals(Function.EQUALS))
-              && (getId().toEntity().equals(function.getValue())));
+            result &= path.size() == 1
+              && function.getOperator().equals(Function.EQUALS)
+              && getId().toEntity().equals(function.getValue());
             break;
           case TYPE:
-            result &= ((path.size() == 1)
-              && (function.getOperator().equals(Function.EQUALS))
-              && (type.toString().equals(function.getValue().getString())));
+            result &= path.size() == 1
+              && function.getOperator().equals(Function.EQUALS)
+              && type.toString().equals(function.getValue().getString());
             break;
           case NAME:
-            result &= (function.getOperator().equals(Function.EQUALS)
-              && (name.equals(function.getValue().getString())));
+            result &= function.getOperator().equals(Function.EQUALS)
+              && name.equals(function.getValue().getString());
             break;
           case COMMIT:
-            result &= (function.getOperator().equals(Function.EQUALS)
-              && (commit.toEntity().equals(function.getValue())));
+            result &= function.getOperator().equals(Function.EQUALS)
+              && commit.toEntity().equals(function.getValue());
             break;
           default:
             return false;

@@ -139,7 +139,6 @@
     <mockito.version>3.7.7</mockito.version>
     <mongodb.version>4.1.1</mongodb.version>
     <prometheus.version>0.9.0</prometheus.version>
-    <rocksdb.version>6.13.3</rocksdb.version>
     <reactor.version>2020.0.3</reactor.version>
     <rocksdb.version>6.13.3</rocksdb.version>
     <serverless.version>1.5</serverless.version>

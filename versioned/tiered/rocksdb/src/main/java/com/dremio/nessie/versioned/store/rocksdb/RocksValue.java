@@ -34,18 +34,18 @@ class RocksValue extends RocksWrappedValue<Value> implements Evaluator, Value {
   @Override
   public boolean evaluate(Condition condition) {
     boolean result = true;
-    for (Function function: condition.functionList) {
+    for (Function function: condition.getFunctionList()) {
       // Retrieve entity at function.path
       final List<String> path = Evaluator.splitPath(function.getPath());
       final String segment = path.get(0);
       if (segment.equals(ID)) {
-        result &= ((path.size() == 1)
-          && (function.getOperator().equals(Function.EQUALS))
-          && (getId().toEntity().equals(function.getValue())));
+        result &= path.size() == 1
+          && function.getOperator().equals(Function.EQUALS)
+          && getId().toEntity().equals(function.getValue());
       } else if (segment.equals(VALUE)) {
-        result &= ((path.size() == 1)
-          && (function.getOperator().equals(Function.EQUALS))
-          && (byteValue.toStringUtf8().equals(function.getValue().getString())));
+        result &= path.size() == 1
+          && function.getOperator().equals(Function.EQUALS)
+          && byteValue.toStringUtf8().equals(function.getValue().getString());
       } else {
         // Invalid Condition Function.
         return false;

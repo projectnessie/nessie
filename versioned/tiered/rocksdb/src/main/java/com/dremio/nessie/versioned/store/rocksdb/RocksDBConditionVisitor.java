@@ -131,15 +131,9 @@ class RocksDBConditionVisitor implements ConditionExpressionVisitor<Condition> {
   */
   @Override
   public Condition visit(final ConditionExpression conditionExpression) {
-    //    final String functions = conditionExpression.getFunctions().stream()
-    //      .map(f -> f.accept(STR_VALUE_VISITOR))
-    //      .collect(Collectors.joining("& "));
-
-    Condition holder = new Condition();
-    holder.functionList = conditionExpression.getFunctions().stream()
+    return new Condition(conditionExpression.getFunctions().stream()
         .map(f -> f.accept(FUNC_VALUE_VISITOR))
-        .collect(Collectors.toList());
-    return holder;
+        .collect(Collectors.toList()));
   }
 
   /**

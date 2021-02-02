@@ -69,34 +69,40 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evalua
 
   @Override
   public boolean evaluate(Condition condition) {
-    boolean result = true;
-    for (Function function: condition.functionList) {
+    for (Function function: condition.getFunctionList()) {
       // Retrieve entity at function.path
       List<String> path = Evaluator.splitPath(function.getPath());
       String segment = path.get(0);
-      if (segment.equals(ID)) {
-        result &= ((path.size() == 1)
-          && (function.getOperator().equals(Function.EQUALS))
-          && (getId().toEntity().equals(function.getValue())));
-      } else if (segment.equals(KEY_LIST)) {
-        if (path.size() == 1) {
+      switch (segment) {
+        case ID:
+          if (!(path.size() == 1
+            && function.getOperator().equals(Function.EQUALS)
+            && getId().toEntity().equals(function.getValue()))) {
+            return false;
+          }
+          break;
+        case KEY_LIST:
+          if (path.size() != 1) {
+            return false;
+          }
           if (function.getOperator().equals(Function.EQUALS)) {
-            result &= (keysAsEntityList(keys).equals(function.getValue()));
+            if (!keysAsEntityList(keys).equals(function.getValue())) {
+              return false;
+            }
           } else if (function.getOperator().equals(Function.SIZE)) {
-            long num = keys.count();
-            return (num == function.getValue().getNumber());
+            if (keys.count() != function.getValue().getNumber()) {
+              return false;
+            }
           } else {
             return false;
           }
-        } else {
+          break;
+        default:
+          // Invalid Condition Function.
           return false;
-        }
-      } else {
-        // Invalid Condition Function.
-        return false;
       }
     }
-    return result;
+    return true;
   }
 
   /**

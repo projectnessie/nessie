@@ -20,13 +20,13 @@ import com.dremio.nessie.versioned.store.Entity;
 /**
  * An expression that is asserted against an Entity.
  */
-public class Function {
+class Function {
   public static final String EQUALS = "equals";
   public static final String SIZE = "size";
 
-  final String operator;
-  final String path;
-  final Entity value;
+  private final String operator;
+  private final String path;
+  private final Entity value;
 
   /**
    * ExpressionFunction representation.
@@ -34,7 +34,7 @@ public class Function {
    * @param path the path to be tested
    * @param value the expected value of path
    */
-  public Function(String operator, String path, Entity value) {
+  Function(String operator, String path, Entity value) {
     this.operator = operator;
     this.path = path;
     this.value = value;
@@ -42,24 +42,24 @@ public class Function {
 
   /**
    * Compares for equality with a provided Function object.
-   * @param ex object to compare
+   * @param function object to compare
    * @return true if this is equal to provided object
    */
-  public boolean equals(Function ex) {
-    return (this.operator.equals(ex.operator)
-        && this.path.equals(ex.path)
-        && this.value.equals(ex.value));
+  boolean equals(Function function) {
+    return (this.operator.equals(function.operator)
+        && this.path.equals(function.path)
+        && this.value.equals(function.value));
   }
 
-  public String getOperator() {
+  String getOperator() {
     return operator;
   }
 
-  public String getPath() {
+  String getPath() {
     return path;
   }
 
-  public Entity getValue() {
+  Entity getValue() {
     return value;
   }
 }

@@ -44,14 +44,14 @@ class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
   @Override
   public boolean evaluate(Condition condition) {
     boolean result = true;
-    for (Function function: condition.functionList) {
+    for (Function function: condition.getFunctionList()) {
       // Retrieve entity at function.path
       final List<String> path = Evaluator.splitPath(function.getPath());
       final String segment = path.get(0);
       if (segment.equals(ID)) {
-        result &= ((path.size() == 1)
-          && (function.getOperator().equals(Function.EQUALS))
-          && (getId().toEntity().equals(function.getValue())));
+        result &= path.size() == 1
+          && function.getOperator().equals(Function.EQUALS)
+          && getId().toEntity().equals(function.getValue());
       } else {
         // TODO: ConditionExpression is currently not supported for TREE.
         // TODO: Implement a case for TREE if serialization of a Stream of KeyDelta to Entity is supported.

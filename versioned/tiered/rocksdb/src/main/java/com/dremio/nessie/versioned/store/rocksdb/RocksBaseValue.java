@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.store.rocksdb;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,7 +35,7 @@ import com.google.protobuf.ByteString;
  */
 abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
-  public static final String ID = "id";
+  static final String ID = "id";
 
   private Id id;
   private long dt;
@@ -66,12 +67,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    * @return the List Entity.
    */
   Entity toEntity(Stream<Id> idStream) {
-    List<Id> idList = idStream.collect(Collectors.toList());
-    List<Entity> idsAsEntity = new ArrayList<>();
-    for (Id idElement : idList) {
-      idsAsEntity.add(idElement.toEntity());
-    }
-    return Entity.ofList(idsAsEntity);
+    return Entity.ofList(idStream.map(Id::toEntity).collect(Collectors.toList()));
   }
 
   /**
@@ -81,7 +77,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    * @return the List Entity.
    */
   Entity toEntity(Stream<Id> idStream, int position) {
-    return idStream.collect(Collectors.toList()).get(position).toEntity();
+    return idStream.skip(position).findFirst().orElseThrow(NoSuchElementException::new).toEntity();
   }
 
   /**
@@ -96,16 +92,19 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
     final String segment = path.get(0);
     if (path.size() == 1) {
       if (function.getOperator().equals(Function.EQUALS)) {
-        // Remove enclosing brackets.
+        // The (path) segment may refer to a primative type or a list.
+        // If the equality test is an element in a list, the position within the list is enclosed by "()".
+        // To detect this the argument is split by "(" or ")". If there is a position then splitting will
+        // result in 2 arguments, otherwise there will be 1 argument.
         final List<String> arguments = Arrays.asList(segment.split("[()]"));
         if (arguments.size() == 1) { // compare complete list
-          return (toEntity(stream).equals(function.getValue()));
+          return toEntity(stream).equals(function.getValue());
         } else if (arguments.size() == 2) { // compare individual element of list
           int position = Integer.parseInt(arguments.get(1));
-          return (toEntity(stream, position).equals(function.getValue()));
+          return toEntity(stream, position).equals(function.getValue());
         }
       } else if (function.getOperator().equals(Function.SIZE)) {
-        return (stream.count() == (int)function.getValue().getNumber());
+        return (stream.count() == function.getValue().getNumber());
       }
     }
 

@@ -91,30 +91,38 @@ class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
   @Override
   public boolean evaluate(Condition condition) {
     boolean result = true;
-    for (Function function: condition.functionList) {
+    for (Function function: condition.getFunctionList()) {
       // Retrieve entity at function.path
       final List<String> path = Evaluator.splitPath(function.getPath());
       final String segment = path.get(0);
       if (segment.equals(ID)) {
-        result &= ((path.size() == 1)
-          && (function.getOperator().equals(Function.EQUALS))
-          && (getId().toEntity().equals(function.getValue())));
+        if (!(path.size() == 1
+            && function.getOperator().equals(Function.EQUALS)
+            && getId().toEntity().equals(function.getValue()))) {
+          return false;
+        }
       } else if (segment.equals(COMMIT_METADATA)) {
-        result &= ((path.size() == 1)
-          && (function.getOperator().equals(Function.EQUALS))
-          && (metadataId.toEntity().equals(function.getValue())));
+        if (!(path.size() == 1
+          && function.getOperator().equals(Function.EQUALS)
+          && metadataId.toEntity().equals(function.getValue()))) {
+          return false;
+        }
       } else if (segment.startsWith(ANCESTORS)) {
-        result &= evaluateStream(function, parentList);
+        if (!evaluateStream(function, parentList)) {
+          return false;
+        }
       } else if (segment.startsWith(CHILDREN)) {
-        result &= evaluateStream(function, tree);
+        if (!evaluateStream(function, tree)) {
+          return false;
+        }
       } else if (segment.equals(KEY_LIST)) {
         return false;
       } else if (segment.equals(INCREMENTAL_KEY_LIST)) {
-        if (path.size() == 2 && (function.getOperator().equals(Function.EQUALS))) {
+        if (path.size() == 2 && function.getOperator().equals(Function.EQUALS)) {
           if (path.get(1).equals(CHECKPOINT_ID)) {
-            result &= (checkpointId.toEntity().equals(function.getValue()));
+            result &= checkpointId.toEntity().equals(function.getValue());
           } else if (path.get(1).equals((DISTANCE_FROM_CHECKPOINT))) {
-            result &= (Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue()));
+            result &= Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue());
           } else {
             // Invalid Condition Function.
             return false;

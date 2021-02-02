@@ -42,14 +42,14 @@ class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
   @Override
   public boolean evaluate(Condition condition) {
     boolean result = true;
-    for (Function function: condition.functionList) {
+    for (Function function: condition.getFunctionList()) {
       // Retrieve entity at function.path
       final List<String> path = Evaluator.splitPath(function.getPath());
       final String segment = path.get(0);
       if (segment.equals(ID)) {
-        result &= ((path.size() == 1)
-          && (function.getOperator().equals(Function.EQUALS))
-          && (getId().toEntity().equals(function.getValue())));
+        result &= path.size() == 1
+          && function.getOperator().equals(Function.EQUALS)
+          && getId().toEntity().equals(function.getValue());
       } else if (segment.startsWith(CHILDREN)) {
         result &= evaluateStream(function, tree);
       } else {

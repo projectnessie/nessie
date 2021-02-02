@@ -18,18 +18,28 @@ package com.dremio.nessie.versioned.store.rocksdb;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.collect.ImmutableList;
+
 /**
  * A set of conditions that are asserted against an Entity.
  */
-public class Condition {
+class Condition {
 
-  public List<Function> functionList;
+  private List<Function> functionList;
 
-  public Condition() {
+  Condition() {
     this.functionList = new ArrayList<>();
   }
 
-  public void add(Function holder) {
+  Condition(List<Function> functions) {
+    this.functionList = functions;
+  }
+
+  void add(Function holder) {
     functionList.add(holder);
+  }
+
+  ImmutableList<Function> getFunctionList() {
+    return ImmutableList.copyOf(functionList);
   }
 }
