@@ -30,7 +30,16 @@ import com.dremio.nessie.versioned.store.Id;
  * method.</p>
  * <p>{@link Stream}s passed into the default method implementations are fully consumed when invoked.</p>
  */
-public abstract class AbstractRef extends AbstractBaseValue<Ref> implements Ref {
+public abstract class AbstractRef implements Ref {
+  @Override
+  public Ref id(Id id) {
+    return this;
+  }
+
+  @Override
+  public Ref dt(long dt) {
+    return this;
+  }
 
   @Override
   public Ref name(String name) {

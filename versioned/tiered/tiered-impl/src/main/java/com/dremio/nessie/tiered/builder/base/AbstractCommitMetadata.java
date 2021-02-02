@@ -17,6 +17,7 @@
 package com.dremio.nessie.tiered.builder.base;
 
 import com.dremio.nessie.tiered.builder.CommitMetadata;
+import com.dremio.nessie.versioned.store.Id;
 import com.google.protobuf.ByteString;
 
 /**
@@ -25,7 +26,17 @@ import com.google.protobuf.ByteString;
  * via {@link com.dremio.nessie.versioned.VersionStore}, so users do not have to implement every
  * method.</p>
  */
-public abstract class AbstractCommitMetadata extends AbstractBaseValue<CommitMetadata> implements CommitMetadata {
+public abstract class AbstractCommitMetadata implements CommitMetadata {
+  @Override
+  public CommitMetadata id(Id id) {
+    return this;
+  }
+
+  @Override
+  public CommitMetadata dt(long dt) {
+    return this;
+  }
+
   @Override
   public CommitMetadata value(ByteString value) {
     return this;
