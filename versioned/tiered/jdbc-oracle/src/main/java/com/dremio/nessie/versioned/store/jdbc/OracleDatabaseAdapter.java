@@ -44,6 +44,7 @@ public class OracleDatabaseAdapter extends DatabaseAdapter {
   String columnType(ColumnType type) {
     switch (type) {
       case ID:
+        // The commit-hashes can be up to 40 bytes -> 80 hex chars
         return "VARCHAR2(80)";
       case DT:
       case SEQ:
@@ -55,6 +56,7 @@ public class OracleDatabaseAdapter extends DatabaseAdapter {
       case REF_TYPE:
         return "VARCHAR2(1)";
       case REF_NAME:
+        // We use reference names up to this size in our tests
         return "VARCHAR2(4000)";
       case KEY_MUTATION_LIST:
         return "key_mutation_list_type";
