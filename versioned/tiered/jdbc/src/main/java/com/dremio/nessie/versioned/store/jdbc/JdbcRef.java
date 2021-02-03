@@ -26,8 +26,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.Ref;
-import com.dremio.nessie.tiered.builder.base.AbstractRef.AbstractBranch;
-import com.dremio.nessie.tiered.builder.base.AbstractRef.AbstractTag;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.Key.Mutation;
 import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
@@ -146,11 +144,16 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
   @Override
   public Tag tag() {
     getDatabaseAdapter().setString(change, TYPE, REF_TYPE_TAG);
-    return new AbstractTag(this) {
+    return new Tag() {
       @Override
       public Tag commit(Id commit) {
         getDatabaseAdapter().setId(change, COMMIT, commit);
         return this;
+      }
+
+      @Override
+      public Ref backToRef() {
+        return JdbcRef.this;
       }
     };
   }
@@ -158,7 +161,7 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
   @Override
   public Branch branch() {
     getDatabaseAdapter().setString(change, TYPE, REF_TYPE_BRANCH);
-    return new AbstractBranch(this) {
+    return new Branch() {
       @Override
       public Branch metadata(Id metadata) {
         getDatabaseAdapter().setId(change, METADATA, metadata);
@@ -175,6 +178,11 @@ class JdbcRef extends JdbcBaseValue<Ref> implements Ref {
       public Branch commits(Consumer<BranchCommit> commits) {
         commits.accept(new JdbcBranchCommit(0, change));
         return this;
+      }
+
+      @Override
+      public Ref backToRef() {
+        return JdbcRef.this;
       }
     };
   }
