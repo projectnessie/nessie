@@ -545,12 +545,11 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${surefire.version}</version>
           <configuration>
-            <argLine>@{argLine}</argLine>
+            <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
             <systemProperties>
               <user.language>en</user.language>
               <user.country>US</user.country>
               <user.variant/>
-              <file.encoding>UTF-8</file.encoding>
             </systemProperties>
           </configuration>
         </plugin>
@@ -559,7 +558,12 @@
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>${surefire.version}</version>
           <configuration>
-            <argLine>@{argLine}</argLine>
+            <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+            <systemProperties>
+              <user.language>en</user.language>
+              <user.country>US</user.country>
+              <user.variant/>
+            </systemProperties>
             <useModulePath>false</useModulePath>
           </configuration>
         </plugin>
