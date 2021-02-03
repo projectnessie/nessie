@@ -15,12 +15,12 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.StoreException;
@@ -93,49 +93,60 @@ class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
     boolean result = true;
     for (Function function: condition.getFunctionList()) {
       // Retrieve entity at function.path
-      final List<String> path = Evaluator.splitPath(function.getPath());
-      final String segment = path.get(0);
-      if (segment.equals(ID)) {
-        if (!(path.size() == 1
-            && function.getOperator().equals(Function.EQUALS)
-            && getId().toEntity().equals(function.getValue()))) {
-          return false;
-        }
-      } else if (segment.equals(COMMIT_METADATA)) {
-        if (!(path.size() == 1
-          && function.getOperator().equals(Function.EQUALS)
-          && metadataId.toEntity().equals(function.getValue()))) {
-          return false;
-        }
-      } else if (segment.startsWith(ANCESTORS)) {
-        if (!evaluateStream(function, parentList)) {
-          return false;
-        }
-      } else if (segment.startsWith(CHILDREN)) {
-        if (!evaluateStream(function, tree)) {
-          return false;
-        }
-      } else if (segment.equals(KEY_LIST)) {
-        return false;
-      } else if (segment.equals(INCREMENTAL_KEY_LIST)) {
-        if (path.size() == 2 && function.getOperator().equals(Function.EQUALS)) {
-          if (path.get(1).equals(CHECKPOINT_ID)) {
-            result &= checkpointId.toEntity().equals(function.getValue());
-          } else if (path.get(1).equals((DISTANCE_FROM_CHECKPOINT))) {
-            result &= Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue());
-          } else {
+      if (function.getPath().getRoot().isName()) {
+        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final String segment = nameSegment.getName();
+        switch (segment) {
+          case ID:
+            if (!(!nameSegment.getChild().isPresent()
+                && function.getOperator().equals(Function.EQUALS)
+                && getId().toEntity().equals(function.getValue()))) {
+              return false;
+            }
+            break;
+          case COMMIT_METADATA:
+            if (!(!nameSegment.getChild().isPresent()
+                && function.getOperator().equals(Function.EQUALS)
+                && metadataId.toEntity().equals(function.getValue()))) {
+              return false;
+            }
+            break;
+          case ANCESTORS:
+            if (!evaluateStream(function, parentList)) {
+              return false;
+            }
+            break;
+          case CHILDREN:
+            if (!evaluateStream(function, tree)) {
+              return false;
+            }
+            break;
+          case KEY_LIST:
+            return false;
+          case INCREMENTAL_KEY_LIST:
+            if (nameSegment.getChild().isPresent() && function.getOperator().equals(Function.EQUALS)) {
+              if (nameSegment.getChild().get().asName().getName().equals(CHECKPOINT_ID)) {
+                result &= checkpointId.toEntity().equals(function.getValue());
+              } else if (nameSegment.getChild().get().asName().getName().equals((DISTANCE_FROM_CHECKPOINT))) {
+                result &= Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue());
+              } else {
+                // Invalid Condition Function.
+                return false;
+              }
+            } else {
+              // Invalid Condition Function.
+              return false;
+            }
+            break;
+          case COMPLETE_KEY_LIST:
+            if (!evaluateStream(function, fragmentIds)) {
+              return false;
+            }
+            break;
+          default:
             // Invalid Condition Function.
             return false;
-          }
-        } else {
-          // Invalid Condition Function.
-          return false;
         }
-      } else if (segment.startsWith(COMPLETE_KEY_LIST)) {
-        result &= evaluateStream(function, fragmentIds);
-      } else {
-        // Invalid Condition Function.
-        return false;
       }
     }
     return result;

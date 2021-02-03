@@ -15,6 +15,7 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
 
 /**
@@ -25,7 +26,7 @@ class Function {
   public static final String SIZE = "size";
 
   private final String operator;
-  private final String path;
+  private final ExpressionPath path;
   private final Entity value;
 
   /**
@@ -34,7 +35,7 @@ class Function {
    * @param path the path to be tested
    * @param value the expected value of path
    */
-  Function(String operator, String path, Entity value) {
+  Function(String operator, ExpressionPath path, Entity value) {
     this.operator = operator;
     this.path = path;
     this.value = value;
@@ -55,7 +56,7 @@ class Function {
     return operator;
   }
 
-  String getPath() {
+  ExpressionPath getPath() {
     return path;
   }
 

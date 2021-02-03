@@ -16,11 +16,11 @@
 
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L3;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.StoreException;
@@ -43,23 +43,26 @@ class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
 
   @Override
   public boolean evaluate(Condition condition) {
-    boolean result = true;
     for (Function function: condition.getFunctionList()) {
       // Retrieve entity at function.path
-      final List<String> path = Evaluator.splitPath(function.getPath());
-      final String segment = path.get(0);
-      if (segment.equals(ID)) {
-        result &= path.size() == 1
-          && function.getOperator().equals(Function.EQUALS)
-          && getId().toEntity().equals(function.getValue());
-      } else {
-        // TODO: ConditionExpression is currently not supported for TREE.
-        // TODO: Implement a case for TREE if serialization of a Stream of KeyDelta to Entity is supported.
-        // Invalid Condition Function.
-        return false;
+      if (function.getPath().getRoot().isName()) {
+        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final String segment = nameSegment.getName();
+        if (segment.equals(ID)) {
+          if (!(!nameSegment.getChild().isPresent()
+              && function.getOperator().equals(Function.EQUALS)
+              && getId().toEntity().equals(function.getValue()))) {
+            return false;
+          }
+        } else {
+          // TODO: ConditionExpression is currently not supported for TREE.
+          // TODO: Implement a case for TREE if serialization of a Stream of KeyDelta to Entity is supported.
+          // Invalid Condition Function.
+          return false;
+        }
       }
     }
-    return result;
+    return true;
   }
 
   @Override

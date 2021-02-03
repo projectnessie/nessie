@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -41,23 +42,31 @@ class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
 
   @Override
   public boolean evaluate(Condition condition) {
-    boolean result = true;
     for (Function function: condition.getFunctionList()) {
       // Retrieve entity at function.path
-      final List<String> path = Evaluator.splitPath(function.getPath());
-      final String segment = path.get(0);
-      if (segment.equals(ID)) {
-        result &= path.size() == 1
-          && function.getOperator().equals(Function.EQUALS)
-          && getId().toEntity().equals(function.getValue());
-      } else if (segment.startsWith(CHILDREN)) {
-        result &= evaluateStream(function, tree);
-      } else {
-        // Invalid Condition Function.
-        return false;
+      if (function.getPath().getRoot().isName()) {
+        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final String segment = nameSegment.getName();
+        switch (segment) {
+          case ID:
+            if (!(!nameSegment.getChild().isPresent()
+                && function.getOperator().equals(Function.EQUALS)
+                && getId().toEntity().equals(function.getValue()))) {
+              return false;
+            }
+            break;
+          case CHILDREN:
+            if (!evaluateStream(function, tree)) {
+              return false;
+            }
+            break;
+          default:
+            // Invalid Condition Function.
+            return false;
+        }
       }
     }
-    return result;
+    return true;
   }
 
   @Override

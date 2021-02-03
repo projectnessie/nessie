@@ -16,9 +16,8 @@
 
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.List;
-
 import com.dremio.nessie.tiered.builder.CommitMetadata;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.protobuf.ByteString;
 
@@ -34,27 +33,29 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements E
   @Override
   public boolean evaluate(Condition condition) {
     for (Function function: condition.getFunctionList()) {
-      // Retrieve entity at function.path
-      final List<String> path = Evaluator.splitPath(function.getPath());
-      final String segment = path.get(0);
-      switch (segment) {
-        case ID:
-          if (!(path.size() == 1
-              && function.getOperator().equals(Function.EQUALS)
-              && getId().toEntity().equals(function.getValue()))) {
+      if (function.getPath().getRoot().isName()) {
+        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final String segment = nameSegment.getName();
+
+        switch (segment) {
+          case ID:
+            if (!(!nameSegment.getChild().isPresent()
+                && function.getOperator().equals(Function.EQUALS)
+                && getId().toEntity().equals(function.getValue()))) {
+              return false;
+            }
+            break;
+          case VALUE:
+            if (!(!nameSegment.getChild().isPresent()
+                && function.getOperator().equals(Function.EQUALS)
+                && byteValue.toStringUtf8().equals(function.getValue().getString()))) {
+              return false;
+            }
+            break;
+          default:
+            // Invalid Condition Function.
             return false;
-          }
-          break;
-        case VALUE:
-          if (!(path.size() == 1
-              && function.getOperator().equals(Function.EQUALS)
-              && byteValue.toStringUtf8().equals(function.getValue().getString()))) {
-            return false;
-          }
-          break;
-        default:
-          // Invalid Condition Function.
-          return false;
+        }
       }
     }
     // All functions have passed the test.

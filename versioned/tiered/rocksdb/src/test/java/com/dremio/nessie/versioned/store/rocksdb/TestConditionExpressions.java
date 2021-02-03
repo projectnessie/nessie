@@ -52,7 +52,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), TRUE_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), TRUE_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -62,7 +62,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), FALSE_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, FALSE_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), FALSE_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -72,7 +72,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), LIST_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, LIST_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), LIST_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -82,7 +82,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), MAP_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, MAP_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), MAP_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -93,7 +93,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), numEntity));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, numEntity));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), numEntity));
     equals(expectedCondition, ex);
   }
 
@@ -104,7 +104,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), strEntity));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, strEntity));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), strEntity));
     equals(expectedCondition, ex);
   }
 
@@ -115,7 +115,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, binaryEntity));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), binaryEntity));
     equals(expectedCondition, ex);
   }
 
@@ -126,7 +126,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), TRUE_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), TRUE_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -136,7 +136,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), FALSE_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, FALSE_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), FALSE_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -146,7 +146,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), LIST_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, LIST_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), LIST_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -156,7 +156,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), MAP_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, MAP_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), MAP_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -167,7 +167,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), numEntity));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, numEntity));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), numEntity));
     equals(expectedCondition, ex);
   }
 
@@ -177,7 +177,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), THREE));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, THREE));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), THREE));
     equals(expectedCondition, ex);
   }
 
@@ -188,7 +188,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, binaryEntity));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), binaryEntity));
     equals(expectedCondition, ex);
   }
 
@@ -199,7 +199,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), TRUE_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), TRUE_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -209,7 +209,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), FALSE_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, FALSE_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), FALSE_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -219,7 +219,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), LIST_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, LIST_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), LIST_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -229,7 +229,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), MAP_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, MAP_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), MAP_ENTITY));
     equals(expectedCondition, ex);
   }
   // TODO: map with list
@@ -241,7 +241,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), numEntity));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, numEntity));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), numEntity));
     equals(expectedCondition, ex);
   }
 
@@ -251,7 +251,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), THREE));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, THREE));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), THREE));
     equals(expectedCondition, ex);
   }
 
@@ -262,7 +262,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, binaryEntity));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), binaryEntity));
     equals(expectedCondition, ex);
   }
 
@@ -274,7 +274,7 @@ class TestConditionExpressions {
         ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(ofPath(path)), NUM_FOUR));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.SIZE, path, NUM_FOUR));
+    expectedCondition.add(new Function(Function.SIZE, ofPath(path), NUM_FOUR));
     equals(expectedCondition, ex);
   }
 
@@ -288,8 +288,8 @@ class TestConditionExpressions {
     ex = ex.and(ExpressionFunction.equals(ExpressionFunction.size(ofPath(path2)), NUM_ONE));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path, id));
-    expectedCondition.add(new Function(Function.SIZE, path2, NUM_ONE));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path), id));
+    expectedCondition.add(new Function(Function.SIZE, ofPath(path2), NUM_ONE));
     equals(expectedCondition, ex);
   }
 
@@ -302,8 +302,8 @@ class TestConditionExpressions {
         ExpressionFunction.equals(ofPath(path1), TRUE_ENTITY), ExpressionFunction.equals(ofPath(path2), FALSE_ENTITY));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path1, TRUE_ENTITY));
-    expectedCondition.add(new Function(Function.SIZE, path2, FALSE_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path1), TRUE_ENTITY));
+    expectedCondition.add(new Function(Function.SIZE, ofPath(path2), FALSE_ENTITY));
     equals(expectedCondition, ex);
   }
 
@@ -317,9 +317,9 @@ class TestConditionExpressions {
         ExpressionFunction.equals(ofPath(path2), FALSE_ENTITY), ExpressionFunction.equals(ofPath(pathPos), strEntity));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, path1, TRUE_ENTITY));
-    expectedCondition.add(new Function(Function.EQUALS, path2, FALSE_ENTITY));
-    expectedCondition.add(new Function(Function.EQUALS, pathPos, strEntity));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path1), TRUE_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(path2), FALSE_ENTITY));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(pathPos), strEntity));
     equals(expectedCondition, ex);
   }
 
@@ -351,7 +351,7 @@ class TestConditionExpressions {
   void equalsExpression() {
     final ExpressionFunction ex = ExpressionFunction.equals(ExpressionPath.builder("foo").build(), TRUE_ENTITY);
     String expected = String.format("%s,foo,%s", Function.EQUALS, "true");
-    Function expected2 = new Function(Function.EQUALS, "foo", TRUE_ENTITY);
+    Function expected2 = new Function(Function.EQUALS, ofPath("foo"), TRUE_ENTITY);
     Assertions.assertEquals(expected, ex.accept(RocksDBConditionVisitor.STR_VALUE_VISITOR));
   }
 
@@ -361,7 +361,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ExpressionPath.builder(Store.KEY_NAME).build(), id));
 
     final Condition expectedCondition = new Condition();
-    expectedCondition.add(new Function(Function.EQUALS, Store.KEY_NAME, id));
+    expectedCondition.add(new Function(Function.EQUALS, ofPath(Store.KEY_NAME), id));
     equals(expectedCondition, ex);
   }
 
@@ -371,7 +371,7 @@ class TestConditionExpressions {
     final Entity strEntity = SampleEntities.createStringEntity(RANDOM, 7);
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), strEntity));
 
-    final Function expectedFunction = new Function(Function.EQUALS, path, strEntity);
+    final Function expectedFunction = new Function(Function.EQUALS, ofPath(path), strEntity);
 
     Assertions.assertTrue(expectedFunction.equals(ex.accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR).getFunctionList().get(0)));
   }

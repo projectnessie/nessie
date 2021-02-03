@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.Fragment;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -71,35 +72,37 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evalua
   public boolean evaluate(Condition condition) {
     for (Function function: condition.getFunctionList()) {
       // Retrieve entity at function.path
-      List<String> path = Evaluator.splitPath(function.getPath());
-      String segment = path.get(0);
-      switch (segment) {
-        case ID:
-          if (!(path.size() == 1
-            && function.getOperator().equals(Function.EQUALS)
-            && getId().toEntity().equals(function.getValue()))) {
-            return false;
-          }
-          break;
-        case KEY_LIST:
-          if (path.size() != 1) {
-            return false;
-          }
-          if (function.getOperator().equals(Function.EQUALS)) {
-            if (!keysAsEntityList(keys).equals(function.getValue())) {
+      if (function.getPath().getRoot().isName()) {
+        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final String segment = nameSegment.getName();
+        switch (segment) {
+          case ID:
+            if (!(!nameSegment.getChild().isPresent()
+                && function.getOperator().equals(Function.EQUALS)
+                && getId().toEntity().equals(function.getValue()))) {
               return false;
             }
-          } else if (function.getOperator().equals(Function.SIZE)) {
-            if (keys.count() != function.getValue().getNumber()) {
+            break;
+          case KEY_LIST:
+            if (nameSegment.getChild().isPresent()) {
               return false;
             }
-          } else {
+            if (function.getOperator().equals(Function.EQUALS)) {
+              if (!keysAsEntityList(keys).equals(function.getValue())) {
+                return false;
+              }
+            } else if (function.getOperator().equals(Function.SIZE)) {
+              if (keys.count() != function.getValue().getNumber()) {
+                return false;
+              }
+            } else {
+              return false;
+            }
+            break;
+          default:
+            // Invalid Condition Function.
             return false;
-          }
-          break;
-        default:
-          // Invalid Condition Function.
-          return false;
+        }
       }
     }
     return true;

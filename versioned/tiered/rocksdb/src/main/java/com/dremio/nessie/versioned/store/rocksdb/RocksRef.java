@@ -15,6 +15,9 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import static com.dremio.nessie.versioned.store.rocksdb.Function.EQUALS;
+import static com.dremio.nessie.versioned.store.rocksdb.Function.SIZE;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -22,6 +25,7 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -48,78 +52,130 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
 
   @Override
   public boolean evaluate(Condition condition) {
-    boolean result = true;
-
     // Retrieve entity at function.path
     if (type == RefType.BRANCH) {
-      // TODO: do we need to subtype?
-      for (Function function: condition.getFunctionList()) {
-        // Branch evaluation
-        final List<String> path = Evaluator.splitPath(function.getPath());
-        final String segment = path.get(0);
-        if (segment.equals(ID)) {
-          result &= ((path.size() == 1)
-            && (function.getOperator().equals(Function.EQUALS))
-            && (getId().toEntity().equals(function.getValue())));
-        } else if (segment.equals(TYPE)) {
-          result &= ((path.size() == 1)
-            && (function.getOperator().equals(Function.EQUALS))
-            && (type.toString().equals(function.getValue().getString())));
-        } else if (segment.equals(NAME)) {
-          result &= ((path.size() == 1)
-            && (function.getOperator().equals(Function.EQUALS)
-            && (name.equals(function.getValue().getString()))));
-        } else if (segment.startsWith(CHILDREN)) {
-          evaluateStream(function, children);
-        } else if (segment.equals(METADATA)) {
-          result &= ((path.size() == 1)
-                && (function.getOperator().equals(Function.EQUALS)))
-                && (metadata.toEntity().equals(function.getValue()));
-        } else if (segment.equals(COMMITS)) {
-          // TODO: refactor once jdbc-store Store changes are available.
-          if (function.getOperator().equals(Function.SIZE)) {
-            result &= ((path.size() == 1)
-                && (function.getOperator().equals(Function.SIZE)
-                && (commits.size() == (int)function.getValue().getNumber())));
-          } else if (function.getOperator().equals(Function.EQUALS)) {
-            return false;
-          } else {
-            return false;
-          }
-        } else {
-          return false;
-        }
-      }
+      return evaluateBranch(condition);
     } else if (this.type == RefType.TAG) {
-      for (Function function: condition.getFunctionList()) {
-        // Tag evaluation
-        final List<String> path = Evaluator.splitPath(function.getPath());
-        final String segment = path.get(0);
+      return evaluateTag(condition);
+    }
+    return false;
+  }
+
+  /**
+   * Evaluates that this branch meets the condition.
+   * @param condition the condition to evaluate this branch against
+   * @return true if this branch meets the condition
+   */
+  private boolean evaluateBranch(Condition condition) {
+    for (Function function: condition.getFunctionList()) {
+      // Branch evaluation
+      if (function.getPath().getRoot().isName()) {
+        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            result &= path.size() == 1
-              && function.getOperator().equals(Function.EQUALS)
-              && getId().toEntity().equals(function.getValue());
+            if (!(!nameSegment.getChild().isPresent()
+                && (function.getOperator().equals(EQUALS))
+                && (getId().toEntity().equals(function.getValue())))) {
+              return false;
+            }
             break;
           case TYPE:
-            result &= path.size() == 1
-              && function.getOperator().equals(Function.EQUALS)
-              && type.toString().equals(function.getValue().getString());
+            if (!(!nameSegment.getChild().isPresent()
+                && (function.getOperator().equals(EQUALS))
+                && (type.toString().equals(function.getValue().getString())))) {
+              return false;
+            }
             break;
           case NAME:
-            result &= function.getOperator().equals(Function.EQUALS)
-              && name.equals(function.getValue().getString());
+            if (!(!nameSegment.getChild().isPresent()
+                && (function.getOperator().equals(EQUALS)
+                && (name.equals(function.getValue().getString()))))) {
+              return false;
+            }
             break;
-          case COMMIT:
-            result &= function.getOperator().equals(Function.EQUALS)
-              && commit.toEntity().equals(function.getValue());
+          case CHILDREN:
+            if (!evaluateStream(function, children)) {
+              return false;
+            }
+            break;
+          case METADATA:
+            if (!(!nameSegment.getChild().isPresent()
+                && (function.getOperator().equals(EQUALS))
+                && (metadata.toEntity().equals(function.getValue())))) {
+              return false;
+            }
+            break;
+          case COMMITS:
+            // TODO: refactor once jdbc-store Store changes are available.
+            switch (function.getOperator()) {
+              case SIZE:
+                if (!(!nameSegment.getChild().isPresent()
+                    && (function.getOperator().equals(SIZE)
+                    && (commits.size() == (int) function.getValue().getNumber())))) {
+                  return false;
+                }
+                break;
+              case EQUALS:
+                return false;
+              default:
+                return false;
+            }
             break;
           default:
             return false;
         }
       }
     }
-    return result;
+    // The object has not failed any condition.
+    return true;
+  }
+
+  /**
+   * Evaluates that this tag meets the condition.
+   * @param condition the condition to evaluate this tag against
+   * @return true if this tag meets the condition
+   */
+  private boolean evaluateTag(Condition condition) {
+    for (Function function: condition.getFunctionList()) {
+      // Tag evaluation
+      if (function.getPath().getRoot().isName()) {
+        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final String segment = nameSegment.getName();
+        switch (segment) {
+          case ID:
+            if (!(!nameSegment.getChild().isPresent()
+                && function.getOperator().equals(Function.EQUALS)
+                && getId().toEntity().equals(function.getValue()))) {
+              return false;
+            }
+            break;
+          case TYPE:
+            if (!(!nameSegment.getChild().isPresent()
+                && function.getOperator().equals(Function.EQUALS)
+                && type.toString().equals(function.getValue().getString()))) {
+              return false;
+            }
+            break;
+          case NAME:
+            if (!(function.getOperator().equals(Function.EQUALS)
+                && name.equals(function.getValue().getString()))) {
+              return false;
+            }
+            break;
+          case COMMIT:
+            if (!(function.getOperator().equals(Function.EQUALS)
+                && commit.toEntity().equals(function.getValue()))) {
+              return false;
+            }
+            break;
+          default:
+            return false;
+        }
+      }
+    }
+    // The object has not failed any condition.
+    return true;
   }
 
   @Override

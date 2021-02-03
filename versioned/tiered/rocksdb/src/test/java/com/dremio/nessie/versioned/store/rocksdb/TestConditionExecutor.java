@@ -31,6 +31,7 @@ import org.junit.jupiter.api.TestInstance;
 import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.SampleEntities;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.KeyDelta;
@@ -61,7 +62,7 @@ class TestConditionExecutor {
   void executorL1Empty() {
     final Condition condition = new Condition();
     final String path = createPath();
-    condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    condition.add(new Function(Function.EQUALS, ofPath(path), TRUE_ENTITY));
     RocksL1 l1 = createL1(random);
     Assertions.assertFalse(l1.evaluate(condition));
   }
@@ -69,7 +70,7 @@ class TestConditionExecutor {
   @Test
   void executorL1ID() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.ID, Id.EMPTY.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksL1.ID), Id.EMPTY.toEntity()));
     RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -77,7 +78,7 @@ class TestConditionExecutor {
   @Test
   void executorL1CommitMetadata() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.COMMIT_METADATA, ID.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksL1.COMMIT_METADATA), ID.toEntity()));
     RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -85,7 +86,8 @@ class TestConditionExecutor {
   @Test
   void executorL1IncrementalKeyListCheckpointId() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.INCREMENTAL_KEY_LIST + SEPARATOR + RocksL1.CHECKPOINT_ID, ID.toEntity()));
+    ExpressionPath expressionPath = ExpressionPath.builder(RocksL1.INCREMENTAL_KEY_LIST).name(RocksL1.CHECKPOINT_ID).build();
+    condition.add(new Function(Function.EQUALS, expressionPath, ID.toEntity()));
     RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -93,7 +95,8 @@ class TestConditionExecutor {
   @Test
   void executorL1IncrementalKeyListDistanceFromCheckpoint() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.INCREMENTAL_KEY_LIST + SEPARATOR + RocksL1.DISTANCE_FROM_CHECKPOINT, ONE));
+    ExpressionPath expressionPath = ExpressionPath.builder(RocksL1.INCREMENTAL_KEY_LIST).name(RocksL1.DISTANCE_FROM_CHECKPOINT).build();
+    condition.add(new Function(Function.EQUALS, expressionPath, ONE));
     RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -101,7 +104,7 @@ class TestConditionExecutor {
   @Test
   void executorL1ChildrenSize() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.SIZE, RocksL1.CHILDREN, Entity.ofNumber(RocksL1.SIZE)));
+    condition.add(new Function(Function.SIZE, ofPath(RocksL1.CHILDREN), Entity.ofNumber(RocksL1.SIZE)));
     RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -113,7 +116,7 @@ class TestConditionExecutor {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.CHILDREN, Entity.ofList(idsAsEntity)));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksL1.CHILDREN), Entity.ofList(idsAsEntity)));
     RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -121,7 +124,7 @@ class TestConditionExecutor {
   @Test
   void executorL1ChildrenEqualsListPosition() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.CHILDREN + "(" + "3" + ")", ID.toEntity()));
+    condition.add(new Function(Function.EQUALS, ExpressionPath.builder(RocksL1.CHILDREN).position(3).build(), ID.toEntity()));
     RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -129,7 +132,7 @@ class TestConditionExecutor {
   @Test
   void executorL1AncestorsSize() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.SIZE, RocksL1.ANCESTORS, Entity.ofNumber(RocksL1.SIZE)));
+    condition.add(new Function(Function.SIZE, ofPath(RocksL1.ANCESTORS), Entity.ofNumber(RocksL1.SIZE)));
     RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -141,7 +144,7 @@ class TestConditionExecutor {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.ANCESTORS, Entity.ofList(idsAsEntity)));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksL1.ANCESTORS), Entity.ofList(idsAsEntity)));
     RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -149,7 +152,7 @@ class TestConditionExecutor {
   @Test
   void executorL1AncestorsEqualsListPosition() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.ANCESTORS + "(" + "3" + ")", ID.toEntity()));
+    condition.add(new Function(Function.EQUALS, ExpressionPath.builder(RocksL1.ANCESTORS).position(3).build(), ID.toEntity()));
     RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -157,7 +160,7 @@ class TestConditionExecutor {
   @Test
   void executorL1FragmentsSize() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.SIZE, RocksL1.COMPLETE_KEY_LIST, Entity.ofNumber(RocksL1.SIZE)));
+    condition.add(new Function(Function.SIZE, ofPath(RocksL1.COMPLETE_KEY_LIST), Entity.ofNumber(RocksL1.SIZE)));
     RocksL1 l1 = createL1CompleteKeyList(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -169,7 +172,7 @@ class TestConditionExecutor {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.COMPLETE_KEY_LIST, Entity.ofList(idsAsEntity)));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksL1.COMPLETE_KEY_LIST), Entity.ofList(idsAsEntity)));
     RocksL1 l1 = createL1CompleteKeyList(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -177,7 +180,7 @@ class TestConditionExecutor {
   @Test
   void executorL1FragmentsEqualsListPosition() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.COMPLETE_KEY_LIST + "(" + "3" + ")", ID.toEntity()));
+    condition.add(new Function(Function.EQUALS, ExpressionPath.builder(RocksL1.COMPLETE_KEY_LIST).position(3).build(), ID.toEntity()));
     RocksL1 l1 = createL1CompleteKeyList(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -186,7 +189,7 @@ class TestConditionExecutor {
   void executorL2Empty() {
     final Condition condition = new Condition();
     final String path = createPath();
-    condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    condition.add(new Function(Function.EQUALS, ofPath(path), TRUE_ENTITY));
     final RocksL2 l2 = createL2();
     Assertions.assertFalse(l2.evaluate(condition));
   }
@@ -194,7 +197,7 @@ class TestConditionExecutor {
   @Test
   void executorL2ID() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL2.ID, Id.EMPTY.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksL2.ID), Id.EMPTY.toEntity()));
     final RocksL2 l2 = createL2();
     assertTrue(l2.evaluate(condition));
   }
@@ -202,7 +205,7 @@ class TestConditionExecutor {
   @Test
   void executorL2ChildrenSize() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.SIZE, RocksL1.CHILDREN, Entity.ofNumber(RocksL1.SIZE)));
+    condition.add(new Function(Function.SIZE, ofPath(RocksL1.CHILDREN), Entity.ofNumber(RocksL1.SIZE)));
     final RocksL2 l2 = createL2();
     assertTrue(l2.evaluate(condition));
   }
@@ -214,7 +217,7 @@ class TestConditionExecutor {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.CHILDREN, Entity.ofList(idsAsEntity)));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksL1.CHILDREN), Entity.ofList(idsAsEntity)));
     final RocksL2 l2 = createL2();
     assertTrue(l2.evaluate(condition));
   }
@@ -222,7 +225,7 @@ class TestConditionExecutor {
   @Test
   void executorL2ChildrenEqualsListPosition() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL1.CHILDREN + "(" + "3" + ")", ID.toEntity()));
+    condition.add(new Function(Function.EQUALS, ExpressionPath.builder(RocksL1.CHILDREN).position(3).build(), ID.toEntity()));
     RocksL2 l2 = createL2();
     assertTrue(l2.evaluate(condition));
   }
@@ -231,7 +234,7 @@ class TestConditionExecutor {
   void executorL3Empty() {
     final Condition condition = new Condition();
     final String path = createPath();
-    condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    condition.add(new Function(Function.EQUALS, ofPath(path), TRUE_ENTITY));
     RocksL3 l3 = createL3();
     Assertions.assertFalse(l3.evaluate(condition));
   }
@@ -239,7 +242,7 @@ class TestConditionExecutor {
   @Test
   void executorL3ID() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksL3.ID, Id.EMPTY.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksL3.ID), Id.EMPTY.toEntity()));
     RocksL3 l3 = createL3();
     assertTrue(l3.evaluate(condition));
   }
@@ -248,7 +251,7 @@ class TestConditionExecutor {
   void executorCommitMetadataId() {
     final Id id = Id.build("test-id");
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksCommitMetadata.ID, id.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksCommitMetadata.ID), id.toEntity()));
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(
         id, 0L, ByteString.EMPTY);
     assertTrue(meta.evaluate(condition));
@@ -258,7 +261,7 @@ class TestConditionExecutor {
   void executorCommitMetadataValue() {
     final ByteString value = ByteString.copyFromUtf8("test-value");
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksCommitMetadata.VALUE,
+    condition.add(new Function(Function.EQUALS, ofPath(RocksCommitMetadata.VALUE),
         Entity.ofString(value.toStringUtf8())));
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(Id.EMPTY, 0L, value);
     assertTrue(meta.evaluate(condition));
@@ -269,7 +272,7 @@ class TestConditionExecutor {
     final Id searchId = Id.build("search-id");
     final Id actualId = Id.build("actual-id");
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksCommitMetadata.ID, searchId.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksCommitMetadata.ID), searchId.toEntity()));
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(actualId, 0L, ByteString.EMPTY);
     assertFalse(meta.evaluate(condition));
   }
@@ -279,7 +282,7 @@ class TestConditionExecutor {
     final ByteString searchValue = ByteString.copyFromUtf8("search-value");
     final ByteString actualValue = ByteString.copyFromUtf8("actual-value");
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksCommitMetadata.VALUE,
+    condition.add(new Function(Function.EQUALS, ofPath(RocksCommitMetadata.VALUE),
         Entity.ofString(searchValue.toStringUtf8())));
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(Id.EMPTY, 0L, actualValue);
     assertFalse(meta.evaluate(condition));
@@ -289,7 +292,7 @@ class TestConditionExecutor {
   void executorTagEmpty() {
     final Condition condition = new Condition();
     final String path = createPath();
-    condition.add(new Function(Function.EQUALS, path, TRUE_ENTITY));
+    condition.add(new Function(Function.EQUALS, ofPath(path), TRUE_ENTITY));
     final RocksRef ref = createTag(random);
     Assertions.assertFalse(ref.evaluate(condition));
   }
@@ -297,7 +300,7 @@ class TestConditionExecutor {
   @Test
   void executorTagID() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.ID, Id.EMPTY.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksRef.ID), Id.EMPTY.toEntity()));
     final RocksRef ref = createTag(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -305,7 +308,7 @@ class TestConditionExecutor {
   @Test
   void executorTagType() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.TYPE, Entity.ofString(Ref.RefType.TAG.toString())));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksRef.TYPE), Entity.ofString(Ref.RefType.TAG.toString())));
     final RocksRef ref = createTag(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -313,7 +316,7 @@ class TestConditionExecutor {
   @Test
   void executorTagName() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.NAME, Entity.ofString(sampleName)));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksRef.NAME), Entity.ofString(sampleName)));
     final RocksRef ref = createTag(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -321,7 +324,7 @@ class TestConditionExecutor {
   @Test
   void executorTagCommit() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.COMMIT, ID_2.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksRef.COMMIT), ID_2.toEntity()));
     final RocksRef ref = createTag(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -330,7 +333,7 @@ class TestConditionExecutor {
   @Test
   void executorTagChildrenEqualsListPosition() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.CHILDREN + "(" + "6" + ")", ID.toEntity()));
+    condition.add(new Function(Function.EQUALS, ExpressionPath.builder(RocksRef.CHILDREN).position(6).build(), ID.toEntity()));
     final RocksRef ref = createTag(random);
     Assertions.assertFalse(ref.evaluate(condition));
   }
@@ -338,7 +341,7 @@ class TestConditionExecutor {
   @Test
   void executorBranchID() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.ID, Id.EMPTY.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksRef.ID), Id.EMPTY.toEntity()));
     final RocksRef ref = createBranch(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -346,7 +349,7 @@ class TestConditionExecutor {
   @Test
   void executorBranchType() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.TYPE, Entity.ofString(Ref.RefType.BRANCH.toString())));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksRef.TYPE), Entity.ofString(Ref.RefType.BRANCH.toString())));
     final RocksRef ref = createBranch(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -354,7 +357,7 @@ class TestConditionExecutor {
   @Test
   void executorBranchName() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.NAME, Entity.ofString(sampleName)));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksRef.NAME), Entity.ofString(sampleName)));
     final RocksRef ref = createBranch(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -362,7 +365,7 @@ class TestConditionExecutor {
   @Test
   void executorBranchChildrenSize() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.SIZE, RocksRef.CHILDREN, Entity.ofNumber(RocksL1.SIZE)));
+    condition.add(new Function(Function.SIZE, ofPath(RocksRef.CHILDREN), Entity.ofNumber(RocksL1.SIZE)));
     final RocksRef ref = createBranch(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -374,7 +377,7 @@ class TestConditionExecutor {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.CHILDREN, Entity.ofList(idsAsEntity)));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksRef.CHILDREN), Entity.ofList(idsAsEntity)));
     final RocksRef ref = createBranch(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -382,7 +385,7 @@ class TestConditionExecutor {
   @Test
   void executorBranchChildrenEqualsListPosition() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.CHILDREN + "(" + "8" + ")", ID.toEntity()));
+    condition.add(new Function(Function.EQUALS, ExpressionPath.builder(RocksRef.CHILDREN).position(8).build(), ID.toEntity()));
     final RocksRef ref = createBranch(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -390,7 +393,7 @@ class TestConditionExecutor {
   @Test
   void executorBranchMetadata() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksRef.METADATA, ID.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksRef.METADATA), ID.toEntity()));
     final RocksRef ref = createBranch(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -398,7 +401,7 @@ class TestConditionExecutor {
   @Test
   void executorBranchCommitsSize() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.SIZE, RocksRef.COMMITS, Entity.ofNumber(2)));
+    condition.add(new Function(Function.SIZE, ofPath(RocksRef.COMMITS), Entity.ofNumber(2)));
     final RocksRef ref = createBranch(random);
     assertTrue(ref.evaluate(condition));
   }
@@ -406,7 +409,7 @@ class TestConditionExecutor {
   @Test
   void executorFragmentID() {
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksFragment.ID, Id.EMPTY.toEntity()));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksFragment.ID), Id.EMPTY.toEntity()));
     final RocksFragment fragment = createFragment(random);
     assertTrue(fragment.evaluate(condition));
   }
@@ -419,7 +422,7 @@ class TestConditionExecutor {
       keysList.add(key1);
     }
     final Condition condition = new Condition();
-    condition.add(new Function(Function.EQUALS, RocksFragment.KEY_LIST, Entity.ofList(keysList)));
+    condition.add(new Function(Function.EQUALS, ofPath(RocksFragment.KEY_LIST), Entity.ofList(keysList)));
     final RocksFragment fragment = createFragment(random);
     assertTrue(fragment.evaluate(condition));
   }
@@ -432,7 +435,7 @@ class TestConditionExecutor {
       keysList.add(key1);
     }
     final Condition condition = new Condition();
-    condition.add(new Function(Function.SIZE, RocksFragment.KEY_LIST, Entity.ofNumber(keyListSize)));
+    condition.add(new Function(Function.SIZE, ofPath(RocksFragment.KEY_LIST), Entity.ofNumber(keyListSize)));
     final RocksFragment fragment = createFragment(random);
     assertTrue(fragment.evaluate(condition));
   }
@@ -501,7 +504,7 @@ class TestConditionExecutor {
       .id(Id.EMPTY)
       .type(Ref.RefType.BRANCH)
       .name(sampleName)
-      .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> createId(random)))
+      .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
       .metadata(ID)
       .commits(bc -> {
         bc.id(ID)
@@ -573,5 +576,27 @@ class TestConditionExecutor {
       .limit(numChars)
       .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
       .toString();
+  }
+
+  /**
+   * Create a path from a . delimited string.
+   * @param path the input string where parts of the path are . delimited.
+   * @return the associated ExpressionPath.
+   */
+  private static ExpressionPath ofPath(String path) {
+    ExpressionPath.PathSegment.Builder builder = null;
+    for (String part : path.split("\\.")) {
+      if (builder == null) {
+        builder = ExpressionPath.builder(part);
+      } else {
+        try {
+          builder = builder.position(Integer.parseInt(part));
+        } catch (NumberFormatException e) {
+          builder = builder.name(part);
+        }
+      }
+    }
+
+    return builder.build();
   }
 }

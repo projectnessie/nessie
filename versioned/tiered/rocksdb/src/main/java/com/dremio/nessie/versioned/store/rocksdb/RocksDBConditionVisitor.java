@@ -79,6 +79,32 @@ class RocksDBConditionVisitor implements ConditionExpressionVisitor<Condition> {
    * This provides a separation of queries on @{ExpressionFunction} from the object itself.
    * This uses the Visitor design pattern to retrieve object attributes.
    */
+  private static class RocksDBExpressionPathValueVisitor implements ValueVisitor<ExpressionPath> {
+    @Override
+    public ExpressionPath visit(Value value) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ExpressionPath visit(ExpressionFunction value) {
+      final ExpressionFunction.FunctionName name = value.getName();
+      throw new UnsupportedOperationException(String.format("%s is not a supported top-level RocksDB function.", name));
+    }
+
+    @Override
+    public ExpressionPath visit(ExpressionPath value) {
+      return value;
+    }
+
+    private boolean isSize(Value value) {
+      return (value.getType() == Value.Type.FUNCTION) && (((ExpressionFunction)value).getName() == ExpressionFunction.FunctionName.SIZE);
+    }
+  }
+
+  /**
+   * This provides a separation of queries on @{ExpressionFunction} from the object itself.
+   * This uses the Visitor design pattern to retrieve object attributes.
+   */
   private static class RocksDBFunctionHolderValueVisitor implements ValueVisitor<Function> {
     @Override
     public Function visit(Value value) {
@@ -100,11 +126,11 @@ class RocksDBConditionVisitor implements ConditionExpressionVisitor<Condition> {
           // Special case SIZE, as the object representation is not contained in one level of ExpressionFunction.
           if (isSize(arguments.get(0))) {
             return new Function(Function.SIZE,
-                arguments.get(0).getFunction().getArguments().get(0).accept(STR_VALUE_VISITOR), arguments.get(1).getValue());
+                arguments.get(0).getFunction().getArguments().get(0).accept(EXPRESSION_PATH_VALUE_VISITOR), arguments.get(1).getValue());
           }
 
           return new Function(Function.EQUALS,
-            arguments.get(0).accept(STR_VALUE_VISITOR), arguments.get(1).getValue());
+            arguments.get(0).accept(EXPRESSION_PATH_VALUE_VISITOR), arguments.get(1).getValue());
         default:
           throw new UnsupportedOperationException(String.format("%s is not a supported top-level RocksDB function.", name));
       }
@@ -120,6 +146,7 @@ class RocksDBConditionVisitor implements ConditionExpressionVisitor<Condition> {
     }
   }
 
+  static final RocksDBExpressionPathValueVisitor EXPRESSION_PATH_VALUE_VISITOR = new RocksDBExpressionPathValueVisitor();
   static final RocksDBStrValueVisitor STR_VALUE_VISITOR = new RocksDBStrValueVisitor();
   static final RocksDBFunctionHolderValueVisitor FUNC_VALUE_VISITOR = new RocksDBFunctionHolderValueVisitor();
 
