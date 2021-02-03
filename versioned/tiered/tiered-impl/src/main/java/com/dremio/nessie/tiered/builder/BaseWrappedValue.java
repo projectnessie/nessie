@@ -34,5 +34,8 @@ public interface BaseWrappedValue<C extends BaseWrappedValue<C>> extends BaseVal
    * @param value The value to set.
    * @return This consumer.
    */
-  C value(ByteString value);
+  @SuppressWarnings("unchecked")
+  default C value(ByteString value) {
+    return (C) this;
+  }
 }

@@ -114,7 +114,9 @@ public interface Ref extends BaseValue<Ref> {
    * @param name The name of the reference.
    * @return This consumer.
    */
-  Ref name(String name);
+  default Ref name(String name) {
+    return this;
+  }
 
   /**
    * Specifies that this reference is a tag, not a branch.
@@ -138,7 +140,9 @@ public interface Ref extends BaseValue<Ref> {
      * @param commit The commit of the reference.
      * @return This consumer.
      */
-    Tag commit(Id commit);
+    default Tag commit(Id commit) {
+      return this;
+    }
 
     /**
      * Convenience method to get back to the {@link Ref}.
@@ -159,7 +163,9 @@ public interface Ref extends BaseValue<Ref> {
      * @param metadata The metadata of the reference.
      * @return This consumer.
      */
-    Branch metadata(Id metadata);
+    default Branch metadata(Id metadata) {
+      return this;
+    }
 
     /**
      * Set the children of the reference.
@@ -168,7 +174,9 @@ public interface Ref extends BaseValue<Ref> {
      * @param children The children of the reference.
      * @return This consumer.
      */
-    Branch children(Stream<Id> children);
+    default Branch children(Stream<Id> children) {
+      return this;
+    }
 
     /**
      * Set the commits of the reference.
@@ -182,7 +190,9 @@ public interface Ref extends BaseValue<Ref> {
      * @param commits The branch's commit-log receiver.
      * @return This consumer.
      */
-    Branch commits(Consumer<BranchCommit> commits);
+    default Branch commits(Consumer<BranchCommit> commits) {
+      return this;
+    }
 
     /**
      * Convenience method to get back to the {@link Ref}.
@@ -213,7 +223,9 @@ public interface Ref extends BaseValue<Ref> {
      * @param id ID of the branch's commit
      * @return this consumer
      */
-    BranchCommit id(Id id);
+    default BranchCommit id(Id id) {
+      return this;
+    }
 
     /**
      * Commit of the branch's commit.
@@ -221,7 +233,9 @@ public interface Ref extends BaseValue<Ref> {
      * @param commit Commit of the branch's commit
      * @return this consumer
      */
-    BranchCommit commit(Id commit);
+    default BranchCommit commit(Id commit) {
+      return this;
+    }
 
     /**
      * Continue with this branch-commit as a saved commit.
@@ -249,7 +263,9 @@ public interface Ref extends BaseValue<Ref> {
      * @param parent Parent of the branch's commit
      * @return this consumer
      */
-    SavedCommit parent(Id parent);
+    default SavedCommit parent(Id parent) {
+      return this;
+    }
 
     /**
      * End the current commit.
@@ -273,7 +289,9 @@ public interface Ref extends BaseValue<Ref> {
      * @param newId    delta-new-id
      * @return this consumer
      */
-    UnsavedCommitDelta delta(int position, Id oldId, Id newId);
+    default UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
+      return this;
+    }
 
     /**
      * Continue with the mutations for this unsaved-commit.
@@ -289,7 +307,9 @@ public interface Ref extends BaseValue<Ref> {
      * @param keyMutation key-mutation
      * @return this consumer
      */
-    UnsavedCommitMutations keyMutation(Key.Mutation keyMutation);
+    default UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
+      return this;
+    }
 
     /**
      * End the current commit.

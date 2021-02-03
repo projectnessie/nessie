@@ -34,12 +34,18 @@ public interface BaseValue<T extends BaseValue<T>> {
    * @param id The id.
    * @return This consumer.
    */
-  T id(Id id);
+  @SuppressWarnings("unchecked")
+  default T id(Id id) {
+    return (T) this;
+  }
 
   /**
    * Set the date-time in microseconds since epoch when this object was last modified (inserted/updated).
    * @param dt The date+time in microseconds since epoch.
    * @return This consumer.
    */
-  T dt(long dt);
+  @SuppressWarnings("unchecked")
+  default T dt(long dt) {
+    return (T) this;
+  }
 }

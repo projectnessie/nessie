@@ -34,6 +34,8 @@ public interface L2 extends BaseValue<L2> {
    * @param ids The list of ids
    * @return This consumer.
    */
-  L2 children(Stream<Id> ids);
-
+  default L2 children(Stream<Id> ids) {
+    ids.forEach(ignored -> {});
+    return this;
+  }
 }

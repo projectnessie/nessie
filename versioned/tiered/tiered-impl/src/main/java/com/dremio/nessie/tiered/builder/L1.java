@@ -36,7 +36,9 @@ public interface L1 extends BaseValue<L1> {
    * @param id The id to reference.
    * @return This consumer.
    */
-  L1 commitMetadataId(Id id);
+  default L1 commitMetadataId(Id id) {
+    return this;
+  }
 
   /**
    * Add ancestors associated with this L1.
@@ -45,7 +47,10 @@ public interface L1 extends BaseValue<L1> {
    * @param ids A list of ancestors ordered by most recent recent first.
    * @return This consumer.
    */
-  L1 ancestors(Stream<Id> ids);
+  default L1 ancestors(Stream<Id> ids) {
+    ids.forEach(ignored -> {});
+    return this;
+  }
 
   /**
    * Add a list of children ids indexed by position.
@@ -54,7 +59,10 @@ public interface L1 extends BaseValue<L1> {
    * @param ids The list of ids. List must be {@link com.dremio.nessie.versioned.impl.InternalL1#SIZE} in length.
    * @return This consumer.
    */
-  L1 children(Stream<Id> ids);
+  default L1 children(Stream<Id> ids) {
+    ids.forEach(ignored -> {});
+    return this;
+  }
 
   /**
    * Keys that were added and removed as part of this commit.
@@ -63,7 +71,10 @@ public interface L1 extends BaseValue<L1> {
    * @param keyMutations The key that was added.
    * @return This consumer.
    */
-  L1 keyMutations(Stream<Key.Mutation> keyMutations);
+  default L1 keyMutations(Stream<Key.Mutation> keyMutations) {
+    keyMutations.forEach(ignored -> {});
+    return this;
+  }
 
   /**
    * States that this L1 has an incremental key list.
@@ -74,7 +85,9 @@ public interface L1 extends BaseValue<L1> {
    * @param distanceFromCheckpoint The number of commits between this commit and the last checkpoint.
    * @return This consumer.
    */
-  L1 incrementalKeyList(Id checkpointId, int distanceFromCheckpoint);
+  default L1 incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
+    return this;
+  }
 
   /**
    * States that this L1 has a complete key list.
@@ -84,6 +97,9 @@ public interface L1 extends BaseValue<L1> {
    * @param fragmentIds The ids of each of the key list fragments given in a meaningful/to be maintained order.
    * @return This consumer.
    */
-  L1 completeKeyList(Stream<Id> fragmentIds);
+  default L1 completeKeyList(Stream<Id> fragmentIds) {
+    fragmentIds.forEach(ignored -> {});
+    return this;
+  }
 
 }

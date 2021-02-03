@@ -34,5 +34,8 @@ public interface Fragment extends BaseValue<Fragment> {
    * @param keys The keys to add.
    * @return This consumer.
    */
-  Fragment keys(Stream<Key> keys);
+  default Fragment keys(Stream<Key> keys) {
+    keys.forEach(ignored -> {});
+    return this;
+  }
 }

@@ -25,7 +25,6 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 
 import com.dremio.nessie.tiered.builder.Ref;
-import com.dremio.nessie.tiered.builder.base.AbstractRef;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.Store.Acceptor;
@@ -81,7 +80,7 @@ public class RefFrame implements Serializable {
     return handler.frame;
   };
 
-  private static final class RefHandler extends AbstractRef {
+  private static final class RefHandler implements Ref {
     final RefFrame frame = new RefFrame();
 
     @Override
@@ -100,31 +99,33 @@ public class RefFrame implements Serializable {
       return new RefBranch();
     }
 
-    private class RefTag extends AbstractTag {
-      protected RefTag() {
-        super(RefHandler.this);
-      }
-
+    private class RefTag implements Tag {
       @Override
       public Tag commit(Id commit) {
         frame.id = IdFrame.of(commit);
         return this;
       }
+
+      @Override
+      public Ref backToRef() {
+        return RefHandler.this;
+      }
     }
 
-    private class RefBranch extends AbstractBranch {
-      protected RefBranch() {
-        super(RefHandler.this);
-      }
-
+    private class RefBranch implements Branch {
       @Override
       public Branch commits(Consumer<BranchCommit> commits) {
         commits.accept(new RefBranchCommit());
         return this;
       }
+
+      @Override
+      public Ref backToRef() {
+        return RefHandler.this;
+      }
     }
 
-    private class RefBranchCommit extends AbstractBranchCommit {
+    private class RefBranchCommit implements BranchCommit {
       private boolean populated;
       private Id id;
       private boolean hasParent;
@@ -143,7 +144,7 @@ public class RefFrame implements Serializable {
 
       @Override
       public SavedCommit saved() {
-        return new AbstractSavedCommit(this) {
+        return new SavedCommit() {
           @Override
           public SavedCommit parent(Id parent) {
             if (!populated) {
@@ -158,24 +159,25 @@ public class RefFrame implements Serializable {
               populated = true;
               frame.id = IdFrame.of(id);
             }
-            return branchCommit;
+            return RefBranchCommit.this;
           }
         };
       }
 
+      @SuppressWarnings("Convert2Lambda")
       @Override
       public UnsavedCommitDelta unsaved() {
-        return new AbstractUnsavedCommitDelta(this) {
+        return new UnsavedCommitDelta() {
           @Override
           public UnsavedCommitMutations mutations() {
-            return new AbstractUnsavedCommitMutations(branchCommit) {
+            return new UnsavedCommitMutations() {
               @Override
               public BranchCommit done() {
                 if (hasParent) {
                   populated = true;
                   frame.id = IdFrame.of(id);
                 }
-                return branchCommit;
+                return RefBranchCommit.this;
               }
             };
           }

@@ -34,5 +34,8 @@ public interface L3 extends BaseValue<L3> {
    * @param keyDelta The stream providing the {@link KeyDelta}s of this L3
    * @return This consumer.
    */
-  L3 keyDelta(Stream<KeyDelta> keyDelta);
+  default L3 keyDelta(Stream<KeyDelta> keyDelta) {
+    keyDelta.forEach(ignored -> {});
+    return this;
+  }
 }
