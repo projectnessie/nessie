@@ -348,14 +348,6 @@ class TestConditionExpressions {
 
   // other tests
   @Test
-  void equalsExpression() {
-    final ExpressionFunction ex = ExpressionFunction.equals(ExpressionPath.builder("foo").build(), TRUE_ENTITY);
-    String expected = String.format("%s,foo,%s", Function.EQUALS, "true");
-    Function expected2 = new Function(Function.EQUALS, ofPath("foo"), TRUE_ENTITY);
-    Assertions.assertEquals(expected, ex.accept(RocksDBConditionVisitor.STR_VALUE_VISITOR));
-  }
-
-  @Test
   void binaryEquals() {
     final Entity id = SampleEntities.createId(RANDOM).toEntity();
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ExpressionPath.builder(Store.KEY_NAME).build(), id));
