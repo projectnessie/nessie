@@ -177,9 +177,9 @@ public class VersionStoreFactory {
     VersionStoreJdbcConfig in = config.getVersionStoreJdbcConfig();
     JdbcStore jdbc = new JdbcStore(
         JdbcStoreConfig.builder()
-          .initializeDatabase(in.isJdbcInitialize())
+          .setupTables(in.isInitializeTables())
+          .ensureInitialValuesPresent(in.isInitializeTables())
           .tablePrefix(in.getTablePrefix())
-          .setupTables(in.isSetupTables())
           .logCreateDDL(in.isLogCreateDDL())
           .catalog(in.getCatalog().orElse(null))
           .schema(in.getSchema().orElse(null))

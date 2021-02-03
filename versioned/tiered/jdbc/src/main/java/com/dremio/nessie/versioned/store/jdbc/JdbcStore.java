@@ -159,7 +159,7 @@ public class JdbcStore implements Store {
         throw new StoreOperationException("SQL Exception caught", e);
       }
     }
-    if (config.initializeDatabase()) {
+    if (config.ensureInitialValuesPresent()) {
       // make sure we have an empty l1 (ignore result, doesn't matter)
       EntityStoreHelper.storeMinimumEntities(this::putIfAbsent);
     }

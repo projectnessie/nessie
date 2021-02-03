@@ -140,10 +140,7 @@ public class ApplicationConfig {
   public interface VersionStoreJdbcConfig {
 
     @ConfigProperty(name = "initialize", defaultValue = "false")
-    boolean isJdbcInitialize();
-
-    @ConfigProperty(name = "setupTables", defaultValue = "false")
-    boolean isSetupTables();
+    boolean isInitializeTables();
 
     @ConfigProperty(name = "logCreateDDL", defaultValue = "false")
     boolean isLogCreateDDL();

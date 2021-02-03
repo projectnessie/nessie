@@ -41,21 +41,21 @@ public abstract class JdbcStoreConfig {
   }
 
   /**
+   * Initializes the database with the initial values. Defaults to {@code true}.
+   * @return whether to create the initial L1, L2 and L3 objects, if those do not already exists.
+   */
+  @Default
+  public boolean ensureInitialValuesPresent() {
+    return true;
+  }
+
+  /**
    * Dump the DDL needed to create the Nessie database tables. Defaults to {@code true}.
    * Note that all DDL statements will be logged at {@code INFO} level.
    * @return whether to dump the DDL statement.
    */
   @Default
   public boolean logCreateDDL() {
-    return true;
-  }
-
-  /**
-   * Initializes the database with the initial values. Defaults to {@code true}.
-   * @return whether to create the initial L1, L2 and L3 objects, if those do not already exists.
-   */
-  @Default
-  public boolean initializeDatabase() {
     return true;
   }
 
