@@ -1,0 +1,93 @@
+TODOs for quarkus-server JDBC integration testing
+See https://github.com/projectnessie/nessie/issues/217
+
+
+Quarkus config:
+
+nessie.version.store.type=JDBC
+nessie.version.store.jdbc.initialize=true
+nessie.version.store.jdbc.databaseAdapter=HSQL
+quarkus.datasource.db-kind=other
+quarkus.datasource.jdbc.driver=org.hsqldb.jdbc.JDBCDriver
+quarkus.datasource.jdbc.url=jdbc:hsqldb:mem:nessie
+
+ADD TO quarkus.native.additional-build-args :
+  --initialize-at-run-time=org.postgresql.Driver\\,org.hsqldb.jdbc.JDBCDriver\\,org.h2.Driver,\
+  --trace-class-initialization=java.sql.DriverManager,\
+  -H:ReflectionConfigurationFiles=proxy-config-jdbc.json,\
+  -H:ReflectionConfigurationFiles=reflection-config-hsql.json,\
+  -H:ResourceConfigurationFiles=resources-config-hsql.json,\
+
+
+ADD DEPENDENCIES:
+- hsql
+- quarkus-agroal
+- quarkus-jdbc-postgresql
+
+
+reflection-config.json:
+
+[
+  {
+    "name" : "org.hsqldb.lib.FileUtil",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name" : "org.hsqldb.dbinfo.DatabaseInformationFull",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  },
+  {
+    "name": "org.hsqldb.jdbc.JDBCDriver",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name" : "com.dremio.nessie.error.NessieError",
+    "allDeclaredConstructors" : true,
+    "allPublicConstructors" : true,
+    "allDeclaredMethods" : true,
+    "allPublicMethods" : true,
+    "allDeclaredFields" : true,
+    "allPublicFields" : true
+  }
+]
+
+
+
+resources-config.json:
+
+{
+  "bundles": [
+    { "name": "org.hsqldb.resources.sql-state-messages" },
+    { "name": "org.hsqldb.resources.info-column-remarks" },
+    { "name": "org.hsqldb.resources.info-table-remarks" }
+  ],
+  "resources": {
+    "includes": [
+      { "pattern": "org/hsqldb/resources/info.*.properties$" },
+      { "pattern": "org/hsqldb/resources/information-schema.sql$" },
+      { "pattern": "org/hsqldb/resources/lob-schema.sql$" },
+      { "pattern": "org/hsqldb/resources/jdklogging-default.properties$" }
+    ]
+  }
+}
+
+
+
+proxy-config.json:
+
+[
+  ["java.sql.Connection"],
+  ["java.sql.Statement"],
+  ["java.sql.PreparedStatement"],
+  ["java.sql.ResultSet"]
+]

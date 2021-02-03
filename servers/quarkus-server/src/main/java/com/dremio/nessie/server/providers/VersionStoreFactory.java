@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -69,7 +70,7 @@ public class VersionStoreFactory {
   private final ApplicationConfig config;
 
   @Inject
-  DataSource dataSource;
+  Instance<DataSource> dataSource;
 
   @Inject
   DatabaseAdapter databaseAdapter;
@@ -184,7 +185,7 @@ public class VersionStoreFactory {
           .catalog(in.getCatalog().orElse(null))
           .schema(in.getSchema().orElse(null))
           .build(),
-        dataSource,
+        dataSource.get(),
         databaseAdapter);
     jdbc.start();
     return jdbc;
