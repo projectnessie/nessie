@@ -22,7 +22,7 @@ option java_generate_equals_and_hash = true;
 
 message BaseValue {
   bytes id = 1;
-  int64 dt = 2;
+  int64 datetime = 2;
 }
 
 message WrappedValue {
@@ -50,8 +50,8 @@ message KeyMutation {
 
 message Delta {
   int32 position = 1;
-  bytes oldId = 2;
-  bytes newId = 3;
+  bytes old_id = 2;
+  bytes new_id = 3;
 }
 
 message Commit {
@@ -59,7 +59,7 @@ message Commit {
   bytes commit = 2;
   bytes parent = 3;
   repeated Delta delta = 4;
-  repeated KeyMutation keyMutation = 5;
+  repeated KeyMutation key_mutation = 5;
 }
 
 message Tag {
@@ -69,13 +69,13 @@ message Tag {
 message Branch {
   repeated Commit commits = 5;
   repeated bytes children = 6;
-  bytes metadataId = 7;
+  bytes metadata_id = 7;
 }
 
 message Ref {
   BaseValue base = 1;
   string name = 2;
-  oneof refValue {
+  oneof ref_value {
     Tag tag = 3;
     Branch branch = 4;
   }
@@ -87,18 +87,24 @@ message Fragment {
 }
 
 message IncrementalList {
-  bytes checkpointId = 1;
-  int32 distanceFromCheckpointId = 2;
+  bytes checkpoint_id = 1;
+  int32 distance_from_checkpoint_id = 2;
+}
+
+message CompleteList {
+  repeated bytes fragment_ids = 1;
 }
 
 message L1 {
   BaseValue base = 1;
-  bytes metadataId = 2;
+  bytes metadata_id = 2;
   repeated bytes ancestors = 3;
   repeated bytes tree = 4;
-  repeated KeyMutation keyMutations = 5;
-  IncrementalList incrementalList = 6;
-  repeated bytes fragmentIds = 7;
+  repeated KeyMutation key_mutations = 5;
+  oneof list {
+    IncrementalList incremental_list = 6;
+    CompleteList complete_list = 7;
+  };
 }
 
 message L2 {
@@ -108,5 +114,5 @@ message L2 {
 
 message L3 {
   BaseValue base = 1;
-  repeated KeyDelta keyDelta = 2;
+  repeated KeyDelta key_delta = 2;
 }

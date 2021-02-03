@@ -163,7 +163,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
           .build());
     } else {
       checkPresent(fragmentIds, COMPLETE_KEY_LIST);
-      builder.addAllFragmentIds(buildIds(fragmentIds));
+      builder.setCompleteList(ValueProtos.CompleteList.newBuilder().addAllFragmentIds(buildIds(fragmentIds)).build());
     }
 
     return builder.build().toByteArray();
@@ -188,7 +188,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
         final ValueProtos.IncrementalList incList = l1.getIncrementalList();
         consumer.incrementalKeyList(Id.of(incList.getCheckpointId()), incList.getDistanceFromCheckpointId());
       } else {
-        consumer.completeKeyList(l1.getFragmentIdsList().stream().map(Id::of));
+        consumer.completeKeyList(l1.getCompleteList().getFragmentIdsList().stream().map(Id::of));
       }
     } catch (InvalidProtocolBufferException e) {
       throw new StoreException("Corrupt L1 value encountered when deserializing.", e);
