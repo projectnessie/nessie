@@ -93,7 +93,6 @@ import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughput;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutRequest;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
-import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
@@ -128,23 +127,26 @@ public class DynamoStore implements Store {
     }
   }
 
+  private static void applyInterceptors(DynamoDbClientBuilder b1, DynamoDbAsyncClientBuilder b2) {
+    DynamoMetricsPublisher publisher = new DynamoMetricsPublisher();
+    TracingExecutionInterceptor tracing = new TracingExecutionInterceptor(GlobalTracer.get());
+    b2.overrideConfiguration(
+        x -> x.addExecutionInterceptor(publisher.interceptor()).addExecutionInterceptor(tracing).addMetricPublisher(publisher));
+    b1.overrideConfiguration(
+        x -> x.addExecutionInterceptor(publisher.interceptor()).addExecutionInterceptor(tracing).addMetricPublisher(publisher));
+  }
+
   @Override
   public void start() {
     if (client != null && async != null) {
       return; // no-op
     }
     try {
-      DynamoMetricsPublisher publisher = new DynamoMetricsPublisher();
-      TracingExecutionInterceptor tracing = new TracingExecutionInterceptor(GlobalTracer.get());
-      DynamoDbClientBuilder b1 = DynamoDbClient.builder().overrideConfiguration(x -> x.addExecutionInterceptor(publisher.interceptor())
-                                                                                      .addExecutionInterceptor(tracing)
-                                                                                      .addMetricPublisher(publisher));
+      DynamoDbClientBuilder b1 = DynamoDbClient.builder();
       b1.httpClient(UrlConnectionHttpClient.create());
-      DynamoDbAsyncClientBuilder b2 =
-          DynamoDbAsyncClient.builder().overrideConfiguration(x -> x.addExecutionInterceptor(publisher.interceptor())
-                                                                  .addExecutionInterceptor(tracing)
-                                                                  .addMetricPublisher(publisher));
+      DynamoDbAsyncClientBuilder b2 = DynamoDbAsyncClient.builder();
       b2.httpClient(NettyNioAsyncHttpClient.create());
+      applyInterceptors(b1, b2);
       config.getEndpoint().ifPresent(ep -> {
         b1.endpointOverride(ep);
         b2.endpointOverride(ep);
@@ -202,8 +204,7 @@ public class DynamoStore implements Store {
           return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
         }));
 
-        BatchGetItemResponse response = client.batchGetItem(BatchGetItemRequest.builder().requestItems(loads).returnConsumedCapacity(
-            ReturnConsumedCapacity.TOTAL).build());
+        BatchGetItemResponse response = client.batchGetItem(BatchGetItemRequest.builder().requestItems(loads).build());
         Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
         Sets.SetView<String> missingElements = Sets.difference(loads.keySet(), responses.keySet());
         Preconditions.checkArgument(missingElements.isEmpty(), "Did not receive any objects for table(s) %s.", missingElements);
@@ -300,7 +301,7 @@ public class DynamoStore implements Store {
     }
 
     try {
-      client.putItem(builder.returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build());
+      client.putItem(builder.build());
     } catch (ConditionalCheckFailedException ex) {
       throw new ConditionFailedException("Condition failed during put operation.", ex);
     } catch (DynamoDbException ex) {
@@ -320,7 +321,7 @@ public class DynamoStore implements Store {
     delete.conditionExpression(aliased.toConditionExpressionString());
 
     try {
-      client.deleteItem(delete.returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build());
+      client.deleteItem(delete.build());
       return true;
     } catch (ConditionalCheckFailedException ex) {
       LOGGER.debug("Failure during conditional check.", ex);
@@ -349,8 +350,7 @@ public class DynamoStore implements Store {
               .item(serializeWithConsumer(save))
               .build()
           ).build());
-      BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap())
-                                                         .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build();
+      BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
       saves.add(async.batchWriteItem(batch));
     }
 
@@ -374,7 +374,6 @@ public class DynamoStore implements Store {
         .tableName(tableNames.get(valueType))
         .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
         .consistentRead(true)
-        .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
         .build());
     if (!response.hasItem()) {
       throw new NotFoundException("Unable to load item.");
@@ -395,7 +394,7 @@ public class DynamoStore implements Store {
           .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
           .updateExpression(aliased.toUpdateExpressionString());
       aliasedCondition.ifPresent(e -> updateRequest.conditionExpression(e.toConditionExpressionString()));
-      UpdateItemRequest builtRequest = updateRequest.returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build();
+      UpdateItemRequest builtRequest = updateRequest.build();
       UpdateItemResponse response = client.updateItem(builtRequest);
       consumer.ifPresent(c -> deserializeToConsumer(type, response.attributes(), c));
       return true;
@@ -421,8 +420,7 @@ public class DynamoStore implements Store {
 
   @Override
   public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
-    return client.scanPaginator(ScanRequest.builder().returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                                           .tableName(tableNames.get(type)).build())
+    return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
         .stream()
         .flatMap(r -> r.items().stream())
         .map(i -> consumer -> deserializeToConsumer(type, i, consumer));

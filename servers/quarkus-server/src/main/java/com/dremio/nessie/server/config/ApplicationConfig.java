@@ -120,5 +120,7 @@ public class ApplicationConfig {
     @ConfigProperty(defaultValue = DynamoStoreConfig.TABLE_PREFIX)
     String getTablePrefix();
 
+    @ConfigProperty(name = "tracing", defaultValue = "true")
+    boolean enableTracing();
   }
 }
