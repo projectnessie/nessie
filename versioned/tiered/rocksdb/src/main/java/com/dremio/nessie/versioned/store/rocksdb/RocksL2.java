@@ -16,7 +16,6 @@
 
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2;
