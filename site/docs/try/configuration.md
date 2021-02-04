@@ -46,21 +46,10 @@ nessie.version.store.jdbc.logCreateDDL=false
 # The prefix for the Nessie tables.
 nessie.version.store.jdbc.table-prefix=nessie_
 #quarkus.datasource.jdbc.initial-size=5
-# The type of database being used. Options are: HSQL, H2, COCKROACH, ORACLE, POSTGRESQL
-nessie.version.store.jdbc.databaseAdapter=HSQL
-# In-memory JDBC
-#quarkus.datasource.db-kind=other
-#quarkus.datasource.jdbc.driver=org.hsqldb.jdbc.JDBCDriver
-#quarkus.datasource.jdbc.url=jdbc:hsqldb:mem:nessie
+# The type of database being used. Options are: H2, COCKROACH, POSTGRESQL
 ## Example for PostgresQL + CockroachDB (hint: PostgresQL default port is 5432, CockroachDB's is 26257)
 quarkus.datasource.db-kind=postgresql
 quarkus.datasource.jdbc.url=jdbc:postgresql://localhost/nessie
-## Example for Oracle
-#quarkus.datasource.db-kind=other
-#quarkus.datasource.jdbc.driver=oracle.jdbc.driver.OracleDriver
-#quarkus.datasource.jdbc.url=jdbc:oracle:thin:@localhost:1521:ORCL
-#quarkus.datasource.username=
-#quarkus.datasource.password=
 ```
 
 ## General Server Settings

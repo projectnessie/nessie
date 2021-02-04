@@ -152,12 +152,6 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-amazon-dynamodb</artifactId>
     </dependency>
-    <!--
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-agroal</artifactId>
-    </dependency>
-    -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-jdbc-postgresql</artifactId>
@@ -258,6 +252,7 @@
                     <QUARKUS_LOG_LEVEL>DEBUG</QUARKUS_LOG_LEVEL>
                     <MP_JWT_VERIFY_PUBLICKEY_LOCATION>${project.build.directory}/test-classes/META-INF/resources/publicKey.pem</MP_JWT_VERIFY_PUBLICKEY_LOCATION>
                     <QUARKUS_SMALLRYE_JWT_ENABLED>true</QUARKUS_SMALLRYE_JWT_ENABLED>
+                    <NESSIE_VERSION_STORE_JGIT_TYPE>INMEMORY</NESSIE_VERSION_STORE_JGIT_TYPE>
                   </environmentVariables>
                   <systemPropertyVariables>
                     <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
