@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.Key;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.common.base.Preconditions;
@@ -86,19 +87,33 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    */
   boolean evaluateStream(Function function, Stream<Id> stream) {
     // EQUALS will either compare a specified position or the whole stream as a List.
-    if (function.getOperator().equals(Function.EQUALS)) {
-      if (function.getPath().getRoot().getChild().isPresent()
-              && function.getPath().getRoot().getChild().get().isPosition()) { // compare individual element of list
-        int position = function.getPath().getRoot().getChild().get().asPosition().getPosition();
-        return toEntity(stream, position).equals(function.getValue());
-      } else { // compare complete list
+    if (function.isEquals()) {
+      ExpressionPath.PathSegment pathSegment = function.getPath().getRoot().getChild().orElse(null);
+      if (pathSegment == null) {
         return toEntity(stream).equals(function.getValue());
+      } else { // compare complete list
+        if (pathSegment.isPosition()) { // compare individual element of list
+          int position = pathSegment.asPosition().getPosition();
+          return toEntity(stream, position).equals(function.getValue());
+        }
       }
-    } else if (function.getOperator().equals(Function.SIZE)) {
+    } else if (function.isSize()) {
       return (stream.count() == function.getValue().getNumber());
     }
 
     return false;
+  }
+
+  /**
+   * A utility to aid evaluation of the Function in checking for equality on
+   * a leaf {@link com.dremio.nessie.versioned.impl.condition.ExpressionPath.NameSegment}
+   * @param nameSegment the NameSegment that is checked to be childless
+   * @param function the condition function to check it is for equality
+   * @return true if both nameSegment is childless and function has an equality operator
+   */
+  boolean nameSegmentChildlessAndEquals(ExpressionPath.NameSegment nameSegment, Function function) {
+    return !nameSegment.getChild().isPresent()
+        && function.isEquals();
   }
 
   /**

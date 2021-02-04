@@ -77,8 +77,7 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evalua
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            if (!(!nameSegment.getChild().isPresent()
-                && function.getOperator().equals(Function.EQUALS)
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
                 && getId().toEntity().equals(function.getValue()))) {
               return false;
             }
@@ -87,11 +86,11 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evalua
             if (nameSegment.getChild().isPresent()) {
               return false;
             }
-            if (function.getOperator().equals(Function.EQUALS)) {
+            if (function.isEquals()) {
               if (!keysAsEntityList(keys).equals(function.getValue())) {
                 return false;
               }
-            } else if (function.getOperator().equals(Function.SIZE)) {
+            } else if (function.isSize()) {
               if (keys.count() != function.getValue().getNumber()) {
                 return false;
               }
@@ -115,15 +114,6 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evalua
    * @return an entity list of keys
    */
   private Entity keysAsEntityList(Stream<Key> keys) {
-    List<Key> keyListIn = keys.collect(Collectors.toList());
-    List<Entity> resultList = new ArrayList<>();
-    for (Key key : keyListIn) {
-      List<Entity> entityElementList = new ArrayList<>();
-      for (String element : key.getElements()) {
-        entityElementList.add(Entity.ofString(element));
-      }
-      resultList.add(Entity.ofList(entityElementList));
-    }
-    return Entity.ofList(resultList);
+    return Entity.ofList(keys.map(k -> Entity.ofList(k.getElements().stream().map(Entity::ofString))));
   }
 }

@@ -38,15 +38,13 @@ class RocksValue extends RocksWrappedValue<Value> implements Evaluator, Value {
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            if (!(!nameSegment.getChild().isPresent()
-                && function.getOperator().equals(Function.EQUALS)
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
                 && getId().toEntity().equals(function.getValue()))) {
               return false;
             }
             break;
           case VALUE:
-            if  (!(!nameSegment.getChild().isPresent()
-                && function.getOperator().equals(Function.EQUALS)
+            if  (!(nameSegmentChildlessAndEquals(nameSegment, function)
                 && byteValue.toStringUtf8().equals(function.getValue().getString()))) {
               return false;
             }

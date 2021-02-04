@@ -55,7 +55,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
     // Retrieve entity at function.path
     if (type == RefType.BRANCH) {
       return evaluateBranch(condition);
-    } else if (this.type == RefType.TAG) {
+    } else if (type == RefType.TAG) {
       return evaluateTag(condition);
     }
     return false;
@@ -74,23 +74,20 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            if (!(!nameSegment.getChild().isPresent()
-                && (function.getOperator().equals(EQUALS))
-                && (getId().toEntity().equals(function.getValue())))) {
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
+                && getId().toEntity().equals(function.getValue()))) {
               return false;
             }
             break;
           case TYPE:
-            if (!(!nameSegment.getChild().isPresent()
-                && (function.getOperator().equals(EQUALS))
-                && (type.toString().equals(function.getValue().getString())))) {
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
+                && type.toString().equals(function.getValue().getString()))) {
               return false;
             }
             break;
           case NAME:
-            if (!(!nameSegment.getChild().isPresent()
-                && (function.getOperator().equals(EQUALS)
-                && (name.equals(function.getValue().getString()))))) {
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
+                && name.equals(function.getValue().getString()))) {
               return false;
             }
             break;
@@ -100,9 +97,8 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
             }
             break;
           case METADATA:
-            if (!(!nameSegment.getChild().isPresent()
-                && (function.getOperator().equals(EQUALS))
-                && (metadata.toEntity().equals(function.getValue())))) {
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
+                && metadata.toEntity().equals(function.getValue()))) {
               return false;
             }
             break;
@@ -111,8 +107,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
             switch (function.getOperator()) {
               case SIZE:
                 if (!(!nameSegment.getChild().isPresent()
-                    && (function.getOperator().equals(SIZE)
-                    && (commits.size() == (int) function.getValue().getNumber())))) {
+                    && commits.size() == (int) function.getValue().getNumber())) {
                   return false;
                 }
                 break;
@@ -144,27 +139,25 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            if (!(!nameSegment.getChild().isPresent()
-                && function.getOperator().equals(Function.EQUALS)
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
                 && getId().toEntity().equals(function.getValue()))) {
               return false;
             }
             break;
           case TYPE:
-            if (!(!nameSegment.getChild().isPresent()
-                && function.getOperator().equals(Function.EQUALS)
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
                 && type.toString().equals(function.getValue().getString()))) {
               return false;
             }
             break;
           case NAME:
-            if (!(function.getOperator().equals(Function.EQUALS)
+            if (!(function.isEquals()
                 && name.equals(function.getValue().getString()))) {
               return false;
             }
             break;
           case COMMIT:
-            if (!(function.getOperator().equals(Function.EQUALS)
+            if (!(function.isEquals()
                 && commit.toEntity().equals(function.getValue()))) {
               return false;
             }

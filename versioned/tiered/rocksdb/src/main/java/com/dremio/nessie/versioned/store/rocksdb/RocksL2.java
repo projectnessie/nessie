@@ -48,8 +48,7 @@ class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            if (!(!nameSegment.getChild().isPresent()
-                && function.getOperator().equals(Function.EQUALS)
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
                 && getId().toEntity().equals(function.getValue()))) {
               return false;
             }

@@ -98,15 +98,13 @@ class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            if (!(!nameSegment.getChild().isPresent()
-                && function.getOperator().equals(Function.EQUALS)
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
                 && getId().toEntity().equals(function.getValue()))) {
               return false;
             }
             break;
           case COMMIT_METADATA:
-            if (!(!nameSegment.getChild().isPresent()
-                && function.getOperator().equals(Function.EQUALS)
+            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
                 && metadataId.toEntity().equals(function.getValue()))) {
               return false;
             }
@@ -124,11 +122,15 @@ class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
           case KEY_LIST:
             return false;
           case INCREMENTAL_KEY_LIST:
-            if (nameSegment.getChild().isPresent() && function.getOperator().equals(Function.EQUALS)) {
+            if (nameSegment.getChild().isPresent() && function.isEquals()) {
               if (nameSegment.getChild().get().asName().getName().equals(CHECKPOINT_ID)) {
-                result &= checkpointId.toEntity().equals(function.getValue());
+                if (!(checkpointId.toEntity().equals(function.getValue()))) {
+                  return false;
+                }
               } else if (nameSegment.getChild().get().asName().getName().equals((DISTANCE_FROM_CHECKPOINT))) {
-                result &= Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue());
+                if (!Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue())) {
+                  return false;
+                }
               } else {
                 // Invalid Condition Function.
                 return false;
