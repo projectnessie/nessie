@@ -21,6 +21,9 @@ import com.dremio.nessie.versioned.Key;
 
 /**
  * Consumer for fragments.
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
  */
 public interface Fragment extends BaseValue<Fragment> {
 
@@ -31,5 +34,8 @@ public interface Fragment extends BaseValue<Fragment> {
    * @param keys The keys to add.
    * @return This consumer.
    */
-  Fragment keys(Stream<Key> keys);
+  default Fragment keys(Stream<Key> keys) {
+    keys.forEach(ignored -> {});
+    return this;
+  }
 }

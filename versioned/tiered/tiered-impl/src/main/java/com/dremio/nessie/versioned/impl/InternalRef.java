@@ -98,59 +98,134 @@ abstract class InternalRef extends PersistentBase<Ref> {
    * Implement {@link Ref} to build an {@link InternalRef} object.
    */
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends EntityBuilder<InternalRef, Ref> implements Ref {
+  static class Builder<REF extends InternalRef> extends EntityBuilder<InternalRef, Ref> implements Ref {
 
-    private RefType refType;
+    private Id id;
     private String name;
 
-    // tag only
-    private Id commit;
-
-    // branch only
-    private Id metadata;
-    private Stream<Id> children;
-    private List<Commit> commits;
+    private Builder<REF> typed;
 
     @Override
-    public Builder type(RefType refType) {
-      checkCalled(this.refType, "refType");
-      this.refType = refType;
+    public Builder<REF> id(Id id) {
+      checkCalled(this.id, "id");
+      this.id = id;
       return this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Builder name(String name) {
+    public Tag tag() {
+      if (typed != null) {
+        throw new IllegalStateException("Must only call tag() or branch() once.");
+      }
+      TagBuilder b = new TagBuilder();
+      typed = (Builder<REF>) b;
+      return b;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Branch branch() {
+      if (typed != null) {
+        throw new IllegalStateException("Must only call tag() or branch() once.");
+      }
+      BranchBuilder b = new BranchBuilder();
+      typed = (Builder<REF>) b;
+      return b;
+    }
+
+    @Override
+    public Builder<REF> name(String name) {
       checkCalled(this.name, "name");
       this.name = name;
       return this;
     }
 
     @Override
-    public Builder commit(Id commit) {
-      checkCalled(this.commit, "commit");
-      this.commit = commit;
-      return this;
+
+    REF build() {
+      if (typed == null) {
+        throw new IllegalStateException("Must call tag() or branch() before build().");
+      }
+      return typed.build();
     }
 
-    @Override
-    public Builder metadata(Id metadata) {
-      checkCalled(this.metadata, "metadata");
-      this.metadata = metadata;
-      return this;
+    private class TagBuilder extends Builder<InternalTag> implements Tag {
+      private Id commit;
+
+      @Override
+      public Tag commit(Id commit) {
+        checkCalled(this.commit, "commit");
+        this.commit = commit;
+        return this;
+      }
+
+      @Override
+      InternalTag build() {
+        // null-id is allowed (will be generated)
+        checkSet(name, "name");
+        checkSet(commit, "commit");
+        return new InternalTag(id, name, commit, dt);
+      }
+
+      @Override
+      public Ref backToRef() {
+        return Builder.this;
+      }
     }
 
-    @Override
-    public Builder children(Stream<Id> children) {
-      checkCalled(this.children, "children");
-      this.children = children;
-      return this;
-    }
+    private class BranchBuilder extends Builder<InternalBranch> implements Branch {
 
-    @Override
-    public Ref commits(Consumer<BranchCommitConsumer> commits) {
-      checkCalled(this.commits, "commits");
-      this.commits = new ArrayList<>();
-      commits.accept(new BranchCommitConsumer() {
+      private Id metadata;
+      private Stream<Id> children;
+      private List<Commit> commits;
+
+      @Override
+      public Branch metadata(Id metadata) {
+        checkCalled(this.metadata, "metadata");
+        this.metadata = metadata;
+        return this;
+      }
+
+      @Override
+      public Branch children(Stream<Id> children) {
+        checkCalled(this.children, "children");
+        this.children = children;
+        return this;
+      }
+
+      @Override
+      public Branch commits(Consumer<BranchCommit> commits) {
+        checkCalled(this.commits, "commits");
+        this.commits = new ArrayList<>();
+        commits.accept(new InternalBranchCommit());
+        return this;
+      }
+
+      @Override
+      public Ref backToRef() {
+        return Builder.this;
+      }
+
+      @Override
+      InternalBranch build() {
+        // null-id is allowed (will be generated)
+        checkSet(name, "name");
+        checkSet(metadata, "metadata");
+        checkSet(children, "children");
+        checkSet(commits, "commits");
+        return new InternalBranch(
+            id,
+            name,
+            IdMap.of(children, InternalL1.SIZE),
+            metadata,
+            commits,
+            dt);
+      }
+
+      private class InternalBranchCommit implements BranchCommit, SavedCommit,
+          UnsavedCommitDelta, UnsavedCommitMutations {
+
         private Id id;
         private Id commit;
         private Id parent;
@@ -158,11 +233,12 @@ abstract class InternalRef extends PersistentBase<Ref> {
         private List<KeyMutation> keyMutations = new ArrayList<>();
 
         @Override
-        public BranchCommitConsumer done() {
+        public BranchCommit done() {
           if (parent != null) {
-            Builder.this.commits.add(new Commit(id, commit, parent));
+            BranchBuilder.this.commits.add(new Commit(id, commit, parent));
           } else {
-            Builder.this.commits.add(new Commit(id, commit, unsavedDeltas, KeyMutationList.of(keyMutations)));
+            BranchBuilder.this.commits
+                .add(new Commit(id, commit, unsavedDeltas, KeyMutationList.of(keyMutations)));
           }
 
           id = null;
@@ -175,69 +251,56 @@ abstract class InternalRef extends PersistentBase<Ref> {
         }
 
         @Override
-        public BranchCommitConsumer id(Id id) {
+        public BranchCommit id(Id id) {
           this.id = id;
           return this;
         }
 
         @Override
-        public BranchCommitConsumer commit(Id commit) {
+        public BranchCommit commit(Id commit) {
           this.commit = commit;
           return this;
         }
 
         @Override
-        public BranchCommitConsumer parent(Id parent) {
+        public SavedCommit saved() {
+          return this;
+        }
+
+        @Override
+        public UnsavedCommitDelta unsaved() {
+          return this;
+        }
+
+        @Override
+        public SavedCommit parent(Id parent) {
           this.parent = parent;
           return this;
         }
 
         @Override
-        public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
+        public UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
           unsavedDeltas.add(new UnsavedDelta(position, oldId, newId));
           return this;
         }
 
         @Override
-        public BranchCommitConsumer keyMutation(Key.Mutation keyMutation) {
+        public UnsavedCommitMutations mutations() {
+          return this;
+        }
+
+        @Override
+        public UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
           keyMutations.add(KeyMutation.fromMutation(keyMutation));
           return this;
         }
-      });
-      return this;
-    }
-
-    @Override
-    InternalRef build() {
-      // null-id is allowed (will be generated)
-      checkSet(refType, "refType");
-      checkSet(name, "name");
-
-      switch (refType) {
-        case TAG:
-          checkSet(commit, "commit");
-          return new InternalTag(id, name, commit, dt);
-        case BRANCH:
-          checkSet(metadata, "metadata");
-          checkSet(children, "children");
-          checkSet(commits, "commits");
-          return new InternalBranch(
-              id,
-              name,
-              IdMap.of(children, InternalL1.SIZE),
-              metadata,
-              commits,
-              dt);
-        default:
-          throw new UnsupportedOperationException("Unknown ref-type " + refType);
       }
     }
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  EntityType<Ref, InternalRef, InternalRef.Builder> getEntityType() {
-    return EntityType.REF;
+  <E extends PersistentBase<Ref>> EntityType<Ref, E, ?> getEntityType() {
+    return (EntityType<Ref, E, ?>) EntityType.REF;
   }
-
 }

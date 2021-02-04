@@ -42,37 +42,28 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 final class DynamoSerDe {
 
-  private static final Map<ValueType<?>, Supplier<DynamoBaseValue<?>>> ENTITY_MAP_PRODUCERS;
-  private static final Map<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseValue<?>>> DESERIALIZERS;
+  private static final Map<ValueType<?>, Supplier<DynamoBaseValue<?>>> ENTITY_MAP_PRODUCERS =
+      ImmutableMap.<ValueType<?>, Supplier<DynamoBaseValue<?>>>builder()
+          .put(ValueType.L1, DynamoL1::new)
+          .put(ValueType.L2, DynamoL2::new)
+          .put(ValueType.L3, DynamoL3::new)
+          .put(ValueType.COMMIT_METADATA, () -> new DynamoWrappedValue<>(ValueType.COMMIT_METADATA))
+          .put(ValueType.VALUE, () -> new DynamoWrappedValue<>(ValueType.VALUE))
+          .put(ValueType.REF, DynamoRef::new)
+          .put(ValueType.KEY_FRAGMENT, DynamoFragment::new)
+          .build();
+  private static final Map<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseValue<?>>> DESERIALIZERS =
+      ImmutableMap.<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseValue<?>>>builder()
+          .put(ValueType.L1, (e, c) -> DynamoL1.toConsumer(e, (L1) c))
+          .put(ValueType.L2, (e, c) -> DynamoL2.toConsumer(e, (L2) c))
+          .put(ValueType.L3, (e, c) -> DynamoL3.toConsumer(e, (L3) c))
+          .put(ValueType.COMMIT_METADATA, (e, c) -> DynamoWrappedValue.produceToConsumer(e, (CommitMetadata) c))
+          .put(ValueType.VALUE, (e, c) -> DynamoWrappedValue.produceToConsumer(e, (Value) c))
+          .put(ValueType.REF, (e, c) -> DynamoRef.toConsumer(e, (Ref) c))
+          .put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragment.toConsumer(e, (Fragment) c))
+          .build();
 
   static {
-    ImmutableMap.Builder<ValueType<?>, Supplier<DynamoBaseValue<?>>> entityMapProducers = ImmutableMap.builder();
-    ImmutableMap.Builder<ValueType<?>, BiConsumer<Map<String, AttributeValue>, BaseValue<?>>> deserializers = ImmutableMap.builder();
-
-    entityMapProducers.put(ValueType.L1, DynamoL1::new);
-    deserializers.put(ValueType.L1, (e, c) -> DynamoL1.toConsumer(e, (L1) c));
-
-    entityMapProducers.put(ValueType.L2, DynamoL2::new);
-    deserializers.put(ValueType.L2, (e, c) -> DynamoL2.toConsumer(e, (L2) c));
-
-    entityMapProducers.put(ValueType.L3, DynamoL3::new);
-    deserializers.put(ValueType.L3, (e, c) -> DynamoL3.toConsumer(e, (L3) c));
-
-    entityMapProducers.put(ValueType.COMMIT_METADATA, () -> new DynamoWrappedValue<>(ValueType.COMMIT_METADATA));
-    deserializers.put(ValueType.COMMIT_METADATA, (e, c) -> DynamoWrappedValue.produceToConsumer(e, (CommitMetadata) c));
-
-    entityMapProducers.put(ValueType.VALUE, () -> new DynamoWrappedValue<>(ValueType.VALUE));
-    deserializers.put(ValueType.VALUE, (e, c) -> DynamoWrappedValue.produceToConsumer(e, (Value) c));
-
-    entityMapProducers.put(ValueType.REF, DynamoRef::new);
-    deserializers.put(ValueType.REF, (e, c) -> DynamoRef.toConsumer(e, (Ref) c));
-
-    entityMapProducers.put(ValueType.KEY_FRAGMENT, DynamoFragment::new);
-    deserializers.put(ValueType.KEY_FRAGMENT, (e, c) -> DynamoFragment.toConsumer(e, (Fragment) c));
-
-    ENTITY_MAP_PRODUCERS = entityMapProducers.build();
-    DESERIALIZERS = deserializers.build();
-
     if (!ENTITY_MAP_PRODUCERS.keySet().equals(DESERIALIZERS.keySet())) {
       throw new UnsupportedOperationException("The enum-maps ENTITY_MAP_PRODUCERS and DESERIALIZERS "
           + "are not equal. This is a bug in the implementation of DynamoSerDe.");

@@ -17,6 +17,9 @@ package com.dremio.nessie.tiered.builder;
 
 /**
  * Consumer for binary values.
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
  */
 public interface Value extends BaseWrappedValue<Value> {
 }
