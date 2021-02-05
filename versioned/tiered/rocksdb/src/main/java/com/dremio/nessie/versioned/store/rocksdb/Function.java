@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import java.util.Objects;
+
 import org.immutables.value.Value.Immutable;
 
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -30,13 +32,32 @@ abstract class Function {
 
   /**
    * Compares for equality with a provided Function object.
-   * @param function object to compare
+   * @param object  the object to compare
    * @return true if this is equal to provided object
    */
-  boolean equals(Function function) {
-    return (this.getOperator().equals(function.getOperator())
-        && this.getPath().equals(function.getPath())
-        && this.getValue().equals(function.getValue()));
+  @Override
+  public boolean equals(Object object) {
+    if (object == null) {
+      return false;
+    }
+
+    if (object == this) {
+      return true;
+    }
+
+    if (!(object instanceof Function)) {
+      return false;
+    }
+
+    Function function = (Function) object;
+    return (getOperator().equals(function.getOperator())
+        && getPath().equals(function.getPath())
+        && getValue().equals(function.getValue()));
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getOperator(), getPath(), getValue());
   }
 
   abstract String getOperator();
