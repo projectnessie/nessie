@@ -43,12 +43,15 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements E
 
         switch (segment) {
           case ID:
-            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && getId().toEntity().equals(function.getValue()))) {
+            // ID is considered a leaf attribute, ie no children. Ensure this is the case
+            // in the ExpressionPath.
+            if (!idEvaluates(nameSegment, function)) {
               return false;
             }
             break;
           case VALUE:
+            // VALUE is considered a leaf attribute, ie no children. Ensure this is the case
+            // in the ExpressionPath.
             if (!(nameSegmentChildlessAndEquals(nameSegment, function)
                 && byteValue.toStringUtf8().equals(function.getValue().getString()))) {
               return false;

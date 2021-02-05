@@ -53,8 +53,7 @@ class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
         ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
         final String segment = nameSegment.getName();
         if (segment.equals(ID)) {
-          if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-              && getId().toEntity().equals(function.getValue()))) {
+          if (!idEvaluates(nameSegment, function)) {
             return false;
           }
         } else {

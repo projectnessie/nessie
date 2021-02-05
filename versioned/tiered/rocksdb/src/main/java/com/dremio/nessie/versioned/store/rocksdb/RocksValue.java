@@ -42,8 +42,7 @@ class RocksValue extends RocksWrappedValue<Value> implements Evaluator, Value {
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && getId().toEntity().equals(function.getValue()))) {
+            if (!idEvaluates(nameSegment, function)) {
               return false;
             }
             break;

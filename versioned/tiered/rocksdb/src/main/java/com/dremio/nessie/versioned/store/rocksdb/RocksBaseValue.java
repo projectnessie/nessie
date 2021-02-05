@@ -116,6 +116,12 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
         && function.isEquals();
   }
 
+  boolean idEvaluates(ExpressionPath.NameSegment nameSegment, Function function) {
+    return (nameSegmentChildlessAndEquals(nameSegment, function)
+      && getId().toEntity().equals(function.getValue()));
+
+  }
+
   /**
    * Serialize the value to protobuf format.
    * @return the value serialized as protobuf.

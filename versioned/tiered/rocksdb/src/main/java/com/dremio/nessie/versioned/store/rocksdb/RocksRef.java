@@ -78,8 +78,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && getId().toEntity().equals(function.getValue()))) {
+            if (!idEvaluates(nameSegment, function)) {
               return false;
             }
             break;
@@ -143,8 +142,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && getId().toEntity().equals(function.getValue()))) {
+            if (!idEvaluates(nameSegment, function)) {
               return false;
             }
             break;

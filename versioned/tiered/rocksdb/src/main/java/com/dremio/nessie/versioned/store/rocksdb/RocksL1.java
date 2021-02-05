@@ -102,8 +102,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
-            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && getId().toEntity().equals(function.getValue()))) {
+            if (!idEvaluates(nameSegment, function)) {
               return false;
             }
             break;
