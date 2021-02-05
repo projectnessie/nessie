@@ -224,7 +224,30 @@ public class RocksDBStore implements Store {
 
   @Override
   public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
-    throw new UnsupportedOperationException();
+    final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
+
+    try(final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions())) {
+      final byte[] key = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, id.toBytes(), true);
+      if (key != null) {
+        if (condition.isPresent()) {
+          final RocksBaseValue<C> consumer = RocksSerDe.getConsumer(type);
+          // Check if condition expression is valid.
+          if (!(((Evaluator) consumer).evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR)))) {
+            throw new ConditionFailedException("Condition failed during delete operation.");
+          }
+          // TODO: delete with condition expression
+        } else {
+          transaction.delete(columnFamilyHandle, key);
+        }
+
+        transaction.commit();
+        return true;
+      }
+
+      throw new NotFoundException("No value was found for the given id.");
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

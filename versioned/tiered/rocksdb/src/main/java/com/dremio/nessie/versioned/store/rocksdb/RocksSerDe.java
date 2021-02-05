@@ -118,6 +118,16 @@ final class RocksSerDe {
   }
 
   /**
+   * Get the Consumer for the provided ValueType.
+   * @param type the ValueType to get the consumer for.
+   * @param <C> The consumer type.
+   * @return the consumer.
+   */
+  static <C extends BaseValue<C>> RocksBaseValue getConsumer(ValueType<C> type) {
+    return CONSUMERS.get(type).get();
+  }
+
+  /**
    * Deserialize the given {@code value} as the given {@link ValueType type} directly into
    * the given {@code consumer}.
    *
