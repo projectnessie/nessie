@@ -71,10 +71,10 @@ public class ITDynamoMetrics {
     store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, SampleEntities.createBranch(random)));
 
     //make sure standard Dynamo metrics are visible. Expect status codes for each of the 3 dynamo calls made (describe, create, put)
-    Assertions.assertEquals(3, registry.get("DynamoDB.HttpStatusCode.summary").meters().size());
+    Assertions.assertEquals(3, Metrics.globalRegistry.get("DynamoDB.HttpStatusCode.summary").meters().size());
 
     //make sure extra Dynamo metrics are visible. Expect capacity for put only
-    Collection<Meter> meters = registry.get("DynamoDB.ConsumedCapacity.summary").meters();
+    Collection<Meter> meters = Metrics.globalRegistry.get("DynamoDB.ConsumedCapacity.summary").meters();
     Assertions.assertEquals(1, meters.size());
     DistributionSummary putCapacity = (DistributionSummary) meters.stream().findFirst().get();
     Assertions.assertEquals(4, putCapacity.count());
