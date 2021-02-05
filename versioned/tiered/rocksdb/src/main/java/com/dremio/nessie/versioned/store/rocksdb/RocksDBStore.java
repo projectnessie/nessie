@@ -206,7 +206,7 @@ public class RocksDBStore implements Store {
   @Override
   public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
     if (condition.isPresent()) {
-      RocksBaseValue consumer = RocksSerDe.getConsumer(saveOp);
+      RocksBaseValue consumer = RocksSerDe.getConsumer(saveOp.getType());
       loadSingle(saveOp.getType(), saveOp.getId(), (C) consumer);
       if (!(((Evaluator) consumer).evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR)))) {
         throw new ConditionFailedException("Condition failed during put operation");
@@ -235,16 +235,14 @@ public class RocksDBStore implements Store {
           if (!(((Evaluator) consumer).evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR)))) {
             throw new ConditionFailedException("Condition failed during delete operation.");
           }
-          // TODO: delete with condition expression
-        } else {
-          transaction.delete(columnFamilyHandle, key);
         }
 
+        transaction.delete(columnFamilyHandle, key);
         transaction.commit();
         return true;
       }
 
-      throw new NotFoundException("No value was found for the given id.");
+      throw new NotFoundException("No value was found for the given id to delete.");
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
