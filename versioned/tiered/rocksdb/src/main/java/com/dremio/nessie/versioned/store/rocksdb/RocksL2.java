@@ -24,6 +24,10 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+/**
+ * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.L2} providing
+ * SerDe and Condition evaluation.
+ */
 class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
   private static final String CHILDREN = "children";
 
@@ -41,7 +45,7 @@ class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
 
   @Override
   public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctionList()) {
+    for (Function function: condition.getFunctions()) {
       // Retrieve entity at function.path
       if (function.getPath().getRoot().isName()) {
         ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();

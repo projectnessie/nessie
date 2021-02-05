@@ -26,6 +26,10 @@ import com.dremio.nessie.versioned.store.KeyDelta;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+/**
+ * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.L3} providing
+ * SerDe and Condition evaluation.
+ */
 class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
   private static final String TREE = "tree";
 
@@ -43,7 +47,7 @@ class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
 
   @Override
   public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctionList()) {
+    for (Function function: condition.getFunctions()) {
       // Retrieve entity at function.path
       if (function.getPath().getRoot().isName()) {
         ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();

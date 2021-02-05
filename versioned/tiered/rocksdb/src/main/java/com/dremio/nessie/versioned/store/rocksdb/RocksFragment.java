@@ -15,8 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,6 +25,10 @@ import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+/**
+ * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.Fragment} providing
+ * SerDe and Condition evaluation.
+ */
 class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evaluator {
   static final String KEY_LIST = "keys";
 
@@ -70,7 +72,7 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evalua
 
   @Override
   public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctionList()) {
+    for (Function function: condition.getFunctions()) {
       // Retrieve entity at function.path
       if (function.getPath().getRoot().isName()) {
         ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();

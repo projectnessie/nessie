@@ -20,6 +20,10 @@ import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+/**
+ * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.BaseWrappedValue} providing
+ * SerDe and Condition evaluation.
+ */
 class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C> implements BaseWrappedValue<C> {
 
   static final String VALUE = "value";

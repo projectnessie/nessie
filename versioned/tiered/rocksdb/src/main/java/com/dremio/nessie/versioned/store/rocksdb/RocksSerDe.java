@@ -33,6 +33,9 @@ import com.dremio.nessie.versioned.store.ValueType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
+/**
+ * Serializes and deserializes metadata to a RocksDB store.
+ */
 final class RocksSerDe {
   private static final Map<ValueType<?>, Supplier<RocksBaseValue<?>>> CONSUMERS;
   private static final Map<ValueType<?>, BiConsumer<byte[], BaseValue<?>>> DESERIALIZERS;

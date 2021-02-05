@@ -20,6 +20,10 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.protobuf.ByteString;
 
+/**
+ * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.Value} providing
+ * SerDe and Condition evaluation.
+ */
 class RocksValue extends RocksWrappedValue<Value> implements Evaluator, Value {
   static Value of(Id id, long dt, ByteString value) {
     return new RocksValue().id(id).dt(dt).value(value);
@@ -31,7 +35,7 @@ class RocksValue extends RocksWrappedValue<Value> implements Evaluator, Value {
 
   @Override
   public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctionList()) {
+    for (Function function: condition.getFunctions()) {
       // Retrieve entity at function.path
       if (function.getPath().getRoot().isName()) {
         ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();

@@ -30,6 +30,10 @@ import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+/**
+ * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.Ref} providing
+ * SerDe and Condition evaluation.
+ */
 class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
 
   static final String TYPE = "type";
@@ -67,7 +71,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
    * @return true if this branch meets the condition
    */
   private boolean evaluateBranch(Condition condition) {
-    for (Function function: condition.getFunctionList()) {
+    for (Function function: condition.getFunctions()) {
       // Branch evaluation
       if (function.getPath().getRoot().isName()) {
         ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
@@ -132,7 +136,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
    * @return true if this tag meets the condition
    */
   private boolean evaluateTag(Condition condition) {
-    for (Function function: condition.getFunctionList()) {
+    for (Function function: condition.getFunctions()) {
       // Tag evaluation
       if (function.getPath().getRoot().isName()) {
         ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();

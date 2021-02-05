@@ -77,12 +77,14 @@ class RocksDBConditionVisitor implements ConditionExpressionVisitor<Condition> {
         case EQUALS:
           // Special case SIZE, as the object representation is not contained in one level of ExpressionFunction.
           if (isSize(arguments.get(0))) {
-            return new Function(Function.SIZE,
-                arguments.get(0).getFunction().getArguments().get(0).accept(EXPRESSION_PATH_VALUE_VISITOR), arguments.get(1).getValue());
+            return ImmutableFunction.builder().operator(Function.SIZE)
+              .path(arguments.get(0).getFunction().getArguments().get(0).accept(EXPRESSION_PATH_VALUE_VISITOR))
+              .value(arguments.get(1).getValue()).build();
           }
 
-          return new Function(Function.EQUALS,
-            arguments.get(0).accept(EXPRESSION_PATH_VALUE_VISITOR), arguments.get(1).getValue());
+          return ImmutableFunction.builder().operator(Function.EQUALS)
+            .path(arguments.get(0).accept(EXPRESSION_PATH_VALUE_VISITOR))
+            .value(arguments.get(1).getValue()).build();
         default:
           throw new UnsupportedOperationException(String.format("%s is not a supported top-level RocksDB function.", name));
       }
@@ -109,8 +111,8 @@ class RocksDBConditionVisitor implements ConditionExpressionVisitor<Condition> {
   */
   @Override
   public Condition visit(final ConditionExpression conditionExpression) {
-    return new Condition(conditionExpression.getFunctions().stream()
-        .map(f -> f.accept(FUNC_VALUE_VISITOR))
-        .collect(Collectors.toList()));
+    return ImmutableCondition.builder().addAllFunctions(conditionExpression.getFunctions().stream()
+      .map(f -> f.accept(FUNC_VALUE_VISITOR))
+      .collect(Collectors.toList())).build();
   }
 }

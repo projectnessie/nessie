@@ -64,6 +64,9 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+/**
+ * A RocksDB specific backing store to store and retrieve Nessie metadata.
+ */
 public class RocksDBStore implements Store {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RocksDBStore.class);

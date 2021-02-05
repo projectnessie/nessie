@@ -15,31 +15,18 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import org.immutables.value.Value.Immutable;
+
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
 
 /**
  * An expression that is asserted against an Entity.
  */
-class Function {
+@Immutable
+abstract class Function {
   static final String EQUALS = "equals";
   static final String SIZE = "size";
-
-  private final String operator;
-  private final ExpressionPath path;
-  private final Entity value;
-
-  /**
-   * ExpressionFunction representation.
-   * @param operator type of assertion to be applied
-   * @param path the path to be tested
-   * @param value the expected value of path
-   */
-  Function(String operator, ExpressionPath path, Entity value) {
-    this.operator = operator;
-    this.path = path;
-    this.value = value;
-  }
 
   /**
    * Compares for equality with a provided Function object.
@@ -47,36 +34,38 @@ class Function {
    * @return true if this is equal to provided object
    */
   boolean equals(Function function) {
-    return (this.operator.equals(function.operator)
-        && this.path.equals(function.path)
-        && this.value.equals(function.value));
+    return (this.getOperator().equals(function.getOperator())
+        && this.getPath().equals(function.getPath())
+        && this.getValue().equals(function.getValue()));
   }
 
-  String getOperator() {
-    return operator;
-  }
+  abstract String getOperator();
 
-  ExpressionPath getPath() {
-    return path;
-  }
+  abstract ExpressionPath getPath();
 
-  Entity getValue() {
-    return value;
-  }
+  abstract Entity getValue();
 
   /**
    * Evaluates if this expression is for equality.
-   * @return true if Function is for an equality oper
+   * @return true if this function relates to a EQUALS evaluation.
    */
   boolean isEquals() {
-    return operator.equals(EQUALS);
+    return getOperator().equals(EQUALS);
   }
 
   /**
    * Evaluates if this expression is for size.
-   * @return
+   * @return true if this function relates to a SIZE evaluation.
    */
   boolean isSize() {
-    return operator.equals(SIZE);
+    return getOperator().equals(SIZE);
+  }
+
+  /**
+   * Builds an immutable representation of this class.
+   * @return the builder
+   */
+  public static ImmutableFunction.Builder builder() {
+    return ImmutableFunction.builder();
   }
 }

@@ -106,7 +106,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
   /**
    * A utility to aid evaluation of the Function in checking for equality on
-   * a leaf {@link com.dremio.nessie.versioned.impl.condition.ExpressionPath.NameSegment}
+   * a leaf {@link com.dremio.nessie.versioned.impl.condition.ExpressionPath.NameSegment}.
    * @param nameSegment the NameSegment that is checked to be childless
    * @param function the condition function to check it is for equality
    * @return true if both nameSegment is childless and function has an equality operator

@@ -21,6 +21,10 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.protobuf.ByteString;
 
+/**
+ * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.CommitMetadata} providing
+ * SerDe and Condition evaluation.
+ */
 class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements Evaluator, CommitMetadata {
   static CommitMetadata of(Id id, long dt, ByteString value) {
     return new RocksCommitMetadata().id(id).dt(dt).value(value);
@@ -32,7 +36,7 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements E
 
   @Override
   public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctionList()) {
+    for (Function function: condition.getFunctions()) {
       if (function.getPath().getRoot().isName()) {
         ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
         final String segment = nameSegment.getName();
