@@ -250,7 +250,7 @@ public class DynamoMetricsPublisher implements MetricPublisher {
         ToLongFunction<SdkRequest> count = ITEM_COUNT_REQUEST.get(request.getClass());
 
         if (count != null) {
-          String metricName = "DynamoDD.RequestedRecordCount";
+          String metricName = "DynamoDB.RequestedRecordCount";
           String key = String.format("%s/%s", metricName, name);
           Tags tags = Tags.of("operation", name);
           measure(key, metricName, tags, (int) count.applyAsLong(request));

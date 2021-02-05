@@ -18,6 +18,7 @@ package com.dremio.nessie.versioned.impl;
 import java.util.Collection;
 import java.util.Random;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,18 +33,24 @@ import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 
 @ExtendWith(LocalDynamoDB.class)
 public class ITDynamoMetrics {
+  private static SimpleMeterRegistry registry;
   private Random random;
   private DynamoStore store;
 
   @BeforeAll
   static void addRegistry() {
+    registry = new SimpleMeterRegistry();
     Metrics.globalRegistry.add(new SimpleMeterRegistry());
+  }
+
+  @AfterAll
+  static void removeRegistry() {
+    Metrics.globalRegistry.remove(registry);
   }
 
   @BeforeEach
@@ -62,7 +69,6 @@ public class ITDynamoMetrics {
   @Test
   void testMetrics() {
     store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, SampleEntities.createBranch(random)));
-    CompositeMeterRegistry registry = Metrics.globalRegistry;
 
     //make sure standard Dynamo metrics are visible. Expect status codes for each of the 3 dynamo calls made (describe, create, put)
     Assertions.assertEquals(3, registry.get("DynamoDB.HttpStatusCode.summary").meters().size());
