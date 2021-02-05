@@ -57,7 +57,7 @@ public class ITDynamoMetrics {
   void buildStore() {
     store = new DynamoStoreFixture().createStoreImpl();
     store.start();
-    random = new Random(0L);
+    random = new Random(156648623438324922L);
   }
 
   @AfterEach
@@ -76,7 +76,8 @@ public class ITDynamoMetrics {
     //make sure extra Dynamo metrics are visible. Expect capacity for put only
     Collection<Meter> meters = Metrics.globalRegistry.get("DynamoDB.ConsumedCapacity.summary").meters();
     Assertions.assertFalse(meters.isEmpty());
-    DistributionSummary putCapacity = (DistributionSummary) meters.stream().findFirst().get();
+    DistributionSummary putCapacity = (DistributionSummary) meters.stream()
+      .filter(x -> x.getId().getTag("operation").contains("Put")).findFirst().get();
     Assertions.assertTrue(1 <= putCapacity.count());
     Assertions.assertTrue(1 <= putCapacity.totalAmount());
   }
