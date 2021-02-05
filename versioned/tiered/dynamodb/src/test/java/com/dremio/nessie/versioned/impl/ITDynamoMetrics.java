@@ -77,7 +77,7 @@ public class ITDynamoMetrics {
     Collection<Meter> meters = Metrics.globalRegistry.get("DynamoDB.ConsumedCapacity.summary").meters();
     Assertions.assertFalse(meters.isEmpty());
     DistributionSummary putCapacity = (DistributionSummary) meters.stream()
-      .filter(x -> x.getId().getTag("operation").contains("Put")).findFirst().get();
+        .filter(x -> x.getId().getTag("operation").contains("Put")).findFirst().get();
     Assertions.assertTrue(1 <= putCapacity.count());
     Assertions.assertTrue(1 <= putCapacity.totalAmount());
   }
