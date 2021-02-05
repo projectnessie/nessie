@@ -46,4 +46,9 @@ public abstract class DynamoStoreConfig {
   public static ImmutableDynamoStoreConfig.Builder builder() {
     return ImmutableDynamoStoreConfig.builder();
   }
+
+  @Default
+  public boolean enableTracing() {
+    return true;
+  }
 }
