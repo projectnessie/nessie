@@ -45,14 +45,12 @@ public class ITDynamoMetrics {
   @BeforeAll
   static void addRegistry() {
     registry = new SimpleMeterRegistry();
-    Metrics.globalRegistry.clear();
     Metrics.addRegistry(new SimpleMeterRegistry());
   }
 
   @AfterAll
   static void removeRegistry() {
     Metrics.removeRegistry(registry);
-    Metrics.globalRegistry.clear();
   }
 
   @BeforeEach
@@ -73,11 +71,11 @@ public class ITDynamoMetrics {
     store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, SampleEntities.createBranch(random)));
 
     //make sure standard Dynamo metrics are visible. Expect status codes for each of the 3 dynamo calls made (describe, create, put)
-    Assertions.assertTrue(1 <= Metrics.globalRegistry.get("DynamoDB.HttpStatusCode.summary").meters().size());
+    Assertions.assertFalse(Metrics.globalRegistry.get("DynamoDB.HttpStatusCode.summary").meters().isEmpty());
 
     //make sure extra Dynamo metrics are visible. Expect capacity for put only
     Collection<Meter> meters = Metrics.globalRegistry.get("DynamoDB.ConsumedCapacity.summary").meters();
-    Assertions.assertTrue(1 <= meters.size());
+    Assertions.assertFalse(meters.isEmpty());
     DistributionSummary putCapacity = (DistributionSummary) meters.stream().findFirst().get();
     Assertions.assertTrue(1 <= putCapacity.count());
     Assertions.assertTrue(1 <= putCapacity.totalAmount());
