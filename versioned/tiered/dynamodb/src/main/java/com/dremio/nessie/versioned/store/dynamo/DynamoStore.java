@@ -127,26 +127,25 @@ public class DynamoStore implements Store {
     }
   }
 
-  private static void applyInterceptors(DynamoDbClientBuilder b1, DynamoDbAsyncClientBuilder b2) {
-    DynamoMetricsPublisher publisher = new DynamoMetricsPublisher();
-    TracingExecutionInterceptor tracing = new TracingExecutionInterceptor(GlobalTracer.get());
-    b2.overrideConfiguration(
-        x -> x.addExecutionInterceptor(publisher.interceptor()).addExecutionInterceptor(tracing).addMetricPublisher(publisher));
-    b1.overrideConfiguration(
-        x -> x.addExecutionInterceptor(publisher.interceptor()).addExecutionInterceptor(tracing).addMetricPublisher(publisher));
-  }
-
   @Override
   public void start() {
     if (client != null && async != null) {
       return; // no-op
     }
     try {
+      DynamoMetricsPublisher publisher = new DynamoMetricsPublisher();
+      TracingExecutionInterceptor tracing = new TracingExecutionInterceptor(GlobalTracer.get());
+
       DynamoDbClientBuilder b1 = DynamoDbClient.builder();
       b1.httpClient(UrlConnectionHttpClient.create());
+      b1.overrideConfiguration(
+          x -> x.addExecutionInterceptor(publisher.interceptor()).addExecutionInterceptor(tracing).addMetricPublisher(publisher));
+
       DynamoDbAsyncClientBuilder b2 = DynamoDbAsyncClient.builder();
       b2.httpClient(NettyNioAsyncHttpClient.create());
-      applyInterceptors(b1, b2);
+      b2.overrideConfiguration(
+          x -> x.addExecutionInterceptor(publisher.interceptor()).addExecutionInterceptor(tracing).addMetricPublisher(publisher));
+
       config.getEndpoint().ifPresent(ep -> {
         b1.endpointOverride(ep);
         b2.endpointOverride(ep);

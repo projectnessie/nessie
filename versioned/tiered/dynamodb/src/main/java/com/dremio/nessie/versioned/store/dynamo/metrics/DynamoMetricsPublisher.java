@@ -15,7 +15,10 @@
  */
 package com.dremio.nessie.versioned.store.dynamo.metrics;
 
+import static software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity.TOTAL;
+
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +65,6 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
-import software.amazon.awssdk.services.dynamodb.model.ReturnConsumedCapacity;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
@@ -90,50 +92,55 @@ public class DynamoMetricsPublisher implements MetricPublisher {
 
   static {
     CONSUMED_CAPACITY = ImmutableMap.<Class<? extends SdkResponse>, ToDoubleFunction<SdkResponse>>builder()
-      .put(PutItemResponse.class,
-        r -> DynamoMetricsPublisher.getConsumedCapacity(((PutItemResponse) r).consumedCapacity()))
-      .put(BatchWriteItemResponse.class,
-        r -> DynamoMetricsPublisher.getConsumedCapacity(((BatchWriteItemResponse) r).consumedCapacity()))
-      .put(GetItemResponse.class,
-        r -> DynamoMetricsPublisher.getConsumedCapacity(((GetItemResponse) r).consumedCapacity()))
-      .put(BatchGetItemResponse.class,
-        r -> DynamoMetricsPublisher.getConsumedCapacity(((BatchGetItemResponse) r).consumedCapacity()))
-      .put(DeleteItemResponse.class,
-        r -> DynamoMetricsPublisher.getConsumedCapacity(((DeleteItemResponse) r).consumedCapacity()))
-      .put(ScanResponse.class,
-        r -> DynamoMetricsPublisher.getConsumedCapacity(((ScanResponse) r).consumedCapacity()))
-      .put(UpdateItemResponse.class,
-        r -> DynamoMetricsPublisher.getConsumedCapacity(((UpdateItemResponse) r).consumedCapacity()))
-      .put(QueryResponse.class,
-        r -> DynamoMetricsPublisher.getConsumedCapacity(((QueryResponse) r).consumedCapacity()))
+      .put(PutItemResponse.class, r -> getConsumedCapacity(((PutItemResponse) r).consumedCapacity()))
+      .put(BatchWriteItemResponse.class, r -> getConsumedCapacity(((BatchWriteItemResponse) r).consumedCapacity()))
+      .put(GetItemResponse.class, r -> getConsumedCapacity(((GetItemResponse) r).consumedCapacity()))
+      .put(BatchGetItemResponse.class, r -> getConsumedCapacity(((BatchGetItemResponse) r).consumedCapacity()))
+      .put(DeleteItemResponse.class, r -> getConsumedCapacity(((DeleteItemResponse) r).consumedCapacity()))
+      .put(ScanResponse.class, r -> getConsumedCapacity(((ScanResponse) r).consumedCapacity()))
+      .put(UpdateItemResponse.class, r -> getConsumedCapacity(((UpdateItemResponse) r).consumedCapacity()))
+      .put(QueryResponse.class, r -> getConsumedCapacity(((QueryResponse) r).consumedCapacity()))
       .build();
+
     ADD_RETURN_CAPACITY = ImmutableMap.<Class<? extends SdkRequest>, Function<SdkRequest, SdkRequest>>builder()
-      .put(PutItemRequest.class,
-        r -> ((PutItemRequest) r).toBuilder().returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build())
-      .put(BatchWriteItemRequest.class,
-        r -> ((BatchWriteItemRequest) r).toBuilder().returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build())
-      .put(GetItemRequest.class,
-        r -> ((GetItemRequest) r).toBuilder().returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build())
-      .put(BatchGetItemRequest.class,
-        r -> ((BatchGetItemRequest) r).toBuilder().returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build())
-      .put(DeleteItemRequest.class,
-        r -> ((DeleteItemRequest) r).toBuilder().returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build())
-      .put(ScanRequest.class,
-        r -> ((ScanRequest) r).toBuilder().returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build())
-      .put(UpdateItemRequest.class,
-        r -> ((UpdateItemRequest) r).toBuilder().returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build())
-      .put(QueryRequest.class,
-        r -> ((QueryRequest) r).toBuilder().returnConsumedCapacity(ReturnConsumedCapacity.TOTAL).build())
+      .put(PutItemRequest.class, r -> ((PutItemRequest) r).toBuilder().returnConsumedCapacity(TOTAL).build())
+      .put(BatchWriteItemRequest.class, r -> ((BatchWriteItemRequest) r).toBuilder().returnConsumedCapacity(TOTAL).build())
+      .put(GetItemRequest.class, r -> ((GetItemRequest) r).toBuilder().returnConsumedCapacity(TOTAL).build())
+      .put(BatchGetItemRequest.class, r -> ((BatchGetItemRequest) r).toBuilder().returnConsumedCapacity(TOTAL).build())
+      .put(DeleteItemRequest.class, r -> ((DeleteItemRequest) r).toBuilder().returnConsumedCapacity(TOTAL).build())
+      .put(ScanRequest.class, r -> ((ScanRequest) r).toBuilder().returnConsumedCapacity(TOTAL).build())
+      .put(UpdateItemRequest.class, r -> ((UpdateItemRequest) r).toBuilder().returnConsumedCapacity(TOTAL).build())
+      .put(QueryRequest.class, r -> ((QueryRequest) r).toBuilder().returnConsumedCapacity(TOTAL).build())
       .build();
+
     ITEM_COUNT_REQUEST = ImmutableMap.<Class<? extends SdkRequest>, ToLongFunction<SdkRequest>>builder()
+      .put(GetItemRequest.class, r -> 0)
+      .put(ScanRequest.class, r -> 0)
+      .put(QueryRequest.class, r -> 0)
       .put(PutItemRequest.class, r -> ((PutItemRequest) r).hasItem() ? 1 : 0)
-      .put(BatchWriteItemRequest.class,
-        r -> ((BatchWriteItemRequest) r).requestItems().values().stream().map(List::size).mapToInt(x -> x).count())
       .put(DeleteItemRequest.class, r -> ((DeleteItemRequest) r).hasKey() ? 1 : 0)
       .put(UpdateItemRequest.class, r -> ((UpdateItemRequest) r).hasKey() ? 1 : 0)
+      .put(BatchWriteItemRequest.class,
+        r -> ((BatchWriteItemRequest) r).requestItems().values().stream().map(List::size).mapToInt(x -> x).count())
+      .put(BatchGetItemRequest.class,
+        r -> ((BatchGetItemRequest) r).requestItems()
+          .values()
+          .stream()
+          .flatMap(x -> x.keys().stream())
+          .map(Map::values)
+          .map(Collection::size)
+          .mapToInt(x -> x).count())
       .build();
+
     ITEM_COUNT_RESPONSE = ImmutableMap.<Class<? extends SdkResponse>, ToLongFunction<SdkResponse>>builder()
       .put(GetItemResponse.class, r -> ((GetItemResponse) r).hasItem() ? 1 : 0)
+      .put(ScanResponse.class, r -> ((ScanResponse) r).count())
+      .put(QueryResponse.class, r -> ((QueryResponse) r).count())
+      .put(PutItemResponse.class, r -> 0)
+      .put(DeleteItemResponse.class, r -> 0)
+      .put(UpdateItemResponse.class, r -> 0)
+      .put(BatchWriteItemResponse.class,
+        r -> ((BatchWriteItemResponse) r).unprocessedItems().values().stream().map(List::size).mapToInt(x -> x).count())
       .put(BatchGetItemResponse.class,
         r -> ((BatchGetItemResponse) r).responses()
           .entrySet()
@@ -141,8 +148,6 @@ public class DynamoMetricsPublisher implements MetricPublisher {
           .flatMap(x -> x.getValue().stream())
           .map(Map::size)
           .mapToInt(x -> x).count())
-      .put(ScanResponse.class, r -> ((ScanResponse) r).count())
-      .put(QueryResponse.class, r -> ((QueryResponse) r).count())
       .build();
   }
 
@@ -187,7 +192,7 @@ public class DynamoMetricsPublisher implements MetricPublisher {
   }
 
   private static DistributionSummary getSummary(String name,Tags tags) {
-    return Metrics.summary(name, tags);
+    return DistributionSummary.builder(name).tags(tags).publishPercentileHistogram().register(Metrics.globalRegistry);
   }
 
   private static AtomicInteger getGauge(String name, Tags tags) {
@@ -242,17 +247,17 @@ public class DynamoMetricsPublisher implements MetricPublisher {
           ExecutionAttributes executionAttributes) {
         SdkRequest request = context.request();
         String name = request.getClass().getSimpleName().replace("Request", "");
-        ToLongFunction<SdkRequest> count = ITEM_COUNT_REQUEST.getOrDefault(request.getClass(), r -> {
-          if (LOG_CACHE.add(r.getClass())) {
-            LOG.info("Could not count number of entries for request of type {}", r.getClass());
-          }
-          return -1;
-        });
+        ToLongFunction<SdkRequest> count = ITEM_COUNT_REQUEST.get(request.getClass());
+
         if (count != null) {
-          String metricName = "DynamoDb.RecordCount";
+          String metricName = "DynamoDD.RequestedRecordCount";
           String key = String.format("%s/%s", metricName, name);
           Tags tags = Tags.of("operation", name);
           measure(key, metricName, tags, (int) count.applyAsLong(request));
+        } else {
+          if (LOG_CACHE.add(request.getClass())) {
+            LOG.info("Could not count number of entries for request of type {}", request.getClass());
+          }
         }
         return context.httpRequest();
       }
@@ -265,27 +270,26 @@ public class DynamoMetricsPublisher implements MetricPublisher {
         String name = response.getClass().getSimpleName().replace("Response", "");
         Tags tags = Tags.of("operation", name);
 
-        ToLongFunction<SdkResponse> count = ITEM_COUNT_RESPONSE.getOrDefault(response.getClass(), r -> {
-          if (LOG_CACHE.add(r.getClass())) {
-            LOG.info("Could not count number of entries for response of type {}", r.getClass());
-          }
-          return -1;
-        });
-        ToDoubleFunction<SdkResponse> consumedValue = CONSUMED_CAPACITY.getOrDefault(response.getClass(), r -> {
-          if (LOG_CACHE.add(r.getClass())) {
-            LOG.info("Could not get returned used capacity for response of type {}", r.getClass());
-          }
-          return -1;
-        });
+        ToLongFunction<SdkResponse> count = ITEM_COUNT_RESPONSE.get(response.getClass());
+        ToDoubleFunction<SdkResponse> consumedValue = CONSUMED_CAPACITY.get(response.getClass());
+
         if (consumedValue != null) {
-          String metricName = "DynamoDb.ConsumedCapacity";
+          String metricName = "DynamoDB.ConsumedCapacity";
           String key = String.format("%s/%s", metricName, name);
           measure(key, metricName, tags, (int) consumedValue.applyAsDouble(response));
+        } else {
+          if (LOG_CACHE.add(response.getClass())) {
+            LOG.info("Could not get returned used capacity for response of type {}", response.getClass());
+          }
         }
         if (count != null) {
-          String metricName = "DynamoDb.RecordCount";
+          String metricName = "DynamoDB.ReceivedRecordCount";
           String key = String.format("%s/%s", metricName, name);
           measure(key, metricName, tags, (int) count.applyAsLong(response));
+        } else {
+          if (LOG_CACHE.add(response.getClass())) {
+            LOG.info("Could not count number of entries for response of type {}", response.getClass());
+          }
         }
         return response;
       }

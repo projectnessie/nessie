@@ -47,7 +47,7 @@ import com.google.common.collect.Multimap;
  * @param <S> The type of the Store being tested.
  */
 public abstract class AbstractTestStore<S extends Store> {
-  private static class CreatorPair {
+  static class CreatorPair {
     final ValueType<?> type;
     final Supplier<HasId> supplier;
 
