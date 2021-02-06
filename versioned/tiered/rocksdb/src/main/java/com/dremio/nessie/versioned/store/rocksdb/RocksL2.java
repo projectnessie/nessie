@@ -44,28 +44,22 @@ class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
   }
 
   @Override
-  public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctions()) {
-      // Retrieve entity at function.path
-      if (function.getPath().getRoot().isName()) {
-        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
-        final String segment = nameSegment.getName();
-        switch (segment) {
-          case ID:
-            if (!idEvaluates(nameSegment, function)) {
-              return false;
-            }
-            break;
-          case CHILDREN:
-            if (!evaluateStream(function, tree)) {
-              return false;
-            }
-            break;
-          default:
-            // Invalid Condition Function.
-            return false;
+  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
+    final String segment = nameSegment.getName();
+    switch (segment) {
+      case ID:
+        if (!idEvaluates(nameSegment, function)) {
+          return false;
         }
-      }
+        break;
+      case CHILDREN:
+        if (!evaluateStream(function, tree)) {
+          return false;
+        }
+        break;
+      default:
+        // Invalid Condition Function.
+        return false;
     }
     return true;
   }

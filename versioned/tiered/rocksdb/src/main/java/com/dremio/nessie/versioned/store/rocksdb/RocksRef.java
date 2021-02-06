@@ -55,75 +55,70 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
   }
 
   @Override
-  public boolean evaluate(Condition condition) {
-    // Retrieve entity at function.path
+  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
     if (type == RefType.BRANCH) {
-      return evaluateBranch(condition);
+      return evaluateBranch(nameSegment, function);
     } else if (type == RefType.TAG) {
-      return evaluateTag(condition);
+      return evaluateTag(nameSegment, function);
     }
-    return false;
+    return true;
   }
 
   /**
    * Evaluates that this branch meets the condition.
-   * @param condition the condition to evaluate this branch against
+   * @param nameSegment the segment on which the function is evaluated
+   * @param function the function that is tested against the nameSegment
    * @return true if this branch meets the condition
    */
-  private boolean evaluateBranch(Condition condition) {
-    for (Function function: condition.getFunctions()) {
-      // Branch evaluation
-      if (function.getPath().getRoot().isName()) {
-        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
-        final String segment = nameSegment.getName();
-        switch (segment) {
-          case ID:
-            if (!idEvaluates(nameSegment, function)) {
+  private boolean evaluateBranch(ExpressionPath.NameSegment nameSegment, Function function) {
+
+    final String segment = nameSegment.getName();
+    switch (segment) {
+      case ID:
+        if (!idEvaluates(nameSegment, function)) {
+          return false;
+        }
+        break;
+      case TYPE:
+        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+            || !type.toString().equals(function.getValue().getString())) {
+          return false;
+        }
+        break;
+      case NAME:
+        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+            || !name.equals(function.getValue().getString())) {
+          return false;
+        }
+        break;
+      case CHILDREN:
+        if (!evaluateStream(function, children)) {
+          return false;
+        }
+        break;
+      case METADATA:
+        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+            || !metadata.toEntity().equals(function.getValue())) {
+          return false;
+        }
+        break;
+      case COMMITS:
+        // TODO: refactor once jdbc-store Store changes are available.
+        switch (function.getOperator()) {
+          case SIZE:
+            if (nameSegment.getChild().isPresent()
+                || commits.size() != (int) function.getValue().getNumber()) {
               return false;
             }
             break;
-          case TYPE:
-            if (!nameSegmentChildlessAndEquals(nameSegment, function)
-                || !type.toString().equals(function.getValue().getString())) {
-              return false;
-            }
-            break;
-          case NAME:
-            if (!nameSegmentChildlessAndEquals(nameSegment, function)
-                || !name.equals(function.getValue().getString())) {
-              return false;
-            }
-            break;
-          case CHILDREN:
-            if (!evaluateStream(function, children)) {
-              return false;
-            }
-            break;
-          case METADATA:
-            if (!nameSegmentChildlessAndEquals(nameSegment, function)
-                || !metadata.toEntity().equals(function.getValue())) {
-              return false;
-            }
-            break;
-          case COMMITS:
-            // TODO: refactor once jdbc-store Store changes are available.
-            switch (function.getOperator()) {
-              case SIZE:
-                if (nameSegment.getChild().isPresent()
-                    || commits.size() != (int) function.getValue().getNumber()) {
-                  return false;
-                }
-                break;
-              case EQUALS:
-                return false;
-              default:
-                return false;
-            }
-            break;
+          case EQUALS:
+            return false;
           default:
             return false;
         }
-      }
+        break;
+      default:
+        return false;
     }
     // The object has not failed any condition.
     return true;
@@ -131,43 +126,38 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
 
   /**
    * Evaluates that this tag meets the condition.
-   * @param condition the condition to evaluate this tag against
+   * @param nameSegment the segment on which the function is evaluated
+   * @param function the function that is tested against the nameSegment
    * @return true if this tag meets the condition
    */
-  private boolean evaluateTag(Condition condition) {
-    for (Function function: condition.getFunctions()) {
-      // Tag evaluation
-      if (function.getPath().getRoot().isName()) {
-        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
-        final String segment = nameSegment.getName();
-        switch (segment) {
-          case ID:
-            if (!idEvaluates(nameSegment, function)) {
-              return false;
-            }
-            break;
-          case TYPE:
-            if (!nameSegmentChildlessAndEquals(nameSegment, function)
-                || !type.toString().equals(function.getValue().getString())) {
-              return false;
-            }
-            break;
-          case NAME:
-            if (!function.isEquals()
-                || !name.equals(function.getValue().getString())) {
-              return false;
-            }
-            break;
-          case COMMIT:
-            if (!function.isEquals()
-                || !commit.toEntity().equals(function.getValue())) {
-              return false;
-            }
-            break;
-          default:
-            return false;
+  private boolean evaluateTag(ExpressionPath.NameSegment nameSegment, Function function) {
+    final String segment = nameSegment.getName();
+    switch (segment) {
+      case ID:
+        if (!idEvaluates(nameSegment, function)) {
+          return false;
         }
-      }
+        break;
+      case TYPE:
+        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+            || !type.toString().equals(function.getValue().getString())) {
+          return false;
+        }
+        break;
+      case NAME:
+        if (!function.isEquals()
+            || !name.equals(function.getValue().getString())) {
+          return false;
+        }
+        break;
+      case COMMIT:
+        if (!function.isEquals()
+            || !commit.toEntity().equals(function.getValue())) {
+          return false;
+        }
+        break;
+      default:
+        return false;
     }
     // The object has not failed any condition.
     return true;

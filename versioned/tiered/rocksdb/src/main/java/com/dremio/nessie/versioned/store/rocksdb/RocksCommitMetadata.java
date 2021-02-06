@@ -35,33 +35,28 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements E
   }
 
   @Override
-  public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctions()) {
-      if (function.getPath().getRoot().isName()) {
-        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
-        final String segment = nameSegment.getName();
+  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
+    final String segment = nameSegment.getName();
 
-        switch (segment) {
-          case ID:
-            // ID is considered a leaf attribute, ie no children. Ensure this is the case
-            // in the ExpressionPath.
-            if (!idEvaluates(nameSegment, function)) {
-              return false;
-            }
-            break;
-          case VALUE:
-            // VALUE is considered a leaf attribute, ie no children. Ensure this is the case
-            // in the ExpressionPath.
-            if (!nameSegmentChildlessAndEquals(nameSegment, function)
-                || !byteValue.toStringUtf8().equals(function.getValue().getString())) {
-              return false;
-            }
-            break;
-          default:
-            // Invalid Condition Function.
-            return false;
+    switch (segment) {
+      case ID:
+        // ID is considered a leaf attribute, ie no children. Ensure this is the case
+        // in the ExpressionPath.
+        if (!idEvaluates(nameSegment, function)) {
+          return false;
         }
-      }
+        break;
+      case VALUE:
+        // VALUE is considered a leaf attribute, ie no children. Ensure this is the case
+        // in the ExpressionPath.
+        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+            || !byteValue.toStringUtf8().equals(function.getValue().getString())) {
+          return false;
+        }
+        break;
+      default:
+        // Invalid Condition Function.
+        return false;
     }
     // All functions have passed the test.
     return true;

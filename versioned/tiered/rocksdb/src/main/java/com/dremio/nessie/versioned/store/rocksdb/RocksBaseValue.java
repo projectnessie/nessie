@@ -32,7 +32,7 @@ import com.google.protobuf.ByteString;
  * An implementation of @{BaseValue} used for ConditionExpression and UpdateExpression evaluation.
  * @param <C> Specialization of a specific BaseValue interface.
  */
-abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
+abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, Evaluator {
 
   static final String ID = "id";
 
@@ -115,6 +115,23 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
     return !nameSegment.getChild().isPresent()
         && function.isEquals();
   }
+
+  @Override
+  public boolean evaluate(Condition condition) {
+    for (Function function: condition.getFunctions()) {
+      if (function.getPath().getRoot().isName()) {
+        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        if (!evaluateSegment(nameSegment, function)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  @Override
+  public abstract boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function);
+
 
   /**
    * Evaluates the id against a function and ensures that the name segment is well formed,

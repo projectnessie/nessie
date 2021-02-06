@@ -16,6 +16,7 @@
 package com.dremio.nessie.versioned.store.rocksdb;
 
 import com.dremio.nessie.tiered.builder.BaseWrappedValue;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -31,6 +32,11 @@ class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C>
 
   RocksWrappedValue() {
     super();
+  }
+
+  @Override
+  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
+    throw new UnsupportedOperationException();
   }
 
   @SuppressWarnings("unchecked")

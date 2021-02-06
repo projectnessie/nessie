@@ -93,65 +93,59 @@ class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
   }
 
   @Override
-  public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctions()) {
-      // Retrieve entity at function.path
-      if (function.getPath().getRoot().isName()) {
-        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
-        final String segment = nameSegment.getName();
-        switch (segment) {
-          case ID:
-            if (!idEvaluates(nameSegment, function)) {
+  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
+    final String segment = nameSegment.getName();
+    switch (segment) {
+      case ID:
+        if (!idEvaluates(nameSegment, function)) {
+          return false;
+        }
+        break;
+      case COMMIT_METADATA:
+        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+            || !metadataId.toEntity().equals(function.getValue())) {
+          return false;
+        }
+        break;
+      case ANCESTORS:
+        if (!evaluateStream(function, parentList)) {
+          return false;
+        }
+        break;
+      case CHILDREN:
+        if (!evaluateStream(function, tree)) {
+          return false;
+        }
+        break;
+      case KEY_LIST:
+        return false;
+      case INCREMENTAL_KEY_LIST:
+        if (nameSegment.getChild().isPresent() && function.isEquals()) {
+          if (nameSegment.getChild().get().asName().getName().equals(CHECKPOINT_ID)) {
+            if (!checkpointId.toEntity().equals(function.getValue())) {
               return false;
             }
-            break;
-          case COMMIT_METADATA:
-            if (!nameSegmentChildlessAndEquals(nameSegment, function)
-                || !metadataId.toEntity().equals(function.getValue())) {
+          } else if (nameSegment.getChild().get().asName().getName().equals((DISTANCE_FROM_CHECKPOINT))) {
+            if (!Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue())) {
               return false;
             }
-            break;
-          case ANCESTORS:
-            if (!evaluateStream(function, parentList)) {
-              return false;
-            }
-            break;
-          case CHILDREN:
-            if (!evaluateStream(function, tree)) {
-              return false;
-            }
-            break;
-          case KEY_LIST:
-            return false;
-          case INCREMENTAL_KEY_LIST:
-            if (nameSegment.getChild().isPresent() && function.isEquals()) {
-              if (nameSegment.getChild().get().asName().getName().equals(CHECKPOINT_ID)) {
-                if (!checkpointId.toEntity().equals(function.getValue())) {
-                  return false;
-                }
-              } else if (nameSegment.getChild().get().asName().getName().equals((DISTANCE_FROM_CHECKPOINT))) {
-                if (!Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue())) {
-                  return false;
-                }
-              } else {
-                // Invalid Condition Function.
-                return false;
-              }
-            } else {
-              // Invalid Condition Function.
-              return false;
-            }
-            break;
-          case COMPLETE_KEY_LIST:
-            if (!evaluateStream(function, fragmentIds)) {
-              return false;
-            }
-            break;
-          default:
+          } else {
             // Invalid Condition Function.
             return false;
+          }
+        } else {
+          // Invalid Condition Function.
+          return false;
         }
-      }
+        break;
+      case COMPLETE_KEY_LIST:
+        if (!evaluateStream(function, fragmentIds)) {
+          return false;
+        }
+        break;
+      default:
+        // Invalid Condition Function.
+        return false;
     }
     return true;
   }

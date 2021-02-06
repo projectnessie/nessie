@@ -24,7 +24,7 @@ import com.google.protobuf.ByteString;
  * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.Value} providing
  * SerDe and Condition evaluation.
  */
-class RocksValue extends RocksWrappedValue<Value> implements Evaluator, Value {
+class RocksValue extends RocksWrappedValue<Value> implements Value {
   static Value of(Id id, long dt, ByteString value) {
     return new RocksValue().id(id).dt(dt).value(value);
   }
@@ -34,29 +34,23 @@ class RocksValue extends RocksWrappedValue<Value> implements Evaluator, Value {
   }
 
   @Override
-  public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctions()) {
-      // Retrieve entity at function.path
-      if (function.getPath().getRoot().isName()) {
-        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
-        final String segment = nameSegment.getName();
-        switch (segment) {
-          case ID:
-            if (!idEvaluates(nameSegment, function)) {
-              return false;
-            }
-            break;
-          case VALUE:
-            if  (!nameSegmentChildlessAndEquals(nameSegment, function)
-                || !byteValue.toStringUtf8().equals(function.getValue().getString())) {
-              return false;
-            }
-            break;
-          default:
-            // Invalid Condition Function.
-            return false;
+  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
+    final String segment = nameSegment.getName();
+    switch (segment) {
+      case ID:
+        if (!idEvaluates(nameSegment, function)) {
+          return false;
         }
-      }
+        break;
+      case VALUE:
+        if  (!nameSegmentChildlessAndEquals(nameSegment, function)
+            || !byteValue.toStringUtf8().equals(function.getValue().getString())) {
+          return false;
+        }
+        break;
+      default:
+        // Invalid Condition Function.
+        return false;
     }
     return true;
   }

@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
+
 /**
  * Provides evaluation of a {@link com.dremio.nessie.versioned.store.rocksdb.Condition} against the implementing class.
  */
@@ -25,4 +27,12 @@ interface Evaluator {
    * @return true if the condition is met
    */
   boolean evaluate(Condition condition);
+
+  /**
+   * Checks that the condition is met by the attribute (nameSegment) for the implementing class.
+   * @param nameSegment path to the attribute in the implementing class
+   * @param function the condition to check
+   * @return true if the condition is met
+   */
+  boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function);
 }

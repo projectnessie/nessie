@@ -46,21 +46,15 @@ class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
   }
 
   @Override
-  public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctions()) {
-      // Retrieve entity at function.path
-      if (function.getPath().getRoot().isName()) {
-        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
-        final String segment = nameSegment.getName();
-        if (segment.equals(ID)) {
-          if (!idEvaluates(nameSegment, function)) {
-            return false;
-          }
-        } else {
-          // Invalid Condition Function.
-          return false;
-        }
+  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
+    final String segment = nameSegment.getName();
+    if (segment.equals(ID)) {
+      if (!idEvaluates(nameSegment, function)) {
+        return false;
       }
+    } else {
+      // Invalid Condition Function.
+      return false;
     }
     return true;
   }

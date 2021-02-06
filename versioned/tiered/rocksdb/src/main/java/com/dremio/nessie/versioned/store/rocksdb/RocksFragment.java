@@ -71,39 +71,33 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evalua
   }
 
   @Override
-  public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctions()) {
-      // Retrieve entity at function.path
-      if (function.getPath().getRoot().isName()) {
-        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
-        final String segment = nameSegment.getName();
-        switch (segment) {
-          case ID:
-            if (!idEvaluates(nameSegment, function)) {
-              return false;
-            }
-            break;
-          case KEY_LIST:
-            if (nameSegment.getChild().isPresent()) {
-              return false;
-            }
-            if (function.isEquals()) {
-              if (!keysAsEntityList(keys).equals(function.getValue())) {
-                return false;
-              }
-            } else if (function.isSize()) {
-              if (keys.count() != function.getValue().getNumber()) {
-                return false;
-              }
-            } else {
-              return false;
-            }
-            break;
-          default:
-            // Invalid Condition Function.
-            return false;
+  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
+    final String segment = nameSegment.getName();
+    switch (segment) {
+      case ID:
+        if (!idEvaluates(nameSegment, function)) {
+          return false;
         }
-      }
+        break;
+      case KEY_LIST:
+        if (nameSegment.getChild().isPresent()) {
+          return false;
+        }
+        if (function.isEquals()) {
+          if (!keysAsEntityList(keys).equals(function.getValue())) {
+            return false;
+          }
+        } else if (function.isSize()) {
+          if (keys.count() != function.getValue().getNumber()) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+        break;
+      default:
+        // Invalid Condition Function.
+        return false;
     }
     return true;
   }
