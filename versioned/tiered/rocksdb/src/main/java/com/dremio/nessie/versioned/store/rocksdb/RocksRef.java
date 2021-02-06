@@ -83,14 +83,14 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
             }
             break;
           case TYPE:
-            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && type.toString().equals(function.getValue().getString()))) {
+            if (!nameSegmentChildlessAndEquals(nameSegment, function)
+                || !type.toString().equals(function.getValue().getString())) {
               return false;
             }
             break;
           case NAME:
-            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && name.equals(function.getValue().getString()))) {
+            if (!nameSegmentChildlessAndEquals(nameSegment, function)
+                || !name.equals(function.getValue().getString())) {
               return false;
             }
             break;
@@ -100,8 +100,8 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
             }
             break;
           case METADATA:
-            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && metadata.toEntity().equals(function.getValue()))) {
+            if (!nameSegmentChildlessAndEquals(nameSegment, function)
+                || !metadata.toEntity().equals(function.getValue())) {
               return false;
             }
             break;
@@ -109,8 +109,8 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
             // TODO: refactor once jdbc-store Store changes are available.
             switch (function.getOperator()) {
               case SIZE:
-                if (!(!nameSegment.getChild().isPresent()
-                    && commits.size() == (int) function.getValue().getNumber())) {
+                if (nameSegment.getChild().isPresent()
+                    || commits.size() != (int) function.getValue().getNumber()) {
                   return false;
                 }
                 break;
@@ -138,7 +138,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
     for (Function function: condition.getFunctions()) {
       // Tag evaluation
       if (function.getPath().getRoot().isName()) {
-        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
@@ -147,20 +147,20 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
             }
             break;
           case TYPE:
-            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && type.toString().equals(function.getValue().getString()))) {
+            if (!nameSegmentChildlessAndEquals(nameSegment, function)
+                || !type.toString().equals(function.getValue().getString())) {
               return false;
             }
             break;
           case NAME:
-            if (!(function.isEquals()
-                && name.equals(function.getValue().getString()))) {
+            if (!function.isEquals()
+                || !name.equals(function.getValue().getString())) {
               return false;
             }
             break;
           case COMMIT:
-            if (!(function.isEquals()
-                && commit.toEntity().equals(function.getValue()))) {
+            if (!function.isEquals()
+                || !commit.toEntity().equals(function.getValue())) {
               return false;
             }
             break;

@@ -38,7 +38,7 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements E
   public boolean evaluate(Condition condition) {
     for (Function function: condition.getFunctions()) {
       if (function.getPath().getRoot().isName()) {
-        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
         final String segment = nameSegment.getName();
 
         switch (segment) {
@@ -52,8 +52,8 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements E
           case VALUE:
             // VALUE is considered a leaf attribute, ie no children. Ensure this is the case
             // in the ExpressionPath.
-            if (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && byteValue.toStringUtf8().equals(function.getValue().getString()))) {
+            if (!nameSegmentChildlessAndEquals(nameSegment, function)
+                || !byteValue.toStringUtf8().equals(function.getValue().getString())) {
               return false;
             }
             break;

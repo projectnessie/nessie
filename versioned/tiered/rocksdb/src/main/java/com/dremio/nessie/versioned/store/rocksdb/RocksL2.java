@@ -48,7 +48,7 @@ class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
     for (Function function: condition.getFunctions()) {
       // Retrieve entity at function.path
       if (function.getPath().getRoot().isName()) {
-        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:

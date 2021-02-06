@@ -38,7 +38,7 @@ class RocksValue extends RocksWrappedValue<Value> implements Evaluator, Value {
     for (Function function: condition.getFunctions()) {
       // Retrieve entity at function.path
       if (function.getPath().getRoot().isName()) {
-        ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
+        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
         final String segment = nameSegment.getName();
         switch (segment) {
           case ID:
@@ -47,8 +47,8 @@ class RocksValue extends RocksWrappedValue<Value> implements Evaluator, Value {
             }
             break;
           case VALUE:
-            if  (!(nameSegmentChildlessAndEquals(nameSegment, function)
-                && byteValue.toStringUtf8().equals(function.getValue().getString()))) {
+            if  (!nameSegmentChildlessAndEquals(nameSegment, function)
+                || !byteValue.toStringUtf8().equals(function.getValue().getString())) {
               return false;
             }
             break;

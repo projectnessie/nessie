@@ -22,9 +22,7 @@ import org.immutables.value.Value.Immutable;
 public abstract class RocksDBStoreConfig {
 
   @Default
-  public String getRefTableName() {
-    return "nessie_refs";
-  }
+  public String getRefTableName() { return "refs"; }
 
   @Default
   public String getTreeTableName() {
@@ -33,17 +31,17 @@ public abstract class RocksDBStoreConfig {
 
   @Default
   public String getValueTableName() {
-    return "nessie_objects";
+    return "values";
   }
 
   @Default
   public String getKeyListTableName() {
-    return "nessie_objects";
+    return "keys";
   }
 
   @Default
   public String getMetadataTableName() {
-    return "nessie_objects";
+    return "commit_metadata";
   }
 
   public static ImmutableRocksDBStoreConfig.Builder builder() {

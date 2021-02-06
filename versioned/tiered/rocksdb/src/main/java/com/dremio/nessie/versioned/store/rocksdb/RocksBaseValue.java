@@ -88,7 +88,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   boolean evaluateStream(Function function, Stream<Id> stream) {
     // EQUALS will either compare a specified position or the whole stream as a List.
     if (function.isEquals()) {
-      ExpressionPath.PathSegment pathSegment = function.getPath().getRoot().getChild().orElse(null);
+      final ExpressionPath.PathSegment pathSegment = function.getPath().getRoot().getChild().orElse(null);
       if (pathSegment == null) {
         return toEntity(stream).equals(function.getValue());
       } else { // compare complete list
@@ -111,15 +111,21 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    * @param function the condition function to check it is for equality
    * @return true if both nameSegment is childless and function has an equality operator
    */
-  boolean nameSegmentChildlessAndEquals(ExpressionPath.NameSegment nameSegment, Function function) {
+  static boolean nameSegmentChildlessAndEquals(ExpressionPath.NameSegment nameSegment, Function function) {
     return !nameSegment.getChild().isPresent()
         && function.isEquals();
   }
 
+  /**
+   * Evaluates the id against a function and ensures that the name segment is well formed,
+   * ie does not contain a child attribute.
+   * @param nameSegment the name of the attribute.
+   * @param function the function to evaluate against id.
+   * @return true if the id meets the function condition
+   */
   boolean idEvaluates(ExpressionPath.NameSegment nameSegment, Function function) {
     return (nameSegmentChildlessAndEquals(nameSegment, function)
       && getId().toEntity().equals(function.getValue()));
-
   }
 
   /**

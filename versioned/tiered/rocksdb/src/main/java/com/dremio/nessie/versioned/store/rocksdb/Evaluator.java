@@ -18,7 +18,7 @@ package com.dremio.nessie.versioned.store.rocksdb;
 /**
  * Provides evaluation of a {@link com.dremio.nessie.versioned.store.rocksdb.Condition} against the implementing class.
  */
-public interface Evaluator {
+interface Evaluator {
   /**
    * Checks that each Function in the Condition is met by the implementing class.
    * @param condition the condition to check
