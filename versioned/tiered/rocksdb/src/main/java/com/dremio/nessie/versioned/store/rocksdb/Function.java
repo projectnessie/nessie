@@ -49,7 +49,7 @@ abstract class Function {
       return false;
     }
 
-    Function function = (Function) object;
+    final Function function = (Function) object;
     return (getOperator().equals(function.getOperator())
         && getPath().equals(function.getPath())
         && getValue().equals(function.getValue()));
