@@ -356,6 +356,86 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
+  void deleteWithConditionValue() {
+    deleteWithCondition(ValueType.VALUE, SampleEntities.createValue(random));
+  }
+
+  @Test
+  void deleteWithConditionBranch() {
+    deleteWithCondition(ValueType.REF, SampleEntities.createBranch(random));
+  }
+
+  @Test
+  void deleteWithConditionTag() {
+    deleteWithCondition(ValueType.REF, SampleEntities.createTag(random));
+  }
+
+  @Test
+  void deleteWithConditionCommitMetadata() {
+    deleteWithCondition(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
+  }
+
+  @Test
+  void deleteWithConditionKeyFragment() {
+    deleteWithCondition(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random));
+  }
+
+  @Test
+  void deleteWithConditionL1() {
+    deleteWithCondition(ValueType.L1, SampleEntities.createL1(random));
+  }
+
+  @Test
+  void deleteWithConditionL2() {
+    deleteWithCondition(ValueType.L2, SampleEntities.createL2(random));
+  }
+
+  @Test
+  void deleteWithConditionL3() {
+    deleteWithCondition(ValueType.L3, SampleEntities.createL3(random));
+  }
+
+  @Test
+  void deleteValue() {
+    delete(ValueType.VALUE, SampleEntities.createValue(random));
+  }
+
+  @Test
+  void deleteBranch() {
+    delete(ValueType.REF, SampleEntities.createBranch(random));
+  }
+
+  @Test
+  void deleteTag() {
+    delete(ValueType.REF, SampleEntities.createTag(random));
+  }
+
+  @Test
+  void deleteCommitMetadata() {
+    delete(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
+  }
+
+  @Test
+  void deleteKeyFragment() {
+    delete(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random));
+  }
+
+  @Test
+  void deleteL1() {
+    delete(ValueType.L1, SampleEntities.createL1(random));
+  }
+
+  @Test
+  void deleteL2() {
+    delete(ValueType.L2, SampleEntities.createL2(random));
+  }
+
+  @Test
+  void deleteL3() {
+    delete(ValueType.L3, SampleEntities.createL3(random));
+  }
+
+  @Test
   void loadPagination() {
     final ImmutableMultimap.Builder<ValueType<?>, HasId> builder = ImmutableMultimap.builder();
     for (int i = 0; i < (10 + loadSize()); ++i) {
@@ -368,6 +448,26 @@ public abstract class AbstractTestStore<S extends Store> {
     objs.forEach(this::putThenLoad);
 
     testLoad(objs);
+  }
+
+  private <T extends HasId> void deleteWithCondition(ValueType type, HasId sample) {
+    final ExpressionPath keyName = ExpressionPath.builder(Store.KEY_NAME).build();
+    final ConditionExpression conditionExpression = ConditionExpression.of(ExpressionFunction.equals(keyName, sample.getId().toEntity()));
+    deleteConditional(type, sample, Optional.of(conditionExpression));
+  }
+
+  private <T extends HasId> void delete(ValueType type, HasId sample) {
+    deleteConditional(type, sample, Optional.empty());
+  }
+
+  protected <C extends BaseValue<C>> void deleteConditional(ValueType type, HasId sample,
+                                                            Optional<ConditionExpression> conditionExpression) {
+    try {
+      store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, Optional.<ConditionExpression>empty());
+      store.delete(type, sample.getId(), conditionExpression);
+    } catch (ConditionFailedException cfe) {
+      Assertions.fail(cfe);
+    }
   }
 
   private <T extends HasId> void putWithCondition(ValueType type, HasId sample) {

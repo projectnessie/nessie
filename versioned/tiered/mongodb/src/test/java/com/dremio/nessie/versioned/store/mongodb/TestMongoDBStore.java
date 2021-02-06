@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import com.dremio.nessie.versioned.impl.SampleEntities;
+import com.dremio.nessie.versioned.store.ValueType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -83,6 +85,86 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   @Test
   @Disabled
   void putWithConditionL3() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionValue() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionBranch() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionTag() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionCommitMetadata() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionKeyFragment() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionL1() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionL2() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionL3() {
+  }
+
+  @Test
+  @Disabled
+  void deleteValue() {
+  }
+
+  @Test
+  @Disabled
+  void deleteBranch() {
+  }
+
+  @Test
+  @Disabled
+  void deleteTag() {
+  }
+
+  @Test
+  @Disabled
+  void deleteCommitMetadata() {
+  }
+
+  @Test
+  @Disabled
+  void deleteKeyFragment() {
+  }
+
+  @Test
+  @Disabled
+  void deleteL1() {
+  }
+
+  @Test
+  @Disabled
+  void deleteL2() {
+  }
+
+  @Test
+  @Disabled
+  void deleteL3() {
   }
 
   /**

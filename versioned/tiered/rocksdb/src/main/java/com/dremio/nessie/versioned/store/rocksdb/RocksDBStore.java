@@ -226,11 +226,13 @@ public class RocksDBStore implements Store {
   public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
 
-    try(final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions())) {
+    try (final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions())) {
       final byte[] key = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, id.toBytes(), true);
       if (key != null) {
         if (condition.isPresent()) {
           final RocksBaseValue<C> consumer = RocksSerDe.getConsumer(type);
+          // TODO: Does the critical section need to be locked?
+          // TODO: Critical Section - evaluating the condition expression and deleting the entity.
           // Check if condition expression is valid.
           if (!(((Evaluator) consumer).evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR)))) {
             throw new ConditionFailedException("Condition failed during delete operation.");
