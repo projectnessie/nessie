@@ -25,7 +25,7 @@ import com.google.protobuf.ByteString;
  * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.CommitMetadata} providing
  * SerDe and Condition evaluation.
  */
-class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements Evaluator, CommitMetadata {
+class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements CommitMetadata {
   static CommitMetadata of(Id id, long dt, ByteString value) {
     return new RocksCommitMetadata().id(id).dt(dt).value(value);
   }

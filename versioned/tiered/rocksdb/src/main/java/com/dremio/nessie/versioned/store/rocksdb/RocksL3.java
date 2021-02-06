@@ -30,7 +30,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
  * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.L3} providing
  * SerDe and Condition evaluation.
  */
-class RocksL3 extends RocksBaseValue<L3> implements L3, Evaluator {
+class RocksL3 extends RocksBaseValue<L3> implements L3 {
   private static final String TREE = "tree";
 
   private Stream<KeyDelta> keyDelta;

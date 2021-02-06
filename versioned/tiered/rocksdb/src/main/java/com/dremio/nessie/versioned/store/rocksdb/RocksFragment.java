@@ -29,7 +29,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
  * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.Fragment} providing
  * SerDe and Condition evaluation.
  */
-class RocksFragment extends RocksBaseValue<Fragment> implements Fragment, Evaluator {
+class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
   static final String KEY_LIST = "keys";
 
   private Stream<Key> keys;

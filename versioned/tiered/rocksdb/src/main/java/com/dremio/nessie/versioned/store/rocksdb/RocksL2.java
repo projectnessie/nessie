@@ -28,7 +28,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
  * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.L2} providing
  * SerDe and Condition evaluation.
  */
-class RocksL2 extends RocksBaseValue<L2> implements L2, Evaluator {
+class RocksL2 extends RocksBaseValue<L2> implements L2 {
   private static final String CHILDREN = "children";
 
   private Stream<Id> tree; // children

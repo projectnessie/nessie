@@ -34,7 +34,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
  * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.Ref} providing
  * SerDe and Condition evaluation.
  */
-class RocksRef extends RocksBaseValue<Ref> implements Ref, Evaluator {
+class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
   static final String TYPE = "type";
   static final String NAME = "name";

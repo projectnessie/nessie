@@ -30,7 +30,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
  * A RocksDB specific implementation of {@link com.dremio.nessie.tiered.builder.L1} providing
  * SerDe and Condition evaluation.
  */
-class RocksL1 extends RocksBaseValue<L1> implements L1, Evaluator {
+class RocksL1 extends RocksBaseValue<L1> implements L1 {
 
   static final int SIZE = 43;
   static final String COMMIT_METADATA = "metadataId";
