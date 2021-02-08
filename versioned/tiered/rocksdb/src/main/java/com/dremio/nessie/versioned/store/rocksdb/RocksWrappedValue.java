@@ -35,7 +35,7 @@ class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C>
   }
 
   @Override
-  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
+  public boolean evaluateFunction(Function function) {
     throw new UnsupportedOperationException();
   }
 

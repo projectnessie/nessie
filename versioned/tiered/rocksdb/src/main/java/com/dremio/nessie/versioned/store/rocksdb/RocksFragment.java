@@ -71,16 +71,16 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
   }
 
   @Override
-  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
-    final String segment = nameSegment.getName();
+  public boolean evaluateFunction(Function function) {
+    final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:
-        if (!idEvaluates(nameSegment, function)) {
+        if (!idEvaluates(function)) {
           return false;
         }
         break;
       case KEY_LIST:
-        if (nameSegment.getChild().isPresent()) {
+        if (function.getRootPathAsNameSegment().getChild().isPresent()) {
           return false;
         }
         if (function.isEquals()) {

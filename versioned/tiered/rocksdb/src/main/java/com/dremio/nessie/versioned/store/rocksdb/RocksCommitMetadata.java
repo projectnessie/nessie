@@ -17,7 +17,6 @@
 package com.dremio.nessie.versioned.store.rocksdb;
 
 import com.dremio.nessie.tiered.builder.CommitMetadata;
-import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.protobuf.ByteString;
 
@@ -35,21 +34,21 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements C
   }
 
   @Override
-  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
-    final String segment = nameSegment.getName();
+  public boolean evaluateFunction(Function function) {
+    final String segment = function.getRootPathAsNameSegment().getName();
 
     switch (segment) {
       case ID:
         // ID is considered a leaf attribute, ie no children. Ensure this is the case
         // in the ExpressionPath.
-        if (!idEvaluates(nameSegment, function)) {
+        if (!idEvaluates(function)) {
           return false;
         }
         break;
       case VALUE:
         // VALUE is considered a leaf attribute, ie no children. Ensure this is the case
         // in the ExpressionPath.
-        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+        if (!function.isRootNameSegmentChildlessAndEquals()
             || !byteValue.toStringUtf8().equals(function.getValue().getString())) {
           return false;
         }

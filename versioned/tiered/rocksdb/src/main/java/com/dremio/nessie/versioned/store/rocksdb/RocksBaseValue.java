@@ -104,24 +104,11 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
     return false;
   }
 
-  /**
-   * A utility to aid evaluation of the Function in checking for equality on
-   * a leaf {@link com.dremio.nessie.versioned.impl.condition.ExpressionPath.NameSegment}.
-   * @param nameSegment the NameSegment that is checked to be childless
-   * @param function the condition function to check it is for equality
-   * @return true if both nameSegment is childless and function has an equality operator
-   */
-  static boolean nameSegmentChildlessAndEquals(ExpressionPath.NameSegment nameSegment, Function function) {
-    return !nameSegment.getChild().isPresent()
-        && function.isEquals();
-  }
-
   @Override
   public boolean evaluate(Condition condition) {
     for (Function function: condition.getFunctions()) {
       if (function.getPath().getRoot().isName()) {
-        final ExpressionPath.NameSegment nameSegment = function.getPath().getRoot().asName();
-        if (!evaluateSegment(nameSegment, function)) {
+        if (!evaluateFunction(function)) {
           return false;
         }
       }
@@ -129,19 +116,21 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
     return true;
   }
 
-  @Override
-  public abstract boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function);
-
+  /**
+   * Checks that a Function is met by the implementing class.
+   * @param function the condition to check
+   * @return true if the condition is met
+   */
+  public abstract boolean evaluateFunction(Function function);
 
   /**
    * Evaluates the id against a function and ensures that the name segment is well formed,
    * ie does not contain a child attribute.
-   * @param nameSegment the name of the attribute.
    * @param function the function to evaluate against id.
    * @return true if the id meets the function condition
    */
-  boolean idEvaluates(ExpressionPath.NameSegment nameSegment, Function function) {
-    return (nameSegmentChildlessAndEquals(nameSegment, function)
+  boolean idEvaluates(Function function) {
+    return (function.isRootNameSegmentChildlessAndEquals()
       && getId().toEntity().equals(function.getValue()));
   }
 

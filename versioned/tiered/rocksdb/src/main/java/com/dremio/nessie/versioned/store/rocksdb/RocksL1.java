@@ -93,16 +93,17 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
   }
 
   @Override
-  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
+  public boolean evaluateFunction(Function function) {
+    final ExpressionPath.NameSegment nameSegment = function.getRootPathAsNameSegment();
     final String segment = nameSegment.getName();
     switch (segment) {
       case ID:
-        if (!idEvaluates(nameSegment, function)) {
+        if (!idEvaluates(function)) {
           return false;
         }
         break;
       case COMMIT_METADATA:
-        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+        if (!function.isRootNameSegmentChildlessAndEquals()
             || !metadataId.toEntity().equals(function.getValue())) {
           return false;
         }
@@ -121,11 +122,12 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
         return false;
       case INCREMENTAL_KEY_LIST:
         if (nameSegment.getChild().isPresent() && function.isEquals()) {
-          if (nameSegment.getChild().get().asName().getName().equals(CHECKPOINT_ID)) {
+          final String childName = nameSegment.getChild().get().asName().getName();
+          if (childName.equals(CHECKPOINT_ID)) {
             if (!checkpointId.toEntity().equals(function.getValue())) {
               return false;
             }
-          } else if (nameSegment.getChild().get().asName().getName().equals((DISTANCE_FROM_CHECKPOINT))) {
+          } else if (childName.equals((DISTANCE_FROM_CHECKPOINT))) {
             if (!Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue())) {
               return false;
             }

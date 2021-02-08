@@ -34,16 +34,16 @@ class RocksValue extends RocksWrappedValue<Value> implements Value {
   }
 
   @Override
-  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
-    final String segment = nameSegment.getName();
+  public boolean evaluateFunction(Function function) {
+    final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:
-        if (!idEvaluates(nameSegment, function)) {
+        if (!idEvaluates(function)) {
           return false;
         }
         break;
       case VALUE:
-        if  (!nameSegmentChildlessAndEquals(nameSegment, function)
+        if  (!function.isRootNameSegmentChildlessAndEquals()
             || !byteValue.toStringUtf8().equals(function.getValue().getString())) {
           return false;
         }

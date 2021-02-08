@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -55,11 +54,11 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
   }
 
   @Override
-  public boolean evaluateSegment(ExpressionPath.NameSegment nameSegment, Function function) {
+  public boolean evaluateFunction(Function function) {
     if (type == RefType.BRANCH) {
-      return evaluateBranch(nameSegment, function);
+      return evaluateBranch(function);
     } else if (type == RefType.TAG) {
-      return evaluateTag(nameSegment, function);
+      return evaluateTag(function);
     }
     return true;
   }
@@ -70,23 +69,23 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
    * @param function the function that is tested against the nameSegment
    * @return true if this branch meets the condition
    */
-  private boolean evaluateBranch(ExpressionPath.NameSegment nameSegment, Function function) {
+  private boolean evaluateBranch(Function function) {
+    final String segment = function.getRootPathAsNameSegment().getName();
 
-    final String segment = nameSegment.getName();
     switch (segment) {
       case ID:
-        if (!idEvaluates(nameSegment, function)) {
+        if (!idEvaluates(function)) {
           return false;
         }
         break;
       case TYPE:
-        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+        if (!function.isRootNameSegmentChildlessAndEquals()
             || !type.toString().equals(function.getValue().getString())) {
           return false;
         }
         break;
       case NAME:
-        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+        if (!function.isRootNameSegmentChildlessAndEquals()
             || !name.equals(function.getValue().getString())) {
           return false;
         }
@@ -97,7 +96,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
         }
         break;
       case METADATA:
-        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+        if (!function.isRootNameSegmentChildlessAndEquals()
             || !metadata.toEntity().equals(function.getValue())) {
           return false;
         }
@@ -106,7 +105,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
         // TODO: refactor once jdbc-store Store changes are available.
         switch (function.getOperator()) {
           case SIZE:
-            if (nameSegment.getChild().isPresent()
+            if (function.getRootPathAsNameSegment().getChild().isPresent()
                 || commits.size() != (int) function.getValue().getNumber()) {
               return false;
             }
@@ -126,20 +125,19 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
   /**
    * Evaluates that this tag meets the condition.
-   * @param nameSegment the segment on which the function is evaluated
    * @param function the function that is tested against the nameSegment
    * @return true if this tag meets the condition
    */
-  private boolean evaluateTag(ExpressionPath.NameSegment nameSegment, Function function) {
-    final String segment = nameSegment.getName();
+  private boolean evaluateTag(Function function) {
+    final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:
-        if (!idEvaluates(nameSegment, function)) {
+        if (!idEvaluates(function)) {
           return false;
         }
         break;
       case TYPE:
-        if (!nameSegmentChildlessAndEquals(nameSegment, function)
+        if (!function.isRootNameSegmentChildlessAndEquals()
             || !type.toString().equals(function.getValue().getString())) {
           return false;
         }

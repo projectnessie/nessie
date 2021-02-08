@@ -66,6 +66,20 @@ abstract class Function {
 
   abstract Entity getValue();
 
+  ExpressionPath.NameSegment getRootPathAsNameSegment() {
+    return getPath().getRoot().asName();
+  }
+
+  /**
+   * A utility to aid evaluation of the Function in checking for equality on
+   * a leaf {@link com.dremio.nessie.versioned.impl.condition.ExpressionPath.NameSegment}.
+   * @return true if both root nameSegment is childless and function has an equality operator
+   */
+  boolean isRootNameSegmentChildlessAndEquals() {
+    return !getRootPathAsNameSegment().getChild().isPresent()
+      && isEquals();
+  }
+
   /**
    * Evaluates if this expression is for equality.
    * @return true if this function relates to a EQUALS evaluation.
