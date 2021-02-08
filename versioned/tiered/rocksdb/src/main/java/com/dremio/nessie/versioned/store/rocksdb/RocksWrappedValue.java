@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.rocksdb;
 
 import com.dremio.nessie.tiered.builder.BaseWrappedValue;
-import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;

@@ -16,7 +16,6 @@
 package com.dremio.nessie.versioned.store.rocksdb;
 
 import com.dremio.nessie.tiered.builder.Value;
-import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Id;
 import com.google.protobuf.ByteString;
 

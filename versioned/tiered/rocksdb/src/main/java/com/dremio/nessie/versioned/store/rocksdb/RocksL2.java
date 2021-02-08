@@ -19,7 +19,6 @@ package com.dremio.nessie.versioned.store.rocksdb;
 import java.util.stream.Stream;
 
 import com.dremio.nessie.tiered.builder.L2;
-import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.StoreException;
 import com.google.protobuf.InvalidProtocolBufferException;

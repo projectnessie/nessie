@@ -15,8 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
-import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
-
 /**
  * Provides evaluation of a {@link com.dremio.nessie.versioned.store.rocksdb.Condition} against the implementing class.
  */
