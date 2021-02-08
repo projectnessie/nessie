@@ -93,7 +93,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
         return toEntity(stream).equals(function.getValue());
       } else { // compare complete list
         if (pathSegment.isPosition()) { // compare individual element of list
-          int position = pathSegment.asPosition().getPosition();
+          final int position = pathSegment.asPosition().getPosition();
           return toEntity(stream, position).equals(function.getValue());
         }
       }

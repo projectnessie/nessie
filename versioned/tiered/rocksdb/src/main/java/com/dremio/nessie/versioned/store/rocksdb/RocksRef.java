@@ -65,7 +65,6 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
   /**
    * Evaluates that this branch meets the condition.
-   * @param nameSegment the segment on which the function is evaluated
    * @param function the function that is tested against the nameSegment
    * @return true if this branch meets the condition
    */
@@ -74,53 +73,32 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
     switch (segment) {
       case ID:
-        if (!idEvaluates(function)) {
-          return false;
-        }
-        break;
+        return idEvaluates(function);
       case TYPE:
-        if (!function.isRootNameSegmentChildlessAndEquals()
-            || !type.toString().equals(function.getValue().getString())) {
-          return false;
-        }
-        break;
+        return (function.isRootNameSegmentChildlessAndEquals()
+            && type.toString().equals(function.getValue().getString()));
       case NAME:
-        if (!function.isRootNameSegmentChildlessAndEquals()
-            || !name.equals(function.getValue().getString())) {
-          return false;
-        }
-        break;
+        return (function.isRootNameSegmentChildlessAndEquals()
+            && name.equals(function.getValue().getString()));
       case CHILDREN:
-        if (!evaluateStream(function, children)) {
-          return false;
-        }
-        break;
+        return evaluateStream(function, children);
       case METADATA:
-        if (!function.isRootNameSegmentChildlessAndEquals()
-            || !metadata.toEntity().equals(function.getValue())) {
-          return false;
-        }
-        break;
+        return (function.isRootNameSegmentChildlessAndEquals()
+            && metadata.toEntity().equals(function.getValue()));
       case COMMITS:
         // TODO: refactor once jdbc-store Store changes are available.
         switch (function.getOperator()) {
           case SIZE:
-            if (function.getRootPathAsNameSegment().getChild().isPresent()
-                || commits.size() != (int) function.getValue().getNumber()) {
-              return false;
-            }
-            break;
+            return (!function.getRootPathAsNameSegment().getChild().isPresent()
+                && commits.size() == (int) function.getValue().getNumber());
           case EQUALS:
             return false;
           default:
             return false;
         }
-        break;
       default:
         return false;
     }
-    // The object has not failed any condition.
-    return true;
   }
 
   /**
@@ -132,33 +110,19 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
     final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:
-        if (!idEvaluates(function)) {
-          return false;
-        }
-        break;
+        return idEvaluates(function);
       case TYPE:
-        if (!function.isRootNameSegmentChildlessAndEquals()
-            || !type.toString().equals(function.getValue().getString())) {
-          return false;
-        }
-        break;
+        return (function.isRootNameSegmentChildlessAndEquals()
+            && type.toString().equals(function.getValue().getString()));
       case NAME:
-        if (!function.isEquals()
-            || !name.equals(function.getValue().getString())) {
-          return false;
-        }
-        break;
+        return (function.isEquals()
+            && name.equals(function.getValue().getString()));
       case COMMIT:
-        if (!function.isEquals()
-            || !commit.toEntity().equals(function.getValue())) {
-          return false;
-        }
-        break;
+        return (function.isEquals()
+            && commit.toEntity().equals(function.getValue()));
       default:
         return false;
     }
-    // The object has not failed any condition.
-    return true;
   }
 
   @Override

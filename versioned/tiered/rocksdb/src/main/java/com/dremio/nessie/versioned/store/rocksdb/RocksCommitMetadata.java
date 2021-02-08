@@ -41,23 +41,15 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements C
       case ID:
         // ID is considered a leaf attribute, ie no children. Ensure this is the case
         // in the ExpressionPath.
-        if (!idEvaluates(function)) {
-          return false;
-        }
-        break;
+        return idEvaluates(function);
       case VALUE:
         // VALUE is considered a leaf attribute, ie no children. Ensure this is the case
         // in the ExpressionPath.
-        if (!function.isRootNameSegmentChildlessAndEquals()
-            || !byteValue.toStringUtf8().equals(function.getValue().getString())) {
-          return false;
-        }
-        break;
+        return (function.isRootNameSegmentChildlessAndEquals()
+            && byteValue.toStringUtf8().equals(function.getValue().getString()));
       default:
         // Invalid Condition Function.
         return false;
     }
-    // All functions have passed the test.
-    return true;
   }
 }

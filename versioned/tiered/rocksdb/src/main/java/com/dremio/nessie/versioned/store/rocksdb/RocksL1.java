@@ -98,58 +98,35 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
     final String segment = nameSegment.getName();
     switch (segment) {
       case ID:
-        if (!idEvaluates(function)) {
-          return false;
-        }
-        break;
+        return idEvaluates(function);
       case COMMIT_METADATA:
-        if (!function.isRootNameSegmentChildlessAndEquals()
-            || !metadataId.toEntity().equals(function.getValue())) {
-          return false;
-        }
-        break;
+        return (function.isRootNameSegmentChildlessAndEquals()
+            && metadataId.toEntity().equals(function.getValue()));
       case ANCESTORS:
-        if (!evaluateStream(function, parentList)) {
-          return false;
-        }
-        break;
+        return evaluateStream(function, parentList);
       case CHILDREN:
-        if (!evaluateStream(function, tree)) {
-          return false;
-        }
-        break;
+        return evaluateStream(function, tree);
       case KEY_LIST:
         return false;
       case INCREMENTAL_KEY_LIST:
-        if (nameSegment.getChild().isPresent() && function.isEquals()) {
-          final String childName = nameSegment.getChild().get().asName().getName();
-          if (childName.equals(CHECKPOINT_ID)) {
-            if (!checkpointId.toEntity().equals(function.getValue())) {
-              return false;
-            }
-          } else if (childName.equals((DISTANCE_FROM_CHECKPOINT))) {
-            if (!Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue())) {
-              return false;
-            }
-          } else {
-            // Invalid Condition Function.
-            return false;
-          }
+        if (!nameSegment.getChild().isPresent() || !function.isEquals()) {
+          return false;
+        }
+        final String childName = nameSegment.getChild().get().asName().getName();
+        if (childName.equals(CHECKPOINT_ID)) {
+          return checkpointId.toEntity().equals(function.getValue());
+        } else if (childName.equals((DISTANCE_FROM_CHECKPOINT))) {
+          return Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue());
         } else {
           // Invalid Condition Function.
           return false;
         }
-        break;
       case COMPLETE_KEY_LIST:
-        if (!evaluateStream(function, fragmentIds)) {
-          return false;
-        }
-        break;
+        return evaluateStream(function, fragmentIds);
       default:
         // Invalid Condition Function.
         return false;
     }
-    return true;
   }
 
   @Override

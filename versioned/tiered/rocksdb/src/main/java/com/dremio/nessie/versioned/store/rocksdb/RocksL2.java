@@ -47,20 +47,13 @@ class RocksL2 extends RocksBaseValue<L2> implements L2 {
     final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:
-        if (!idEvaluates(function)) {
-          return false;
-        }
-        break;
+        return idEvaluates(function);
       case CHILDREN:
-        if (!evaluateStream(function, tree)) {
-          return false;
-        }
-        break;
+        return evaluateStream(function, tree);
       default:
         // Invalid Condition Function.
         return false;
     }
-    return true;
   }
 
   @Override
