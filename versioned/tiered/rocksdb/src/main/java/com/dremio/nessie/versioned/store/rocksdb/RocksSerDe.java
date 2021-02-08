@@ -108,13 +108,13 @@ final class RocksSerDe {
   }
 
   /**
-   * Get the Consumer for the provided saveOp.
-   * @param saveOp the saveOp for which a consumer if required
-   * @param <C> The consumer type
-   * @return the consumer
+   * Get the Consumer for the provided ValueType.
+   * @param type the ValueType to get the consumer for.
+   * @param <C> The consumer type.
+   * @return the consumer.
    */
-  static <C extends BaseValue<C>> RocksBaseValue getConsumer(SaveOp<C> saveOp) {
-    return CONSUMERS.get(saveOp.getType()).get();
+  static <C extends BaseValue<C>> RocksBaseValue getConsumer(ValueType<C> type) {
+    return CONSUMERS.get(type).get();
   }
 
   /**

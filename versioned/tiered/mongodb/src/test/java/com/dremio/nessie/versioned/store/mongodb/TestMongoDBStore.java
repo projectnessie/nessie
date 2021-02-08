@@ -85,6 +85,86 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
   void putWithConditionL3() {
   }
 
+  @Test
+  @Disabled
+  void deleteWithConditionValue() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionBranch() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionTag() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionCommitMetadata() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionKeyFragment() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionL1() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionL2() {
+  }
+
+  @Test
+  @Disabled
+  void deleteWithConditionL3() {
+  }
+
+  @Test
+  @Disabled
+  void deleteValue() {
+  }
+
+  @Test
+  @Disabled
+  void deleteBranch() {
+  }
+
+  @Test
+  @Disabled
+  void deleteTag() {
+  }
+
+  @Test
+  @Disabled
+  void deleteCommitMetadata() {
+  }
+
+  @Test
+  @Disabled
+  void deleteKeyFragment() {
+  }
+
+  @Test
+  @Disabled
+  void deleteL1() {
+  }
+
+  @Test
+  @Disabled
+  void deleteL2() {
+  }
+
+  @Test
+  @Disabled
+  void deleteL3() {
+  }
+
   /**
    * Creates an instance of MongoDBStore on which tests are executed.
    * @return the store to test.
