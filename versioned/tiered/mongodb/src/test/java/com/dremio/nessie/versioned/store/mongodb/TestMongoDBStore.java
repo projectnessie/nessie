@@ -15,8 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import com.dremio.nessie.versioned.impl.SampleEntities;
-import com.dremio.nessie.versioned.store.ValueType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
