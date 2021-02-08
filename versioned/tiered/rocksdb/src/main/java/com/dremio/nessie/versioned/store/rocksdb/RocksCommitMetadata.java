@@ -46,7 +46,7 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements C
         // VALUE is considered a leaf attribute, ie no children. Ensure this is the case
         // in the ExpressionPath.
         return (function.isRootNameSegmentChildlessAndEquals()
-            && byteValue.toStringUtf8().equals(function.getValue().getString()));
+            && byteValue.equals(function.getValue().getBinary()));
       default:
         // Invalid Condition Function.
         return false;

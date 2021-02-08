@@ -369,12 +369,12 @@ class TestConditionExecutor {
 
   @Test
   void executorCommitMetadataValue() {
-    final ByteString value = ByteString.copyFromUtf8("test-value");
+    final ByteString value = ByteString.copyFrom(createBinary(random, 6));
     final Condition condition = ImmutableCondition.builder()
         .addFunctions(ImmutableFunction.builder()
         .operator(Function.EQUALS)
         .path(ofPath(RocksCommitMetadata.VALUE))
-        .value(Entity.ofString(value.toStringUtf8()))
+        .value(Entity.ofBinary(value))
         .build())
         .build();
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(Id.EMPTY, 0L, value);
@@ -398,13 +398,13 @@ class TestConditionExecutor {
 
   @Test
   void executorCommitMetadataValueNoMatch() {
-    final ByteString searchValue = ByteString.copyFromUtf8("search-value");
-    final ByteString actualValue = ByteString.copyFromUtf8("actual-value");
+    final ByteString searchValue = ByteString.copyFrom(createBinary(random, 6));
+    final ByteString actualValue = ByteString.copyFrom(createBinary(random, 6));
     final Condition condition = ImmutableCondition.builder()
         .addFunctions(ImmutableFunction.builder()
         .operator(Function.EQUALS)
         .path(ofPath(RocksCommitMetadata.VALUE))
-        .value(Entity.ofString(searchValue.toStringUtf8()))
+        .value(Entity.ofBinary(searchValue))
         .build())
         .build();
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(Id.EMPTY, 0L, actualValue);

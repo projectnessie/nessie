@@ -47,12 +47,7 @@ class RocksL3 extends RocksBaseValue<L3> implements L3 {
   @Override
   public boolean evaluateFunction(Function function) {
     final String segment = function.getRootPathAsNameSegment().getName();
-    if (segment.equals(ID)) {
-      return idEvaluates(function);
-    } else {
-      // Invalid Condition Function.
-      return false;
-    }
+    return segment.equals(ID) ? idEvaluates(function) : false;
   }
 
   @Override

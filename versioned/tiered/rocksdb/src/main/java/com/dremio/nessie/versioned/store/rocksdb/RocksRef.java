@@ -60,7 +60,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
     } else if (type == RefType.TAG) {
       return evaluateTag(function);
     }
-    return true;
+    return false;
   }
 
   /**
