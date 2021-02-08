@@ -15,8 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.jdbc;
 
-import com.dremio.nessie.versioned.store.SaveOp;
-import com.dremio.nessie.versioned.store.ValueType;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +26,9 @@ import com.dremio.nessie.versioned.store.ConditionFailedException;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.NotFoundException;
+import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.Store;
+import com.dremio.nessie.versioned.store.ValueType;
 import com.dremio.nessie.versioned.store.jdbc.JdbcEntity.SQLChange;
 import com.dremio.nessie.versioned.store.jdbc.JdbcEntity.SQLDelete;
 import com.google.common.collect.ImmutableMap;
@@ -89,25 +90,24 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    */
   enum ExecuteUpdateStrategy {
     /**
-     * An operation like {@link com.dremio.nessie.versioned.store.Store#putIfAbsent(SaveOp)},
+     * An operation like {@link Store#putIfAbsent(SaveOp)},
      * it tries an SQL INSERT, but does not fail, if the ID already exists.
      */
     INSERT(false, true, false),
     /**
-     * An operation like {@link com.dremio.nessie.versioned.store.Store#save(List)} or
-     * {@link com.dremio.nessie.versioned.store.Store#put(SaveOp, Optional)} without a condition,
-     * it tries an SQL DELETE followed by an SQL INSERT, aka a "classic UPSERT", the DELETE does
-     * not need to succeed.
+     * An operation like {@link Store#save(List)} or {@link Store#put(SaveOp, Optional)} without
+     * a condition, it tries an SQL DELETE followed by an SQL INSERT, aka a "classic UPSERT",
+     * the DELETE does not need to succeed.
      */
     UPSERT(true, true, false),
     /**
-     * An operation like {@link com.dremio.nessie.versioned.store.Store#put(SaveOp, Optional)}
+     * An operation like {@link Store#put(SaveOp, Optional)}
      * with a condition, it tries an SQL DELETE followed by an SQL INSERT, where both DMLs must
      * succeed, the condition passed to {@code Store.put()} asserts on properties.
      */
     UPSERT_MUST_DELETE(true, true, true),
     /**
-     * An operation like {@link com.dremio.nessie.versioned.store.Store#delete(ValueType, Id, Optional)}.
+     * An operation like {@link Store#delete(ValueType, Id, Optional)}.
      */
     DELETE(true, false, true);
 
@@ -122,26 +122,24 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
     }
 
     /**
-     * {@code true} for {@link com.dremio.nessie.versioned.store.Store#delete(ValueType, Id, Optional)},
-     * {@code true} for {@link com.dremio.nessie.versioned.store.Store#put(SaveOp, Optional)} and
-     * {@link com.dremio.nessie.versioned.store.Store#save(List)}.
+     * {@code true} for {@link Store#delete(ValueType, Id, Optional)},
+     * {@code true} for {@link Store#put(SaveOp, Optional)} and {@link Store#save(List)}.
      */
     boolean isDelete() {
       return delete;
     }
 
     /**
-     * {@code true} for {@link com.dremio.nessie.versioned.store.Store#put(SaveOp, Optional)}
-     * and {@link com.dremio.nessie.versioned.store.Store#putIfAbsent(SaveOp)} and
-     * {@link com.dremio.nessie.versioned.store.Store#save(List)}.
+     * {@code true} for {@link Store#put(SaveOp, Optional)} and {@link Store#putIfAbsent(SaveOp)}
+     * and {@link Store#save(List)}.
      */
     boolean isChange() {
       return change;
     }
 
     /**
-     * {@code true} for {@link com.dremio.nessie.versioned.store.Store#put(SaveOp, Optional)}
-     * with a condition and {@link com.dremio.nessie.versioned.store.Store#delete(ValueType, Id, Optional)}.
+     * {@code true} for {@link Store#put(SaveOp, Optional)}
+     * with a condition and {@link Store#delete(ValueType, Id, Optional)}.
      */
     boolean isDeleteMustSucceed() {
       return deleteMustSucceed;
