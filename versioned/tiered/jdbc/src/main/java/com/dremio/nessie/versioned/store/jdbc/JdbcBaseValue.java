@@ -15,7 +15,10 @@
  */
 package com.dremio.nessie.versioned.store.jdbc;
 
+import com.dremio.nessie.versioned.store.SaveOp;
+import com.dremio.nessie.versioned.store.ValueType;
 import java.sql.ResultSet;
+import java.util.List;
 import java.util.Optional;
 
 import com.dremio.nessie.tiered.builder.BaseValue;
@@ -85,9 +88,27 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
    * Used in {@link #executeUpdates(ExecuteUpdateStrategy, Conditions, Id)} to specify its exact behavior.
    */
   enum ExecuteUpdateStrategy {
+    /**
+     * An operation like {@link com.dremio.nessie.versioned.store.Store#putIfAbsent(SaveOp)},
+     * it tries an SQL INSERT, but does not fail, if the ID already exists.
+     */
     INSERT(false, true, false),
+    /**
+     * An operation like {@link com.dremio.nessie.versioned.store.Store#save(List)} or
+     * {@link com.dremio.nessie.versioned.store.Store#put(SaveOp, Optional)} without a condition,
+     * it tries an SQL DELETE followed by an SQL INSERT, aka a "classic UPSERT", the DELETE does
+     * not need to succeed.
+     */
     UPSERT(true, true, false),
+    /**
+     * An operation like {@link com.dremio.nessie.versioned.store.Store#put(SaveOp, Optional)}
+     * with a condition, it tries an SQL DELETE followed by an SQL INSERT, where both DMLs must
+     * succeed, the condition passed to {@code Store.put()} asserts on properties.
+     */
     UPSERT_MUST_DELETE(true, true, true),
+    /**
+     * An operation like {@link com.dremio.nessie.versioned.store.Store#delete(ValueType, Id, Optional)}.
+     */
     DELETE(true, false, true);
 
     private final boolean delete;
@@ -100,14 +121,28 @@ abstract class JdbcBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
       this.deleteMustSucceed = deleteMustSucceed;
     }
 
+    /**
+     * {@code true} for {@link com.dremio.nessie.versioned.store.Store#delete(ValueType, Id, Optional)},
+     * {@code true} for {@link com.dremio.nessie.versioned.store.Store#put(SaveOp, Optional)} and
+     * {@link com.dremio.nessie.versioned.store.Store#save(List)}.
+     */
     boolean isDelete() {
       return delete;
     }
 
+    /**
+     * {@code true} for {@link com.dremio.nessie.versioned.store.Store#put(SaveOp, Optional)}
+     * and {@link com.dremio.nessie.versioned.store.Store#putIfAbsent(SaveOp)} and
+     * {@link com.dremio.nessie.versioned.store.Store#save(List)}.
+     */
     boolean isChange() {
       return change;
     }
 
+    /**
+     * {@code true} for {@link com.dremio.nessie.versioned.store.Store#put(SaveOp, Optional)}
+     * with a condition and {@link com.dremio.nessie.versioned.store.Store#delete(ValueType, Id, Optional)}.
+     */
     boolean isDeleteMustSucceed() {
       return deleteMustSucceed;
     }
