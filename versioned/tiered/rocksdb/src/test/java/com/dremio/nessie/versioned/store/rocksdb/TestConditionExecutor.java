@@ -62,12 +62,12 @@ class TestConditionExecutor {
   void executorL1Empty() {
     final String path = createPath();
     final Condition condition = ImmutableCondition.builder()
-      .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(TRUE_ENTITY)
-        .build())
-      .build();
+        .addFunctions(ImmutableFunction.builder()
+          .operator(Function.EQUALS)
+          .path(ofPath(path))
+          .value(TRUE_ENTITY)
+          .build())
+        .build();
     final RocksL1 l1 = createL1(random);
     Assertions.assertFalse(l1.evaluate(condition));
   }
@@ -201,12 +201,12 @@ class TestConditionExecutor {
       idsAsEntity.add(ID.toEntity());
     }
     final Condition condition = ImmutableCondition.builder()
-      .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(RocksL1.COMPLETE_KEY_LIST))
-        .value(Entity.ofList(idsAsEntity))
-        .build())
-      .build();
+        .addFunctions(ImmutableFunction.builder()
+          .operator(Function.EQUALS)
+          .path(ofPath(RocksL1.COMPLETE_KEY_LIST))
+          .value(Entity.ofList(idsAsEntity))
+          .build())
+        .build();
     final RocksL1 l1 = createL1CompleteKeyList(random);
     assertTrue(l1.evaluate(condition));
   }
@@ -393,41 +393,17 @@ class TestConditionExecutor {
 
   @Test
   void executorTagType() {
-    final Condition condition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-          .operator(Function.EQUALS)
-          .path(ofPath(RocksRef.TYPE))
-          .value(Entity.ofString(Ref.RefType.TAG.toString()))
-          .build())
-        .build();
-    final RocksRef ref = createTag(random);
-    assertTrue(ref.evaluate(condition));
+    equalsTag(RocksRef.TYPE, Entity.ofString(Ref.RefType.TAG.toString()));
   }
 
   @Test
   void executorTagName() {
-    final Condition condition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-          .operator(Function.EQUALS)
-          .path(ofPath(RocksRef.NAME))
-          .value(Entity.ofString(sampleName))
-          .build())
-        .build();
-    final RocksRef ref = createTag(random);
-    assertTrue(ref.evaluate(condition));
+    equalsTag(RocksRef.NAME, Entity.ofString(sampleName));
   }
 
   @Test
   void executorTagCommit() {
-    final Condition condition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-          .operator(Function.EQUALS)
-          .path(ofPath(RocksRef.COMMIT))
-          .value(ID_2.toEntity())
-          .build())
-        .build();
-    final RocksRef ref = createTag(random);
-    assertTrue(ref.evaluate(condition));
+    equalsTag(RocksRef.COMMIT, ID_2.toEntity());
   }
 
   // Children do not exist for Tags
@@ -446,41 +422,17 @@ class TestConditionExecutor {
 
   @Test
   void executorBranchID() {
-    final Condition condition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-          .operator(Function.EQUALS)
-          .path(ofPath(RocksRef.ID))
-          .value(Id.EMPTY.toEntity())
-          .build())
-        .build();
-    final RocksRef ref = createBranch(random);
-    assertTrue(ref.evaluate(condition));
+    equalsBranch(RocksRef.ID, Id.EMPTY.toEntity());
   }
 
   @Test
   void executorBranchType() {
-    final Condition condition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-          .operator(Function.EQUALS)
-          .path(ofPath(RocksRef.TYPE))
-          .value(Entity.ofString(Ref.RefType.BRANCH.toString()))
-          .build())
-        .build();
-    final RocksRef ref = createBranch(random);
-    assertTrue(ref.evaluate(condition));
+    equalsBranch(RocksRef.TYPE, Entity.ofString(Ref.RefType.BRANCH.toString()));
   }
 
   @Test
   void executorBranchName() {
-    final Condition condition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-          .operator(Function.EQUALS)
-          .path(ofPath(RocksRef.NAME))
-          .value(Entity.ofString(sampleName))
-          .build())
-        .build();
-    final RocksRef ref = createBranch(random);
-    assertTrue(ref.evaluate(condition));
+    equalsBranch(RocksRef.NAME, Entity.ofString(sampleName));
   }
 
   @Test
@@ -502,15 +454,7 @@ class TestConditionExecutor {
     for (int i = 0; i < RocksL1.SIZE; i++) {
       idsAsEntity.add(ID.toEntity());
     }
-    final Condition condition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-          .operator(Function.EQUALS)
-          .path(ofPath(RocksRef.CHILDREN))
-          .value(Entity.ofList(idsAsEntity))
-          .build())
-        .build();
-    final RocksRef ref = createBranch(random);
-    assertTrue(ref.evaluate(condition));
+    equalsBranch(RocksRef.CHILDREN, Entity.ofList(idsAsEntity));
   }
 
   @Test
@@ -528,15 +472,7 @@ class TestConditionExecutor {
 
   @Test
   void executorBranchMetadata() {
-    final Condition condition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-          .operator(Function.EQUALS)
-          .path(ofPath(RocksRef.METADATA))
-          .value(ID.toEntity())
-          .build())
-        .build();
-    final RocksRef ref = createBranch(random);
-    assertTrue(ref.evaluate(condition));
+    equalsBranch(RocksRef.METADATA, ID.toEntity());
   }
 
   @Test
@@ -554,15 +490,7 @@ class TestConditionExecutor {
 
   @Test
   void executorFragmentID() {
-    final Condition condition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-          .operator(Function.EQUALS)
-          .path(ofPath(RocksFragment.ID))
-          .value(Id.EMPTY.toEntity())
-          .build())
-        .build();
-    final RocksFragment fragment = createFragment(random);
-    assertTrue(fragment.evaluate(condition));
+    equalsFragment(RocksFragment.ID, Id.EMPTY.toEntity());
   }
 
   @Test
@@ -572,15 +500,7 @@ class TestConditionExecutor {
       final Entity key1 = Entity.ofList(Entity.ofString(sampleKey1), Entity.ofString(sampleKey2), Entity.ofString(String.valueOf(i)));
       keysList.add(key1);
     }
-    final Condition condition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-          .operator(Function.EQUALS)
-          .path(ofPath(RocksFragment.KEY_LIST))
-          .value(Entity.ofList(keysList))
-          .build())
-        .build();
-    final RocksFragment fragment = createFragment(random);
-    assertTrue(fragment.evaluate(condition));
+    equalsFragment(RocksFragment.KEY_LIST, Entity.ofList(keysList));
   }
 
   @Test
@@ -606,27 +526,34 @@ class TestConditionExecutor {
   }
 
   private static void equalsL1(String path, Entity entity) {
-    final Condition condition = ImmutableCondition.builder()
-      .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(entity)
-        .build())
-      .build();
-    final RocksL1 l1 = createL1(random);
-    assertTrue(l1.evaluate(condition));
+    equalsRocksBaseValue(path, entity, createL1(random));
   }
 
   private static void equalsL2(String path, Entity entity) {
+    equalsRocksBaseValue(path, entity, createL2());
+  }
+
+  private static void equalsFragment(String path, Entity entity) {
+    equalsRocksBaseValue(path, entity, createFragment(random));
+  }
+
+  private static void equalsTag(String path, Entity entity) {
+    equalsRocksBaseValue(path, entity, createTag(random));
+  }
+
+  private static void equalsBranch(String path, Entity entity) {
+    equalsRocksBaseValue(path, entity, createBranch(random));
+  }
+
+  private static <C extends RocksBaseValue<C>> void equalsRocksBaseValue(String path, Entity entity, RocksBaseValue rocksBaseValue) {
     final Condition condition = ImmutableCondition.builder()
-      .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(entity)
-        .build())
-      .build();
-    final RocksL2 l2 = createL2();
-    assertTrue(l2.evaluate(condition));
+        .addFunctions(ImmutableFunction.builder()
+          .operator(Function.EQUALS)
+          .path(ofPath(path))
+          .value(entity)
+          .build())
+        .build();
+    assertTrue(rocksBaseValue.evaluate(condition));
   }
 
   /**
