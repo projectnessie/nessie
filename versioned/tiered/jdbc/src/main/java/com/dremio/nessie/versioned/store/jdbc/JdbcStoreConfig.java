@@ -50,16 +50,6 @@ public abstract class JdbcStoreConfig {
   }
 
   /**
-   * Dump the DDL needed to create the Nessie database tables. Defaults to {@code true}.
-   * Note that all DDL statements will be logged at {@code INFO} level.
-   * @return whether to dump the DDL statement.
-   */
-  @Default
-  public boolean logCreateDDL() {
-    return true;
-  }
-
-  /**
    * The database catalog to use. Defaults to {@code null}.
    * @return Database catalog
    */

@@ -56,7 +56,8 @@ abstract class DynamoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   }
 
   /**
-   * Adds an {@link AttributeValue} that consists of a list of {@link Id}s.
+   * Same as {@link #addIdList(String, Stream)}, but asserts that the number of IDs in the
+   * provided {@link Stream} is 43, which is the number of IDs in an {@link com.dremio.nessie.tiered.builder.L1}.
    */
   C addIdList43(String key, Stream<Id> ids) {
     AttributeValue list = idsList(ids);

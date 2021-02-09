@@ -71,7 +71,8 @@ Links:
 * [Oracle Container Registry](https://container-registry.oracle.com/)
 * [Oracle Docker images github repo](https://github.com/oracle/docker-images) (not checked)
 
-Integration tests against Oracle are exercised if the `commercialOracle` Maven profile is activated.
+Oracle database adapter is only built if the `commercialOracle` Maven profile is activated.
+Integration tests against Oracle are exercised if the `commercialOracleIT` Maven profile is activated.
 
 # Example intergration-tests invocation
 
@@ -81,7 +82,7 @@ Integration tests against Oracle are exercised if the `commercialOracle` Maven p
 
 # Oracle
 ./mvnw integration-test -pl :nessie-versioned-tiered-jdbc-oracle \
-   -P commercialOracle \
+   -P commercialOracle -P commercialOracleIT \
    -Dit.nessie.store.jdbc.container-image=oracle-testnessie \
    -Dit.nessie.store.jdbc.oracle-password=oracle \
    -Dit.nessie.store.jdbc.oracle-sid=XE \

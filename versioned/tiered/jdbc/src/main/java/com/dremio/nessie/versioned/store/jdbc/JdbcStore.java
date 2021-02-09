@@ -71,6 +71,7 @@ import com.google.common.primitives.Ints;
 
 public class JdbcStore implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(JdbcStore.class);
+  public static final String CREATE_DDL_LOGGER_NAME = "com.dremio.nessie.versioned.store.jdbc.create-ddl";
 
   private final JdbcStoreConfig config;
   private final DataSource dataSource;
@@ -110,15 +111,15 @@ public class JdbcStore implements Store {
     LOGGER.info("Starting JDBC store using databaseAdapter {} against data source '{}'",
         databaseAdapter.name(), dataSource);
 
-    if (config.logCreateDDL()) {
-      LOGGER.info("Config option 'logCreateDDL' is set to 'true', DDL statements to create the "
-          + "Nessie database objects for databaseAdapter {} are:\n{}",
-          databaseAdapter.name(),
-          Stream.concat(
-              databaseAdapter.additionalDDL().stream(),
-              entityDefinitions.entrySet().stream().map(e -> e.getValue().createTableDDL(e.getKey().getTableName(config.getTablePrefix())))
-          ).collect(Collectors.joining("\n\n")));
-    }
+    LoggerFactory.getLogger(CREATE_DDL_LOGGER_NAME)
+        .debug("DDL statements to create the Nessie database objects for databaseAdapter {} are:\n{}",
+            databaseAdapter.name(),
+            Stream.concat(
+                databaseAdapter.additionalDDL().stream(),
+                entityDefinitions.entrySet().stream()
+                    .map(e -> e.getValue().createTableDDL(e.getKey().getTableName(config.getTablePrefix())))
+            ).collect(Collectors.joining("\n\n")));
+
     if (config.setupTables()) {
       LOGGER.info("Setting up tables using catalog {} and schema {}",
           catalog != null ? catalog : "<none>",

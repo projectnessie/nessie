@@ -70,12 +70,6 @@ public class VersionStoreFactory {
   private final ApplicationConfig config;
 
   @Inject
-  Instance<DataSource> dataSource;
-
-  @Inject
-  DatabaseAdapter databaseAdapter;
-
-  @Inject
   public VersionStoreFactory(ApplicationConfig config) {
     this.config = config;
   }
@@ -84,7 +78,6 @@ public class VersionStoreFactory {
   String region;
   @ConfigProperty(name = "quarkus.dynamodb.endpoint-override")
   Optional<String> endpoint;
-
 
   @Produces
   public StoreWorker<Contents, CommitMeta> worker() {
@@ -97,9 +90,14 @@ public class VersionStoreFactory {
   @Produces
   @Singleton
   public VersionStore<Contents, CommitMeta> configuration(
-      TableCommitMetaStoreWorker storeWorker, Repository repository, ServerConfig config) {
+      TableCommitMetaStoreWorker storeWorker, ServerConfig config,
+      // JGit specific
+      Repository repository,
+      // JDBC specific
+      Instance<DataSource> dataSource, DatabaseAdapter databaseAdapter) {
     try {
-      VersionStore<Contents, CommitMeta> store = getVersionStore(storeWorker, repository);
+      VersionStore<Contents, CommitMeta> store = getVersionStore(storeWorker, repository,
+          dataSource, databaseAdapter);
       try (Stream<WithHash<NamedRef>> str = store.getNamedRefs()) {
         if (!str.findFirst().isPresent()) {
           // if this is a new database, create a branch with the default branch name.
@@ -119,14 +117,18 @@ public class VersionStoreFactory {
     }
   }
 
-  private VersionStore<Contents, CommitMeta> getVersionStore(TableCommitMetaStoreWorker storeWorker, Repository repository) {
+  private VersionStore<Contents, CommitMeta> getVersionStore(TableCommitMetaStoreWorker storeWorker,
+      // JGit specific
+      Repository repository,
+      // JDBC specific
+      Instance<DataSource> dataSource, DatabaseAdapter databaseAdapter) {
     switch (config.getVersionStoreConfig().getVersionStoreType()) {
       case DYNAMO:
         LOGGER.info("Using Dyanmo Version store");
         return new TieredVersionStore<>(storeWorker, createDynamoConnection(), false);
       case JDBC:
         LOGGER.info("Using JDBC Version store");
-        return new TieredVersionStore<>(storeWorker, createJdbcStore(), false);
+        return new TieredVersionStore<>(storeWorker, createJdbcStore(dataSource, databaseAdapter), false);
       case JGIT:
         LOGGER.info("Using JGit Version Store");
         return new JGitVersionStore<>(repository, storeWorker);
@@ -170,7 +172,7 @@ public class VersionStoreFactory {
   /**
    * Create a JDBC store.
    */
-  private JdbcStore createJdbcStore() {
+  private JdbcStore createJdbcStore(Instance<DataSource> dataSource, DatabaseAdapter databaseAdapter) {
     if (!config.getVersionStoreConfig().getVersionStoreType().equals(VersionStoreType.JDBC)) {
       return null;
     }
@@ -181,7 +183,6 @@ public class VersionStoreFactory {
           .setupTables(in.isInitializeTables())
           .ensureInitialValuesPresent(in.isInitializeTables())
           .tablePrefix(in.getTablePrefix())
-          .logCreateDDL(in.isLogCreateDDL())
           .catalog(in.getCatalog().orElse(null))
           .schema(in.getSchema().orElse(null))
           .build(),

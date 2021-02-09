@@ -36,20 +36,19 @@ quarkus.dynamodb.aws.credentials.type=DEFAULT
 nessie.version.store.jdbc.catalog=
 # Schema used to query the database metadata for missing tables.
 nessie.version.store.jdbc.schema=
-# Whether to create missing tables automatically
-nessie.version.store.jdbc.setupTables=false
-# Whether to create missing initial & mandatory objects.
+# Whether to create missing tables and create missing initial & mandatory objects automatically
 nessie.version.store.jdbc.initialize=false
-# Log the DDL statements to create the tables for Nessie. This just logs the statements
-# independent of the current state of the database objects.
-nessie.version.store.jdbc.logCreateDDL=false
 # The prefix for the Nessie tables.
 nessie.version.store.jdbc.table-prefix=nessie_
-#quarkus.datasource.jdbc.initial-size=5
-# The type of database being used. Options are: H2, COCKROACH, POSTGRESQL
+# The type of database being used. Options are: H2, Cockroach, PostgresQL (the value is case independent).
+# To use a "special" database-adapter like Oracle, you have to build a custom native-image, that
+# pulls in the Maven artifact containing that database-adapter implementation, with the implementation
+# class annotated with `@Alternative`.
+nessie.version.store.jdbc.database-adapter=PostgresQL
 ## Example for PostgresQL + CockroachDB (hint: PostgresQL default port is 5432, CockroachDB's is 26257)
-quarkus.datasource.db-kind=postgresql
-quarkus.datasource.jdbc.url=jdbc:postgresql://localhost/nessie
+#quarkus.datasource.db-kind=postgresql
+#quarkus.datasource.jdbc.url=jdbc:postgresql://localhost/nessie
+#quarkus.datasource.jdbc.initial-size=5
 ```
 
 ## General Server Settings

@@ -40,8 +40,7 @@ public abstract class JdbcFixture extends AbstractTieredStoreFixture<JdbcStore, 
 
   private static JdbcStoreConfig makeConfig(boolean setupTables) {
     Builder builder = JdbcStoreConfig.builder()
-        .setupTables(setupTables)
-        .logCreateDDL(false);
+        .setupTables(setupTables);
 
     if (System.getProperty("it.nessie.store.jdbc.table_prefix") != null) {
       builder.tablePrefix(System.getProperty("it.nessie.store.jdbc.table_prefix"));

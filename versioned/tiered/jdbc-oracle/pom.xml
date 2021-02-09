@@ -29,6 +29,10 @@
 
   <name>Nessie - Versioned - JDBC - Oracle Add-On</name>
 
+  <properties>
+    <oraclejdbc.version>21.1.0.0</oraclejdbc.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
@@ -44,6 +48,7 @@
       <groupId>com.oracle.database.jdbc</groupId>
       <artifactId>ojdbc8</artifactId>
       <version>${oraclejdbc.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency><!-- This is the connection-pool used by Quarkus -->
       <groupId>io.agroal</groupId>
@@ -96,7 +101,7 @@
 
       You must provide extra system properties for integration testing against Oracle RDBMS!
       -->
-      <id>commercialOracle</id>
+      <id>commercialOracleIT</id>
       <build>
         <plugins>
           <plugin>

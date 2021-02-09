@@ -107,6 +107,10 @@ abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
     bsonWriter.writeInt64(property, value);
   }
 
+  /**
+   * Same as {@link #serializeIds(String, Stream)}, but asserts that the number of IDs in the
+   * provided {@link Stream} is 43, which is the number of IDs in an {@link com.dremio.nessie.tiered.builder.L1}.
+   */
   void serializeIds43(String property, Stream<Id> ids) {
     addProperty(property);
     bsonWriter.writeStartArray(property);

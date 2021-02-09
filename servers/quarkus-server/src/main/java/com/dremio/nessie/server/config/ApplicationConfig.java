@@ -128,7 +128,7 @@ public class ApplicationConfig {
     @ConfigProperty(name = "initialize", defaultValue = "false")
     boolean isDynamoInitialize();
 
-    @ConfigProperty(defaultValue = DynamoStoreConfig.TABLE_PREFIX)
+    @ConfigProperty(name = "table-prefix", defaultValue = DynamoStoreConfig.TABLE_PREFIX)
     String getTablePrefix();
 
   }
@@ -142,10 +142,7 @@ public class ApplicationConfig {
     @ConfigProperty(name = "initialize", defaultValue = "false")
     boolean isInitializeTables();
 
-    @ConfigProperty(name = "logCreateDDL", defaultValue = "false")
-    boolean isLogCreateDDL();
-
-    @ConfigProperty(defaultValue = JdbcStoreConfig.TABLE_PREFIX)
+    @ConfigProperty(name = "table-prefix", defaultValue = JdbcStoreConfig.TABLE_PREFIX)
     String getTablePrefix();
 
     @ConfigProperty
@@ -154,7 +151,7 @@ public class ApplicationConfig {
     @ConfigProperty
     Optional<String> getSchema();
 
-    @ConfigProperty(name = "databaseAdapter")
+    @ConfigProperty(name = "database-adapter")
     String getDatabaseAdapter();
 
   }

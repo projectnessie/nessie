@@ -136,7 +136,6 @@
     <jmeter.version>5.4.1</jmeter.version>
     <junit.version>5.7.0</junit.version>
     <logback.version>1.2.3</logback.version>
-    <oraclejdbc.version>21.1.0.0</oraclejdbc.version>
     <protobuf.version>3.14.0</protobuf.version>
     <mockito.version>3.7.7</mockito.version>
     <mongodb.version>4.1.1</mongodb.version>

@@ -24,6 +24,7 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -642,14 +643,14 @@ public abstract class DatabaseAdapter {
    * @return created database-adapter
    */
   public static DatabaseAdapter create(String name) {
-    switch (name) {
+    switch (name.toUpperCase(Locale.ROOT)) {
       case "H2":
         return new H2();
       case "HSQL":
         return new HSQL();
-      case "Cockroach":
+      case "COCKROACH":
         return new Cockroach();
-      case "PostgresQL":
+      case "POSTGRESQL":
         return new PostgresQL();
       default:
         throw new IllegalArgumentException("Unknown DatabaseAdapter " + name);
