@@ -292,7 +292,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
     assertAll(entities.stream().map(s -> () -> {
       try {
-        HasId saveOpValue = s.entity;
+        final HasId saveOpValue = s.entity;
         HasId loadedValue = EntityType.forType(s.type).loadSingle(store, saveOpValue.getId());
         assertEquals(saveOpValue, loadedValue, "type " + s.type);
         assertEquals(saveOpValue.getId(), loadedValue.getId(), "ID type " + s.type);
@@ -513,7 +513,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected LoadStep createTestLoadStep(Multimap<ValueType<?>, HasId> objs, Optional<LoadStep> next) {
-    EntityLoadOps loadOps = new EntityLoadOps();
+    final EntityLoadOps loadOps = new EntityLoadOps();
     objs.forEach((type, val) -> loadOps.load(((EntityType) EntityType.forType(type)), val.getId(), r -> {
       assertEquals(val, r);
       assertEquals(val.getId(), r.getId());

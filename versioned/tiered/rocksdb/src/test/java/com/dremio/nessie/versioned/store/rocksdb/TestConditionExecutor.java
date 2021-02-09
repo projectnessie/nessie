@@ -68,7 +68,7 @@ class TestConditionExecutor {
         .value(TRUE_ENTITY)
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     Assertions.assertFalse(l1.evaluate(condition));
   }
 
@@ -81,7 +81,7 @@ class TestConditionExecutor {
         .value(Id.EMPTY.toEntity())
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -94,13 +94,13 @@ class TestConditionExecutor {
         .value(ID.toEntity())
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
 
   @Test
   void executorL1IncrementalKeyListCheckpointId() {
-    ExpressionPath expressionPath = ExpressionPath.builder(RocksL1.INCREMENTAL_KEY_LIST).name(RocksL1.CHECKPOINT_ID).build();
+    final ExpressionPath expressionPath = ExpressionPath.builder(RocksL1.INCREMENTAL_KEY_LIST).name(RocksL1.CHECKPOINT_ID).build();
     final Condition condition = ImmutableCondition.builder()
         .addFunctions(ImmutableFunction.builder()
         .operator(Function.EQUALS)
@@ -108,13 +108,13 @@ class TestConditionExecutor {
         .value(ID.toEntity())
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
 
   @Test
   void executorL1IncrementalKeyListDistanceFromCheckpoint() {
-    ExpressionPath expressionPath = ExpressionPath.builder(RocksL1.INCREMENTAL_KEY_LIST).name(RocksL1.DISTANCE_FROM_CHECKPOINT).build();
+    final ExpressionPath expressionPath = ExpressionPath.builder(RocksL1.INCREMENTAL_KEY_LIST).name(RocksL1.DISTANCE_FROM_CHECKPOINT).build();
     final Condition condition = ImmutableCondition.builder()
         .addFunctions(ImmutableFunction.builder()
         .operator(Function.EQUALS)
@@ -122,7 +122,7 @@ class TestConditionExecutor {
         .value(ONE)
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -135,7 +135,7 @@ class TestConditionExecutor {
         .value(Entity.ofNumber(RocksL1.SIZE))
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -152,7 +152,7 @@ class TestConditionExecutor {
         .value(Entity.ofList(idsAsEntity))
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -165,7 +165,7 @@ class TestConditionExecutor {
         .value(ID.toEntity())
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -178,7 +178,7 @@ class TestConditionExecutor {
         .value(Entity.ofNumber(RocksL1.SIZE))
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -195,7 +195,7 @@ class TestConditionExecutor {
         .value(Entity.ofList(idsAsEntity))
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -208,7 +208,7 @@ class TestConditionExecutor {
         .value(ID.toEntity())
         .build())
         .build();
-    RocksL1 l1 = createL1(random);
+    final RocksL1 l1 = createL1(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -221,7 +221,7 @@ class TestConditionExecutor {
         .value(Entity.ofNumber(RocksL1.SIZE))
         .build())
         .build();
-    RocksL1 l1 = createL1CompleteKeyList(random);
+    final RocksL1 l1 = createL1CompleteKeyList(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -238,7 +238,7 @@ class TestConditionExecutor {
         .value(Entity.ofList(idsAsEntity))
         .build())
         .build();
-    RocksL1 l1 = createL1CompleteKeyList(random);
+    final RocksL1 l1 = createL1CompleteKeyList(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -251,7 +251,7 @@ class TestConditionExecutor {
         .value(ID.toEntity())
         .build())
         .build();
-    RocksL1 l1 = createL1CompleteKeyList(random);
+    final RocksL1 l1 = createL1CompleteKeyList(random);
     assertTrue(l1.evaluate(condition));
   }
 
@@ -321,7 +321,7 @@ class TestConditionExecutor {
         .value(ID.toEntity())
         .build())
         .build();
-    RocksL2 l2 = createL2();
+    final RocksL2 l2 = createL2();
     assertTrue(l2.evaluate(condition));
   }
 
@@ -335,7 +335,7 @@ class TestConditionExecutor {
         .value(TRUE_ENTITY)
         .build())
         .build();
-    RocksL3 l3 = createL3();
+    final RocksL3 l3 = createL3();
     Assertions.assertFalse(l3.evaluate(condition));
   }
 
@@ -348,7 +348,7 @@ class TestConditionExecutor {
         .value(Id.EMPTY.toEntity())
         .build())
         .build();
-    RocksL3 l3 = createL3();
+    final RocksL3 l3 = createL3();
     assertTrue(l3.evaluate(condition));
   }
 
@@ -616,7 +616,7 @@ class TestConditionExecutor {
   void executorFragmentEqualsKeys() {
     List<Entity> keysList = new ArrayList<>();
     for (int i = 0; i < keyListSize; i++) {
-      Entity key1 = Entity.ofList(Entity.ofString(sampleKey1), Entity.ofString(sampleKey2), Entity.ofString(String.valueOf(i)));
+      final Entity key1 = Entity.ofList(Entity.ofString(sampleKey1), Entity.ofString(sampleKey2), Entity.ofString(String.valueOf(i)));
       keysList.add(key1);
     }
     final Condition condition = ImmutableCondition.builder()
@@ -634,7 +634,7 @@ class TestConditionExecutor {
   void executorFragmentSizeKeys() {
     List<Entity> keysList = new ArrayList<>();
     for (int i = 0; i < keyListSize; i++) {
-      Entity key1 = Entity.ofList(Entity.ofString(sampleKey1), Entity.ofString(sampleKey2), Entity.ofString(String.valueOf(i)));
+      final Entity key1 = Entity.ofList(Entity.ofString(sampleKey1), Entity.ofString(sampleKey2), Entity.ofString(String.valueOf(i)));
       keysList.add(key1);
     }
     final Condition condition = ImmutableCondition.builder()
