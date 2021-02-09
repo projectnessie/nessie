@@ -80,7 +80,7 @@ public interface Value extends Aliasable<Value> {
 
     @Override
     public String asString() {
-      throw new IllegalArgumentException();
+      return value.toString();
     }
 
     @Override
@@ -95,6 +95,11 @@ public interface Value extends Aliasable<Value> {
     @Override
     public <T> T accept(ValueVisitor<T> visitor) {
       return visitor.visit(value);
+    }
+
+    @Override
+    public String toString() {
+      return asString();
     }
   }
 }

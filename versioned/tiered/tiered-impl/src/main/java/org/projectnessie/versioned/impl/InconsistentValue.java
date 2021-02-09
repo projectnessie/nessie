@@ -71,4 +71,11 @@ public class InconsistentValue {
     return actual;
   }
 
+  @Override
+  public String toString() {
+    return "InconsistentValue{" + "key=" + key
+        + ", expected=" + expected
+        + ", actual=" + actual
+        + '}';
+  }
 }

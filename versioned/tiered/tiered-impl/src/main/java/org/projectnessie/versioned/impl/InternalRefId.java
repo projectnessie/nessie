@@ -87,4 +87,11 @@ class InternalRefId implements HasId {
     return name;
   }
 
+  @Override
+  public String toString() {
+    return "InternalRefId{type=" + type
+        + ", name='" + name + '\''
+        + ", id=" + id
+        + '}';
+  }
 }

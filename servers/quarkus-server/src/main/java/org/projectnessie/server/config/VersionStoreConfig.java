@@ -35,4 +35,11 @@ public interface VersionStoreConfig {
 
   @ConfigProperty(name = "type", defaultValue = "INMEMORY")
   VersionStoreType getVersionStoreType();
+
+  /**
+   * Whether calls against the version-store are traced with
+   * OpenTracing/OpenTelemetry (Jaeger), enabled by default.
+   */
+  @ConfigProperty(name = "trace.enable", defaultValue = "true")
+  boolean isTracingEnabled();
 }

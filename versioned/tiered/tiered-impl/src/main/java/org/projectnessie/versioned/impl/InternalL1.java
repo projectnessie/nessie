@@ -270,4 +270,9 @@ class InternalL1 extends PersistentBase<L1> {
   EntityType<L1, InternalL1, InternalL1.Builder> getEntityType() {
     return EntityType.L1;
   }
+
+  @Override
+  public String toString() {
+    return "InternalL1{metadataId=" + metadataId + '}';
+  }
 }

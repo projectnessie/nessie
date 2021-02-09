@@ -364,4 +364,17 @@ class PartialTree<V> {
       return value;
     }
   }
+
+  @Override
+  public String toString() {
+    return "PartialTree{refType=" + refType
+        + ", refId=" + refId
+        + ", rootId=" + rootId
+        + ", l1=" + l1
+        + ", l2s=" + l2s.size()
+        + ", l3s=" + l3s.size()
+        + ", values=" + values.size()
+        + ", keys=" + keys.size()
+        + '}';
+  }
 }

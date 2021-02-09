@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -66,6 +67,9 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
+import io.opentracing.Scope;
+import io.opentracing.Tracer;
+import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.util.GlobalTracer;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
@@ -200,51 +204,75 @@ public class DynamoStore implements Store {
 
   @Override
   public void load(LoadStep loadstep) throws NotFoundException {
+    for (int stepNumber = 0; ; stepNumber++) { // for each load step in the chain.
+      try (Scope scope = createSpan("load-step-" + stepNumber).startActive(true)) {
+        List<ListMultimap<String, LoadOp<?>>> stepPages = paginateLoads(loadstep, paginationSize);
 
-    while (true) { // for each load step in the chain.
-      List<ListMultimap<String, LoadOp<?>>> stepPages = paginateLoads(loadstep, paginationSize);
+        for (int pageNumber = 0; pageNumber < stepPages.size(); pageNumber++) {
+          ListMultimap<String, LoadOp<?>> stepPage = stepPages.get(pageNumber);
+          int pageNum = pageNumber;
+          Map<String, String> traceLogs = new HashMap<>();
+          Map<String, KeysAndAttributes> loads = stepPage.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
+            List<LoadOp<?>> loadList = stepPage.get(table);
 
-      for (ListMultimap<String, LoadOp<?>> l : stepPages) {
-        Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
-          List<LoadOp<?>> loadList = l.get(table);
-          List<Map<String, AttributeValue>> keys = loadList.stream()
-              .map(load -> Collections.singletonMap(DynamoBaseValue.ID, idValue(load.getId())))
-              .collect(Collectors.toList());
-          return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
-        }));
+            traceLogs.put(
+                String.format("nessie.load-step.page%03d.%s", pageNum, table),
+                loadList.stream().map(LoadOp::getId).map(Id::toString).collect(Collectors.joining(", ")));
 
-        BatchGetItemResponse response = client.batchGetItem(BatchGetItemRequest.builder().requestItems(loads).build());
-        Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
-        Sets.SetView<String> missingElements = Sets.difference(loads.keySet(), responses.keySet());
-        Preconditions.checkArgument(missingElements.isEmpty(), "Did not receive any objects for table(s) %s.", missingElements);
+            List<Map<String, AttributeValue>> keys = loadList.stream().map(LoadOp::getId)
+                .map(AttributeValueUtil::idValue)
+                .map(id -> Collections.singletonMap(DynamoBaseValue.ID, id))
+                .collect(Collectors.toList());
+            return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
+          }));
+          scope.span().log(traceLogs);
 
-        for (String table : responses.keySet()) {
-          List<LoadOp<?>> loadList = l.get(table);
-          List<Map<String, AttributeValue>> values = responses.get(table);
-          int missingResponses = loadList.size() - values.size();
-          if (missingResponses != 0) {
-            ValueType<?> loadType = loadList.get(0).getValueType();
-            if (loadType == ValueType.REF || loadType == ValueType.L1) {
-              throw new NotFoundException("Unable to find requested ref.");
+          BatchGetItemResponse response = client.batchGetItem(BatchGetItemRequest.builder().requestItems(loads).build());
+          Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
+          Set<String> missingElements = Sets.difference(loads.keySet(), responses.keySet());
+          Preconditions.checkArgument(missingElements.isEmpty(), "Did not receive any objects for table(s) %s.", missingElements);
+
+          for (String table : responses.keySet()) {
+            List<LoadOp<?>> loadList = stepPage.get(table);
+            Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
+            List<Map<String, AttributeValue>> values = responses.get(table);
+            int missingResponses = loadList.size() - values.size();
+            if (missingResponses != 0) {
+              ValueType<?> loadType = loadList.get(0).getValueType();
+
+              Set<Id> loaded = values.stream().map(m -> deserializeId(m, ID)).collect(Collectors.toSet());
+              Set<Id> missingLoads = Sets.difference(opMap.keySet(), loaded);
+
+              if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(
+                    "[{}] object(s) missing in table read [{}]."
+                        + "\n\nIDs missing: {}\n\nObjects expected: {}\n\nObjects Received: {}",
+                    missingResponses, table, missingLoads, loadList, responses);
+              }
+
+              if (loadType == ValueType.REF || loadType == ValueType.L1) {
+                throw new NotFoundException(String.format("Unable to find requested ref %s:%s.",
+                    loadType, missingLoads));
+              }
+
+              throw new NotFoundException(
+                  String.format("[%d] object(s) missing in table read [%s]."
+                          + "\n\nIDs missing: %s\n\nObjects expected: %s\n\nObjects Received: %s",
+                  missingResponses, table, missingLoads, loadList, responses));
             }
 
-            throw new NotFoundException(
-                String.format("[%d] object(s) missing in table read [%s]. \n\nObjects expected: %s\n\nObjects Received: %s",
-                missingResponses, table, loadList, responses));
-          }
+            // unfortunately, responses don't come in the order of the requests so we need to map between ids.
+            for (Map<String, AttributeValue> item : values) {
+              @SuppressWarnings("rawtypes") ValueType valueType = ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
+              Id id = deserializeId(item, ID);
+              LoadOp<?> loadOp = opMap.get(id);
+              if (loadOp == null) {
+                throw new IllegalStateException("No load-op for loaded ID " + id);
+              }
 
-          // unfortunately, responses don't come in the order of the requests so we need to map between ids.
-          Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
-          for (Map<String, AttributeValue> item : values) {
-            @SuppressWarnings("rawtypes") ValueType valueType = ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
-            Id id = deserializeId(item, ID);
-            LoadOp<?> loadOp = opMap.get(id);
-            if (loadOp == null) {
-              throw new IllegalStateException("No load-op for loaded ID " + id);
+              deserializeToConsumer(valueType, item, loadOp.getReceiver());
+              loadOp.done();
             }
-
-            deserializeToConsumer(valueType, item, loadOp.getReceiver());
-            loadOp.done();
           }
         }
       }
@@ -534,5 +562,15 @@ public class DynamoStore implements Store {
     }
     throw new IllegalStateException(String.format("Invalid key schema for table: %s. Key schema should be a hash partitioned "
         + "attribute with the name 'id'.", description.tableName()));
+  }
+
+  private Tracer getTracer() {
+    return GlobalTracer.get();
+  }
+
+  private SpanBuilder createSpan(String name) {
+    Tracer tracer = getTracer();
+    return tracer.buildSpan(name)
+        .asChildOf(tracer.activeSpan());
   }
 }

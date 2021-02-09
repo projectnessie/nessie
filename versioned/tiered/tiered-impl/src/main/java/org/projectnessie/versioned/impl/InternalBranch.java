@@ -52,6 +52,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
+import io.opentracing.Scope;
+import io.opentracing.Tracer;
+import io.opentracing.Tracer.SpanBuilder;
+import io.opentracing.log.Fields;
+import io.opentracing.tag.Tags;
+import io.opentracing.util.GlobalTracer;
+
 /**
  * Stores the current state of branch.
  *
@@ -188,6 +195,17 @@ class InternalBranch extends InternalRef {
     @Override
     public int hashCode() {
       return Objects.hashCode(saved, id, commit, parent, deltas, keyMutationList);
+    }
+
+    @Override
+    public String toString() {
+      return "Commit{" + "saved=" + saved
+          + ", id=" + id
+          + ", commit=" + commit
+          + ", parent=" + parent
+          + ", deltas=" + deltas
+          + ", keyMutationList=" + keyMutationList
+          + '}';
     }
 
     Map<String, Entity> itemToMap(Commit item) {
@@ -391,57 +409,71 @@ class InternalBranch extends InternalRef {
      */
     private static InternalBranch collapseIntentionLog(UpdateState initialState, Store store, InternalBranch branch, int attempts)
         throws ReferenceNotFoundException, ReferenceConflictException {
-      try {
-        for (int attempt = 0; attempt < attempts; attempt++) {
+      try (Scope outerScope = createSpan("InternalBranch.collapseIntentionLog")
+          .withTag("nessie.operation", "CollapseIntentionLog")
+          .withTag("nessie.branch", branch.getName())
+          .startActive(true)) {
+        try {
+          UpdateState updateState = initialState;
+          for (int attempt = 0; attempt < attempts; attempt++) {
+            try (Scope innerScope = createSpan("Attempt-" + attempt).startActive(true)) {
 
-          // cleanup pending updates.
-          UpdateState updateState = attempt == 0 ? initialState : branch.getUpdateState(store);
+              // ensure that any to-be-saved items are saved. This is a noop on attempt 0 since
+              // ensureAvailable will have already done a save.
+              updateState.save(store);
 
-          // ensure that any to-be-saved items are saved. This is a noop on attempt 0 since
-          // ensureAvailable will have already done a save.
-          updateState.save(store);
+              innerScope.span().setTag("nessie.num-saves", updateState.saves.size())
+                  .setTag("nessie.num-deletes", updateState.deletes.size());
 
-          // now we need to take the current list and turn it into a list of 1 item that is saved.
-          final ExpressionPath commits = ExpressionPath.builder("commits").build();
-          final ExpressionPath last = commits.toBuilder().position(updateState.finalL1position).build();
+              // now we need to take the current list and turn it into a list of 1 item that is saved.
+              final ExpressionPath commits = ExpressionPath.builder("commits").build();
+              final ExpressionPath last = commits.toBuilder().position(updateState.finalL1position).build();
 
-          UpdateExpression update = UpdateExpression.initial();
-          ConditionExpression condition = ConditionExpression.initial();
+              UpdateExpression update = UpdateExpression.initial();
+              ConditionExpression condition = ConditionExpression.initial();
 
-          for (Delete d : updateState.deletes) {
-            ExpressionPath path = commits.toBuilder().position(d.position).build();
-            condition = condition.and(ExpressionFunction.equals(path.toBuilder().name(ID).build(), d.id.toEntity()));
-            update = update.and(RemoveClause.of(path));
+              for (Delete d : updateState.deletes) {
+                ExpressionPath path = commits.toBuilder().position(d.position).build();
+                condition = condition.and(ExpressionFunction.equals(path.toBuilder().name(ID).build(), d.id.toEntity()));
+                update = update.and(RemoveClause.of(path));
+              }
+
+              condition = condition.and(ExpressionFunction.equals(last.toBuilder().name(ID).build(),
+                  updateState.finalL1RandomId.toEntity()));
+
+              // remove extra commits field for last commit.
+              update = update
+                  .and(RemoveClause.of(last.toBuilder().name(Commit.DELTAS).build()))
+                  .and(RemoveClause.of(last.toBuilder().name(Commit.KEY_MUTATIONS).build()))
+                  .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toEntity()))
+                  .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
+
+              InternalRef.Builder<?> producer = EntityType.REF.newEntityProducer();
+              boolean updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer));
+              if (updated) {
+                innerScope.span().setTag("nessie.completed", true);
+                LOGGER.debug("Completed collapse update on attempt {}, L1.id={}, L1.parentId={}, position={}.",
+                    attempt, updateState.finalL1.getId(), updateState.finalL1.getParentId(), updateState.finalL1position);
+                return producer.build().getBranch();
+              }
+
+              LOGGER.debug("Failed to collapse update on attempt {}, L1.id={}, L1.parentId={}, position={}.",
+                  attempt, updateState.finalL1.getId(), updateState.finalL1.getParentId(), updateState.finalL1position);
+              // something must have changed, reload the branch.
+              final InternalRef ref = EntityType.REF.loadSingle(store, branch.getId());
+              if (ref.getType() != Type.BRANCH) {
+                throw new ReferenceNotFoundException("Failure while collapsing log. Former branch is now a " + ref.getType());
+              }
+              branch = ref.getBranch();
+              updateState = branch.getUpdateState(store);
+            }
           }
 
-          condition = condition.and(ExpressionFunction.equals(last.toBuilder().name(ID).build(),
-              updateState.finalL1RandomId.toEntity()));
-
-          // remove extra commits field for last commit.
-          update = update
-              .and(RemoveClause.of(last.toBuilder().name(Commit.DELTAS).build()))
-              .and(RemoveClause.of(last.toBuilder().name(Commit.KEY_MUTATIONS).build()))
-              .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toEntity()))
-              .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
-
-          InternalRef.Builder<?> producer = EntityType.REF.newEntityProducer();
-          boolean updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer));
-          if (updated) {
-            LOGGER.debug("Completed collapse update on attempt {}.", attempt);
-            return producer.build().getBranch();
-          }
-
-          LOGGER.debug("Failed to collapse update on attempt {}.", attempt);
-          // something must have changed, reload the branch.
-          final InternalRef ref = EntityType.REF.loadSingle(store, branch.getId());
-          if (ref.getType() != Type.BRANCH) {
-            throw new ReferenceNotFoundException("Failure while collapsing log. Former branch is now a " + ref.getType());
-          }
-          branch = ref.getBranch();
+        } catch (Exception ex) {
+          Tags.ERROR.set(outerScope.span().log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(),
+              Fields.ERROR_OBJECT, ex.toString())), true);
+          LOGGER.debug("Exception when trying to collapse intention log.", ex);
         }
-
-      } catch (Exception ex) {
-        LOGGER.debug("Exception when trying to collapse intention log.", ex);
       }
       throw new ReferenceConflictException(String.format("Unable to collapse intention log after %d attempts, giving up.", attempts));
     }
@@ -505,6 +537,14 @@ class InternalBranch extends InternalRef {
     @Override
     public int hashCode() {
       return Objects.hashCode(position, oldId, newId);
+    }
+
+    @Override
+    public String toString() {
+      return "UnsavedDelta{" + "position=" + position
+          + ", oldId=" + oldId
+          + ", newId=" + newId
+          + '}';
     }
 
     Map<String, Entity> itemToMap() {
@@ -583,4 +623,13 @@ class InternalBranch extends InternalRef {
         .backToRef();
   }
 
+  private static Tracer getTracer() {
+    return GlobalTracer.get();
+  }
+
+  private static SpanBuilder createSpan(String name) {
+    Tracer tracer = getTracer();
+    return tracer.buildSpan(name)
+        .asChildOf(tracer.activeSpan());
+  }
 }

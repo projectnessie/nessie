@@ -33,6 +33,7 @@ import java.util.Map;
 
 import io.opentracing.Span;
 import io.opentracing.Tracer;
+import io.opentracing.log.Fields;
 import io.opentracing.tag.Tags;
 import software.amazon.awssdk.core.interceptor.Context.AfterExecution;
 import software.amazon.awssdk.core.interceptor.Context.AfterMarshalling;
@@ -76,11 +77,11 @@ public class TracingExecutionInterceptor implements ExecutionInterceptor {
     final Span span = executionAttributes.getAttribute(SPAN_ATTRIBUTE);
     final SdkHttpRequest httpRequest = context.httpRequest();
 
-    span.setTag(Tags.HTTP_METHOD.getKey(), httpRequest.method().name());
-    span.setTag(Tags.HTTP_URL.getKey(), httpRequest.getUri().toString());
-    span.setTag(Tags.PEER_HOSTNAME.getKey(), httpRequest.host());
+    Tags.HTTP_METHOD.set(span, httpRequest.method().name());
+    Tags.HTTP_URL.set(span, httpRequest.getUri().toString());
+    Tags.PEER_HOSTNAME.set(span, httpRequest.host());
     if (httpRequest.port() > 0) {
-      span.setTag(Tags.PEER_PORT.getKey(), httpRequest.port());
+      Tags.PEER_PORT.set(span, httpRequest.port());
     }
   }
 
@@ -113,8 +114,8 @@ public class TracingExecutionInterceptor implements ExecutionInterceptor {
 
   private static Map<String, Object> errorLogs(final Throwable ex) {
     Map<String, Object> errorLogs = new HashMap<>(2);
-    errorLogs.put("event", Tags.ERROR.getKey());
-    errorLogs.put("error.object", ex);
+    errorLogs.put(Fields.EVENT, Tags.ERROR.getKey());
+    errorLogs.put(Fields.ERROR_OBJECT, ex);
     return errorLogs;
   }
 }

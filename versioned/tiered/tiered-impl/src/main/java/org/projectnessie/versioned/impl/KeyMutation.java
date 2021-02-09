@@ -51,6 +51,11 @@ abstract class KeyMutation {
 
   abstract Key.Mutation toMutation();
 
+  @Override
+  public String toString() {
+    return "KeyMutation[type=" + getType() + ", key=" + getKey() + "]";
+  }
+
   @Immutable
   public abstract static class KeyAddition extends KeyMutation {
 
