@@ -107,6 +107,26 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
 
   @Test
   @Disabled
+  void deleteConditionMismatchAttributeValue() {
+  }
+
+  @Test
+  @Disabled
+  void deleteConditionMismatchAttributeBranch() {
+  }
+
+  @Test
+  @Disabled
+  void deleteBranchSizeFail() {
+  }
+
+  @Test
+  @Disabled
+  void deleteBranchSizeSucceed() {
+  }
+
+  @Test
+  @Disabled
   void deleteWithConditionKeyFragment() {
   }
 
