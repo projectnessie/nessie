@@ -21,17 +21,11 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie</artifactId>
+    <artifactId>nessie-perftest</artifactId>
     <version>0.4.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-perftest</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>nessie-perftest-measurement-pack</artifactId>
 
-  <name>Nessie - Perf Test - Parent</name>
-
-  <modules>
-    <module>gatling</module>
-    <module>measurement-pack</module>
-  </modules>
+  <name>Nessie - Perf Test - Measurement Pack</name>
 </project>
