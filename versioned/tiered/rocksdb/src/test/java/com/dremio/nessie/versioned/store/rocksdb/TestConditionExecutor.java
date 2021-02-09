@@ -114,7 +114,8 @@ class TestConditionExecutor {
 
   @Test
   void executorL1IncrementalKeyListDistanceFromCheckpoint() {
-    final ExpressionPath expressionPath = ExpressionPath.builder(RocksL1.INCREMENTAL_KEY_LIST).name(RocksL1.DISTANCE_FROM_CHECKPOINT).build();
+    final ExpressionPath expressionPath = ExpressionPath.builder(RocksL1.INCREMENTAL_KEY_LIST)
+        .name(RocksL1.DISTANCE_FROM_CHECKPOINT).build();
     final Condition condition = ImmutableCondition.builder()
         .addFunctions(ImmutableFunction.builder()
         .operator(Function.EQUALS)
