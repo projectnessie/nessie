@@ -14,35 +14,43 @@
 # limitations under the License.
 #
 
-version: '3.8'
+version: '3.3'
 services:
   grafana:
     image: grafana/grafana
+    container_name: grafana
     depends_on:
       - prometheus
     ports:
       - 3000:3000
-  nginx:
-    image: nginx:latest
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - nessie
-    ports:
-      - "19131:19131"
+      - ./configs/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./configs/grafana/dashboards:/var/lib/grafana/dashboards:ro
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus
     container_name: prometheus
     ports:
       - 9090:9090
     command:
       - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=1y
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./configs/prometheus/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+      - ./prometheus-data:/prometheus:rw
     depends_on:
       - cadvisor
+      - docker-host
+  push-gateway:
+    image: prom/pushgateway
+    container_name: push-gateway
+    ports:
+      - 9091:9091
+    depends_on:
+      - prometheus
   cadvisor:
-    image: gcr.io/google-containers/cadvisor:latest
+    image: gcr.io/google-containers/cadvisor
     container_name: cadvisor
     ports:
       - 8080:8080
@@ -51,10 +59,9 @@ services:
       - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
-    depends_on:
-      - nessie
   jaeger:
-    image: jaegertracing/all-in-one:1.18
+    image: jaegertracing/all-in-one:1.22.0
+    container_name: jaeger
     ports:
       - 5775:5775/udp
       - 6831:6831/udp
@@ -66,23 +73,17 @@ services:
       - 9411:9411
     environment:
       - COLLECTOR_ZIPKIN_HTTP_PORT=9411
-  nessie:
-    image: projectnessie/nessie:latest
-    expose:
-      - "19120"
-    depends_on:
-      - dynamodb
-    environment:
-      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
-      - QUARKUS_JAEGER_SAMPLER_TYPE=const
-      - NESSIE_VERSION_STORE_DYNAMO_INITIALIZE=true
-      - NESSIE_VERSION_STORE_TYPE=DYNAMO
-      - QUARKUS_DYNAMODB_ENDPOINT_OVERRIDE=http://dynamodb:8000
-      - QUARKUS_DYNAMODB_AWS_REGION=us-west-2
-      - AWS_DEFAULT_REGION=us-west-2
-      - AWS_ACCESS_KEY_ID=xxx
-      - AWS_SECRET_ACCESS_KEY=xxx
   dynamodb:
     image: amazon/dynamodb-local
+    container_name: dynamodb
     ports:
       - 8000:8000
+  # docker-host is an image that forwards traffic to the host running the Docker containers.
+  # This container is needed to let e.g. Prometheus scrape the metrics from the Nessie server
+  # running on the Docker host (your machine). Make sure, your firewall doesn't block that traffic.
+  docker-host:
+    image: qoomon/docker-host
+    container_name: docker-host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
