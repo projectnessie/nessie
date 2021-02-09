@@ -205,18 +205,24 @@ public class RocksDBStore implements Store {
 
   @Override
   public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
-    if (condition.isPresent()) {
-      RocksBaseValue consumer = RocksSerDe.getConsumer(saveOp.getType());
-      loadSingle(saveOp.getType(), saveOp.getId(), (C) consumer);
-      if (!(((Evaluator) consumer).evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR)))) {
-        throw new ConditionFailedException("Condition failed during put operation");
-      }
-    }
-
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
 
-    try {
-      rocksDB.put(columnFamilyHandle, saveOp.getId().toBytes(), RocksSerDe.serializeWithConsumer(saveOp));
+    try (final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions())) {
+      if (condition.isPresent()) {
+        final RocksBaseValue consumer = RocksSerDe.getConsumer(saveOp.getType());
+        final byte[] buffer = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, saveOp.getId().toBytes(), true);
+        if (null == buffer) {
+          throw new NotFoundException("Unable to load item with ID: " + saveOp.getId());
+        }
+        RocksSerDe.deserializeToConsumer(saveOp.getType(), buffer, consumer);
+
+        if (!consumer.evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR))) {
+          throw new ConditionFailedException("Condition failed during put operation");
+        }
+      }
+
+      transaction.put(columnFamilyHandle, saveOp.getId().toBytes(), RocksSerDe.serializeWithConsumer(saveOp));
+      transaction.commit();
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
