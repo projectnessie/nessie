@@ -32,6 +32,8 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.impl.TieredVersionStore;
+import org.projectnessie.versioned.store.Store;
+import org.projectnessie.versioned.store.TracingStore;
 
 import software.amazon.awssdk.regions.Region;
 
@@ -67,8 +69,8 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
   /**
    * create a dynamo store based on config.
    */
-  private DynamoStore newDynamoConnection() {
-    DynamoStore dynamo = new DynamoStore(
+  private Store newDynamoConnection() {
+    Store store = new DynamoStore(
         DynamoStoreConfig.builder()
           .endpoint(endpoint.map(e -> {
             try {
@@ -82,7 +84,12 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
           .tablePrefix(config.getTablePrefix())
           .enableTracing(config.enableTracing())
           .build());
-    dynamo.start();
-    return dynamo;
+
+    if (config.enableTracing()) {
+      store = new TracingStore(store);
+    }
+
+    store.start();
+    return store;
   }
 }

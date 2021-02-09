@@ -38,6 +38,7 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 import org.slf4j.Logger;
@@ -115,6 +116,10 @@ public class ConfigurableVersionStoreFactory {
         versionStore = factory.newStore(new TableCommitMetaStoreWorker());
       } catch (IOException e) {
         throw new IOError(e);
+      }
+
+      if (storeConfig.isTracingEnabled()) {
+        versionStore = new TracingVersionStore<>(versionStore);
       }
 
       lastUnsuccessfulStart = 0L;
