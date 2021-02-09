@@ -234,25 +234,26 @@ public class RocksDBStore implements Store {
 
     try (final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions())) {
       final byte[] value = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, id.toBytes(), true);
-      if (value != null) {
-        if (condition.isPresent()) {
-          final RocksBaseValue<C> consumer = RocksSerDe.getConsumer(type);
-          // TODO: Does the critical section need to be locked?
-          // TODO: Critical Section - evaluating the condition expression and deleting the entity.
-          // Check if condition expression is valid.
-          RocksSerDe.deserializeToConsumer(type, value, consumer);
-          if (!consumer.evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR))) {
-            LOGGER.debug("Condition failed during delete operation.");
-            return false;
-          }
-        }
 
-        transaction.delete(columnFamilyHandle, id.toBytes());
-        transaction.commit();
-        return true;
+      if (null == value) {
+        throw new NotFoundException("No value was found for the given id to delete.");
       }
 
-      throw new NotFoundException("No value was found for the given id to delete.");
+      if (condition.isPresent()) {
+        final RocksBaseValue<C> consumer = RocksSerDe.getConsumer(type);
+        // TODO: Does the critical section need to be locked?
+        // TODO: Critical Section - evaluating the condition expression and deleting the entity.
+        // Check if condition expression is valid.
+        RocksSerDe.deserializeToConsumer(type, value, consumer);
+        if (!(consumer.evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR)))) {
+          LOGGER.debug("Condition failed during delete operation.");
+          return false;
+        }
+      }
+
+      transaction.delete(columnFamilyHandle, id.toBytes());
+      transaction.commit();
+      return true;
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
