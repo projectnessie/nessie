@@ -48,13 +48,29 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
    */
   @Override
   protected RocksDBStore createStore() {
-    return new RocksDBStore(DB_PATH.toString());
+    return new RocksDBStore(createConfig());
+  }
+
+  private RocksDBStoreConfig createConfig() {
+    return new RocksDBStoreConfig() {
+      public String getDbDirectory() {
+        return DB_PATH.toString();
+      }
+    };
   }
 
   @Override
   protected RocksDBStore createRawStore() {
     // Need to use a separate path to avoid reusing the file created by the normal store.
-    return new RocksDBStore(getRawPath().toString());
+    return new RocksDBStore(createRawConfig());
+  }
+
+  private RocksDBStoreConfig createRawConfig() {
+    return new RocksDBStoreConfig() {
+      public String getDbDirectory() {
+        return getRawPath().toString();
+      }
+    };
   }
 
   @Override

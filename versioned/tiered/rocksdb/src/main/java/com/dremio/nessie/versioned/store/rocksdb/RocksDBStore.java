@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -81,17 +80,17 @@ public class RocksDBStore implements Store {
       ValueType.values().stream().map(v -> v.name().getBytes(UTF_8))).collect(ImmutableList.toImmutableList());
   }
 
-  private final String dbDirectory;
   private OptimisticTransactionDB transactionDB;
   private RocksDB rocksDB;
   private Map<ValueType<?>, ColumnFamilyHandle> valueTypeToColumnFamily;
+  private final RocksDBStoreConfig config;
 
   /**
    * Creates a store ready for connection to RocksDB.
-   * @param dbDirectory the directory of the Rocks database.
+   * @param config the configuration for the store.
    */
-  public RocksDBStore(String dbDirectory) {
-    this.dbDirectory = dbDirectory;
+  public RocksDBStore(RocksDBStoreConfig config) {
+    this.config = config;
   }
 
   @Override
@@ -106,8 +105,19 @@ public class RocksDBStore implements Store {
         final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
         transactionDB = OptimisticTransactionDB.open(dbOptions, dbPath, columnFamilies, columnFamilyHandles);
         rocksDB = transactionDB.getBaseDB();
-        valueTypeToColumnFamily = IntStream.rangeClosed(1, ValueType.values().size()).boxed().collect(
-          ImmutableMap.toImmutableMap(k -> ValueType.values().get(k - 1), columnFamilyHandles::get));
+        valueTypeToColumnFamily = ValueType.values().stream()
+          .collect(ImmutableMap.<ValueType<?>, ValueType<?>, ColumnFamilyHandle>toImmutableMap(
+            v -> v,
+            v -> {
+              String collectionName = v.getTableName(config.getTablePrefix());
+              // TODO: this is probably not correct. I guess we need to look up the columnFamilyHandle based on prefix
+              // or ColumnFamilyDescriptor.
+              return rocksDB.getDefaultColumnFamily();
+            })
+          );
+        // TODO: remove commented out code once I understand how this works.
+        //        valueTypeToColumnFamily = IntStream.rangeClosed(1, ValueType.values().size()).boxed().collect(
+        //          ImmutableMap.toImmutableMap(k -> ValueType.values().get(k - 1), columnFamilyHandles::get));
         break;
       } catch (RocksDBException e) {
         if (e.getStatus().getCode() != Status.Code.IOError || !e.getStatus().getState().contains("While lock")) {
@@ -376,7 +386,7 @@ public class RocksDBStore implements Store {
   }
 
   private String verifyPath() {
-    final File dbDirectory = new File(this.dbDirectory);
+    final File dbDirectory = new File(config.getDbDirectory());
     if (dbDirectory.exists()) {
       if (!dbDirectory.isDirectory()) {
         throw new RuntimeException(
