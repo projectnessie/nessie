@@ -90,6 +90,11 @@ jobs:
           **/target/failsafe-reports/*
           **/build/reports/*
           **/build/test-results/*
+    - name: Capture Gatling simulation logs
+      uses: actions/upload-artifact@v2
+      with:
+        name: gatling-logs
+        path: perftest/simulations/target/gatling/*/simulation.log
     - uses: codecov/codecov-action@v1
       with:
         flags: java

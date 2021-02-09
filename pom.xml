@@ -132,17 +132,17 @@
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <flapdoodle.version>3.0.0</flapdoodle.version>
+    <gatling.maven.version>3.1.2</gatling.maven.version>
+    <gatling.version>3.5.1</gatling.version>
     <guava.version>30.1.1-jre</guava.version>
     <hadoop.version>3.3.1</hadoop.version>
     <iceberg.version>0.11.1</iceberg.version>
     <immutables.version>2.8.9-ea-1</immutables.version>
     <jackson.version>2.12.3</jackson.version>
     <javax.version>4.0.1</javax.version>
-    <jaeger.version>1.3.2</jaeger.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jjwt.version>0.11.2</jjwt.version>
     <jgit.version>5.12.0.202106070339-r</jgit.version>
-    <jmeter.version>5.4.1</jmeter.version>
     <junit.version>5.7.2</junit.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.17.3</protobuf.version>
@@ -153,6 +153,7 @@
     <surefire.version>3.0.0-M5</surefire.version>
     <slf4j.version>1.7.30</slf4j.version>
     <scala2.12.version>2.12.13</scala2.12.version>
+    <scala2.13.version>2.13.5</scala2.13.version>
     <spark2.version>2.4.2</spark2.version>
     <spark2.jackson.version>2.8.8</spark2.jackson.version>
     <spark3.version>3.0.2</spark3.version>
@@ -433,22 +434,6 @@
         <version>${quarkus.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.jmeter</groupId>
-        <artifactId>ApacheJMeter_core</artifactId>
-        <version>${jmeter.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.jmeter</groupId>
-        <artifactId>ApacheJMeter_java</artifactId>
-        <version>${jmeter.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -1092,6 +1077,11 @@ limitations under the License.
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.gatling</groupId>
+        <artifactId>gatling-maven-plugin</artifactId>
+        <version>${gatling.maven.version}</version>
       </plugin>
     </plugins>
   </build>
