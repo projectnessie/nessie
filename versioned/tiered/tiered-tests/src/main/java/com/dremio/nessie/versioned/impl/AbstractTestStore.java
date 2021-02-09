@@ -35,6 +35,7 @@ import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
 import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.ConditionFailedException;
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
@@ -51,6 +52,10 @@ import com.google.common.collect.Multimap;
  * @param <S> The type of the Store being tested.
  */
 public abstract class AbstractTestStore<S extends Store> {
+  protected static final ExpressionPath COMMITS = ExpressionPath.builder("commits").build();
+  protected static final Entity ONE = Entity.ofNumber(1);
+  protected static final Entity TWO = Entity.ofNumber(2);
+
   private static class CreatorPair {
     final ValueType<?> type;
     final Supplier<HasId> supplier;
@@ -376,6 +381,34 @@ public abstract class AbstractTestStore<S extends Store> {
   }
 
   @Test
+  void deleteConditionMismatchAttributeValue() {
+    final ExpressionFunction expressionFunction = ExpressionFunction.equals(ExpressionPath.builder("value").build(),
+        SampleEntities.createStringEntity(random, random.nextInt(10) + 1));
+    final ConditionExpression ex = ConditionExpression.of(expressionFunction);
+    deleteConditional(ValueType.VALUE, SampleEntities.createValue(random), false, Optional.of(ex));
+  }
+
+  @Test
+  void deleteConditionMismatchAttributeBranch() {
+    final ExpressionFunction expressionFunction = ExpressionFunction.equals(ExpressionPath.builder("commit").build(),
+        SampleEntities.createStringEntity(random, random.nextInt(10) + 1));
+    final ConditionExpression ex = ConditionExpression.of(expressionFunction);
+    deleteConditional(ValueType.REF, SampleEntities.createBranch(random), false, Optional.of(ex));
+  }
+
+  @Test
+  void deleteBranchSizeFail() {
+    final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(COMMITS), ONE));
+    deleteConditional(ValueType.REF, SampleEntities.createBranch(random), false, Optional.of(expression));
+  }
+
+  @Test
+  void deleteBranchSizeSucceed() {
+    final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(COMMITS), TWO));
+    deleteConditional(ValueType.REF, SampleEntities.createBranch(random), true, Optional.of(expression));
+  }
+
+  @Test
   void deleteWithConditionKeyFragment() {
     deleteWithCondition(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random));
   }
@@ -453,20 +486,23 @@ public abstract class AbstractTestStore<S extends Store> {
   private <T extends HasId> void deleteWithCondition(ValueType type, HasId sample) {
     final ExpressionPath keyName = ExpressionPath.builder(Store.KEY_NAME).build();
     final ConditionExpression conditionExpression = ConditionExpression.of(ExpressionFunction.equals(keyName, sample.getId().toEntity()));
-    deleteConditional(type, sample, Optional.of(conditionExpression));
+    deleteConditional(type, sample, true, Optional.of(conditionExpression));
   }
 
   private <T extends HasId> void delete(ValueType type, HasId sample) {
-    deleteConditional(type, sample, Optional.empty());
+    deleteConditional(type, sample, true, Optional.empty());
   }
 
-  protected <C extends BaseValue<C>> void deleteConditional(ValueType type, HasId sample,
+  protected <C extends BaseValue<C>> void deleteConditional(ValueType type, HasId sample, boolean shouldSucceed,
                                                             Optional<ConditionExpression> conditionExpression) {
-    try {
-      store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, Optional.<ConditionExpression>empty());
-      store.delete(type, sample.getId(), conditionExpression);
-    } catch (ConditionFailedException cfe) {
-      Assertions.fail(cfe);
+    store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, Optional.<ConditionExpression>empty());
+
+    if (shouldSucceed) {
+      Assertions.assertTrue(store.delete(type, sample.getId(), conditionExpression));
+      Assertions.assertThrows(NotFoundException.class, () -> testLoadSingle(type, sample));
+    } else {
+      Assertions.assertFalse(store.delete(type, sample.getId(), conditionExpression));
+      testLoadSingle(type, sample);
     }
   }
 

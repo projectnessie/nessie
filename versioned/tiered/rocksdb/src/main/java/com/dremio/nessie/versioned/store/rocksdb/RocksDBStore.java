@@ -235,12 +235,13 @@ public class RocksDBStore implements Store {
           // TODO: Critical Section - evaluating the condition expression and deleting the entity.
           // Check if condition expression is valid.
           RocksSerDe.deserializeToConsumer(type, value, consumer);
-          if (!(((Evaluator) consumer).evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR)))) {
-            throw new ConditionFailedException("Condition failed during delete operation.");
+          if (!(consumer.evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR)))) {
+            LOGGER.debug("Condition failed during delete operation.");
+            return false;
           }
         }
 
-        transaction.delete(columnFamilyHandle, value);
+        transaction.delete(columnFamilyHandle, id.toBytes());
         transaction.commit();
         return true;
       }
