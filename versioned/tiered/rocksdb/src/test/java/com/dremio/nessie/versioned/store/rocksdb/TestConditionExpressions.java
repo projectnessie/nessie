@@ -48,326 +48,92 @@ class TestConditionExpressions {
   // Single ExpressionFunction equals tests
   @Test
   void equalsBooleanTrue() {
-    final String path = createPath();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), TRUE_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(TRUE_ENTITY)
-        .build()).build();
-    equals(expectedCondition, ex);
+    equalsEntity(TRUE_ENTITY);
   }
 
   @Test
   void equalsBooleanFalse() {
-    final String path = createPath();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), FALSE_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(FALSE_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(FALSE_ENTITY);
   }
 
   @Test
   void equalsList() {
-    final String path = createPath();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), LIST_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(LIST_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(LIST_ENTITY);
   }
 
   @Test
   void equalsMap() {
-    final String path = createPath();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), MAP_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(MAP_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(MAP_ENTITY);
   }
 
   @Test
   void equalsNumber() {
-    final String path = createPath();
     final Entity numEntity = Entity.ofNumber(RANDOM.nextLong());
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), numEntity));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(numEntity)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(numEntity);
   }
 
   @Test
   void equalsString() {
-    final String path = createPath();
     final Entity strEntity = SampleEntities.createStringEntity(RANDOM, 7);
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), strEntity));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(strEntity)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(strEntity);
   }
 
   @Test
   void equalsBinary() {
-    final String path = createPath();
     final Entity binaryEntity = Entity.ofBinary(SampleEntities.createBinary(RANDOM, 15));
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(binaryEntity)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(binaryEntity);
   }
+
+  @Test
+  void binaryEquals() {
+    final Entity id = SampleEntities.createId(RANDOM).toEntity();
+    equalsEntity(id, Store.KEY_NAME);
+  }
+
 
   // Single ExpressionFunction array equals tests
   @Test
   void arraySubpathEqualsBooleanTrue() {
     final String path = createPathPos();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), TRUE_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(TRUE_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(TRUE_ENTITY, path);
   }
 
   @Test
   void arraySubpathEqualsBooleanFalse() {
     final String path = createPathPos();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), FALSE_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(FALSE_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(FALSE_ENTITY, path);
   }
 
   @Test
   void arraySubpathEqualsList() {
     final String path = createPathPos();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), LIST_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(LIST_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(LIST_ENTITY, path);
   }
 
   @Test
   void arraySubpathEqualsMap() {
     final String path = createPathPos();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), MAP_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(MAP_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(MAP_ENTITY, path);
   }
 
   @Test
   void arraySubpathEqualsNumber() {
     final String path = createPathPos();
     final Entity numEntity = Entity.ofNumber(RANDOM.nextLong());
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), numEntity));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(numEntity)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(numEntity, path);
   }
 
   @Test
   void arraySubpathEqualsString() {
     final String path = createPathPos();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), THREE));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(THREE)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(THREE, path);
   }
 
   @Test
   void arraySubpathWithBinary() {
     final String path = createPathPos();
     final Entity binaryEntity = Entity.ofBinary(SampleEntities.createBinary(RANDOM, 8));
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(binaryEntity)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
-  }
-
-  // Single ExpressionFunction array equals tests
-  @Test
-  void subpathEqualsBooleanTrue() {
-    final String path = createPathName();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), TRUE_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(TRUE_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
-  }
-
-  @Test
-  void subpathEqualsBooleanFalse() {
-    final String path = createPathName();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), FALSE_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(FALSE_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
-  }
-
-  @Test
-  void subpathEqualsList() {
-    final String path = createPathName();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), LIST_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(LIST_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
-  }
-
-  @Test
-  void subpathEqualsMap() {
-    final String path = createPathName();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), MAP_ENTITY));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(MAP_ENTITY)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
-  }
-  // TODO: map with list
-
-  @Test
-  void subpathEqualsNumber() {
-    final String path = createPathName();
-    final Entity numEntity = Entity.ofNumber(RANDOM.nextLong());
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), numEntity));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(numEntity)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
-  }
-
-  @Test
-  void subpathEqualsString() {
-    final String path = createPathName();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), THREE));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(THREE)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
-  }
-
-  @Test
-  void subpathEqualsBinary() {
-    final String path = createPathName();
-    final Entity binaryEntity = Entity.ofBinary(SampleEntities.createBinary(RANDOM, 24));
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), binaryEntity));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(binaryEntity)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
+    equalsEntity(binaryEntity, path);
   }
 
   // Single ExpressionFunction size tests
@@ -379,10 +145,10 @@ class TestConditionExpressions {
 
     final Condition expectedCondition = ImmutableCondition.builder()
         .addFunctions(ImmutableFunction.builder()
-        .operator(Function.SIZE)
-        .path(ofPath(path))
-        .value(NUM_FOUR)
-        .build())
+          .operator(Function.SIZE)
+          .path(ofPath(path))
+          .value(NUM_FOUR)
+          .build())
         .build();
     equals(expectedCondition, ex);
   }
@@ -398,15 +164,15 @@ class TestConditionExpressions {
 
     final Condition expectedCondition = ImmutableCondition.builder()
         .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(id)
-        .build())
+          .operator(Function.EQUALS)
+          .path(ofPath(path))
+          .value(id)
+          .build())
         .addFunctions(ImmutableFunction.builder()
-        .operator(Function.SIZE)
-        .path(ofPath(path2))
-        .value(NUM_ONE)
-        .build())
+          .operator(Function.SIZE)
+          .path(ofPath(path2))
+          .value(NUM_ONE)
+          .build())
         .build();
     equals(expectedCondition, ex);
   }
@@ -421,15 +187,15 @@ class TestConditionExpressions {
 
     final Condition expectedCondition = ImmutableCondition.builder()
         .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path1))
-        .value(TRUE_ENTITY)
-        .build())
+          .operator(Function.EQUALS)
+          .path(ofPath(path1))
+          .value(TRUE_ENTITY)
+          .build())
         .addFunctions(ImmutableFunction.builder()
-        .operator(Function.SIZE)
-        .path(ofPath(path2))
-        .value(FALSE_ENTITY)
-        .build())
+          .operator(Function.SIZE)
+          .path(ofPath(path2))
+          .value(FALSE_ENTITY)
+          .build())
         .build();
     equals(expectedCondition, ex);
   }
@@ -445,20 +211,20 @@ class TestConditionExpressions {
 
     final Condition expectedCondition = ImmutableCondition.builder()
         .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path1))
-        .value(TRUE_ENTITY)
-        .build())
+          .operator(Function.EQUALS)
+          .path(ofPath(path1))
+          .value(TRUE_ENTITY)
+          .build())
         .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path2))
-        .value(FALSE_ENTITY)
-        .build())
+          .operator(Function.EQUALS)
+          .path(ofPath(path2))
+          .value(FALSE_ENTITY)
+          .build())
         .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(pathPos))
-        .value(strEntity)
-        .build())
+          .operator(Function.EQUALS)
+          .path(ofPath(pathPos))
+          .value(strEntity)
+          .build())
         .build();
     equals(expectedCondition, ex);
   }
@@ -488,21 +254,6 @@ class TestConditionExpressions {
 
   // other tests
   @Test
-  void binaryEquals() {
-    final Entity id = SampleEntities.createId(RANDOM).toEntity();
-    final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ExpressionPath.builder(Store.KEY_NAME).build(), id));
-
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(Store.KEY_NAME))
-        .value(id)
-        .build())
-        .build();
-    equals(expectedCondition, ex);
-  }
-
-  @Test
   void stringEqualsHolder() {
     final String path = createPath();
     final Entity strEntity = SampleEntities.createStringEntity(RANDOM, 7);
@@ -515,6 +266,24 @@ class TestConditionExpressions {
         .build();
 
     Assertions.assertTrue(expectedFunction.equals(ex.accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR).getFunctions().get(0)));
+  }
+
+  private static void equalsEntity(Entity entity) {
+    final String path = createPath();
+    equalsEntity(entity, path);
+  }
+
+  private static void equalsEntity(Entity entity, String path) {
+    final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), entity));
+
+    final Condition expectedCondition = ImmutableCondition.builder()
+      .addFunctions(ImmutableFunction.builder()
+        .operator(Function.EQUALS)
+        .path(ofPath(path))
+        .value(entity)
+        .build())
+      .build();
+    equals(expectedCondition, expression);
   }
 
   /**
