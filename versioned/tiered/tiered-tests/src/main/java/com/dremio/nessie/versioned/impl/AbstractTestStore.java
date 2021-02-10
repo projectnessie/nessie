@@ -15,8 +15,6 @@
  */
 package com.dremio.nessie.versioned.impl;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -71,7 +69,6 @@ public abstract class AbstractTestStore<S extends Store> {
 
   protected Random random;
   protected S store;
-  protected ImmutableList<CreatorPair> creators;
 
   /**
    * Create and start the store, if not already done.
@@ -82,16 +79,6 @@ public abstract class AbstractTestStore<S extends Store> {
       this.store = createStore();
       this.store.start();
       random = new Random(getRandomSeed());
-      creators = ImmutableList.<CreatorPair>builder()
-        .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createTag(random)))
-        .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createBranch(random)))
-        .add(new CreatorPair(ValueType.COMMIT_METADATA, () -> SampleEntities.createCommitMetadata(random)))
-        .add(new CreatorPair(ValueType.VALUE, () -> SampleEntities.createValue(random)))
-        .add(new CreatorPair(ValueType.L1, () -> SampleEntities.createL1(random)))
-        .add(new CreatorPair(ValueType.L2, () -> SampleEntities.createL2(random)))
-        .add(new CreatorPair(ValueType.L3, () -> SampleEntities.createL3(random)))
-        .add(new CreatorPair(ValueType.KEY_FRAGMENT, () -> SampleEntities.createFragment(random)))
-        .build();
     }
   }
 
@@ -129,6 +116,8 @@ public abstract class AbstractTestStore<S extends Store> {
     return true;
   }
 
+  // Tests for close()
+
   @Test
   void closeWithoutStart() {
     final Store localStore = createRawStore();
@@ -143,8 +132,20 @@ public abstract class AbstractTestStore<S extends Store> {
     localStore.close(); // This should be a no-op.
   }
 
+  // Tests for load()
+
   @Test
   void load() {
+    final ImmutableList<CreatorPair> creators = ImmutableList.<CreatorPair>builder()
+      .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createTag(random)))
+      .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createBranch(random)))
+      .add(new CreatorPair(ValueType.COMMIT_METADATA, () -> SampleEntities.createCommitMetadata(random)))
+      .add(new CreatorPair(ValueType.VALUE, () -> SampleEntities.createValue(random)))
+      .add(new CreatorPair(ValueType.L1, () -> SampleEntities.createL1(random)))
+      .add(new CreatorPair(ValueType.L2, () -> SampleEntities.createL2(random)))
+      .add(new CreatorPair(ValueType.L3, () -> SampleEntities.createL3(random)))
+      .add(new CreatorPair(ValueType.KEY_FRAGMENT, () -> SampleEntities.createFragment(random)))
+      .build();
     final ImmutableMultimap.Builder<ValueType<?>, HasId> builder = ImmutableMultimap.builder();
     for (int i = 0; i < 100; ++i) {
       final int index = i % creators.size();
@@ -155,7 +156,7 @@ public abstract class AbstractTestStore<S extends Store> {
     final Multimap<ValueType<?>, HasId> objs = builder.build();
     objs.forEach(this::putThenLoad);
 
-    testLoad(objs);
+    store.load(createTestLoadStep(objs));
   }
 
   @Test
@@ -185,7 +186,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @Test
   void loadNone() {
-    testLoad(ImmutableMultimap.of());
+    store.load(createTestLoadStep(ImmutableMultimap.of()));
   }
 
   @Test
@@ -193,8 +194,25 @@ public abstract class AbstractTestStore<S extends Store> {
     putThenLoad(ValueType.REF, SampleEntities.createBranch(random));
     final Multimap<ValueType<?>, HasId> objs = ImmutableMultimap.of(ValueType.REF, SampleEntities.createBranch(random));
 
-    Assertions.assertThrows(NotFoundException.class, () -> testLoad(objs));
+    Assertions.assertThrows(NotFoundException.class, () -> store.load(createTestLoadStep(objs)));
   }
+
+  @Test
+  void loadPagination() {
+    final ImmutableMultimap.Builder<ValueType<?>, HasId> builder = ImmutableMultimap.builder();
+    for (int i = 0; i < (10 + loadSize()); ++i) {
+      // Only create a single type as this is meant to test the pagination within the store, not the variety. Variety is
+      // taken care of by another test.
+      builder.put(ValueType.REF, SampleEntities.createTag(random));
+    }
+
+    final Multimap<ValueType<?>, HasId> objs = builder.build();
+    objs.forEach(this::putThenLoad);
+
+    store.load(createTestLoadStep(objs));
+  }
+
+  // Test for loadSingle()
 
   @Test
   void loadSingleInvalid() {
@@ -241,6 +259,8 @@ public abstract class AbstractTestStore<S extends Store> {
     putThenLoad(ValueType.VALUE, SampleEntities.createValue(random));
   }
 
+  // Tests for putIfAbsent()
+
   @Test
   void putIfAbsentL1() {
     testPutIfAbsent(ValueType.L1, SampleEntities.createL1(random));
@@ -281,6 +301,8 @@ public abstract class AbstractTestStore<S extends Store> {
     testPutIfAbsent(ValueType.VALUE, SampleEntities.createValue(random));
   }
 
+  // Tests for save()
+
   static class EntitySaveOp<C extends BaseValue<C>> {
     final ValueType<C> type;
     final PersistentBase<C> entity;
@@ -308,7 +330,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
     store.save(entities.stream().map(e -> e.saveOp).collect(Collectors.toList()));
 
-    assertAll(entities.stream().map(s -> () -> {
+    Assertions.assertAll(entities.stream().map(s -> () -> {
       try {
         final HasId saveOpValue = s.entity;
         HasId loadedValue = EntityType.forType(s.type).loadSingle(store, saveOpValue.getId());
@@ -331,20 +353,7 @@ public abstract class AbstractTestStore<S extends Store> {
     }));
   }
 
-  @Test
-  void loadPagination() {
-    final ImmutableMultimap.Builder<ValueType<?>, HasId> builder = ImmutableMultimap.builder();
-    for (int i = 0; i < (10 + loadSize()); ++i) {
-      // Only create a single type as this is meant to test the pagination within the store, not the variety. Variety is
-      // taken care of by another test.
-      builder.put(ValueType.REF, SampleEntities.createTag(random));
-    }
-
-    final Multimap<ValueType<?>, HasId> objs = builder.build();
-    objs.forEach(this::putThenLoad);
-
-    testLoad(objs);
-  }
+  // Tests for put()
 
   @Test
   void putWithConditionValue() {
@@ -393,6 +402,8 @@ public abstract class AbstractTestStore<S extends Store> {
     putThenLoad(ValueType.L3, l3);
   }
 
+  // Tests for put() with conditions
+
   @Test
   void putWithCompoundConditionTag() {
     final InternalRef sample = SampleEntities.createTag(random);
@@ -414,6 +425,8 @@ public abstract class AbstractTestStore<S extends Store> {
         ExpressionFunction.equals(ExpressionPath.builder("commit").build(), Entity.ofString("notEqual")));
     putConditional(ValueType.REF, sample, false, Optional.of(condition));
   }
+
+  // Tests for delete()
 
   @Test
   void deleteNoConditionValue() {
@@ -530,6 +543,8 @@ public abstract class AbstractTestStore<S extends Store> {
     final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(COMMITS), TWO));
     deleteCondition(ValueType.REF, SampleEntities.createBranch(random), true, Optional.of(expression));
   }
+
+  // Tests for update()
 
   @Test
   void updateWithFailedCondition() {
@@ -665,54 +680,7 @@ public abstract class AbstractTestStore<S extends Store> {
     testLoadSingle(ValueType.KEY_FRAGMENT, updated);
   }
 
-  private <T extends HasId> void putWithCondition(ValueType<?> type, T sample) {
-    // Tests that attempt to put (update) an existing entry should only occur when the condition expression is met.
-    putThenLoad(type, sample);
-
-    final ExpressionPath keyName = ExpressionPath.builder(Store.KEY_NAME).build();
-    final ConditionExpression conditionExpression = ConditionExpression.of(ExpressionFunction.equals(keyName, sample.getId().toEntity()));
-    putConditional(type, sample, true, Optional.of(conditionExpression));
-  }
-
-  protected <T extends HasId> void deleteCondition(ValueType<?> type, T sample, boolean shouldSucceed,
-                                                   Optional<ConditionExpression> conditionExpression) {
-    putThenLoad(type, sample);
-    if (shouldSucceed) {
-      Assertions.assertTrue(store.delete(type, sample.getId(), conditionExpression));
-      Assertions.assertThrows(NotFoundException.class, () -> EntityType.forType(type).loadSingle(store, sample.getId()));
-    } else {
-      Assertions.assertFalse(store.delete(type, sample.getId(), conditionExpression));
-      testLoadSingle(type, sample);
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  protected <C extends BaseValue<C>> void putConditional(ValueType<C> type, HasId sample, boolean shouldSucceed,
-                                                         Optional<ConditionExpression> conditionExpression) {
-    if (!supportsConditionExpression()) {
-      return;
-    }
-
-    try {
-      store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, conditionExpression);
-      if (!shouldSucceed) {
-        Assertions.fail();
-      }
-      testLoadSingle(type, sample);
-    } catch (ConditionFailedException cfe) {
-      if (shouldSucceed) {
-        Assertions.fail(cfe);
-      }
-
-      Assertions.assertThrows(NotFoundException.class, () -> EntityType.forType(type).loadSingle(store, sample.getId()));
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private <C extends BaseValue<C>> void putThenLoad(ValueType<C> type, HasId sample) {
-    store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, Optional.empty());
-    testLoadSingle(type, sample);
-  }
+  // Utility functions for the tests
 
   private void updateRemoveArray(UpdateExpression update, int beginArrayIndex, int endArrayIndex) {
     if (!supportsUpdate()) {
@@ -739,8 +707,60 @@ public abstract class AbstractTestStore<S extends Store> {
     testLoadSingle(ValueType.KEY_FRAGMENT, updated);
   }
 
-  protected void testLoad(Multimap<ValueType<?>, HasId> objs) {
-    store.load(createTestLoadStep(objs));
+  protected <T extends HasId> void deleteCondition(ValueType<?> type, T sample, boolean shouldSucceed,
+                                                   Optional<ConditionExpression> conditionExpression) {
+    putThenLoad(type, sample);
+    if (shouldSucceed) {
+      Assertions.assertTrue(store.delete(type, sample.getId(), conditionExpression));
+      Assertions.assertThrows(NotFoundException.class, () -> EntityType.forType(type).loadSingle(store, sample.getId()));
+    } else {
+      Assertions.assertFalse(store.delete(type, sample.getId(), conditionExpression));
+      testLoadSingle(type, sample);
+    }
+  }
+
+  private <T extends HasId> void putWithCondition(ValueType<?> type, T sample) {
+    // Tests that attempt to put (update) an existing entry should only occur when the condition expression is met.
+    putThenLoad(type, sample);
+
+    final ExpressionPath keyName = ExpressionPath.builder(Store.KEY_NAME).build();
+    final ConditionExpression conditionExpression = ConditionExpression.of(ExpressionFunction.equals(keyName, sample.getId().toEntity()));
+    putConditional(type, sample, true, Optional.of(conditionExpression));
+  }
+
+  @SuppressWarnings("unchecked")
+  protected <C extends BaseValue<C>> void putConditional(ValueType<C> type, HasId sample, boolean shouldSucceed,
+                                                         Optional<ConditionExpression> conditionExpression) {
+    if (!supportsConditionExpression()) {
+      return;
+    }
+
+    try {
+      store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, conditionExpression);
+      if (!shouldSucceed) {
+        Assertions.fail();
+      }
+      testLoadSingle(type, sample);
+    } catch (ConditionFailedException cfe) {
+      if (shouldSucceed) {
+        Assertions.fail(cfe);
+      }
+
+      Assertions.assertThrows(NotFoundException.class, () -> EntityType.forType(type).loadSingle(store, sample.getId()));
+    }
+  }
+
+  protected <C extends BaseValue<C>, T extends PersistentBase<C>> void testPutIfAbsent(ValueType<C> type, T sample) {
+    Assertions.assertTrue(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));
+    testLoadSingle(type, sample);
+    Assertions.assertFalse(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));
+    testLoadSingle(type, sample);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <C extends BaseValue<C>> void putThenLoad(ValueType<C> type, HasId sample) {
+    store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, Optional.empty());
+    testLoadSingle(type, sample);
   }
 
   protected LoadStep createTestLoadStep(Multimap<ValueType<?>, HasId> objs) {
@@ -758,13 +778,6 @@ public abstract class AbstractTestStore<S extends Store> {
   protected <T extends HasId> void testLoadSingle(ValueType<?> type, T sample) {
     final T read = (T) EntityType.forType(type).loadSingle(store, sample.getId());
     assertEquals(sample, read);
-  }
-
-  protected <C extends BaseValue<C>, T extends PersistentBase<C>> void testPutIfAbsent(ValueType<C> type, T sample) {
-    Assertions.assertTrue(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));
-    testLoadSingle(type, sample);
-    Assertions.assertFalse(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));
-    testLoadSingle(type, sample);
   }
 
   protected static void assertEquals(HasId expected, HasId actual) {
