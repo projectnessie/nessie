@@ -565,8 +565,8 @@ class TestConditionExecutor {
     return (RocksL1) new RocksL1()
         .id(Id.EMPTY)
         .commitMetadataId(ID)
-        .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
-        .ancestors(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
+        .children(Stream.generate(() -> ID).limit(RocksL1.SIZE))
+        .ancestors(Stream.generate(() -> ID).limit(RocksL1.SIZE))
         .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
         .incrementalKeyList(ID, 1);
   }
@@ -580,10 +580,10 @@ class TestConditionExecutor {
     return (RocksL1) new RocksL1()
         .id(Id.EMPTY)
         .commitMetadataId(ID)
-        .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
-        .ancestors(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
+        .children(Stream.generate(() -> ID).limit(RocksL1.SIZE))
+        .ancestors(Stream.generate(() -> ID).limit(RocksL1.SIZE))
         .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
-        .completeKeyList(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID));
+        .completeKeyList(Stream.generate(() -> ID).limit(RocksL1.SIZE));
   }
 
   /**
@@ -591,7 +591,7 @@ class TestConditionExecutor {
    * @return sample L2 entity.
    */
   static RocksL2 createL2() {
-    return (RocksL2) new RocksL2().id(Id.EMPTY).children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID));
+    return (RocksL2) new RocksL2().id(Id.EMPTY).children(Stream.generate(() -> ID).limit(RocksL1.SIZE));
   }
 
   /**
@@ -616,7 +616,7 @@ class TestConditionExecutor {
       .id(Id.EMPTY)
       .type(Ref.RefType.BRANCH)
       .name(sampleName)
-      .children(IntStream.range(0, RocksL1.SIZE).mapToObj(x -> ID))
+      .children(Stream.generate(() -> ID).limit(RocksL1.SIZE))
       .metadata(ID)
       .commits(bc -> {
         bc.id(ID)
