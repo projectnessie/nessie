@@ -23,7 +23,9 @@ import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.deserializeTo
 import static com.dremio.nessie.versioned.store.dynamo.DynamoSerDe.serializeWithConsumer;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -104,6 +106,12 @@ import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 public class DynamoStore implements Store {
 
   public static final int LOAD_SIZE = 100;
+
+  /**
+   * The <a href="https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchWriteItem.html">Dynamo docs</a>
+   * state a batch-write be rejected, if it contains more than 25 requests in a batch.
+   */
+  public static final int DYNAMO_BATCH_WRITE_LIMIT_COUNT = 25;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
@@ -339,17 +347,35 @@ public class DynamoStore implements Store {
 
   @Override
   public void save(List<SaveOp<?>> ops) {
-    List<CompletableFuture<BatchWriteItemResponse>> saves =  new ArrayList<>();
-    for (int i = 0; i < ops.size(); i += paginationSize) {
+    // max number of requests per batch-write
+    int pageSize = Math.min(DYNAMO_BATCH_WRITE_LIMIT_COUNT, paginationSize);
 
-      ListMultimap<String, SaveOp<?>> mm =
-          Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
-      ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save ->
-          WriteRequest.builder().putRequest(PutRequest.builder()
-              .item(serializeWithConsumer(save))
-              .build()
-          ).build());
-      BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
+    List<CompletableFuture<BatchWriteItemResponse>> saves =  new ArrayList<>();
+
+    // The following nested forEach construct collects up to `pageSize` `WriteRequest`s in
+    // the `currentBatch` map. The current number of `WriteRequest`s is held in `currentBatchSize[0]`.
+    Map<String, Collection<WriteRequest>> currentBatch = new HashMap<>();
+    int[] currentBatchSize = new int[1];
+
+    ops.forEach(op -> {
+      String tableName = tableNames.get(op.getType());
+      WriteRequest writeRequest = WriteRequest.builder().putRequest(PutRequest.builder()
+          .item(serializeWithConsumer(op))
+          .build()
+      ).build();
+      currentBatch.computeIfAbsent(tableName, ignore -> new ArrayList<>()).add(writeRequest);
+
+      if (++currentBatchSize[0] == pageSize) {
+        // Reached `pageSize` limit: construct a "batch write request" and submit it.
+        BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(new HashMap<>(currentBatch)).build();
+        saves.add(async.batchWriteItem(batch));
+        currentBatch.clear();
+        currentBatchSize[0] = 0;
+      }
+    });
+    if (currentBatchSize[0] > 0) {
+      // Construct a "batch write request" for the remaining `SaveOs`s and submit it.
+      BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(new HashMap<>(currentBatch)).build();
       saves.add(async.batchWriteItem(batch));
     }
 
