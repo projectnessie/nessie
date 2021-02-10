@@ -441,7 +441,7 @@ class InternalBranch extends InternalRef {
         }
 
       } catch (Exception ex) {
-        LOGGER.debug("Exception when trying to update item.", ex);
+        LOGGER.debug("Exception when trying to collapse intention log.", ex);
       }
       throw new ReferenceConflictException(String.format("Unable to collapse intention log after %d attempts, giving up.", attempts));
     }

@@ -450,7 +450,7 @@ public class DynamoStore implements Store {
         .consistentRead(true)
         .build());
     if (!response.hasItem()) {
-      throw new NotFoundException("Unable to load item.");
+      throw new NotFoundException(String.format("Unable to load item %s:%s.", valueType, id));
     }
     deserializeToConsumer(valueType, response.item(), consumer);
   }
@@ -473,7 +473,7 @@ public class DynamoStore implements Store {
       consumer.ifPresent(c -> deserializeToConsumer(type, response.attributes(), c));
       return true;
     } catch (ResourceNotFoundException ex) {
-      throw new NotFoundException("Unable to find value.", ex);
+      throw new NotFoundException(String.format("Unable to find value %s:%s.", type, id), ex);
     } catch (ConditionalCheckFailedException checkFailed) {
       LOGGER.debug("Conditional check failed.", checkFailed);
       return false;
