@@ -285,7 +285,11 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     try {
       updatedBranch.getUpdateState(store).ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
     } catch (Exception ex) {
-      LOGGER.info("Failure while collapsing intention log after commit.", ex);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.info("Failure while collapsing intention log after commit.", ex);
+      } else {
+        LOGGER.info("Failure while collapsing intention log after commit: {}", ex.toString());
+      }
     }
   }
 
