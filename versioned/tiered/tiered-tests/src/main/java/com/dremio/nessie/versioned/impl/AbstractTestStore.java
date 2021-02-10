@@ -632,7 +632,7 @@ public abstract class AbstractTestStore<S extends Store> {
       putThenLoad(ValueType.REF, tag);
       final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(
           ExpressionPath.builder("name").build(), Entity.ofString("badTagName")));
-      Assertions.assertThrows(ConditionFailedException.class, () -> store.update(
+      Assertions.assertFalse(store.update(
           ValueType.REF,
           tag.getId(),
           UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("metadata").build())),
@@ -741,7 +741,8 @@ public abstract class AbstractTestStore<S extends Store> {
       final boolean result = store.update(
           ValueType.KEY_FRAGMENT,
           fragment.getId(),
-          UpdateExpression.of(SetClause.appendToList(ExpressionPath.builder("keys").build(), Entity.ofList(Entity.ofString(key)))),
+          UpdateExpression.of(SetClause.appendToList(
+              ExpressionPath.builder("keys").build(), Entity.ofList(Entity.ofList(Entity.ofString(key))))),
           Optional.empty(),
           Optional.of(builder));
       Assertions.assertTrue(result);
