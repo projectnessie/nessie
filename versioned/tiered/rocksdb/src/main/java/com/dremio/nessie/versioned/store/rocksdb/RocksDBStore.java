@@ -72,12 +72,13 @@ public class RocksDBStore implements Store {
   private static final long OPEN_SLEEP_MILLIS = 100L;
   private static final List<byte[]> COLUMN_FAMILIES;
   private static final RocksDBConditionVisitor ROCKS_DB_CONDITION_EXPRESSION_VISITOR = new RocksDBConditionVisitor();
+  private static final String DEFAULT_COLUMN_FAMILY = new String(RocksDB.DEFAULT_COLUMN_FAMILY, UTF_8);
 
   static {
     RocksDB.loadLibrary();
     COLUMN_FAMILIES = Stream.concat(
       Stream.of(RocksDB.DEFAULT_COLUMN_FAMILY),
-      ValueType.values().stream().map(v -> v.name().getBytes(UTF_8))).collect(ImmutableList.toImmutableList());
+      ValueType.values().stream().map(v -> v.getValueName().getBytes(UTF_8))).collect(ImmutableList.toImmutableList());
   }
 
   private OptimisticTransactionDB transactionDB;
@@ -108,8 +109,8 @@ public class RocksDBStore implements Store {
         final ImmutableMap.Builder<ValueType<?>, ColumnFamilyHandle> builder = new ImmutableMap.Builder<>();
         for (ColumnFamilyHandle handle : columnFamilyHandles) {
           final String valueTypeName = new String(handle.getName(), UTF_8);
-          if (!valueTypeName.equals(new String(RocksDB.DEFAULT_COLUMN_FAMILY, UTF_8))) {
-            builder.put(ValueType.values().stream().filter(v -> v.getTableName("").equals(valueTypeName)).findFirst().get(), handle);
+          if (!valueTypeName.equals(DEFAULT_COLUMN_FAMILY)) {
+            builder.put(ValueType.byValueName(valueTypeName), handle);
           }
         }
         valueTypeToColumnFamily = builder.build();
