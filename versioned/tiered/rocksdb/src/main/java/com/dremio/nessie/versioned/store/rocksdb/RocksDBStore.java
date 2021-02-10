@@ -109,9 +109,6 @@ public class RocksDBStore implements Store {
         final ImmutableMap.Builder<ValueType<?>, ColumnFamilyHandle> builder = new ImmutableMap.Builder<>();
         for (ColumnFamilyHandle handle : columnFamilyHandles) {
           final String valueTypeName = new String(handle.getName(), UTF_8);
-          if (!handle.getName().equals(RocksDB.DEFAULT_COLUMN_FAMILY)) {
-            builder.put(ValueType.byValueName(valueTypeName), handle);
-          }
           if (!valueTypeName.equals(DEFAULT_COLUMN_FAMILY)) {
             // TODO: byValueName returns the valueName. We need to compare the defaultTableSuffix.
             builder.put(ValueType.byValueName(valueTypeName), handle);
