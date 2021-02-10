@@ -33,8 +33,6 @@ import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
 import org.rocksdb.FlushOptions;
-import org.rocksdb.OptimisticTransactionDB;
-import org.rocksdb.OptimisticTransactionOptions;
 import org.rocksdb.Options;
 import org.rocksdb.ReadOptions;
 import org.rocksdb.RocksDB;
@@ -42,6 +40,8 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.Status;
 import org.rocksdb.Transaction;
+import org.rocksdb.TransactionDB;
+import org.rocksdb.TransactionDBOptions;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
@@ -81,8 +81,7 @@ public class RocksDBStore implements Store {
       ValueType.values().stream().map(v -> v.getValueName().getBytes(UTF_8))).collect(ImmutableList.toImmutableList());
   }
 
-  private OptimisticTransactionDB transactionDB;
-  private RocksDB rocksDB;
+  private TransactionDB rocksDB;
   private Map<ValueType<?>, ColumnFamilyHandle> valueTypeToColumnFamily;
   private final RocksDBStoreConfig config;
 
@@ -104,8 +103,7 @@ public class RocksDBStore implements Store {
       try (final DBOptions dbOptions = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true)) {
         // TODO: Consider setting WAL limits.
         final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
-        transactionDB = OptimisticTransactionDB.open(dbOptions, dbPath, columnFamilies, columnFamilyHandles);
-        rocksDB = transactionDB.getBaseDB();
+        rocksDB = TransactionDB.open(dbOptions, new TransactionDBOptions(), dbPath, columnFamilies, columnFamilyHandles);
         final ImmutableMap.Builder<ValueType<?>, ColumnFamilyHandle> builder = new ImmutableMap.Builder<>();
         for (ColumnFamilyHandle handle : columnFamilyHandles) {
           final String valueTypeName = new String(handle.getName(), UTF_8);
@@ -193,8 +191,7 @@ public class RocksDBStore implements Store {
   @Override
   public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
-    try {
-      final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions());
+    try (final Transaction transaction = rocksDB.beginTransaction(new WriteOptions())) {
       // Get exclusive access to key if it exists.
       final byte[] buffer = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, saveOp.getId().toBytes(), true);
       if (null == buffer) {
@@ -213,7 +210,7 @@ public class RocksDBStore implements Store {
   public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
 
-    try (final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions())) {
+    try (final Transaction transaction = rocksDB.beginTransaction(new WriteOptions())) {
       if (condition.isPresent()) {
         final RocksBaseValue consumer = RocksSerDe.getConsumer(saveOp.getType());
         final byte[] buffer = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, saveOp.getId().toBytes(), true);
@@ -238,7 +235,7 @@ public class RocksDBStore implements Store {
   public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
 
-    try (final Transaction transaction = transactionDB.beginTransaction(new WriteOptions(), new OptimisticTransactionOptions())) {
+    try (final Transaction transaction = rocksDB.beginTransaction(new WriteOptions())) {
       final byte[] value = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, id.toBytes(), true);
 
       if (null == value) {
