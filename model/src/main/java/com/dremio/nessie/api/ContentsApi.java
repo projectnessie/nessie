@@ -56,7 +56,7 @@ public interface ContentsApi {
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Information for table"),
       @APIResponse(responseCode = "404", description = "Table not found on ref")
-    })
+  })
   Contents getContents(
       @Valid
       @Parameter(description = "object name to search for")
