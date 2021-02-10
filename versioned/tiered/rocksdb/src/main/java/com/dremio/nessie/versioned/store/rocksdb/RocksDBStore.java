@@ -72,6 +72,7 @@ public class RocksDBStore implements Store {
   private static final long OPEN_SLEEP_MILLIS = 100L;
   private static final List<byte[]> COLUMN_FAMILIES;
   private static final RocksDBConditionVisitor ROCKS_DB_CONDITION_EXPRESSION_VISITOR = new RocksDBConditionVisitor();
+  private static final String DEFAULT_COLUMN_FAMILY = "default";
 
   static {
     RocksDB.loadLibrary();
@@ -105,19 +106,18 @@ public class RocksDBStore implements Store {
         final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
         transactionDB = OptimisticTransactionDB.open(dbOptions, dbPath, columnFamilies, columnFamilyHandles);
         rocksDB = transactionDB.getBaseDB();
-        valueTypeToColumnFamily = ValueType.values().stream()
-          .collect(ImmutableMap.<ValueType<?>, ValueType<?>, ColumnFamilyHandle>toImmutableMap(
-            v -> v,
-            v -> {
-              String collectionName = v.getTableName(config.getTablePrefix());
-              // TODO: this is probably not correct. I guess we need to look up the columnFamilyHandle based on prefix
-              // or ColumnFamilyDescriptor.
-              return rocksDB.getDefaultColumnFamily();
-            })
-          );
-        // TODO: remove commented out code once I understand how this works.
-        //        valueTypeToColumnFamily = IntStream.rangeClosed(1, ValueType.values().size()).boxed().collect(
-        //          ImmutableMap.toImmutableMap(k -> ValueType.values().get(k - 1), columnFamilyHandles::get));
+        final ImmutableMap.Builder<ValueType<?>, ColumnFamilyHandle> builder = new ImmutableMap.Builder<>();
+        for (ColumnFamilyHandle handle : columnFamilyHandles) {
+          final String valueTypeName = new String(handle.getName(), UTF_8);
+          if (!handle.getName().equals(RocksDB.DEFAULT_COLUMN_FAMILY)) {
+            builder.put(ValueType.byValueName(valueTypeName), handle);
+          }
+          if (!valueTypeName.equals(DEFAULT_COLUMN_FAMILY)) {
+            // TODO: byValueName returns the valueName. We need to compare the defaultTableSuffix.
+            builder.put(ValueType.byValueName(valueTypeName), handle);
+          }
+        }
+        valueTypeToColumnFamily = builder.build();
         break;
       } catch (RocksDBException e) {
         if (e.getStatus().getCode() != Status.Code.IOError || !e.getStatus().getState().contains("While lock")) {
