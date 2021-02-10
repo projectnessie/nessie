@@ -93,6 +93,11 @@ public class ExpressionFunction implements Value {
     return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(func, Value.of(value)));
   }
 
+  @Override
+  public ExpressionFunction alias(AliasCollector aliasCollector) {
+    return new ExpressionFunction(name, arguments.stream().map(v -> v.alias(aliasCollector)).collect(ImmutableList.toImmutableList()));
+  }
+
   /**
    * Return this function as a Dynamo expression string.
    * @return The expression string.
@@ -102,11 +107,6 @@ public class ExpressionFunction implements Value {
       return String.format("%s %s %s", arguments.get(0).asString(), name.protocolName, arguments.get(1).asString());
     }
     return String.format("%s(%s)", name.protocolName, arguments.stream().map(Value::asString).collect(Collectors.joining(", ")));
-  }
-
-  @Override
-  public ExpressionFunction alias(AliasCollector aliasCollector) {
-    return new ExpressionFunction(name, arguments.stream().map(v -> v.alias(aliasCollector)).collect(ImmutableList.toImmutableList()));
   }
 
   @Override

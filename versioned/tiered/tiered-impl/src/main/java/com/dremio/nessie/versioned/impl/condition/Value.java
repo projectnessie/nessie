@@ -43,7 +43,7 @@ public interface Value extends Aliasable<Value> {
   Type getType();
 
   /**
-   * Default implementation for visitation.
+   * Acceptor for any visitors of the Value hierarchy.
    * @param visitor the visitor that will be invoked.
    * @param <T> the type of the returned value.
    * @return the possibly transformed value resulting from the visitation.
