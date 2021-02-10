@@ -24,11 +24,11 @@ import com.google.common.collect.ImmutableList;
 
 public class ExpressionFunction implements Value {
 
-  private static enum FunctionName {
+  public enum FunctionName {
     LIST_APPEND("list_append", 2),
-    IF_NOT_EXISTS("if_not_exists", 2),
     EQUALS("="),
     // Not yet implemented below here.
+    //  IF_NOT_EXISTS("if_not_exists", 2),
     //  ATTRIBUTE_EXISTS("attribute_exists", 1),
     ATTRIBUTE_NOT_EXISTS("attribute_not_exists", 1),
     SIZE("size", 1),
@@ -58,12 +58,16 @@ public class ExpressionFunction implements Value {
     FunctionName(String text) {
       this(text, 2, true);
     }
+
+    public int getArgCount() {
+      return argCount;
+    }
   }
 
   private final FunctionName name;
   private final List<Value> arguments;
 
-  private ExpressionFunction(FunctionName name, ImmutableList<Value> arguments) {
+  ExpressionFunction(FunctionName name, ImmutableList<Value> arguments) {
     this.name = name;
     this.arguments = ImmutableList.copyOf(arguments);
     Preconditions.checkArgument(this.arguments.size() == name.argCount, "Unexpected argument count.");
@@ -89,14 +93,9 @@ public class ExpressionFunction implements Value {
     return new ExpressionFunction(FunctionName.EQUALS, ImmutableList.of(func, Value.of(value)));
   }
 
-
-  public static ExpressionFunction ifNotExists(ExpressionPath path, Entity value) {
-    return new ExpressionFunction(FunctionName.IF_NOT_EXISTS, ImmutableList.of(path, Value.of(value)));
-  }
-
   @Override
-  public ExpressionFunction alias(AliasCollector c) {
-    return new ExpressionFunction(name, arguments.stream().map(v -> v.alias(c)).collect(ImmutableList.toImmutableList()));
+  public ExpressionFunction alias(AliasCollector aliasCollector) {
+    return new ExpressionFunction(name, arguments.stream().map(v -> v.alias(aliasCollector)).collect(ImmutableList.toImmutableList()));
   }
 
   /**
@@ -107,7 +106,7 @@ public class ExpressionFunction implements Value {
     if (name.binaryExpression) {
       return String.format("%s %s %s", arguments.get(0).asString(), name.protocolName, arguments.get(1).asString());
     }
-    return String.format("%s(%s)", name.protocolName, arguments.stream().map(v -> v.asString()).collect(Collectors.joining(", ")));
+    return String.format("%s(%s)", name.protocolName, arguments.stream().map(Value::asString).collect(Collectors.joining(", ")));
   }
 
   @Override
@@ -120,4 +119,16 @@ public class ExpressionFunction implements Value {
     return this;
   }
 
+  public FunctionName getName() {
+    return name;
+  }
+
+  public List<Value> getArguments() {
+    return arguments;
+  }
+
+  @Override
+  public <T> T accept(ValueVisitor<T> visitor) {
+    return visitor.visit(this);
+  }
 }
