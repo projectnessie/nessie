@@ -376,7 +376,7 @@ class InternalBranch extends InternalRef {
         for (int attempt = 0; attempt < attempts; attempt++) {
 
           // cleanup pending updates.
-          UpdateState updateState = attempts == 0 ? initialState : branch.getUpdateState(store);
+          UpdateState updateState = attempt == 0 ? initialState : branch.getUpdateState(store);
 
           // now we need to take the current list and turn it into a list of 1 item that is saved.
           final ExpressionPath commits = ExpressionPath.builder("commits").build();
