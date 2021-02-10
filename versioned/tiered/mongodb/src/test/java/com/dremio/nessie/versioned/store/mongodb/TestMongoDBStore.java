@@ -85,4 +85,20 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
       }
     };
   }
+
+  // Disabled tests
+  @Override
+  protected boolean supportsDelete() {
+    return false;
+  }
+
+  @Override
+  protected boolean supportsUpdate() {
+    return false;
+  }
+
+  @Override
+  protected boolean supportsConditionExpression() {
+    return false;
+  }
 }

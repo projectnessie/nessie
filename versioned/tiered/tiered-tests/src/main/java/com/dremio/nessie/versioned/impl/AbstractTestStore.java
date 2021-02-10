@@ -16,8 +16,8 @@
 package com.dremio.nessie.versioned.impl;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +31,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.dremio.nessie.tiered.builder.BaseValue;
+import com.dremio.nessie.versioned.impl.condition.ConditionExpression;
+import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
+import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
+import com.dremio.nessie.versioned.impl.condition.RemoveClause;
+import com.dremio.nessie.versioned.impl.condition.SetClause;
+import com.dremio.nessie.versioned.impl.condition.UpdateExpression;
+import com.dremio.nessie.versioned.store.ConditionFailedException;
+import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.HasId;
 import com.dremio.nessie.versioned.store.LoadStep;
 import com.dremio.nessie.versioned.store.NotFoundException;
@@ -49,16 +57,21 @@ import com.google.common.collect.Multimap;
 public abstract class AbstractTestStore<S extends Store> {
   static class CreatorPair {
     final ValueType<?> type;
-    final Supplier<HasId> supplier;
+    final Supplier<PersistentBase<?>> supplier;
 
-    CreatorPair(ValueType<?> type, Supplier<HasId> supplier) {
+    CreatorPair(ValueType<?> type, Supplier<PersistentBase<?>> supplier) {
       this.type = type;
       this.supplier = supplier;
     }
   }
 
+  protected static final ExpressionPath COMMITS = ExpressionPath.builder("commits").build();
+  protected static final Entity ONE = Entity.ofNumber(1);
+  protected static final Entity TWO = Entity.ofNumber(2);
+
   protected Random random;
   protected S store;
+  protected ImmutableList<CreatorPair> creators;
 
   /**
    * Create and start the store, if not already done.
@@ -69,6 +82,16 @@ public abstract class AbstractTestStore<S extends Store> {
       this.store = createStore();
       this.store.start();
       random = new Random(getRandomSeed());
+      creators = ImmutableList.<CreatorPair>builder()
+        .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createTag(random)))
+        .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createBranch(random)))
+        .add(new CreatorPair(ValueType.COMMIT_METADATA, () -> SampleEntities.createCommitMetadata(random)))
+        .add(new CreatorPair(ValueType.VALUE, () -> SampleEntities.createValue(random)))
+        .add(new CreatorPair(ValueType.L1, () -> SampleEntities.createL1(random)))
+        .add(new CreatorPair(ValueType.L2, () -> SampleEntities.createL2(random)))
+        .add(new CreatorPair(ValueType.L3, () -> SampleEntities.createL3(random)))
+        .add(new CreatorPair(ValueType.KEY_FRAGMENT, () -> SampleEntities.createFragment(random)))
+        .build();
     }
   }
 
@@ -94,6 +117,18 @@ public abstract class AbstractTestStore<S extends Store> {
 
   protected abstract int loadSize();
 
+  protected boolean supportsDelete() {
+    return true;
+  }
+
+  protected boolean supportsUpdate() {
+    return true;
+  }
+
+  protected boolean supportsConditionExpression() {
+    return true;
+  }
+
   @Test
   void closeWithoutStart() {
     final Store localStore = createRawStore();
@@ -110,17 +145,6 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @Test
   void load() {
-    final ImmutableList<CreatorPair> creators = ImmutableList.<CreatorPair>builder()
-        .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createTag(random)))
-        .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createBranch(random)))
-        .add(new CreatorPair(ValueType.COMMIT_METADATA, () -> SampleEntities.createCommitMetadata(random)))
-        .add(new CreatorPair(ValueType.VALUE, () -> SampleEntities.createValue(random)))
-        .add(new CreatorPair(ValueType.L1, () -> SampleEntities.createL1(random)))
-        .add(new CreatorPair(ValueType.L2, () -> SampleEntities.createL2(random)))
-        .add(new CreatorPair(ValueType.L3, () -> SampleEntities.createL3(random)))
-        .add(new CreatorPair(ValueType.KEY_FRAGMENT, () -> SampleEntities.createFragment(random)))
-        .build();
-
     final ImmutableMultimap.Builder<ValueType<?>, HasId> builder = ImmutableMultimap.builder();
     for (int i = 0; i < 100; ++i) {
       final int index = i % creators.size();
@@ -271,7 +295,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @Test
   void save() {
-    List<EntitySaveOp<?>> entities = Arrays.asList(
+    final List<EntitySaveOp<?>> entities = Arrays.asList(
         new EntitySaveOp<>(ValueType.L1, SampleEntities.createL1(random)),
         new EntitySaveOp<>(ValueType.L2, SampleEntities.createL2(random)),
         new EntitySaveOp<>(ValueType.L3, SampleEntities.createL3(random)),
@@ -286,9 +310,9 @@ public abstract class AbstractTestStore<S extends Store> {
 
     assertAll(entities.stream().map(s -> () -> {
       try {
-        HasId saveOpValue = s.entity;
+        final HasId saveOpValue = s.entity;
         HasId loadedValue = EntityType.forType(s.type).loadSingle(store, saveOpValue.getId());
-        assertEquals(saveOpValue, loadedValue, "type " + s.type);
+        Assertions.assertEquals(saveOpValue, loadedValue, "type " + s.type);
 
         try {
           loadedValue = EntityType.forType(s.type).buildEntity(producer -> {
@@ -296,7 +320,7 @@ public abstract class AbstractTestStore<S extends Store> {
             @SuppressWarnings("rawtypes") BaseValue p = producer;
             store.loadSingle(t, saveOpValue.getId(), p);
           });
-          assertEquals(saveOpValue, loadedValue, "type " + s.type);
+          Assertions.assertEquals(saveOpValue, loadedValue, "type " + s.type);
         } catch (UnsupportedOperationException e) {
           // TODO ignore this for now
         }
@@ -311,8 +335,8 @@ public abstract class AbstractTestStore<S extends Store> {
   void loadPagination() {
     final ImmutableMultimap.Builder<ValueType<?>, HasId> builder = ImmutableMultimap.builder();
     for (int i = 0; i < (10 + loadSize()); ++i) {
-      // Only create a single type as this is meant to test the pagination within Mongo, not the variety. Variety is
-      // taken care of by a test in AbstractTestStore.
+      // Only create a single type as this is meant to test the pagination within the store, not the variety. Variety is
+      // taken care of by another test.
       builder.put(ValueType.REF, SampleEntities.createTag(random));
     }
 
@@ -322,10 +346,397 @@ public abstract class AbstractTestStore<S extends Store> {
     testLoad(objs);
   }
 
+  @Test
+  void putWithConditionValue() {
+    putWithCondition(ValueType.VALUE, SampleEntities.createValue(random));
+  }
+
+  @Test
+  void putWithConditionBranch() {
+    putWithCondition(ValueType.REF, SampleEntities.createBranch(random));
+  }
+
+  @Test
+  void putWithConditionTag() {
+    putWithCondition(ValueType.REF, SampleEntities.createTag(random));
+  }
+
+  @Test
+  void putWithConditionCommitMetadata() {
+    putWithCondition(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
+  }
+
+  @Test
+  void putWithConditionKeyFragment() {
+    putWithCondition(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random));
+  }
+
+  @Test
+  void putWithConditionL1() {
+    putWithCondition(ValueType.L1, SampleEntities.createL1(random));
+  }
+
+  @Test
+  void putWithConditionL2() {
+    putWithCondition(ValueType.L2, SampleEntities.createL2(random));
+  }
+
+  @Test
+  void putWithConditionL3() {
+    putWithCondition(ValueType.L3, SampleEntities.createL3(random));
+  }
+
+  @Test
+  void putTwice() {
+    final HasId l3 = SampleEntities.createL3(random);
+    putThenLoad(ValueType.L3, l3);
+    putThenLoad(ValueType.L3, l3);
+  }
+
+  @Test
+  void putWithCompoundConditionTag() {
+    final InternalRef sample = SampleEntities.createTag(random);
+    putThenLoad(ValueType.REF, sample);
+    final InternalRef.Type type = InternalRef.Type.TAG;
+    final ConditionExpression condition = ConditionExpression.of(
+        ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), type.toEntity()),
+        ExpressionFunction.equals(ExpressionPath.builder("name").build(), Entity.ofString("tagName"))
+    );
+    putConditional(ValueType.REF, sample, true, Optional.of(condition));
+  }
+
+  @Test
+  void putWithFailingConditionExpression() {
+    final InternalRef sample = SampleEntities.createBranch(random);
+    final InternalRef.Type type = InternalRef.Type.BRANCH;
+    final ConditionExpression condition = ConditionExpression.of(
+        ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), type.toEntity()),
+        ExpressionFunction.equals(ExpressionPath.builder("commit").build(), Entity.ofString("notEqual")));
+    putConditional(ValueType.REF, sample, false, Optional.of(condition));
+  }
+
+  @Test
+  void deleteNoConditionValue() {
+    if (!supportsDelete()) {
+      return;
+    }
+
+    deleteCondition(ValueType.VALUE, SampleEntities.createValue(random), true, Optional.empty());
+  }
+
+  @Test
+  void deleteNoConditionL1() {
+    if (!supportsDelete()) {
+      return;
+    }
+
+    deleteCondition(ValueType.L1, SampleEntities.createL1(random), true, Optional.empty());
+  }
+
+  @Test
+  void deleteNoConditionL2() {
+    if (!supportsDelete()) {
+      return;
+    }
+
+    deleteCondition(ValueType.L2, SampleEntities.createL2(random), true, Optional.empty());
+  }
+
+  @Test
+  void deleteNoConditionL3() {
+    if (!supportsDelete()) {
+      return;
+    }
+
+    deleteCondition(ValueType.L3, SampleEntities.createL3(random), true, Optional.empty());
+  }
+
+  @Test
+  void deleteNoConditionFragment() {
+    if (!supportsDelete()) {
+      return;
+    }
+
+    deleteCondition(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random), true, Optional.empty());
+  }
+
+  @Test
+  void deleteNoConditionBranch() {
+    if (!supportsDelete()) {
+      return;
+    }
+
+    deleteCondition(ValueType.REF, SampleEntities.createBranch(random), true, Optional.empty());
+  }
+
+  @Test
+  void deleteNoConditionTag() {
+    if (!supportsDelete()) {
+      return;
+    }
+
+    deleteCondition(ValueType.REF, SampleEntities.createTag(random), true, Optional.empty());
+  }
+
+  @Test
+  void deleteNoConditionCommitMetadata() {
+    if (!supportsDelete()) {
+      return;
+    }
+
+    deleteCondition(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random), true, Optional.empty());
+  }
+
+  @Test
+  void deleteConditionMismatchAttributeValue() {
+    if (!supportsDelete() || !supportsConditionExpression()) {
+      return;
+    }
+
+    final ExpressionFunction expressionFunction = ExpressionFunction.equals(ExpressionPath.builder("value").build(),
+        SampleEntities.createStringEntity(random, random.nextInt(10) + 1));
+    final ConditionExpression ex = ConditionExpression.of(expressionFunction);
+    deleteCondition(ValueType.VALUE, SampleEntities.createValue(random), false, Optional.of(ex));
+  }
+
+  @Test
+  void deleteConditionMismatchAttributeBranch() {
+    if (!supportsDelete() || !supportsConditionExpression()) {
+      return;
+    }
+
+    final ExpressionFunction expressionFunction = ExpressionFunction.equals(ExpressionPath.builder("commit").build(),
+        SampleEntities.createStringEntity(random, random.nextInt(10) + 1));
+    final ConditionExpression ex = ConditionExpression.of(expressionFunction);
+    deleteCondition(ValueType.REF, SampleEntities.createBranch(random), false, Optional.of(ex));
+  }
+
+  @Test
+  void deleteBranchSizeFail() {
+    if (!supportsDelete() || !supportsConditionExpression()) {
+      return;
+    }
+
+    final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(COMMITS), ONE));
+    deleteCondition(ValueType.REF, SampleEntities.createBranch(random), false, Optional.of(expression));
+  }
+
+  @Test
+  void deleteBranchSizeSucceed() {
+    if (!supportsDelete() || !supportsConditionExpression()) {
+      return;
+    }
+
+    final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(COMMITS), TWO));
+    deleteCondition(ValueType.REF, SampleEntities.createBranch(random), true, Optional.of(expression));
+  }
+
+  @Test
+  void updateWithFailedCondition() {
+    if (!supportsUpdate() || !supportsConditionExpression()) {
+      return;
+    }
+
+    final InternalRef tag = SampleEntities.createTag(random);
+    putThenLoad(ValueType.REF, tag);
+    final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(
+        ExpressionPath.builder("name").build(), Entity.ofString("badTagName")));
+    Assertions.assertThrows(ConditionFailedException.class, () -> store.update(
+        ValueType.REF,
+        tag.getId(),
+        UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("metadata").build())),
+        Optional.of(expression),
+        Optional.empty()));
+  }
+
+  @Test
+  void updateWithSuccessfulCondition() {
+    if (!supportsUpdate() || !supportsConditionExpression()) {
+      return;
+    }
+
+    final String tagName = "myTag";
+    final InternalTag tag = SampleEntities.createTag(random).getTag();
+    putThenLoad(ValueType.REF, tag);
+    final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(
+        ExpressionPath.builder("name").build(), Entity.ofString("tagName")));
+    final InternalRef.Builder<?> builder = EntityType.REF.newEntityProducer();
+    final boolean result = store.update(
+        ValueType.REF,
+        tag.getId(),
+        UpdateExpression.of(SetClause.equals(ExpressionPath.builder("name").build(), Entity.ofString(tagName))),
+        Optional.of(expression),
+        Optional.of(builder));
+    Assertions.assertTrue(result);
+    final InternalTag updated = builder.build().getTag();
+
+    Assertions.assertEquals(tag.getId(), updated.getId());
+    Assertions.assertEquals(tag.getCommit(), updated.getCommit());
+    Assertions.assertEquals(tag.getDt(), updated.getDt());
+    Assertions.assertNotEquals(tag.getName(), updated.getName());
+    Assertions.assertEquals(tagName, updated.getName());
+
+    testLoadSingle(ValueType.REF, updated);
+  }
+
+  @Test
+  protected void updateRemoveOneArray() {
+    updateRemoveArray(UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("keys").position(0).build())), 1, 10);
+  }
+
+  @Test
+  protected void updateRemoveOneArrayEnd() {
+    updateRemoveArray(UpdateExpression.of(RemoveClause.of(ExpressionPath.builder("keys").position(9).build())), 0, 9);
+  }
+
+  @Test
+  protected void updateRemoveMultipleArrayAscending() {
+    UpdateExpression update = UpdateExpression.of();
+    for (int i = 0; i < 5; ++i) {
+      update = update.and(RemoveClause.of(ExpressionPath.builder("keys").position(i).build()));
+    }
+
+    updateRemoveArray(update, 5, 10);
+  }
+
+  @Test
+  protected void updateRemoveMultipleArrayDescending() {
+    UpdateExpression update = UpdateExpression.of();
+    for (int i = 4; i >= 0; --i) {
+      update = update.and(RemoveClause.of(ExpressionPath.builder("keys").position(i).build()));
+    }
+
+    updateRemoveArray(update, 5, 10);
+  }
+
+  @Test
+  void updateSetEquals() {
+    if (!supportsUpdate()) {
+      return;
+    }
+
+    final String tagName = "myTag";
+    final InternalTag tag = SampleEntities.createTag(random).getTag();
+    putThenLoad(ValueType.REF, tag);
+    final InternalRef.Builder<?> builder = EntityType.REF.newEntityProducer();
+    final boolean result = store.update(
+        ValueType.REF,
+        tag.getId(),
+        UpdateExpression.of(SetClause.equals(ExpressionPath.builder("name").build(), Entity.ofString(tagName))),
+        Optional.empty(),
+        Optional.of(builder));
+    Assertions.assertTrue(result);
+    final InternalTag updated = builder.build().getTag();
+
+    Assertions.assertEquals(tag.getId(), updated.getId());
+    Assertions.assertEquals(tag.getCommit(), updated.getCommit());
+    Assertions.assertEquals(tag.getDt(), updated.getDt());
+    Assertions.assertNotEquals(tag.getName(), updated.getName());
+    Assertions.assertEquals(tagName, updated.getName());
+
+    testLoadSingle(ValueType.REF, updated);
+  }
+
+  @Test
+  void updateSetListAppend() {
+    if (!supportsUpdate()) {
+      return;
+    }
+
+    final String key = "newKey";
+    final InternalFragment fragment = SampleEntities.createFragment(random);
+    putThenLoad(ValueType.KEY_FRAGMENT, fragment);
+    final InternalFragment.Builder builder = EntityType.KEY_FRAGMENT.newEntityProducer();
+    final boolean result = store.update(
+        ValueType.KEY_FRAGMENT,
+        fragment.getId(),
+        UpdateExpression.of(SetClause.appendToList(ExpressionPath.builder("keys").build(), Entity.ofList(Entity.ofString(key)))),
+        Optional.empty(),
+        Optional.of(builder));
+    Assertions.assertTrue(result);
+    final InternalFragment updated = builder.build();
+
+    Assertions.assertEquals(fragment.getId(), updated.getId());
+
+    final List<InternalKey> oldKeys = new ArrayList<>(fragment.getKeys());
+    oldKeys.add(InternalKey.fromEntity(Entity.ofList(Entity.ofString(key))));
+    Assertions.assertEquals(oldKeys, updated.getKeys());
+
+    testLoadSingle(ValueType.KEY_FRAGMENT, updated);
+  }
+
+  private <T extends HasId> void putWithCondition(ValueType<?> type, T sample) {
+    // Tests that attempt to put (update) an existing entry should only occur when the condition expression is met.
+    putThenLoad(type, sample);
+
+    final ExpressionPath keyName = ExpressionPath.builder(Store.KEY_NAME).build();
+    final ConditionExpression conditionExpression = ConditionExpression.of(ExpressionFunction.equals(keyName, sample.getId().toEntity()));
+    putConditional(type, sample, true, Optional.of(conditionExpression));
+  }
+
+  protected <T extends HasId> void deleteCondition(ValueType<?> type, T sample, boolean shouldSucceed,
+                                                   Optional<ConditionExpression> conditionExpression) {
+    putThenLoad(type, sample);
+    if (shouldSucceed) {
+      Assertions.assertTrue(store.delete(type, sample.getId(), conditionExpression));
+      Assertions.assertThrows(NotFoundException.class, () -> EntityType.forType(type).loadSingle(store, sample.getId()));
+    } else {
+      Assertions.assertFalse(store.delete(type, sample.getId(), conditionExpression));
+      testLoadSingle(type, sample);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  protected <C extends BaseValue<C>> void putConditional(ValueType<C> type, HasId sample, boolean shouldSucceed,
+                                                         Optional<ConditionExpression> conditionExpression) {
+    if (!supportsConditionExpression()) {
+      return;
+    }
+
+    try {
+      store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, conditionExpression);
+      if (!shouldSucceed) {
+        Assertions.fail();
+      }
+      testLoadSingle(type, sample);
+    } catch (ConditionFailedException cfe) {
+      if (shouldSucceed) {
+        Assertions.fail(cfe);
+      }
+
+      Assertions.assertThrows(NotFoundException.class, () -> EntityType.forType(type).loadSingle(store, sample.getId()));
+    }
+  }
+
   @SuppressWarnings("unchecked")
   private <C extends BaseValue<C>> void putThenLoad(ValueType<C> type, HasId sample) {
     store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, Optional.empty());
     testLoadSingle(type, sample);
+  }
+
+  private void updateRemoveArray(UpdateExpression update, int beginArrayIndex, int endArrayIndex) {
+    if (!supportsUpdate()) {
+      return;
+    }
+
+    final InternalFragment fragment = SampleEntities.createFragment(random);
+    putThenLoad(ValueType.KEY_FRAGMENT, fragment);
+    final InternalFragment.Builder builder = EntityType.KEY_FRAGMENT.newEntityProducer();
+    final boolean result = store.update(
+        ValueType.KEY_FRAGMENT,
+        fragment.getId(),
+        update,
+        Optional.empty(),
+        Optional.of(builder));
+    Assertions.assertTrue(result);
+    final InternalFragment updated = builder.build();
+
+    Assertions.assertEquals(fragment.getId(), updated.getId());
+
+    final List<InternalKey> oldKeys = fragment.getKeys().subList(beginArrayIndex, endArrayIndex);
+    Assertions.assertEquals(oldKeys, updated.getKeys());
+
+    testLoadSingle(ValueType.KEY_FRAGMENT, updated);
   }
 
   protected void testLoad(Multimap<ValueType<?>, HasId> objs) {
@@ -338,7 +749,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected LoadStep createTestLoadStep(Multimap<ValueType<?>, HasId> objs, Optional<LoadStep> next) {
-    EntityLoadOps loadOps = new EntityLoadOps();
+    final EntityLoadOps loadOps = new EntityLoadOps();
     objs.forEach((type, val) -> loadOps.load(((EntityType) EntityType.forType(type)), val.getId(), r -> assertEquals(val, r)));
     return loadOps.build(() -> next);
   }
@@ -354,5 +765,10 @@ public abstract class AbstractTestStore<S extends Store> {
     testLoadSingle(type, sample);
     Assertions.assertFalse(store.putIfAbsent(new EntitySaveOp<>(type, sample).saveOp));
     testLoadSingle(type, sample);
+  }
+
+  protected static void assertEquals(HasId expected, HasId actual) {
+    Assertions.assertEquals(expected, actual);
+    Assertions.assertEquals(expected.getId(), actual.getId());
   }
 }
