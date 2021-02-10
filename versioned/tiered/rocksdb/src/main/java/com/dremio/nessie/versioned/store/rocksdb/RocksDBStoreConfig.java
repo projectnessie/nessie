@@ -27,6 +27,11 @@ public abstract class RocksDBStoreConfig {
   }
 
   @Default
+  public String getDbDirectory() {
+    return "";
+  }
+
+  @Default
   public String getTreeTableName() {
     return "nessie_objects";
   }

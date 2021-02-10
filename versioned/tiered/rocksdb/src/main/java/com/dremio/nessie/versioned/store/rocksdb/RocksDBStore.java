@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -73,25 +72,26 @@ public class RocksDBStore implements Store {
   private static final long OPEN_SLEEP_MILLIS = 100L;
   private static final List<byte[]> COLUMN_FAMILIES;
   private static final RocksDBConditionVisitor ROCKS_DB_CONDITION_EXPRESSION_VISITOR = new RocksDBConditionVisitor();
+  private static final String DEFAULT_COLUMN_FAMILY = new String(RocksDB.DEFAULT_COLUMN_FAMILY, UTF_8);
 
   static {
     RocksDB.loadLibrary();
     COLUMN_FAMILIES = Stream.concat(
       Stream.of(RocksDB.DEFAULT_COLUMN_FAMILY),
-      ValueType.values().stream().map(v -> v.name().getBytes(UTF_8))).collect(ImmutableList.toImmutableList());
+      ValueType.values().stream().map(v -> v.getValueName().getBytes(UTF_8))).collect(ImmutableList.toImmutableList());
   }
 
-  private final String dbDirectory;
   private OptimisticTransactionDB transactionDB;
   private RocksDB rocksDB;
   private Map<ValueType<?>, ColumnFamilyHandle> valueTypeToColumnFamily;
+  private final RocksDBStoreConfig config;
 
   /**
    * Creates a store ready for connection to RocksDB.
-   * @param dbDirectory the directory of the Rocks database.
+   * @param config the configuration for the store.
    */
-  public RocksDBStore(String dbDirectory) {
-    this.dbDirectory = dbDirectory;
+  public RocksDBStore(RocksDBStoreConfig config) {
+    this.config = config;
   }
 
   @Override
@@ -106,8 +106,14 @@ public class RocksDBStore implements Store {
         final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
         transactionDB = OptimisticTransactionDB.open(dbOptions, dbPath, columnFamilies, columnFamilyHandles);
         rocksDB = transactionDB.getBaseDB();
-        valueTypeToColumnFamily = IntStream.rangeClosed(1, ValueType.values().size()).boxed().collect(
-          ImmutableMap.toImmutableMap(k -> ValueType.values().get(k - 1), columnFamilyHandles::get));
+        final ImmutableMap.Builder<ValueType<?>, ColumnFamilyHandle> builder = new ImmutableMap.Builder<>();
+        for (ColumnFamilyHandle handle : columnFamilyHandles) {
+          final String valueTypeName = new String(handle.getName(), UTF_8);
+          if (!valueTypeName.equals(DEFAULT_COLUMN_FAMILY)) {
+            builder.put(ValueType.byValueName(valueTypeName), handle);
+          }
+        }
+        valueTypeToColumnFamily = builder.build();
         break;
       } catch (RocksDBException e) {
         if (e.getStatus().getCode() != Status.Code.IOError || !e.getStatus().getState().contains("While lock")) {
@@ -378,7 +384,7 @@ public class RocksDBStore implements Store {
   }
 
   private String verifyPath() {
-    final File dbDirectory = new File(this.dbDirectory);
+    final File dbDirectory = new File(config.getDbDirectory());
     if (dbDirectory.exists()) {
       if (!dbDirectory.isDirectory()) {
         throw new RuntimeException(
