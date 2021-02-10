@@ -48,29 +48,13 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
    */
   @Override
   protected RocksDBStore createStore() {
-    return new RocksDBStore(createConfig());
-  }
-
-  private RocksDBStoreConfig createConfig() {
-    return new RocksDBStoreConfig() {
-      public String getDbDirectory() {
-        return DB_PATH.toString();
-      }
-    };
+    return new RocksDBStore(createConfig(DB_PATH.toString()));
   }
 
   @Override
   protected RocksDBStore createRawStore() {
     // Need to use a separate path to avoid reusing the file created by the normal store.
-    return new RocksDBStore(createRawConfig());
-  }
-
-  private RocksDBStoreConfig createRawConfig() {
-    return new RocksDBStoreConfig() {
-      public String getDbDirectory() {
-        return getRawPath().toString();
-      }
-    };
+    return new RocksDBStore(createConfig(getRawPath().toString()));
   }
 
   @Override
@@ -89,6 +73,13 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
     store.deleteAllData();
   }
 
+  private RocksDBStoreConfig createConfig(String path) {
+    return new RocksDBStoreConfig() {
+      public String getDbDirectory() {
+        return path;
+      }
+    };
+  }
 
   private static Path getRawPath() {
     return DB_PATH.resolve("raw");

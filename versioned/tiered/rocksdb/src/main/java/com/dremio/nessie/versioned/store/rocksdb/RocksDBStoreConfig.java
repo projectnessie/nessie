@@ -22,11 +22,6 @@ import org.immutables.value.Value.Immutable;
 public abstract class RocksDBStoreConfig {
 
   @Default
-  public String getTablePrefix() {
-    return "";
-  }
-
-  @Default
   public String getRefTableName() {
     return "refs";
   }
