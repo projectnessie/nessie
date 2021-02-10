@@ -23,7 +23,9 @@ import static org.projectnessie.versioned.dynamodb.DynamoSerDe.deserializeToCons
 import static org.projectnessie.versioned.dynamodb.DynamoSerDe.serializeWithConsumer;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -104,6 +106,12 @@ import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 public class DynamoStore implements Store {
 
   public static final int LOAD_SIZE = 100;
+
+  /**
+   * The <a href="https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchWriteItem.html">Dynamo docs</a>
+   * state a batch-write be rejected, if it contains more than 25 requests in a batch.
+   */
+  static final int DYNAMO_BATCH_WRITE_LIMIT_COUNT = 25;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DynamoStore.class);
 
@@ -337,21 +345,86 @@ public class DynamoStore implements Store {
     return possibleExpression.map(ce -> ce.and(checkType)).orElse(ConditionExpression.of(checkType));
   }
 
+  /**
+   * Internal class used to collect batch-operation ({@code BATCH}) of type {@code REQ}, where
+   * each batch-operation gets at max the given number of requests {{@code REQ}}, but in a map of
+   * table-name-to-collection-of-write-requests.
+   * <p>This class is very targeted to be used for DynamoDB batch-write requests, and is
+   * therefore here as a "private" class. If it feels appropriate elsewhere, it can probably
+   * be extended and maybe moved elsewhere.</p>
+   *
+   * @param <IN> Input object type - this is {@link SaveOp} for the {@link #save(List)} use-case
+   * @param <KEY> Key parameter as required by the batch - this is the table-name as a {@link String}
+   *             for DynamoDB batch-writes. The {@code keyMapper} function maps an {@code IN}
+   *             to a {@code KEY}.
+   * @param <REQ> Value parameter as required by the bach - this is a {@link WriteRequest} for
+   *             DynamoDB batch-writes. The {@code valueMapper} function maps an {@code IN}
+   *             to a {@code REQ}.
+   * @param <BATCH> the resulting type as returned by the {@code emitter} function after submitting
+   *               the batch-operation from the {@code Map<KEY, Collection<REQ>>}.
+   */
+  static class BatchesCollector<IN, KEY, REQ, BATCH> {
+    private final Function<IN, KEY> keyMapper;
+    private final Function<IN, REQ> valueMapper;
+    private final Function<Map<KEY, Collection<REQ>>, BATCH> emitter;
+    private final List<BATCH> result = new ArrayList<>();
+    private final int maxBatchSize;
+
+    private int requests;
+    private final Map<KEY, Collection<REQ>> current = new HashMap<>();
+
+    BatchesCollector(Function<IN, KEY> keyMapper, Function<IN, REQ> valueMapper,
+        Function<Map<KEY, Collection<REQ>>, BATCH> emitter, int maxBatchSize) {
+      Preconditions.checkArgument(maxBatchSize > 0);
+      Preconditions.checkNotNull(keyMapper);
+      Preconditions.checkNotNull(valueMapper);
+      Preconditions.checkNotNull(emitter);
+      this.keyMapper = keyMapper;
+      this.valueMapper = valueMapper;
+      this.emitter = emitter;
+      this.maxBatchSize = maxBatchSize;
+    }
+
+    private void handle(IN op) {
+      KEY key = keyMapper.apply(op);
+      REQ req = valueMapper.apply(op);
+
+      current.computeIfAbsent(key, k -> new ArrayList<>()).add(req);
+      if (++requests == maxBatchSize) {
+        emit();
+      }
+    }
+
+    private void emit() {
+      if (requests > 0) {
+        result.add(emitter.apply(new HashMap<>(current)));
+        requests = 0;
+        current.clear();
+      }
+    }
+
+    List<BATCH> collect(Stream<IN> input) {
+      input.forEach(this::handle);
+      emit();
+      return result;
+    }
+  }
+
   @Override
   public void save(List<SaveOp<?>> ops) {
-    List<CompletableFuture<BatchWriteItemResponse>> saves =  new ArrayList<>();
-    for (int i = 0; i < ops.size(); i += paginationSize) {
+    // max number of requests per batch-write
+    int maxBatchSize = Math.min(DYNAMO_BATCH_WRITE_LIMIT_COUNT, paginationSize);
 
-      ListMultimap<String, SaveOp<?>> mm =
-          Multimaps.index(ops.subList(i, Math.min(i + paginationSize, ops.size())), l -> tableNames.get(l.getType()));
-      ListMultimap<String, WriteRequest> writes = Multimaps.transformValues(mm, save ->
-          WriteRequest.builder().putRequest(PutRequest.builder()
-              .item(serializeWithConsumer(save))
-              .build()
-          ).build());
-      BatchWriteItemRequest batch = BatchWriteItemRequest.builder().requestItems(writes.asMap()).build();
-      saves.add(async.batchWriteItem(batch));
-    }
+    // "Collector" for `BatchWriteItemRequest`s, with at `maxBatchSize` requests per batch-write
+    BatchesCollector<SaveOp<?>, String, WriteRequest, CompletableFuture<BatchWriteItemResponse>> saveBatch =
+        new BatchesCollector<>(
+            op -> tableNames.get(op.getType()),
+            op -> WriteRequest.builder().putRequest(PutRequest.builder().item(serializeWithConsumer(op)).build()).build(),
+            grouped -> async.batchWriteItem(BatchWriteItemRequest.builder().requestItems(grouped).build()),
+            maxBatchSize);
+
+    // Collect the already fired `BatchWriteItemRequest`
+    List<CompletableFuture<BatchWriteItemResponse>> saves = saveBatch.collect(ops.stream());
 
     try {
       CompletableFuture.allOf(saves.toArray(new CompletableFuture[0])).get();
