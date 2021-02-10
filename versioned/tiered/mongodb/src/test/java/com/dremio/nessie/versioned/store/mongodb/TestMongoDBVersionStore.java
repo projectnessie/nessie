@@ -31,7 +31,7 @@ import com.dremio.nessie.versioned.VersionStore;
 import com.dremio.nessie.versioned.VersionStoreException;
 import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
 
-@ExtendWith(LocalMongo.class)
+@ExtendWith(LocalMongoD.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Disabled("MongoDBStore not fully implemented")
 public class TestMongoDBVersionStore extends AbstractITVersionStore {

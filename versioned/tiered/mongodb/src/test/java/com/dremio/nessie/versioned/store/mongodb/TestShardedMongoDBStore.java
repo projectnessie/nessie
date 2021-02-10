@@ -15,27 +15,17 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.dremio.nessie.versioned.impl.AbstractITTieredVersionStore;
-
-@ExtendWith(LocalMongoD.class)
+/**
+ * A test class that contains MongoDB specific tests for sharded MongoDB.
+ */
+@ExtendWith(LocalMongoS.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Disabled("MongoDBStore not fully implemented")
-class TestMongoDBTieredVersionStore extends AbstractITTieredVersionStore {
-  private static final String testDatabaseName = "mydb";
-  private String connectionString;
-
-  @BeforeAll
-  void init(String connectionString) {
-    this.connectionString = connectionString;
-  }
-
+class TestShardedMongoDBStore extends TestMongoDBStoreBase {
   @Override
-  protected MongoStoreFixture createNewFixture() {
-    return new MongoStoreFixture(connectionString, testDatabaseName);
+  protected long getRandomSeed() {
+    return 98324122436234L;
   }
 }

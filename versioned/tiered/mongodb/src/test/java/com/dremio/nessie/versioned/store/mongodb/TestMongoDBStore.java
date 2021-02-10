@@ -15,74 +15,17 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import com.dremio.nessie.versioned.impl.AbstractTestStore;
-
 /**
- * A test class that contains MongoDB specific tests.
+ * A test class that contains MongoDB specific tests for unsharded MongoDB.
  */
-@ExtendWith(LocalMongo.class)
+@ExtendWith(LocalMongoD.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
-  private static final String testDatabaseName = "mydb";
-  private String connectionString;
-
-  @BeforeAll
-  void init(String connectionString) {
-    this.connectionString = connectionString;
-  }
-
-  @AfterAll
-  void close() {
-    if (null != store) {
-      store.close();
-    }
-  }
-
-  /**
-   * Creates an instance of MongoDBStore on which tests are executed.
-   * @return the store to test.
-   */
-  @Override
-  protected MongoDBStore createStore() {
-    return new MongoDBStore(createConfig());
-  }
-
-  @Override
-  protected MongoDBStore createRawStore() {
-    return new MongoDBStore(createConfig());
-  }
-
+class TestMongoDBStore extends TestMongoDBStoreBase {
   @Override
   protected long getRandomSeed() {
     return 8612341233543L;
-  }
-
-  @Override
-  protected void resetStoreState() {
-    store.resetCollections();
-  }
-
-  @Override
-  protected int loadSize() {
-    return MongoDBStore.LOAD_SIZE;
-  }
-
-  private MongoStoreConfig createConfig() {
-    return new MongoStoreConfig() {
-      @Override
-      public String getConnectionString() {
-        return connectionString;
-      }
-
-      @Override
-      public String getDatabaseName() {
-        return testDatabaseName;
-      }
-    };
   }
 }
