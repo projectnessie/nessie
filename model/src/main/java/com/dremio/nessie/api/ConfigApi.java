@@ -38,12 +38,12 @@ public interface ConfigApi {
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "List all configuration settings")
   @APIResponses({
-        @APIResponse(
-          description = "Configuration settings",
-          content = @Content(mediaType = "application/json",
-            schema = @Schema(implementation = NessieConfiguration.class))),
-        @APIResponse(responseCode = "400", description = "Unknown Error")}
-  )
+    @APIResponse(
+        description = "Configuration settings",
+        content = @Content(mediaType = "application/json",
+        schema = @Schema(implementation = NessieConfiguration.class))),
+    @APIResponse(responseCode = "400", description = "Unknown Error")
+  })
   NessieConfiguration getConfig();
 
 }

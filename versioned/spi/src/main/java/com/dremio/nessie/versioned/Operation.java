@@ -31,7 +31,6 @@ public interface Operation<V> {
 
   /**
    * The key for this operation.
-   * @return
    */
   Key getKey();
 }

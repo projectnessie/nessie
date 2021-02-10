@@ -27,13 +27,11 @@ public interface WithHash<T> {
 
   /**
    * Get the value of the hash associated with this commit.
-   * @return
    */
   Hash getHash();
 
   /**
    * Get the value this object wraps.
-   * @return
    */
   T getValue();
 
