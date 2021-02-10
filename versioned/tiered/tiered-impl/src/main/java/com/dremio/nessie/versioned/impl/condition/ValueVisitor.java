@@ -15,17 +15,19 @@
  */
 package com.dremio.nessie.versioned.impl.condition;
 
+import com.dremio.nessie.versioned.store.Entity;
+
 /**
  * Visitor for all classes in the Value hierarchy.
  * @param <T> The type to which the Value will be converted.
  */
 public interface ValueVisitor<T> {
   /**
-   * Visit the passed in Value.
-   * @param value the Value to visit.
+   * Visit the passed in Entity.
+   * @param entity the Entity to visit.
    * @return the possibly transformed value resulting from the visitation.
    */
-  T visit(Value value);
+  T visit(Entity entity);
 
   /**
    * Visit the passed in ExpressionFunction.

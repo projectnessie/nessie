@@ -90,15 +90,4 @@ public abstract class ConditionExpression implements Aliasable<ConditionExpressi
       o1 -> ImmutableConditionExpression.builder().addAllFunctions(o1).build()
       );
   }
-
-  /**
-   * Visit this object given the specific visitor.
-   *
-   * @param visitor the instance visiting.
-   * @param <T> The class to which ConditionExpression is converted.
-   * @return the converted class.
-   */
-  public <T> T accept(ConditionExpressionVisitor<T> visitor) {
-    return visitor.visit(this);
-  }
 }
