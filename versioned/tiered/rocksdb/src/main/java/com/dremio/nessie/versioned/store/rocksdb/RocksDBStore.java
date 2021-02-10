@@ -72,7 +72,6 @@ public class RocksDBStore implements Store {
   private static final long OPEN_SLEEP_MILLIS = 100L;
   private static final List<byte[]> COLUMN_FAMILIES;
   private static final RocksDBConditionVisitor ROCKS_DB_CONDITION_EXPRESSION_VISITOR = new RocksDBConditionVisitor();
-  private static final String DEFAULT_COLUMN_FAMILY = "default";
 
   static {
     RocksDB.loadLibrary();
@@ -109,9 +108,8 @@ public class RocksDBStore implements Store {
         final ImmutableMap.Builder<ValueType<?>, ColumnFamilyHandle> builder = new ImmutableMap.Builder<>();
         for (ColumnFamilyHandle handle : columnFamilyHandles) {
           final String valueTypeName = new String(handle.getName(), UTF_8);
-          if (!valueTypeName.equals(DEFAULT_COLUMN_FAMILY)) {
-            // TODO: byValueName returns the valueName. We need to compare the defaultTableSuffix.
-            builder.put(ValueType.byValueName(valueTypeName), handle);
+          if (!valueTypeName.equals(new String(RocksDB.DEFAULT_COLUMN_FAMILY, UTF_8))) {
+            builder.put(ValueType.values().stream().filter(v -> v.getTableName("").equals(valueTypeName)).findFirst().get(), handle);
           }
         }
         valueTypeToColumnFamily = builder.build();
