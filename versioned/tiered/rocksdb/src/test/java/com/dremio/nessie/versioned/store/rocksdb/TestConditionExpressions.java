@@ -277,12 +277,12 @@ class TestConditionExpressions {
     final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), entity));
 
     final Condition expectedCondition = ImmutableCondition.builder()
-      .addFunctions(ImmutableFunction.builder()
-        .operator(Function.EQUALS)
-        .path(ofPath(path))
-        .value(entity)
-        .build())
-      .build();
+        .addFunctions(ImmutableFunction.builder()
+          .operator(Function.EQUALS)
+          .path(ofPath(path))
+          .value(entity)
+          .build())
+        .build();
     equals(expectedCondition, expression);
   }
 
