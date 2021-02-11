@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.immutables.value.Value;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -29,8 +30,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonTypeName("HIVE_TABLE")
 public interface HiveTable extends Contents {
 
+  @JsonProperty(index = 1)
   byte[] getTableDefinition();
 
+  @JsonProperty(index = 2)
   List<byte[]> getPartitions();
 
 }
