@@ -96,15 +96,15 @@ public class SampleEntities {
           bc.id(createId(random))
               .commit(createId(random))
               .saved()
-              .parent(createId(random))
-              .done();
+                .parent(createId(random))
+                .done();
           bc.id(createId(random))
               .commit(createId(random))
               .unsaved()
-              .delta(1, createId(random), createId(random))
-              .mutations()
-              .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
-              .done();
+                .delta(1, createId(random), createId(random))
+                .mutations()
+                  .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
+                  .done();
         }));
   }
 

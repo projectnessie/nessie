@@ -187,8 +187,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
         RocksRef.this.commits = new ArrayList<>();
       }
 
-      commitsConsumer.accept(new RocksBranchCommit() {
-      });
+      commitsConsumer.accept(new RocksBranchCommit());
       return this;
     }
 
