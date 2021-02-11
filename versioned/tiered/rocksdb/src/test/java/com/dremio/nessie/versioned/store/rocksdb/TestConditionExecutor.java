@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.impl.SampleEntities;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
@@ -606,22 +605,23 @@ class TestConditionExecutor {
       .id(Id.EMPTY)
       .name(sampleName)
       .branch()
-      .children(Stream.generate(() -> ID).limit(RocksL1.SIZE))
-      .metadata(ID)
-      .commits(bc -> {
-        bc.id(ID)
-          .commit(ID_2)
-          .saved()
-            .parent(ID_3)
-            .done();
-        bc.id(ID_4)
-          .commit(ID)
-          .unsaved()
-            .delta(1, ID_2, ID_3)
-            .mutations()
-              .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
+        .children(Stream.generate(() -> ID).limit(RocksL1.SIZE))
+        .metadata(ID)
+        .commits(bc -> {
+          bc.id(ID)
+            .commit(ID_2)
+            .saved()
+              .parent(ID_3)
               .done();
-      });
+          bc.id(ID_4)
+            .commit(ID)
+            .unsaved()
+              .delta(1, ID_2, ID_3)
+              .mutations()
+                .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
+                .done();
+        })
+        .backToRef();
   }
 
   /**
@@ -634,7 +634,8 @@ class TestConditionExecutor {
       .id(Id.EMPTY)
       .name(sampleName)
       .tag()
-      .commit(ID_2);
+        .commit(ID_2)
+        .backToRef();
   }
 
   /**
