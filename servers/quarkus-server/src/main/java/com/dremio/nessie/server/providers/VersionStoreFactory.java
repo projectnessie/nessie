@@ -141,6 +141,7 @@ public class VersionStoreFactory {
           .region(Region.of(region))
           .initializeDatabase(in.isDynamoInitialize())
           .tablePrefix(in.getTablePrefix())
+          .enableTracing(in.enableTracing())
           .build());
     dynamo.start();
     return dynamo;

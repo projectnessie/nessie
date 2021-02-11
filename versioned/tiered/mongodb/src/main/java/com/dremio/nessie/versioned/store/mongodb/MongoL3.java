@@ -15,13 +15,11 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.List;
 import java.util.stream.Stream;
 
-import org.bson.BsonReader;
 import org.bson.BsonWriter;
+import org.bson.Document;
 
 import com.dremio.nessie.tiered.builder.L3;
 import com.dremio.nessie.versioned.Key;
@@ -34,12 +32,9 @@ final class MongoL3 extends MongoBaseValue<L3> implements L3 {
   static final String TREE_KEY = "key";
   static final String TREE_ID = "id";
 
-  static final Map<String, BiConsumer<L3, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
-
-  static {
-    PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
-    PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.keyDelta(deserializeKeyDeltas(r)));
+  static void produce(Document document, L3 v) {
+    produceBase(document, v)
+        .keyDelta(deserializeKeyDeltas(document));
   }
 
   MongoL3(BsonWriter bsonWriter) {
@@ -61,14 +56,16 @@ final class MongoL3 extends MongoBaseValue<L3> implements L3 {
     writer.writeEndDocument();
   }
 
-  static Stream<KeyDelta> deserializeKeyDeltas(BsonReader entity) {
-    return MongoSerDe.deserializeArray(entity, r -> {
-      r.readStartDocument();
-      Key key = MongoSerDe.deserializeKey(entity);
-      Id id = MongoSerDe.deserializeId(entity);
-      r.readEndDocument();
-      return KeyDelta.of(key, id);
-    }).stream();
+  static Stream<KeyDelta> deserializeKeyDeltas(Document entity) {
+    List<Document> deltas = (List<Document>) entity.get(TREE);
+    return deltas.stream()
+        .map(MongoL3::deserializeKeyDelta);
+  }
+
+  private static KeyDelta deserializeKeyDelta(Document d) {
+    Key key = MongoSerDe.deserializeKey((List<String>) d.get(TREE_KEY));
+    Id id = MongoSerDe.deserializeId(d, TREE_ID);
+    return KeyDelta.of(key, id);
   }
 
   @Override

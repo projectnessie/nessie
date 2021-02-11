@@ -17,6 +17,7 @@ package com.dremio.nessie.versioned.store.rocksdb;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
 import java.util.Random;
 
 import org.junit.jupiter.api.Assertions;
@@ -28,6 +29,7 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Store;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 class TestConditionExpressions {
@@ -42,8 +44,6 @@ class TestConditionExpressions {
   private static final Entity FALSE_ENTITY = Entity.ofBoolean(false);
   private static final Entity LIST_ENTITY = Entity.ofList(ONE, TWO, THREE);
   private static final Entity MAP_ENTITY = Entity.ofMap(ImmutableMap.of("key_one", ONE, "key_two", TWO, "key_three", THREE));
-
-  private static final RocksDBConditionVisitor ROCKS_DB_CONDITION_EXPRESSION_VISITOR = new RocksDBConditionVisitor();
 
   // Single ExpressionFunction equals tests
   @Test
@@ -143,13 +143,12 @@ class TestConditionExpressions {
     final ConditionExpression ex =
         ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(ofPath(path)), NUM_FOUR));
 
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
+    final List<Function> expectedCondition = ImmutableList.of(
+        ImmutableFunction.builder()
           .operator(Function.SIZE)
           .path(ofPath(path))
           .value(NUM_FOUR)
-          .build())
-        .build();
+          .build());
     equals(expectedCondition, ex);
   }
 
@@ -162,18 +161,17 @@ class TestConditionExpressions {
     ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), id));
     ex = ex.and(ExpressionFunction.equals(ExpressionFunction.size(ofPath(path2)), NUM_ONE));
 
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
+    final List<Function> expectedCondition = ImmutableList.of(
+        ImmutableFunction.builder()
           .operator(Function.EQUALS)
           .path(ofPath(path))
           .value(id)
-          .build())
-        .addFunctions(ImmutableFunction.builder()
+          .build(),
+        ImmutableFunction.builder()
           .operator(Function.SIZE)
           .path(ofPath(path2))
           .value(NUM_ONE)
-          .build())
-        .build();
+          .build());
     equals(expectedCondition, ex);
   }
 
@@ -183,20 +181,20 @@ class TestConditionExpressions {
     final String path1 = SampleEntities.createString(RANDOM, RANDOM.nextInt(15));
     final String path2 = SampleEntities.createString(RANDOM, RANDOM.nextInt(15));
     final ConditionExpression ex = ConditionExpression.of(
-        ExpressionFunction.equals(ofPath(path1), TRUE_ENTITY), ExpressionFunction.equals(ofPath(path2), FALSE_ENTITY));
+        ExpressionFunction.equals(ofPath(path1), TRUE_ENTITY),
+        ExpressionFunction.equals(ExpressionFunction.size(ofPath(path2)), NUM_ONE));
 
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
+    final List<Function> expectedCondition = ImmutableList.of(
+        ImmutableFunction.builder()
           .operator(Function.EQUALS)
           .path(ofPath(path1))
           .value(TRUE_ENTITY)
-          .build())
-        .addFunctions(ImmutableFunction.builder()
+          .build(),
+        ImmutableFunction.builder()
           .operator(Function.SIZE)
           .path(ofPath(path2))
-          .value(FALSE_ENTITY)
-          .build())
-        .build();
+          .value(NUM_ONE)
+          .build());
     equals(expectedCondition, ex);
   }
 
@@ -209,23 +207,22 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path1), TRUE_ENTITY),
         ExpressionFunction.equals(ofPath(path2), FALSE_ENTITY), ExpressionFunction.equals(ofPath(pathPos), strEntity));
 
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
+    final List<Function> expectedCondition = ImmutableList.of(
+        ImmutableFunction.builder()
           .operator(Function.EQUALS)
           .path(ofPath(path1))
           .value(TRUE_ENTITY)
-          .build())
-        .addFunctions(ImmutableFunction.builder()
+          .build(),
+        ImmutableFunction.builder()
           .operator(Function.EQUALS)
           .path(ofPath(path2))
           .value(FALSE_ENTITY)
-          .build())
-        .addFunctions(ImmutableFunction.builder()
+          .build(),
+        ImmutableFunction.builder()
           .operator(Function.EQUALS)
           .path(ofPath(pathPos))
           .value(strEntity)
-          .build())
-        .build();
+          .build());
     equals(expectedCondition, ex);
   }
 
@@ -265,7 +262,7 @@ class TestConditionExpressions {
         .value(strEntity)
         .build();
 
-    Assertions.assertTrue(expectedFunction.equals(ex.accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR).getFunctions().get(0)));
+    Assertions.assertEquals(ImmutableList.of(expectedFunction), RocksDBStore.translate(ex));
   }
 
   private static void equalsEntity(Entity entity) {
@@ -276,14 +273,13 @@ class TestConditionExpressions {
   private static void equalsEntity(Entity entity, String path) {
     final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), entity));
 
-    final Condition expectedCondition = ImmutableCondition.builder()
-        .addFunctions(ImmutableFunction.builder()
+    final List<Function> expectedFunctions = ImmutableList.of(
+        ImmutableFunction.builder()
           .operator(Function.EQUALS)
           .path(ofPath(path))
           .value(entity)
-          .build())
-        .build();
-    equals(expectedCondition, expression);
+          .build());
+    equals(expectedFunctions, expression);
   }
 
   /**
@@ -316,17 +312,11 @@ class TestConditionExpressions {
     return SampleEntities.createString(RANDOM, RANDOM.nextInt(8) + 1) + "." + RANDOM.nextInt(10);
   }
 
-  private static String createPathName() {
-    return SampleEntities.createString(RANDOM, RANDOM.nextInt(5) + 1) + "."
-        + SampleEntities.createString(RANDOM, RANDOM.nextInt(10) + 1);
-  }
-
-  private static void equals(Condition expected, ConditionExpression input) {
-    Condition actual = input.accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR);
-    Assertions.assertTrue(actual.getFunctions().get(0).equals(expected.getFunctions().get(0)));
+  private static void equals(List<Function> expected, ConditionExpression input) {
+    Assertions.assertEquals(expected, RocksDBStore.translate(input));
   }
 
   private static void failsUnsupportedOperationException(ConditionExpression input) {
-    assertThrows(UnsupportedOperationException.class, () -> input.accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR));
+    assertThrows(UnsupportedOperationException.class, () -> RocksDBStore.translate(input));
   }
 }

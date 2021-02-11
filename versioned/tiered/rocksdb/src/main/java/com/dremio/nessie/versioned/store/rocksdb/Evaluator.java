@@ -15,14 +15,17 @@
  */
 package com.dremio.nessie.versioned.store.rocksdb;
 
+import java.util.List;
+
 /**
- * Provides evaluation of a {@link com.dremio.nessie.versioned.store.rocksdb.Condition} against the implementing class.
+ * Provides evaluation of a collection of {@link com.dremio.nessie.versioned.store.rocksdb.Function} against the
+ * implementing class.
  */
 interface Evaluator {
   /**
-   * Checks that each Function in the Condition is met by the implementing class.
-   * @param condition the condition to check
-   * @return true if the condition is met
+   * Checks that each Function in the collection is met by the implementing class.
+   * @param functions the functions to check
+   * @return true if the functions are met
    */
-  boolean evaluate(Condition condition);
+  boolean evaluate(List<Function> functions);
 }

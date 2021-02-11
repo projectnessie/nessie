@@ -21,6 +21,9 @@ import com.dremio.nessie.versioned.store.Id;
 
 /**
  * Consumer for L2s.
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
  */
 public interface L2 extends BaseValue<L2> {
 
@@ -31,6 +34,8 @@ public interface L2 extends BaseValue<L2> {
    * @param ids The list of ids
    * @return This consumer.
    */
-  L2 children(Stream<Id> ids);
-
+  default L2 children(Stream<Id> ids) {
+    ids.forEach(ignored -> {});
+    return this;
+  }
 }

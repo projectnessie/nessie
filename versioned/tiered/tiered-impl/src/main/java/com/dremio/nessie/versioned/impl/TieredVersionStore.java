@@ -265,7 +265,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           true,
           true);
 
-      InternalRef.Builder builder = EntityType.REF.newEntityProducer();
+      InternalRef.Builder<?> builder = EntityType.REF.newEntityProducer();
       boolean updated = store.update(ValueType.REF, ref.getId(),
           commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(builder));
       if (!updated) {
@@ -285,7 +285,11 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     try {
       updatedBranch.getUpdateState(store).ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
     } catch (Exception ex) {
-      LOGGER.info("Failure while collapsing intention log after commit.", ex);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.info("Failure while collapsing intention log after commit.", ex);
+      } else {
+        LOGGER.info("Failure while collapsing intention log after commit: {}", ex.toString());
+      }
     }
   }
 
@@ -319,7 +323,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   public Stream<WithHash<NamedRef>> getNamedRefs() {
     return store.getValues(ValueType.REF)
         .map(acceptor -> {
-          InternalRef.Builder producer = EntityType.REF.newEntityProducer();
+          InternalRef.Builder<?> producer = EntityType.REF.newEntityProducer();
           acceptor.applyValue(producer);
           return producer.build();
         })

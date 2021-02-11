@@ -70,9 +70,9 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     if (client == null) {
       client = NessieClient.basic(path, "admin_user", "test123");
       try {
-        client.getTreeApi().createReference(Branch.of("master", null));
+        client.getTreeApi().createReference(Branch.of("main", null));
       } catch (Exception t) {
-        //pass - likely already created master
+        //pass - likely already created main
       }
     }
     return client;
@@ -86,8 +86,8 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     Arguments defaultParameters = new Arguments();
     defaultParameters.addArgument(METHOD_TAG, "test");
     defaultParameters.addArgument(PATH_TAG, "testurl");
-    defaultParameters.addArgument(BRANCH_TAG, "master");
-    defaultParameters.addArgument(BASE_BRANCH_TAG, "master");
+    defaultParameters.addArgument(BRANCH_TAG, "main");
+    defaultParameters.addArgument(BASE_BRANCH_TAG, "main");
     defaultParameters.addArgument(TABLE_TAG, "table");
     return defaultParameters;
   }
@@ -175,11 +175,9 @@ public class NessieSampler extends AbstractJavaSamplerClient {
             Branch branch = (Branch) nessieClient().getTreeApi().getReferenceByName(this.branch);
             commitId.set(branch);
           }
-
-          nessieClient().getContentsApi().setContents(ContentsKey.of("name.space." + table),
+          nessieClient().getContentsApi().setContents(ContentsKey.of("name", "space", table),
               commitId.get().getName(), commitId.get().getHash(),
-              "", IcebergTable.of("path_on_disk_" + table));
-
+              "test", IcebergTable.of("path_on_disk_" + table));
           //TODO: this test shouldn't be doing a get branch operation since that isn't required to complete a commit.
           return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
         }, method);
@@ -200,6 +198,6 @@ public class NessieSampler extends AbstractJavaSamplerClient {
   public void setupTest(JavaSamplerContext context) {
     path = context.getParameter(PATH_TAG);
     branch = context.getParameter(BRANCH_TAG, "x");
-    baseBranch = context.getParameter(BASE_BRANCH_TAG, "master");
+    baseBranch = context.getParameter(BASE_BRANCH_TAG, "main");
   }
 }

@@ -20,7 +20,6 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.bool;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdStream;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeInt;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKeyMutations;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idsList;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
@@ -118,7 +117,7 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, L1 consumer) {
-    consumer.id(deserializeId(entity, ID)).dt(AttributeValueUtil.getDt(entity));
+    baseToConsumer(entity, consumer);
 
     if (entity.containsKey(METADATA)) {
       consumer.commitMetadataId(deserializeId(entity, METADATA));
@@ -145,11 +144,8 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
       }
       // See com.dremio.nessie.versioned.store.dynamo.DynamoL1Consumer.addKeyMutation about a
       // proposal to simplify this one.
-      deserializeKeyMutations(
-          keys,
-          MUTATIONS,
-          consumer::keyMutations
-      );
+      consumer.keyMutations(attributeValue(keys, MUTATIONS).l().stream()
+          .map(AttributeValueUtil::deserializeKeyMutation));
     }
   }
 }

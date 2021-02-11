@@ -53,6 +53,8 @@ import com.dremio.nessie.versioned.store.SaveOp;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.StoreOperationException;
 import com.dremio.nessie.versioned.store.ValueType;
+import com.dremio.nessie.versioned.store.dynamo.metrics.DynamoMetricsPublisher;
+import com.dremio.nessie.versioned.store.dynamo.metrics.TracingExecutionInterceptor;
 import com.dremio.nessie.versioned.util.AutoCloseables;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -62,6 +64,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
+import io.opentracing.util.GlobalTracer;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -130,10 +133,19 @@ public class DynamoStore implements Store {
       return; // no-op
     }
     try {
+      DynamoMetricsPublisher publisher = new DynamoMetricsPublisher();
+      TracingExecutionInterceptor tracing = new TracingExecutionInterceptor(GlobalTracer.get());
+
       DynamoDbClientBuilder b1 = DynamoDbClient.builder();
       b1.httpClient(UrlConnectionHttpClient.create());
+      b1.overrideConfiguration(
+          x -> x.addExecutionInterceptor(publisher.interceptor()).addExecutionInterceptor(tracing).addMetricPublisher(publisher));
+
       DynamoDbAsyncClientBuilder b2 = DynamoDbAsyncClient.builder();
       b2.httpClient(NettyNioAsyncHttpClient.create());
+      b2.overrideConfiguration(
+          x -> x.addExecutionInterceptor(publisher.interceptor()).addExecutionInterceptor(tracing).addMetricPublisher(publisher));
+
       config.getEndpoint().ifPresent(ep -> {
         b1.endpointOverride(ep);
         b2.endpointOverride(ep);

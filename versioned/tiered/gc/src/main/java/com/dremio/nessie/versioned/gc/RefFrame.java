@@ -20,13 +20,11 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 
 import com.dremio.nessie.tiered.builder.Ref;
-import com.dremio.nessie.versioned.Key.Mutation;
 import com.dremio.nessie.versioned.store.Id;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.Store.Acceptor;
@@ -73,76 +71,82 @@ public class RefFrame implements Serializable {
     this.id = id;
   }
 
-
   /**
    * For a stream of Refs, convert each to a RefFrame.
    */
   private static final Function<Acceptor<Ref>, RefFrame> CONVERTER = a -> {
-    RefFrame frame = new RefFrame();
-    a.applyValue(new Ref() {
+    RefHandler handler = new RefHandler();
+    a.applyValue(handler);
+    return handler.frame;
+  };
 
-      private RefType type;
+  private static final class RefHandler implements Ref {
+    final RefFrame frame = new RefFrame();
 
+    @Override
+    public Ref name(String name) {
+      frame.name = name;
+      return this;
+    }
+
+    @Override
+    public Tag tag() {
+      return new RefTag();
+    }
+
+    @Override
+    public Branch branch() {
+      return new RefBranch();
+    }
+
+    private class RefTag implements Tag {
       @Override
-      public Ref id(Id id) {
-        return this;
-      }
-
-      @Override
-      public Ref dt(long dt) {
-        return this;
-      }
-
-      @Override
-      public Ref type(RefType refType) {
-        return this;
-      }
-
-      @Override
-      public Ref name(String name) {
-        frame.name = name;
-        return this;
-      }
-
-      @Override
-      public Ref commit(Id commit) {
+      public Tag commit(Id commit) {
         frame.id = IdFrame.of(commit);
         return this;
       }
 
       @Override
-      public Ref metadata(Id metadata) {
+      public Ref backToRef() {
+        return RefHandler.this;
+      }
+    }
+
+    private class RefBranch implements Branch {
+      @Override
+      public Branch commits(Consumer<BranchCommit> commits) {
+        commits.accept(new RefBranchCommit());
         return this;
       }
 
       @Override
-      public Ref children(Stream<Id> children) {
+      public Ref backToRef() {
+        return RefHandler.this;
+      }
+    }
+
+    private class RefBranchCommit implements BranchCommit {
+      private boolean populated;
+      private Id id;
+      private boolean hasParent;
+
+      RefBranchCommit() {
+        // empty
+      }
+
+      @Override
+      public BranchCommit id(Id id) {
+        if (!populated) {
+          this.id = id;
+        }
         return this;
       }
 
       @Override
-      public Ref commits(Consumer<BranchCommitConsumer> commits) {
-        commits.accept(new BranchCommitConsumer() {
-
-          private boolean populated;
-          private Id id;
-          private boolean hasParent;
-
+      public SavedCommit saved() {
+        return new SavedCommit() {
           @Override
-          public BranchCommitConsumer id(Id id) {
-            if (!populated) {
-              this.id = id;
-            }
-            return this;
-          }
-
-          @Override
-          public BranchCommitConsumer commit(Id commit) {
-            return this;
-          }
-
-          @Override
-          public BranchCommitConsumer parent(Id parent) {
+          public SavedCommit parent(Id parent) {
             if (!populated) {
               hasParent = true;
             }
@@ -150,32 +154,37 @@ public class RefFrame implements Serializable {
           }
 
           @Override
-          public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
-            return this;
-          }
-
-          @Override
-          public BranchCommitConsumer keyMutation(Mutation keyMutation) {
-            return this;
-          }
-
-          @Override
-          public BranchCommitConsumer done() {
+          public BranchCommit done() {
             if (hasParent) {
               populated = true;
               frame.id = IdFrame.of(id);
             }
-            return this;
+            return RefBranchCommit.this;
           }
-
-        });
-        return this;
+        };
       }
-    });
 
-    return frame;
-
-  };
+      @SuppressWarnings("Convert2Lambda")
+      @Override
+      public UnsavedCommitDelta unsaved() {
+        return new UnsavedCommitDelta() {
+          @Override
+          public UnsavedCommitMutations mutations() {
+            return new UnsavedCommitMutations() {
+              @Override
+              public BranchCommit done() {
+                if (hasParent) {
+                  populated = true;
+                  frame.id = IdFrame.of(id);
+                }
+                return RefBranchCommit.this;
+              }
+            };
+          }
+        };
+      }
+    }
+  }
 
   /**
    * Generate spark dataset from store supplier.

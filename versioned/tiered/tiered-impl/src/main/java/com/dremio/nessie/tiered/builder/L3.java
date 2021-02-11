@@ -21,6 +21,9 @@ import com.dremio.nessie.versioned.store.KeyDelta;
 
 /**
  * Consumer for L2s.
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
  */
 public interface L3 extends BaseValue<L3> {
 
@@ -31,5 +34,8 @@ public interface L3 extends BaseValue<L3> {
    * @param keyDelta The stream providing the {@link KeyDelta}s of this L3
    * @return This consumer.
    */
-  L3 keyDelta(Stream<KeyDelta> keyDelta);
+  default L3 keyDelta(Stream<KeyDelta> keyDelta) {
+    keyDelta.forEach(ignored -> {});
+    return this;
+  }
 }

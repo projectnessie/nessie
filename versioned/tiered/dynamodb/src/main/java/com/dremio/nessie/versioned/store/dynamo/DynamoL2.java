@@ -15,7 +15,6 @@
  */
 package com.dremio.nessie.versioned.store.dynamo;
 
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdStream;
 
 import java.util.Map;
@@ -51,7 +50,7 @@ class DynamoL2 extends DynamoBaseValue<L2> implements L2 {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, L2 consumer) {
-    consumer.id(deserializeId(entity, ID)).dt(AttributeValueUtil.getDt(entity));
+    baseToConsumer(entity, consumer);
 
     if (entity.containsKey(TREE)) {
       consumer.children(deserializeIdStream(entity, TREE));

@@ -133,9 +133,10 @@ class TestExpressions {
         ).build();
     final AliasCollectorImpl c = new AliasCollectorImpl();
     final UpdateExpression e0p = e0.alias(c);
-    assertEquals(" "
+    String expected = " "
         + "SET p0 = :v0, p1 = list_append(p1, :v1) "
-        + "REMOVE p0, p2[2]", e0p.toUpdateExpressionString());
+        + "REMOVE p0, p2[2]";
+    assertEquals(expected, e0p.toUpdateExpressionString());
   }
 
   @Test

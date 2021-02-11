@@ -114,17 +114,17 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
-    <awssdk.version>2.15.67</awssdk.version>
+    <awssdk.version>2.15.79</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
     <flapdoodle.version>3.0.0</flapdoodle.version>
-    <guava.version>29.0-jre</guava.version>
+    <guava.version>30.1-jre</guava.version>
     <hadoop.version>3.3.0</hadoop.version>
     <hamcrest.version>2.2</hamcrest.version>
-    <iceberg.version>0.10.0</iceberg.version>
+    <iceberg.version>0.11.0</iceberg.version>
     <immutables.version>2.8.9-ea-1</immutables.version>
     <jackson.version>2.11.3</jackson.version>
     <javax.version>4.0.1</javax.version>
@@ -133,7 +133,7 @@
     <jjwt.version>0.11.2</jjwt.version>
     <jgit.version>5.10.0.202012080955-r</jgit.version>
     <jmeter.version>5.4.1</jmeter.version>
-    <junit.version>5.7.0</junit.version>
+    <junit.version>5.7.1</junit.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.14.0</protobuf.version>
     <protobug.maven.version>0.6.1</protobug.maven.version>
@@ -151,7 +151,7 @@
     <spark3.version>3.0.1</spark3.version>
     <spark3.jackson.version>2.10.2</spark3.jackson.version>
     <sqlite.version>1.0.392</sqlite.version>
-    <quarkus.version>1.11.0.Final</quarkus.version>
+    <quarkus.version>1.11.1.Final</quarkus.version>
     <openapi.version>1.1.2</openapi.version>
     <jsr305.version>3.0.2</jsr305.version>
   </properties>
@@ -323,7 +323,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.iceberg</groupId>
-        <artifactId>iceberg-core</artifactId>
+        <artifactId>iceberg-nessie</artifactId>
         <version>${iceberg.version}</version>
       </dependency>
       <dependency>
@@ -439,16 +439,6 @@
         <version>${jmeter.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.iceberg</groupId>
-        <artifactId>iceberg-spark-runtime</artifactId>
-        <version>${iceberg.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.iceberg</groupId>
-        <artifactId>iceberg-spark3-runtime</artifactId>
-        <version>${iceberg.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest</artifactId>
         <version>${hamcrest.version}</version>
@@ -562,7 +552,12 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${surefire.version}</version>
           <configuration>
-            <argLine>@{argLine}</argLine>
+            <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+            <systemProperties>
+              <user.language>en</user.language>
+              <user.country>US</user.country>
+              <user.variant/>
+            </systemProperties>
           </configuration>
         </plugin>
         <plugin>
@@ -570,7 +565,12 @@
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>${surefire.version}</version>
           <configuration>
-            <argLine>@{argLine}</argLine>
+            <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+            <systemProperties>
+              <user.language>en</user.language>
+              <user.country>US</user.country>
+              <user.variant/>
+            </systemProperties>
             <useModulePath>false</useModulePath>
           </configuration>
         </plugin>
@@ -582,7 +582,14 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>3.1.1</version>
+          <version>3.1.2</version>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>8.40</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -623,7 +630,7 @@
         <plugin>
           <groupId>kr.motd.maven</groupId>
           <artifactId>os-maven-plugin</artifactId>
-          <version>1.6.2</version>
+          <version>1.7.0</version>
         </plugin>
         <plugin>
           <groupId>net.alchim31.maven</groupId>

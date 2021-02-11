@@ -71,7 +71,7 @@ public class RocksDBStore implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(RocksDBStore.class);
   private static final long OPEN_SLEEP_MILLIS = 100L;
   private static final List<byte[]> COLUMN_FAMILIES;
-  private static final RocksDBConditionVisitor ROCKS_DB_CONDITION_EXPRESSION_VISITOR = new RocksDBConditionVisitor();
+  private static final RocksDBValueVisitor VALUE_VISITOR = new RocksDBValueVisitor();
   private static final String DEFAULT_COLUMN_FAMILY = new String(RocksDB.DEFAULT_COLUMN_FAMILY, UTF_8);
 
   static {
@@ -219,7 +219,7 @@ public class RocksDBStore implements Store {
         }
         RocksSerDe.deserializeToConsumer(saveOp.getType(), buffer, consumer);
 
-        if (!consumer.evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR))) {
+        if (!consumer.evaluate(translate(condition.get()))) {
           throw new ConditionFailedException("Condition failed during put operation");
         }
       }
@@ -248,7 +248,7 @@ public class RocksDBStore implements Store {
         // TODO: Critical Section - evaluating the condition expression and deleting the entity.
         // Check if condition expression is valid.
         RocksSerDe.deserializeToConsumer(type, value, consumer);
-        if (!(consumer.evaluate(condition.get().accept(ROCKS_DB_CONDITION_EXPRESSION_VISITOR)))) {
+        if (!(consumer.evaluate(translate(condition.get())))) {
           LOGGER.debug("Condition failed during delete operation.");
           return false;
         }
@@ -349,6 +349,13 @@ public class RocksDBStore implements Store {
         throw new RuntimeException(e);
       }
     }
+  }
+
+  @VisibleForTesting
+  static List<Function> translate(ConditionExpression conditionExpression) {
+    return conditionExpression.getFunctions().stream()
+      .map(f -> f.accept(VALUE_VISITOR))
+      .collect(Collectors.toList());
   }
 
   private <C extends BaseValue<C>> ColumnFamilyHandle getColumnFamilyHandle(ValueType<C> valueType) {

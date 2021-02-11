@@ -67,38 +67,22 @@ services:
     environment:
       - COLLECTOR_ZIPKIN_HTTP_PORT=9411
   nessie:
-    image: nessie:latest
+    image: projectnessie/nessie:latest
     expose:
       - "19120"
     depends_on:
-      - localstack
+      - dynamodb
     environment:
       - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
-      - NESSIE_DB_PROPS_REGION=us-west-2
-      - NESSIE_DB_PROPS_ENDPOINT=http://localstack:4569
-      - NESSIE_AUTH_KEY_GENERATOR_CLASSNAME=com.dremio.nessie.server.auth.SecretKeyGenerator
+      - QUARKUS_JAEGER_SAMPLER_TYPE=const
+      - NESSIE_VERSION_STORE_DYNAMO_INITIALIZE=true
+      - NESSIE_VERSION_STORE_TYPE=DYNAMO
+      - QUARKUS_DYNAMODB_ENDPOINT_OVERRIDE=http://dynamodb:8000
+      - QUARKUS_DYNAMODB_AWS_REGION=us-west-2
       - AWS_DEFAULT_REGION=us-west-2
       - AWS_ACCESS_KEY_ID=xxx
       - AWS_SECRET_ACCESS_KEY=xxx
-    secrets:
-      - nessie_key
-  localstack:
-    image: localstack/localstack
+  dynamodb:
+    image: amazon/dynamodb-local
     ports:
-      - "4567-4584:4567-4584"
-      - "${PORT_WEB_UI-8081}:${PORT_WEB_UI-8081}"
-    environment:
-      - SERVICES=${SERVICES-dynamodb,s3,iam,sns,lambda,cloudformation,sqs}
-      - DEBUG=${DEBUG- }
-      - DATA_DIR=${DATA_DIR-/home/ryan/aws-data}
-      - PORT_WEB_UI=${PORT_WEB_UI- }
-      - LAMBDA_EXECUTOR=${LAMBDA_EXECUTOR- }
-      - KINESIS_ERROR_PROBABILITY=${KINESIS_ERROR_PROBABILITY- }
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - DEFAULT_REGION=us-west-2
-      - TEST_AWS_ACCOUNT_ID=384816939103
-    volumes:
-      - "/home/ryan/aws-data:/tmp/localstack"
-secrets:
-  nessie_key:
-    file: perftest-key.txt
+      - 8000:8000

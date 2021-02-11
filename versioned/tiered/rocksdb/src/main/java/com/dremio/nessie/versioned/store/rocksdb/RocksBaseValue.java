@@ -105,8 +105,8 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
   }
 
   @Override
-  public boolean evaluate(Condition condition) {
-    for (Function function: condition.getFunctions()) {
+  public boolean evaluate(List<Function> functions) {
+    for (Function function: functions) {
       if (function.getPath().getRoot().isName()) {
         if (!evaluateFunction(function)) {
           return false;
