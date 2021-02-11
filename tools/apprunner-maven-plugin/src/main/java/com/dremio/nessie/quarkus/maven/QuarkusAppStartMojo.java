@@ -93,6 +93,12 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
   private Properties applicationProperties;
 
   /**
+   * Environment variable configuration properties.
+   */
+  @Parameter
+  private Properties systemProperties;
+
+  /**
    * Properties to get from Quarkus running application.
    *
    * <p>The property key is the name of the build property to set, the value is
@@ -106,6 +112,10 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
     if (isSkipped()) {
       getLog().debug("Execution is skipped");
       return;
+    }
+
+    if (systemProperties != null) {
+      systemProperties.forEach(System.getProperties()::put);
     }
 
     final AppArtifactCoords appCoords = AppArtifactCoords.fromString(appArtifactId);
