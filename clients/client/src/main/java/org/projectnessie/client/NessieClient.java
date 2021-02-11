@@ -25,6 +25,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -35,14 +36,26 @@ import org.projectnessie.client.auth.AwsAuth;
 import org.projectnessie.client.auth.BasicAuthFilter;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.propagation.Format.Builtin;
+import io.opentracing.propagation.TextMap;
+import io.opentracing.propagation.TextMapInjectAdapter;
+import io.opentracing.util.GlobalTracer;
+
 public class NessieClient implements Closeable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(NessieClient.class);
 
   private final HttpClient client;
   private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
@@ -68,11 +81,39 @@ public class NessieClient implements Closeable {
    */
   public NessieClient(AuthType authType, String path, String username, String password) {
     client = HttpClient.builder().setBaseUri(path).setObjectMapper(mapper).build();
+    maybeAddTracing(client);
     authFilter(client, authType, username, password);
     client.register(new NessieHttpResponseFilter(mapper));
     contents = wrap(ContentsApi.class, new ClientContentsApi(client));
     tree = wrap(TreeApi.class, new ClientTreeApi(client));
     config = wrap(ConfigApi.class, new ClientConfigApi(client));
+  }
+
+  private void maybeAddTracing(HttpClient httpClient) {
+    // Catch errors that occur when the OpenTracing classes are not available, log a debug
+    // message in that case.
+    try {
+      TracingConfigurer.addTracing(httpClient);
+    } catch (Error | Exception e) {
+      LOGGER.debug("Not adding OpenTracing/OpenTelemetry, initialization failed", e);
+    }
+  }
+
+  private static class TracingConfigurer {
+    static void addTracing(HttpClient httpClient) {
+      Tracer tracer = GlobalTracer.get();
+      if (tracer != null) {
+        httpClient.register((RequestFilter) context -> {
+          Span span = tracer.activeSpan();
+          if (span != null) {
+            HashMap<String,String> headerMap = new HashMap<>();
+            TextMap httpHeadersCarrier = new TextMapInjectAdapter(headerMap);
+            tracer.inject(span.context(), Builtin.HTTP_HEADERS, httpHeadersCarrier);
+            headerMap.forEach(context::putHeader);
+          }
+        });
+      }
+    }
   }
 
   private void authFilter(HttpClient client, AuthType authType, String username, String password) {

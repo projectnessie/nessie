@@ -94,7 +94,7 @@ public class HttpClient {
     private ObjectMapper mapper;
     private SSLContext sslContext;
 
-    public HttpClientBuilder() {
+    private HttpClientBuilder() {
     }
 
     public String getBaseUri() {
