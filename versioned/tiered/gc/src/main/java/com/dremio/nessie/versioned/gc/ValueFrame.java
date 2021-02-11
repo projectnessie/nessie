@@ -28,6 +28,11 @@ import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
 
+/**
+ * Container for a value. Holds its serialized representation, its Id and the last time an L1 that references it was modified.
+ *
+ * <p>This container is useful for passing around inside of Spark
+ */
 public class ValueFrame {
   private byte[] bytes;
   private long dt;

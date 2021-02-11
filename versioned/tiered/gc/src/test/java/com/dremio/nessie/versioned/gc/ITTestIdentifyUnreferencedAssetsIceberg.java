@@ -20,14 +20,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +33,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import com.dremio.nessie.versioned.AssetKey;
-import com.google.common.collect.Multimap;
-import com.google.protobuf.ByteString;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -63,6 +59,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,15 +73,20 @@ import com.dremio.nessie.model.Branch;
 import com.dremio.nessie.model.CommitMeta;
 import com.dremio.nessie.model.Contents;
 import com.dremio.nessie.model.Reference;
+import com.dremio.nessie.versioned.AssetKey;
+import com.dremio.nessie.versioned.LocalDynamoDB;
 import com.dremio.nessie.versioned.StoreWorker;
 import com.dremio.nessie.versioned.gc.IdentifyUnreferencedAssets.UnreferencedItem;
 import com.dremio.nessie.versioned.store.Store;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
 import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
+import com.google.common.collect.Multimap;
+import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.regions.Region;
 
-public class ITTestIdentifyUnreferencedAssetsIceberg {
+@ExtendWith(LocalDynamoDB.class)
+class ITTestIdentifyUnreferencedAssetsIceberg {
   private static final Logger LOGGER = LoggerFactory.getLogger(ITTestIdentifyUnreferencedAssetsIceberg.class);
 
   private static final String BRANCH = ITTestIdentifyUnreferencedAssetsIceberg.class.getName();
@@ -94,7 +96,7 @@ public class ITTestIdentifyUnreferencedAssetsIceberg {
   private static final Schema SCHEMA = new Schema(Types.StructType.of(required(1, "foe1", Types.StringType.get()),
                                                                       required(2, "foe2", Types.StringType.get())).fields());
 
-  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19120);
+  private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
   private static final String NESSIE_ENDPOINT = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
   @TempDir
@@ -113,7 +115,7 @@ public class ITTestIdentifyUnreferencedAssetsIceberg {
 
 
   @BeforeAll
-  public static void create() throws Exception {
+  static void create() throws Exception {
     SparkConf conf = new SparkConf();
     conf.set("spark.sql.catalog.nessie.url", NESSIE_ENDPOINT)
         .set("spark.sql.catalog.nessie.ref", BRANCH)
@@ -131,7 +133,7 @@ public class ITTestIdentifyUnreferencedAssetsIceberg {
 
     //create new spark session for 2nd branch committer
     sparkDeleteBranch = spark.newSession();
-    sparkDeleteBranch.conf().set("spark.sql.catalog.nessie.ref", "toBeDeleted");
+    sparkDeleteBranch.conf().set("spark.sql.catalog.nessie.ref", DELETE_BRANCH);
   }
 
   private void resetData() throws NessieConflictException, NessieNotFoundException {
@@ -148,7 +150,7 @@ public class ITTestIdentifyUnreferencedAssetsIceberg {
   }
 
   @BeforeEach
-  public void beforeEach() throws NessieConflictException, NessieNotFoundException {
+  void beforeEach() throws NessieConflictException, NessieNotFoundException {
     this.client = NessieClient.none(NESSIE_ENDPOINT);
     tree = client.getTreeApi();
     contents = client.getContentsApi();
@@ -159,11 +161,13 @@ public class ITTestIdentifyUnreferencedAssetsIceberg {
     props.put("ref", BRANCH);
     props.put("url", NESSIE_ENDPOINT);
     props.put("warehouse", ALLEY_LOCAL_DIR.toURI().toString());
-    catalog = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, spark.sessionState().newHadoopConf());
+    Configuration hadoopConfig = spark.sessionState().newHadoopConf();
+    catalog = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
 
     //second catalog for deleted branch
-    props.put("ref", "toBeDeleted");
-    catalogDeleteBranch = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, sparkDeleteBranch.sessionState().newHadoopConf());
+    props.put("ref", DELETE_BRANCH);
+    hadoopConfig = sparkDeleteBranch.sessionState().newHadoopConf();
+    catalogDeleteBranch = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
 
     helper = new GcStoreWorker(spark.sessionState().newHadoopConf());
   }
@@ -175,7 +179,7 @@ public class ITTestIdentifyUnreferencedAssetsIceberg {
   }
 
 
-  protected Table createTable(TableIdentifier tableIdentifier, NessieCatalog catalog) {
+  private Table createTable(TableIdentifier tableIdentifier, NessieCatalog catalog) {
     try {
       return catalog.createTable(tableIdentifier, SCHEMA, PartitionSpec.builderFor(SCHEMA).identity("foe1").build());
     } catch (Throwable t) {
@@ -195,10 +199,10 @@ public class ITTestIdentifyUnreferencedAssetsIceberg {
 
     // Create schema
     StructType schema = DataTypes
-      .createStructType(new StructField[] {
-        DataTypes.createStructField("foe1", DataTypes.StringType, false),
-        DataTypes.createStructField("foe2", DataTypes.StringType, false)
-      });
+        .createStructType(new StructField[] {
+          DataTypes.createStructField("foe1", DataTypes.StringType, false),
+          DataTypes.createStructField("foe2", DataTypes.StringType, false)
+        });
 
     Dataset<Row> dataDF = spark.sqlContext().createDataFrame(rowRDD, schema);
 
@@ -207,7 +211,7 @@ public class ITTestIdentifyUnreferencedAssetsIceberg {
   }
 
   @Test
-  public void run() throws Exception {
+  void run() throws Exception {
 
     // create an iceberg table on disk and stick some data in
     createTable(TABLE_IDENTIFIER, catalog);
@@ -219,10 +223,10 @@ public class ITTestIdentifyUnreferencedAssetsIceberg {
     // create a new table on a different branch, commit then delete the branch.
     createTable(TABLE_IDENTIFIER2, catalogDeleteBranch);
     addFile(sparkDeleteBranch, TABLE_IDENTIFIER2);
-    client.getTreeApi().deleteBranch("toBeDeleted", client.getTreeApi().getReferenceByName("toBeDeleted").getHash());
+    client.getTreeApi().deleteBranch(DELETE_BRANCH, client.getTreeApi().getReferenceByName(DELETE_BRANCH).getHash());
 
     // hack: sleep for 10 seconds so GC will see above data as old
-    Thread.sleep(10*1000);
+    Thread.sleep(10 * 1000);
 
     long commitTime = System.currentTimeMillis();
 
@@ -235,47 +239,52 @@ public class ITTestIdentifyUnreferencedAssetsIceberg {
     GcOptions options = ImmutableGcOptions.builder()
         .bloomFilterCapacity(10_000_000)
         .timeSlopMicros(1)
-        .maxAgeMicros((System.currentTimeMillis() - commitTime)*1000)
+        .maxAgeMicros((System.currentTimeMillis() - commitTime) * 1000)
         .build();
     IdentifyUnreferencedAssets<Contents> app = new IdentifyUnreferencedAssets<Contents>(helper, new DynamoSupplier(), spark, options);
     Dataset<UnreferencedItem> items = app.identify();
 
     //collect into a multimap for assertions
     Multimap<String, AssetKey> unreferencedItems = items.collectAsList()
-      .stream()
-      .collect(MultimapCollector.toMultimap(UnreferencedItem::getName, x -> helper.getValueWorker().getAssetKeySerializer().fromBytes(ByteString.copyFrom(x.getAsset()))));
-    Map<String, Long> count = unreferencedItems.keySet().stream().map(x -> x.split("\\.")[0]).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        .stream()
+        .collect(MultimapCollector.toMultimap(UnreferencedItem::getName,
+            x -> helper.getValueWorker().getAssetKeySerializer().fromBytes(ByteString.copyFrom(x.getAsset()))));
+    Map<String, Long> count = unreferencedItems.keySet().stream()
+        .map(x -> x.split("\\.")[0]).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
     //1 table should be deleted from deleted branch
     //5 metadata: 1 from add, 1 from delete and 2 from creates and 1 from add on other branch
     //3 manifest lists: 1 from add, 1 from delete, 1 from add
     //2 manifests: 2 manifest files from deleted table
     //2 data files: 2 data files from deleted table
-    ImmutableMap<String, Long> expected = ImmutableMap.of("TABLE", 1L, "ICEBERG_MANIFEST", 2L, "ICEBERG_MANIFEST_LIST", 3L, "ICEBERG_METADATA", 5L, "DATA_FILE", 2L);
+    ImmutableMap<String, Long> expected = ImmutableMap.of("TABLE", 1L,
+        "ICEBERG_MANIFEST", 2L,
+        "ICEBERG_MANIFEST_LIST", 3L,
+        "ICEBERG_METADATA", 5L,
+        "DATA_FILE", 2L);
     assertThat(count.entrySet(), (Matcher)hasItems(expected.entrySet().toArray()));
 
     //delete all the unused data
-    unreferencedItems.values().forEach(x -> {
-      try {
-        x.delete();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    unreferencedItems.values().forEach(AssetKey::delete);
 
     // assert that we can still read the data and that the table count is correct
     final long[] finalCount = {0};
     Assertions.assertDoesNotThrow(() -> {
-        finalCount[0] = (long) spark.sql("SELECT COUNT(*) from nessie." + TABLE_IDENTIFIER).collectAsList().get(0).get(0);
-      }
-    );
+      finalCount[0] = (long) spark.sql("SELECT COUNT(*) from nessie." + TABLE_IDENTIFIER).collectAsList().get(0).get(0);
+    });
     Assertions.assertEquals(3, finalCount[0]);
 
     // assert correct set of files still exists
     // we dont check exact file names as we can't know uuid. So we count extensions and directories
     List<Path> paths = Files.walk(ALLEY_LOCAL_DIR.toPath()).filter(Files::isRegularFile).collect(Collectors.toList());
-    Map<String, Long> existingPathCount = paths.stream().map(x -> x.toString().replace(ALLEY_LOCAL_DIR.toString()+"/test/table/", "")).map(x->x.split("/",2)[0]).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-    Map<String, Long> extensionCount = paths.stream().map(Path::toString).map(f -> f.substring(f.lastIndexOf(".") + 1)).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    Map<String, Long> existingPathCount = paths.stream()
+        .map(x -> x.toString().replace(ALLEY_LOCAL_DIR.toString() + "/test/table/", ""))
+        .map(x -> x.split("/",2)[0])
+        .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    Map<String, Long> extensionCount = paths.stream()
+        .map(Path::toString)
+        .map(f -> f.substring(f.lastIndexOf(".") + 1))
+        .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
     //ensure no files from table2 are left
     Assertions.assertFalse(paths.stream().anyMatch(x -> x.toString().contains("table2")));

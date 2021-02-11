@@ -13,29 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.gc.iceberg;
+package com.dremio.nessie.versioned.gc.assets;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.versioned.gc.assets.FileSystemAssetKey;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import org.apache.iceberg.DataFileCollector;
 import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.TableMetadataParser;
 import org.apache.iceberg.hadoop.HadoopFileIO;
-import com.dremio.nessie.model.IcebergTable;
-import com.dremio.nessie.versioned.AssetKey;
-import com.dremio.nessie.versioned.gc.AssetKeyReader;
 import org.apache.spark.util.SerializableConfiguration;
 
-public class IcebergAssetKeyReader<T> implements AssetKeyReader {
+import com.dremio.nessie.model.IcebergTable;
+import com.dremio.nessie.versioned.AssetKey;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
+public class IcebergAssetKeyReader<T> implements Supplier<Stream<AssetKey>> {
 
   private final IcebergTable table;
   private final SerializableConfiguration hadoopConfig;
@@ -46,7 +46,7 @@ public class IcebergAssetKeyReader<T> implements AssetKeyReader {
   }
 
   @Override
-  public Stream<AssetKey> getKeys() {
+  public Stream<AssetKey> get() {
     TableMetadata metadata = TableMetadataParser.read(new HadoopFileIO(hadoopConfig.value()), table.getMetadataLocation());
     return allFiles(metadata);
   }
@@ -61,11 +61,13 @@ public class IcebergAssetKeyReader<T> implements AssetKeyReader {
         metadataFiles.add(new FileSystemAssetKey(snapshot.manifestListLocation(), hadoopConfig, AssetKeyType.ICEBERG_MANIFEST_LIST));
       }
     }
-    manifests.stream().map(ManifestFile::path).map(x -> new FileSystemAssetKey(x, hadoopConfig, AssetKeyType.ICEBERG_MANIFEST)).forEach(metadataFiles::add);
+    manifests.stream().map(ManifestFile::path)
+      .map(x -> new FileSystemAssetKey(x, hadoopConfig, AssetKeyType.ICEBERG_MANIFEST)).forEach(metadataFiles::add);
     metadataFiles.add(new FileSystemAssetKey(metadata.metadataFileLocation(), hadoopConfig, AssetKeyType.ICEBERG_METADATA));
     metadataFiles.add(new FileSystemAssetKey(metadata.location(), hadoopConfig, AssetKeyType.TABLE));
 
-    Stream<FileSystemAssetKey> files = DataFileCollector.dataFiles(new HadoopFileIO(hadoopConfig.value()), manifests).map(x -> new FileSystemAssetKey(x, hadoopConfig, AssetKeyType.DATA_FILE));
+    Stream<FileSystemAssetKey> files = DataFileCollector.dataFiles(new HadoopFileIO(hadoopConfig.value()), manifests)
+        .map(x -> new FileSystemAssetKey(x, hadoopConfig, AssetKeyType.DATA_FILE));
     List<FileSystemAssetKey> keys = files.collect(Collectors.toList());
     return Stream.concat(metadataFiles.stream(), keys.stream());
   }

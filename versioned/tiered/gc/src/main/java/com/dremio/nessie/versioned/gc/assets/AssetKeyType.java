@@ -13,31 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.gc;
+package com.dremio.nessie.versioned.gc.assets;
 
-import java.util.stream.Stream;
+/**
+ * possible Asset Key types. Here recursiveDelete is applicable only to filesystem Asset Keys.
+ */
+public enum AssetKeyType {
+  TABLE(true),
+  ICEBERG_MANIFEST(false),
+  ICEBERG_MANIFEST_LIST(false),
+  ICEBERG_METADATA(false),
+  DATA_FILE(false);
 
-import com.dremio.nessie.versioned.AssetKey;
+  private final boolean recursiveDelete;
 
-public interface AssetKeyReader {
-
-  enum AssetKeyType {
-    TABLE(true),
-    ICEBERG_MANIFEST(false),
-    ICEBERG_MANIFEST_LIST(false),
-    ICEBERG_METADATA(false),
-    DATA_FILE(false);
-
-    private final boolean recursive;
-
-    AssetKeyType(boolean recursive) {
-      this.recursive = recursive;
-    }
-
-    public boolean isRecursive() {
-      return recursive;
-    }
+  AssetKeyType(boolean recursive) {
+    this.recursiveDelete = recursive;
   }
 
-  Stream<AssetKey> getKeys();
+  public boolean isRecursiveDelete() {
+    return recursiveDelete;
+  }
 }

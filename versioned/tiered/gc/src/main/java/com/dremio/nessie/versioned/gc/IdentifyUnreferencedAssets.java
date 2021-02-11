@@ -94,7 +94,7 @@ public class IdentifyUnreferencedAssets<T> {
 
     // for each value, determine if it is a valid value. If it is, generate a referenced asset. If not, generate a non-referenced asset.
     // this is a single output that has a categorization column
-    AssetCategorizer<T> categorizer = new AssetCategorizer<>(validValueIds, storeWorker.getValueWorker(), options.getTimeSlopMicros());
+    AssetCategorizer<T> categorizer = new AssetCategorizer<T>(validValueIds, storeWorker.getValueWorker(), options.getTimeSlopMicros());
     Dataset<CategorizedAssetKey> assets = values.flatMap(categorizer, Encoders.bean(CategorizedAssetKey.class));
 
     // generate a bloom filter of referenced items.
@@ -105,10 +105,14 @@ public class IdentifyUnreferencedAssets<T> {
     // in the written file to avoid stale -> not stale -> stale values.
     Dataset<Row> unreferencedAssets = assets.filter("referenced = false").select("data").filter(new AssetFilter(referencedAssets));
 
+    // map the generic spark Row back to a concrete type.
     return unreferencedAssets.map(
         new UnreferencedItemConverter(valueWorker.getAssetKeySerializer()), Encoders.bean(UnreferencedItem.class));
   }
 
+  /**
+   * Spark filter to determine if a value is referenced by checking if the byte[] serialization is in a bloom filter.
+   */
   public static class AssetFilter implements FilterFunction<Row> {
 
     private static final long serialVersionUID = 2411246084016802962L;
@@ -130,6 +134,9 @@ public class IdentifyUnreferencedAssets<T> {
 
   }
 
+  /**
+   * Pair of referenced state of an asset key and its byte[] representation.
+   */
   public static final class CategorizedAssetKey implements Serializable {
 
     private static final long serialVersionUID = -1466847843373432962L;
@@ -167,6 +174,9 @@ public class IdentifyUnreferencedAssets<T> {
 
   }
 
+  /**
+   * Spark function to convert a Row into a concrete UnreferencedItem object.
+   */
   public static class UnreferencedItemConverter implements Function1<Row, UnreferencedItem>, Serializable {
     private static final long serialVersionUID = -5135625090051205329L;
 
@@ -188,6 +198,9 @@ public class IdentifyUnreferencedAssets<T> {
 
   }
 
+  /**
+   * Unreferenced Item. Pair of name of unreferenced item and the byte[] representation of the underlying AssetKey.
+   */
   public static class UnreferencedItem implements Serializable {
     private static final long serialVersionUID = -5566256066143995534L;
 
@@ -212,6 +225,9 @@ public class IdentifyUnreferencedAssets<T> {
 
   }
 
+  /**
+   * Spark flat map function to convert a value into an iterator of AssetKeys with their reference state.
+   */
   public static class AssetCategorizer<T> implements FlatMapFunction<ValueFrame, CategorizedAssetKey> {
 
     private static final long serialVersionUID = -4605489080345105845L;
@@ -222,6 +238,10 @@ public class IdentifyUnreferencedAssets<T> {
 
     /**
      * Construct categorizer.
+     *
+     * @param bloomFilter bloom filter to determine if a value is referenced.
+     * @param valueWorker serde for values and their asset keys.
+     * @param maxSlopMicros minimum age of a value to consider it as being unreferenced.
      */
     public AssetCategorizer(BinaryBloomFilter bloomFilter, ValueWorker<T> valueWorker, long maxSlopMicros) {
       this.bloomFilter = bloomFilter;
@@ -232,10 +252,9 @@ public class IdentifyUnreferencedAssets<T> {
     @Override
     public Iterator<CategorizedAssetKey> call(ValueFrame r) throws Exception {
       boolean referenced = r.getDt() > recentValues || bloomFilter.mightContain(r.getId());
-      final ByteString bytes = ByteString.copyFrom(r.getBytes());
-      T contents = valueWorker.fromBytes(bytes);
-      Serializer<AssetKey> akSerializer = valueWorker.getAssetKeySerializer();
-      return valueWorker.getAssetKeys(contents).map(ak -> new CategorizedAssetKey(referenced, akSerializer.toBytes(ak))).iterator();
+      final Serializer<AssetKey> serializer = valueWorker.getAssetKeySerializer();
+      T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getBytes()));
+      return valueWorker.getAssetKeys(contents).map(ak -> new CategorizedAssetKey(referenced, serializer.toBytes(ak))).iterator();
     }
 
   }

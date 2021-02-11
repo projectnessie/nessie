@@ -52,7 +52,7 @@ class RefToL2Producer {
 
     // expose a table of all l1s.
     Dataset<L1Frame> l1s = L1Frame.asDataset(store, spark);
-    l1s.createTempView("l1");
+    l1s.createOrReplaceTempView("l1");
 
     // create a potential view for l1s to consider.
     refs.select("id", "name").createOrReplaceTempView("potential");
@@ -113,4 +113,3 @@ class RefToL2Producer {
   }
 
 }
-
