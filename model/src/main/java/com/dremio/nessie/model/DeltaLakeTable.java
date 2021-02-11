@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 
 import org.immutables.value.Value;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -31,10 +32,13 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonTypeName("DELTA_LAKE_TABLE")
 public interface DeltaLakeTable extends Contents {
 
+  @JsonProperty(index = 1)
   List<String> getMetadataLocationHistory();
 
+  @JsonProperty(index = 2)
   List<String> getCheckpointLocationHistory();
 
+  @JsonProperty(index = 3)
   @Nullable
   String getLastCheckpoint();
 

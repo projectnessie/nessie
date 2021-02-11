@@ -17,6 +17,7 @@ package com.dremio.nessie.model;
 
 import org.immutables.value.Value;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -27,6 +28,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonTypeName("ICEBERG_TABLE")
 public interface IcebergTable extends Contents {
 
+  @JsonProperty(index = 1)
   String getMetadataLocation();
 
   public static IcebergTable of(String metadataLocation) {
