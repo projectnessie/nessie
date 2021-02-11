@@ -15,30 +15,26 @@
  */
 package com.dremio.nessie.versioned.gc.assets;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import com.dremio.nessie.versioned.gc.iceberg.IcebergAssetKeyReader;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.spark.util.SerializableConfiguration;
 
 import com.clearspring.analytics.util.Lists;
 import com.dremio.nessie.versioned.AssetKey;
-import com.dremio.nessie.versioned.gc.AssetKeyReader.AssetKeyType;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
-import org.apache.spark.sql.Encoder;
-import org.apache.spark.sql.Encoders;
-import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
-import org.apache.spark.util.SerializableConfiguration;
 
+/**
+ * Specialization of AssetKey to denote a file on a disk/store.
+ *
+ * <p>Uses hadoop filesystem to access the data, needs a valid hadoop config to work.
+ */
 public class FileSystemAssetKey extends AssetKey implements Serializable {
   private static final Splitter DOT = Splitter.on(".");
 
@@ -50,6 +46,9 @@ public class FileSystemAssetKey extends AssetKey implements Serializable {
 
   }
 
+  /**
+   * all args constructor for a filesystem asset key.
+   */
   public FileSystemAssetKey(String path, SerializableConfiguration hadoopConfig, AssetKeyType type) {
     this.type = type;
     Preconditions.checkNotNull(path);
@@ -61,7 +60,7 @@ public class FileSystemAssetKey extends AssetKey implements Serializable {
   public CompletionStage<Boolean> delete() {
     Path path = new Path(this.path);
     try {
-      return CompletableFuture.completedFuture(path.getFileSystem(hadoopConfig.value()).delete(path, type.isRecursive()));
+      return CompletableFuture.completedFuture(path.getFileSystem(hadoopConfig.value()).delete(path, type.isRecursiveDelete()));
     } catch (IOException e) {
       throw new IllegalStateException(String.format("Unable to delete %s", this.path), e);
     }

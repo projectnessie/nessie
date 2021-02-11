@@ -22,12 +22,18 @@ import java.util.stream.StreamSupport;
 
 import org.apache.iceberg.io.FileIO;
 
+/**
+ * Utility to get at the manifest files to retrieve data file list. Not publicly exposed by Iceberg.
+ */
 public final class DataFileCollector {
 
   private DataFileCollector(){
 
   }
 
+  /**
+   * retrieve all data files from a set of manifest files.
+   */
   public static Stream<String> dataFiles(FileIO io, Set<ManifestFile> allManifests) {
     return allManifests.stream().flatMap(manifest -> {
       try (ManifestReader<?> reader = ManifestFiles.open(manifest, io)) {

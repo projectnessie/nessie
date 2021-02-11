@@ -26,7 +26,10 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 
-public class MultimapCollector<T, K, V> implements Collector<T, Multimap<K, V>, Multimap<K, V>> {
+/**
+ * Collector to collect into multimap.
+ */
+class MultimapCollector<T, K, V> implements Collector<T, Multimap<K, V>, Multimap<K, V>> {
 
   private final Function<T, K> keyGetter;
   private final Function<T, V> valueGetter;
@@ -38,10 +41,6 @@ public class MultimapCollector<T, K, V> implements Collector<T, Multimap<K, V>, 
 
   public static <T, K, V> MultimapCollector<T, K, V> toMultimap(Function<T, K> keyGetter, Function<T, V> valueGetter) {
     return new MultimapCollector<>(keyGetter, valueGetter);
-  }
-
-  public static <T, K, V> MultimapCollector<T, K, T> toMultimap(Function<T, K> keyGetter) {
-    return new MultimapCollector<>(keyGetter, v -> v);
   }
 
   @Override

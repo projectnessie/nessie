@@ -193,6 +193,7 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <configuration>
           <systemPropertyVariables>
+            <quarkus.http.test-port>${quarkus.http.test-port}</quarkus.http.test-port>
             <aws.accessKeyId>xxx</aws.accessKeyId>
             <aws.secretAccessKey>xxx</aws.secretAccessKey>
             <sqlite4java.library.path>${project.build.directory}/native-libraries</sqlite4java.library.path>
@@ -224,6 +225,48 @@
               <overWriteIfNewer>true</overWriteIfNewer>
               <includeTypes>dll,so,dylib</includeTypes>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-apprunner-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <configuration>
+          <skip>${skipTests}</skip>
+          <appArtifactId>org.projectnessie:nessie-quarkus:${project.version}</appArtifactId>
+          <applicationProperties>
+            <quarkus.http.test-port>0</quarkus.http.test-port>
+            <nessie.version.store.dynamo.initialize>true</nessie.version.store.dynamo.initialize>
+            <nessie.version.store.type>DYNAMO</nessie.version.store.type>
+            <quarkus.dynamodb.endpoint.override>http://localhost:8000</quarkus.dynamodb.endpoint.override>
+            <quarkus.dynamodb.aws.region>us-west-2</quarkus.dynamodb.aws.region>
+          </applicationProperties>
+          <systemProperties>
+            <aws.accessKeyId>xxx</aws.accessKeyId>
+            <aws.secretAccessKey>xxx</aws.secretAccessKey>
+          </systemProperties>
+          <outputProperties>
+            <quarkus.http.test-port>quarkus.http.test-port</quarkus.http.test-port>
+          </outputProperties>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.projectnessie</groupId>
+            <artifactId>nessie-quarkus</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>start</id>
+            <phase>pre-integration-test</phase>
+            <goals><goal>start</goal></goals>
+          </execution>
+          <execution>
+            <id>stop</id>
+            <phase>post-integration-test</phase>
+            <goals><goal>stop</goal></goals>
           </execution>
         </executions>
       </plugin>
