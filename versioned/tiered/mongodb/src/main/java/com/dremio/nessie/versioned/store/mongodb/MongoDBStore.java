@@ -224,14 +224,14 @@ public class MongoDBStore implements Store {
 
     final MongoCollection<Document> collection = getCollection(saveOp.getType());
 
-    // Use upsert so that if an item does not exist, it will be insert.
+    // Use upsert so that if an item does not exist, it will be inserted.
     final UpdateResult result = Mono.from(
         collection.updateOne(
             Filters.eq(MongoBaseValue.ID, saveOp.getId()),
             MongoSerDe.bsonForValueType(saveOp, "$set"),
             new UpdateOptions().upsert(true)
         )).block(timeout);
-    if (result == null || result.getUpsertedId() == null) {
+    if (result == null || (result.getModifiedCount() != 0 && result.getUpsertedId() == null)) {
       throw new StoreOperationException(String.format("Update of %s %s did not succeed", saveOp.getType().name(), saveOp.getId()));
     }
   }
