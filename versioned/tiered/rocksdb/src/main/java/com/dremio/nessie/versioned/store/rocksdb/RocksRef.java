@@ -324,15 +324,14 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
           .commit(Id.of(commit.getCommit()));
 
       if (commit.getParent().isEmpty()) {
-        commit.getDeltaList().forEach(d -> consumer.unsaved().delta(d.getPosition(), Id.of(d.getOldId()), Id.of(d.getNewId())));
-        commit.getKeyMutationList().forEach(km -> consumer.unsaved().mutations().keyMutation(createKeyMutation(km)));
-        consumer.unsaved().mutations().done();
+        final UnsavedCommitDelta unsaved = consumer.unsaved();
+        commit.getDeltaList().forEach(d -> unsaved.delta(d.getPosition(), Id.of(d.getOldId()), Id.of(d.getNewId())));
+        final UnsavedCommitMutations mutations = unsaved.mutations();
+        commit.getKeyMutationList().forEach(km -> mutations.keyMutation(createKeyMutation(km)));
+        mutations.done();
       } else {
-        consumer.saved().parent(Id.of(commit.getParent()));
-
+        consumer.saved().parent(Id.of(commit.getParent())).done();
       }
     }
   }
-
-
 }
