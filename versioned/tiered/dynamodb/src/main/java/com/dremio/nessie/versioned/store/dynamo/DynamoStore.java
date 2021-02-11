@@ -363,7 +363,7 @@ public class DynamoStore implements Store {
    * @param <BATCH> the resulting type as returned by the {@code emitter} function after submitting
    *               the batch-operation from the {@code Map<KEY, Collection<REQ>>}.
    */
-  private static class BatchesCollector<IN, KEY, REQ, BATCH> {
+  static class BatchesCollector<IN, KEY, REQ, BATCH> {
     private final Function<IN, KEY> keyMapper;
     private final Function<IN, REQ> valueMapper;
     private final Function<Map<KEY, Collection<REQ>>, BATCH> emitter;
@@ -375,6 +375,10 @@ public class DynamoStore implements Store {
 
     BatchesCollector(Function<IN, KEY> keyMapper, Function<IN, REQ> valueMapper,
         Function<Map<KEY, Collection<REQ>>, BATCH> emitter, int maxBatchSize) {
+      Preconditions.checkArgument(maxBatchSize > 0);
+      Preconditions.checkNotNull(keyMapper);
+      Preconditions.checkNotNull(valueMapper);
+      Preconditions.checkNotNull(emitter);
       this.keyMapper = keyMapper;
       this.valueMapper = valueMapper;
       this.emitter = emitter;
