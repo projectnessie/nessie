@@ -31,6 +31,7 @@ import de.flapdoodle.embed.process.config.RuntimeConfig;
 import de.flapdoodle.embed.process.extract.DirectoryAndExecutableNaming;
 import de.flapdoodle.embed.process.extract.NoopTempNaming;
 import de.flapdoodle.embed.process.extract.UUIDTempNaming;
+import de.flapdoodle.embed.process.config.io.ProcessOutput;
 import de.flapdoodle.embed.process.io.directories.Directory;
 import de.flapdoodle.embed.process.io.directories.FixedPath;
 
@@ -44,6 +45,7 @@ abstract class LocalMongoBase extends TypeBasedParameterResolver<String> impleme
   private static final Directory MONGO_ARTIFACT_STORE_PATH = new FixedPath(Files.createTempDir().getPath());
 
   private static final RuntimeConfig MONGOD_RUNTIME_CONFIG = Defaults.runtimeConfigFor(Command.MongoD)
+      .processOutput(ProcessOutput.getDefaultInstanceSilent())
       .artifactStore(Defaults.extractedArtifactStoreFor(Command.MongoD)
           .withTemp(DirectoryAndExecutableNaming.of(MONGO_ARTIFACT_TEMP_PATH, new NoopTempNaming()))
           .withExtraction(DirectoryAndExecutableNaming.of(MONGO_ARTIFACT_EXTRACT_PATH, new UUIDTempNaming()))
@@ -52,6 +54,7 @@ abstract class LocalMongoBase extends TypeBasedParameterResolver<String> impleme
               .build()))
       .build();
   private static final RuntimeConfig MONGOS_RUNTIME_CONFIG = Defaults.runtimeConfigFor(Command.MongoS)
+      .processOutput(ProcessOutput.getDefaultInstanceSilent())
       .artifactStore(Defaults.extractedArtifactStoreFor(Command.MongoS)
           .withTemp(DirectoryAndExecutableNaming.of(MONGO_ARTIFACT_TEMP_PATH, new UUIDTempNaming()))
           .withExtraction(DirectoryAndExecutableNaming.of(MONGO_ARTIFACT_EXTRACT_PATH, new UUIDTempNaming()))
