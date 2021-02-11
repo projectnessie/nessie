@@ -43,14 +43,12 @@ public interface Value extends Aliasable<Value> {
   Type getType();
 
   /**
-   * Default implementation for visitation.
+   * Acceptor for any visitors of the Value hierarchy.
    * @param visitor the visitor that will be invoked.
    * @param <T> the type of the returned value.
    * @return the possibly transformed value resulting from the visitation.
    */
-  default <T> T accept(ValueVisitor<T> visitor) {
-    throw new IllegalArgumentException();
-  }
+  <T> T accept(ValueVisitor<T> visitor);
 
   default Entity getValue() {
     throw new IllegalArgumentException();
@@ -96,7 +94,7 @@ public interface Value extends Aliasable<Value> {
 
     @Override
     public <T> T accept(ValueVisitor<T> visitor) {
-      return visitor.visit(this);
+      return visitor.visit(value);
     }
   }
 }

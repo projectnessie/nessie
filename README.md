@@ -40,7 +40,7 @@ users. Check them out [here](https://projectnessie.org/develop/).
 ### Requirements
 
 - JDK 11 or higher: JDK11 or higher is needed to build Nessie (artifacts are built 
-  for with Java 8)
+  for Java 8)
 
 ### Installation
 

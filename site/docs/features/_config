@@ -1,5 +1,7 @@
 title: Features
 arrange:
   - index.md
+  - intro.md
+  - best-practices.md
   - transactions.md
   - management.md

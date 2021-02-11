@@ -129,7 +129,6 @@ class PartialTree<V> {
 
   /**
    * Gets value, l3 and l2 save ops. These ops are all non-conditional.
-   * @return
    */
   public Stream<SaveOp<?>> getMostSaveOps() {
     checkMutable();
@@ -143,8 +142,6 @@ class PartialTree<V> {
 
   /**
    * Gets L1 mutations required to save tree.
-   *
-   * @return
    */
   public CommitOp getCommitOp(Id metadataId, Collection<InternalKey> unchangedKeys,
       boolean includeTreeUpdates,

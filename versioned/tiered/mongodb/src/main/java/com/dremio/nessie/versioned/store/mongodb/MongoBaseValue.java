@@ -15,6 +15,8 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeId;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -22,6 +24,7 @@ import java.util.stream.Stream;
 
 import org.bson.BsonBinary;
 import org.bson.BsonWriter;
+import org.bson.Document;
 
 import com.dremio.nessie.tiered.builder.BaseValue;
 import com.dremio.nessie.versioned.store.Id;
@@ -36,6 +39,11 @@ abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   final BsonWriter bsonWriter;
 
   private final Set<String> properties = new HashSet<>();
+
+  static <C extends BaseValue<C>> C produceBase(Document document, C v) {
+    return v.id(deserializeId(document, ID))
+        .dt(document.getLong(DT));
+  }
 
   protected MongoBaseValue(BsonWriter bsonWriter) {
     // empty

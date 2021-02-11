@@ -25,6 +25,7 @@ import com.dremio.nessie.versioned.impl.condition.ExpressionFunction;
 import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
 import com.dremio.nessie.versioned.impl.condition.Value;
 import com.dremio.nessie.versioned.impl.condition.ValueVisitor;
+import com.dremio.nessie.versioned.store.Entity;
 
 /**
  * This class allows conversion of ConditionExpression objects to ConditionExpressionHolder objects.
@@ -37,7 +38,7 @@ class RocksDBConditionVisitor implements ConditionExpressionVisitor<Condition> {
    */
   private static class RocksDBExpressionPathValueVisitor implements ValueVisitor<ExpressionPath> {
     @Override
-    public ExpressionPath visit(Value value) {
+    public ExpressionPath visit(Entity value) {
       throw new UnsupportedOperationException();
     }
 
@@ -59,7 +60,7 @@ class RocksDBConditionVisitor implements ConditionExpressionVisitor<Condition> {
    */
   private static class RocksDBFunctionHolderValueVisitor implements ValueVisitor<Function> {
     @Override
-    public Function visit(Value value) {
+    public Function visit(Entity value) {
       throw new UnsupportedOperationException();
     }
 

@@ -66,10 +66,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest-client</artifactId>
-    </dependency>
-    <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>url-connection-client</artifactId>
     </dependency>
@@ -140,7 +136,7 @@
       <plugin>
         <groupId>com.lazerycode.jmeter</groupId>
         <artifactId>jmeter-maven-plugin</artifactId>
-        <version>3.2.0</version>
+        <version>3.3.0</version>
         <executions>
           <execution>
             <id>configuration</id>
@@ -179,34 +175,6 @@
                An alternative is to set this to true and use excludedArtifacts, see below
           -->
           <downloadExtensionDependencies>true</downloadExtensionDependencies>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>java</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <mainClass>com.dremio.nessie.backend.dynamodb.CreateTables</mainClass>
-          <arguments>
-            <argument>${nessie.dynamo.region}</argument>
-            <argument>${nessie.dynamo.endpoint}</argument>
-          </arguments>
-          <systemProperties>
-            <systemProperty>
-              <key>aws.accessKeyId</key>
-              <value>xxx</value>
-            </systemProperty>
-            <systemProperty>
-              <key>aws.secretAccessKey</key>
-              <value>xxx</value>
-            </systemProperty>
-          </systemProperties>
         </configuration>
       </plugin>
     </plugins>

@@ -24,23 +24,25 @@ import com.dremio.nessie.versioned.store.Id;
 /**
  * Reference-consumer for branches + tags.
  * <p>
- * Tags must have the following attributes, other attributes are not allowed:
+ * Tags are handled by calling {@link #tag()} and setting the following attributes:
  * </p>
  * <ul>
+ * <li>{@link #tag()}</li>
  * <li>{@link #id(Id)}</li>
  * <li>{@link #name(String)}</li>
- * <li>{@link #commit(Id)}</li>
+ * <li>{@link Tag#commit(Id)}</li>
  * </ul>
  * <p>
  * Branches must have the following attributes, other attributes are not allowed:
  * </p>
  * <ul>
+ * <li>{@link #branch()}</li>
  * <li>{@link #id(Id)}</li>
  * <li>{@link #name(String)}</li>
- * <li>{@link #commits(Consumer)} receives a {@link BranchCommitConsumer} that must be used to
+ * <li>{@link Branch#commits(Consumer)} receives a {@link BranchCommit} that must be used to
  * immediately execute the callbacks that represent the commit-log for the branch</li>
- * <li>{@link #metadata(Id)}</li>
- * <li>{@link #children(Stream)} containing {@link Id} elements</li>
+ * <li>{@link Branch#metadata(Id)}</li>
+ * <li>{@link Branch#children(Stream)} containing {@link Id} elements</li>
  * </ul>
  *
  * <em>Branches</em>
@@ -97,22 +99,14 @@ import com.dremio.nessie.versioned.store.Id;
  * (one or more saved followed by zero or more unsaved commits).
  * <li>The ids for all saved commits will exist in the L1 table.
  * </ol>
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
+ * <p>For efficient serialization (think: serializing a value to for example to JSON without
+ * buffering data, some store implementations require a strict ordering and in turn a strict
+ * sequence of method invocations.</p>
  */
 public interface Ref extends BaseValue<Ref> {
-  enum RefType {
-    TAG,
-    BRANCH
-  }
-
-  /**
-   * Set the type of the reference.
-   * <p>Must be called exactly once.</p>
-   *
-   * @param refType The type of the reference.
-   * @return This consumer.
-   */
-  Ref type(RefType refType);
-
   /**
    * Set the name of the reference.
    * <p>Must be called exactly once.</p>
@@ -120,58 +114,108 @@ public interface Ref extends BaseValue<Ref> {
    * @param name The name of the reference.
    * @return This consumer.
    */
-  Ref name(String name);
+  default Ref name(String name) {
+    return this;
+  }
 
   /**
-   * Set the commit of the reference.
-   * <p>Must be called exactly once for {@link RefType#TAG}, never for {@link RefType#BRANCH}.</p>
-   *
-   * @param commit The commit of the reference.
-   * @return This consumer.
+   * Specifies that this reference is a tag, not a branch.
+   * <p>Either this function or {@link #branch()} must be called.</p>
+   * @return consumer instance for tags.
    */
-  Ref commit(Id commit);
+  Tag tag();
 
   /**
-   * Set the metadata of the reference.
-   * <p>Must be called exactly once for {@link RefType#BRANCH}, never for {@link RefType#TAG}.</p>
-   *
-   * @param metadata The metadata of the reference.
-   * @return This consumer.
+   * Specifies that this reference is a branch, not a tag.
+   * <p>Either this function or {@link #tag()} must be called.</p>
+   * @return consumer instance for branches.
    */
-  Ref metadata(Id metadata);
+  Branch branch();
 
-  /**
-   * Set the children of the reference.
-   * <p>Must be called exactly once for {@link RefType#BRANCH}, never for {@link RefType#TAG}.</p>
-   *
-   * @param children The children of the reference.
-   * @return This consumer.
-   */
-  Ref children(Stream<Id> children);
+  interface Tag {
+    /**
+     * Set the commit of the reference.
+     * <p>Must be called exactly once.</p>
+     *
+     * @param commit The commit of the reference.
+     * @return This consumer.
+     */
+    default Tag commit(Id commit) {
+      return this;
+    }
 
-  /**
-   * Set the commits of the reference.
-   * <p>Must be called exactly once for {@link RefType#BRANCH}, never for {@link RefType#TAG}.</p>
-   * <p>Implementations must immediately execute the callbacks in the {@link BranchCommitConsumer}
-   * to construct the commit-log of the branch.</p>
-   *
-   * @param commits The branch's commit-log receiver.
-   * @return This consumer.
-   */
-  Ref commits(Consumer<BranchCommitConsumer> commits);
+    /**
+     * Convenience method to get back to the {@link Ref}.
+     * <p>
+     * Implementations must return the shared state ({@code this}) from/for {@link Ref}.
+     * </p>
+     * @return owning {@link Ref}
+     */
+    Ref backToRef();
+  }
+
+  interface Branch {
+
+    /**
+     * Set the metadata of the reference.
+     * <p>Must be called exactly once.</p>
+     *
+     * @param metadata The metadata of the reference.
+     * @return This consumer.
+     */
+    default Branch metadata(Id metadata) {
+      return this;
+    }
+
+    /**
+     * Set the children of the reference.
+     * <p>Must be called exactly once.</p>
+     *
+     * @param children The children of the reference.
+     * @return This consumer.
+     */
+    default Branch children(Stream<Id> children) {
+      return this;
+    }
+
+    /**
+     * Set the commits of the reference.
+     * <p>Must be called exactly once.</p>
+     * <p>Implementations must immediately execute the callbacks in the {@link BranchCommit}
+     * to construct the commit-log of the branch.</p>
+     * <p>For efficient serialization (think: serializing a value to for example to JSON without
+     * buffering data, some store implementations require a strict ordering and in turn a strict
+     * sequence of method invocations.</p>
+     *
+     * @param commits The branch's commit-log receiver.
+     * @return This consumer.
+     */
+    default Branch commits(Consumer<BranchCommit> commits) {
+      return this;
+    }
+
+    /**
+     * Convenience method to get back to the {@link Ref}.
+     * <p>
+     * Implementations must return the shared state ({@code this}) from/for {@link Ref}.
+     * </p>
+     * @return owning {@link Ref}
+     */
+    Ref backToRef();
+  }
 
   /**
    * Users of this consumers must call the methods in the following order.
    * <ol>
-   *   <li>{@link #id(Id)} (mandatory), {@link #commit(Id)} (mandatory),
-   *   {@link #parent(Id)} (for "saved" branch-commits)</li>
-   *   <li>{@link #delta(int, Id, Id)} (for "unsaved" branch-commits)</li>
-   *   <li>{@link #keyMutation(Key.Mutation)} (int, Id, Id)} (for "unsaved" branch-commits)</li>
-   *   <li>{@link #done()} (mandatory)</li>
+   *   <li>{@link #id(Id)} (mandatory), {@link #commit(Id)} (mandatory)</li>
+   *   <li>Either {@link #saved()} or {@link #unsaved()}</li>
+   *   <li>Each saved and unsaved branch-commit must be terminated with its {@code done()} method</li>
    * </ol>
-   * , then
+   * <p>For efficient serialization (think: serializing a value to for example to JSON without
+   * buffering data, some store implementations require a strict ordering and in turn a strict
+   * sequence of method invocations.</p>
    */
-  interface BranchCommitConsumer {
+  interface BranchCommit {
 
     /**
      * ID of the branch's commit.
@@ -179,7 +223,9 @@ public interface Ref extends BaseValue<Ref> {
      * @param id ID of the branch's commit
      * @return this consumer
      */
-    BranchCommitConsumer id(Id id);
+    default BranchCommit id(Id id) {
+      return this;
+    }
 
     /**
      * Commit of the branch's commit.
@@ -187,42 +233,91 @@ public interface Ref extends BaseValue<Ref> {
      * @param commit Commit of the branch's commit
      * @return this consumer
      */
-    BranchCommitConsumer commit(Id commit);
+    default BranchCommit commit(Id commit) {
+      return this;
+    }
 
     /**
+     * Continue with this branch-commit as a saved commit.
+     * <p>For efficient serialization (think: serializing a value to for example to JSON without
+     * buffering data, some store implementations require a strict ordering and in turn a strict
+     * sequence of method invocations.</p>
+     * @return consumer that takes the parent for the saved-commit.
+     */
+    SavedCommit saved();
+
+    /**
+     * Continue with this branch-commit as an unsaved commit.
+     * <p>For efficient serialization (think: serializing a value to for example to JSON without
+     * buffering data, some store implementations require a strict ordering and in turn a strict
+     * sequence of method invocations.</p>
+     * @return consumer that takes the deltas and later the mutations for the unsaved-commit.
+     */
+    UnsavedCommitDelta unsaved();
+  }
+
+  interface SavedCommit {
+    /**
      * Parent of the branch's commit.
-     * <p>Must be called exactly once for each branch-commit, but never with
-     * {@link #delta(int, Id, Id)} or {@link #keyMutation(Key.Mutation)}.</p>
+     * <p>Must be called exactly once for each saved branch-commit.</p>
      * @param parent Parent of the branch's commit
      * @return this consumer
      */
-    BranchCommitConsumer parent(Id parent);
-
-    /**
-     * Add a delta.
-     * <p>Can be called multiple times, but must be called after {@link #id(Id)} and {@link #commit(Id)}.</p>
-     * <p>Must not be combined with {@link #parent(Id)}</p>
-     * @param position delta-position
-     * @param oldId delta-old-id
-     * @param newId delta-new-id
-     * @return this consumer
-     */
-    BranchCommitConsumer delta(int position, Id oldId, Id newId);
-
-    /**
-     * Add a key-mutation.
-     * <p>Can be called multiple times, but must be called after {@link #id(Id)} and {@link #commit(Id)}
-     * and {@link #delta(int, Id, Id)}.</p>
-     * <p>Must not be combined with {@link #parent(Id)}</p>
-     * @param keyMutation key-mutation
-     * @return this consumer
-     */
-    BranchCommitConsumer keyMutation(Key.Mutation keyMutation);
+    default SavedCommit parent(Id parent) {
+      return this;
+    }
 
     /**
      * End the current commit.
+     * <p>
+     * Implementations must return the shared state ({@code this}) from/for {@link BranchCommit}.
+     * </p>
      * @return this consumer
      */
-    BranchCommitConsumer done();
+    BranchCommit done();
+  }
+
+  interface UnsavedCommitDelta {
+
+    /**
+     * Add a delta.
+     * <p>Can be called multiple times, but must be called after {@link #id(Id)} and {@link
+     * BranchCommit#commit(Id)}.</p>
+     *
+     * @param position delta-position
+     * @param oldId    delta-old-id
+     * @param newId    delta-new-id
+     * @return this consumer
+     */
+    default UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
+      return this;
+    }
+
+    /**
+     * Continue with the mutations for this unsaved-commit.
+     * @return consumer that takes the key-mutations for this unsaved-commit.
+     */
+    UnsavedCommitMutations mutations();
+  }
+
+  interface UnsavedCommitMutations {
+    /**
+     * Add a key-mutation.
+     * <p>Can be called multiple times.</p>
+     * @param keyMutation key-mutation
+     * @return this consumer
+     */
+    default UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
+      return this;
+    }
+
+    /**
+     * End the current commit.
+     * <p>
+     * Implementations must return the shared state ({@code this}) from/for {@link BranchCommit}.
+     * </p>
+     * @return this consumer
+     */
+    BranchCommit done();
   }
 }

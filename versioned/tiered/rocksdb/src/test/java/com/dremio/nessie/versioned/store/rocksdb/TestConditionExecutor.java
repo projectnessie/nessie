@@ -392,11 +392,6 @@ class TestConditionExecutor {
   }
 
   @Test
-  void executorTagType() {
-    equalsTag(RocksRef.TYPE, Entity.ofString(Ref.RefType.TAG.toString()));
-  }
-
-  @Test
   void executorTagName() {
     equalsTag(RocksRef.NAME, Entity.ofString(sampleName));
   }
@@ -423,11 +418,6 @@ class TestConditionExecutor {
   @Test
   void executorBranchID() {
     equalsBranch(RocksRef.ID, Id.EMPTY.toEntity());
-  }
-
-  @Test
-  void executorBranchType() {
-    equalsBranch(RocksRef.TYPE, Entity.ofString(Ref.RefType.BRANCH.toString()));
   }
 
   @Test
@@ -614,20 +604,23 @@ class TestConditionExecutor {
   static RocksRef createBranch(Random random) {
     return (RocksRef) new RocksRef()
       .id(Id.EMPTY)
-      .type(Ref.RefType.BRANCH)
       .name(sampleName)
+      .branch()
       .children(Stream.generate(() -> ID).limit(RocksL1.SIZE))
       .metadata(ID)
       .commits(bc -> {
         bc.id(ID)
           .commit(ID_2)
-          .parent(ID_3)
+          .saved()
+            .parent(ID_3)
             .done();
         bc.id(ID_4)
           .commit(ID)
-          .delta(1, ID_2, ID_3)
-          .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
-            .done();
+          .unsaved()
+            .delta(1, ID_2, ID_3)
+            .mutations()
+              .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
+              .done();
       });
   }
 
@@ -639,8 +632,8 @@ class TestConditionExecutor {
   static RocksRef createTag(Random random) {
     return (RocksRef) new RocksRef()
       .id(Id.EMPTY)
-      .type(Ref.RefType.TAG)
       .name(sampleName)
+      .tag()
       .commit(ID_2);
   }
 

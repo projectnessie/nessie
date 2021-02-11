@@ -19,7 +19,6 @@ import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.dremio.nessie.tiered.builder.Ref.RefType;
 import com.dremio.nessie.versioned.Key;
 import com.dremio.nessie.versioned.store.Entity;
 import com.dremio.nessie.versioned.store.Id;
@@ -89,18 +88,21 @@ public class SampleEntities {
     final String name = createString(random, 10);
 
     return EntityType.REF.buildEntity(producer -> producer.id(Id.build(name))
-        .type(RefType.BRANCH)
         .name(name)
+        .branch()
         .children(IntStream.range(0, InternalL1.SIZE).mapToObj(x -> createId(random)))
         .metadata(createId(random))
         .commits(bc -> {
           bc.id(createId(random))
               .commit(createId(random))
+              .saved()
               .parent(createId(random))
               .done();
           bc.id(createId(random))
               .commit(createId(random))
+              .unsaved()
               .delta(1, createId(random), createId(random))
+              .mutations()
               .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
               .done();
         }));
@@ -113,8 +115,8 @@ public class SampleEntities {
    */
   public static InternalRef createTag(Random random) {
     return EntityType.REF.buildEntity(producer -> producer.id(createId(random))
-        .type(RefType.TAG)
         .name("tagName")
+        .tag()
         .commit(createId(random)));
   }
 

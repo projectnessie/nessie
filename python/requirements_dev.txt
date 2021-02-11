@@ -1,10 +1,10 @@
 -r requirements.txt
 bump2version==1.0.1
 codecov==2.1.11
-coverage==5.3.1
+coverage==5.4
 flake8==3.8.4
-pip==20.3.3
-pytest==6.2.1
+pip==21.0.1
+pytest==6.2.2
 pytest-cov==2.11.1
 pytest-mock==3.5.1
 pytest-mypy==0.8.0
@@ -12,7 +12,7 @@ pytest-recording==0.11.0
 pytest-runner==5.2
 Sphinx==3.4.3
 sphinx-autodoc-typehints==1.11.1
-tox==3.21.2
+tox==3.21.4
 twine==3.3.0
 watchdog==1.0.2
 wheel==0.36.2

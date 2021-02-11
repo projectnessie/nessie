@@ -23,13 +23,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.bson.BsonBinary;
-import org.bson.BsonDocument;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 import org.bson.Document;
@@ -79,10 +77,12 @@ public class MongoDBStore implements Store {
    * Pair of a collection to the set of IDs to be loaded.
    */
   private static class CollectionLoadIds {
+    final ValueType<?> type;
     final MongoCollection<Document> collection;
     final List<Id> ids;
 
-    CollectionLoadIds(MongoCollection<Document> collection, List<Id> ops) {
+    CollectionLoadIds(ValueType<?> type, MongoCollection<Document> collection, List<Id> ops) {
+      this.type = type;
       this.collection = collection;
       this.ids = ops;
     }
@@ -164,6 +164,7 @@ public class MongoDBStore implements Store {
     }
   }
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public void load(LoadStep loadstep) throws NotFoundException {
     for (LoadStep step = loadstep; step != null; step = step.getNext().orElse(null)) {
@@ -174,16 +175,20 @@ public class MongoDBStore implements Store {
         .flatMap(entry -> {
           ValueType<?> type = entry.key();
 
-          MongoCollection<Document> collection = readCollection(
-              type,
-              id -> idLoadOps.get(id).getReceiver(),
-              id -> idLoadOps.remove(id).done());
+          MongoCollection<Document> collection = getCollection(type);
 
           return entry.map(LoadOp::getId)
               .buffer(LOAD_SIZE)
-              .map(l -> new CollectionLoadIds(collection, l));
+              .map(l -> new CollectionLoadIds(type, collection, l));
         })
           .flatMap(entry -> entry.collection.find(Filters.in(MongoBaseValue.ID, entry.ids)))
+          .handle((op, sink) -> {
+            // Process each of the loaded entries.
+            Id id = MongoSerDe.deserializeId(op, MongoBaseValue.ID);
+            LoadOp loadOp = idLoadOps.remove(id);
+            MongoSerDe.produceToConsumer(op, loadOp.getValueType(), loadOp.getReceiver());
+            loadOp.done();
+          })
           .blockLast(timeout);
 
       // Check if there were any missed ops.
@@ -248,14 +253,17 @@ public class MongoDBStore implements Store {
 
   @Override
   public <C extends BaseValue<C>> void loadSingle(ValueType<C> valueType, Id id, C consumer) {
-    final MongoCollection<Document> collection = readCollection(valueType, x -> consumer, x -> {});
+    final MongoCollection<Document> collection = getCollection(valueType);
 
-    Object found = Mono.from(
+    Document found = Mono.from(
         collection.find(Filters.eq(MongoBaseValue.ID, id))
     ).block(timeout);
+
     if (null == found) {
       throw new NotFoundException(String.format("Unable to load item with ID: %s", id));
     }
+
+    MongoSerDe.produceToConsumer(found, valueType, consumer);
   }
 
   @Override
@@ -269,10 +277,7 @@ public class MongoDBStore implements Store {
     // TODO: Can this be optimized to not collect the elements before streaming them?
     // TODO: Could this benefit from paging?
     return Flux.from(this.getCollection(type).find()).toStream()
-        .map(d -> producer -> {
-          BsonDocument bsonDoc = d.toBsonDocument(Document.class, mongoClientSettings.getCodecRegistry());
-          MongoSerDe.produceToConsumer(bsonDoc, type, producer);
-        });
+        .map(d -> producer -> MongoSerDe.produceToConsumer(d, type, producer));
   }
 
   /**
@@ -300,29 +305,6 @@ public class MongoDBStore implements Store {
       @Override
       public Class<SaveOp> getEncoderClass() {
         return SaveOp.class;
-      }
-    };
-
-    return this.getCollection(type, codec);
-  }
-
-  @SuppressWarnings("rawtypes")
-  private MongoCollection<Document> readCollection(ValueType<?> type, Function<Id, BaseValue> onIdParsed, Consumer<Id> parsed) {
-    Codec<Document> codec = new Codec<Document>() {
-      @Override
-      public Document decode(BsonReader bsonReader, DecoderContext decoderContext) {
-        MongoSerDe.produceToConsumer(bsonReader, type, onIdParsed, parsed);
-        return new Document();
-      }
-
-      @Override
-      public void encode(BsonWriter bsonWriter, Document o, EncoderContext encoderContext) {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public Class<Document> getEncoderClass() {
-        return Document.class;
       }
     };
 

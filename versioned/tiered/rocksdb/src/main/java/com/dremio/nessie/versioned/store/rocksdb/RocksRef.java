@@ -42,9 +42,8 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
   static final String COMMIT = "commit";
   static final String CHILDREN = "children";
 
-  private RefType type;
-  private String name;
   private Id commit;
+  private String name;
   private Id metadata;
   private Stream<Id> children;
   private List<ValueProtos.Commit> commits;
@@ -53,11 +52,17 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
     super();
   }
 
+  private enum Type {
+    INIT, TAG, BRANCH
+  }
+
+  private Type type = Type.INIT;
+
   @Override
   public boolean evaluateFunction(Function function) {
-    if (type == RefType.BRANCH) {
+    if (type == Type.BRANCH) {
       return evaluateBranch(function);
-    } else if (type == RefType.TAG) {
+    } else if (type == Type.TAG) {
       return evaluateTag(function);
     }
     return false;
@@ -65,6 +70,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
   /**
    * Evaluates that this branch meets the condition.
+   *
    * @param function the function that is tested against the nameSegment
    * @return true if this branch meets the condition
    */
@@ -74,23 +80,20 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
     switch (segment) {
       case ID:
         return idEvaluates(function);
-      case TYPE:
-        return (function.isRootNameSegmentChildlessAndEquals()
-            && type.toString().equals(function.getValue().getString()));
       case NAME:
         return (function.isRootNameSegmentChildlessAndEquals()
-            && name.equals(function.getValue().getString()));
+          && name.equals(function.getValue().getString()));
       case CHILDREN:
         return evaluateStream(function, children);
       case METADATA:
         return (function.isRootNameSegmentChildlessAndEquals()
-            && metadata.toEntity().equals(function.getValue()));
+          && metadata.toEntity().equals(function.getValue()));
       case COMMITS:
         // TODO: refactor once jdbc-store Store changes are available.
         switch (function.getOperator()) {
           case SIZE:
             return (!function.getRootPathAsNameSegment().getChild().isPresent()
-                && commits.size() == (int) function.getValue().getNumber());
+              && commits.size() == (int) function.getValue().getNumber());
           case EQUALS:
             return false;
           default:
@@ -103,6 +106,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
   /**
    * Evaluates that this tag meets the condition.
+   *
    * @param function the function that is tested against the nameSegment
    * @return true if this tag meets the condition
    */
@@ -111,24 +115,15 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
     switch (segment) {
       case ID:
         return idEvaluates(function);
-      case TYPE:
-        return (function.isRootNameSegmentChildlessAndEquals()
-            && type.toString().equals(function.getValue().getString()));
       case NAME:
         return (function.isEquals()
-            && name.equals(function.getValue().getString()));
+          && name.equals(function.getValue().getString()));
       case COMMIT:
         return (function.isEquals()
-            && commit.toEntity().equals(function.getValue()));
+          && commit.toEntity().equals(function.getValue()));
       default:
         return false;
     }
-  }
-
-  @Override
-  public Ref type(RefType refType) {
-    this.type = refType;
-    return this;
   }
 
   @Override
@@ -138,31 +133,142 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
   }
 
   @Override
-  public Ref commit(Id commit) {
-    this.commit = commit;
-    return this;
+  public Tag tag() {
+    if (type != Type.INIT) {
+      throw new IllegalStateException("branch()/tag() has already been called");
+    }
+    type = Type.TAG;
+    // TODO: Do we need to serialize ref type?
+    //    serializeString(TYPE, REF_TYPE_TAG);
+    return new RocksTag();
   }
 
   @Override
-  public Ref metadata(Id metadata) {
-    this.metadata = metadata;
-    return this;
+  public Branch branch() {
+    if (type != Type.INIT) {
+      throw new IllegalStateException("branch()/tag() has already been called");
+    }
+    type = Type.BRANCH;
+    // TODO: Do we need to serialize ref type?
+    //    serializeString(TYPE, REF_TYPE_BRANCH);
+    return new RocksBranch();
   }
 
-  @Override
-  public Ref children(Stream<Id> children) {
-    this.children = children;
-    return this;
+
+  class RocksTag implements Tag {
+    @Override
+    public Tag commit(Id commit) {
+      RocksRef.this.commit = commit;
+      return this;
+    }
+
+    @Override
+    public Ref backToRef() {
+      return RocksRef.this;
+    }
+  }
+
+  class RocksBranch implements Branch {
+    @Override
+    public Branch metadata(Id metadata) {
+      RocksRef.this.metadata = metadata;
+      return this;
+    }
+
+    @Override
+    public Branch children(Stream<Id> children) {
+      RocksRef.this.children = children;
+      return this;
+    }
+
+    @Override
+    public Branch commits(Consumer<BranchCommit> commitsConsumer) {
+      if (null == RocksRef.this.commits) {
+        RocksRef.this.commits = new ArrayList<>();
+      }
+
+      commitsConsumer.accept(new RocksBranchCommit() {
+      });
+      return this;
+    }
+
+    @Override
+    public Ref backToRef() {
+      return RocksRef.this;
+    }
+  }
+
+  private class RocksBranchCommit implements BranchCommit, SavedCommit, UnsavedCommitDelta, UnsavedCommitMutations {
+    final ValueProtos.Commit.Builder builder = ValueProtos.Commit.newBuilder();
+
+    // BranchCommit implementations
+    @Override
+    public BranchCommit id(Id id) {
+      builder.setId(id.getValue());
+      return this;
+    }
+
+    @Override
+    public BranchCommit commit(Id commit) {
+      builder.setCommit(commit.getValue());
+      return this;
+    }
+
+    @Override
+    public SavedCommit saved() {
+      return this;
+    }
+
+    @Override
+    public UnsavedCommitDelta unsaved() {
+      return this;
+    }
+
+    // SavedCommit implementations
+    @Override
+    public SavedCommit parent(Id parent) {
+      builder.setParent(parent.getValue());
+      return this;
+    }
+
+    @Override
+    public BranchCommit done() {
+      commits.add(builder.build());
+      builder.clear();
+      return this;
+    }
+
+    // UnsavedCommitDelta implementations
+    @Override
+    public UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
+      builder.addDelta(ValueProtos.Delta.newBuilder()
+          .setPosition(position)
+          .setOldId(oldId.getValue())
+          .setNewId(newId.getValue())
+          .build());
+      return this;
+    }
+
+    @Override
+    public UnsavedCommitMutations mutations() {
+      return this;
+    }
+
+    // UnsavedCommitMutations implementations
+    @Override
+    public UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
+      builder.addKeyMutation(buildKeyMutation(keyMutation));
+      return this;
+    }
   }
 
   @Override
   byte[] build() {
     checkPresent(name, NAME);
-    checkPresent(type, TYPE);
 
     final ValueProtos.Ref.Builder builder = ValueProtos.Ref.newBuilder().setBase(buildBase()).setName(name);
 
-    if (type == RefType.TAG) {
+    if (type == Type.TAG) {
       checkPresent(commit, COMMIT);
       checkNotPresent(commits, COMMITS);
       checkNotPresent(children, CHILDREN);
@@ -197,11 +303,11 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
       setBase(consumer, ref.getBase());
       consumer.name(ref.getName());
       if (ref.hasTag()) {
-        consumer.type(RefType.TAG).commit(Id.of(ref.getTag().getId()));
+        consumer.tag().commit(Id.of(ref.getTag().getId()));
       } else {
         // Branch
         consumer
-            .type(RefType.BRANCH)
+            .branch()
             .commits(bc -> deserializeCommits(bc, ref.getBranch().getCommitsList()))
             .children(ref.getBranch().getChildrenList().stream().map(Id::of))
             .metadata(Id.of(ref.getBranch().getMetadataId()));
@@ -212,72 +318,22 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
     }
   }
 
-  private static void deserializeCommits(BranchCommitConsumer consumer, List<ValueProtos.Commit> commitsList) {
+  private static void deserializeCommits(BranchCommit consumer, List<ValueProtos.Commit> commitsList) {
     for (ValueProtos.Commit commit : commitsList) {
       consumer
           .id(Id.of(commit.getId()))
           .commit(Id.of(commit.getCommit()));
 
       if (commit.getParent().isEmpty()) {
-        commit.getDeltaList().forEach(d -> consumer.delta(d.getPosition(), Id.of(d.getOldId()), Id.of(d.getNewId())));
-        commit.getKeyMutationList().forEach(km -> consumer.keyMutation(createKeyMutation(km)));
+        commit.getDeltaList().forEach(d -> consumer.unsaved().delta(d.getPosition(), Id.of(d.getOldId()), Id.of(d.getNewId())));
+        commit.getKeyMutationList().forEach(km -> consumer.unsaved().mutations().keyMutation(createKeyMutation(km)));
+        consumer.unsaved().mutations().done();
       } else {
-        consumer.parent(Id.of(commit.getParent()));
+        consumer.saved().parent(Id.of(commit.getParent()));
+
       }
-      consumer.done();
     }
   }
 
-  @Override
-  public Ref commits(Consumer<BranchCommitConsumer> commitsConsumer) {
-    if (null == this.commits) {
-      this.commits = new ArrayList<>();
-    }
 
-    commitsConsumer.accept(new BranchCommitConsumer() {
-      final ValueProtos.Commit.Builder builder = ValueProtos.Commit.newBuilder();
-
-      @Override
-      public BranchCommitConsumer id(Id id) {
-        builder.setId(id.getValue());
-        return this;
-      }
-
-      @Override
-      public BranchCommitConsumer commit(Id commit) {
-        builder.setCommit(commit.getValue());
-        return this;
-      }
-
-      @Override
-      public BranchCommitConsumer parent(Id parent) {
-        builder.setParent(parent.getValue());
-        return this;
-      }
-
-      @Override
-      public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
-        builder.addDelta(ValueProtos.Delta.newBuilder()
-            .setPosition(position)
-            .setOldId(oldId.getValue())
-            .setNewId(newId.getValue())
-            .build());
-        return this;
-      }
-
-      @Override
-      public BranchCommitConsumer keyMutation(Key.Mutation keyMutation) {
-        builder.addKeyMutation(buildKeyMutation(keyMutation));
-        return this;
-      }
-
-      @Override
-      public BranchCommitConsumer done() {
-        commits.add(builder.build());
-        builder.clear();
-        return this;
-      }
-    });
-    return this;
-  }
 }

@@ -101,7 +101,7 @@ public interface TreeApi {
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Found and returned reference."),
       @APIResponse(responseCode = "404", description = "Ref not found")
-    })
+  })
   Reference getReferenceByName(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
@@ -120,8 +120,8 @@ public interface TreeApi {
   @APIResponses({
       @APIResponse(description = "all objects for a reference"),
       @APIResponse(responseCode = "200", description = "Returned successfully."),
-      @APIResponse(responseCode = "404", description = "Ref not found")}
-  )
+      @APIResponse(responseCode = "404", description = "Ref not found")
+  })
   public EntriesResponse getEntries(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
@@ -139,7 +139,8 @@ public interface TreeApi {
   @Operation(summary = "Get commit log for a reference")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Returned commits."),
-      @APIResponse(responseCode = "404", description = "Ref doesn't exists")})
+      @APIResponse(responseCode = "404", description = "Ref doesn't exists")
+  })
   LogResponse getCommitLog(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
@@ -157,7 +158,7 @@ public interface TreeApi {
       @APIResponse(responseCode = "204", description = "Assigned successfully"),
       @APIResponse(responseCode = "404", description = "One or more references don't exist"),
       @APIResponse(responseCode = "412", description = "Update conflict")
-    })
+  })
   void assignTag(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -185,7 +186,7 @@ public interface TreeApi {
       @APIResponse(responseCode = "204", description = "Deleted successfully."),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "update conflict"),
-    })
+  })
   void deleteTag(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -208,7 +209,7 @@ public interface TreeApi {
       @APIResponse(responseCode = "204", description = "Assigned successfully"),
       @APIResponse(responseCode = "404", description = "One or more references don't exist"),
       @APIResponse(responseCode = "412", description = "Update conflict")
-    })
+  })
   void assignBranch(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -236,7 +237,7 @@ public interface TreeApi {
       @APIResponse(responseCode = "204", description = "Deleted successfully."),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
       @APIResponse(responseCode = "412", description = "update conflict"),
-    })
+  })
   void deleteBranch(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -260,8 +261,8 @@ public interface TreeApi {
       @APIResponse(responseCode = "204", description = "Merged successfully."),
       @APIResponse(responseCode = "401", description = "no merge ref supplied"),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
-      @APIResponse(responseCode = "412", description = "update conflict")}
-  )
+      @APIResponse(responseCode = "412", description = "update conflict")
+  })
   void transplantCommitsIntoBranch(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -291,8 +292,8 @@ public interface TreeApi {
       @APIResponse(responseCode = "204", description = "Merged successfully."),
       @APIResponse(responseCode = "401", description = "no merge ref supplied"),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists"),
-      @APIResponse(responseCode = "412", description = "update conflict")}
-  )
+      @APIResponse(responseCode = "412", description = "update conflict")
+  })
   void mergeRefIntoBranch(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
@@ -317,7 +318,8 @@ public interface TreeApi {
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Updated successfully."),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
-      @APIResponse(responseCode = "412", description = "Update conflict")})
+      @APIResponse(responseCode = "412", description = "Update conflict")
+  })
   public void commitMultipleOperations(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)

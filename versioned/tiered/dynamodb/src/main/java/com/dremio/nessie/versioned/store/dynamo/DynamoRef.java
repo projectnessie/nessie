@@ -19,7 +19,7 @@ import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.attrib
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeId;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeIdStream;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeInt;
-import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKeyMutations;
+import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.deserializeKeyMutation;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.idValue;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.list;
 import static com.dremio.nessie.versioned.store.dynamo.AttributeValueUtil.map;
@@ -60,19 +60,73 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
+  private enum Type {
+    INIT, TAG, BRANCH
+  }
+
+  private Type type = Type.INIT;
+
   DynamoRef() {
     super(ValueType.REF);
   }
 
   @Override
-  public Ref type(RefType refType) {
-    switch (refType) {
-      case TAG:
-        return addEntitySafe(TYPE, string(REF_TYPE_TAG));
-      case BRANCH:
-        return addEntitySafe(TYPE, string(REF_TYPE_BRANCH));
-      default:
-        throw new IllegalArgumentException("Unknown ref-type " + refType);
+  public Tag tag() {
+    if (type != Type.INIT) {
+      throw new IllegalStateException("branch()/tag() has already been called");
+    }
+    type = Type.TAG;
+    addEntitySafe(TYPE, string(REF_TYPE_TAG));
+    return new DynamoTag();
+  }
+
+  @Override
+  public Branch branch() {
+    if (type != Type.INIT) {
+      throw new IllegalStateException("branch()/tag() has already been called");
+    }
+    type = Type.BRANCH;
+    addEntitySafe(TYPE, string(REF_TYPE_BRANCH));
+    return new DynamoBranch();
+  }
+
+  class DynamoTag implements Tag {
+    @Override
+    public Tag commit(Id commit) {
+      addEntitySafe(COMMIT, idValue(commit));
+      return this;
+    }
+
+    @Override
+    public Ref backToRef() {
+      return DynamoRef.this;
+    }
+  }
+
+  class DynamoBranch implements Branch {
+    @Override
+    public Branch metadata(Id metadata) {
+      addEntitySafe(METADATA, idValue(metadata));
+      return this;
+    }
+
+    @Override
+    public Branch children(Stream<Id> children) {
+      addIdList(TREE, children);
+      return this;
+    }
+
+    @Override
+    public Branch commits(Consumer<BranchCommit> commits) {
+      DynamoBranchCommit serializedCommits = new DynamoBranchCommit();
+      commits.accept(serializedCommits);
+      addEntitySafe(COMMITS, builder().l(serializedCommits.commitsList).build());
+      return this;
+    }
+
+    @Override
+    public Ref backToRef() {
+      return DynamoRef.this;
     }
   }
 
@@ -81,85 +135,82 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
     return addEntitySafe(NAME, string(name));
   }
 
-  @Override
-  public Ref commit(Id commit) {
-    return addEntitySafe(COMMIT, idValue(commit));
-  }
+  private static class DynamoBranchCommit implements BranchCommit, SavedCommit,
+      UnsavedCommitDelta, UnsavedCommitMutations {
+    final Map<String, AttributeValue> builder = new HashMap<>();
+    final List<AttributeValue> commitsList = new ArrayList<>();
+    List<AttributeValue> deltas = null;
+    List<AttributeValue> keyMutations = null;
 
-  @Override
-  public Ref metadata(Id metadata) {
-    return addEntitySafe(METADATA, idValue(metadata));
-  }
+    @Override
+    public BranchCommit id(Id id) {
+      builder.put(ID, idValue(id));
+      return this;
+    }
 
-  @Override
-  public Ref children(Stream<Id> children) {
-    return addIdList(TREE, children);
-  }
+    @Override
+    public BranchCommit commit(Id commit) {
+      builder.put(COMMIT, idValue(commit));
+      return this;
+    }
 
-  @Override
-  public Ref commits(Consumer<BranchCommitConsumer> commits) {
-    List<AttributeValue> commitsList = new ArrayList<>();
-    commits.accept(new BranchCommitConsumer() {
-      final Map<String, AttributeValue> builder = new HashMap<>();
-      List<AttributeValue> deltas = null;
-      List<AttributeValue> keyMutations = null;
+    @Override
+    public SavedCommit saved() {
+      return this;
+    }
 
-      @Override
-      public BranchCommitConsumer id(Id id) {
-        builder.put(ID, idValue(id));
-        return this;
+    @Override
+    public UnsavedCommitDelta unsaved() {
+      return this;
+    }
+
+    @Override
+    public SavedCommit parent(Id parent) {
+      builder.put(PARENT, idValue(parent));
+      return this;
+    }
+
+    @Override
+    public UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
+      if (deltas == null) {
+        deltas = new ArrayList<>();
       }
+      Map<String, AttributeValue> map = new HashMap<>();
+      map.put(POSITION, number(position));
+      map.put(OLD_ID, idValue(oldId));
+      map.put(NEW_ID, idValue(newId));
+      deltas.add(map(map));
+      return this;
+    }
 
-      @Override
-      public BranchCommitConsumer commit(Id commit) {
-        builder.put(COMMIT, idValue(commit));
-        return this;
-      }
+    @Override
+    public UnsavedCommitMutations mutations() {
+      return this;
+    }
 
-      @Override
-      public BranchCommitConsumer parent(Id parent) {
-        builder.put(PARENT, idValue(parent));
-        return this;
+    @Override
+    public UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
+      if (keyMutations == null) {
+        keyMutations = new ArrayList<>();
       }
+      keyMutations.add(serializeKeyMutation(keyMutation));
+      return this;
+    }
 
-      @Override
-      public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
-        if (deltas == null) {
-          deltas = new ArrayList<>();
-        }
-        Map<String, AttributeValue> map = new HashMap<>();
-        map.put(POSITION, number(position));
-        map.put(OLD_ID, idValue(oldId));
-        map.put(NEW_ID, idValue(newId));
-        deltas.add(map(map));
-        return this;
+    @Override
+    public BranchCommit done() {
+      if (deltas != null) {
+        builder.put(DELTAS, list(deltas.stream()));
       }
-
-      @Override
-      public BranchCommitConsumer keyMutation(Key.Mutation keyMutation) {
-        if (keyMutations == null) {
-          keyMutations = new ArrayList<>();
-        }
-        keyMutations.add(serializeKeyMutation(keyMutation));
-        return this;
+      if (keyMutations != null) {
+        builder.put(KEY_LIST, list(keyMutations.stream()));
       }
-
-      @Override
-      public BranchCommitConsumer done() {
-        if (deltas != null) {
-          builder.put(DELTAS, list(deltas.stream()));
-        }
-        if (keyMutations != null) {
-          builder.put(KEY_LIST, list(keyMutations.stream()));
-        }
-        commitsList.add(map(builder));
-        builder.clear();
-        deltas = null;
-        keyMutations = null;
-        return this;
-      }
-    });
-    return addEntitySafe(COMMITS, builder().l(commitsList).build());
+      commitsList.add(map(builder));
+      builder.clear();
+      deltas = null;
+      keyMutations = null;
+      return this;
+    }
   }
 
   @Override
@@ -167,18 +218,21 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
     checkPresent(NAME, "name");
     checkPresent(TYPE, "type");
 
-    if (entity.get(TYPE).s().equals(REF_TYPE_TAG)) {
-      // tag
-      checkPresent(COMMIT, "commit");
-      checkNotPresent(COMMITS, "commits");
-      checkNotPresent(TREE, "tree");
-      checkNotPresent(METADATA, "metadata");
-    } else {
-      // branch
-      checkNotPresent(COMMIT, "commit");
-      checkPresent(COMMITS, "commits");
-      checkPresent(TREE, "tree");
-      checkPresent(METADATA, "metadata");
+    switch (type) {
+      case TAG:
+        checkPresent(COMMIT, "commit");
+        checkNotPresent(COMMITS, "commits");
+        checkNotPresent(TREE, "tree");
+        checkNotPresent(METADATA, "metadata");
+        break;
+      case BRANCH:
+        checkNotPresent(COMMIT, "commit");
+        checkPresent(COMMITS, "commits");
+        checkPresent(TREE, "tree");
+        checkPresent(METADATA, "metadata");
+        break;
+      default:
+        throw new IllegalStateException("Neither tag() nor branch() has been called");
     }
 
     return super.build();
@@ -188,22 +242,19 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
    * Deserialize a DynamoDB entity into the given consumer.
    */
   static void toConsumer(Map<String, AttributeValue> entity, Ref consumer) {
-    consumer.id(deserializeId(entity, ID))
-        .dt(AttributeValueUtil.getDt(entity))
+    baseToConsumer(entity, consumer)
         .name(Preconditions.checkNotNull(attributeValue(entity, NAME).s()));
 
     String refType = Preconditions.checkNotNull(attributeValue(entity, TYPE).s());
     switch (refType) {
       case REF_TYPE_BRANCH:
-        consumer.type(RefType.BRANCH);
-
-        consumer.metadata(deserializeId(entity, METADATA))
+        consumer.branch()
+            .metadata(deserializeId(entity, METADATA))
             .children(deserializeIdStream(entity, TREE))
             .commits(cc -> deserializeCommits(entity, cc));
-
         break;
       case REF_TYPE_TAG:
-        consumer.type(RefType.TAG)
+        consumer.tag()
             .commit(deserializeId(entity, COMMIT));
         break;
       default:
@@ -211,35 +262,37 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
     }
   }
 
-  private static void deserializeCommits(Map<String, AttributeValue> map, BranchCommitConsumer cc) {
-    AttributeValue raw = attributeValue(map, COMMITS);
-    raw.l().stream()
-        .map(AttributeValue::m)
-        .forEach(m -> deserializeCommit(m, cc));
+  private static void deserializeCommits(Map<String, AttributeValue> map, BranchCommit cc) {
+    for (AttributeValue raw : attributeValue(map, COMMITS).l()) {
+      deserializeCommit(raw.m(), cc);
+    }
   }
 
-  private static void deserializeCommit(Map<String, AttributeValue> map, BranchCommitConsumer cc) {
+  private static void deserializeCommit(Map<String, AttributeValue> map, BranchCommit cc) {
     cc.id(deserializeId(map, ID))
         .commit(deserializeId(map, COMMIT));
 
     if (map.containsKey(PARENT)) {
-      cc.parent(deserializeId(map, PARENT));
+      cc.saved()
+          .parent(deserializeId(map, PARENT))
+          .done();
     } else {
+      UnsavedCommitDelta deltas = cc.unsaved();
       if (map.containsKey(DELTAS)) {
-        attributeValue(map, DELTAS).l().forEach(av -> {
+        for (AttributeValue av : attributeValue(map, DELTAS).l()) {
           Map<String, AttributeValue> m = av.m();
-          cc.delta(deserializeInt(m, POSITION), deserializeId(m, OLD_ID), deserializeId(m, NEW_ID));
-        });
+          deltas.delta(deserializeInt(m, POSITION), deserializeId(m, OLD_ID), deserializeId(m, NEW_ID));
+        }
       }
 
+      UnsavedCommitMutations mutations = deltas.mutations();
       if (map.containsKey(KEY_LIST)) {
-        deserializeKeyMutations(
-            map,
-            KEY_LIST,
-            km -> km.forEach(cc::keyMutation)
-        );
+        for (AttributeValue raw : attributeValue(map, KEY_LIST).l()) {
+          mutations.keyMutation(deserializeKeyMutation(raw));
+        }
       }
+
+      mutations.done();
     }
-    cc.done();
   }
 }

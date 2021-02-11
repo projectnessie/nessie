@@ -22,6 +22,9 @@ import com.google.protobuf.ByteString;
  * <p>
  * Do not implement this interface in non-abstract implementation classes!
  * </p>
+ * <p>
+ * Implementations must return a shared state ({@code this}) from its method.
+ * </p>
  */
 public interface BaseWrappedValue<C extends BaseWrappedValue<C>> extends BaseValue<C> {
   /**
@@ -31,5 +34,8 @@ public interface BaseWrappedValue<C extends BaseWrappedValue<C>> extends BaseVal
    * @param value The value to set.
    * @return This consumer.
    */
-  C value(ByteString value);
+  @SuppressWarnings("unchecked")
+  default C value(ByteString value) {
+    return (C) this;
+  }
 }

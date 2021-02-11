@@ -15,14 +15,14 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiConsumer;
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeId;
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeIds;
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeKeyMutations;
+
 import java.util.stream.Stream;
 
-import org.bson.BsonReader;
-import org.bson.BsonType;
 import org.bson.BsonWriter;
+import org.bson.Document;
 
 import com.dremio.nessie.tiered.builder.L1;
 import com.dremio.nessie.versioned.Key;
@@ -41,16 +41,22 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
-  static final Map<String, BiConsumer<L1, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
+  static void produce(Document document, L1 v) {
+    v = produceBase(document, v)
+      .commitMetadataId(deserializeId(document, METADATA))
+      .ancestors(deserializeIds(document, PARENTS))
+      .children(deserializeIds(document, TREE))
+      .keyMutations(deserializeKeyMutations(document, MUTATIONS));
 
-  static {
-    PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
-    PROPERTY_PRODUCERS.put(PARENTS, (c, r) -> c.ancestors(MongoSerDe.deserializeIds(r)));
-    PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.children(MongoSerDe.deserializeIds(r)));
-    PROPERTY_PRODUCERS.put(METADATA, (c, r) -> c.commitMetadataId(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(KEY_LIST, MongoL1::deserializeKeyList);
-    PROPERTY_PRODUCERS.put(MUTATIONS, MongoL1::deserializeKeyMutations);
+    Document keyList = (Document) document.get(KEY_LIST);
+    boolean checkpoint = keyList.getBoolean(IS_CHECKPOINT);
+    if (checkpoint) {
+      v.completeKeyList(deserializeIds(keyList, FRAGMENTS));
+    } else {
+      Id checkpointId = deserializeId(keyList, ORIGIN);
+      int distanceFromCheckpoint = Ints.checkedCast(keyList.getLong(DISTANCE));
+      v.incrementalKeyList(checkpointId, distanceFromCheckpoint);
+    }
   }
 
   MongoL1(BsonWriter bsonWriter) {
@@ -108,49 +114,6 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
     bsonWriter.writeEndDocument();
 
     return this;
-  }
-
-  private static void deserializeKeyList(L1 consumer, BsonReader reader) {
-    reader.readStartDocument();
-
-    boolean chk = false;
-    Id checkpointId = null;
-    int distance = 0;
-    Stream<Id> fragments = null;
-
-    while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
-      String field = reader.readName();
-      switch (field) {
-        case IS_CHECKPOINT:
-          chk = reader.readBoolean();
-          break;
-        case FRAGMENTS:
-          fragments = MongoSerDe.deserializeIds(reader);
-          break;
-        case ORIGIN:
-          checkpointId = MongoSerDe.deserializeId(reader);
-          break;
-        case DISTANCE:
-          distance = Ints.checkedCast(reader.readInt64());
-          break;
-        default:
-          throw new IllegalArgumentException(String.format("Unsupported field '%s' for BranchCommit", field));
-      }
-    }
-
-    if (chk) {
-      // complete key list
-      consumer.completeKeyList(fragments);
-    } else {
-      // incremental key list
-      consumer.incrementalKeyList(checkpointId, distance);
-    }
-
-    reader.readEndDocument();
-  }
-
-  private static void deserializeKeyMutations(L1 consumer, BsonReader bsonReader) {
-    consumer.keyMutations(MongoSerDe.deserializeKeyMutations(bsonReader).stream());
   }
 
   @Override

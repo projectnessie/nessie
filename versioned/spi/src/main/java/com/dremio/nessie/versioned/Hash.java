@@ -46,8 +46,6 @@ public final class Hash implements Ref {
   /**
    * Generates a string representation of the hash suitable to be used with
    * {@link #of(String)}.
-   *
-   * @return
    */
   public String asString() {
     final int maxSize = 2 * bytes.size();

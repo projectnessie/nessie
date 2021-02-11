@@ -49,7 +49,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @Type(SqlView.class),
     @Type(HiveTable.class),
     @Type(HiveDatabase.class)
-  })
+})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 public interface Contents {
 

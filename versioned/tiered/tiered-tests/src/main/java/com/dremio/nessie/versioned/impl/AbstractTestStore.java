@@ -56,7 +56,7 @@ public abstract class AbstractTestStore<S extends Store> {
   protected static final Entity ONE = Entity.ofNumber(1);
   protected static final Entity TWO = Entity.ofNumber(2);
 
-  private static class CreatorPair {
+  static class CreatorPair {
     final ValueType<?> type;
     final Supplier<HasId> supplier;
 
@@ -560,8 +560,8 @@ public abstract class AbstractTestStore<S extends Store> {
   @SuppressWarnings("unchecked")
   protected <T extends HasId> void testLoadSingle(ValueType<?> type, T sample) {
     final T read = (T) EntityType.forType(type).loadSingle(store, sample.getId());
-    assertEquals(sample, read);
     assertEquals(sample.getId(), read.getId());
+    assertEquals(sample, read);
   }
 
   protected <C extends BaseValue<C>, T extends PersistentBase<C>> void testPutIfAbsent(ValueType<C> type, T sample) {

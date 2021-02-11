@@ -15,15 +15,16 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiConsumer;
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeId;
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeIds;
+import static com.dremio.nessie.versioned.store.mongodb.MongoSerDe.deserializeKeyMutations;
+
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.bson.BsonReader;
-import org.bson.BsonType;
 import org.bson.BsonWriter;
+import org.bson.Document;
 
 import com.dremio.nessie.tiered.builder.Ref;
 import com.dremio.nessie.versioned.Key;
@@ -47,53 +48,53 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
   static final String METADATA = "metadata";
   static final String KEY_LIST = "keys";
 
-  static final Map<String, BiConsumer<Ref, BsonReader>> PROPERTY_PRODUCERS = new HashMap<>();
-
-  static {
-    PROPERTY_PRODUCERS.put(ID, (c, r) -> c.id(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(DT, (c, r) -> c.dt(r.readInt64()));
-    PROPERTY_PRODUCERS.put(TYPE, (c, r) -> c.type(deserializeType(r)));
-    PROPERTY_PRODUCERS.put(NAME, (c, r) -> c.name(r.readString()));
-    PROPERTY_PRODUCERS.put(COMMIT, (c, r) -> c.commit(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(METADATA, (c, r) -> c.metadata(MongoSerDe.deserializeId(r)));
-    PROPERTY_PRODUCERS.put(TREE, (c, r) -> c.children(MongoSerDe.deserializeIds(r)));
-    PROPERTY_PRODUCERS.put(COMMITS, (c, r) -> c.commits(bc -> deserializeBranchCommits(bc, r)));
+  static void produce(Document document, Ref v) {
+    v = produceBase(document, v)
+        .name(document.getString(NAME));
+    String type = document.getString(TYPE);
+    switch (type) {
+      case REF_TYPE_TAG:
+        v.tag().commit(deserializeId(document, COMMIT));
+        break;
+      case REF_TYPE_BRANCH:
+        v.branch()
+            .metadata(deserializeId(document, METADATA))
+            .children(deserializeIds(document, TREE))
+            .commits(bc -> deserializeBranchCommits(bc, document));
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown ref-type " + type);
+    }
   }
 
-  private RefType refType;
+  private enum Type {
+    INIT, TAG, BRANCH
+  }
+
+  private Type type = Type.INIT;
 
   MongoRef(BsonWriter bsonWriter) {
     super(bsonWriter);
   }
 
   @Override
-  public Ref type(RefType refType) {
-    this.refType = refType;
-    String t;
-    switch (refType) {
-      case TAG:
-        t = REF_TYPE_TAG;
-        break;
-      case BRANCH:
-        t = REF_TYPE_BRANCH;
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown ref-type " + refType);
+  public Tag tag() {
+    if (type != Type.INIT) {
+      throw new IllegalStateException("branch()/tag() has already been called");
     }
-    serializeString(TYPE, t);
-    return this;
+    type = Type.TAG;
+    serializeString(TYPE, REF_TYPE_TAG);
+    return new MongoTag();
   }
 
-  private static RefType deserializeType(BsonReader r) {
-    String t = r.readString();
-    switch (t) {
-      case REF_TYPE_TAG:
-        return RefType.TAG;
-      case REF_TYPE_BRANCH:
-        return RefType.BRANCH;
-      default:
-        throw new IllegalArgumentException("Unknown ref-type " + t);
+  @Override
+  public Branch branch() {
+    if (type != Type.INIT) {
+      throw new IllegalStateException("branch()/tag() has already been called");
     }
+    type = Type.BRANCH;
+    serializeString(TYPE, REF_TYPE_BRANCH);
+    return new MongoBranch();
   }
 
   @Override
@@ -102,111 +103,145 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     return this;
   }
 
-  @Override
-  public Ref commit(Id commit) {
-    serializeId(COMMIT, commit);
-    return this;
+  class MongoTag implements Tag {
+    @Override
+    public Tag commit(Id commit) {
+      serializeId(COMMIT, commit);
+      return this;
+    }
+
+    @Override
+    public Ref backToRef() {
+      return MongoRef.this;
+    }
   }
 
-  @Override
-  public Ref metadata(Id metadata) {
-    serializeId(METADATA, metadata);
-    return this;
+  class MongoBranch implements Branch {
+    @Override
+    public Branch metadata(Id metadata) {
+      serializeId(METADATA, metadata);
+      return this;
+    }
+
+    @Override
+    public Branch children(Stream<Id> children) {
+      serializeIds(TREE, children);
+      return this;
+    }
+
+    @Override
+    public Branch commits(Consumer<BranchCommit> commits) {
+      addProperty(COMMITS);
+      bsonWriter.writeStartArray(COMMITS);
+      commits.accept(new MongoBranchCommit());
+      bsonWriter.writeEndArray();
+      return this;
+    }
+
+    @Override
+    public Ref backToRef() {
+      return MongoRef.this;
+    }
   }
 
-  @Override
-  public Ref children(Stream<Id> children) {
-    serializeIds(TREE, children);
-    return this;
-  }
+  private class MongoBranchCommit implements BranchCommit, SavedCommit, UnsavedCommitDelta, UnsavedCommitMutations {
 
-  @Override
-  public Ref commits(Consumer<BranchCommitConsumer> commits) {
-    addProperty(COMMITS);
-    bsonWriter.writeStartArray(COMMITS);
-    commits.accept(new BranchCommitConsumer() {
-      int state;
+    int state;
 
-      @Override
-      public BranchCommitConsumer id(Id id) {
-        maybeStart();
-        assertState(1);
-        MongoSerDe.serializeId(bsonWriter, ID, id);
-        return this;
+    @Override
+    public BranchCommit id(Id id) {
+      maybeStart();
+      assertState(1);
+      MongoSerDe.serializeId(bsonWriter, ID, id);
+      return this;
+    }
+
+    @Override
+    public BranchCommit commit(Id commit) {
+      maybeStart();
+      assertState(1);
+      MongoSerDe.serializeId(bsonWriter, COMMIT, commit);
+      return this;
+    }
+
+    @Override
+    public SavedCommit saved() {
+      return this;
+    }
+
+    @Override
+    public UnsavedCommitDelta unsaved() {
+      return this;
+    }
+
+    @Override
+    public SavedCommit parent(Id parent) {
+      maybeStart();
+      assertState(1);
+      MongoSerDe.serializeId(bsonWriter, PARENT, parent);
+      return this;
+    }
+
+    @Override
+    public UnsavedCommitDelta delta(int position, Id oldId, Id newId) {
+      maybeStart();
+      if (state == 1) {
+        state = 2;
+        bsonWriter.writeStartArray(DELTAS);
       }
+      assertState(2);
+      serializeDelta(bsonWriter, position, oldId, newId);
+      return this;
+    }
 
-      @Override
-      public BranchCommitConsumer commit(Id commit) {
-        maybeStart();
-        assertState(1);
-        MongoSerDe.serializeId(bsonWriter, COMMIT, commit);
-        return this;
-      }
+    @Override
+    public UnsavedCommitMutations mutations() {
+      return this;
+    }
 
-      @Override
-      public BranchCommitConsumer parent(Id parent) {
-        maybeStart();
-        assertState(1);
-        MongoSerDe.serializeId(bsonWriter, PARENT, parent);
-        return this;
+    @Override
+    public UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
+      maybeStart();
+      if (state == 2) {
+        state = 1;
+        bsonWriter.writeEndArray();
       }
+      if (state == 1) {
+        state = 3;
+        bsonWriter.writeStartArray(KEY_LIST);
+      }
+      assertState(3);
+      MongoSerDe.serializeKeyMutation(bsonWriter, keyMutation);
+      return this;
+    }
 
-      @Override
-      public BranchCommitConsumer delta(int position, Id oldId, Id newId) {
-        maybeStart();
-        if (state == 1) {
-          state = 2;
-          bsonWriter.writeStartArray(DELTAS);
-        }
-        assertState(2);
-        serializeDelta(bsonWriter, position, oldId, newId);
-        return this;
+    private void maybeStart() {
+      if (state == 0) {
+        bsonWriter.writeStartDocument();
+        state = 1;
       }
+    }
 
-      @Override
-      public BranchCommitConsumer keyMutation(Key.Mutation keyMutation) {
-        maybeStart();
-        if (state == 2) {
-          state = 1;
-          bsonWriter.writeEndArray();
-        }
-        if (state == 1) {
-          state = 3;
-          bsonWriter.writeStartArray(KEY_LIST);
-        }
-        assertState(3);
-        MongoSerDe.serializeKeyMutation(bsonWriter, keyMutation);
-        return this;
+    private void assertState(int expected) {
+      if (state != expected) {
+        throw new IllegalStateException(
+            "Wrong order or consumer method invocations (" + expected + " != " + state
+                + ". See Javadocs.");
       }
+    }
 
-      private void maybeStart() {
-        if (state == 0) {
-          bsonWriter.writeStartDocument();
-          state = 1;
-        }
+    @Override
+    public BranchCommit done() {
+      if (state == 3 || state == 2) {
+        bsonWriter.writeEndArray();
+        state = 1;
       }
-
-      private void assertState(int expected) {
-        if (state != expected) {
-          throw new IllegalStateException("Wrong order or consumer method invocations (" + expected + " != " + state + ". See Javadocs.");
-        }
+      if (state == 1) {
+        bsonWriter.writeEndDocument();
+        state = 0;
       }
-
-      @Override
-      public BranchCommitConsumer done() {
-        if (state == 3 || state == 2) {
-          bsonWriter.writeEndArray();
-          state = 1;
-        }
-        if (state == 1) {
-          bsonWriter.writeEndDocument();
-          state = 0;
-        }
-        return this;
-      }
-    });
-    bsonWriter.writeEndArray();
-    return this;
+      return this;
+    }
   }
 
   @Override
@@ -214,18 +249,21 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     checkPresent(NAME, "name");
     checkPresent(TYPE, "type");
 
-    if (refType == RefType.TAG) {
-      // tag
-      checkPresent(COMMIT, "commit");
-      checkNotPresent(COMMITS, "commits");
-      checkNotPresent(TREE, "tree");
-      checkNotPresent(METADATA, "metadata");
-    } else {
-      // branch
-      checkNotPresent(COMMIT, "commit");
-      checkPresent(COMMITS, "commits");
-      checkPresent(TREE, "tree");
-      checkPresent(METADATA, "metadata");
+    switch (type) {
+      case TAG:
+        checkPresent(COMMIT, "commit");
+        checkNotPresent(COMMITS, "commits");
+        checkNotPresent(TREE, "tree");
+        checkNotPresent(METADATA, "metadata");
+        break;
+      case BRANCH:
+        checkNotPresent(COMMIT, "commit");
+        checkPresent(COMMITS, "commits");
+        checkPresent(TREE, "tree");
+        checkPresent(METADATA, "metadata");
+        break;
+      default:
+        throw new IllegalStateException("Neither tag() nor branch() has been called");
     }
 
     return super.build();
@@ -239,74 +277,30 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     writer.writeEndDocument();
   }
 
-  private static void deserializeBranchCommits(BranchCommitConsumer consumer, BsonReader reader) {
-    reader.readStartArray();
-    while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
-      deserializeBranchCommit(consumer, reader);
-    }
-    reader.readEndArray();
+  static void deserializeBranchCommits(BranchCommit bc, Document d) {
+    @SuppressWarnings("unchecked") List<Document> lst = (List<Document>) d.get(COMMITS);
+    lst.forEach(c -> deserializeBranchCommit(bc, c));
   }
 
-  private static void deserializeBranchCommit(BranchCommitConsumer consumer, BsonReader reader) {
-    reader.readStartDocument();
-
-    while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
-      String field = reader.readName();
-      switch (field) {
-        case ID:
-          consumer.id(MongoSerDe.deserializeId(reader));
-          break;
-        case COMMIT:
-          consumer.commit(MongoSerDe.deserializeId(reader));
-          break;
-        case PARENT:
-          consumer.parent(MongoSerDe.deserializeId(reader));
-          break;
-        case DELTAS:
-          MongoSerDe.deserializeArray(reader, r -> {
-            deserializeUnsavedDelta(consumer, r);
-            return null;
-          });
-          break;
-        case KEY_LIST:
-          MongoSerDe.deserializeKeyMutations(reader).forEach(consumer::keyMutation);
-          break;
-        default:
-          throw new IllegalArgumentException(String.format("Unsupported field '%s' for BranchCommit", field));
-      }
+  private static void deserializeBranchCommit(BranchCommit consumer, Document d) {
+    consumer = consumer.id(deserializeId(d, ID))
+        .commit(deserializeId(d, COMMIT));
+    if (d.containsKey(PARENT)) {
+      consumer.saved().parent(deserializeId(d, PARENT)).done();
+    } else {
+      UnsavedCommitDelta unsaved = consumer.unsaved();
+      @SuppressWarnings("unchecked") List<Document> deltas = (List<Document>) d.get(DELTAS);
+      deltas.forEach(delta -> deserializeUnsavedDelta(unsaved, delta));
+      UnsavedCommitMutations mutations = unsaved.mutations();
+      deserializeKeyMutations(d, KEY_LIST).forEach(mutations::keyMutation);
+      mutations.done();
     }
-
-    consumer.done();
-
-    reader.readEndDocument();
   }
 
-  private static void deserializeUnsavedDelta(BranchCommitConsumer consumer, BsonReader reader) {
-    reader.readStartDocument();
-
-    int position = 0;
-    Id oldId = null;
-    Id newId = null;
-
-    while (BsonType.END_OF_DOCUMENT != reader.readBsonType()) {
-      String field = reader.readName();
-      switch (field) {
-        case POSITION:
-          position = Ints.saturatedCast(reader.readInt64());
-          break;
-        case OLD_ID:
-          oldId = MongoSerDe.deserializeId(reader);
-          break;
-        case NEW_ID:
-          newId = MongoSerDe.deserializeId(reader);
-          break;
-        default:
-          throw new IllegalArgumentException(String.format("Unsupported field '%s' for BranchCommit", field));
-      }
-    }
-
-    reader.readEndDocument();
-
+  private static void deserializeUnsavedDelta(UnsavedCommitDelta consumer, Document d) {
+    int position = Ints.saturatedCast(d.getLong(POSITION));
+    Id oldId = deserializeId(d, OLD_ID);
+    Id newId = deserializeId(d, NEW_ID);
     consumer.delta(position, oldId, newId);
   }
 }
