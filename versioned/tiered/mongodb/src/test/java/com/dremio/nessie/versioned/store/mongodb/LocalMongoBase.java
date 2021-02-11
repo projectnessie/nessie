@@ -15,12 +15,18 @@
  */
 package com.dremio.nessie.versioned.store.mongodb;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Comparator;
+
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.support.TypeBasedParameterResolver;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
 import de.flapdoodle.embed.mongo.Command;
@@ -28,10 +34,10 @@ import de.flapdoodle.embed.mongo.MongodStarter;
 import de.flapdoodle.embed.mongo.MongosStarter;
 import de.flapdoodle.embed.mongo.config.Defaults;
 import de.flapdoodle.embed.process.config.RuntimeConfig;
+import de.flapdoodle.embed.process.config.io.ProcessOutput;
 import de.flapdoodle.embed.process.extract.DirectoryAndExecutableNaming;
 import de.flapdoodle.embed.process.extract.NoopTempNaming;
 import de.flapdoodle.embed.process.extract.UUIDTempNaming;
-import de.flapdoodle.embed.process.config.io.ProcessOutput;
 import de.flapdoodle.embed.process.io.directories.Directory;
 import de.flapdoodle.embed.process.io.directories.FixedPath;
 
@@ -43,6 +49,21 @@ abstract class LocalMongoBase extends TypeBasedParameterResolver<String> impleme
   private static final Directory MONGO_ARTIFACT_TEMP_PATH = new FixedPath(Files.createTempDir().getPath());
   private static final Directory MONGO_ARTIFACT_EXTRACT_PATH = new FixedPath(Files.createTempDir().getPath());
   private static final Directory MONGO_ARTIFACT_STORE_PATH = new FixedPath(Files.createTempDir().getPath());
+
+  static {
+    // Register a shutdown hook to clean up the downloaded flapdoodle artifacts.
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      for (Directory dir : ImmutableList.of(MONGO_ARTIFACT_EXTRACT_PATH, MONGO_ARTIFACT_TEMP_PATH, MONGO_ARTIFACT_STORE_PATH)) {
+        if (dir.asFile().exists()) {
+          try {
+            java.nio.file.Files.walk(dir.asFile().toPath()).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+          } catch (IOException e) {
+            // Swallow this, as it's best effort.
+          }
+        }
+      }
+    }));
+  }
 
   private static final RuntimeConfig MONGOD_RUNTIME_CONFIG = Defaults.runtimeConfigFor(Command.MongoD)
       .processOutput(ProcessOutput.getDefaultInstanceSilent())
