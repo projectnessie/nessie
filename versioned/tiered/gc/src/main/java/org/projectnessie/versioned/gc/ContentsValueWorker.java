@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.gc;
+package org.projectnessie.versioned.gc;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -25,14 +25,14 @@ import java.util.stream.Stream;
 
 import org.apache.spark.util.SerializableConfiguration;
 
-import com.dremio.nessie.model.Contents;
-import com.dremio.nessie.model.IcebergTable;
-import com.dremio.nessie.server.providers.TableCommitMetaStoreWorker;
-import com.dremio.nessie.versioned.AssetKey;
-import com.dremio.nessie.versioned.Serializer;
-import com.dremio.nessie.versioned.ValueWorker;
-import com.dremio.nessie.versioned.gc.assets.FileSystemAssetKey;
-import com.dremio.nessie.versioned.gc.assets.IcebergAssetKeyReader;
+import org.projectnessie.model.Contents;
+import org.projectnessie.model.IcebergTable;
+import org.projectnessie.server.providers.TableCommitMetaStoreWorker;
+import org.projectnessie.versioned.AssetKey;
+import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.ValueWorker;
+import org.projectnessie.versioned.gc.assets.FileSystemAssetKey;
+import org.projectnessie.versioned.gc.assets.IcebergAssetKeyReader;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;

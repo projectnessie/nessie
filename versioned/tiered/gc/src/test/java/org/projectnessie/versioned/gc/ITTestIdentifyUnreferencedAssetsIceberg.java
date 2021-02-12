@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.gc;
+package org.projectnessie.versioned.gc;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -61,26 +61,27 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.projectnessie.api.ContentsApi;
+import org.projectnessie.api.TreeApi;
+import org.projectnessie.error.NessieConflictException;
+import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Contents;
+import org.projectnessie.model.Reference;
+import org.projectnessie.versioned.AssetKey;
+import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.dynamodb.DynamoStore;
+import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
+import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
+import org.projectnessie.versioned.store.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dremio.nessie.api.ContentsApi;
-import com.dremio.nessie.api.TreeApi;
 import com.dremio.nessie.client.NessieClient;
-import com.dremio.nessie.error.NessieConflictException;
-import com.dremio.nessie.error.NessieNotFoundException;
-import com.dremio.nessie.model.Branch;
-import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.Contents;
-import com.dremio.nessie.model.Reference;
-import com.dremio.nessie.versioned.AssetKey;
-import com.dremio.nessie.versioned.LocalDynamoDB;
-import com.dremio.nessie.versioned.StoreWorker;
-import com.dremio.nessie.versioned.gc.IdentifyUnreferencedAssets.UnreferencedItem;
-import com.dremio.nessie.versioned.store.Store;
-import com.dremio.nessie.versioned.store.dynamo.DynamoStore;
-import com.dremio.nessie.versioned.store.dynamo.DynamoStoreConfig;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import com.google.protobuf.ByteString;
 
 import software.amazon.awssdk.regions.Region;
@@ -242,13 +243,13 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
         .maxAgeMicros((System.currentTimeMillis() - commitTime) * 1000)
         .build();
     IdentifyUnreferencedAssets<Contents> app = new IdentifyUnreferencedAssets<Contents>(helper, new DynamoSupplier(), spark, options);
-    Dataset<UnreferencedItem> items = app.identify();
+    Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = app.identify();
 
     //collect into a multimap for assertions
     Multimap<String, AssetKey> unreferencedItems = items.collectAsList()
         .stream()
-        .collect(MultimapCollector.toMultimap(UnreferencedItem::getName,
-            x -> helper.getValueWorker().getAssetKeySerializer().fromBytes(ByteString.copyFrom(x.getAsset()))));
+        .collect(Multimaps.toMultimap(IdentifyUnreferencedAssets.UnreferencedItem::getName,
+            x -> helper.getValueWorker().getAssetKeySerializer().fromBytes(ByteString.copyFrom(x.getAsset())), ArrayListMultimap::create));
     Map<String, Long> count = unreferencedItems.keySet().stream()
         .map(x -> x.split("\\.")[0]).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 

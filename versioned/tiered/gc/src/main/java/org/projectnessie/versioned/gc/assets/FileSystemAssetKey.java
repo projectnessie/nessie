@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.gc.assets;
+package org.projectnessie.versioned.gc.assets;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -24,9 +24,9 @@ import java.util.concurrent.CompletionStage;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.util.SerializableConfiguration;
+import org.projectnessie.versioned.AssetKey;
 
 import com.clearspring.analytics.util.Lists;
-import com.dremio.nessie.versioned.AssetKey;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 
@@ -36,7 +36,7 @@ import com.google.common.base.Splitter;
  * <p>Uses hadoop filesystem to access the data, needs a valid hadoop config to work.
  */
 public class FileSystemAssetKey extends AssetKey implements Serializable {
-  private static final Splitter DOT = Splitter.on(".");
+  private static final Splitter SLASH = Splitter.on(".");
 
   private String path;
   private SerializableConfiguration hadoopConfig;
@@ -70,7 +70,7 @@ public class FileSystemAssetKey extends AssetKey implements Serializable {
   public List<String> toReportableName() {
     List<String> name = Lists.newArrayList();
     name.add(type.name());
-    name.addAll(DOT.splitToList(path));
+    name.addAll(SLASH.splitToList(path));
     return name;
   }
 

@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.gc;
+package org.projectnessie.versioned.gc;
 
 import java.io.Serializable;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.util.SerializableConfiguration;
+import org.projectnessie.model.CommitMeta;
+import org.projectnessie.model.Contents;
+import org.projectnessie.server.providers.TableCommitMetaStoreWorker;
+import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.ValueWorker;
 
-import com.dremio.nessie.model.CommitMeta;
-import com.dremio.nessie.model.Contents;
-import com.dremio.nessie.server.providers.TableCommitMetaStoreWorker;
-import com.dremio.nessie.versioned.Serializer;
-import com.dremio.nessie.versioned.StoreWorker;
-import com.dremio.nessie.versioned.ValueWorker;
 import com.google.protobuf.ByteString;
 
 /**

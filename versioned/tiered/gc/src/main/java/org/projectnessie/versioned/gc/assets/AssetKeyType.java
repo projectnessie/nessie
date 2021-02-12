@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dremio.nessie.versioned.gc.assets;
+package org.projectnessie.versioned.gc.assets;
 
 /**
  * possible Asset Key types. Here recursiveDelete is applicable only to filesystem Asset Keys.
