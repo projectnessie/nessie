@@ -19,13 +19,13 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * A test class that contains MongoDB specific tests for unsharded MongoDB.
+ * A test class that contains MongoDB specific tests for sharded MongoDB.
  */
-@ExtendWith(LocalMongoD.class)
+@ExtendWith(LocalMongoS.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class TestMongoDBStore extends TestMongoDBStoreBase {
+class TestShardedMongoDBStore extends TestMongoDBStoreBase {
   @Override
   protected long getRandomSeed() {
-    return 8612341233543L;
+    return 98324122436234L;
   }
 }

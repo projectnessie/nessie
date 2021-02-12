@@ -21,7 +21,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.impl.AbstractITTieredVersionStore;
 
-@ExtendWith(LocalMongo.class)
+@ExtendWith(LocalMongoD.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Disabled("MongoDBStore not fully implemented")
 class TestMongoDBTieredVersionStore extends AbstractITTieredVersionStore {
