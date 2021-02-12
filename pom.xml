@@ -136,10 +136,12 @@
     <junit.version>5.7.1</junit.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.14.0</protobuf.version>
+    <protobuf.maven.version>0.6.1</protobuf.maven.version>
     <mockito.version>3.7.7</mockito.version>
     <mongodb.version>4.1.1</mongodb.version>
     <prometheus.version>0.9.0</prometheus.version>
     <reactor.version>2020.0.3</reactor.version>
+    <rocksdb.version>6.13.3</rocksdb.version>
     <serverless.version>1.5</serverless.version>
     <surefire.version>3.0.0-M5</surefire.version>
     <slf4j.version>1.7.30</slf4j.version>
@@ -462,6 +464,11 @@
         <version>${flapdoodle.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.rocksdb</groupId>
+        <artifactId>rocksdbjni</artifactId>
+        <version>${rocksdb.version}</version>
+      </dependency>
+      <dependency>
         <groupId>io.projectreactor</groupId>
         <artifactId>reactor-bom</artifactId>
         <version>${reactor.version}</version>
@@ -670,6 +677,15 @@
           <groupId>io.quarkus</groupId>
           <artifactId>quarkus-maven-plugin</artifactId>
           <version>${quarkus.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.xolstice.maven.plugins</groupId>
+          <artifactId>protobuf-maven-plugin</artifactId>
+          <version>${protobuf.maven.version}</version>
+          <configuration>
+            <protoSourceRoot>${basedir}/src/main/proto</protoSourceRoot>
+            <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>

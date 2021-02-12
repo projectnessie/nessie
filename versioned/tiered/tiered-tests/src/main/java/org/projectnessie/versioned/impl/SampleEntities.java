@@ -163,6 +163,19 @@ public class SampleEntities {
   }
 
   /**
+   * Create a String of random characters.
+   * @param random random number generator to use.
+   * @param numChars the size of the String.
+   * @return the String of random characters.
+   */
+  public static String createString(Random random, int numChars) {
+    return random.ints('a', 'z' + 1)
+        .limit(numChars)
+        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+        .toString();
+  }
+
+  /**
    * Create a String Entity of random characters.
    * @param random random number generator to use.
    * @param numChars the size of the String.
@@ -170,18 +183,5 @@ public class SampleEntities {
    */
   public static Entity createStringEntity(Random random, int numChars) {
     return Entity.ofString(createString(random, numChars));
-  }
-
-  /**
-   * Create a String of random characters.
-   * @param random random number generator to use.
-   * @param numChars the size of the String.
-   * @return the String of random characters.
-   */
-  private static String createString(Random random, int numChars) {
-    return random.ints('a', 'z' + 1)
-        .limit(numChars)
-        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-        .toString();
   }
 }
