@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import org.apache.spark.util.SerializableConfiguration;
-
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.server.providers.TableCommitMetaStoreWorker;
@@ -33,6 +32,7 @@ import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.ValueWorker;
 import org.projectnessie.versioned.gc.assets.FileSystemAssetKey;
 import org.projectnessie.versioned.gc.assets.IcebergAssetKeyReader;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
