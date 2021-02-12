@@ -265,7 +265,7 @@
           <arguments>
             <argument>-classpath</argument>
             <classpath />
-            <argument>com.dremio.nessie.hms.CodeGenerator</argument>
+            <argument>org.projectnessie.hms.CodeGenerator</argument>
             <argument>-m=HIVE2</argument>
             <argument>-o=${project.build.directory}/generated-sources/generator</argument>
           </arguments>

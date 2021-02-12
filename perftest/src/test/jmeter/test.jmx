@@ -83,7 +83,7 @@
               </elementProp>
             </collectionProp>
           </elementProp>
-          <stringProp name="classname">com.dremio.nessie.perftest.NessieSampler</stringProp>
+          <stringProp name="classname">org.projectnessie.perftest.NessieSampler</stringProp>
         </JavaSampler>
         <hashTree/>
         <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Duration Assertion" enabled="true">

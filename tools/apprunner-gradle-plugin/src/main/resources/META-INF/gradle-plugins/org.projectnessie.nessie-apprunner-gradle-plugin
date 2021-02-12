@@ -1,1 +1,1 @@
-implementation=com.dremio.nessie.quarkus.gradle.QuarkusAppPlugin
+implementation=org.projectnessie.quarkus.gradle.QuarkusAppPlugin

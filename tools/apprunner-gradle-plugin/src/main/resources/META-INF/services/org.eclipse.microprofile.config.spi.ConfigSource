@@ -1,1 +1,1 @@
-com.dremio.nessie.quarkus.maven.MojoConfigSource
+org.projectnessie.quarkus.maven.MojoConfigSource
