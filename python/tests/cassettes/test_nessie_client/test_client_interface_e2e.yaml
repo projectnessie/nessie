@@ -44,11 +44,11 @@ interactions:
   response:
     body:
       string: "{\n  \"message\" : \"A reference of name [main] already exists.\",\n\
-        \  \"status\" : \"CONFLICT\",\n  \"serverStackTrace\" : \"com.dremio.nessie.error.NessieConflictException:\
-        \ A reference of name [main] already exists.\\n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:119)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:110)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createReference$$superaccessor6(TreeResource_Subclass.zig:2283)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass$$function$$6.apply(TreeResource_Subclass$$function$$6.zig:33)\\\
+        \  \"status\" : \"CONFLICT\",\n  \"serverStackTrace\" : \"org.projectnessie.error.NessieConflictException:\
+        \ A reference of name [main] already exists.\\n\\tat org.projectnessie.services.rest.TreeResource.createReference(TreeResource.java:119)\\\
+        n\\tat org.projectnessie.services.rest.TreeResource.createReference(TreeResource.java:110)\\\
+        n\\tat org.projectnessie.services.rest.TreeResource_Subclass.createReference$$superaccessor6(TreeResource_Subclass.zig:2283)\\\
+        n\\tat org.projectnessie.services.rest.TreeResource_Subclass$$function$$6.apply(TreeResource_Subclass$$function$$6.zig:33)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.interceptor.AbstractMethodValidationInterceptor.validateMethodInvocation(AbstractMethodValidationInterceptor.java:69)\\\
         n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor.validateMethodInvocation(JaxrsEndPointValidationInterceptor.java:32)\\\
@@ -66,8 +66,8 @@ interactions:
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
         n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_Subclass.createReference(TreeResource_Subclass.zig:2222)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource_ClientProxy.createReference(TreeResource_ClientProxy.zig:164)\\\
+        n\\tat org.projectnessie.services.rest.TreeResource_Subclass.createReference(TreeResource_Subclass.zig:2222)\\\
+        n\\tat org.projectnessie.services.rest.TreeResource_ClientProxy.createReference(TreeResource_ClientProxy.zig:164)\\\
         n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native\
         \ Method)\\n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\\\
         n\\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\\\
@@ -102,9 +102,9 @@ interactions:
         n\\tat org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)\\\
         n\\tat org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)\\\
         n\\tat java.base/java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
-        nCaused by: com.dremio.nessie.versioned.ReferenceAlreadyExistsException: A\
-        \ branch or tag already exists with that name.\\n\\tat com.dremio.nessie.versioned.impl.TieredVersionStore.create(TieredVersionStore.java:115)\\\
-        n\\tat com.dremio.nessie.services.rest.TreeResource.createReference(TreeResource.java:115)\\\
+        nCaused by: org.projectnessie.versioned.ReferenceAlreadyExistsException: A\
+        \ branch or tag already exists with that name.\\n\\tat org.projectnessie.versioned.impl.TieredVersionStore.create(TieredVersionStore.java:115)\\\
+        n\\tat org.projectnessie.services.rest.TreeResource.createReference(TreeResource.java:115)\\\
         n\\t... 57 more\\n\"\n}"
     headers:
       Content-Length:

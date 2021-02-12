@@ -73,7 +73,7 @@ quarkus.jaeger.metrics.enabled=true
 
 ## sentry specific settings
 quarkus.log.sentry.level=ERROR
-quarkus.log.sentry.in-app-packages=com.dremio.nessie
+quarkus.log.sentry.in-app-packages=org.projectnessie
 quarkus.log.sentry=false
 #quarkus.log.sentry.dsn=https://<fillin>.ingest.sentry.io/<fillin>
 ```

@@ -114,7 +114,7 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
-    <awssdk.version>2.15.79</awssdk.version>
+    <awssdk.version>2.15.80</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
@@ -149,7 +149,7 @@
     <spark3.version>3.0.1</spark3.version>
     <spark3.jackson.version>2.10.2</spark3.jackson.version>
     <sqlite.version>1.0.392</sqlite.version>
-    <quarkus.version>1.11.1.Final</quarkus.version>
+    <quarkus.version>1.11.3.Final</quarkus.version>
     <openapi.version>1.1.2</openapi.version>
     <jsr305.version>3.0.2</jsr305.version>
   </properties>

@@ -149,7 +149,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn: JerseyNessieFunctionRole
     Properties:
-      Handler: com.dremio.nessie.serverless.NessieLambda::handleRequest
+      Handler: org.projectnessie.serverless.NessieLambda::handleRequest
       Runtime: provided
       CodeUri: target/function.zip
       MemorySize: 128

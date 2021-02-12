@@ -44,10 +44,10 @@ The Nessie server is based on the Quarkus microkernel appserver and can run in a
 JVM or be precompiled into a native image via GraalVM. We develop all code using JDK11 and then compile for release on JDK8.
 
 ### Rest API 
-The Rest API is composed primarily of the [Contents](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/com/dremio/nessie/api/ContentsApi.java), [Tree](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/com/dremio/nessie/api/TreeApi.java) and [Config](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/com/dremio/nessie/api/ConfigApi.java) APIs.
+The Rest API is composed primarily of the [Contents](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/org/projectnessie/api/ContentsApi.java), [Tree](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/org/projectnessie/api/TreeApi.java) and [Config](https://github.com/projectnessie/nessie/blob/main/model/src/main/java/org/projectnessie/api/ConfigApi.java) APIs.
 
 ### Versioning Kernel
-Deeper in the server, the core commit kernel is built on top of the [VersionStore SPI](https://github.com/projectnessie/nessie/blob/main/versioned/spi/src/main/java/com/dremio/nessie/versioned/VersionStore.java)  
+Deeper in the server, the core commit kernel is built on top of the [VersionStore SPI](https://github.com/projectnessie/nessie/blob/main/versioned/spi/src/main/java/org/projectnessie/versioned/VersionStore.java)  
 
 ### New Backing Store
 
