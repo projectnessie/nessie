@@ -32,7 +32,6 @@ import org.projectnessie.versioned.AssetKey;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.ValueWorker;
-import org.projectnessie.versioned.store.HasId;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 
