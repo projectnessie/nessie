@@ -28,7 +28,6 @@ public interface GcOptions {
 
   /**
    * The age in micros beyond which a referenced L1 can be collected.
-   * @return
    */
   long getMaxAgeMicros();
 

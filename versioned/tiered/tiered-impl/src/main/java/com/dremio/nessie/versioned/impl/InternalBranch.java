@@ -212,7 +212,6 @@ class InternalBranch extends InternalRef {
 
   /**
    * Identify the list of intended commits that need to be completed.
-   * @return
    */
   public UpdateState getUpdateState(Store store)  {
     // generate sublist of important commits.
@@ -321,7 +320,6 @@ class InternalBranch extends InternalRef {
      * @param attempts The number of times we'll attempt to clean up the commit log.
      * @param waitOnCollapse Whether or not the operation should wait on the final operation of collapsing the commit log succesfully
      *        before returning/failing. If false, the final collapse will be done in a separate thread.
-     * @return
      */
     CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, int attempts, boolean waitOnCollapse) {
       if (saves.isEmpty()) {
@@ -378,7 +376,7 @@ class InternalBranch extends InternalRef {
         for (int attempt = 0; attempt < attempts; attempt++) {
 
           // cleanup pending updates.
-          UpdateState updateState = attempts == 0 ? initialState : branch.getUpdateState(store);
+          UpdateState updateState = attempt == 0 ? initialState : branch.getUpdateState(store);
 
           // now we need to take the current list and turn it into a list of 1 item that is saved.
           final ExpressionPath commits = ExpressionPath.builder("commits").build();

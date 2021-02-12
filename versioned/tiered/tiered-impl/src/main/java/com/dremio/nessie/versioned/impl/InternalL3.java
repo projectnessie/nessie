@@ -127,7 +127,6 @@ class InternalL3 extends PersistentBase<L3> {
 
   /**
    * return the number of keys defined.
-   * @return
    */
   int size() {
     return map.size();

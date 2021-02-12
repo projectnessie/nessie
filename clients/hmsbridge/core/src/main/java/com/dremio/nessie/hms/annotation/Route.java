@@ -31,7 +31,6 @@ public @interface Route {
 
   /**
    * Whether to throw for Nessie references.
-   * @return
    */
   boolean value() default false;
 
