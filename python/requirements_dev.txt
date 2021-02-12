@@ -14,5 +14,5 @@ Sphinx==3.4.3
 sphinx-autodoc-typehints==1.11.1
 tox==3.21.4
 twine==3.3.0
-watchdog==1.0.2
+watchdog==2.0.0
 wheel==0.36.2
