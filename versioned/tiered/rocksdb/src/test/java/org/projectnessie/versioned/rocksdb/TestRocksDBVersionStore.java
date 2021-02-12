@@ -22,12 +22,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.TestInstance;
 
-import com.dremio.nessie.versioned.ReferenceAlreadyExistsException;
-import com.dremio.nessie.versioned.ReferenceConflictException;
-import com.dremio.nessie.versioned.ReferenceNotFoundException;
-import com.dremio.nessie.versioned.VersionStore;
-import com.dremio.nessie.versioned.VersionStoreException;
-import com.dremio.nessie.versioned.tests.AbstractITVersionStore;
+import org.projectnessie.versioned.ReferenceAlreadyExistsException;
+import org.projectnessie.versioned.ReferenceConflictException;
+import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Disabled("RocksDBStore not fully implemented")

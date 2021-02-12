@@ -28,12 +28,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import com.dremio.nessie.versioned.Key;
-import com.dremio.nessie.versioned.impl.SampleEntities;
-import com.dremio.nessie.versioned.impl.condition.ExpressionPath;
-import com.dremio.nessie.versioned.store.Entity;
-import com.dremio.nessie.versioned.store.Id;
-import com.dremio.nessie.versioned.store.KeyDelta;
+import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.impl.SampleEntities;
+import org.projectnessie.versioned.impl.condition.ExpressionPath;
+import org.projectnessie.versioned.store.Entity;
+import org.projectnessie.versioned.store.Id;
+import org.projectnessie.versioned.store.KeyDelta;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 

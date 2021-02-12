@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.dremio.nessie.versioned.impl.AbstractITTieredVersionStore;
+import org.projectnessie.versioned.impl.AbstractITTieredVersionStore;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Disabled("RocksDBStore not fully implemented")
