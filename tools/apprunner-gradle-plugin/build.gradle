@@ -19,7 +19,7 @@ gradlePlugin {
   plugins {
     simplePlugin {
       id = 'org.projectnessie'
-      implementationClass = 'com.dremio.nessie.quarkus.gradle.QuarkusAppPlugin'
+      implementationClass = 'org.projectnessie.quarkus.gradle.QuarkusAppPlugin'
       displayName = 'Quarkus App Runner'
       description = 'Start and stop a quarkus app as gradle tasks for integration testing'
     }

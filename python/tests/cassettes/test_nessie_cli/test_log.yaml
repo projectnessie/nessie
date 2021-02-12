@@ -66,10 +66,10 @@ interactions:
     body:
       string: "{\n  \"message\" : \"Requested contents do not exist for specified\
         \ reference.\",\n  \"status\" : \"NOT_FOUND\",\n  \"serverStackTrace\" : \"\
-        com.dremio.nessie.error.NessieNotFoundException: Requested contents do not\
-        \ exist for specified reference.\\n\\tat com.dremio.nessie.services.rest.ContentsResource.getContents(ContentsResource.java:72)\\\
-        n\\tat com.dremio.nessie.services.rest.ContentsResource_Subclass.getContents$$superaccessor2(ContentsResource_Subclass.zig:766)\\\
-        n\\tat com.dremio.nessie.services.rest.ContentsResource_Subclass$$function$$2.apply(ContentsResource_Subclass$$function$$2.zig:41)\\\
+        org.projectnessie.error.NessieNotFoundException: Requested contents do not\
+        \ exist for specified reference.\\n\\tat org.projectnessie.services.rest.ContentsResource.getContents(ContentsResource.java:72)\\\
+        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass.getContents$$superaccessor2(ContentsResource_Subclass.zig:766)\\\
+        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass$$function$$2.apply(ContentsResource_Subclass$$function$$2.zig:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.time(TimedInterceptor.java:54)\\\
         n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.timedMethod(TimedInterceptor.java:35)\\\
@@ -82,8 +82,8 @@ interactions:
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
         n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
-        n\\tat com.dremio.nessie.services.rest.ContentsResource_Subclass.getContents(ContentsResource_Subclass.zig:712)\\\
-        n\\tat com.dremio.nessie.services.rest.ContentsResource_ClientProxy.getContents(ContentsResource_ClientProxy.zig:408)\\\
+        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass.getContents(ContentsResource_Subclass.zig:712)\\\
+        n\\tat org.projectnessie.services.rest.ContentsResource_ClientProxy.getContents(ContentsResource_ClientProxy.zig:408)\\\
         n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native\
         \ Method)\\n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\\\
         n\\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\\\

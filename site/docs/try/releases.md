@@ -21,7 +21,7 @@
 * Add [WebUI](../tools/ui.md)
 * Introduce new DynamoDB optimizations to support faster log and entry retrieval
 * Update to Quarkus 1.9.1
-* Expose the new [Store interface](https://github.com/projectnessie/nessie/blob/main/versioned/dynamodb/src/main/java/com/dremio/nessie/versioned/store/Store.java) for low level storage implementations
+* Expose the new [Store interface](https://github.com/projectnessie/nessie/blob/main/versioned/dynamodb/src/main/java/org/projectnessie/versioned/store/Store.java) for low level storage implementations
 * Introduce Quarkus Gradle runner plugin for easier third-party testing (e.g. Iceberg)
 * Enable [swagger-ui](../tools/ui.md) by default in Nessie service
 

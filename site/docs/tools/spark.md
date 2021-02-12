@@ -130,7 +130,7 @@ addressing jvm objects directly in Python (until the python library for iceberg 
     jvm = sc._gateway.jvm
 
     # import jvm libraries for iceberg catalogs and schemas
-    java_import(jvm, "com.dremio.nessie.iceberg.NessieCatalog")
+    java_import(jvm, "org.projectnessie.iceberg.NessieCatalog")
     java_import(jvm, "org.apache.iceberg.catalog.TableIdentifier")
     java_import(jvm, "org.apache.iceberg.Schema")
     java_import(jvm, "org.apache.iceberg.types.Types")
@@ -314,8 +314,8 @@ nessie.url = full url to nessie
 nessie.username = username if using basic auth, omitted otherwise
 nessie.password = password if using basic auth, omitted otherwise
 nessie.auth.type = authentication type (BASIC, NONE or AWS)
-spark.delta.logFileHandler.class=com.dremio.nessie.deltalake.NessieLogFileMetaParser
-spark.delta.logStore.class=com.dremio.nessie.deltalake.NessieLogStore
+spark.delta.logFileHandler.class=org.projectnessie.deltalake.NessieLogFileMetaParser
+spark.delta.logStore.class=org.projectnessie.deltalake.NessieLogStore
 ```
 
 These are set as follows in code (or through other methods as described [here](https://spark.apache.org/docs/latest/configuration.html))
@@ -328,8 +328,8 @@ These are set as follows in code (or through other methods as described [here](h
         .set("spark.hadoop.nessie.auth_type", authType)
         .set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
-        .set("spark.delta.logStore.class", "com.dremio.nessie.deltalake.NessieLogStore")
-        .set("spark.delta.logFileHandler.class", "com.dremio.nessie.deltalake.NessieLogFileMetaParser")
+        .set("spark.delta.logStore.class", "org.projectnessie.deltalake.NessieLogStore")
+        .set("spark.delta.logFileHandler.class", "org.projectnessie.deltalake.NessieLogFileMetaParser")
     spark = SparkSession.builder()
                         .master("local[2]")
                         .config(conf)
@@ -344,8 +344,8 @@ These are set as follows in code (or through other methods as described [here](h
             .config("spark.hadoop.nessie.ref", "main") \
             .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
             .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
-            .config("spark.delta.logFileHandler.class", "com.dremio.nessie.deltalake.NessieLogFileMetaParser") \
-            .config("spark.delta.logStore.class", "com.dremio.nessie.deltalake.NessieLogStore") \
+            .config("spark.delta.logFileHandler.class", "org.projectnessie.deltalake.NessieLogFileMetaParser") \
+            .config("spark.delta.logStore.class", "org.projectnessie.deltalake.NessieLogStore") \
             .getOrCreate()
     ```
 Note above we specified the option `spark.hadoop.nessie.ref`. This value sets the default branch that the delta

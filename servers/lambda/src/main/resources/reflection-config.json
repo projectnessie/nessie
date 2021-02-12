@@ -63,7 +63,7 @@
     "allPublicFields" : true
   },
   {
-    "name" : "com.dremio.nessie.error.NessieError",
+    "name" : "org.projectnessie.error.NessieError",
     "allDeclaredConstructors" : true,
     "allPublicConstructors" : true,
     "allDeclaredMethods" : true,
