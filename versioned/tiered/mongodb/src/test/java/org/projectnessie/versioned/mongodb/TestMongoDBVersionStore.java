@@ -30,7 +30,7 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
-@ExtendWith(LocalMongoD.class)
+@ExtendWith(LocalMongo.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Disabled("MongoDBStore not fully implemented")
 public class TestMongoDBVersionStore extends AbstractITVersionStore {
