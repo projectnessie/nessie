@@ -15,8 +15,9 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
-import org.projectnessie.versioned.tiered.Value;
 import org.projectnessie.versioned.store.Id;
+import org.projectnessie.versioned.tiered.Value;
+
 import com.google.protobuf.ByteString;
 
 /**

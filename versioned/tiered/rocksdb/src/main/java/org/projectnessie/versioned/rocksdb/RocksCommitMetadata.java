@@ -16,8 +16,9 @@
 
 package org.projectnessie.versioned.rocksdb;
 
-import org.projectnessie.versioned.tiered.CommitMetadata;
 import org.projectnessie.versioned.store.Id;
+import org.projectnessie.versioned.tiered.CommitMetadata;
+
 import com.google.protobuf.ByteString;
 
 /**

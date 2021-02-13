@@ -22,10 +22,11 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.tiered.Ref;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.StoreException;
+import org.projectnessie.versioned.tiered.Ref;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 
 /**

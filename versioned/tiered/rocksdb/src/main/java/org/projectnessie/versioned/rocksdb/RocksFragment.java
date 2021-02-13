@@ -18,10 +18,11 @@ package org.projectnessie.versioned.rocksdb;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.tiered.Fragment;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.StoreException;
+import org.projectnessie.versioned.tiered.Fragment;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 
 /**

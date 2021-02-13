@@ -20,11 +20,12 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.tiered.BaseValue;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
+import org.projectnessie.versioned.tiered.BaseValue;
+
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 

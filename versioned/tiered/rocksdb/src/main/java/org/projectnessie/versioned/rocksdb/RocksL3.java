@@ -19,10 +19,11 @@ package org.projectnessie.versioned.rocksdb;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.tiered.L3;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.KeyDelta;
 import org.projectnessie.versioned.store.StoreException;
+import org.projectnessie.versioned.tiered.L3;
+
 import com.google.protobuf.InvalidProtocolBufferException;
 
 /**

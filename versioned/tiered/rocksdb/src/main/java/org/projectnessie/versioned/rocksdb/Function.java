@@ -18,7 +18,6 @@ package org.projectnessie.versioned.rocksdb;
 import java.util.Objects;
 
 import org.immutables.value.Value.Immutable;
-
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
 import org.projectnessie.versioned.store.Entity;
 

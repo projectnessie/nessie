@@ -15,8 +15,9 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
-import org.projectnessie.versioned.tiered.BaseWrappedValue;
 import org.projectnessie.versioned.store.StoreException;
+import org.projectnessie.versioned.tiered.BaseWrappedValue;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 

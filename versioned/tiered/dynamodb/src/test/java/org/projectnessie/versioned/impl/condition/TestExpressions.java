@@ -21,15 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.dynamodb.AliasCollectorImpl;
 import org.projectnessie.versioned.dynamodb.AttributeValueUtil;
-import org.projectnessie.versioned.impl.condition.AddClause;
-import org.projectnessie.versioned.impl.condition.ConditionExpression;
-import org.projectnessie.versioned.impl.condition.ExpressionFunction;
-import org.projectnessie.versioned.impl.condition.ExpressionPath;
-import org.projectnessie.versioned.impl.condition.ImmutableUpdateExpression;
-import org.projectnessie.versioned.impl.condition.RemoveClause;
-import org.projectnessie.versioned.impl.condition.SetClause;
-import org.projectnessie.versioned.impl.condition.UpdateExpression;
-import org.projectnessie.versioned.impl.condition.Value;
 import org.projectnessie.versioned.store.Entity;
 
 class TestExpressions {
