@@ -20,7 +20,6 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
-
 import org.projectnessie.versioned.impl.AbstractITTieredVersionStore;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
