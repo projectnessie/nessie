@@ -24,8 +24,8 @@ import java.util.Comparator;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
-
 import org.projectnessie.versioned.impl.AbstractTestStore;
+
 import com.google.common.collect.ImmutableList;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
