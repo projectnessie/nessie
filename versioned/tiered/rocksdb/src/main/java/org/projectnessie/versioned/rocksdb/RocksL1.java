@@ -94,7 +94,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
   }
 
   @Override
-  public boolean evaluateFunction(Function function) {
+  public boolean evaluate(Function function) {
     final ExpressionPath.NameSegment nameSegment = function.getRootPathAsNameSegment();
     final String segment = nameSegment.getName();
     switch (segment) {
@@ -110,7 +110,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
       case KEY_LIST:
         return false;
       case INCREMENTAL_KEY_LIST:
-        if (!nameSegment.getChild().isPresent() || !function.getOperator().equals(Function.EQUALS)) {
+        if (!nameSegment.getChild().isPresent() || !function.getOperator().equals(Function.Operator.EQUALS)) {
           return false;
         }
         final String childName = nameSegment.getChild().get().asName().getName();

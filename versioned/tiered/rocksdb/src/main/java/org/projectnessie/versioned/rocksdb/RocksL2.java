@@ -44,7 +44,7 @@ class RocksL2 extends RocksBaseValue<L2> implements L2 {
   }
 
   @Override
-  public boolean evaluateFunction(Function function) {
+  public boolean evaluate(Function function) {
     final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:

@@ -26,8 +26,16 @@ import org.projectnessie.versioned.store.Entity;
  */
 @Immutable
 abstract class Function {
-  static final String EQUALS = "equals";
-  static final String SIZE = "size";
+  /**
+   * An enum encapsulating.
+   */
+  enum Operator {
+    // An operator comparing the equality of entities.
+    EQUALS,
+
+    // An operator comparing the size of entities.
+    SIZE
+  }
 
   /**
    * Compares for equality with a provided Function object.
@@ -55,7 +63,7 @@ abstract class Function {
     return Objects.hash(getOperator(), getPath(), getValue());
   }
 
-  abstract String getOperator();
+  abstract Operator getOperator();
 
   abstract ExpressionPath getPath();
 
@@ -67,12 +75,12 @@ abstract class Function {
 
   /**
    * A utility to aid evaluation of the Function in checking for equality on
-   * a leaf {@link com.dremio.nessie.versioned.impl.condition.ExpressionPath.NameSegment}.
+   * a leaf {@link org.projectnessie.versioned.impl.condition.ExpressionPath.NameSegment}.
    * @return true if both root nameSegment is childless and function has an equality operator
    */
   boolean isRootNameSegmentChildlessAndEquals() {
     return !getRootPathAsNameSegment().getChild().isPresent()
-      && getOperator().equals(Function.EQUALS);
+      && getOperator().equals(Operator.EQUALS);
   }
 
   /**

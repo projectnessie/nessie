@@ -88,17 +88,15 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
    */
   boolean evaluateStream(Function function, Stream<Id> stream) {
     // EQUALS will either compare a specified position or the whole stream as a List.
-    if (function.getOperator().equals(Function.EQUALS)) {
+    if (function.getOperator().equals(Function.Operator.EQUALS)) {
       final ExpressionPath.PathSegment pathSegment = function.getPath().getRoot().getChild().orElse(null);
       if (pathSegment == null) {
         return toEntity(stream).equals(function.getValue());
-      } else { // compare complete list
-        if (pathSegment.isPosition()) { // compare individual element of list
-          final int position = pathSegment.asPosition().getPosition();
-          return toEntity(stream, position).equals(function.getValue());
-        }
+      } else if (pathSegment.isPosition()) { // compare individual element of list
+        final int position = pathSegment.asPosition().getPosition();
+        return toEntity(stream, position).equals(function.getValue());
       }
-    } else if (function.getOperator().equals(Function.SIZE)) {
+    } else if (function.getOperator().equals(Function.Operator.SIZE)) {
       return (stream.count() == function.getValue().getNumber());
     }
 
@@ -109,7 +107,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
   public boolean evaluate(List<Function> functions) {
     for (Function function: functions) {
       if (function.getPath().getRoot().isName()) {
-        if (!evaluateFunction(function)) {
+        if (!evaluate(function)) {
           return false;
         }
       }
@@ -122,7 +120,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
    * @param function the condition to check
    * @return true if the condition is met
    */
-  public abstract boolean evaluateFunction(Function function);
+  public abstract boolean evaluate(Function function);
 
   /**
    * Evaluates the id against a function and ensures that the name segment is well formed,

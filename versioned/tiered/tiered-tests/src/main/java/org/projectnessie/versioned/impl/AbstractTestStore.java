@@ -447,6 +447,7 @@ public abstract class AbstractTestStore<S extends Store> {
     @Test
     void putWithFailingConditionExpression() {
       final InternalRef sample = SampleEntities.createBranch(random);
+      putThenLoad(ValueType.REF, sample);
       final InternalRef.Type type = InternalRef.Type.BRANCH;
       final ConditionExpression condition = ConditionExpression.of(
           ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), type.toEntity()),
@@ -480,8 +481,6 @@ public abstract class AbstractTestStore<S extends Store> {
         if (shouldSucceed) {
           Assertions.fail(cfe);
         }
-
-        Assertions.assertThrows(NotFoundException.class, () -> EntityType.forType(type).loadSingle(store, sample.getId()));
       }
     }
   }

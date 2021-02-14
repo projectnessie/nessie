@@ -71,7 +71,7 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
   }
 
   @Override
-  public boolean evaluateFunction(Function function) {
+  public boolean evaluate(Function function) {
     final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:
@@ -79,10 +79,9 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
       case KEY_LIST:
         if (function.getRootPathAsNameSegment().getChild().isPresent()) {
           return false;
-        }
-        if (function.getOperator().equals(Function.EQUALS)) {
+        } else if (function.getOperator().equals(Function.Operator.EQUALS)) {
           return keysAsEntityList(keys).equals(function.getValue());
-        } else if (function.getOperator().equals(Function.SIZE)) {
+        } else if (function.getOperator().equals(Function.Operator.SIZE)) {
           return (keys.count() == function.getValue().getNumber());
         } else {
           return false;

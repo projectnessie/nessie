@@ -95,6 +95,7 @@ public class RocksDBStore implements Store {
       // TODO: Consider setting WAL limits.
       final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
       rocksDB = TransactionDB.open(dbOptions, new TransactionDBOptions(), dbPath, columnFamilies, columnFamilyHandles);
+
       final ImmutableMap.Builder<ValueType<?>, ColumnFamilyHandle> builder = new ImmutableMap.Builder<>();
       for (ColumnFamilyHandle handle : columnFamilyHandles) {
         final String valueTypeName = new String(handle.getName(), UTF_8);
@@ -171,7 +172,7 @@ public class RocksDBStore implements Store {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
     try (final Transaction transaction = rocksDB.beginTransaction(new WriteOptions())) {
       // Get exclusive access to key if it exists.
-      final byte[] buffer = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, saveOp.getId().toBytes(), true);
+      final byte[] buffer = getForUpdate(transaction, columnFamilyHandle, saveOp.getId());
       if (null == buffer) {
         transaction.put(columnFamilyHandle, saveOp.getId().toBytes(), RocksSerDe.serializeWithConsumer(saveOp));
         transaction.commit();
@@ -189,19 +190,9 @@ public class RocksDBStore implements Store {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
 
     try (final Transaction transaction = rocksDB.beginTransaction(new WriteOptions())) {
-      if (condition.isPresent()) {
-        final byte[] buffer = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, saveOp.getId().toBytes(), true);
-        if (null == buffer) {
-          throw new ConditionFailedException("Unable to load item with ID: " + saveOp.getId());
-        }
-        final RocksBaseValue<C> consumer = RocksSerDe.getConsumer(saveOp.getType());
-        RocksSerDe.deserializeToConsumer(saveOp.getType(), buffer, consumer);
-
-        if (!consumer.evaluate(translate(condition.get()))) {
-          throw new ConditionFailedException("Condition failed during put operation");
-        }
+      if (!isConditionExpressionValid(transaction, columnFamilyHandle, saveOp.getId(), saveOp.getType(), condition, "put")) {
+        throw new ConditionFailedException("Condition failed during put operation");
       }
-
       transaction.put(columnFamilyHandle, saveOp.getId().toBytes(), RocksSerDe.serializeWithConsumer(saveOp));
       transaction.commit();
     } catch (RocksDBException e) {
@@ -214,24 +205,10 @@ public class RocksDBStore implements Store {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
 
     try (final Transaction transaction = rocksDB.beginTransaction(new WriteOptions())) {
-      final byte[] value = transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, id.toBytes(), true);
-
-      if (null == value) {
-        throw new NotFoundException("No value was found for the given id to delete.");
+      if (!isConditionExpressionValid(transaction, columnFamilyHandle, id, type, condition, "delete")) {
+        LOGGER.debug("Condition failed during delete operation.");
+        return false;
       }
-
-      if (condition.isPresent()) {
-        final RocksBaseValue<C> consumer = RocksSerDe.getConsumer(type);
-        // TODO: Does the critical section need to be locked?
-        // TODO: Critical Section - evaluating the condition expression and deleting the entity.
-        // Check if condition expression is valid.
-        RocksSerDe.deserializeToConsumer(type, value, consumer);
-        if (!(consumer.evaluate(translate(condition.get())))) {
-          LOGGER.debug("Condition failed during delete operation.");
-          return false;
-        }
-      }
-
       transaction.delete(columnFamilyHandle, id.toBytes());
       transaction.commit();
       return true;
@@ -262,9 +239,7 @@ public class RocksDBStore implements Store {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
     try {
       final byte[] buffer = rocksDB.get(columnFamilyHandle, id.toBytes());
-      if (null == buffer) {
-        throw new NotFoundException("Unable to load item with ID: " + id);
-      }
+      checkValue(buffer, "load", id);
       RocksSerDe.deserializeToConsumer(type, buffer, consumer);
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
@@ -334,6 +309,38 @@ public class RocksDBStore implements Store {
     return conditionExpression.getFunctions().stream()
       .map(f -> f.accept(VALUE_VISITOR))
       .collect(Collectors.toList());
+  }
+
+  private <C extends BaseValue<C>> boolean isConditionExpressionValid(Transaction transaction, ColumnFamilyHandle columnFamilyHandle,
+                                                                      Id id, ValueType type, Optional<ConditionExpression> condition,
+                                                                      String operation) throws RocksDBException {
+    if (condition.isPresent()) {
+      final byte[] value = getAndCheckValue(transaction, columnFamilyHandle, id, operation);
+      final RocksBaseValue<C> consumer = RocksSerDe.getConsumer(type);
+      RocksSerDe.deserializeToConsumer(type, value, consumer);
+      if (!(consumer.evaluate(translate(condition.get())))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private byte[] getAndCheckValue(Transaction transaction, ColumnFamilyHandle columnFamilyHandle,
+                                  Id id, String operation) throws RocksDBException {
+    final byte[] value = getForUpdate(transaction, columnFamilyHandle, id);
+    checkValue(value, operation, id);
+    return value;
+  }
+
+  private byte[] getForUpdate(Transaction transaction, ColumnFamilyHandle columnFamilyHandle, Id id)
+      throws RocksDBException {
+    return transaction.getForUpdate(new ReadOptions(), columnFamilyHandle, id.toBytes(), true);
+  }
+
+  private void checkValue(byte[] value, String operation, Id id) {
+    if (null == value) {
+      throw new NotFoundException("Unable to " + operation + " item with ID: " + id);
+    }
   }
 
   private <C extends BaseValue<C>> ColumnFamilyHandle getColumnFamilyHandle(ValueType<C> valueType) {

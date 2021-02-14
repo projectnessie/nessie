@@ -34,7 +34,7 @@ class RocksValue extends RocksWrappedValue<Value> implements Value {
   }
 
   @Override
-  public boolean evaluateFunction(Function function) {
+  public boolean evaluate(Function function) {
     final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:

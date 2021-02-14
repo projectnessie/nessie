@@ -145,7 +145,7 @@ class TestConditionExpressions {
 
     final List<Function> expectedCondition = ImmutableList.of(
         ImmutableFunction.builder()
-          .operator(Function.SIZE)
+          .operator(Function.Operator.SIZE)
           .path(ofPath(path))
           .value(NUM_FOUR)
           .build());
@@ -163,12 +163,12 @@ class TestConditionExpressions {
 
     final List<Function> expectedCondition = ImmutableList.of(
         ImmutableFunction.builder()
-          .operator(Function.EQUALS)
+          .operator(Function.Operator.EQUALS)
           .path(ofPath(path))
           .value(id)
           .build(),
         ImmutableFunction.builder()
-          .operator(Function.SIZE)
+          .operator(Function.Operator.SIZE)
           .path(ofPath(path2))
           .value(NUM_ONE)
           .build());
@@ -186,12 +186,12 @@ class TestConditionExpressions {
 
     final List<Function> expectedCondition = ImmutableList.of(
         ImmutableFunction.builder()
-          .operator(Function.EQUALS)
+          .operator(Function.Operator.EQUALS)
           .path(ofPath(path1))
           .value(TRUE_ENTITY)
           .build(),
         ImmutableFunction.builder()
-          .operator(Function.SIZE)
+          .operator(Function.Operator.SIZE)
           .path(ofPath(path2))
           .value(NUM_ONE)
           .build());
@@ -209,17 +209,17 @@ class TestConditionExpressions {
 
     final List<Function> expectedCondition = ImmutableList.of(
         ImmutableFunction.builder()
-          .operator(Function.EQUALS)
+          .operator(Function.Operator.EQUALS)
           .path(ofPath(path1))
           .value(TRUE_ENTITY)
           .build(),
         ImmutableFunction.builder()
-          .operator(Function.EQUALS)
+          .operator(Function.Operator.EQUALS)
           .path(ofPath(path2))
           .value(FALSE_ENTITY)
           .build(),
         ImmutableFunction.builder()
-          .operator(Function.EQUALS)
+          .operator(Function.Operator.EQUALS)
           .path(ofPath(pathPos))
           .value(strEntity)
           .build());
@@ -257,7 +257,7 @@ class TestConditionExpressions {
     final ConditionExpression ex = ConditionExpression.of(ExpressionFunction.equals(ofPath(path), strEntity));
 
     final Function expectedFunction = ImmutableFunction.builder()
-        .operator(Function.EQUALS)
+        .operator(Function.Operator.EQUALS)
         .path(ofPath(path))
         .value(strEntity)
         .build();
@@ -275,7 +275,7 @@ class TestConditionExpressions {
 
     final List<Function> expectedFunctions = ImmutableList.of(
         ImmutableFunction.builder()
-          .operator(Function.EQUALS)
+          .operator(Function.Operator.EQUALS)
           .path(ofPath(path))
           .value(entity)
           .build());

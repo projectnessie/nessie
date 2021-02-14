@@ -15,8 +15,6 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
-import static org.projectnessie.versioned.rocksdb.Function.SIZE;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -73,7 +71,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
       } else if (identifier.equals("t")) {
         return TAG;
       } else {
-        throw new IllegalArgumentException(String.format("Unknown identifier name [%s].", identifier));
+        throw new IllegalArgumentException(String.format("Unknown type name [%s].", identifier));
       }
     }
   }
@@ -81,7 +79,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
   private Type type = Type.INIT;
 
   @Override
-  public boolean evaluateFunction(Function function) {
+  public boolean evaluate(Function function) {
     if (type == Type.BRANCH) {
       return evaluateBranch(function);
     } else if (type == Type.TAG) {
@@ -142,10 +140,10 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
         return (function.isRootNameSegmentChildlessAndEquals()
           && type.equals(Type.getType(function.getValue().getString())));
       case NAME:
-        return (function.getOperator().equals(Function.EQUALS)
+        return (function.getOperator().equals(Function.Operator.EQUALS)
           && name.equals(function.getValue().getString()));
       case COMMIT:
-        return (function.getOperator().equals(Function.EQUALS)
+        return (function.getOperator().equals(Function.Operator.EQUALS)
           && commit.toEntity().equals(function.getValue()));
       default:
         return false;
@@ -164,8 +162,6 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
       throw new IllegalStateException("branch()/tag() has already been called");
     }
     type = Type.TAG;
-    // TODO: Do we need to serialize ref type?
-    //    serializeString(TYPE, REF_TYPE_TAG);
     return new RocksTag();
   }
 
@@ -175,8 +171,6 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
       throw new IllegalStateException("branch()/tag() has already been called");
     }
     type = Type.BRANCH;
-    // TODO: Do we need to serialize ref type?
-    //    serializeString(TYPE, REF_TYPE_BRANCH);
     return new RocksBranch();
   }
 

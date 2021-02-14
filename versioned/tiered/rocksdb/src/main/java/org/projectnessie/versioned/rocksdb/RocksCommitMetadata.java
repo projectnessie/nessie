@@ -35,7 +35,7 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements C
   }
 
   @Override
-  public boolean evaluateFunction(Function function) {
+  public boolean evaluate(Function function) {
     final String segment = function.getRootPathAsNameSegment().getName();
 
     switch (segment) {

@@ -68,12 +68,12 @@ class RocksDBValueVisitor implements ValueVisitor<Function> {
       case EQUALS:
         // Special case SIZE, as the object representation is not contained in one level of ExpressionFunction.
         if (isSize(arguments.get(0))) {
-          return ImmutableFunction.builder().operator(Function.SIZE)
+          return ImmutableFunction.builder().operator(Function.Operator.SIZE)
             .path(arguments.get(0).getFunction().getArguments().get(0).accept(EXPRESSION_PATH_VALUE_VISITOR))
             .value(arguments.get(1).getValue()).build();
         }
 
-        return ImmutableFunction.builder().operator(Function.EQUALS)
+        return ImmutableFunction.builder().operator(Function.Operator.EQUALS)
           .path(arguments.get(0).accept(EXPRESSION_PATH_VALUE_VISITOR))
           .value(arguments.get(1).getValue()).build();
       default:
