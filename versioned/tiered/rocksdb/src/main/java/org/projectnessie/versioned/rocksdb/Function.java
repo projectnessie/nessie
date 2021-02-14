@@ -82,12 +82,4 @@ abstract class Function {
     return !getRootPathAsNameSegment().getChild().isPresent()
       && getOperator().equals(Operator.EQUALS);
   }
-
-  /**
-   * Builds an immutable representation of this class.
-   * @return the builder
-   */
-  public static ImmutableFunction.Builder builder() {
-    return ImmutableFunction.builder();
-  }
 }

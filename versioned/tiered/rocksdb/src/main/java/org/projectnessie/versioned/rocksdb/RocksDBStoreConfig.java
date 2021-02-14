@@ -25,8 +25,4 @@ public abstract class RocksDBStoreConfig {
   public String getDbDirectory() {
     return "";
   }
-
-  public static ImmutableRocksDBStoreConfig.Builder builder() {
-    return ImmutableRocksDBStoreConfig.builder();
-  }
 }
