@@ -20,9 +20,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 
 import java.io.File;
-import java.io.Serializable;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
@@ -72,10 +68,7 @@ import org.projectnessie.model.Contents;
 import org.projectnessie.model.Reference;
 import org.projectnessie.versioned.AssetKey;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.dynamodb.DynamoStore;
-import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
-import org.projectnessie.versioned.store.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,8 +76,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.protobuf.ByteString;
-
-import software.amazon.awssdk.regions.Region;
 
 @ExtendWith(LocalDynamoDB.class)
 class ITTestIdentifyUnreferencedAssetsIceberg {
@@ -304,29 +295,6 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
 
     // 4 metadata + 4 data + 8 crc
     Assertions.assertEquals(16, paths.size());
-  }
-
-  private static class DynamoSupplier implements Supplier<Store>, Serializable {
-
-    private static final long serialVersionUID = 5030232198230089450L;
-
-    static DynamoStore createStore() throws URISyntaxException {
-      return new DynamoStore(DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000"))
-          .region(Region.US_WEST_2).build());
-    }
-
-    @Override
-    public Store get() {
-      Store store;
-      try {
-        store = createStore();
-        store.start();
-        return store;
-      } catch (URISyntaxException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
   }
 
 }

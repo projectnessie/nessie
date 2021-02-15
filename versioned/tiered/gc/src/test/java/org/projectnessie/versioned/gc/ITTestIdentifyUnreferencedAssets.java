@@ -20,8 +20,6 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,15 +43,12 @@ import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringWorker;
 import org.projectnessie.versioned.ValueWorker;
-import org.projectnessie.versioned.dynamodb.DynamoStore;
-import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
 import org.projectnessie.versioned.gc.IdentifyUnreferencedAssets.UnreferencedItem;
 import org.projectnessie.versioned.impl.TieredVersionStore;
 import org.projectnessie.versioned.store.HasId;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.SaveOp;
-import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tests.CommitBuilder;
 import org.projectnessie.versioned.tiered.Value;
@@ -65,8 +59,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
-
-import software.amazon.awssdk.regions.Region;
 
 @ExtendWith(LocalDynamoDB.class)
 public class ITTestIdentifyUnreferencedAssets {
@@ -150,29 +142,6 @@ public class ITTestIdentifyUnreferencedAssets {
       }
     };
     store.put(saveOp, Optional.empty());
-  }
-
-  private static class DynamoSupplier implements Supplier<Store>, Serializable {
-
-    private static final long serialVersionUID = 5030232198230089450L;
-
-    static DynamoStore createStore() throws URISyntaxException {
-      return new DynamoStore(DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000"))
-          .region(Region.US_WEST_2).build());
-    }
-
-    @Override
-    public Store get() {
-      Store store;
-      try {
-        store = createStore();
-        store.start();
-        return store;
-      } catch (URISyntaxException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
   }
 
   @BeforeEach
