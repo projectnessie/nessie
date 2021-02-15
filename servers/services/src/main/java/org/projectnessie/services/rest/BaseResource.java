@@ -72,14 +72,15 @@ abstract class BaseResource {
     return store;
   }
 
-  protected void doOps(String branch, String hash, String message, List<org.projectnessie.versioned.Operation<Contents>> operations)
+  protected void doOps(String branch, String hash, ImmutableCommitMeta.Builder builder,
+                       List<org.projectnessie.versioned.Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
       store.commit(
-          BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
-          Optional.ofNullable(hash).map(Hash::of),
-          meta(principal, message),
-          operations
+        BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
+        Optional.ofNullable(hash).map(Hash::of),
+        meta(builder, principal),
+        operations
       );
     } catch (IllegalArgumentException e) {
       throw new NessieNotFoundException("Invalid hash provided.", e);
@@ -90,11 +91,15 @@ abstract class BaseResource {
     }
   }
 
-  private static CommitMeta meta(Principal principal, String message) {
-    return ImmutableCommitMeta.builder()
-        .commiter(principal == null ? "" : principal.getName())
-        .message(message == null ? "" : message)
-        .commitTime(System.currentTimeMillis())
-        .build();
+  protected void doOps(String branch, String hash, String message, List<org.projectnessie.versioned.Operation<Contents>> operations)
+      throws NessieConflictException, NessieNotFoundException {
+    doOps(branch, hash, ImmutableCommitMeta.builder().message(message == null ? "" : message), operations);
+  }
+
+  private static CommitMeta meta(ImmutableCommitMeta.Builder builder, Principal principal) {
+    return builder
+      .commiter(principal == null ? "" : principal.getName())
+      .commitTime(System.currentTimeMillis())
+      .build();
   }
 }

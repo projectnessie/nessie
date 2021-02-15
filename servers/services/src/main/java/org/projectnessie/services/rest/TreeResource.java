@@ -35,6 +35,7 @@ import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableHash;
 import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableTag;
@@ -160,7 +161,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public void transplantCommitsIntoBranch(String branchName, String hash, String message, Transplant transplant)
+  public void transplantCommitsIntoBranch(String branchName, String hash, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     try {
       List<Hash> transplants = transplant.getHashesToTransplant().stream().map(Hash::of).collect(Collectors.toList());
@@ -180,7 +181,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       getStore().merge(toHash(merge.getFromHash(), true).get(), BranchName.of(branchName), toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("At least one of the references provided does not exist."), e);
+      throw new NessieNotFoundException("At least one of the references provided does not exist.", e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(
           String.format("The branch [%s] does not have the expected hash [%s].", branchName, hash), e);
@@ -201,13 +202,24 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public void commitMultipleOperations(String branch, String hash, String message, Operations operations)
+  public void commitMultipleOperations(String branch,
+                                       String hash,
+                                       String message,
+                                       String author,
+                                       String authorEmail,
+                                       String authorDate,
+                                       String signedOff,
+                                       String signedOffEmail,
+                                       String signedOffDate,
+                                       Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation<Contents>> ops = operations.getOperations()
         .stream()
         .map(TreeResource::toOp)
         .collect(ImmutableList.toImmutableList());
-    doOps(branch, hash, message, ops);
+    ImmutableCommitMeta.Builder builder = ImmutableCommitMeta.builder().author(author).authorEmail(authorEmail)
+        .authorDate(authorDate).signedOff(signedOff).signedOffDate(signedOffDate).signedOffEmail(signedOffEmail).message(message);
+    doOps(branch, hash, builder, ops);
   }
 
   private static Optional<Hash> toHash(String hash, boolean required) throws NessieConflictException {
