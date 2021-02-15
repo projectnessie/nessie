@@ -397,7 +397,8 @@ class InternalBranch extends InternalRef {
           // cleanup pending updates.
           UpdateState updateState = attempt == 0 ? initialState : branch.getUpdateState(store);
 
-          // ensure that any to-be-saved items are saved. This is a noop on the first loop since ensureAvailable will have already done a save.
+          // ensure that any to-be-saved items are saved. This is a noop on attempt 0 since
+          // ensureAvailable will have already done a save.
           updateState.save(store);
 
           // now we need to take the current list and turn it into a list of 1 item that is saved.
