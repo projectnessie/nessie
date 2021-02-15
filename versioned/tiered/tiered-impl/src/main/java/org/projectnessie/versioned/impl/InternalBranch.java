@@ -311,6 +311,26 @@ class InternalBranch extends InternalRef {
     }
 
     /**
+     * Save any pending saves if they are not already saved.
+     *
+     * <p>It is safe to call this multiple times. Subsequent calls will be a no-op.
+     * @param store The store to save any pending saves to.
+     */
+    private void save(Store store) {
+      if (saved) {
+        return;
+      }
+
+      if (saves.isEmpty()) {
+        saved = true;
+        return;
+      }
+
+      store.save(saves);
+      saved = true;
+    }
+
+    /**
      * Ensure that all l1s to save are available. Returns once the L1s reference in this object are available for
      * reference. Before returning, will also submit a separate thread to the provided executor that will attempt to
      * clean up the existing commit log. Once the log is cleaned up, the returned CompletableFuture will return a cleaned InternalBranch.
@@ -322,13 +342,12 @@ class InternalBranch extends InternalRef {
      *        before returning/failing. If false, the final collapse will be done in a separate thread.
      */
     CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, int attempts, boolean waitOnCollapse) {
+
+      save(store);
+
       if (saves.isEmpty()) {
-        saved = true;
         return CompletableFuture.completedFuture(initialBranch);
       }
-
-      store.save(saves);
-      saved = true;
 
       CompletableFuture<InternalBranch> future = CompletableFuture.supplyAsync(() -> {
         try {
@@ -377,6 +396,9 @@ class InternalBranch extends InternalRef {
 
           // cleanup pending updates.
           UpdateState updateState = attempt == 0 ? initialState : branch.getUpdateState(store);
+
+          // ensure that any to-be-saved items are saved. This is a noop on the first loop since ensureAvailable will have already done a save.
+          updateState.save(store);
 
           // now we need to take the current list and turn it into a list of 1 item that is saved.
           final ExpressionPath commits = ExpressionPath.builder("commits").build();
