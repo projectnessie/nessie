@@ -23,6 +23,7 @@ import javax.validation.constraints.Pattern;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -273,9 +274,6 @@ public interface TreeApi {
       @Parameter(description = "Expected hash of tag")
       @QueryParam("expectedHash")
           String hash,
-      @Parameter(description = "commit message")
-      @QueryParam("message")
-          String message,
       @Valid
       @RequestBody(description = "Hashes to transplant")
           Transplant transplant)
@@ -331,8 +329,26 @@ public interface TreeApi {
       @QueryParam("expectedHash")
           String hash,
       @Parameter(description = "Commit message")
-      @QueryParam("message")
+      @HeaderParam(NessieHeaders.MESSAGE_HEADER_NAME)
           String message,
+      @Parameter(description = "Commit author")
+      @HeaderParam(NessieHeaders.AUTHOR_HEADER_NAME)
+        String author,
+      @Parameter(description = "Commit author email")
+      @HeaderParam(NessieHeaders.AUTHOR_EMAIL_HEADER_NAME)
+        String authorEmail,
+      @Parameter(description = "Time commit was authored")
+      @HeaderParam(NessieHeaders.AUTHOR_DATE_HEADER_NAME)
+        String authorDate,
+      @Parameter(description = "Commit signed off")
+      @HeaderParam(NessieHeaders.SIGNED_OFF_HEADER_NAME)
+        String signedOff,
+      @Parameter(description = "Commit signed off email")
+      @HeaderParam(NessieHeaders.SIGNED_OFF_EMAIL_HEADER_NAME)
+        String signedOffEmail,
+      @Parameter(description = "Time commit was signed off")
+      @HeaderParam(NessieHeaders.SIGNED_OFF_DATE_HEADER_NAME)
+        String signedOffDate,
       @Valid
       @NotNull
       @RequestBody(description = "Operations")

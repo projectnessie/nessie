@@ -154,7 +154,8 @@ class TestRest {
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
     ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
     Operations ops = ImmutableOperations.builder().addOperations(op).build();
-    tree.commitMultipleOperations(branchName, branchHash, "One dummy op", ops);
+    tree.commitMultipleOperations(branchName, branchHash, "One dummy op",
+      null, null, null, null, null, null, ops);
     log = tree.getCommitLog(branchName);
     String newHash = log.getOperations().get(0).getHash();
 
@@ -225,7 +226,8 @@ class TestRest {
     assertAll(
         () -> assertEquals("Bad Request (HTTP/400): commitMultipleOperations.branchName: " + REF_NAME_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.commitMultipleOperations(invalidBranchName, validHash, null, ops)).getMessage()),
+                () -> tree.commitMultipleOperations(invalidBranchName, validHash,
+                  null, null, null, null, null, null, null, ops)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): deleteBranch.branchName: " + REF_NAME_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.deleteBranch(invalidBranchName, validHash)).getMessage()),
@@ -254,7 +256,7 @@ class TestRest {
                 () -> tree.deleteTag(invalidBranchName, validHash)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): transplantCommitsIntoBranch.branchName: " + REF_NAME_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.transplantCommitsIntoBranch(invalidBranchName, validHash, null, null)).getMessage()),
+                () -> tree.transplantCommitsIntoBranch(invalidBranchName, validHash, null)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): setContents.branch: " + REF_NAME_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> contents.setContents(key, invalidBranchName, validHash, null, cts)).getMessage()),
@@ -292,7 +294,8 @@ class TestRest {
     assertAll(
         () -> assertEquals("Bad Request (HTTP/400): commitMultipleOperations.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.commitMultipleOperations(validBranchName, invalidHash, null, ops)).getMessage()),
+                () -> tree.commitMultipleOperations(validBranchName, invalidHash,
+                  null, null, null, null, null, null, null, ops)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): deleteBranch.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.deleteBranch(validBranchName, invalidHash)).getMessage()),
@@ -312,7 +315,7 @@ class TestRest {
                 () -> tree.deleteTag(validBranchName, invalidHash)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): transplantCommitsIntoBranch.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.transplantCommitsIntoBranch(validBranchName, invalidHash, null, null)).getMessage()),
+                () -> tree.transplantCommitsIntoBranch(validBranchName, invalidHash, null)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): setContents.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> contents.setContents(key, validBranchName, invalidHash, null, cts)).getMessage()),

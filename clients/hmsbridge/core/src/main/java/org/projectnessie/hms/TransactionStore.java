@@ -137,7 +137,7 @@ class TransactionStore {
     }
 
     checkWritable();
-    tree.commitMultipleOperations(reference.getName(), reference.getHash(), "HMS commit",
+    tree.commitMultipleOperations(reference.getName(), reference.getHash(), "HMS commit", null, null, null, null, null, null,
         ImmutableOperations.builder().addAllOperations(operations.stream().collect(Collectors.toList())).build());
   }
 
