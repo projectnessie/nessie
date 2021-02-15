@@ -99,7 +99,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
     switch (segment) {
       case ID:
-        return idEvaluates(function);
+        return evaluatesId(function);
       case TYPE:
         return (function.isRootNameSegmentChildlessAndEquals()
           && type.equals(Type.getType(function.getValue().getString())));
@@ -135,7 +135,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
     final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:
-        return idEvaluates(function);
+        return evaluatesId(function);
       case TYPE:
         return (function.isRootNameSegmentChildlessAndEquals()
           && type.equals(Type.getType(function.getValue().getString())));

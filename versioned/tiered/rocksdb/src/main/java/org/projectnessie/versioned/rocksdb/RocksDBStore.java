@@ -318,7 +318,7 @@ public class RocksDBStore implements Store {
       final byte[] value = getAndCheckValue(transaction, columnFamilyHandle, id, operation);
       final RocksBaseValue<C> consumer = RocksSerDe.getConsumer(type);
       RocksSerDe.deserializeToConsumer(type, value, consumer);
-      if (!(consumer.evaluate(translate(condition.get())))) {
+      if (!consumer.evaluate(translate(condition.get()))) {
         return false;
       }
     }

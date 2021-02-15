@@ -244,7 +244,8 @@ public class MongoDBStore implements Store {
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public void save(List<SaveOp<?>> ops) {
-    final Map<ValueType<?>, List<SaveOp<?>>> perType = ops.stream().collect(Collectors.groupingBy(SaveOp::getType));
+    Map<ValueType<?>, List<SaveOp>> perType = ops.stream()
+        .collect(Collectors.groupingBy(SaveOp::getType));
 
     Flux.fromIterable(perType.entrySet())
       .flatMap(entry -> ((MongoCollection) writeCollection(entry.getKey()))

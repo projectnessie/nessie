@@ -128,7 +128,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
    * @param function the function to evaluate against id.
    * @return true if the id meets the function condition
    */
-  boolean idEvaluates(Function function) {
+  boolean evaluatesId(Function function) {
     return (function.isRootNameSegmentChildlessAndEquals()
       && getId().toEntity().equals(function.getValue()));
   }

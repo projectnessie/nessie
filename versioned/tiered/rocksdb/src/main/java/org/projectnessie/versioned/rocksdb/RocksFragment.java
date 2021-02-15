@@ -75,7 +75,7 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
     final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:
-        return idEvaluates(function);
+        return evaluatesId(function);
       case KEY_LIST:
         if (function.getRootPathAsNameSegment().getChild().isPresent()) {
           return false;

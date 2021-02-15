@@ -38,7 +38,7 @@ class RocksValue extends RocksWrappedValue<Value> implements Value {
     final String segment = function.getRootPathAsNameSegment().getName();
     switch (segment) {
       case ID:
-        return idEvaluates(function);
+        return evaluatesId(function);
       case VALUE:
         return (function.isRootNameSegmentChildlessAndEquals()
             && byteValue.toStringUtf8().equals(function.getValue().getString()));

@@ -99,7 +99,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
     final String segment = nameSegment.getName();
     switch (segment) {
       case ID:
-        return idEvaluates(function);
+        return evaluatesId(function);
       case COMMIT_METADATA:
         return (function.isRootNameSegmentChildlessAndEquals()
             && metadataId.toEntity().equals(function.getValue()));
