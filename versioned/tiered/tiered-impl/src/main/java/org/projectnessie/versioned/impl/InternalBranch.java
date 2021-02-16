@@ -267,8 +267,12 @@ class InternalBranch extends InternalRef {
       for (UnsavedDelta delta : c.deltas) {
         tree = delta.apply(tree);
       }
-      lastL1 = lastL1.getChildWithTree(c.commit, tree, c.keyMutationList)
-          .withCheckpointAsNecessary(store);
+
+      lastL1 = lastL1.getChildWithTree(c.commit, tree, c.keyMutationList);
+      if (lastL1 == lastSavedL1) {
+        lastL1 = lastL1.withCheckpointAsNecessary(store);
+      }
+
       toSave.add(EntityType.L1.createSaveOpForEntity(lastL1));
       lastId = c.id;
       if (lastUnsaved != c) {
