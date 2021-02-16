@@ -140,6 +140,7 @@ public class DynamoStore implements Store {
     if (client != null && async != null) {
       return; // no-op
     }
+
     try {
       DynamoMetricsPublisher publisher = new DynamoMetricsPublisher();
       TracingExecutionInterceptor tracing = new TracingExecutionInterceptor(GlobalTracer.get());
@@ -176,8 +177,7 @@ public class DynamoStore implements Store {
         // make sure we have an empty l1 (ignore result, doesn't matter)
         EntityStoreHelper.storeMinimumEntities(this::putIfAbsent);
       }
-
-    } catch (DynamoDbException ex) {
+    } catch (Exception ex) {
       try {
         close();
       } catch (Exception e) {
@@ -191,6 +191,8 @@ public class DynamoStore implements Store {
   public void close() {
     try {
       AutoCloseables.close(client, async);
+      client = null;
+      async = null;
     } catch (Exception e) {
       throw new StoreOperationException("Failed to close store", e);
     }
