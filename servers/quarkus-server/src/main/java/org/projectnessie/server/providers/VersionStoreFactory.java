@@ -130,7 +130,7 @@ public class VersionStoreFactory {
               .build();
           break;
         default:
-          throw new RuntimeException(String.format("unknown jgit repo type %s",
+          throw new RuntimeException(String.format("unknown version-store type %s",
               config.getVersionStoreConfig().getVersionStoreType()));
       }
       lastUnsuccessfulStart = 0L;
