@@ -50,7 +50,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
     this.config = config;
     store = createStoreImpl();
     store.start();
-    impl = new TieredVersionStore<>(WORKER, store, true);
+    impl = new TieredVersionStore<>(WORKER, store, TieredVersionStoreConfig.testConfig());
   }
 
   public C getConfig() {

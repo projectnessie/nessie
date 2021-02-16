@@ -90,23 +90,21 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   private final Serializer<METADATA> metadataSerializer;
   private final ExecutorService executor;
   private final Store store;
-  private final int commitRetryCount = 5;
-  private final int p2commitRetry = 5;
-  private final boolean waitOnCollapse;
+  private final TieredVersionStoreConfig config;
 
   /**
    * Construct a TieredVersionStore.
    *
    * @param storeWorker The consumption layer's serialization and related utilities.
    * @param store The underlying {@link Store} implementation to use.
-   * @param waitOnCollapse Whether to block on collapsing the InternalBranch commit log before returning valid L1s.
+   * @param config The tiered-version-store configuration.
    */
-  public TieredVersionStore(StoreWorker<DATA,METADATA> storeWorker, Store store, boolean waitOnCollapse) {
+  public TieredVersionStore(StoreWorker<DATA,METADATA> storeWorker, Store store, TieredVersionStoreConfig config) {
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
     this.executor = Executors.newCachedThreadPool();
-    this.waitOnCollapse = waitOnCollapse;
+    this.config = config;
   }
 
   @Override
@@ -269,11 +267,12 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       boolean updated = store.update(ValueType.REF, ref.getId(),
           commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(builder));
       if (!updated) {
-        if (loop++ < commitRetryCount) {
+        if (loop++ < config.commitRetryCount()) {
           continue;
         }
         throw new ReferenceConflictException(
-            String.format("Unable to complete commit due to conflicting events. Retried %d times before failing.", commitRetryCount));
+            String.format("Unable to complete commit due to conflicting events. "
+                + "Retried %d times before failing.", config.commitRetryCount()));
       }
 
       updatedBranch = builder.build().getBranch();
@@ -283,13 +282,9 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     // Now we'll try to collapse the intention log. Note that this is done post official commit so we need to return
     // successfully even if this fails.
     try {
-      updatedBranch.getUpdateState(store).ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
+      updatedBranch.getUpdateState(store).ensureAvailable(store, executor, config.p2CommitRetryCount(), config.waitOnCollapse());
     } catch (Exception ex) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.info("Failure while collapsing intention log after commit.", ex);
-      } else {
-        LOGGER.info("Failure while collapsing intention log after commit: {}", ex.toString());
-      }
+      LOGGER.debug("Failure while collapsing intention log after commit.", ex);
     }
   }
 
@@ -345,7 +340,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
    */
   private InternalL1 ensureValidL1(InternalBranch branch) {
     UpdateState updateState = branch.getUpdateState(store);
-    updateState.ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
+    updateState.ensureAvailable(store, executor, config.p2CommitRetryCount(), config.waitOnCollapse());
     return updateState.getL1();
   }
 
