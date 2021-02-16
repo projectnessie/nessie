@@ -84,7 +84,7 @@ abstract class BaseResource {
     } catch (IllegalArgumentException e) {
       throw new NessieNotFoundException("Invalid hash provided.", e);
     } catch (ReferenceConflictException e) {
-      throw new NessieConflictException("Failed to commit data. Provided hash does not match current value.", e);
+      throw new NessieConflictException("Failed to commit data. " + e.getMessage(), e);
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException("Failed to commit data. Provided ref was not found.", e);
     }
