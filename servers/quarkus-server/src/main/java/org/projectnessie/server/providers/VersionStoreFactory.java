@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import javax.enterprise.inject.Produces;
@@ -72,6 +73,8 @@ public class VersionStoreFactory {
   @ConfigProperty(name = "quarkus.dynamodb.endpoint-override")
   Optional<String> endpoint;
 
+  private static final long START_RETRY_MIN_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(2);
+  private volatile long lastUnsuccessfulStart = 0L;
 
   @Produces
   public StoreWorker<Contents, CommitMeta> worker() {
@@ -101,21 +104,41 @@ public class VersionStoreFactory {
   }
 
   private VersionStore<Contents, CommitMeta> getVersionStore(TableCommitMetaStoreWorker storeWorker, Repository repository) {
-    switch (config.getVersionStoreConfig().getVersionStoreType()) {
-      case DYNAMO:
-        LOGGER.info("Using Dyanmo Version store");
-        return new TieredVersionStore<>(storeWorker, createDynamoConnection(), false);
-      case JGIT:
-        LOGGER.info("Using JGit Version Store");
-        return new JGitVersionStore<>(repository, storeWorker);
-      case INMEMORY:
-        LOGGER.info("Using In Memory version store");
-        return InMemoryVersionStore.<Contents, CommitMeta>builder()
-            .metadataSerializer(storeWorker.getMetadataSerializer())
-            .valueSerializer(storeWorker.getValueWorker())
-            .build();
-      default:
-        throw new RuntimeException(String.format("unknown jgit repo type %s", config.getVersionStoreConfig().getVersionStoreType()));
+    if (System.nanoTime() - lastUnsuccessfulStart < START_RETRY_MIN_INTERVAL_NANOS) {
+      LOGGER.warn("{} version store failed to start recently, try again later.",
+          config.getVersionStoreConfig().getVersionStoreType());
+      throw new RuntimeException(String.format("%s version store failed to start recently, try again later.",
+          config.getVersionStoreConfig().getVersionStoreType()));
+    }
+
+    try {
+      VersionStore<Contents, CommitMeta> versionStore;
+      switch (config.getVersionStoreConfig().getVersionStoreType()) {
+        case DYNAMO:
+          LOGGER.info("Using Dyanmo Version store");
+          versionStore = new TieredVersionStore<>(storeWorker, createDynamoConnection(), false);
+          break;
+        case JGIT:
+          LOGGER.info("Using JGit Version Store");
+          versionStore = new JGitVersionStore<>(repository, storeWorker);
+          break;
+        case INMEMORY:
+          LOGGER.info("Using In Memory version store");
+          versionStore = InMemoryVersionStore.<Contents, CommitMeta>builder()
+              .metadataSerializer(storeWorker.getMetadataSerializer())
+              .valueSerializer(storeWorker.getValueWorker())
+              .build();
+          break;
+        default:
+          throw new RuntimeException(String.format("unknown version-store type %s",
+              config.getVersionStoreConfig().getVersionStoreType()));
+      }
+      lastUnsuccessfulStart = 0L;
+      return versionStore;
+    } catch (RuntimeException e) {
+      lastUnsuccessfulStart = System.nanoTime();
+      LOGGER.error("Failed to configure/start {} version store", config.getVersionStoreConfig().getVersionStoreType(), e);
+      throw e;
     }
   }
 
