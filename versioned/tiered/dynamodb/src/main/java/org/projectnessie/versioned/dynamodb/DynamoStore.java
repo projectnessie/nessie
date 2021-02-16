@@ -79,6 +79,7 @@ import software.amazon.awssdk.services.dynamodb.model.BatchGetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.BatchGetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
@@ -507,17 +508,23 @@ public class DynamoStore implements Store {
   }
 
   private void createTable(String name) {
-    client.createTable(CreateTableRequest.builder()
+    CreateTableRequest.Builder createRequest = CreateTableRequest.builder()
         .tableName(name)
         .attributeDefinitions(AttributeDefinition.builder()
             .attributeName(KEY_NAME)
             .attributeType(
-              ScalarAttributeType.B)
+                ScalarAttributeType.B)
             .build())
-        .provisionedThroughput(ProvisionedThroughput.builder()
-            .readCapacityUnits(10L)
-            .writeCapacityUnits(10L)
-            .build())
+        .billingMode(config.getBillingMode());
+
+    if (config.getBillingMode() == BillingMode.PROVISIONED) {
+      createRequest = createRequest.provisionedThroughput(ProvisionedThroughput.builder()
+          .readCapacityUnits(config.getCreateTableReadCapacityUnits())
+          .writeCapacityUnits(config.getCreateTableWriteCapacityUnits())
+          .build());
+    }
+
+    client.createTable(createRequest
         .keySchema(KeySchemaElement.builder()
             .attributeName(KEY_NAME)
             .keyType(KeyType.HASH)

@@ -34,6 +34,7 @@ import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.impl.TieredVersionStore;
 
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 
 /**
  * DynamoDB version store factory.
@@ -80,6 +81,9 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
           .initializeDatabase(config.isDynamoInitialize())
           .tablePrefix(config.getTablePrefix())
           .enableTracing(config.enableTracing())
+          .billingMode(BillingMode.valueOf(config.billingMode().name()))
+          .createTableReadCapacityUnits(config.createTableReadCapacityUnits())
+          .createTableWriteCapacityUnits(config.createTableWriteCapacityUnits())
           .build());
     dynamo.start();
     return dynamo;

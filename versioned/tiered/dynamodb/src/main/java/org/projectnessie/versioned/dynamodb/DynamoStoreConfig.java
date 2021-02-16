@@ -22,12 +22,16 @@ import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 
 @Immutable
 public abstract class DynamoStoreConfig {
 
   // DEFAULT TABLE PREFIXNAMES
   public static final String TABLE_PREFIX = "nessie_";
+  public static final String CREATE_TABLE_READ_CAPACITY_UNITS = "50";
+  public static final String CREATE_TABLE_WRITE_CAPACITY_UNITS = "50";
+  public static final String BILLING_MODE = "PAY_PER_REQUEST";
 
   public abstract Optional<URI> getEndpoint();
 
@@ -39,6 +43,21 @@ public abstract class DynamoStoreConfig {
   @Default
   public boolean initializeDatabase() {
     return true;
+  }
+
+  @Default
+  public long getCreateTableReadCapacityUnits() {
+    return Long.parseLong(CREATE_TABLE_READ_CAPACITY_UNITS);
+  }
+
+  @Default
+  public long getCreateTableWriteCapacityUnits() {
+    return Long.parseLong(CREATE_TABLE_WRITE_CAPACITY_UNITS);
+  }
+
+  @Default
+  public BillingMode getBillingMode() {
+    return BillingMode.valueOf(BILLING_MODE);
   }
 
   public abstract Optional<Region> getRegion();
