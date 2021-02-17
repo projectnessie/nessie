@@ -48,15 +48,21 @@ class RocksL2 extends RocksBaseValue<L2> implements L2 {
   @Override
   public boolean evaluate(Function function) {
     final String segment = function.getRootPathAsNameSegment().getName();
-    switch (segment) {
-      case ID:
-        return evaluatesId(function);
-      case CHILDREN:
-        return evaluate(function, tree);
-      default:
-        // Invalid Condition Function.
-        return false;
+    try {
+      switch (segment) {
+        case ID:
+          return evaluatesId(function);
+        case CHILDREN:
+          return evaluate(function, tree);
+        default:
+          // Invalid Condition Function.
+          return false;
+      }
+    } catch (IllegalStateException e) {
+      // Catch exceptions raise due to malformed ConditionExpressions.
+      return false;
     }
+
   }
 
   @Override

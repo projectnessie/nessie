@@ -33,24 +33,4 @@ class RocksCommitMetadata extends RocksWrappedValue<CommitMetadata> implements C
   RocksCommitMetadata() {
     super();
   }
-
-  @Override
-  public boolean evaluate(Function function) {
-    final String segment = function.getRootPathAsNameSegment().getName();
-
-    switch (segment) {
-      case ID:
-        // ID is considered a leaf attribute, ie no children. Ensure this is the case
-        // in the ExpressionPath.
-        return evaluatesId(function);
-      case VALUE:
-        // VALUE is considered a leaf attribute, ie no children. Ensure this is the case
-        // in the ExpressionPath.
-        return (function.isRootNameSegmentChildlessAndEquals()
-            && byteValue.equals(function.getValue().getBinary()));
-      default:
-        // Invalid Condition Function.
-        return false;
-    }
-  }
 }

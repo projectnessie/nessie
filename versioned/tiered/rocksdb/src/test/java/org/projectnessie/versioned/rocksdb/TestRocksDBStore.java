@@ -15,11 +15,12 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.TestInstance;
@@ -36,8 +37,11 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
   @AfterAll
   static void tearDown() throws IOException {
     for (Path path : ImmutableList.of(DB_PATH, getRawPath())) {
-      if (path.toFile().exists()) {
-        Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+      if (Files.exists(path)) {
+        final List<Path> pathList = Files.walk(path).sorted(Comparator.reverseOrder()).collect(Collectors.toList());
+        for (Path pathToDelete : pathList) {
+          Files.delete(pathToDelete);
+        }
       }
     }
   }

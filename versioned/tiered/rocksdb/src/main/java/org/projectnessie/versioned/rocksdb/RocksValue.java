@@ -32,19 +32,4 @@ class RocksValue extends RocksWrappedValue<Value> implements Value {
   RocksValue() {
     super();
   }
-
-  @Override
-  public boolean evaluate(Function function) {
-    final String segment = function.getRootPathAsNameSegment().getName();
-    switch (segment) {
-      case ID:
-        return evaluatesId(function);
-      case VALUE:
-        return (function.isRootNameSegmentChildlessAndEquals()
-            && byteValue.toStringUtf8().equals(function.getValue().getString()));
-      default:
-        // Invalid Condition Function.
-        return false;
-    }
-  }
 }

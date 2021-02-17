@@ -36,7 +36,22 @@ class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C>
 
   @Override
   public boolean evaluate(Function function) {
-    throw new UnsupportedOperationException();
+    final String segment = function.getRootPathAsNameSegment().getName();
+    try {
+      switch (segment) {
+        case ID:
+          return evaluatesId(function);
+        case VALUE:
+          return (function.isRootNameSegmentChildlessAndEquals()
+            && byteValue.equals(function.getValue().getBinary()));
+        default:
+          // Invalid Condition Function.
+          return false;
+      }
+    } catch (IllegalStateException e) {
+      // Catch exceptions raise due to malformed ConditionExpressions.
+      return false;
+    }
   }
 
   @SuppressWarnings("unchecked")

@@ -74,22 +74,27 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
   @Override
   public boolean evaluate(Function function) {
     final String segment = function.getRootPathAsNameSegment().getName();
-    switch (segment) {
-      case ID:
-        return evaluatesId(function);
-      case KEY_LIST:
-        if (function.getRootPathAsNameSegment().getChild().isPresent()) {
+    try {
+      switch (segment) {
+        case ID:
+          return evaluatesId(function);
+        case KEY_LIST:
+          if (function.getRootPathAsNameSegment().getChild().isPresent()) {
+            return false;
+          } else if (function.getOperator().equals(Function.Operator.EQUALS)) {
+            return keysAsEntityList(keys).equals(function.getValue());
+          } else if (function.getOperator().equals(Function.Operator.SIZE)) {
+            return (keys.size() == function.getValue().getNumber());
+          } else {
+            return false;
+          }
+        default:
+          // Invalid Condition Function.
           return false;
-        } else if (function.getOperator().equals(Function.Operator.EQUALS)) {
-          return keysAsEntityList(keys).equals(function.getValue());
-        } else if (function.getOperator().equals(Function.Operator.SIZE)) {
-          return (keys.size() == function.getValue().getNumber());
-        } else {
-          return false;
-        }
-      default:
-        // Invalid Condition Function.
-        return false;
+      }
+    } catch (IllegalStateException e) {
+      // Catch exceptions raise due to malformed ConditionExpressions.
+      return false;
     }
   }
 

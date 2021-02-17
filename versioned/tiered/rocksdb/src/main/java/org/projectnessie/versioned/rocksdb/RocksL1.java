@@ -98,36 +98,41 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
   public boolean evaluate(Function function) {
     final ExpressionPath.NameSegment nameSegment = function.getRootPathAsNameSegment();
     final String segment = nameSegment.getName();
-    switch (segment) {
-      case ID:
-        return evaluatesId(function);
-      case COMMIT_METADATA:
-        return (function.isRootNameSegmentChildlessAndEquals()
+    try {
+      switch (segment) {
+        case ID:
+          return evaluatesId(function);
+        case COMMIT_METADATA:
+          return (function.isRootNameSegmentChildlessAndEquals()
             && metadataId.toEntity().equals(function.getValue()));
-      case ANCESTORS:
-        return evaluate(function, parentList);
-      case CHILDREN:
-        return evaluate(function, tree);
-      case KEY_LIST:
-        return false;
-      case INCREMENTAL_KEY_LIST:
-        if (!nameSegment.getChild().isPresent() || !function.getOperator().equals(Function.Operator.EQUALS)) {
+        case ANCESTORS:
+          return evaluate(function, parentList);
+        case CHILDREN:
+          return evaluate(function, tree);
+        case KEY_LIST:
           return false;
-        }
-        final String childName = nameSegment.getChild().get().asName().getName();
-        if (childName.equals(CHECKPOINT_ID)) {
-          return checkpointId.toEntity().equals(function.getValue());
-        } else if (childName.equals((DISTANCE_FROM_CHECKPOINT))) {
-          return Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue());
-        } else {
+        case INCREMENTAL_KEY_LIST:
+          if (!nameSegment.getChild().isPresent() || !function.getOperator().equals(Function.Operator.EQUALS)) {
+            return false;
+          }
+          final String childName = nameSegment.getChild().get().asName().getName();
+          if (childName.equals(CHECKPOINT_ID)) {
+            return checkpointId.toEntity().equals(function.getValue());
+          } else if (childName.equals((DISTANCE_FROM_CHECKPOINT))) {
+            return Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue());
+          } else {
+            // Invalid Condition Function.
+            return false;
+          }
+        case COMPLETE_KEY_LIST:
+          return evaluate(function, fragmentIds);
+        default:
           // Invalid Condition Function.
           return false;
-        }
-      case COMPLETE_KEY_LIST:
-        return evaluate(function, fragmentIds);
-      default:
-        // Invalid Condition Function.
-        return false;
+      }
+    } catch (IllegalStateException e) {
+      // Catch exceptions raise due to malformed ConditionExpressions.
+      return false;
     }
   }
 
