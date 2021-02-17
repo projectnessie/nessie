@@ -18,6 +18,7 @@ package org.projectnessie.versioned.rocksdb;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Key;
@@ -43,7 +44,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
   private Id commit;
   private String name;
   private Id metadata;
-  private Stream<Id> children;
+  private List<Id> children;
   private List<ValueProtos.Commit> commits;
 
   RocksRef() {
@@ -107,7 +108,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
         return (function.isRootNameSegmentChildlessAndEquals()
           && name.equals(function.getValue().getString()));
       case CHILDREN:
-        return evaluateStream(function, children);
+        return evaluate(function, children);
       case METADATA:
         return (function.isRootNameSegmentChildlessAndEquals()
           && metadata.toEntity().equals(function.getValue()));
@@ -197,7 +198,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
     @Override
     public Branch children(Stream<Id> children) {
-      RocksRef.this.children = children;
+      RocksRef.this.children = children.collect(Collectors.toList());
       return this;
     }
 

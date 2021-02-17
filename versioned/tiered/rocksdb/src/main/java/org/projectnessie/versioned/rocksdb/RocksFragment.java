@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,7 +33,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
   static final String KEY_LIST = "keys";
 
-  private Stream<Key> keys;
+  private List<Key> keys;
 
   RocksFragment() {
     super();
@@ -40,7 +41,7 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
 
   @Override
   public Fragment keys(Stream<Key> keys) {
-    this.keys = keys;
+    this.keys = keys.collect(Collectors.toList());
     return this;
   }
 
@@ -49,7 +50,7 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
     checkPresent(keys, KEY_LIST);
     return ValueProtos.Fragment.newBuilder()
       .setBase(buildBase())
-      .addAllKeys(keys.map(RocksBaseValue::buildKey).collect(Collectors.toList()))
+      .addAllKeys(keys.stream().map(RocksBaseValue::buildKey).collect(Collectors.toList()))
       .build()
       .toByteArray();
   }
@@ -82,7 +83,7 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
         } else if (function.getOperator().equals(Function.Operator.EQUALS)) {
           return keysAsEntityList(keys).equals(function.getValue());
         } else if (function.getOperator().equals(Function.Operator.SIZE)) {
-          return (keys.count() == function.getValue().getNumber());
+          return (keys.size() == function.getValue().getNumber());
         } else {
           return false;
         }
@@ -98,7 +99,7 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
    * @param keys stream of keys to convert
    * @return an entity list of keys
    */
-  private Entity keysAsEntityList(Stream<Key> keys) {
-    return Entity.ofList(keys.map(k -> Entity.ofList(k.getElements().stream().map(Entity::ofString))));
+  private Entity keysAsEntityList(List<Key> keys) {
+    return Entity.ofList(keys.stream().map(k -> Entity.ofList(k.getElements().stream().map(Entity::ofString))));
   }
 }

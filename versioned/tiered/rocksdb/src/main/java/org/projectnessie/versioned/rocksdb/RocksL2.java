@@ -16,6 +16,8 @@
 
 package org.projectnessie.versioned.rocksdb;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.store.Id;
@@ -25,13 +27,13 @@ import org.projectnessie.versioned.tiered.L2;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 /**
- * A RocksDB specific implementation of {@link org.projectnessie.tiered.builder.L2} providing
+ * A RocksDB specific implementation of {@link org.projectnessie.versioned.tiered.L2} providing
  * SerDe and Condition evaluation.
  */
 class RocksL2 extends RocksBaseValue<L2> implements L2 {
   private static final String CHILDREN = "children";
 
-  private Stream<Id> tree; // children
+  private List<Id> tree; // children
 
   RocksL2() {
     super();
@@ -39,7 +41,7 @@ class RocksL2 extends RocksBaseValue<L2> implements L2 {
 
   @Override
   public L2 children(Stream<Id> ids) {
-    this.tree = ids;
+    this.tree = ids.collect(Collectors.toList());
     return this;
   }
 
@@ -50,7 +52,7 @@ class RocksL2 extends RocksBaseValue<L2> implements L2 {
       case ID:
         return evaluatesId(function);
       case CHILDREN:
-        return evaluateStream(function, tree);
+        return evaluate(function, tree);
       default:
         // Invalid Condition Function.
         return false;

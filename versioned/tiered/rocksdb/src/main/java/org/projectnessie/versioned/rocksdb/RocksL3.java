@@ -16,6 +16,7 @@
 
 package org.projectnessie.versioned.rocksdb;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,7 +34,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 class RocksL3 extends RocksBaseValue<L3> implements L3 {
   private static final String TREE = "tree";
 
-  private Stream<KeyDelta> keyDelta;
+  private List<KeyDelta> keyDelta;
 
   RocksL3() {
     super();
@@ -41,7 +42,7 @@ class RocksL3 extends RocksBaseValue<L3> implements L3 {
 
   @Override
   public L3 keyDelta(Stream<KeyDelta> keyDelta) {
-    this.keyDelta = keyDelta;
+    this.keyDelta = keyDelta.collect(Collectors.toList());
     return this;
   }
 
@@ -56,7 +57,7 @@ class RocksL3 extends RocksBaseValue<L3> implements L3 {
     checkPresent(keyDelta, TREE);
     return ValueProtos.L3.newBuilder()
       .setBase(buildBase())
-      .addAllKeyDelta(keyDelta.map(d ->
+      .addAllKeyDelta(keyDelta.stream().map(d ->
         ValueProtos.KeyDelta.newBuilder().setId(d.getId().getValue()).setKey(buildKey(d.getKey())).build()).collect(Collectors.toList()))
       .build()
       .toByteArray();

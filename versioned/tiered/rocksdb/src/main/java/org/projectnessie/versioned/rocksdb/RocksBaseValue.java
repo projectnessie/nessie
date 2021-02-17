@@ -18,7 +18,6 @@ package org.projectnessie.versioned.rocksdb;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
@@ -63,41 +62,41 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
 
   /**
    * Converts a Stream of Ids into a List Entity.
-   * @param idStream the stream of Id to convert.
+   * @param idList the stream of Id to convert.
    * @return the List Entity.
    */
-  Entity toEntity(Stream<Id> idStream) {
-    return Entity.ofList(idStream.map(Id::toEntity).collect(Collectors.toList()));
+  Entity toEntity(List<Id> idList) {
+    return Entity.ofList(idList.stream().map(Id::toEntity).collect(Collectors.toList()));
   }
 
   /**
    * Retrieves an Id at 'position' in a Stream of Ids as an Entity.
-   * @param idStream the stream of Id to convert.
+   * @param idList the stream of Id to convert.
    * @param position the element in the Stream to retrieve.
    * @return the List Entity.
    */
-  Entity toEntity(Stream<Id> idStream, int position) {
-    return idStream.skip(position).findFirst().orElseThrow(NoSuchElementException::new).toEntity();
+  Entity toEntity(List<Id> idList, int position) {
+    return idList.stream().skip(position).findFirst().orElseThrow(NoSuchElementException::new).toEntity();
   }
 
   /**
-   * Evaluates if the stream of Id meets the Condition Function.
+   * Evaluates if the idList of Id meets the Condition Function.
    * @param function the function of the ConditionExpression to evaluate.
-   * @param stream The Ids to evaluate against the function
+   * @param idList The Ids to evaluate against the function
    * @return true if the condition is met
    */
-  boolean evaluateStream(Function function, Stream<Id> stream) {
-    // EQUALS will either compare a specified position or the whole stream as a List.
+  boolean evaluate(Function function, List<Id> idList) {
+    // EQUALS will either compare a specified position or the whole idList as a List.
     if (function.getOperator().equals(Function.Operator.EQUALS)) {
       final ExpressionPath.PathSegment pathSegment = function.getPath().getRoot().getChild().orElse(null);
       if (pathSegment == null) {
-        return toEntity(stream).equals(function.getValue());
+        return toEntity(idList).equals(function.getValue());
       } else if (pathSegment.isPosition()) { // compare individual element of list
         final int position = pathSegment.asPosition().getPosition();
-        return toEntity(stream, position).equals(function.getValue());
+        return toEntity(idList, position).equals(function.getValue());
       }
     } else if (function.getOperator().equals(Function.Operator.SIZE)) {
-      return (stream.count() == function.getValue().getNumber());
+      return (idList.size() == function.getValue().getNumber());
     }
 
     return false;
@@ -158,8 +157,8 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
     }
   }
 
-  static List<ByteString> buildIds(Stream<Id> ids) {
-    return ids.map(Id::getValue).collect(Collectors.toList());
+  static List<ByteString> buildIds(List<Id> ids) {
+    return ids.stream().map(Id::getValue).collect(Collectors.toList());
   }
 
   /**

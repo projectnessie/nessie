@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,13 +45,13 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
   static final String DISTANCE_FROM_CHECKPOINT = "distanceFromCheckpoint";
 
   private Id metadataId; // commitMetadataId
-  private Stream<Id> parentList; // ancestors
-  private Stream<Id> tree; // children
+  private List<Id> parentList; // ancestors
+  private List<Id> tree; // children
 
-  private Stream<Key.Mutation> keyMutations; // keylist
+  private List<Key.Mutation> keyMutations; // keylist
   private Id checkpointId; // checkpointId
   private int distanceFromCheckpoint; // distanceFromCheckpoint
-  private Stream<Id> fragmentIds; // completeKeyList
+  private List<Id> fragmentIds; // completeKeyList
 
   RocksL1() {
     super();
@@ -64,19 +65,19 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
 
   @Override
   public L1 ancestors(Stream<Id> ids) {
-    this.parentList = ids;
+    this.parentList = ids.collect(Collectors.toList());
     return this;
   }
 
   @Override
   public L1 children(Stream<Id> ids) {
-    this.tree = ids;
+    this.tree = ids.collect(Collectors.toList());
     return this;
   }
 
   @Override
   public L1 keyMutations(Stream<Key.Mutation> keyMutations) {
-    this.keyMutations = keyMutations;
+    this.keyMutations = keyMutations.collect(Collectors.toList());
     return this;
   }
 
@@ -89,7 +90,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
 
   @Override
   public L1 completeKeyList(Stream<Id> fragmentIds) {
-    this.fragmentIds = fragmentIds;
+    this.fragmentIds = fragmentIds.collect(Collectors.toList());
     return this;
   }
 
@@ -104,9 +105,9 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
         return (function.isRootNameSegmentChildlessAndEquals()
             && metadataId.toEntity().equals(function.getValue()));
       case ANCESTORS:
-        return evaluateStream(function, parentList);
+        return evaluate(function, parentList);
       case CHILDREN:
-        return evaluateStream(function, tree);
+        return evaluate(function, tree);
       case KEY_LIST:
         return false;
       case INCREMENTAL_KEY_LIST:
@@ -123,7 +124,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
           return false;
         }
       case COMPLETE_KEY_LIST:
-        return evaluateStream(function, fragmentIds);
+        return evaluate(function, fragmentIds);
       default:
         // Invalid Condition Function.
         return false;
@@ -142,7 +143,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
         .setMetadataId(metadataId.getValue())
         .addAllAncestors(buildIds(parentList))
         .addAllTree(buildIds(tree))
-        .addAllKeyMutations(keyMutations.map(RocksBaseValue::buildKeyMutation).collect(Collectors.toList()));
+        .addAllKeyMutations(keyMutations.stream().map(RocksBaseValue::buildKeyMutation).collect(Collectors.toList()));
 
     if (null == fragmentIds) {
       checkPresent(checkpointId, CHECKPOINT_ID);
