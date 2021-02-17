@@ -81,7 +81,7 @@ public class ApplicationConfig {
 
     @ConfigProperty(name = "send-stacktrace-to-client", defaultValue = "main")
     @Override
-    boolean shouldSendstackTraceToAPIClient();
+    boolean sendStacktraceToClient();
 
   }
 

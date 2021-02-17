@@ -19,6 +19,6 @@ public interface ServerConfig {
 
   String getDefaultBranch();
 
-  boolean shouldSendstackTraceToAPIClient();
+  boolean sendStacktraceToClient();
 
 }
