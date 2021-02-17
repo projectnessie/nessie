@@ -21,7 +21,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.projectnessie.server.config.converters.BackendType;
 import org.projectnessie.server.config.converters.JGitStoreType;
 import org.projectnessie.server.config.converters.VersionStoreType;
 import org.projectnessie.services.config.ServerConfig;
@@ -35,7 +34,6 @@ import io.quarkus.arc.config.ConfigProperties;
 @Singleton
 public class ApplicationConfig {
 
-  private final BackendsConfig backendsConfig;
   private final VersionStoreConfig versionStoreConfig;
   private final VersionStoreJGitConfig versionStoreJGitConfig;
   private final VersionStoreDynamoConfig versionStoreDynamoConfig;
@@ -44,20 +42,13 @@ public class ApplicationConfig {
    * inject all configs form config providers.
    */
   @Inject
-  public ApplicationConfig(BackendsConfig backendsConfig,
-                           VersionStoreConfig versionStoreConfig,
+  public ApplicationConfig(VersionStoreConfig versionStoreConfig,
                            VersionStoreJGitConfig versionStoreJGitConfig,
                            VersionStoreDynamoConfig versionStoreDynamoConfig) {
 
-    this.backendsConfig = backendsConfig;
     this.versionStoreConfig = versionStoreConfig;
     this.versionStoreJGitConfig = versionStoreJGitConfig;
     this.versionStoreDynamoConfig = versionStoreDynamoConfig;
-  }
-
-
-  public BackendsConfig getBackendsConfig() {
-    return backendsConfig;
   }
 
   public VersionStoreConfig getVersionStoreConfig() {
@@ -83,13 +74,6 @@ public class ApplicationConfig {
     @Override
     boolean sendStacktraceToClient();
 
-  }
-
-  @ConfigProperties(prefix = "nessie.backends")
-  public interface BackendsConfig {
-
-    @ConfigProperty(name = "type", defaultValue = "INMEMORY")
-    BackendType getBackendType();
   }
 
   @ConfigProperties(prefix = "nessie.version.store")
