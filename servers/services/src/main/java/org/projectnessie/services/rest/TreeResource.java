@@ -164,7 +164,8 @@ public class TreeResource extends BaseResource implements TreeApi {
       throws NessieNotFoundException, NessieConflictException {
     try {
       List<Hash> transplants = transplant.getHashesToTransplant().stream().map(Hash::of).collect(Collectors.toList());
-      getStore().transplant(BranchName.of(branchName), toHash(hash, true), transplants);
+      String values = transplants.stream().map(Hash::asString).collect(Collectors.joining(", "));
+      getStore().transplant(BranchName.of(branchName), toHash(hash, true), transplants, x -> this.update(x, "transplant", values));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
           String.format("Unable to find the requested branch we're transplanting to of [%s].", branchName), e);
@@ -178,7 +179,8 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Override
   public void mergeRefIntoBranch(String branchName, String hash, Merge merge) throws NessieNotFoundException, NessieConflictException {
     try {
-      getStore().merge(toHash(merge.getFromHash(), true).get(), BranchName.of(branchName), toHash(hash, true));
+      getStore().merge(toHash(merge.getFromHash(), true).get(), BranchName.of(branchName), toHash(hash, true),
+          x -> this.update(x, "merge", merge.getFromHash()));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException("At least one of the references provided does not exist.", e);
     } catch (ReferenceConflictException e) {

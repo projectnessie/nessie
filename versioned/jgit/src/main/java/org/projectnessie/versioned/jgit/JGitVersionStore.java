@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -263,7 +264,8 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
   @Override
   public void transplant(BranchName targetBranch, Optional<Hash> expectedHash,
-                         List<Hash> sequenceToTransplant) throws ReferenceNotFoundException, ReferenceConflictException {
+        List<Hash> sequenceToTransplant, UnaryOperator<METADATA> metadataUpdate)
+      throws ReferenceNotFoundException, ReferenceConflictException {
     testLinearTransplantList(sequenceToTransplant);
     try {
       ObjectId targetTreeId = repository.resolve(targetBranch.getName() + "^{tree}");
@@ -293,7 +295,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         commitTree(targetBranch,
                    transplantTree,
                    Optional.of(currentCommitId).map(ObjectId::name).map(Hash::of),
-                   getCommit(hash),
+                   metadataUpdate.apply(getCommit(hash)),
                    false,
                    false);
         currentCommitId = repository.resolve(targetBranch.getName() + "^{commit}");
@@ -305,7 +307,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash, UnaryOperator<METADATA> metadataUpdate)
       throws ReferenceNotFoundException, ReferenceConflictException {
     try {
       org.eclipse.jgit.lib.Ref ref = repository.findRef(Constants.R_HEADS + toBranch.getName());
@@ -340,7 +342,8 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
           }
         }
         List<RevCommit> pickList = calculatePickList(newCommit, headCommit);
-        transplant(toBranch, expectedHash, pickList.stream().map(RevCommit::name).map(Hash::of).collect(Collectors.toList()));
+        List<Hash> commitList = pickList.stream().map(RevCommit::name).map(Hash::of).collect(Collectors.toList());
+        transplant(toBranch, expectedHash, commitList, metadataUpdate);
       }
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);

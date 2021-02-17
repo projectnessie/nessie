@@ -18,6 +18,7 @@ package org.projectnessie.versioned;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
@@ -86,12 +87,13 @@ public interface VersionStore<VALUE, METADATA> {
    * @param targetBranch         The branch we're transplanting to
    * @param referenceHash        The hash to use as a reference for conflict detection. If not present, do not perform conflict detection
    * @param sequenceToTransplant The sequence of hashes to transplant.
+   * @param metadataUpdate Function to perform any modifications to metadata as part of transplant operation
    * @throws ReferenceConflictException if {@code referenceHash} values do not match the stored values for {@code branch}
    * @throws ReferenceNotFoundException if {@code branch} or if any of the hashes from {@code sequenceToTransplant} is not present in the
    *     store.
    */
-  void transplant(BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant)
-      throws ReferenceNotFoundException, ReferenceConflictException;
+  void transplant(BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant,
+      UnaryOperator<METADATA> metadataUpdate) throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
    * Merge items from an existing hash into the requested branch. The merge is always a rebase + fast-forward merge and
@@ -110,10 +112,11 @@ public interface VersionStore<VALUE, METADATA> {
    * @param fromHash     The hash we are using to get additional commits
    * @param toBranch     The branch that we are merging into
    * @param expectedHash The current head of the branch to validate before updating (optional).
+   * @param metadataUpdate Function to perform any modifications to metadata as part of merge operation
    * @throws ReferenceConflictException if {@code expectedBranchHash} doesn't match the stored hash for {@code toBranch}
    * @throws ReferenceNotFoundException if {@code toBranch} or {@code fromHash} is not present in the store.
    */
-  void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash, UnaryOperator<METADATA> metadataUpdate)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**

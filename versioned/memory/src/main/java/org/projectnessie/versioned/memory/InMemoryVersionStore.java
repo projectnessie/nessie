@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -201,8 +202,8 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   }
 
   @Override
-  public void transplant(BranchName targetBranch, Optional<Hash> referenceHash,
-      List<Hash> sequenceToTransplant) throws ReferenceNotFoundException, ReferenceConflictException {
+  public void transplant(BranchName targetBranch, Optional<Hash> referenceHash, List<Hash> sequenceToTransplant,
+      UnaryOperator<MetadataT> metadataUpdate) throws ReferenceNotFoundException, ReferenceConflictException {
     requireNonNull(targetBranch);
     requireNonNull(sequenceToTransplant);
 
@@ -232,7 +233,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
       commit.getOperations().forEach(op -> keys.add(op.getKey()));
 
       Commit<ValueT, MetadataT> newCommit = Commit.of(valueSerializer, metadataSerializer,
-          newAncestor, commit.getMetadata(), commit.getOperations());
+          newAncestor, metadataUpdate.apply(commit.getMetadata()), commit.getOperations());
       toStore.add(newCommit);
 
       ancestor = commit.getHash();
@@ -279,7 +280,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
+  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash, UnaryOperator<MetadataT> metadataUpdate)
       throws ReferenceNotFoundException, ReferenceConflictException {
     requireNonNull(fromHash);
     requireNonNull(toBranch);
@@ -317,7 +318,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     Hash newAncestor = currentHash;
     for (final Commit<ValueT, MetadataT> commit : Lists.reverse(toMerge)) {
       final Commit<ValueT, MetadataT> newCommit = Commit.of(valueSerializer, metadataSerializer,
-          newAncestor, commit.getMetadata(), commit.getOperations());
+          newAncestor, metadataUpdate.apply(commit.getMetadata()), commit.getOperations());
       toStore.add(newCommit);
       newAncestor = newCommit.getHash();
     }

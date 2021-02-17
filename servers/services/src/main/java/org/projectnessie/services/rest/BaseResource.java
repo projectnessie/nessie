@@ -90,6 +90,12 @@ abstract class BaseResource {
     }
   }
 
+  protected CommitMeta update(CommitMeta commitMeta, String key, String value) {
+    String committer = principal == null ? commitMeta.getCommiter() : principal.getName();
+    long commitTime = System.currentTimeMillis();
+    return commitMeta.toBuilder().commiter(committer).commitTime(commitTime).putProperties(key, value).build();
+  }
+
   private static CommitMeta meta(CommitMeta commitMeta, Principal principal) {
     String committer = principal == null ? commitMeta.getCommiter() : principal.getName();
     long commitTime = System.currentTimeMillis();

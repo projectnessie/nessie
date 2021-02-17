@@ -17,6 +17,7 @@ package org.projectnessie.versioned.impl;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.BranchName;
@@ -81,15 +82,15 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
 
   @Override
   public void transplant(BranchName targetBranch, Optional<Hash> expectedHash,
-      List<Hash> sequenceToTransplant)
+      List<Hash> sequenceToTransplant, UnaryOperator<String> metadataUpdate)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    impl.transplant(targetBranch, expectedHash, sequenceToTransplant);
+    impl.transplant(targetBranch, expectedHash, sequenceToTransplant, metadataUpdate);
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
+  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash, UnaryOperator<String> metadataUpdate)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    impl.merge(fromHash, toBranch, expectedHash);
+    impl.merge(fromHash, toBranch, expectedHash, metadataUpdate);
   }
 
   @Override

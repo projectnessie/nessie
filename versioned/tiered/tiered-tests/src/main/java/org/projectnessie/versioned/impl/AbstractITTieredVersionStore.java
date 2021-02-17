@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -105,7 +106,7 @@ public abstract class AbstractITTieredVersionStore {
     versionStore().commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"),
         Put.of(Key.of("no"), "world")));
-    versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1)));
+    versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1)), UnaryOperator.identity());
   }
 
   @Test
@@ -121,12 +122,38 @@ public abstract class AbstractITTieredVersionStore {
     versionStore().commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world3"),
         Put.of(Key.of("no"), "world4")));
-    versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1)));
+    versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1)), UnaryOperator.identity());
 
     assertEquals("world1", versionStore().getValue(branch1, Key.of("foo")));
     assertEquals("world2", versionStore().getValue(branch1, Key.of("bar")));
     assertEquals("world3", versionStore().getValue(branch1, Key.of("hi")));
     assertEquals("world4", versionStore().getValue(branch1, Key.of("no")));
+
+  }
+
+  @Test
+  void mergeUpdateMetadata() throws Exception {
+    BranchName branch1 = BranchName.of("b1");
+    BranchName branch2 = BranchName.of("b2");
+    versionStore().create(branch1, Optional.empty());
+    versionStore().commit(branch1, Optional.empty(), "metadata1", ImmutableList.of(
+        Put.of(Key.of("foo"), "world1"),
+        Put.of(Key.of("bar"), "world2")));
+
+    versionStore().create(branch2, Optional.empty());
+    versionStore().commit(branch2, Optional.empty(), "metadata2", ImmutableList.of(
+        Put.of(Key.of("hi"), "world3"),
+        Put.of(Key.of("no"), "world4")));
+    UnaryOperator<String> transform = x -> x.replace("a", "A").replace("2", "4");
+    versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1)), transform);
+
+    assertEquals("world1", versionStore().getValue(branch1, Key.of("foo")));
+    assertEquals("world2", versionStore().getValue(branch1, Key.of("bar")));
+    assertEquals("world3", versionStore().getValue(branch1, Key.of("hi")));
+    assertEquals("world4", versionStore().getValue(branch1, Key.of("no")));
+    List<String> messages = versionStore().getCommits(branch1).map(WithHash::getValue).collect(Collectors.toList());
+    assertEquals("metadata1", messages.get(1));
+    assertEquals("metAdAtA4", messages.get(0));
 
   }
 
@@ -141,7 +168,8 @@ public abstract class AbstractITTieredVersionStore {
     versionStore().commit(branch2, Optional.empty(), "metadata2", ImmutableList.of(Put.of(Key.of("conflictKey"), "world2")));
 
     ReferenceConflictException ex = assertThrows(ReferenceConflictException.class, () ->
-        versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1))));
+        versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1)),
+          UnaryOperator.identity()));
     assertThat(ex.getMessage(), Matchers.containsString("conflictKey"));
   }
 

@@ -27,6 +27,7 @@ import java.util.Spliterators.AbstractSpliterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -67,6 +68,7 @@ import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.LoadStep;
 import org.projectnessie.versioned.store.NotFoundException;
+import org.projectnessie.versioned.store.SaveOp;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 import org.slf4j.Logger;
@@ -482,8 +484,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant)
-      throws ReferenceNotFoundException, ReferenceConflictException {
+  public void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant,
+         UnaryOperator<METADATA> metadataUpdate) throws ReferenceNotFoundException, ReferenceConflictException {
 
     Id endTarget = Id.of(sequenceToTransplant.get(0));
     internalTransplant(sequenceToTransplant.get(sequenceToTransplant.size() - 1), targetBranch, currentBranchHash,
@@ -498,7 +500,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           }
 
           return l1s;
-        });
+        }, metadataUpdate);
   }
 
   private static Stream<InternalL1> takeUntilNext(Stream<InternalL1> stream, Id endTarget) {
@@ -520,13 +522,13 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
+  public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash, UnaryOperator<METADATA> metadataUpdate)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     internalTransplant(fromHash, toBranch, expectedBranchHash, false, (from, commonParent) -> {
       return Lists.reverse(new HistoryRetriever(store, from, commonParent, true, false, true)
           .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
-    });
+    }, metadataUpdate);
   }
 
   private interface HistoryHelper {
@@ -538,7 +540,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       BranchName toBranch,
       Optional<Hash> expectedBranchHash,
       boolean cherryPick,
-      HistoryHelper historyHelper)
+      HistoryHelper historyHelper,
+      UnaryOperator<METADATA> metadataUpdate)
       throws ReferenceNotFoundException, ReferenceConflictException {
 
     final InternalRefId branchId = InternalRefId.ofBranch(toBranch.getName());
@@ -659,18 +662,24 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     // Now that we have all the items loaded, let's apply the changeset to both the sequential DiffManagers and the composite PartialTree.
     // We generate the intention log here with clean PartialTrees.
     List<Commit> intentions = new ArrayList<>();
+    List<InternalCommitMetadata> newMetadataIds = creators.stream().map(pt -> pt.metadataId).map(id -> updateMetadata(id, metadataUpdate))
+        .collect(Collectors.toList());
+    final int[] counter = new int[]{0};
     creators.forEach(pt -> {
       PartialTree<DATA> clean = headToRebaseOn.cleanClone();
       pt.apply(headToRebaseOn);
       pt.apply(clean);
-      intentions.add(clean.getCommitOp(pt.metadataId, Collections.emptyList(), false, true).getCommitIntention());
+      intentions.add(
+          clean.getCommitOp(newMetadataIds.get(counter[0]++).getId(), Collections.emptyList(), false, true).getCommitIntention()
+      );
     });
 
     // Save L2s and L3s. Note we don't need to do any value saves here as we know that the values are already stored.
+    Stream<SaveOp<?>> metadataSaveOps = newMetadataIds.stream().map(EntityType.COMMIT_METADATA::createSaveOpForEntity);
     store.save(
         Stream.concat(
             creators.stream().flatMap(c -> c.tree.getMostSaveOps()),
-            headToRebaseOn.getMostSaveOps())
+            Stream.concat(headToRebaseOn.getMostSaveOps(), metadataSaveOps))
         .distinct()
         .collect(Collectors.toList()));
 
@@ -690,6 +699,13 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     if (!updated) {
       throw new ReferenceConflictException("Unable to complete commit.");
     }
+  }
+
+  private InternalCommitMetadata updateMetadata(Id metadataId, UnaryOperator<METADATA> metadataUpdate) {
+    METADATA oldMetadata = metadataSerializer.fromBytes(EntityType.COMMIT_METADATA.loadSingle(store, metadataId).getBytes());
+    METADATA newMetadata = metadataUpdate.apply(oldMetadata);
+    InternalCommitMetadata imd = InternalCommitMetadata.of(metadataSerializer.toBytes(newMetadata));
+    return imd;
   }
 
   /**
