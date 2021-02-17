@@ -32,6 +32,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringWorker;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.store.Store;
 
@@ -121,7 +122,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithEntityType<Key>> getKeys(Ref ref) throws ReferenceNotFoundException {
     return impl.getKeys(ref);
   }
 

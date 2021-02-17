@@ -51,6 +51,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.impl.InconsistentValue.InconsistentValueException;
 import org.projectnessie.versioned.store.Id;
@@ -155,7 +156,7 @@ public abstract class AbstractITTieredVersionStore {
         Put.of(Key.of("no"), "world"),
         Put.of(Key.of("mad mad"), "world")));
     assertEquals(0, EntityType.L2.loadSingle(store(), InternalL2.EMPTY_ID).size());
-    assertThat(versionStore().getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
+    assertThat(versionStore().getKeys(branch).map(WithEntityType::getEntity).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
         Matchers.containsInAnyOrder("hi", "no", "mad mad"));
   }
 
@@ -182,7 +183,7 @@ public abstract class AbstractITTieredVersionStore {
       current = versionStore().toHash(branch);
     }
 
-    List<Key> keysFromStore = versionStore().getKeys(branch).collect(Collectors.toList());
+    List<Key> keysFromStore = versionStore().getKeys(branch).map(WithEntityType::getEntity).collect(Collectors.toList());
 
     // ensure that our total key size is greater than a single dynamo page.
     assertThat(keysFromStore.size() * longName.length, Matchers.greaterThan(400000));

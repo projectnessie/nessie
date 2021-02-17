@@ -126,8 +126,11 @@ public interface TreeApi {
       @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
       @Parameter(description = "name of ref to fetch from")
       @PathParam("ref")
-          String refName)
-          throws NessieNotFoundException;
+          String refName,
+      @Parameter(description = "list of value types to return. Return all if empty")
+      @QueryParam("types")
+          List<String> types)
+      throws NessieNotFoundException;
 
   /**
    * commit log for a ref.

@@ -50,6 +50,7 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.impl.DiffFinder.KeyDiff;
 import org.projectnessie.versioned.impl.HistoryRetriever.HistoryItem;
@@ -435,7 +436,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithEntityType<Key>> getKeys(Ref ref) throws ReferenceNotFoundException {
     // naive implementation.
     InternalRefId refId = InternalRefId.of(ref);
     final InternalL1 start;
@@ -457,7 +458,15 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         throw new UnsupportedOperationException();
     }
 
-    return start.getKeys(store).map(InternalKey::toKey);
+    //todo naive implementation, have to push filter to Store
+    return start.getKeys(store).map(InternalKey::toKey).map(k -> {
+      try {
+        String type = getValue(ref, k).getClass().getSimpleName();
+        return WithEntityType.of(type, k);
+      } catch (ReferenceNotFoundException e) {
+        return WithEntityType.of("UNKNOWN", k);
+      }
+    });
   }
 
   @Override

@@ -22,6 +22,7 @@ import javax.validation.constraints.NotNull;
 
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.http.HttpClient;
+import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -136,11 +137,10 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(@NotNull String refName) throws NessieNotFoundException {
-    return client.newRequest().path("trees/tree/{ref}/entries")
-                 .resolveTemplate("ref", refName)
-                 .get()
-                 .readEntity(EntriesResponse.class);
+  public EntriesResponse getEntries(@NotNull String refName, @NotNull List<String> valueTypes) throws NessieNotFoundException {
+    HttpRequest builder = client.newRequest().path("trees/tree/{ref}/entries").resolveTemplate("ref", refName);
+    valueTypes.forEach(x -> builder.queryParam("types", x));
+    return builder.get().readEntity(EntriesResponse.class);
   }
 
   @Override

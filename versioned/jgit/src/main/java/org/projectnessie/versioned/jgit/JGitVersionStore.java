@@ -79,6 +79,7 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -490,15 +491,17 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) {
+  public Stream<WithEntityType<Key>> getKeys(Ref ref) {
     try {
-      List<Key> tables = new ArrayList<>();
+      List<WithEntityType<Key>> tables = new ArrayList<>();
       try (TreeWalk treeWalk = new TreeWalk(repository)) {
         ObjectId treeId = repository.resolve(refName(ref) + "^{tree}");
         treeWalk.addTree(treeId);
         treeWalk.setRecursive(true);
         while (treeWalk.next()) {
-          tables.add(keyFromUrlString(treeWalk.getPathString()));
+          byte[] bytes = getTable(treeWalk, repository);
+          String valueType = storeWorker.getValueWorker().fromBytes(ByteString.copyFrom(bytes)).getClass().getSimpleName();
+          tables.add(WithEntityType.of(valueType, keyFromUrlString(treeWalk.getPathString())));
         }
       }
       return tables.stream();

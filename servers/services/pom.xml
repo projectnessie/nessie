@@ -60,5 +60,11 @@
       <groupId>jakarta.enterprise</groupId>
       <artifactId>jakarta.enterprise.cdi-api</artifactId>
     </dependency>
+      <dependency>
+          <groupId>org.datanucleus</groupId>
+          <artifactId>datanucleus-core</artifactId>
+          <version>4.1.17</version>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
 </project>

@@ -19,6 +19,7 @@ package org.projectnessie.services.rest;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -188,15 +189,41 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(String refName) throws NessieNotFoundException {
+  public EntriesResponse getEntries(String refName, List<String> valueTypes) throws NessieNotFoundException {
     final Hash hash = getHashOrThrow(refName);
+
+    final Set<Type> valueTypeSet = valueTypes.stream().map(Type::valueOf).collect(Collectors.toSet());
     try {
       List<EntriesResponse.Entry> entries = getStore().getKeys(hash)
-          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key)).type(Type.UNKNOWN).build())
+          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key.getEntity())).type(toType(key.getEntityType())).build())
+          .filter(x -> valueTypeSet.isEmpty() || valueTypeSet.contains(x.getType()))
           .collect(ImmutableList.toImmutableList());
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("Unable to find the reference [%s].", refName), e);
+    }
+  }
+
+
+  private static Type toType(String valueType) {
+    switch (valueType) {
+      case "IcebergTable":
+      case "ImmutableIcebergTable":
+        return Type.ICEBERG_TABLE;
+      case "DeltaLakeTable":
+      case "ImmutableDeltaLakeTable":
+        return Type.DELTA_LAKE_TABLE;
+      case "SqlView":
+      case "ImmutableSqlView":
+        return Type.VIEW;
+      case "HiveTable":
+      case "ImmutableHiveTable":
+        return Type.HIVE_TABLE;
+      case "HiveDatabase":
+      case "ImmutableHiveDatabase":
+        return Type.HIVE_DATABASE;
+      default:
+        return Type.UNKNOWN;
     }
   }
 

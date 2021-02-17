@@ -52,6 +52,7 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 
 import com.google.common.collect.ImmutableList;
@@ -244,17 +245,17 @@ public abstract class AbstractITVersionStore {
         ));
 
     assertThat(store().getKeys(branch).collect(Collectors.toList()), containsInAnyOrder(
+        WithEntityType.of("String", Key.of("t1")),
+        WithEntityType.of("String", Key.of("t2")),
+        WithEntityType.of("String", Key.of("t4"))
+        ));
+
+    assertThat(store().getKeys(secondCommit).map(WithEntityType::getEntity).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
-        Key.of("t2"),
         Key.of("t4")
         ));
 
-    assertThat(store().getKeys(secondCommit).collect(Collectors.toList()), containsInAnyOrder(
-        Key.of("t1"),
-        Key.of("t4")
-        ));
-
-    assertThat(store().getKeys(initialCommit).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(initialCommit).map(WithEntityType::getEntity).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t3")
@@ -338,7 +339,7 @@ public abstract class AbstractITVersionStore {
         WithHash.of(initialCommit, "Initial Commit")
         ));
 
-    assertThat(store().getKeys(branch).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(branch).map(WithEntityType::getEntity).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t3")

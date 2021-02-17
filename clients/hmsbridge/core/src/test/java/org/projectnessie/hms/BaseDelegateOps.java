@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ public abstract class BaseDelegateOps extends BaseHiveOps {
     assertTrue(HiveTable.class.isAssignableFrom(tbl.getClass()));
 
     // ensure only one table was created in Nessie.
-    assertEquals(2, client.getTreeApi().getEntries("main").getEntries().size());
+    assertEquals(2, client.getTreeApi().getEntries("main", Collections.emptyList()).getEntries().size());
   }
 
 }

@@ -51,6 +51,7 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -424,7 +425,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithEntityType<Key>> getKeys(Ref ref) throws ReferenceNotFoundException {
     final Hash hash = toHash(ref);
 
     final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
@@ -441,7 +442,12 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
           return !deleted.contains(key);
         })
         // extract the keys
-        .map(Operation::getKey)
+        .map(operation -> WithEntityType.of(
+            (operation instanceof Put) ? ((Put<ValueT>) operation).getValue().getClass().getSimpleName() : "UNKNOWN", operation.getKey())
+        )
+        .collect(Collectors.toMap(WithEntityType::getEntity, WithEntityType::getEntityType, (a, b) -> b))
+        .entrySet().stream()
+        .map(x -> WithEntityType.of(x.getValue(), x.getKey()))
         // filter keys which have been seen already
         .distinct();
   }
