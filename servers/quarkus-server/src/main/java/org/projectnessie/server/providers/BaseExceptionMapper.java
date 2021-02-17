@@ -61,7 +61,7 @@ abstract class BaseExceptionMapper {
         reason,
         message,
         e,
-        serverConfig.shouldSendstackTraceToAPIClient(),
+        serverConfig.sendStacktraceToClient(),
         h -> {});
   }
 
