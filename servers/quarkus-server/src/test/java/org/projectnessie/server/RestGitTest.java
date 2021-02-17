@@ -19,6 +19,7 @@ package org.projectnessie.server;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.projectnessie.server.TestUtils.meta;
 
 import java.util.Arrays;
 
@@ -39,6 +40,8 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 
+import com.google.common.base.Splitter;
+
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.RestAssured;
@@ -48,6 +51,7 @@ import io.restassured.specification.RequestSpecification;
 
 @QuarkusTest
 public class RestGitTest {
+  private static final Splitter DOT = Splitter.on(".");
 
   @BeforeEach
   public void enableLogging() {
@@ -84,10 +88,10 @@ public class RestGitTest {
                                 .build();
 
     rest()
-      .body(table)
-      .queryParam("branch", newReference.getName()).queryParam("hash", newReference.getHash())
-      .post("contents/xxx.test")
-        .then().statusCode(204);
+      .body(ImmutableOperations.builder().addOperations(Put.of(ContentsKey.of("xxx", "test"), table)).commitMeta(meta("message")).build())
+      .queryParam("expectedHash", newReference.getHash())
+      .post(String.format("trees/branch/%s/commit", newReference.getName()))
+      .then().statusCode(204);
 
     Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
@@ -105,6 +109,7 @@ public class RestGitTest {
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
     Operations contents = ImmutableOperations.builder()
         .addOperations(updates)
+        .commitMeta(meta("test"))
         .build();
 
     rest().body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
@@ -118,9 +123,12 @@ public class RestGitTest {
         .build();
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
-    rest().body(table)
-           .queryParam("branch", b2.getName()).queryParam("hash", b2.getHash())
-           .post("contents/xxx.test").then().statusCode(204);
+    rest()
+      .body(ImmutableOperations.builder().addOperations(Put.of(ContentsKey.of("xxx", "test"), table)).commitMeta(meta("message")).build())
+      .queryParam("expectedHash", b2.getHash())
+      .post(String.format("trees/branch/%s/commit", b2.getName()))
+      .then().statusCode(204);
+
     Contents returned = rest()
         .queryParam("ref", "test")
         .get("contents/xxx.test").then().statusCode(200).extract().as(Contents.class);
@@ -153,10 +161,12 @@ public class RestGitTest {
   }
 
   private void commit(Branch b, String path, String metadataUrl) {
+    Put op = Put.of(ContentsKey.of(DOT.splitToList(path)), IcebergTable.of(metadataUrl));
+    ImmutableOperations ops = ImmutableOperations.builder().addOperations(op).commitMeta(meta("xxx")).build();
     rest()
-      .body(IcebergTable.of(metadataUrl))
-      .queryParam("branch", b.getName()).queryParam("hash", b.getHash())
-      .post("contents/xxx.test")
+      .body(ops)
+      .queryParam("expectedHash", b.getHash())
+      .post(String.format("trees/branch/%s/commit", b.getName()))
       .then().statusCode(204);
   }
 

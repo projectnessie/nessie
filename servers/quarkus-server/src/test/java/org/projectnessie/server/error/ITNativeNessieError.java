@@ -20,12 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.api.ContentsApi;
+import org.projectnessie.client.ClientContentsApi;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.NessieClient.AuthType;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.server.TestUtils;
 
 import io.quarkus.test.junit.NativeImageTest;
 
@@ -37,7 +38,7 @@ import io.quarkus.test.junit.NativeImageTest;
 @NativeImageTest
 public class ITNativeNessieError {
 
-  private ContentsApi contents;
+  private ClientContentsApi contents;
 
   @BeforeEach
   void init() {
@@ -54,7 +55,7 @@ public class ITNativeNessieError {
         "Bad Request (HTTP/400): setContents.hash: must not be null",
         assertThrows(
             NessieBadRequestException.class,
-            () -> contents.setContents(k, "branchName", null, "message", t))
+            () -> contents.setContents(k, "branchName", null, TestUtils.meta("message"), t))
               .getMessage());
   }
 

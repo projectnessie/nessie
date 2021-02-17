@@ -20,7 +20,6 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-import org.projectnessie.api.NessieHeaders;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
@@ -146,24 +145,10 @@ class ClientTreeApi implements TreeApi {
   public void commitMultipleOperations(
       String branch,
       @NotNull String expectedHash,
-      String message,
-      String author,
-      String authorEmail,
-      String authorDate,
-      String signedOff,
-      String signedOffEmail,
-      String signedOffDate,
       @NotNull Operations operations) throws NessieNotFoundException, NessieConflictException {
     client.newRequest().path("trees/branch/{branchName}/commit")
           .resolveTemplate("branchName", branch)
           .queryParam("expectedHash", expectedHash)
-          .header(NessieHeaders.MESSAGE_HEADER_NAME, message)
-          .header(NessieHeaders.AUTHOR_HEADER_NAME, author)
-          .header(NessieHeaders.AUTHOR_EMAIL_HEADER_NAME, authorEmail)
-          .header(NessieHeaders.AUTHOR_DATE_HEADER_NAME, authorDate)
-          .header(NessieHeaders.SIGNED_OFF_HEADER_NAME, signedOff)
-          .header(NessieHeaders.SIGNED_OFF_EMAIL_HEADER_NAME, signedOffEmail)
-          .header(NessieHeaders.SIGNED_OFF_DATE_HEADER_NAME, signedOffDate)
           .post(operations);
   }
 }

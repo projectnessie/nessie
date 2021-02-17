@@ -72,15 +72,15 @@ abstract class BaseResource {
     return store;
   }
 
-  protected void doOps(String branch, String hash, ImmutableCommitMeta.Builder builder,
+  protected void doOps(String branch, String hash, CommitMeta commitMeta,
                        List<org.projectnessie.versioned.Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
       store.commit(
-        BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
-        Optional.ofNullable(hash).map(Hash::of),
-        meta(builder, principal),
-        operations
+          BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
+          Optional.ofNullable(hash).map(Hash::of),
+          meta(commitMeta, principal),
+          operations
       );
     } catch (IllegalArgumentException e) {
       throw new NessieNotFoundException("Invalid hash provided.", e);
@@ -91,15 +91,14 @@ abstract class BaseResource {
     }
   }
 
-  protected void doOps(String branch, String hash, String message, List<org.projectnessie.versioned.Operation<Contents>> operations)
-      throws NessieConflictException, NessieNotFoundException {
-    doOps(branch, hash, ImmutableCommitMeta.builder().message(message == null ? "" : message), operations);
-  }
-
-  private static CommitMeta meta(ImmutableCommitMeta.Builder builder, Principal principal) {
-    return builder
-      .commiter(principal == null ? "" : principal.getName())
-      .commitTime(System.currentTimeMillis())
+  private static CommitMeta meta(CommitMeta commitMeta, Principal principal) {
+    String committer = principal == null ? commitMeta.getCommiter() : principal.getName();
+    long commitTime = System.currentTimeMillis();
+    return commitMeta.toBuilder()
+      .commiter(committer)
+      .commitTime(commitTime)
+      .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
+      .authorTime(commitMeta.getAuthorTime() == null || commitMeta.getAuthorTime() < 0L ? commitTime : commitMeta.getAuthorTime())
       .build();
   }
 }

@@ -28,6 +28,7 @@ import org.projectnessie.client.rest.NessieServiceException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -177,7 +178,8 @@ public class NessieSampler extends AbstractJavaSamplerClient {
           }
           nessieClient().getContentsApi().setContents(ContentsKey.of("name", "space", table),
               commitId.get().getName(), commitId.get().getHash(),
-              "test", IcebergTable.of("path_on_disk_" + table));
+              ImmutableCommitMeta.builder().message("test commit").commiter("test").commitTime(System.currentTimeMillis()).build(),
+              IcebergTable.of("path_on_disk_" + table));
           //TODO: this test shouldn't be doing a get branch operation since that isn't required to complete a commit.
           return (Branch) nessieClient().getTreeApi().getReferenceByName(branch);
         }, method);

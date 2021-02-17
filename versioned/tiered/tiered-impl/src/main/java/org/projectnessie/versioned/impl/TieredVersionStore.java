@@ -581,6 +581,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     Id commonParent = HistoryRetriever.findCommonParent(store, from, to, MAX_MERGE_DEPTH);
 
     List<InternalL1> fromL1s = historyHelper.getFromL1s(from, commonParent);
+    fromL1s.get(0).getMetadataId()
     if (fromL1s.size() == 1) {
       Preconditions.checkArgument(fromL1s.get(0).getId().equals(InternalL1.EMPTY_ID));
       // the from hash is the empty hash, no operations to merge.

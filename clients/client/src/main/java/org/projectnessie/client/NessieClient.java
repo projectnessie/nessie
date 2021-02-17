@@ -29,7 +29,6 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import org.projectnessie.api.ConfigApi;
-import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.auth.AwsAuth;
 import org.projectnessie.client.auth.BasicAuthFilter;
@@ -56,7 +55,7 @@ public class NessieClient implements Closeable {
 
   private final TreeApi tree;
   private final ConfigApi config;
-  private final ContentsApi contents;
+  private final ClientContentsApi contents;
 
   /**
    * create new nessie client. All REST api endpoints are mapped here. This client should support any jaxrs implementation
@@ -70,7 +69,7 @@ public class NessieClient implements Closeable {
     client = HttpClient.builder().setBaseUri(path).setObjectMapper(mapper).build();
     authFilter(client, authType, username, password);
     client.register(new NessieHttpResponseFilter(mapper));
-    contents = wrap(ContentsApi.class, new ClientContentsApi(client));
+    contents = wrap(ClientContentsApi.class, new BaseClientContentsApi(client));
     tree = wrap(TreeApi.class, new ClientTreeApi(client));
     config = wrap(ConfigApi.class, new ClientConfigApi(client));
   }
@@ -137,7 +136,7 @@ public class NessieClient implements Closeable {
     return tree;
   }
 
-  public ContentsApi getContentsApi() {
+  public ClientContentsApi getContentsApi() {
     return contents;
   }
 

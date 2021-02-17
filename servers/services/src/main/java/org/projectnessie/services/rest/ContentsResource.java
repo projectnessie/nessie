@@ -18,7 +18,6 @@ package org.projectnessie.services.rest;
 
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,7 +26,6 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 
 import org.projectnessie.api.ContentsApi;
-import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
@@ -37,10 +35,8 @@ import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
-import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 
@@ -90,18 +86,6 @@ public class ContentsResource extends BaseResource implements ContentsApi {
     } catch (ReferenceNotFoundException ex) {
       throw new NessieNotFoundException("Unable to find the requested ref.", ex);
     }
-  }
-
-  @Override
-  public void setContents(ContentsKey key, String branch, String hash, String message, Contents contents)
-      throws NessieNotFoundException, NessieConflictException {
-    doOps(branch, hash, message, Arrays.asList(Put.of(toKey(key), contents)));
-  }
-
-  @Override
-  public void deleteContents(ContentsKey key, String branch, String hash, String message)
-      throws NessieNotFoundException, NessieConflictException {
-    doOps(branch, hash, message, Arrays.asList(Delete.of(toKey(key))));
   }
 
   static Key toKey(ContentsKey key) {

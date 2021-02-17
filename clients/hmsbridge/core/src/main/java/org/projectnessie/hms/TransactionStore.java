@@ -32,9 +32,11 @@ import org.projectnessie.api.TreeApi;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse.Entry;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableEntry;
 import org.projectnessie.model.ImmutableMultiGetContentsRequest;
 import org.projectnessie.model.ImmutableOperations;
@@ -137,8 +139,9 @@ class TransactionStore {
     }
 
     checkWritable();
-    tree.commitMultipleOperations(reference.getName(), reference.getHash(), "HMS commit", null, null, null, null, null, null,
-        ImmutableOperations.builder().addAllOperations(operations.stream().collect(Collectors.toList())).build());
+    CommitMeta meta = ImmutableCommitMeta.builder().message("HMS commit").build();
+    tree.commitMultipleOperations(reference.getName(), reference.getHash(),
+        ImmutableOperations.builder().commitMeta(meta).addAllOperations(new ArrayList<>(operations)).build());
   }
 
   void deleteItem(ContentsKey key) {
