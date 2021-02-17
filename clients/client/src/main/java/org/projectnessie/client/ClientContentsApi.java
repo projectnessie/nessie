@@ -18,57 +18,20 @@ package org.projectnessie.client;
 import javax.validation.constraints.NotNull;
 
 import org.projectnessie.api.ContentsApi;
-import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
-import org.projectnessie.model.MultiGetContentsRequest;
-import org.projectnessie.model.MultiGetContentsResponse;
 
-class ClientContentsApi implements ContentsApi {
+/**
+ * Extends ContentsApi with some helper methods for clients.
+ */
+public interface ClientContentsApi extends ContentsApi {
 
-  private final HttpClient client;
+  void setContents(@NotNull ContentsKey key, String branch, @NotNull String hash, CommitMeta commitMeta,
+                          @NotNull Contents contents) throws NessieNotFoundException, NessieConflictException;
 
-  public ClientContentsApi(HttpClient client) {
-    this.client = client;
-  }
-
-  @Override
-  public Contents getContents(@NotNull ContentsKey key, String ref) throws NessieNotFoundException {
-    return client.newRequest().path("contents").path(key.toPathString())
-                 .queryParam("ref", ref)
-                 .get()
-                 .readEntity(Contents.class);
-  }
-
-  @Override
-  public MultiGetContentsResponse getMultipleContents(@NotNull String ref, @NotNull MultiGetContentsRequest request)
-      throws NessieNotFoundException {
-    return client.newRequest().path("contents")
-                 .queryParam("ref", ref)
-                 .post(request)
-                 .readEntity(MultiGetContentsResponse.class);
-  }
-
-
-  @Override
-  public void setContents(@NotNull ContentsKey key, String branch, @NotNull String hash, String message,
-                          @NotNull Contents contents) throws NessieNotFoundException, NessieConflictException {
-    client.newRequest().path("contents").path(key.toPathString())
-          .queryParam("branch", branch)
-          .queryParam("hash", hash)
-          .queryParam("message", message)
-          .post(contents);
-  }
-
-  @Override
-  public void deleteContents(ContentsKey key, String branch, String hash, String message)
-      throws NessieNotFoundException, NessieConflictException {
-    client.newRequest().path("contents").path(key.toPathString())
-          .queryParam("branch", branch)
-          .queryParam("hash", hash)
-          .queryParam("message", message)
-          .delete();
-  }
+  void deleteContents(ContentsKey key, String branch, String hash, CommitMeta commitMeta)
+      throws NessieNotFoundException, NessieConflictException;
 }

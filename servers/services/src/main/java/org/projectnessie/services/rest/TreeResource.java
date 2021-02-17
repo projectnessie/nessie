@@ -35,7 +35,6 @@ import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
-import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableHash;
 import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableTag;
@@ -204,22 +203,13 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Override
   public void commitMultipleOperations(String branch,
                                        String hash,
-                                       String message,
-                                       String author,
-                                       String authorEmail,
-                                       String authorDate,
-                                       String signedOff,
-                                       String signedOffEmail,
-                                       String signedOffDate,
                                        Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation<Contents>> ops = operations.getOperations()
         .stream()
         .map(TreeResource::toOp)
         .collect(ImmutableList.toImmutableList());
-    ImmutableCommitMeta.Builder builder = ImmutableCommitMeta.builder().author(author).authorEmail(authorEmail)
-        .authorDate(authorDate).signedOff(signedOff).signedOffDate(signedOffDate).signedOffEmail(signedOffEmail).message(message);
-    doOps(branch, hash, builder, ops);
+    doOps(branch, hash, operations.getCommitMeta(), ops);
   }
 
   private static Optional<Hash> toHash(String hash, boolean required) throws NessieConflictException {

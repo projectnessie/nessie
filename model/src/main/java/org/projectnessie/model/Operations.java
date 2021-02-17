@@ -34,4 +34,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 public interface Operations {
 
   List<Operation> getOperations();
+
+  CommitMeta getCommitMeta();
 }
