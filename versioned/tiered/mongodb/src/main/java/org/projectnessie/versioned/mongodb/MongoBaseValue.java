@@ -54,7 +54,7 @@ abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   @Override
   public C id(Id id) {
     if (!properties.contains(ID)) {
-      // MongoSerDe calls this method as the very first one during serialization to satisfy the
+      // MongoSerDe calls this method as the very first one during serialization to satisfiy the
       // deserialization requirement that the ID field is the first one being deserialized.
       serializeId(ID, id);
     }

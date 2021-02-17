@@ -51,7 +51,7 @@ class RocksDBValueVisitor implements ValueVisitor<Function> {
 
   @Override
   public Function visit(Entity entity) {
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException(String.format("%s is not supported as a RocksDB Function", entity.toString()));
   }
 
   @Override
@@ -83,7 +83,7 @@ class RocksDBValueVisitor implements ValueVisitor<Function> {
 
   @Override
   public Function visit(ExpressionPath value) {
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException(String.format("%s is not supported as a RocksDB Function", value.toString()));
   }
 
   private boolean isSize(Value value) {

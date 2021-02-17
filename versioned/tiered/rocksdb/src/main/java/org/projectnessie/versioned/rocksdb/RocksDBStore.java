@@ -17,7 +17,10 @@ package org.projectnessie.versioned.rocksdb;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -69,6 +72,7 @@ public class RocksDBStore implements Store {
   private static final Logger LOGGER = LoggerFactory.getLogger(RocksDBStore.class);
   private static final RocksDBValueVisitor VALUE_VISITOR = new RocksDBValueVisitor();
   private static final String DEFAULT_COLUMN_FAMILY = new String(RocksDB.DEFAULT_COLUMN_FAMILY, UTF_8);
+  private static final WriteOptions WRITE_OPTIONS = new WriteOptions();
 
   static {
     RocksDB.loadLibrary();
@@ -105,7 +109,7 @@ public class RocksDBStore implements Store {
       }
       valueTypeToColumnFamily = builder.build();
     } catch (RocksDBException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("RocksDB failed to start", e);
     }
   }
 
@@ -147,7 +151,7 @@ public class RocksDBStore implements Store {
       try {
         reads = rocksDB.multiGetAsList(columnFamilies, keys);
       } catch (RocksDBException e) {
-        throw new RuntimeException(e);
+        throw new RuntimeException("Load operation failed to load the keys given", e);
       }
 
       if (reads.size() != loadOps.size()) {
@@ -170,7 +174,7 @@ public class RocksDBStore implements Store {
   @Override
   public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
-    try (final Transaction transaction = rocksDB.beginTransaction(new WriteOptions())) {
+    try (final Transaction transaction = rocksDB.beginTransaction(WRITE_OPTIONS)) {
       // Get exclusive access to key if it exists.
       final byte[] buffer = getForUpdate(transaction, columnFamilyHandle, saveOp.getId());
       if (null == buffer) {
@@ -181,7 +185,8 @@ public class RocksDBStore implements Store {
       // Id already exists.
       return false;
     } catch (RocksDBException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException(String.format("putIfAbsent operation failed on %s for ID: %s",
+          saveOp.getType().name(), saveOp.getId()), e);
     }
   }
 
@@ -189,14 +194,14 @@ public class RocksDBStore implements Store {
   public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
 
-    try (final Transaction transaction = rocksDB.beginTransaction(new WriteOptions())) {
+    try (final Transaction transaction = rocksDB.beginTransaction(WRITE_OPTIONS)) {
       if (!isConditionExpressionValid(transaction, columnFamilyHandle, saveOp.getId(), saveOp.getType(), condition, "put")) {
         throw new ConditionFailedException("Condition failed during put operation");
       }
       transaction.put(columnFamilyHandle, saveOp.getId().toBytes(), RocksSerDe.serializeWithConsumer(saveOp));
       transaction.commit();
     } catch (RocksDBException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException(String.format("put operation failed on %s for ID: %s", saveOp.getType().name(), saveOp.getId()), e);
     }
   }
 
@@ -204,7 +209,7 @@ public class RocksDBStore implements Store {
   public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
 
-    try (final Transaction transaction = rocksDB.beginTransaction(new WriteOptions())) {
+    try (final Transaction transaction = rocksDB.beginTransaction(WRITE_OPTIONS)) {
       if (!isConditionExpressionValid(transaction, columnFamilyHandle, id, type, condition, "delete")) {
         LOGGER.debug("Condition failed during delete operation.");
         return false;
@@ -213,7 +218,7 @@ public class RocksDBStore implements Store {
       transaction.commit();
       return true;
     } catch (RocksDBException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException(String.format("put operation failed on %s for ID: %s", type.name(), id), e);
     }
   }
 
@@ -228,9 +233,9 @@ public class RocksDBStore implements Store {
           batch.put(getColumnFamilyHandle(entry.getKey()), op.getId().toBytes(), RocksSerDe.serializeWithConsumer(op));
         }
       }
-      rocksDB.write(new WriteOptions(), batch);
+      rocksDB.write(WRITE_OPTIONS, batch);
     } catch (RocksDBException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Save operation failed", e);
     }
   }
 
@@ -242,7 +247,7 @@ public class RocksDBStore implements Store {
       checkValue(buffer, "load", id);
       RocksSerDe.deserializeToConsumer(type, buffer, consumer);
     } catch (RocksDBException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException(String.format("put operation failed on %s for ID: %s", type.name(), id), e);
     }
   }
 
@@ -258,23 +263,23 @@ public class RocksDBStore implements Store {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(ValueType.REF);
 
     final Iterable<Acceptor<C>> iterable = () -> new AbstractIterator<Acceptor<C>>() {
-      private final RocksIterator itr = rocksDB.newIterator(columnFamilyHandle);
+      private final RocksIterator rocksIter = rocksDB.newIterator(columnFamilyHandle);
       private boolean isFirst = true;
 
       @Override
       protected Acceptor<C> computeNext() {
         if (isFirst) {
-          itr.seekToFirst();
+          rocksIter.seekToFirst();
           isFirst = false;
         } else {
-          itr.next();
+          rocksIter.next();
         }
 
-        if (itr.isValid()) {
-          return (consumer) -> RocksSerDe.deserializeToConsumer(type, itr.value(), consumer);
+        if (rocksIter.isValid()) {
+          return (consumer) -> RocksSerDe.deserializeToConsumer(type, rocksIter.value(), consumer);
         }
 
-        itr.close();
+        rocksIter.close();
         return endOfData();
       }
     };
@@ -339,7 +344,7 @@ public class RocksDBStore implements Store {
 
   private void checkValue(byte[] value, String operation, Id id) {
     if (null == value) {
-      throw new NotFoundException("Unable to " + operation + " item with ID: " + id);
+      throw new NotFoundException(String.format("Unable to %s item with ID: %s", operation, id));
     }
   }
 
@@ -377,17 +382,21 @@ public class RocksDBStore implements Store {
   }
 
   private String verifyPath() {
-    final File dbDirectory = new File(config.getDbDirectory());
-    if (dbDirectory.exists()) {
-      if (!dbDirectory.isDirectory()) {
+    final Path dbDirectory = Paths.get(config.getDbDirectory());
+    if (Files.exists(dbDirectory)) {
+      if (!Files.isDirectory(dbDirectory)) {
         throw new RuntimeException(
-          String.format("Invalid path '%s' for Nessie database, not a directory.", dbDirectory.getAbsolutePath()));
+          String.format("Invalid path '%s' for Nessie database, not a directory.", dbDirectory.toAbsolutePath()));
       }
-    } else if (!dbDirectory.mkdirs()) {
-      throw new RuntimeException(
-          String.format("Failed to create directory '%s' for Nessie database.", dbDirectory.getAbsolutePath()));
+    } else {
+      try {
+        Files.createDirectory(dbDirectory);
+      } catch (IOException e) {
+        throw new RuntimeException(
+          String.format("Failed to create directory '%s' for Nessie database.", dbDirectory.toAbsolutePath()));
+      }
     }
 
-    return dbDirectory.getAbsolutePath();
+    return dbDirectory.toAbsolutePath().toString();
   }
 }
