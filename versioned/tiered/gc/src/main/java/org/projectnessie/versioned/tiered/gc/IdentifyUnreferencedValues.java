@@ -33,7 +33,7 @@ import org.projectnessie.versioned.store.ValueType;
 import com.google.protobuf.ByteString;
 
 /**
- * Operation which identifies unreferenced assets.
+ * Operation which identifies the referenced state of all values in a tiered version store.
  */
 public class IdentifyUnreferencedValues<T> {
 
@@ -120,7 +120,7 @@ public class IdentifyUnreferencedValues<T> {
 
     @Override
     public CategorizedValue call(ValueFrame r) throws Exception {
-      boolean referenced = r.getDt() > recentValues || bloomFilter.mightContain(r.getId());
+      boolean referenced = r.getDt() > recentValues || bloomFilter.mightContain(r.getId().getId());
       T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getBytes()));
       //todo once we add entity type to store we should add it here to avoid the useless serialization.
       return new CategorizedValue(referenced, contents.getClass().getSimpleName(), ByteString.copyFrom(r.getBytes()));

@@ -134,7 +134,7 @@ public class ITTestIdentifyUnreferencedAssets {
     Dataset<CategorizedValue> values = app.identify();
 
     IdentifyUnreferencedAssets<DummyValue> ident = new IdentifyUnreferencedAssets<DummyValue>(helper, new DummyAssetKeySerializer(),
-        new DummeyAssetKeyConverter(), values, spark);
+        new DummyAssetConverter(), values, spark);
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = ident.identify();
     Set<String> unreferencedItems = items.collectAsList().stream().map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
         .collect(Collectors.toSet());
@@ -268,7 +268,7 @@ public class ITTestIdentifyUnreferencedAssets {
     }
   }
 
-  private static class DummeyAssetKeyConverter implements AssetKeyConverter<DummyValue>, Serializable {
+  private static class DummyAssetConverter implements AssetKeyConverter<DummyValue>, Serializable {
 
     @Override
     public Stream<? extends AssetKey> getAssetKeys(DummyValue value) {

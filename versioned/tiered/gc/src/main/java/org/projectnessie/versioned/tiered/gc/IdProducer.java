@@ -50,7 +50,7 @@ final class IdProducer {
       long targetCount,
       Function<Acceptor<T>, IdCarrier> converter) {
 
-    Predicate<IdCarrier> predicate = t -> idFilter.mightContain(t.getId());
+    Predicate<IdCarrier> predicate = t -> idFilter.mightContain(t.getId().getId());
     Dataset<IdCarrier> carriers = IdCarrier.asDataset(valueType, store, converter, Optional.of(predicate), spark);
     return BinaryBloomFilter.aggregate(carriers.withColumn("id", explode(col("children"))), "id.id");
 

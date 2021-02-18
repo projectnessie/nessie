@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 import org.apache.spark.api.java.function.FilterFunction;
 import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
@@ -50,7 +49,7 @@ public class IdentifyUnreferencedAssets<T> {
   private final SparkSession spark;
 
   /**
-   * Drive a job that generates a dataset of unreferenced values.
+   * Drive a job that generates a dataset of unreferenced assets.
    */
   public IdentifyUnreferencedAssets(
       StoreWorker<T, ?> storeWorker,
@@ -161,9 +160,9 @@ public class IdentifyUnreferencedAssets<T> {
   public static class UnreferencedItemConverter implements Function1<Row, UnreferencedItem>, Serializable {
     private static final long serialVersionUID = -5135625090051205329L;
 
-    private final Serializer<? extends AssetKey> serializer;
+    private final Serializer<AssetKey> serializer;
 
-    public UnreferencedItemConverter(Serializer<? extends AssetKey> serializer) {
+    public UnreferencedItemConverter(Serializer<AssetKey> serializer) {
       this.serializer = serializer;
     }
 

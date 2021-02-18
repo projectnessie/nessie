@@ -29,8 +29,6 @@ import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.functions;
-import org.projectnessie.versioned.store.Id;
-import org.projectnessie.versioned.tiered.gc.IdFrame;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
@@ -63,20 +61,12 @@ public class BinaryBloomFilter implements Externalizable {
     return filter.mightContain(ByteBuffer.wrap(bytes));
   }
 
-  public boolean mightContain(IdFrame id) {
-    return filter.mightContain(ByteBuffer.wrap(id.getId()));
-  }
-
   public boolean mightContain(ByteString bytes) {
     return filter.mightContain(bytes.asReadOnlyByteBuffer());
   }
 
   public boolean mightContain(ByteBuffer bytes) {
     return filter.mightContain(bytes);
-  }
-
-  public boolean mightContain(Id id) {
-    return mightContain(id.getValue());
   }
 
   private static class BloomFilterAggregator extends
