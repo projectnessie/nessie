@@ -15,9 +15,12 @@
  */
 package org.projectnessie.client.http;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import org.projectnessie.client.http.HttpClient.Method;
 
@@ -30,6 +33,7 @@ public class RequestContext {
   private final String uri;
   private final Method method;
   private final Object body;
+  private List<BiConsumer<ResponseContext, Exception>> responseCallbacks;
 
   /**
    * Construct a request context.
@@ -64,5 +68,26 @@ public class RequestContext {
 
   public Optional<Object> getBody() {
     return body == null ? Optional.empty() : Optional.of(body);
+  }
+
+  /**
+   * Adds a callback to be called when the request has finished. The {@code responseCallback}
+   * {@link BiConsumer consumer} is called with a non-{@code null} {@link ResponseContext}, if the
+   * HTTP request technically succeeded. The The {@code responseCallback}
+   * {@link BiConsumer consumer} is called with a non-{@code null} {@link Exception} object, if the
+   * HTTP request technically failed.
+   *
+   * @param responseCallback callback that receives either a non-{@code null} {@link ResponseContext}
+   *                         or a non-{@code null} {@link Exception}.
+   */
+  public void addResponseCallback(BiConsumer<ResponseContext, Exception> responseCallback) {
+    if (responseCallbacks == null) {
+      responseCallbacks = new ArrayList<>();
+    }
+    responseCallbacks.add(responseCallback);
+  }
+
+  List<BiConsumer<ResponseContext, Exception>> getResponseCallbacks() {
+    return responseCallbacks;
   }
 }
