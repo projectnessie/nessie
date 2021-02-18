@@ -15,14 +15,10 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
-import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 
 @Immutable
 public abstract class RocksDBStoreConfig {
 
-  @Default
-  public String getDbDirectory() {
-    return "";
-  }
+  public abstract String getDbDirectory();
 }
