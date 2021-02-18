@@ -42,7 +42,7 @@ public class ITTestHive3DelegateOps extends BaseDelegateOps {
 
   @BeforeAll
   static void setupNessieClient() {
-    client = NessieClient.withConfig(properties::get);
+    client = NessieClient.builder().fromConfig(properties::get).build();
   }
 
   @Override

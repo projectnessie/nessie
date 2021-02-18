@@ -47,6 +47,12 @@ public final class NessieConfigConstants {
    * Config property name ({@value #CONF_NESSIE_REF}) for the nessie reference used by clients.
    */
   public static final String CONF_NESSIE_REF = "nessie.ref";
+  /**
+   * Config property name ({@value #CONF_NESSIE_TRACING}) to enable adding the HTTP headers of
+   * an active OpenTracing span to all Nessie requests. Valid values are {@code true}
+   * and {@code false}.
+   */
+  public static final String CONF_NESSIE_TRACING = "nessie.tracing";
 
   private NessieConfigConstants() {
     // empty

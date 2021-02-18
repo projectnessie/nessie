@@ -40,7 +40,7 @@ public class ITTestHive2TableOperations extends BaseTableOperations {
 
   @BeforeAll
   static void setupNessieClient() {
-    client = NessieClient.withConfig(properties::get);
+    client = NessieClient.builder().fromConfig(properties::get).build();
   }
 
   @Override

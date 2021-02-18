@@ -17,6 +17,7 @@ package org.projectnessie.client;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
 
@@ -26,7 +27,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.function.Function;
 
 import org.projectnessie.api.ConfigApi;
@@ -40,12 +40,11 @@ import org.projectnessie.client.http.RequestFilter;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format.Builtin;
@@ -55,9 +54,6 @@ import io.opentracing.util.GlobalTracer;
 
 public class NessieClient implements Closeable {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(NessieClient.class);
-
-  private final HttpClient client;
   private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
                                                         .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
@@ -79,9 +75,11 @@ public class NessieClient implements Closeable {
    * @param username username (only for BASIC auth)
    * @param password password (only for BASIC auth)
    */
-  public NessieClient(AuthType authType, String path, String username, String password) {
-    client = HttpClient.builder().setBaseUri(path).setObjectMapper(mapper).build();
-    maybeAddTracing(client);
+  NessieClient(AuthType authType, String path, String username, String password, boolean enableTracing) {
+    HttpClient client = HttpClient.builder().setBaseUri(path).setObjectMapper(mapper).build();
+    if (enableTracing) {
+      addTracing(client);
+    }
     authFilter(client, authType, username, password);
     client.register(new NessieHttpResponseFilter(mapper));
     contents = wrap(ContentsApi.class, new ClientContentsApi(client));
@@ -89,30 +87,23 @@ public class NessieClient implements Closeable {
     config = wrap(ConfigApi.class, new ClientConfigApi(client));
   }
 
-  private void maybeAddTracing(HttpClient httpClient) {
-    // Catch errors that occur when the OpenTracing classes are not available, log a debug
-    // message in that case.
-    try {
-      TracingConfigurer.addTracing(httpClient);
-    } catch (Error | Exception e) {
-      LOGGER.debug("Not adding OpenTracing/OpenTelemetry, initialization failed", e);
-    }
-  }
-
-  private static class TracingConfigurer {
-    static void addTracing(HttpClient httpClient) {
-      Tracer tracer = GlobalTracer.get();
-      if (tracer != null) {
-        httpClient.register((RequestFilter) context -> {
-          Span span = tracer.activeSpan();
-          if (span != null) {
-            HashMap<String,String> headerMap = new HashMap<>();
+  private static void addTracing(HttpClient httpClient) {
+    // It's safe to reference `GlobalTracer` here even without the required dependencies available
+    // at runtime, as long as tracing is not enabled. I.e. as long as tracing is not enabled, this
+    // method will not be called and the JVM won't try to load + initialize `GlobalTracer`.
+    Tracer tracer = GlobalTracer.get();
+    if (tracer != null) {
+      httpClient.register((RequestFilter) context -> {
+        Span span = tracer.activeSpan();
+        if (span != null) {
+          try (Scope scope = tracer.buildSpan("Nessie-HTTP").startActive(true)) {
+            HashMap<String, String> headerMap = new HashMap<>();
             TextMap httpHeadersCarrier = new TextMapInjectAdapter(headerMap);
-            tracer.inject(span.context(), Builtin.HTTP_HEADERS, httpHeadersCarrier);
+            tracer.inject(scope.span().context(), Builtin.HTTP_HEADERS, httpHeadersCarrier);
             headerMap.forEach(context::putHeader);
           }
-        });
-      }
+        }
+      });
     }
   }
 
@@ -156,10 +147,10 @@ public class NessieClient implements Closeable {
         Throwable targetException = ex.getTargetException();
         if (targetException instanceof HttpClientException) {
           if (targetException.getCause() instanceof NessieNotFoundException) {
-            throw (NessieNotFoundException) targetException.getCause();
+            throw targetException.getCause();
           }
           if (targetException.getCause() instanceof NessieConflictException) {
-            throw (NessieConflictException) targetException.getCause();
+            throw targetException.getCause();
           }
         }
 
@@ -190,36 +181,122 @@ public class NessieClient implements Closeable {
   public void close() {
   }
 
-  public static NessieClient basic(String path, String username, String password) {
-    return new NessieClient(AuthType.BASIC, path, username, password);
-  }
-
-  public static NessieClient aws(String path) {
-    return new NessieClient(AuthType.AWS, path, null, null);
-  }
-
-  public static NessieClient none(String path) {
-    return new NessieClient(AuthType.NONE, path, null, null);
+  /**
+   * Create a new {@link Builder} to configure a new {@link NessieClient}.
+   */
+  public static Builder builder() {
+    return new Builder();
   }
 
   /**
-   * Create a client using a configuration object and standard Nessie configuration keys.
-   * @param configuration The function that exploses configuration keys.
-   * @return A new Nessie client.
+   * Builder to configure a new {@link NessieClient}.
    */
-  public static NessieClient withConfig(Function<String, String> configuration) {
-    String url = Objects.requireNonNull(configuration.apply(CONF_NESSIE_URL));
-    String authType = configuration.apply(CONF_NESSIE_AUTH_TYPE);
-    String username = configuration.apply(CONF_NESSIE_USERNAME);
-    String password = configuration.apply(CONF_NESSIE_PASSWORD);
-    if (authType == null) {
-      if (username != null && password != null) {
-        authType = AuthType.BASIC.name();
-      } else {
-        authType = AuthType.NONE.name();
-      }
-    }
-    return new NessieClient(AuthType.valueOf(authType), url, username, password);
-  }
+  public static class Builder {
+    private AuthType authType = AuthType.NONE;
+    private String path;
+    private String username;
+    private String password;
+    private boolean tracing;
 
+    /**
+     * Same semantics as {@link #fromConfig(Function)}, uses the system properties.
+     * @return {@code this}
+     * @see #fromConfig(Function)
+     */
+    public Builder fromSystemProperties() {
+      return fromConfig(System::getProperty);
+    }
+
+    /**
+     * Configure this builder instance using a configuration object and standard Nessie
+     * configuration keys defined by the constants defined in {@link NessieConfigConstants}.
+     * Non-{@code null} values returned by the {@code configuration}-function will override
+     * previously configured values.
+     * @param configuration The function that exploses configuration keys.
+     * @return {@code this}
+     * @see #fromSystemProperties()
+     */
+    public Builder fromConfig(Function<String, String> configuration) {
+      String path = configuration.apply(CONF_NESSIE_URL);
+      if (path != null) {
+        this.path = path;
+      }
+      String username = configuration.apply(CONF_NESSIE_USERNAME);
+      if (username != null) {
+        this.username = username;
+      }
+      String password = configuration.apply(CONF_NESSIE_PASSWORD);
+      if (password != null) {
+        this.password = password;
+      }
+      String authType = configuration.apply(CONF_NESSIE_AUTH_TYPE);
+      if (authType != null) {
+        this.authType = AuthType.valueOf(authType);
+      }
+      String tracing = configuration.apply(CONF_NESSIE_TRACING);
+      if (tracing != null) {
+        this.tracing = Boolean.parseBoolean(tracing);
+      }
+      return this;
+    }
+
+    /**
+     * Set the authentication type. Default is {@link AuthType#NONE}.
+     * @param authType new auth-type
+     * @return {@code this}
+     */
+    public Builder withAuthType(AuthType authType) {
+      this.authType = authType;
+      return this;
+    }
+
+    /**
+     * Set the Nessie server URI. A server URI must be configured.
+     * @param path server URI
+     * @return {@code this}
+     */
+    public Builder withPath(String path) {
+      this.path = path;
+      return this;
+    }
+
+    /**
+     * Set the username for {@link AuthType#BASIC} authentication.
+     * @param username username
+     * @return {@code this}
+     */
+    public Builder withUsername(String username) {
+      this.username = username;
+      return this;
+    }
+
+    /**
+     * Set the password for {@link AuthType#BASIC} authentication.
+     * @param password password
+     * @return {@code this}
+     */
+    public Builder withPassword(String password) {
+      this.password = password;
+      return this;
+    }
+
+    /**
+     * Whether to enable adding the HTTP headers of an active OpenTracing span to all
+     * Nessie requests. If enabled, the OpenTracing dependencies must be present at runtime.
+     * @param tracing {@code true} to enable passing HTTP headers for active tracing spans.
+     * @return {@code this}
+     */
+    public Builder withTracing(boolean tracing) {
+      this.tracing = tracing;
+      return this;
+    }
+
+    /**
+     * Build a new {@link NessieClient}.
+     * @return new {@link NessieClient}
+     */
+    public NessieClient build() {
+      return new NessieClient(authType, path, username, password, tracing);
+    }
+  }
 }

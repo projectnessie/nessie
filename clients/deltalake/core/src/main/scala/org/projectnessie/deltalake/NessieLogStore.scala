@@ -48,7 +48,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   var lastSnapshotUuid: Option[String] = None
 
   private val client: NessieClient = {
-    NessieClient.withConfig(c => hadoopConf.get(c))
+    NessieClient.builder().fromConfig(c => hadoopConf.get(c)).build()
   }
 
   private def getOrCreate(): Reference = {

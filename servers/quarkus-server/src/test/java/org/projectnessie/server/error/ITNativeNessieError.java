@@ -22,7 +22,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.client.NessieClient;
-import org.projectnessie.client.NessieClient.AuthType;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
@@ -42,7 +41,7 @@ public class ITNativeNessieError {
   @BeforeEach
   void init() {
     String path = "http://localhost:19121/api/v1";
-    NessieClient client = new NessieClient(AuthType.NONE, path, null, null);
+    NessieClient client = NessieClient.builder().withPath(path).build();
     contents = client.getContentsApi();
   }
 

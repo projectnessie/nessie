@@ -60,7 +60,7 @@ class TestAuth {
   }
 
   void getCatalog(String branch) throws NessieNotFoundException, NessieConflictException {
-    client = NessieClient.none("http://localhost:19121/api/v1");
+    client = NessieClient.builder().withPath("http://localhost:19121/api/v1").build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {
