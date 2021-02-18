@@ -68,7 +68,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
    */
   private synchronized NessieClient nessieClient() {
     if (client == null) {
-      client = NessieClient.basic(path, "admin_user", "test123");
+      client = NessieClient.builder().withPath(path).withUsername("admin_user").withPassword("test123").build();
       try {
         client.getTreeApi().createReference(Branch.of("main", null));
       } catch (Exception t) {
