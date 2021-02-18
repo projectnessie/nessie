@@ -31,15 +31,15 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ImmutablePut;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StringWorker;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
 public class ITInMemoryVersionStore extends AbstractITVersionStore {
   private static final InMemoryVersionStore.Builder<String, String> BUILDER = InMemoryVersionStore.<String, String>builder()
-      .valueSerializer(StringWorker.getInstance())
-      .metadataSerializer(StringWorker.getInstance());
+      .valueSerializer(StringSerializer.getInstance())
+      .metadataSerializer(StringSerializer.getInstance());
 
   private VersionStore<String, String> store;
 

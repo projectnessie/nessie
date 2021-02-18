@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.gc;
+package org.projectnessie.versioned.tiered.gc;
 
 import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.explode;
@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
+import org.projectnessie.versioned.gc.core.BinaryBloomFilter;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.Store.Acceptor;
 import org.projectnessie.versioned.store.ValueType;

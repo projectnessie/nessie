@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.gc;
+package org.projectnessie.versioned.tiered.gc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -39,17 +39,18 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.AssetKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.StringWorker;
-import org.projectnessie.versioned.ValueWorker;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
-import org.projectnessie.versioned.gc.IdentifyUnreferencedAssets.UnreferencedItem;
+import org.projectnessie.versioned.gc.IdentifyUnreferencedAssets;
+import org.projectnessie.versioned.gc.core.AssetKey;
+import org.projectnessie.versioned.gc.core.AssetKeyConverter;
+import org.projectnessie.versioned.gc.core.CategorizedValue;
 import org.projectnessie.versioned.impl.TieredVersionStore;
 import org.projectnessie.versioned.store.HasId;
 import org.projectnessie.versioned.store.Id;
@@ -129,9 +130,14 @@ public class ITTestIdentifyUnreferencedAssets {
         .maxAgeMicros(ONE_DAY_OLD_MICROS)
         .timeSlopMicros(ONE_HOUR_OLD_MICROS)
         .build();
-    IdentifyUnreferencedAssets<DummyValue> app = new IdentifyUnreferencedAssets<DummyValue>(helper, new DynamoSupplier(), spark, options);
-    Dataset<UnreferencedItem> items = app.identify();
-    Set<String> unreferencedItems = items.collectAsList().stream().map(UnreferencedItem::getName).collect(Collectors.toSet());
+    IdentifyUnreferencedValues<DummyValue> app = new IdentifyUnreferencedValues<>(helper, new DynamoSupplier(), spark, options);
+    Dataset<CategorizedValue> values = app.identify();
+
+    IdentifyUnreferencedAssets<DummyValue> ident = new IdentifyUnreferencedAssets<DummyValue>(helper, new DummyAssetKeySerializer(),
+        new DummeyAssetKeyConverter(), values, spark);
+    Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = ident.identify();
+    Set<String> unreferencedItems = items.collectAsList().stream().map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
+        .collect(Collectors.toSet());
     assertThat(unreferencedItems, containsInAnyOrder("-1", "-2", "-3", "-60", "-61"));
   }
 
@@ -199,13 +205,13 @@ public class ITTestIdentifyUnreferencedAssets {
 
   private static class StoreW implements StoreWorker<DummyValue, String> {
     @Override
-    public ValueWorker<DummyValue> getValueWorker() {
-      return new ValueValueWorker();
+    public Serializer<DummyValue> getValueSerializer() {
+      return new DummyValueSerializer();
     }
 
     @Override
     public Serializer<String> getMetadataSerializer() {
-      return StringWorker.getInstance();
+      return StringSerializer.getInstance();
     }
   }
 
@@ -239,24 +245,36 @@ public class ITTestIdentifyUnreferencedAssets {
 
   }
 
-  private static class ValueValueWorker extends JsonSerializer<DummyValue> implements ValueWorker<DummyValue>, Serializable {
+  private static class DummyValueSerializer extends JsonSerializer<DummyValue> implements Serializable {
 
-    private static final long serialVersionUID = 3651529251225721177L;
-
-    public ValueValueWorker() {
+    public DummyValueSerializer() {
       super(DummyValue.class);
     }
+
+  }
+
+  // annoying games w/ Java generics.
+  private static class DummyAssetKeySerializer implements Serializer<AssetKey>, Serializable {
+    private final Serializer<DummyAsset> delegate = new JsonSerializer<>(DummyAsset.class);
+
+    @Override
+    public ByteString toBytes(AssetKey value) {
+      return delegate.toBytes((DummyAsset) value);
+    }
+
+    @Override
+    public AssetKey fromBytes(ByteString bytes) {
+      return delegate.fromBytes(bytes);
+    }
+  }
+
+  private static class DummeyAssetKeyConverter implements AssetKeyConverter<DummyValue>, Serializable {
 
     @Override
     public Stream<? extends AssetKey> getAssetKeys(DummyValue value) {
       return value.assets.stream();
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Serializer<AssetKey> getAssetKeySerializer() {
-      return (Serializer<AssetKey>) (Object) new JsonSerializer<DummyAsset>(DummyAsset.class);
-    }
   }
 
   private static class DummyValue implements HasId {

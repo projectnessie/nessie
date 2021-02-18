@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.gc;
+package org.projectnessie.versioned.gc.core;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,6 +30,7 @@ import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.functions;
 import org.projectnessie.versioned.store.Id;
+import org.projectnessie.versioned.tiered.gc.IdFrame;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
@@ -134,7 +135,12 @@ public class BinaryBloomFilter implements Externalizable {
     }
   }
 
-  static BinaryBloomFilter aggregate(Dataset<Row> data, String column) {
+  /**
+   * Run aggregation on dataset to add all rows to the bloom filter.
+   * @param data a Spark Dataset to add to binary bloom filter
+   * @param column the column to aggregate on
+   */
+  public static BinaryBloomFilter aggregate(Dataset<Row> data, String column) {
     Row[] aggregated = (Row[]) data.agg(functions.udaf(new BloomFilterAggregator(), Encoders.BINARY()).apply(data.col(column))).collect();
     byte[] bytes = aggregated[0].getAs(0);
     return fromBinary(bytes);

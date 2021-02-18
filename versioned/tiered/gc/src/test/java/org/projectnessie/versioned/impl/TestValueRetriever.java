@@ -32,15 +32,18 @@ import java.util.stream.Collectors;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.Key;
-import org.projectnessie.versioned.gc.IdCarrier;
-import org.projectnessie.versioned.gc.IdFrame;
-import org.projectnessie.versioned.gc.L1Frame;
-import org.projectnessie.versioned.gc.RefFrame;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
+import org.projectnessie.versioned.tiered.gc.IdCarrier;
+import org.projectnessie.versioned.tiered.gc.IdFrame;
+import org.projectnessie.versioned.tiered.gc.L1Frame;
+import org.projectnessie.versioned.tiered.gc.RefFrame;
 
 public class TestValueRetriever {
 
@@ -87,7 +90,7 @@ public class TestValueRetriever {
     assertNotNull(f1);
     assertEquals(0, f1.getParents().size());
     assertEquals(l21.toString(), f1.getChildren().get(1).toString());
-    assertEquals(InternalL2.EMPTY_ID.toString(), f1.getChildren().get(2).toString());
+    Assertions.assertEquals(InternalL2.EMPTY_ID.toString(), f1.getChildren().get(2).toString());
 
     L1Frame f2 = frameMap.get(c2.getId().toString());
     assertNotNull(f2);
@@ -146,7 +149,7 @@ public class TestValueRetriever {
         .asDataset(ValueType.L2, () -> store, IdCarrier.L2_CONVERTER,
             Optional.of(i -> i.getId().equalsId(l2.getId())), spark()));
     Set<String> children = carrier1.getChildren().stream().map(IdFrame::toString).collect(Collectors.toSet());
-    assertThat(children, containsInAnyOrder(l31.toString(), l32.toString(), InternalL3.EMPTY_ID.toString()));
+    MatcherAssert.assertThat(children, Matchers.containsInAnyOrder(l31.toString(), l32.toString(), InternalL3.EMPTY_ID.toString()));
   }
 
   public static boolean equals(IdFrame id1, Id id2) {
