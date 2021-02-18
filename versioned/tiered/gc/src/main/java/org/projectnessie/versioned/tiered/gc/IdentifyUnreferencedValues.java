@@ -25,8 +25,8 @@ import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.gc.core.BinaryBloomFilter;
-import org.projectnessie.versioned.gc.core.CategorizedValue;
+import org.projectnessie.versioned.gc.BinaryBloomFilter;
+import org.projectnessie.versioned.gc.CategorizedValue;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 

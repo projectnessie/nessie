@@ -26,11 +26,6 @@ import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.versioned.Serializer;
-import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.gc.core.AssetKey;
-import org.projectnessie.versioned.gc.core.AssetKeyConverter;
-import org.projectnessie.versioned.gc.core.BinaryBloomFilter;
-import org.projectnessie.versioned.gc.core.CategorizedValue;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
@@ -42,39 +37,36 @@ import scala.Function1;
  */
 public class IdentifyUnreferencedAssets<T> {
 
-  private final StoreWorker<T, ?> storeWorker;
+  private final Serializer<T> valueSerializer;
   private final Serializer<AssetKey> assetKeySerializer;
   private final AssetKeyConverter<T> assetKeyConverter;
-  private final Dataset<CategorizedValue> categorizedValues;
   private final SparkSession spark;
 
   /**
    * Drive a job that generates a dataset of unreferenced assets.
    */
   public IdentifyUnreferencedAssets(
-      StoreWorker<T, ?> storeWorker,
+      Serializer<T> valueSerializer,
       Serializer<AssetKey> assetKeySerializer,
       AssetKeyConverter<T> assetKeyConverter,
-      Dataset<CategorizedValue> categorizedValues,
       SparkSession spark) {
     super();
-    this.storeWorker = storeWorker;
+    this.valueSerializer = valueSerializer;
     this.assetKeySerializer = assetKeySerializer;
     this.assetKeyConverter = assetKeyConverter;
-    this.categorizedValues = categorizedValues;
     this.spark = spark;
   }
 
-  public Dataset<UnreferencedItem> identify() {
-    return go(storeWorker, categorizedValues, assetKeySerializer, assetKeyConverter, spark);
+  public Dataset<UnreferencedItem> identify(Dataset<CategorizedValue> categorizedValues) {
+    return go(valueSerializer, categorizedValues, assetKeySerializer, assetKeyConverter, spark);
   }
 
-  private static <T> Dataset<UnreferencedItem> go(StoreWorker<T, ?> storeWorker, Dataset<CategorizedValue> categorizedValues,
+  private static <T> Dataset<UnreferencedItem> go(Serializer<T> valueSerializer, Dataset<CategorizedValue> categorizedValues,
       Serializer<AssetKey> assetKeySerializer, AssetKeyConverter<T> assetKeyConverter, SparkSession spark) {
 
     // If it is, generate a referenced asset. If not, generate a non-referenced asset.
     // this is a single output that has a categorization column
-    AssetFlatMapper<T> mapper = new AssetFlatMapper<T>(storeWorker.getValueSerializer(), assetKeySerializer, assetKeyConverter);
+    AssetFlatMapper<T> mapper = new AssetFlatMapper<T>(valueSerializer, assetKeySerializer, assetKeyConverter);
     Dataset<CategorizedAssetKey> assets = categorizedValues.flatMap(mapper, Encoders.bean(CategorizedAssetKey.class));
 
     // generate a bloom filter of referenced items.
