@@ -284,7 +284,10 @@ public class RocksDBStore implements Store {
       }
     };
 
-    return StreamSupport.stream(iterable.spliterator(), false);
+    Stream<Acceptor<C>> stream = StreamSupport.stream(iterable.spliterator(), false);
+    // Explicitly close stream as spliterator does not do this automatically.
+    stream.close();
+    return stream;
   }
 
   /**
