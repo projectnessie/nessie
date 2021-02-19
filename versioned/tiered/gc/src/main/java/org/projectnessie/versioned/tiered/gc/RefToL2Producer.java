@@ -27,7 +27,6 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.types.DataTypes;
-import org.projectnessie.versioned.gc.BinaryBloomFilter;
 import org.projectnessie.versioned.store.Store;
 
 /**

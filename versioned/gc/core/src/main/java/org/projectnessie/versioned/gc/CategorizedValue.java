@@ -29,6 +29,7 @@ public final class CategorizedValue implements Serializable {
   private boolean referenced;
   private byte[] data;
   private String valueType;
+  private long timestamp;
 
   public CategorizedValue() {
 
@@ -37,11 +38,12 @@ public final class CategorizedValue implements Serializable {
   /**
    * Construct asset key.
    */
-  public CategorizedValue(boolean referenced, String valueType, ByteString data) {
+  public CategorizedValue(boolean referenced, String valueType, ByteString data, long timestamp) {
     super();
     this.referenced = referenced;
     this.valueType = valueType;
     this.data = data.toByteArray();
+    this.timestamp = timestamp;
   }
 
   public void setReferenced(boolean referenced) {
@@ -66,5 +68,13 @@ public final class CategorizedValue implements Serializable {
 
   public void setValueType(String valueType) {
     this.valueType = valueType;
+  }
+
+  public long getTimestamp() {
+    return timestamp;
+  }
+
+  public void setTimestamp(long timestamp) {
+    this.timestamp = timestamp;
   }
 }

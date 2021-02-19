@@ -25,6 +25,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.util.sketch.BloomFilter;
 import org.projectnessie.versioned.Serializer;
 
 import com.google.protobuf.ByteString;
@@ -70,12 +71,13 @@ public class IdentifyUnreferencedAssets<T> {
     Dataset<CategorizedAssetKey> assets = categorizedValues.flatMap(mapper, Encoders.bean(CategorizedAssetKey.class));
 
     // generate a bloom filter of referenced items.
-    final BinaryBloomFilter referencedAssets = BinaryBloomFilter.aggregate(assets.filter("referenced = true").select("data"), "data");
+    final BloomFilter referencedAssets = assets.filter("referenced = true").stat().bloomFilter("hashedData", 10_000_000, 0.03);
 
     // generate list of maybe referenced assets (note that a single asset may be referenced by both referenced and non-referenced values).
     // TODO: convert this to a group by asset, date and then figure out the latest date so we can include that
     // in the written file to avoid stale -> not stale -> stale values.
-    Dataset<Row> unreferencedAssets = assets.filter("referenced = false").select("data").filter(new AssetFilter(referencedAssets));
+    Dataset<Row> unreferencedAssets = assets.filter("referenced = false").select("data", "timestamp", "hashedData")
+        .filter(new AssetFilter(referencedAssets));
 
     // map the generic spark Row back to a concrete type.
     return unreferencedAssets.map(
@@ -89,19 +91,16 @@ public class IdentifyUnreferencedAssets<T> {
 
     private static final long serialVersionUID = 2411246084016802962L;
 
-    private BinaryBloomFilter filter;
+    private BloomFilter filter;
 
-    public AssetFilter() {
-    }
-
-    public AssetFilter(BinaryBloomFilter filter) {
+    public AssetFilter(BloomFilter filter) {
       this.filter = filter;
     }
 
     @Override
     public boolean call(Row r) throws Exception {
-      byte[] bytes = r.getAs("data");
-      return !filter.mightContain(bytes);
+      long hashCode = r.getAs("hashedData");
+      return !filter.mightContainLong(hashCode);
     }
 
   }
@@ -115,6 +114,8 @@ public class IdentifyUnreferencedAssets<T> {
 
     private boolean referenced;
     private byte[] data;
+    private long hashedData;
+    private long timestamp;
 
     public CategorizedAssetKey() {
     }
@@ -122,10 +123,12 @@ public class IdentifyUnreferencedAssets<T> {
     /**
      * Construct asset key.
      */
-    public CategorizedAssetKey(boolean referenced, ByteString data) {
+    public CategorizedAssetKey(boolean referenced, ByteString data, long hashedData, long timestamp) {
       super();
       this.referenced = referenced;
       this.data = data.toByteArray();
+      this.hashedData = hashedData;
+      this.timestamp = timestamp;
     }
 
     public void setReferenced(boolean referenced) {
@@ -144,6 +147,21 @@ public class IdentifyUnreferencedAssets<T> {
       return data;
     }
 
+    public long getHashedData() {
+      return hashedData;
+    }
+
+    public void setHashedData(long hashedData) {
+      this.hashedData = hashedData;
+    }
+
+    public long getTimestamp() {
+      return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+      this.timestamp = timestamp;
+    }
   }
 
   /**
@@ -165,6 +183,7 @@ public class IdentifyUnreferencedAssets<T> {
       UnreferencedItem ui = new UnreferencedItem();
       ui.setName(key.toReportableName().stream().collect(Collectors.joining(".")));
       ui.setAsset(asset);
+      ui.setTimestamp(r.getAs("timestamp"));
       return ui;
     }
 
@@ -178,6 +197,7 @@ public class IdentifyUnreferencedAssets<T> {
 
     private String name;
     private byte[] asset;
+    private long timestamp;
 
     public String getName() {
       return name;
@@ -195,6 +215,13 @@ public class IdentifyUnreferencedAssets<T> {
       this.asset = asset;
     }
 
+    public long getTimestamp() {
+      return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+      this.timestamp = timestamp;
+    }
   }
 
   /**
@@ -224,7 +251,7 @@ public class IdentifyUnreferencedAssets<T> {
     public Iterator<CategorizedAssetKey> call(CategorizedValue r) throws Exception {
       T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getData()));
       return assetKeyConverter.getAssetKeys(contents)
-        .map(ak -> new CategorizedAssetKey(r.isReferenced(), assetKeySerializer.toBytes(ak))).iterator();
+        .map(ak -> new CategorizedAssetKey(r.isReferenced(), assetKeySerializer.toBytes(ak), ak.hashCode(), r.getTimestamp())).iterator();
     }
 
   }

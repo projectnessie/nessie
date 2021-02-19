@@ -25,7 +25,6 @@ import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.gc.BinaryBloomFilter;
 import org.projectnessie.versioned.gc.CategorizedValue;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
@@ -123,7 +122,7 @@ public class IdentifyUnreferencedValues<T> {
       boolean referenced = r.getDt() > recentValues || bloomFilter.mightContain(r.getId().getId());
       T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getBytes()));
       //todo once we add entity type to store we should add it here to avoid the useless serialization.
-      return new CategorizedValue(referenced, contents.getClass().getSimpleName(), ByteString.copyFrom(r.getBytes()));
+      return new CategorizedValue(referenced, contents.getClass().getSimpleName(), ByteString.copyFrom(r.getBytes()), r.getDt());
     }
 
   }
