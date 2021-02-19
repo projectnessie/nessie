@@ -36,11 +36,11 @@ import scala.Function1;
 /**
  * Operation which identifies unreferenced assets.
  */
-public class IdentifyUnreferencedAssets<T> {
+public class IdentifyUnreferencedAssets<T, R> {
 
   private final Serializer<T> valueSerializer;
   private final Serializer<AssetKey> assetKeySerializer;
-  private final AssetKeyConverter<T> assetKeyConverter;
+  private final AssetKeyConverter<T, R> assetKeyConverter;
   private final SparkSession spark;
 
   /**
@@ -49,7 +49,7 @@ public class IdentifyUnreferencedAssets<T> {
   public IdentifyUnreferencedAssets(
       Serializer<T> valueSerializer,
       Serializer<AssetKey> assetKeySerializer,
-      AssetKeyConverter<T> assetKeyConverter,
+      AssetKeyConverter<T, R> assetKeyConverter,
       SparkSession spark) {
     super();
     this.valueSerializer = valueSerializer;
@@ -62,12 +62,12 @@ public class IdentifyUnreferencedAssets<T> {
     return go(valueSerializer, categorizedValues, assetKeySerializer, assetKeyConverter, spark);
   }
 
-  private static <T> Dataset<UnreferencedItem> go(Serializer<T> valueSerializer, Dataset<CategorizedValue> categorizedValues,
-      Serializer<AssetKey> assetKeySerializer, AssetKeyConverter<T> assetKeyConverter, SparkSession spark) {
+  private static <T, R> Dataset<UnreferencedItem> go(Serializer<T> valueSerializer, Dataset<CategorizedValue> categorizedValues,
+      Serializer<AssetKey> assetKeySerializer, AssetKeyConverter<T, R> assetKeyConverter, SparkSession spark) {
 
     // If it is, generate a referenced asset. If not, generate a non-referenced asset.
     // this is a single output that has a categorization column
-    AssetFlatMapper<T> mapper = new AssetFlatMapper<T>(valueSerializer, assetKeySerializer, assetKeyConverter);
+    AssetFlatMapper<T, R> mapper = new AssetFlatMapper<T, R>(valueSerializer, assetKeySerializer, assetKeyConverter);
     Dataset<CategorizedAssetKey> assets = categorizedValues.flatMap(mapper, Encoders.bean(CategorizedAssetKey.class));
 
     // generate a bloom filter of referenced items.
@@ -227,13 +227,13 @@ public class IdentifyUnreferencedAssets<T> {
   /**
    * Spark flat map function to convert a value into an iterator of AssetKeys keeping their reference state.
    */
-  public static class AssetFlatMapper<T> implements FlatMapFunction<CategorizedValue, CategorizedAssetKey> {
+  public static class AssetFlatMapper<T, R> implements FlatMapFunction<CategorizedValue, CategorizedAssetKey> {
 
     private static final long serialVersionUID = -4605489080345105845L;
 
     private final Serializer<T> valueWorker;
     private final Serializer<AssetKey> assetKeySerializer;
-    private final AssetKeyConverter<T> assetKeyConverter;
+    private final AssetKeyConverter<T, R> assetKeyConverter;
 
     /**
      * Construct mapper.
@@ -241,7 +241,7 @@ public class IdentifyUnreferencedAssets<T> {
      * @param assetKeySerializer locate and serialize AssetKeys
      * @param assetKeyConverter convert value of type T to its associated Asset Keys
      */
-    public AssetFlatMapper(Serializer<T> valueWorker, Serializer<AssetKey> assetKeySerializer, AssetKeyConverter<T> assetKeyConverter) {
+    public AssetFlatMapper(Serializer<T> valueWorker, Serializer<AssetKey> assetKeySerializer, AssetKeyConverter<T, R> assetKeyConverter) {
       this.valueWorker = valueWorker;
       this.assetKeySerializer = assetKeySerializer;
       this.assetKeyConverter = assetKeyConverter;
@@ -250,8 +250,9 @@ public class IdentifyUnreferencedAssets<T> {
     @Override
     public Iterator<CategorizedAssetKey> call(CategorizedValue r) throws Exception {
       T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getData()));
-      return assetKeyConverter.getAssetKeys(contents)
-        .map(ak -> new CategorizedAssetKey(r.isReferenced(), assetKeySerializer.toBytes(ak), ak.hashCode(), r.getTimestamp())).iterator();
+      return assetKeyConverter.apply(contents)
+        .map(ak -> new CategorizedAssetKey(r.isReferenced(), assetKeySerializer.toBytes((AssetKey) ak), ak.hashCode(), r.getTimestamp()))
+        .iterator();
     }
 
   }

@@ -125,7 +125,7 @@ public class ITTestIdentifyUnreferencedAssets {
     IdentifyUnreferencedValues<DummyValue> app = new IdentifyUnreferencedValues<>(helper, new DynamoSupplier(), spark, options);
     Dataset<CategorizedValue> values = app.identify();
 
-    IdentifyUnreferencedAssets<DummyValue> ident = new IdentifyUnreferencedAssets<>(helper.getValueSerializer(),
+    IdentifyUnreferencedAssets<DummyValue, DummyAsset> ident = new IdentifyUnreferencedAssets<>(helper.getValueSerializer(),
         new DummyAssetKeySerializer(), new DummyAssetConverter(), spark);
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = ident.identify(values);
     Set<String> unreferencedItems = items.collectAsList().stream().map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
@@ -237,13 +237,12 @@ public class ITTestIdentifyUnreferencedAssets {
     }
   }
 
-  private static class DummyAssetConverter implements AssetKeyConverter<DummyValue>, Serializable {
+  private static class DummyAssetConverter implements AssetKeyConverter<DummyValue, DummyAsset>, Serializable {
 
     @Override
-    public Stream<? extends AssetKey> getAssetKeys(DummyValue value) {
+    public Stream<DummyAsset> apply(DummyValue value) {
       return value.assets.stream();
     }
-
   }
 
   private static class DummyValue implements HasId {

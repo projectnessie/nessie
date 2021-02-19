@@ -15,9 +15,12 @@
  */
 package org.projectnessie.versioned.gc;
 
+import java.util.function.Function;
 import java.util.stream.Stream;
 
-@FunctionalInterface
-public interface AssetKeyConverter<T> {
-  Stream<? extends AssetKey> getAssetKeys(T contents);
+/**
+ * convert a value into a stream of asset keys.
+ */
+public interface AssetKeyConverter<T, R> extends Function<T, Stream<R>> {
+
 }
