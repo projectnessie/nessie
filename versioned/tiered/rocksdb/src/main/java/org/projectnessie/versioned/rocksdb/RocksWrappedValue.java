@@ -44,7 +44,7 @@ class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C>
         break;
       case VALUE:
         if (!function.isRootNameSegmentChildlessAndEquals()
-          || !byteValue.equals(function.getValue().getBinary())) {
+            || !byteValue.equals(function.getValue().getBinary())) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;

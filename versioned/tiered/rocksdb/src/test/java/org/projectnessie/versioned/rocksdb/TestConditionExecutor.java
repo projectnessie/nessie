@@ -15,9 +15,6 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -68,7 +65,9 @@ class TestConditionExecutor {
           .value(TRUE_ENTITY)
           .build());
     final RocksL1 l1 = createL1(random);
-    Assertions.assertThrows(ConditionFailedException.class, () -> {l1.evaluate(expectedFunctions);});
+    Assertions.assertThrows(ConditionFailedException.class, () -> {
+      l1.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -91,7 +90,9 @@ class TestConditionExecutor {
           .value(ID.toEntity())
           .build());
     final RocksL1 l1 = createL1(random);
-    Assertions.assertDoesNotThrow(() -> {l1.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l1.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -105,7 +106,9 @@ class TestConditionExecutor {
           .value(ONE)
           .build());
     final RocksL1 l1 = createL1(random);
-    Assertions.assertDoesNotThrow(() -> {l1.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l1.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -117,7 +120,9 @@ class TestConditionExecutor {
           .value(Entity.ofNumber(RocksL1.SIZE))
           .build());
     final RocksL1 l1 = createL1(random);
-    Assertions.assertDoesNotThrow(() -> {l1.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l1.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -138,7 +143,9 @@ class TestConditionExecutor {
           .value(ID.toEntity())
           .build());
     final RocksL1 l1 = createL1(random);
-    Assertions.assertDoesNotThrow(() -> {l1.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l1.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -150,7 +157,9 @@ class TestConditionExecutor {
           .value(Entity.ofNumber(RocksL1.SIZE))
           .build());
     final RocksL1 l1 = createL1(random);
-    Assertions.assertDoesNotThrow(() -> {l1.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l1.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -171,7 +180,9 @@ class TestConditionExecutor {
           .value(ID.toEntity())
           .build());
     final RocksL1 l1 = createL1(random);
-    Assertions.assertDoesNotThrow(() -> {l1.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l1.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -183,7 +194,9 @@ class TestConditionExecutor {
           .value(Entity.ofNumber(RocksL1.SIZE))
           .build());
     final RocksL1 l1 = createL1CompleteKeyList(random);
-    Assertions.assertDoesNotThrow(() -> {l1.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l1.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -199,7 +212,9 @@ class TestConditionExecutor {
           .value(Entity.ofList(idsAsEntity))
           .build());
     final RocksL1 l1 = createL1CompleteKeyList(random);
-    Assertions.assertDoesNotThrow(() -> {l1.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l1.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -211,7 +226,9 @@ class TestConditionExecutor {
           .value(ID.toEntity())
           .build());
     final RocksL1 l1 = createL1CompleteKeyList(random);
-    Assertions.assertDoesNotThrow(() -> {l1.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l1.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -224,7 +241,9 @@ class TestConditionExecutor {
           .value(TRUE_ENTITY)
           .build());
     final RocksL2 l2 = createL2();
-    Assertions.assertThrows(ConditionFailedException.class, () -> {l2.evaluate(expectedFunctions);});
+    Assertions.assertThrows(ConditionFailedException.class, () -> {
+      l2.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -241,7 +260,9 @@ class TestConditionExecutor {
           .value(Entity.ofNumber(RocksL1.SIZE))
           .build());
     final RocksL2 l2 = createL2();
-    Assertions.assertDoesNotThrow(() -> {l2.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l2.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -262,7 +283,9 @@ class TestConditionExecutor {
           .value(ID.toEntity())
           .build());
     final RocksL2 l2 = createL2();
-    Assertions.assertDoesNotThrow(() -> {l2.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l2.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -275,7 +298,9 @@ class TestConditionExecutor {
           .value(TRUE_ENTITY)
           .build());
     final RocksL3 l3 = createL3();
-    Assertions.assertThrows(ConditionFailedException.class, () -> {l3.evaluate(expectedFunctions);});
+    Assertions.assertThrows(ConditionFailedException.class, () -> {
+      l3.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -287,7 +312,9 @@ class TestConditionExecutor {
           .value(Id.EMPTY.toEntity())
           .build());
     final RocksL3 l3 = createL3();
-    Assertions.assertDoesNotThrow(() -> {l3.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      l3.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -301,7 +328,9 @@ class TestConditionExecutor {
           .build());
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(
         id, 0L, ByteString.EMPTY);
-    Assertions.assertDoesNotThrow(() -> {meta.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      meta.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -314,7 +343,9 @@ class TestConditionExecutor {
           .value(Entity.ofBinary(value))
           .build());
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(Id.EMPTY, 0L, value);
-    Assertions.assertDoesNotThrow(() -> {meta.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      meta.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -328,7 +359,9 @@ class TestConditionExecutor {
           .value(searchId.toEntity())
           .build());
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(actualId, 0L, ByteString.EMPTY);
-    Assertions.assertThrows(ConditionFailedException.class, () -> {meta.evaluate(expectedFunctions);});
+    Assertions.assertThrows(ConditionFailedException.class, () -> {
+      meta.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -342,7 +375,9 @@ class TestConditionExecutor {
           .value(Entity.ofBinary(searchValue))
           .build());
     final RocksCommitMetadata meta = (RocksCommitMetadata) RocksCommitMetadata.of(Id.EMPTY, 0L, actualValue);
-    Assertions.assertThrows(ConditionFailedException.class, () -> {meta.evaluate(expectedFunctions);});
+    Assertions.assertThrows(ConditionFailedException.class, () -> {
+      meta.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -355,7 +390,9 @@ class TestConditionExecutor {
           .value(TRUE_ENTITY)
           .build());
     final RocksRef ref = createTag();
-    Assertions.assertThrows(ConditionFailedException.class, () -> {ref.evaluate(expectedFunctions);});
+    Assertions.assertThrows(ConditionFailedException.class, () -> {
+      ref.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -367,7 +404,9 @@ class TestConditionExecutor {
           .value(Id.EMPTY.toEntity())
           .build());
     final RocksRef ref = createTag();
-    Assertions.assertDoesNotThrow(() -> {ref.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      ref.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -390,7 +429,9 @@ class TestConditionExecutor {
           .value(ID.toEntity())
           .build());
     final RocksRef ref = createTag();
-    Assertions.assertThrows(ConditionFailedException.class, () -> {ref.evaluate(expectedFunctions);});
+    Assertions.assertThrows(ConditionFailedException.class, () -> {
+      ref.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -412,7 +453,9 @@ class TestConditionExecutor {
           .value(Entity.ofNumber(RocksL1.SIZE))
           .build());
     final RocksRef ref = createBranch(random);
-    Assertions.assertDoesNotThrow(() -> {ref.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      ref.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -433,7 +476,9 @@ class TestConditionExecutor {
           .value(ID.toEntity())
           .build());
     final RocksRef ref = createBranch(random);
-    Assertions.assertDoesNotThrow(() -> {ref.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      ref.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -450,7 +495,9 @@ class TestConditionExecutor {
           .value(Entity.ofNumber(2))
           .build());
     final RocksRef ref = createBranch(random);
-    Assertions.assertDoesNotThrow(() -> {ref.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      ref.evaluate(expectedFunctions);
+    });
   }
 
   @Test
@@ -477,7 +524,9 @@ class TestConditionExecutor {
           .value(Entity.ofNumber(keyListSize))
           .build());
     final RocksFragment fragment = createFragment();
-    Assertions.assertDoesNotThrow(() -> {fragment.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      fragment.evaluate(expectedFunctions);
+    });
   }
 
   private static String createPath() {
@@ -511,7 +560,9 @@ class TestConditionExecutor {
           .path(ofPath(path))
           .value(entity)
           .build());
-    Assertions.assertDoesNotThrow(() -> {rocksBaseValue.evaluate(expectedFunctions);});
+    Assertions.assertDoesNotThrow(() -> {
+      rocksBaseValue.evaluate(expectedFunctions);
+    });
   }
 
   /**

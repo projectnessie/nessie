@@ -135,7 +135,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
    */
   void evaluatesId(Function function) throws ConditionFailedException {
     if (!function.isRootNameSegmentChildlessAndEquals()
-      || !getId().toEntity().equals(function.getValue())) {
+        || !getId().toEntity().equals(function.getValue())) {
       throw new ConditionFailedException(conditionNotMatchedMessage(function));
     }
   }

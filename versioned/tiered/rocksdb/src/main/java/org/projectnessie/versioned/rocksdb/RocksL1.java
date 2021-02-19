@@ -105,7 +105,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
         break;
       case COMMIT_METADATA:
         if (!function.isRootNameSegmentChildlessAndEquals()
-          || !metadataId.toEntity().equals(function.getValue())) {
+            || !metadataId.toEntity().equals(function.getValue())) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;

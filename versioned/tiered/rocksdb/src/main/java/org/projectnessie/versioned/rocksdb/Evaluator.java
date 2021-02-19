@@ -28,8 +28,7 @@ interface Evaluator {
    * Checks that each Function in the collection is met by the implementing class.
    * @param functions the functions to check
    * @throws ConditionFailedException thrown if the ConditionExpression is invalid or the condition is not met.
-   * It is then up to the calling
-   * method how to handle the exception.
+   *     It is then up to the calling method how to handle the exception.
    */
   void evaluate(List<Function> functions) throws ConditionFailedException;
 }

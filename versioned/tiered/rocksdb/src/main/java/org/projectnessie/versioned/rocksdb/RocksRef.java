@@ -106,13 +106,13 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
         break;
       case TYPE:
         if (!function.isRootNameSegmentChildlessAndEquals()
-          || !type.equals(Type.getType(function.getValue().getString()))) {
+            || !type.equals(Type.getType(function.getValue().getString()))) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;
       case NAME:
         if (!function.isRootNameSegmentChildlessAndEquals()
-          || !name.equals(function.getValue().getString())) {
+            || !name.equals(function.getValue().getString())) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;
@@ -121,7 +121,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
         break;
       case METADATA:
         if (!function.isRootNameSegmentChildlessAndEquals()
-          || !metadata.toEntity().equals(function.getValue())) {
+            || !metadata.toEntity().equals(function.getValue())) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;
@@ -129,7 +129,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
         // TODO: refactor once jdbc-store Store changes are available.
         if (function.getOperator().equals(Function.Operator.SIZE)) {
           if (function.getRootPathAsNameSegment().getChild().isPresent()
-            || commits.size() != function.getValue().getNumber()) {
+              || commits.size() != function.getValue().getNumber()) {
             throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
         } else {
@@ -155,19 +155,19 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
         break;
       case TYPE:
         if (!function.isRootNameSegmentChildlessAndEquals()
-          || !type.equals(Type.getType(function.getValue().getString()))) {
+            || !type.equals(Type.getType(function.getValue().getString()))) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;
       case NAME:
         if (!function.getOperator().equals(Function.Operator.EQUALS)
-          || !name.equals(function.getValue().getString())) {
+            || !name.equals(function.getValue().getString())) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;
       case COMMIT:
         if (!function.getOperator().equals(Function.Operator.EQUALS)
-          || !commit.toEntity().equals(function.getValue())) {
+            || !commit.toEntity().equals(function.getValue())) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;
