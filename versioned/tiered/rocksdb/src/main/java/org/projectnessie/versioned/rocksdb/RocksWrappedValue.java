@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
+import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.StoreException;
 import org.projectnessie.versioned.tiered.BaseWrappedValue;
 
@@ -35,22 +36,21 @@ class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C>
   }
 
   @Override
-  public boolean evaluate(Function function) {
+  public void evaluate(Function function) throws ConditionFailedException {
     final String segment = function.getRootPathAsNameSegment().getName();
-    try {
-      switch (segment) {
-        case ID:
-          return evaluatesId(function);
-        case VALUE:
-          return (function.isRootNameSegmentChildlessAndEquals()
-            && byteValue.equals(function.getValue().getBinary()));
-        default:
-          // Invalid Condition Function.
-          return false;
-      }
-    } catch (IllegalStateException e) {
-      // Catch exceptions raise due to malformed ConditionExpressions.
-      return false;
+    switch (segment) {
+      case ID:
+        evaluatesId(function);
+        break;
+      case VALUE:
+        if (!function.isRootNameSegmentChildlessAndEquals()
+          || !byteValue.equals(function.getValue().getBinary())) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      default:
+        // Invalid Condition Function.
+        throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
     }
   }
 

@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.StoreException;
 import org.projectnessie.versioned.tiered.Ref;
@@ -80,84 +81,98 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
   private Type type = Type.INIT;
 
   @Override
-  public boolean evaluate(Function function) {
+  public void evaluate(Function function) throws ConditionFailedException {
     if (type == Type.BRANCH) {
-      return evaluateBranch(function);
+      evaluateBranch(function);
     } else if (type == Type.TAG) {
-      return evaluateTag(function);
+      evaluateTag(function);
+    } else {
+      throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
     }
-    return false;
   }
 
   /**
    * Evaluates that this branch meets the condition.
    *
    * @param function the function that is tested against the nameSegment
-   * @return true if this branch meets the condition
+   * @throws ConditionFailedException thrown if the condition expression is invalid or the condition is not met.
    */
-  private boolean evaluateBranch(Function function) {
+  private void evaluateBranch(Function function) throws ConditionFailedException {
     final String segment = function.getRootPathAsNameSegment().getName();
 
-    try {
-      switch (segment) {
-        case ID:
-          return evaluatesId(function);
-        case TYPE:
-          return (function.isRootNameSegmentChildlessAndEquals()
-            && type.equals(Type.getType(function.getValue().getString())));
-        case NAME:
-          return (function.isRootNameSegmentChildlessAndEquals()
-            && name.equals(function.getValue().getString()));
-        case CHILDREN:
-          return evaluate(function, children);
-        case METADATA:
-          return (function.isRootNameSegmentChildlessAndEquals()
-            && metadata.toEntity().equals(function.getValue()));
-        case COMMITS:
-          // TODO: refactor once jdbc-store Store changes are available.
-          if (function.getOperator().equals(Function.Operator.SIZE)) {
-            return (!function.getRootPathAsNameSegment().getChild().isPresent()
-              && commits.size() == function.getValue().getNumber());
-          } else {
-            return false;
+    switch (segment) {
+      case ID:
+        evaluatesId(function);
+        break;
+      case TYPE:
+        if (!function.isRootNameSegmentChildlessAndEquals()
+          || !type.equals(Type.getType(function.getValue().getString()))) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      case NAME:
+        if (!function.isRootNameSegmentChildlessAndEquals()
+          || !name.equals(function.getValue().getString())) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      case CHILDREN:
+        evaluate(function, children);
+        break;
+      case METADATA:
+        if (!function.isRootNameSegmentChildlessAndEquals()
+          || !metadata.toEntity().equals(function.getValue())) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      case COMMITS:
+        // TODO: refactor once jdbc-store Store changes are available.
+        if (function.getOperator().equals(Function.Operator.SIZE)) {
+          if (function.getRootPathAsNameSegment().getChild().isPresent()
+            || commits.size() != function.getValue().getNumber()) {
+            throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
-        default:
-          return false;
-      }
-    } catch (IllegalStateException e) {
-      // Catch exceptions raise due to malformed ConditionExpressions.
-      return false;
+        } else {
+          throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
+        }
+        break;
+      default:
+        throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
     }
-
   }
 
   /**
    * Evaluates that this tag meets the condition.
    *
    * @param function the function that is tested against the nameSegment
-   * @return true if this tag meets the condition
+   * @throws ConditionFailedException thrown if the condition expression is invalid or the condition is not met.
    */
-  private boolean evaluateTag(Function function) {
+  private void evaluateTag(Function function) throws ConditionFailedException {
     final String segment = function.getRootPathAsNameSegment().getName();
-    try {
-      switch (segment) {
-        case ID:
-          return evaluatesId(function);
-        case TYPE:
-          return (function.isRootNameSegmentChildlessAndEquals()
-            && type.equals(Type.getType(function.getValue().getString())));
-        case NAME:
-          return (function.getOperator().equals(Function.Operator.EQUALS)
-            && name.equals(function.getValue().getString()));
-        case COMMIT:
-          return (function.getOperator().equals(Function.Operator.EQUALS)
-            && commit.toEntity().equals(function.getValue()));
-        default:
-          return false;
-      }
-    } catch (IllegalStateException e) {
-      // Catch exceptions raise due to malformed ConditionExpressions.
-      return false;
+    switch (segment) {
+      case ID:
+        evaluatesId(function);
+        break;
+      case TYPE:
+        if (!function.isRootNameSegmentChildlessAndEquals()
+          || !type.equals(Type.getType(function.getValue().getString()))) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      case NAME:
+        if (!function.getOperator().equals(Function.Operator.EQUALS)
+          || !name.equals(function.getValue().getString())) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      case COMMIT:
+        if (!function.getOperator().equals(Function.Operator.EQUALS)
+          || !commit.toEntity().equals(function.getValue())) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      default:
+        throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
     }
   }
 

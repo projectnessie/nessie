@@ -17,6 +17,8 @@ package org.projectnessie.versioned.rocksdb;
 
 import java.util.List;
 
+import org.projectnessie.versioned.store.ConditionFailedException;
+
 /**
  * Provides evaluation of a collection of {@link org.projectnessie.versioned.rocksdb.Function} against the
  * implementing class.
@@ -25,7 +27,9 @@ interface Evaluator {
   /**
    * Checks that each Function in the collection is met by the implementing class.
    * @param functions the functions to check
-   * @return true if the functions are met
+   * @throws ConditionFailedException thrown if the ConditionExpression is invalid or the condition is not met.
+   * It is then up to the calling
+   * method how to handle the exception.
    */
-  boolean evaluate(List<Function> functions);
+  void evaluate(List<Function> functions) throws ConditionFailedException;
 }

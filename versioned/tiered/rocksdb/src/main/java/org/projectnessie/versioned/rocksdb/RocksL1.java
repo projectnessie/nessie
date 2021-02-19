@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
+import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.StoreException;
@@ -95,44 +96,51 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
   }
 
   @Override
-  public boolean evaluate(Function function) {
+  public void evaluate(Function function) throws ConditionFailedException {
     final ExpressionPath.NameSegment nameSegment = function.getRootPathAsNameSegment();
     final String segment = nameSegment.getName();
-    try {
-      switch (segment) {
-        case ID:
-          return evaluatesId(function);
-        case COMMIT_METADATA:
-          return (function.isRootNameSegmentChildlessAndEquals()
-            && metadataId.toEntity().equals(function.getValue()));
-        case ANCESTORS:
-          return evaluate(function, parentList);
-        case CHILDREN:
-          return evaluate(function, tree);
-        case KEY_LIST:
-          return false;
-        case INCREMENTAL_KEY_LIST:
-          if (!nameSegment.getChild().isPresent() || !function.getOperator().equals(Function.Operator.EQUALS)) {
-            return false;
+    switch (segment) {
+      case ID:
+        evaluatesId(function);
+        break;
+      case COMMIT_METADATA:
+        if (!function.isRootNameSegmentChildlessAndEquals()
+          || !metadataId.toEntity().equals(function.getValue())) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      case ANCESTORS:
+        evaluate(function, parentList);
+        break;
+      case CHILDREN:
+        evaluate(function, tree);
+        break;
+      case KEY_LIST:
+        throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
+      case INCREMENTAL_KEY_LIST:
+        if (!nameSegment.getChild().isPresent() || !function.getOperator().equals(Function.Operator.EQUALS)) {
+          throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
+        }
+        final String childName = nameSegment.getChild().get().asName().getName();
+        if (childName.equals(CHECKPOINT_ID)) {
+          if (!checkpointId.toEntity().equals(function.getValue())) {
+            throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
-          final String childName = nameSegment.getChild().get().asName().getName();
-          if (childName.equals(CHECKPOINT_ID)) {
-            return checkpointId.toEntity().equals(function.getValue());
-          } else if (childName.equals((DISTANCE_FROM_CHECKPOINT))) {
-            return Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue());
-          } else {
-            // Invalid Condition Function.
-            return false;
+        } else if (childName.equals((DISTANCE_FROM_CHECKPOINT))) {
+          if (!Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue())) {
+            throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
-        case COMPLETE_KEY_LIST:
-          return evaluate(function, fragmentIds);
-        default:
+        } else {
           // Invalid Condition Function.
-          return false;
-      }
-    } catch (IllegalStateException e) {
-      // Catch exceptions raise due to malformed ConditionExpressions.
-      return false;
+          throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
+        }
+        break;
+      case COMPLETE_KEY_LIST:
+        evaluate(function, fragmentIds);
+        break;
+      default:
+        // Invalid Condition Function.
+        throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
     }
   }
 

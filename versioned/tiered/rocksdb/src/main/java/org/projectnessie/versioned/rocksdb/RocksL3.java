@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.KeyDelta;
 import org.projectnessie.versioned.store.StoreException;
@@ -47,13 +48,12 @@ class RocksL3 extends RocksBaseValue<L3> implements L3 {
   }
 
   @Override
-  public boolean evaluate(Function function) {
+  public void evaluate(Function function) throws ConditionFailedException {
     final String segment = function.getRootPathAsNameSegment().getName();
-    try {
-      return segment.equals(ID) && evaluatesId(function);
-    } catch (IllegalStateException e) {
-      // Catch exceptions raise due to malformed ConditionExpressions.
-      return false;
+    if (segment.equals(ID)) {
+      evaluatesId(function);
+    } else {
+      throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
     }
   }
 

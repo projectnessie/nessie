@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
+import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.BaseValue;
@@ -103,33 +104,55 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
   }
 
   @Override
-  public boolean evaluate(List<Function> functions) {
+  public void evaluate(List<Function> functions) throws ConditionFailedException {
     for (Function function: functions) {
       if (function.getPath().getRoot().isName()) {
-        if (!evaluate(function)) {
-          return false;
+        try {
+          evaluate(function);
+        } catch (IllegalStateException e) {
+          // Catch exceptions raise due to incorrect Entity type in FunctionExpression being compared to the
+          // target attribute.
+          throw new ConditionFailedException(invalidValueMessage(function));
+        } catch (ConditionFailedException e) {
+          throw e;
         }
       }
     }
-    return true;
   }
 
   /**
    * Checks that a Function is met by the implementing class.
    * @param function the condition to check
-   * @return true if the condition is met
+   * @throws ConditionFailedException thrown if the condition expression is invalid or the condition is not met.
    */
-  public abstract boolean evaluate(Function function);
+  public abstract void evaluate(Function function) throws ConditionFailedException;
 
   /**
    * Evaluates the id against a function and ensures that the name segment is well formed,
    * ie does not contain a child attribute.
    * @param function the function to evaluate against id.
-   * @return true if the id meets the function condition
+   * @throws ConditionFailedException thrown if the condition expression is invalid or the condition is not met.
    */
-  boolean evaluatesId(Function function) {
-    return (function.isRootNameSegmentChildlessAndEquals()
-      && getId().toEntity().equals(function.getValue()));
+  void evaluatesId(Function function) throws ConditionFailedException {
+    if (!function.isRootNameSegmentChildlessAndEquals()
+      || !getId().toEntity().equals(function.getValue())) {
+      throw new ConditionFailedException(conditionNotMatchedMessage(function));
+    }
+  }
+
+  protected String invalidOperatorSegmentMessage(Function function) {
+    return String.format(String.format("Operator: %s is not applicable to segment %s",
+      function.getOperator(), function.getRootPathAsNameSegment().getName()));
+  }
+
+  protected String invalidValueMessage(Function function) {
+    return String.format(String.format("Not able to apply type: %s to segment: %s", function.getValue().getType(),
+      function.getRootPathAsNameSegment().getName()));
+  }
+
+  protected String conditionNotMatchedMessage(Function function) {
+    return String.format(String.format("Condition %s did not match the actual value for %s", function.getValue().getType(),
+      function.getRootPathAsNameSegment().getName()));
   }
 
   /**

@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.StoreException;
 import org.projectnessie.versioned.tiered.Fragment;
@@ -72,29 +73,30 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
   }
 
   @Override
-  public boolean evaluate(Function function) {
+  public void evaluate(Function function) throws ConditionFailedException {
     final String segment = function.getRootPathAsNameSegment().getName();
-    try {
-      switch (segment) {
-        case ID:
-          return evaluatesId(function);
-        case KEY_LIST:
-          if (function.getRootPathAsNameSegment().getChild().isPresent()) {
-            return false;
-          } else if (function.getOperator().equals(Function.Operator.EQUALS)) {
-            return keysAsEntityList(keys).equals(function.getValue());
-          } else if (function.getOperator().equals(Function.Operator.SIZE)) {
-            return (keys.size() == function.getValue().getNumber());
-          } else {
-            return false;
+    switch (segment) {
+      case ID:
+        evaluatesId(function);
+        break;
+      case KEY_LIST:
+        if (function.getRootPathAsNameSegment().getChild().isPresent()) {
+          throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
+        } else if (function.getOperator().equals(Function.Operator.EQUALS)) {
+          if (!keysAsEntityList(keys).equals(function.getValue())) {
+            throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
-        default:
-          // Invalid Condition Function.
-          return false;
-      }
-    } catch (IllegalStateException e) {
-      // Catch exceptions raise due to malformed ConditionExpressions.
-      return false;
+        } else if (function.getOperator().equals(Function.Operator.SIZE)) {
+          if (keys.size() != function.getValue().getNumber()) {
+            throw new ConditionFailedException(conditionNotMatchedMessage(function));
+          }
+        } else {
+          throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
+        }
+        break;
+      default:
+        // NameSegment could not be applied to FunctionExpression.
+        throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
     }
   }
 

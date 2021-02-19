@@ -195,8 +195,10 @@ public class RocksDBStore implements Store {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(saveOp.getType());
 
     try (final Transaction transaction = rocksDB.beginTransaction(WRITE_OPTIONS)) {
-      if (!isConditionExpressionValid(transaction, columnFamilyHandle, saveOp.getId(), saveOp.getType(), condition, "put")) {
-        throw new ConditionFailedException("Condition failed during put operation");
+      try {
+        isConditionExpressionValid(transaction, columnFamilyHandle, saveOp.getId(), saveOp.getType(), condition, "put");
+      } catch (ConditionFailedException e) {
+        throw new ConditionFailedException(String.format("Condition failed during put operation. %s", e.getMessage()));
       }
       transaction.put(columnFamilyHandle, saveOp.getId().toBytes(), RocksSerDe.serializeWithConsumer(saveOp));
       transaction.commit();
@@ -210,7 +212,9 @@ public class RocksDBStore implements Store {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(type);
 
     try (final Transaction transaction = rocksDB.beginTransaction(WRITE_OPTIONS)) {
-      if (!isConditionExpressionValid(transaction, columnFamilyHandle, id, type, condition, "delete")) {
+      try {
+        isConditionExpressionValid(transaction, columnFamilyHandle, id, type, condition, "delete");
+      } catch (ConditionFailedException e) {
         LOGGER.debug("Condition failed during delete operation.");
         return false;
       }
@@ -319,18 +323,15 @@ public class RocksDBStore implements Store {
       .collect(Collectors.toList());
   }
 
-  private <C extends BaseValue<C>> boolean isConditionExpressionValid(Transaction transaction, ColumnFamilyHandle columnFamilyHandle,
+  private <C extends BaseValue<C>> void isConditionExpressionValid(Transaction transaction, ColumnFamilyHandle columnFamilyHandle,
                                                                       Id id, ValueType type, Optional<ConditionExpression> condition,
-                                                                      String operation) throws RocksDBException {
+                                                                      String operation) throws RocksDBException, ConditionFailedException {
     if (condition.isPresent()) {
       final byte[] value = getAndCheckValue(transaction, columnFamilyHandle, id, operation);
       final RocksBaseValue<C> consumer = RocksSerDe.getConsumer(type);
       RocksSerDe.deserializeToConsumer(type, value, consumer);
-      if (!consumer.evaluate(translate(condition.get()))) {
-        return false;
-      }
+      consumer.evaluate(translate(condition.get()));
     }
-    return true;
   }
 
   private byte[] getAndCheckValue(Transaction transaction, ColumnFamilyHandle columnFamilyHandle,
