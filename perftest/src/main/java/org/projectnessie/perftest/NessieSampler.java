@@ -45,7 +45,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
   private static final Logger logger = LoggerFactory.getLogger(NessieSampler.class);
   private static final Joiner SLASH = Joiner.on("/");
   private static final String METHOD_TAG = "method";
-  private static final String PATH_TAG = "path";
+  private static final String URI_TAG = "uri";
   private static final String BRANCH_TAG = "branch";
   private static final String BASE_BRANCH_TAG = "base_branch";
   private static final String TABLE_TAG = "table";
@@ -58,7 +58,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
   }
 
   private NessieClient client;
-  private String path;
+  private String uri;
   private String branch;
   private String baseBranch;
   private ThreadLocal<Branch> commitId = new ThreadLocal<>();
@@ -68,7 +68,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
    */
   private synchronized NessieClient nessieClient() {
     if (client == null) {
-      client = NessieClient.builder().withPath(path).withUsername("admin_user").withPassword("test123").build();
+      client = NessieClient.builder().withUri(uri).withUsername("admin_user").withPassword("test123").build();
       try {
         client.getTreeApi().createReference(Branch.of("main", null));
       } catch (Exception t) {
@@ -85,7 +85,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
   public Arguments getDefaultParameters() {
     Arguments defaultParameters = new Arguments();
     defaultParameters.addArgument(METHOD_TAG, "test");
-    defaultParameters.addArgument(PATH_TAG, "testurl");
+    defaultParameters.addArgument(URI_TAG, "testurl");
     defaultParameters.addArgument(BRANCH_TAG, "main");
     defaultParameters.addArgument(BASE_BRANCH_TAG, "main");
     defaultParameters.addArgument(TABLE_TAG, "table");
@@ -108,7 +108,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
     sampleResult.setBytes(message.getBytes().length);
     sampleResult.setResponseCode(Integer.toString(retCode));
     try {
-      sampleResult.setURL(new URL(SLASH.join(path, method.name())));
+      sampleResult.setURL(new URL(SLASH.join(uri, method.name())));
     } catch (MalformedURLException e) {
       //pass
     }
@@ -196,7 +196,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
 
   @Override
   public void setupTest(JavaSamplerContext context) {
-    path = context.getParameter(PATH_TAG);
+    uri = context.getParameter(URI_TAG);
     branch = context.getParameter(BRANCH_TAG, "x");
     baseBranch = context.getParameter(BASE_BRANCH_TAG, "main");
   }

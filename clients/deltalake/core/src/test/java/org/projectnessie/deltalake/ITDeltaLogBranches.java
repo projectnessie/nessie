@@ -62,7 +62,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
   @BeforeEach
   public void createClient() {
-    client = NessieClient.builder().withPath(url).build();
+    client = NessieClient.builder().withUri(url).build();
   }
 
   @AfterEach

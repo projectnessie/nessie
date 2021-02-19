@@ -89,7 +89,7 @@ class TestRest {
   @BeforeEach
   void init() {
     String path = "http://localhost:19121/api/v1";
-    client = NessieClient.builder().withPath(path).build();
+    client = NessieClient.builder().withUri(path).build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 

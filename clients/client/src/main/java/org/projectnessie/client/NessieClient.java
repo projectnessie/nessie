@@ -59,7 +59,7 @@ public interface NessieClient extends AutoCloseable {
    */
   class Builder {
     private AuthType authType = AuthType.NONE;
-    private String path;
+    private String uri;
     private String username;
     private String password;
     private boolean tracing;
@@ -83,9 +83,9 @@ public interface NessieClient extends AutoCloseable {
      * @see #fromSystemProperties()
      */
     public Builder fromConfig(Function<String, String> configuration) {
-      String path = configuration.apply(CONF_NESSIE_URL);
-      if (path != null) {
-        this.path = path;
+      String uri = configuration.apply(CONF_NESSIE_URL);
+      if (uri != null) {
+        this.uri = uri;
       }
       String username = configuration.apply(CONF_NESSIE_USERNAME);
       if (username != null) {
@@ -118,11 +118,11 @@ public interface NessieClient extends AutoCloseable {
 
     /**
      * Set the Nessie server URI. A server URI must be configured.
-     * @param path server URI
+     * @param uri server URI
      * @return {@code this}
      */
-    public Builder withPath(String path) {
-      this.path = path;
+    public Builder withUri(String uri) {
+      this.uri = uri;
       return this;
     }
 
@@ -162,7 +162,7 @@ public interface NessieClient extends AutoCloseable {
      * @return new {@link NessieClient}
      */
     public NessieClient build() {
-      return new NessieHttpClient(authType, path, username, password, tracing);
+      return new NessieHttpClient(authType, uri, username, password, tracing);
     }
   }
 }

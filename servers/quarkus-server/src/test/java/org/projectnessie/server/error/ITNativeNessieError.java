@@ -41,7 +41,7 @@ public class ITNativeNessieError {
   @BeforeEach
   void init() {
     String path = "http://localhost:19121/api/v1";
-    NessieClient client = NessieClient.builder().withPath(path).build();
+    NessieClient client = NessieClient.builder().withUri(path).build();
     contents = client.getContentsApi();
   }
 
