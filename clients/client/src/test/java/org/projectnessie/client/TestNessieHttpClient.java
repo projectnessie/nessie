@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.Base64;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -45,7 +46,7 @@ class TestNessieHttpClient {
 
   @Test
   void testNullUri() {
-    assertThrows(IllegalArgumentException.class, () -> NessieClient.builder().withUri(null).build());
+    assertThrows(IllegalArgumentException.class, () -> NessieClient.builder().withUri((URI) null).build());
   }
 
   @Test
