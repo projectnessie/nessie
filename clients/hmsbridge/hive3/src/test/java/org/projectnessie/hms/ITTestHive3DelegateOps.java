@@ -15,7 +15,7 @@
  */
 package org.projectnessie.hms;
 
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -24,8 +24,6 @@ import org.apache.hadoop.hive.metastore.conf.MetastoreConf;
 import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.DelegatingHive3NessieRawStore;
 import org.projectnessie.client.NessieClient;
-import org.projectnessie.hms.BaseDelegateOps;
-import org.projectnessie.hms.NessieStore;
 
 import com.google.common.collect.ImmutableMap;
 import com.klarna.hiverunner.annotations.HiveProperties;
@@ -37,7 +35,7 @@ public class ITTestHive3DelegateOps extends BaseDelegateOps {
       .put(MetastoreConf.ConfVars.RAW_STORE_IMPL.getVarname(), DelegatingHive3NessieRawStore.class.getName())
       .put("hive.exec.dynamic.partition.mode","nonstrict")
       .put(NessieStore.NESSIE_WHITELIST_DBS_OPTION,"nessie,mytestdb")
-      .put(CONF_NESSIE_URL, URL)
+      .put(CONF_NESSIE_URI, URL)
       .build();
 
   @BeforeAll

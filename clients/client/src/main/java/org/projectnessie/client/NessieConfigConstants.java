@@ -20,9 +20,9 @@ package org.projectnessie.client;
  */
 public final class NessieConfigConstants {
   /**
-   * Config property name ({@value #CONF_NESSIE_URL}) for the Nessie service URL.
+   * Config property name ({@value #CONF_NESSIE_URI}) for the Nessie service URL.
    */
-  public static final String CONF_NESSIE_URL = "nessie.url";
+  public static final String CONF_NESSIE_URI = "nessie.uri";
   /**
    * Config property name ({@value #CONF_NESSIE_USERNAME}) for the user name used for (basic) authentication.
    */

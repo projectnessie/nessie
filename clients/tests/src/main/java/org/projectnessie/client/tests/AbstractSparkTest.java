@@ -17,7 +17,7 @@ package org.projectnessie.client.tests;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_REF;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,11 +48,11 @@ public abstract class AbstractSparkTest {
     String branch = "main";
     String authType = "NONE";
 
-    hadoopConfig.set(CONF_NESSIE_URL, url);
+    hadoopConfig.set(CONF_NESSIE_URI, url);
     hadoopConfig.set(CONF_NESSIE_REF, branch);
     hadoopConfig.set(CONF_NESSIE_AUTH_TYPE, authType);
 
-    conf.set("spark.hadoop." + CONF_NESSIE_URL, url)
+    conf.set("spark.hadoop." + CONF_NESSIE_URI, url)
         .set("spark.hadoop." + CONF_NESSIE_REF, branch)
         .set("spark.hadoop." + CONF_NESSIE_AUTH_TYPE, authType)
         .set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");

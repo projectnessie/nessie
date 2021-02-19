@@ -15,7 +15,7 @@
  */
 package org.projectnessie.hms;
 
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -24,7 +24,6 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.junit.jupiter.api.BeforeAll;
 import org.projectnessie.Hive2NessieRawStore;
 import org.projectnessie.client.NessieClient;
-import org.projectnessie.hms.BaseTableOperations;
 
 import com.google.common.collect.ImmutableMap;
 import com.klarna.hiverunner.annotations.HiveProperties;
@@ -35,7 +34,7 @@ public class ITTestHive2TableOperations extends BaseTableOperations {
   public static final Map<String, String> properties = ImmutableMap.<String, String>builder()
       .put(HiveConf.ConfVars.METASTORE_RAW_STORE_IMPL.varname, Hive2NessieRawStore.class.getName())
       .put("hive.exec.dynamic.partition.mode","nonstrict")
-      .put(CONF_NESSIE_URL, URL)
+      .put(CONF_NESSIE_URI, URL)
       .build();
 
   @BeforeAll
