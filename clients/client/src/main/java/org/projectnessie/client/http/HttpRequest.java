@@ -126,6 +126,7 @@ public class HttpRequest {
         if (callbacks != null) {
           callbacks.forEach(callback -> callback.accept(null, e));
         }
+        throw e;
       }
 
       responseFilters.forEach(responseFilter -> responseFilter.filter(responseContext));
