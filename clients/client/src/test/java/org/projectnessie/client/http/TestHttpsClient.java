@@ -49,9 +49,7 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.http.HttpClientException;
-import org.projectnessie.client.http.HttpRequest;
+import org.projectnessie.client.util.TestServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +86,7 @@ class TestHttpsClient {
       SSLContext sc = SSLContext.getInstance("SSL");
       sc.init(null, trustManager[0], new java.security.SecureRandom());
       HttpRequest client = HttpClient.builder()
-                                     .setBaseUri("https://localhost:" + server.server.getAddress().getPort())
+                                     .setBaseUri("https://localhost:" + server.getAddress().getPort())
                                      .setObjectMapper(MAPPER)
                                      .setSslContext(sc)
                                      .build()
@@ -96,7 +94,7 @@ class TestHttpsClient {
       client.get();
 
       final HttpRequest insecureClient = HttpClient.builder()
-                         .setBaseUri("https://localhost:" + server.server.getAddress().getPort())
+                         .setBaseUri("https://localhost:" + server.getAddress().getPort())
                          .setObjectMapper(MAPPER)
                          .build()
                          .newRequest();
