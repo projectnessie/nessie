@@ -17,6 +17,7 @@ package org.projectnessie.perftest;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 
 import org.apache.jmeter.config.Arguments;
@@ -68,7 +69,7 @@ public class NessieSampler extends AbstractJavaSamplerClient {
    */
   private synchronized NessieClient nessieClient() {
     if (client == null) {
-      client = NessieClient.builder().withUri(uri).withUsername("admin_user").withPassword("test123").build();
+      client = NessieClient.builder().withUri(URI.create(uri)).withUsername("admin_user").withPassword("test123").build();
       try {
         client.getTreeApi().createReference(Branch.of("main", null));
       } catch (Exception t) {

@@ -17,6 +17,7 @@ package org.projectnessie.client.http;
 
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -86,7 +87,7 @@ class TestHttpsClient {
       SSLContext sc = SSLContext.getInstance("SSL");
       sc.init(null, trustManager[0], new java.security.SecureRandom());
       HttpRequest client = HttpClient.builder()
-                                     .setBaseUri("https://localhost:" + server.getAddress().getPort())
+                                     .setBaseUri(URI.create("https://localhost:" + server.getAddress().getPort()))
                                      .setObjectMapper(MAPPER)
                                      .setSslContext(sc)
                                      .build()
@@ -94,7 +95,7 @@ class TestHttpsClient {
       client.get();
 
       final HttpRequest insecureClient = HttpClient.builder()
-                         .setBaseUri("https://localhost:" + server.getAddress().getPort())
+                         .setBaseUri(URI.create("https://localhost:" + server.getAddress().getPort()))
                          .setObjectMapper(MAPPER)
                          .build()
                          .newRequest();

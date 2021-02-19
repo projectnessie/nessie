@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
@@ -50,7 +50,7 @@ public class HttpRequest {
   private final List<ResponseFilter> responseFilters;
   private SSLContext sslContext;
 
-  HttpRequest(String baseUri, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters,
+  HttpRequest(URI baseUri, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters,
               List<ResponseFilter> responseFilters, SSLContext context) {
     this.uriBuilder = new UriBuilder(baseUri);
     this.mapper = mapper;
@@ -84,9 +84,8 @@ public class HttpRequest {
 
   private HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
     try {
-      String uri = uriBuilder.build();
-      URL url = new URL(uri);
-      HttpURLConnection con = (HttpURLConnection) url.openConnection();
+      URI uri = uriBuilder.build();
+      HttpURLConnection con = (HttpURLConnection) uri.toURL().openConnection();
       if (con instanceof HttpsURLConnection) {
         ((HttpsURLConnection) con).setSSLSocketFactory(sslContext.getSocketFactory());
       }

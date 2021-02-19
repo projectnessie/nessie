@@ -19,6 +19,7 @@ import java.io.IOError;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -39,7 +40,7 @@ public class TestHttpClient {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private static HttpRequest get(InetSocketAddress address) {
-    return HttpClient.builder().setBaseUri("http://localhost:" + address.getPort()).setObjectMapper(MAPPER).build().newRequest();
+    return HttpClient.builder().setBaseUri(URI.create("http://localhost:" + address.getPort())).setObjectMapper(MAPPER).build().newRequest();
   }
 
   @Test
@@ -202,7 +203,7 @@ public class TestHttpClient {
     };
     try (TestServer server = new TestServer(handler)) {
       HttpClient client = HttpClient.builder()
-                                    .setBaseUri("http://localhost:" + server.getAddress().getPort())
+                                    .setBaseUri(URI.create("http://localhost:" + server.getAddress().getPort()))
                                     .setObjectMapper(MAPPER)
                                     .build();
       client.register((RequestFilter) context -> {

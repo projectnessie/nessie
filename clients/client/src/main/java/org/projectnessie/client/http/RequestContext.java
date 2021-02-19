@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client.http;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ import org.projectnessie.client.http.HttpClient.Method;
 public class RequestContext {
 
   private final Map<String, Set<String>> headers;
-  private final String uri;
+  private final URI uri;
   private final Method method;
   private final Object body;
   private List<BiConsumer<ResponseContext, Exception>> responseCallbacks;
@@ -43,7 +44,7 @@ public class RequestContext {
    * @param method verb to be used
    * @param body optional body of request
    */
-  public RequestContext(Map<String, Set<String>> headers, String uri, Method method, Object body) {
+  public RequestContext(Map<String, Set<String>> headers, URI uri, Method method, Object body) {
     this.headers = headers;
     this.uri = uri;
     this.method = method;
@@ -58,7 +59,7 @@ public class RequestContext {
     HttpRequest.putHeader(name, value, headers);
   }
 
-  public String getUri() {
+  public URI getUri() {
     return uri;
   }
 

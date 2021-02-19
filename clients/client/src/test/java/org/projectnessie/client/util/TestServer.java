@@ -17,6 +17,7 @@ package org.projectnessie.client.util;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.function.Consumer;
 
 import com.sun.net.httpserver.HttpHandler;
@@ -70,12 +71,12 @@ public class TestServer implements AutoCloseable {
     return server.getAddress();
   }
 
-  public String getUri() {
-    return "http://" + getAddress().getAddress().getHostAddress() + ":" + getAddress().getPort() + "/";
+  public URI getUri() {
+    return URI.create("http://" + getAddress().getAddress().getHostAddress() + ":" + getAddress().getPort() + "/");
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     server.stop(0);
   }
 }

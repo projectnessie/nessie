@@ -18,6 +18,8 @@ package org.projectnessie.server.error;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.net.URI;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.api.ContentsApi;
@@ -40,8 +42,8 @@ public class ITNativeNessieError {
 
   @BeforeEach
   void init() {
-    String path = "http://localhost:19121/api/v1";
-    NessieClient client = NessieClient.builder().withUri(path).build();
+    URI uri = URI.create("http://localhost:19121/api/v1");
+    NessieClient client = NessieClient.builder().withUri(uri).build();
     contents = client.getContentsApi();
   }
 

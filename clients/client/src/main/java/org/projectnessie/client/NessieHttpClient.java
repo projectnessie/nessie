@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,7 +67,7 @@ class NessieHttpClient implements NessieClient {
    * @param username username (only for BASIC auth)
    * @param password password (only for BASIC auth)
    */
-  NessieHttpClient(AuthType authType, String uri, String username, String password, boolean enableTracing) {
+  NessieHttpClient(AuthType authType, URI uri, String username, String password, boolean enableTracing) {
     HttpClient client = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).build();
     if (enableTracing) {
       addTracing(client);
@@ -105,7 +106,7 @@ class NessieHttpClient implements NessieClient {
             scope.close();
           });
 
-          scope.span().setTag("http.uri", context.getUri());
+          scope.span().setTag("http.uri", context.getUri().toString());
 
           HashMap<String, String> headerMap = new HashMap<>();
           TextMap httpHeadersCarrier = new TextMapInjectAdapter(headerMap);

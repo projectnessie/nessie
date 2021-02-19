@@ -21,6 +21,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
 
+import java.net.URI;
 import java.util.function.Function;
 
 import org.projectnessie.api.ConfigApi;
@@ -59,7 +60,7 @@ public interface NessieClient extends AutoCloseable {
    */
   class Builder {
     private AuthType authType = AuthType.NONE;
-    private String uri;
+    private URI uri;
     private String username;
     private String password;
     private boolean tracing;
@@ -85,7 +86,7 @@ public interface NessieClient extends AutoCloseable {
     public Builder fromConfig(Function<String, String> configuration) {
       String uri = configuration.apply(CONF_NESSIE_URI);
       if (uri != null) {
-        this.uri = uri;
+        this.uri = URI.create(uri);
       }
       String username = configuration.apply(CONF_NESSIE_USERNAME);
       if (username != null) {
@@ -121,7 +122,7 @@ public interface NessieClient extends AutoCloseable {
      * @param uri server URI
      * @return {@code this}
      */
-    public Builder withUri(String uri) {
+    public Builder withUri(URI uri) {
       this.uri = uri;
       return this;
     }
