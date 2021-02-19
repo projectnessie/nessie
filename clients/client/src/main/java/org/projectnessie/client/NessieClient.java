@@ -128,6 +128,15 @@ public interface NessieClient extends AutoCloseable {
     }
 
     /**
+     * Convenience method for {@link #withUri(URI)} taking a string.
+     * @param uri server URI
+     * @return {@code this}
+     */
+    public Builder withUri(String uri) {
+      return withUri(URI.create(uri));
+    }
+
+    /**
      * Set the username for {@link AuthType#BASIC} authentication.
      * @param username username
      * @return {@code this}

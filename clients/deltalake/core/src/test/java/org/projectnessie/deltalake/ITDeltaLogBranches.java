@@ -16,7 +16,6 @@
 package org.projectnessie.deltalake;
 
 import java.io.File;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -63,7 +62,7 @@ class ITDeltaLogBranches extends AbstractSparkTest {
 
   @BeforeEach
   public void createClient() {
-    client = NessieClient.builder().withUri(URI.create(url)).build();
+    client = NessieClient.builder().withUri(url).build();
   }
 
   @AfterEach

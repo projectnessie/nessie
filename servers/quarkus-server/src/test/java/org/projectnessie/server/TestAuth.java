@@ -18,7 +18,6 @@ package org.projectnessie.server;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -60,7 +59,7 @@ class TestAuth {
   }
 
   void getCatalog(String branch) throws NessieNotFoundException, NessieConflictException {
-    client = NessieClient.builder().withUri(URI.create("http://localhost:19121/api/v1")).build();
+    client = NessieClient.builder().withUri("http://localhost:19121/api/v1").build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {
