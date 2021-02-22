@@ -92,7 +92,7 @@ class NessieHttpClient implements NessieClient {
           context.addResponseCallback((responseContext, exception) -> {
             if (responseContext != null) {
               try {
-                scope.span().setTag("http.status", responseContext.getResponseCode().getCode());
+                scope.span().setTag("http.status_code", responseContext.getResponseCode().getCode());
               } catch (IOException e) {
                 // There's not much we can (and probably should) do here.
               }
@@ -106,7 +106,8 @@ class NessieHttpClient implements NessieClient {
             scope.close();
           });
 
-          scope.span().setTag("http.uri", context.getUri().toString());
+          scope.span().setTag("http.uri", context.getUri().toString())
+              .setTag("http.method", context.getMethod().name());
 
           HashMap<String, String> headerMap = new HashMap<>();
           TextMap httpHeadersCarrier = new TextMapInjectAdapter(headerMap);
