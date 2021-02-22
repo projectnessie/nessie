@@ -16,7 +16,6 @@
 
 package org.projectnessie.versioned.rocksdb;
 
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,15 +33,27 @@ import com.google.protobuf.InvalidProtocolBufferException;
 class RocksL2 extends RocksBaseValue<L2> implements L2 {
   private static final String CHILDREN = "children";
 
-  private List<Id> tree; // children
+  private final ValueProtos.L2.Builder l2Builder = ValueProtos.L2.newBuilder();
 
   RocksL2() {
     super();
   }
 
   @Override
+  public ValueProtos.BaseValue getBase() {
+    return l2Builder.getBase();
+  }
+
+  @Override
+  public void setBase(ValueProtos.BaseValue base) {
+    l2Builder.setBase(base);
+  }
+
+  @Override
   public L2 children(Stream<Id> ids) {
-    this.tree = ids.collect(Collectors.toList());
+    l2Builder
+        .clearTree()
+        .addAllTree(ids.map(Id::getValue).collect(Collectors.toList()));
     return this;
   }
 
@@ -54,7 +65,7 @@ class RocksL2 extends RocksBaseValue<L2> implements L2 {
         evaluatesId(function);
         break;
       case CHILDREN:
-        evaluate(function, tree);
+        evaluate(function, l2Builder.getTreeList().stream().map(Id::of).collect(Collectors.toList()));
         break;
       default:
         // Invalid Condition Function.
@@ -64,12 +75,7 @@ class RocksL2 extends RocksBaseValue<L2> implements L2 {
 
   @Override
   byte[] build() {
-    checkPresent(tree, CHILDREN);
-    return ValueProtos.L2.newBuilder()
-      .setBase(buildBase())
-      .addAllTree(buildIds(tree))
-      .build()
-      .toByteArray();
+    return l2Builder.build().toByteArray();
   }
 
   /**

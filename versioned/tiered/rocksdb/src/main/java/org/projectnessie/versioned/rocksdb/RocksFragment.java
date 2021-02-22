@@ -15,10 +15,12 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.projectnessie.versioned.ImmutableKey;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.Entity;
@@ -34,26 +36,38 @@ import com.google.protobuf.InvalidProtocolBufferException;
 class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
   static final String KEY_LIST = "keys";
 
-  private List<Key> keys;
+  private final ValueProtos.Fragment.Builder protobufBuilder = ValueProtos.Fragment.newBuilder();
 
   RocksFragment() {
     super();
   }
 
   @Override
+  public ValueProtos.BaseValue getBase() {
+    return protobufBuilder.getBase();
+  }
+
+  @Override
+  public void setBase(ValueProtos.BaseValue base) {
+    protobufBuilder.setBase(base);
+  }
+
+  @Override
   public Fragment keys(Stream<Key> keys) {
-    this.keys = keys.collect(Collectors.toList());
+    protobufBuilder
+        .clearKeys()
+        .addAllKeys(keys.map(key -> ValueProtos.Key
+            .newBuilder()
+            .addAllElements(key.getElements())
+            .build()
+        )
+        .collect(Collectors.toList()));
     return this;
   }
 
   @Override
   byte[] build() {
-    checkPresent(keys, KEY_LIST);
-    return ValueProtos.Fragment.newBuilder()
-      .setBase(buildBase())
-      .addAllKeys(keys.stream().map(RocksBaseValue::buildKey).collect(Collectors.toList()))
-      .build()
-      .toByteArray();
+    return protobufBuilder.build().toByteArray();
   }
 
   /**
@@ -83,11 +97,11 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
         if (function.getRootPathAsNameSegment().getChild().isPresent()) {
           throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
         } else if (function.getOperator().equals(Function.Operator.EQUALS)) {
-          if (!keysAsEntityList(keys).equals(function.getValue())) {
+          if (!keysAsEntityList(getKeys()).equals(function.getValue())) {
             throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
         } else if (function.getOperator().equals(Function.Operator.SIZE)) {
-          if (keys.size() != function.getValue().getNumber()) {
+          if (protobufBuilder.getKeysCount() != function.getValue().getNumber()) {
             throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
         } else {
@@ -98,6 +112,18 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
         // NameSegment could not be applied to FunctionExpression.
         throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
     }
+  }
+
+  private List<Key> getKeys() {
+    return protobufBuilder.getKeysList()
+      .stream()
+      .map(key ->
+        ImmutableKey
+          .builder()
+          .addAllElements(new ArrayList<>(key.getElementsList()))
+          .build()
+      )
+      .collect(Collectors.toList());
   }
 
   /**
