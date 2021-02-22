@@ -40,6 +40,7 @@ public class IdentifyUnreferencedValues<T> {
   private final Supplier<Store> store;
   private final SparkSession spark;
   private final GcOptions options;
+  private final Clock clock;
 
   /**
    * Drive a job that generates a dataset of unreferenced assets from known values.
@@ -48,26 +49,29 @@ public class IdentifyUnreferencedValues<T> {
       StoreWorker<T, ?> storeWorker,
       Supplier<Store> store,
       SparkSession spark,
-      GcOptions options) {
+      GcOptions options,
+      Clock clock) {
     super();
     this.storeWorker = storeWorker;
     this.store = store;
     this.spark = spark;
     this.options = options;
+    this.clock = clock;
   }
 
   public Dataset<CategorizedValue> identify() throws AnalysisException {
-    return go(storeWorker, store, spark, options);
+    return go(storeWorker, store, spark, options, clock);
   }
 
   private static <T> Dataset<CategorizedValue> go(
       StoreWorker<T, ?> storeWorker,
       Supplier<Store> store,
       SparkSession spark,
-      GcOptions options) throws AnalysisException {
+      GcOptions options,
+      Clock clock) throws AnalysisException {
 
     //fix all times to be at the same start point. todo push up to GcOptions and remove System call
-    long now = System.currentTimeMillis();
+    long now = clock.now();
     long maxAgeMicros = TimeUnit.MILLISECONDS.toMicros(now) - options.getMaxAgeMicros();
     long maxSlopMicros = TimeUnit.MILLISECONDS.toMicros(now) - options.getTimeSlopMicros();
 

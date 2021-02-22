@@ -135,7 +135,8 @@ public class ITTestIdentifyUnreferencedAssets {
         .maxAgeMicros(ONE_DAY_OLD_MICROS)
         .timeSlopMicros(ONE_HOUR_OLD_MICROS)
         .build();
-    IdentifyUnreferencedValues<DummyValue> identifyValues = new IdentifyUnreferencedValues<>(helper, new DynamoSupplier(), spark, options);
+    IdentifyUnreferencedValues<DummyValue> identifyValues = new IdentifyUnreferencedValues<>(helper, new DynamoSupplier(), spark, options,
+        new SystemClock());
     Dataset<CategorizedValue> values = identifyValues.identify();
 
     // test to make sure values are correct and correctly referenced.
