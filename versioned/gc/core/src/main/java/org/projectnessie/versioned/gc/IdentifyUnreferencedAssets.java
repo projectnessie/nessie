@@ -36,7 +36,7 @@ import scala.Function1;
 /**
  * Operation which identifies unreferenced assets.
  */
-public class IdentifyUnreferencedAssets<T, R> {
+public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
 
   private final Serializer<T> valueSerializer;
   private final Serializer<AssetKey> assetKeySerializer;
@@ -62,8 +62,9 @@ public class IdentifyUnreferencedAssets<T, R> {
     return go(valueSerializer, categorizedValues, assetKeySerializer, assetKeyConverter, spark);
   }
 
-  private static <T, R> Dataset<UnreferencedItem> go(Serializer<T> valueSerializer, Dataset<CategorizedValue> categorizedValues,
-      Serializer<AssetKey> assetKeySerializer, AssetKeyConverter<T, R> assetKeyConverter, SparkSession spark) {
+  private static <T, R extends AssetKey> Dataset<UnreferencedItem> go(Serializer<T> valueSerializer,
+      Dataset<CategorizedValue> categorizedValues, Serializer<AssetKey> assetKeySerializer, AssetKeyConverter<T, R> assetKeyConverter,
+      SparkSession spark) {
 
     // If it is, generate a referenced asset. If not, generate a non-referenced asset.
     // this is a single output that has a categorization column
@@ -227,7 +228,7 @@ public class IdentifyUnreferencedAssets<T, R> {
   /**
    * Spark flat map function to convert a value into an iterator of AssetKeys keeping their reference state.
    */
-  public static class AssetFlatMapper<T, R> implements FlatMapFunction<CategorizedValue, CategorizedAssetKey> {
+  public static class AssetFlatMapper<T, R extends AssetKey> implements FlatMapFunction<CategorizedValue, CategorizedAssetKey> {
 
     private static final long serialVersionUID = -4605489080345105845L;
 
@@ -251,8 +252,7 @@ public class IdentifyUnreferencedAssets<T, R> {
     public Iterator<CategorizedAssetKey> call(CategorizedValue r) throws Exception {
       T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getData()));
       return assetKeyConverter.apply(contents)
-        .map(ak -> new CategorizedAssetKey(r.isReferenced(), assetKeySerializer.toBytes((AssetKey) ak), ak.hashCode(), r.getTimestamp()))
-        .iterator();
+        .map(ak -> new CategorizedAssetKey(r.isReferenced(), assetKeySerializer.toBytes(ak), ak.hashCode(), r.getTimestamp())).iterator();
     }
 
   }
