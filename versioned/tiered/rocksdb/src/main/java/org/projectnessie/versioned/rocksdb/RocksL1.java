@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,7 +44,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
   static final String CHECKPOINT_ID = "checkpointId";
   static final String DISTANCE_FROM_CHECKPOINT = "distanceFromCheckpoint";
 
-  private ValueProtos.L1.Builder protobufBuilder = ValueProtos.L1.newBuilder();
+  private final ValueProtos.L1.Builder l1Builder = ValueProtos.L1.newBuilder();
 
   RocksL1() {
     super();
@@ -53,23 +52,23 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
 
   @Override
   public ValueProtos.BaseValue getBase() {
-    return protobufBuilder.getBase();
+    return l1Builder.getBase();
   }
 
   @Override
   public void setBase(ValueProtos.BaseValue base) {
-    protobufBuilder.setBase(base);
+    l1Builder.setBase(base);
   }
 
   @Override
   public L1 commitMetadataId(Id id) {
-    protobufBuilder.setMetadataId(id.getValue());
+    l1Builder.setMetadataId(id.getValue());
     return this;
   }
 
   @Override
   public L1 ancestors(Stream<Id> ids) {
-    protobufBuilder
+    l1Builder
         .clearAncestors()
         .addAllAncestors(ids.map(Id::getValue).collect(Collectors.toList()));
     return this;
@@ -77,7 +76,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
 
   @Override
   public L1 children(Stream<Id> ids) {
-    protobufBuilder
+    l1Builder
         .clearTree()
         .addAllTree(ids.map(Id::getValue).collect(Collectors.toList()));
     return this;
@@ -85,7 +84,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
 
   @Override
   public L1 keyMutations(Stream<Key.Mutation> keyMutations) {
-    protobufBuilder
+    l1Builder
         .clearKeyMutations()
         .addAllKeyMutations(
             keyMutations.map(km ->
@@ -103,7 +102,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
 
   @Override
   public L1 incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
-    protobufBuilder.setIncrementalList(
+    l1Builder.setIncrementalList(
         ValueProtos.IncrementalList
             .newBuilder()
             .setCheckpointId(checkpointId.getValue())
@@ -115,7 +114,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
 
   @Override
   public L1 completeKeyList(Stream<Id> fragmentIds) {
-    protobufBuilder.setCompleteList(
+    l1Builder.setCompleteList(
         ValueProtos.CompleteList
           .newBuilder()
           .addAllFragmentIds(fragmentIds.map(Id::getValue).collect(Collectors.toList()))
@@ -134,15 +133,15 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
         break;
       case COMMIT_METADATA:
         if (!function.isRootNameSegmentChildlessAndEquals()
-            || !Id.of(protobufBuilder.getMetadataId()).toEntity().equals(function.getValue())) {
+            || !Id.of(l1Builder.getMetadataId()).toEntity().equals(function.getValue())) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;
       case ANCESTORS:
-        evaluate(function, protobufBuilder.getAncestorsList().stream().map(Id::of).collect(Collectors.toList()));
+        evaluate(function, l1Builder.getAncestorsList().stream().map(Id::of).collect(Collectors.toList()));
         break;
       case CHILDREN:
-        evaluate(function, protobufBuilder.getTreeList().stream().map(Id::of).collect(Collectors.toList()));
+        evaluate(function, l1Builder.getTreeList().stream().map(Id::of).collect(Collectors.toList()));
         break;
       case KEY_LIST:
         throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
@@ -152,11 +151,11 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
         }
         final String childName = nameSegment.getChild().get().asName().getName();
         if (childName.equals(CHECKPOINT_ID)) {
-          if (!Id.of(protobufBuilder.getIncrementalList().getCheckpointId()).toEntity().equals(function.getValue())) {
+          if (!Id.of(l1Builder.getIncrementalList().getCheckpointId()).toEntity().equals(function.getValue())) {
             throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
         } else if (childName.equals((DISTANCE_FROM_CHECKPOINT))) {
-          if (!Entity.ofNumber(protobufBuilder.getIncrementalList().getDistanceFromCheckpointId()).equals(function.getValue())) {
+          if (!Entity.ofNumber(l1Builder.getIncrementalList().getDistanceFromCheckpointId()).equals(function.getValue())) {
             throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
         } else {
@@ -165,7 +164,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
         }
         break;
       case COMPLETE_KEY_LIST:
-        evaluate(function, protobufBuilder.getCompleteList().getFragmentIdsList().stream().map(Id::of).collect(Collectors.toList()));
+        evaluate(function, l1Builder.getCompleteList().getFragmentIdsList().stream().map(Id::of).collect(Collectors.toList()));
         break;
       default:
         // Invalid Condition Function.
@@ -175,7 +174,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
 
   @Override
   byte[] build() {
-    return protobufBuilder.build().toByteArray();
+    return l1Builder.build().toByteArray();
   }
 
   /**

@@ -29,7 +29,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C> implements BaseWrappedValue<C> {
 
   static final String VALUE = "value";
-  ValueProtos.WrappedValue.Builder protobufBuilder = ValueProtos.WrappedValue.newBuilder();
+  private final ValueProtos.WrappedValue.Builder wrappedValueBuilder = ValueProtos.WrappedValue.newBuilder();
 
   RocksWrappedValue() {
     super();
@@ -37,12 +37,12 @@ class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C>
 
   @Override
   public ValueProtos.BaseValue getBase() {
-    return protobufBuilder.getBase();
+    return wrappedValueBuilder.getBase();
   }
 
   @Override
   public void setBase(ValueProtos.BaseValue base) {
-    protobufBuilder.setBase(base);
+    wrappedValueBuilder.setBase(base);
   }
 
   @Override
@@ -54,7 +54,7 @@ class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C>
         break;
       case VALUE:
         if (!function.isRootNameSegmentChildlessAndEquals()
-            || !protobufBuilder.getValue().equals(function.getValue().getBinary())) {
+            || !wrappedValueBuilder.getValue().equals(function.getValue().getBinary())) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;
@@ -67,13 +67,13 @@ class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C>
   @SuppressWarnings("unchecked")
   @Override
   public C value(ByteString value) {
-    protobufBuilder.setValue(value);
+    wrappedValueBuilder.setValue(value);
     return (C) this;
   }
 
   @Override
   byte[] build() {
-    return protobufBuilder.build().toByteArray();
+    return wrappedValueBuilder.build().toByteArray();
   }
 
   /**

@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -43,57 +42,74 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
   static final String COMMIT = "commit";
   static final String CHILDREN = "children";
 
-  private ValueProtos.Ref.Builder protobufBuilder = ValueProtos.Ref.newBuilder();
+  private final ValueProtos.Ref.Builder refBuilder = ValueProtos.Ref.newBuilder();
 
   RocksRef() {
     super();
   }
 
-  private enum Type {
-    INIT(null),
-    TAG("t"),
-    BRANCH("b");
-
-    private String identifier;
-    Type(String identifier) {
-      this.identifier = identifier;
-    }
-
-    /**
-     * Get the type associated with this type tag.
-     * @param identifier The type tag to classify.
-     * @return The type classified.
-     */
-    public static Type getType(String identifier) {
-      if (identifier.equals("b")) {
-        return BRANCH;
-      } else if (identifier.equals("t")) {
-        return TAG;
-      } else {
-        throw new IllegalArgumentException(String.format("Unknown type name [%s].", identifier));
-      }
-    }
-  }
-
   @Override
   public ValueProtos.BaseValue getBase() {
-    return protobufBuilder.getBase();
+    return refBuilder.getBase();
   }
 
   @Override
   public void setBase(ValueProtos.BaseValue base) {
-    protobufBuilder.setBase(base);
+    refBuilder.setBase(base);
   }
 
   @Override
   public void evaluate(Function function) throws ConditionFailedException {
-    switch (protobufBuilder.getRefValueCase()) {
-      case BRANCH:
-        evaluateBranch(function);
-        return;
-      case TAG:
-        evaluateTag(function);
-        return;
+    if (refBuilder.getRefValueCase() == ValueProtos.Ref.RefValueCase.REFVALUE_NOT_SET) {
+      throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
+    }
+
+    final String segment = function.getRootPathAsNameSegment().getName();
+
+    switch (segment) {
+      case ID:
+        evaluatesId(function);
+        break;
+      case TYPE:
+        final ValueProtos.Ref.RefValueCase typeFromFunction;
+        if (function.getValue().getString().equals("b")) {
+          typeFromFunction = ValueProtos.Ref.RefValueCase.BRANCH;
+        } else if (function.getValue().getString().equals("t")) {
+          typeFromFunction = ValueProtos.Ref.RefValueCase.TAG;
+        } else {
+          throw new IllegalArgumentException(String.format("Unknown type name [%s].", function.getValue().getString()));
+        }
+
+        if (!function.isRootNameSegmentChildlessAndEquals()
+            || refBuilder.getRefValueCase() != typeFromFunction) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      case NAME:
+        if (!function.isRootNameSegmentChildlessAndEquals()
+            || !refBuilder.getName().equals(function.getValue().getString())) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      case CHILDREN:
+        if (refBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        evaluate(function, refBuilder.getBranch().getChildrenList().stream().map(Id::of).collect(Collectors.toList()));
+        break;
+      case METADATA:
+        if (!function.isRootNameSegmentChildlessAndEquals()
+            || refBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH
+            || !Id.of(refBuilder.getBranch().getMetadataId()).toEntity().equals(function.getValue())) {
+          throw new ConditionFailedException(conditionNotMatchedMessage(function));
+        }
+        break;
+      case COMMIT:
+        evaluateTagCommit(function);
+        break;
+      case COMMITS:
+        evaluateBranchCommits(function);
+        break;
       default:
         throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
     }
@@ -105,61 +121,16 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
    * @param function the function that is tested against the nameSegment
    * @throws ConditionFailedException thrown if the condition expression is invalid or the condition is not met.
    */
-  private void evaluateBranch(Function function) throws ConditionFailedException {
-    final String segment = function.getRootPathAsNameSegment().getName();
-
-    switch (segment) {
-      case ID:
-        evaluatesId(function);
-        break;
-      case TYPE:
-        ValueProtos.Ref.RefValueCase typeFromFunction;
-        if (function.getValue().getString().equals("b")) {
-          typeFromFunction = ValueProtos.Ref.RefValueCase.BRANCH;
-        } else if (function.getValue().getString().equals("t")) {
-          typeFromFunction = ValueProtos.Ref.RefValueCase.TAG;
-        } else {
-          throw new IllegalArgumentException(String.format("Unknown type name [%s].", function.getValue().getString()));
-        }
-
-        if (!function.isRootNameSegmentChildlessAndEquals()
-            || protobufBuilder.getRefValueCase() != typeFromFunction) {
-          throw new ConditionFailedException(conditionNotMatchedMessage(function));
-        }
-        break;
-      case NAME:
-        if (!function.isRootNameSegmentChildlessAndEquals()
-            || !protobufBuilder.getName().equals(function.getValue().getString())) {
-          throw new ConditionFailedException(conditionNotMatchedMessage(function));
-        }
-        break;
-      case CHILDREN:
-        if (protobufBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH) {
-          throw new ConditionFailedException(conditionNotMatchedMessage(function));
-        }
-        evaluate(function, protobufBuilder.getBranch().getChildrenList().stream().map(Id::of).collect(Collectors.toList()));
-        break;
-      case METADATA:
-        if (!function.isRootNameSegmentChildlessAndEquals()
-            || protobufBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH
-            || !Id.of(protobufBuilder.getBranch().getMetadataId()).toEntity().equals(function.getValue())) {
-          throw new ConditionFailedException(conditionNotMatchedMessage(function));
-        }
-        break;
-      case COMMITS:
-        // TODO: refactor once jdbc-store Store changes are available.
-        if (function.getOperator().equals(Function.Operator.SIZE)) {
-          if (function.getRootPathAsNameSegment().getChild().isPresent()
-              || protobufBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH
-              || protobufBuilder.getBranch().getCommitsCount() != function.getValue().getNumber()) {
-            throw new ConditionFailedException(conditionNotMatchedMessage(function));
-          }
-        } else {
-          throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
-        }
-        break;
-      default:
-        throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
+  private void evaluateBranchCommits(Function function) {
+    // TODO: refactor once jdbc-store Store changes are available.
+    if (function.getOperator().equals(Function.Operator.SIZE)) {
+      if (function.getRootPathAsNameSegment().getChild().isPresent()
+          || refBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH
+          || refBuilder.getBranch().getCommitsCount() != function.getValue().getNumber()) {
+        throw new ConditionFailedException(conditionNotMatchedMessage(function));
+      }
+    } else {
+      throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
     }
   }
 
@@ -169,68 +140,37 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
    * @param function the function that is tested against the nameSegment
    * @throws ConditionFailedException thrown if the condition expression is invalid or the condition is not met.
    */
-  private void evaluateTag(Function function) throws ConditionFailedException {
-    final String segment = function.getRootPathAsNameSegment().getName();
-    switch (segment) {
-      case ID:
-        evaluatesId(function);
-        break;
-      case TYPE:
-        ValueProtos.Ref.RefValueCase typeFromFunction;
-        if (function.getValue().getString().equals("b")) {
-          typeFromFunction = ValueProtos.Ref.RefValueCase.BRANCH;
-        } else if (function.getValue().getString().equals("t")) {
-          typeFromFunction = ValueProtos.Ref.RefValueCase.TAG;
-        } else {
-          throw new IllegalArgumentException(String.format("Unknown type name [%s].", function.getValue().getString()));
-        }
-
-        if (!function.isRootNameSegmentChildlessAndEquals()
-            || protobufBuilder.getRefValueCase() != typeFromFunction) {
-          throw new ConditionFailedException(conditionNotMatchedMessage(function));
-        }
-        break;
-      case NAME:
-        if (!function.getOperator().equals(Function.Operator.EQUALS)
-            || !protobufBuilder.getName().equals(function.getValue().getString())) {
-          throw new ConditionFailedException(conditionNotMatchedMessage(function));
-        }
-        break;
-      case COMMIT:
-        if (!function.getOperator().equals(Function.Operator.EQUALS)
-            || protobufBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.TAG
-            || !Id.of(protobufBuilder.getTag().getId()).toEntity().equals(function.getValue())) {
-          throw new ConditionFailedException(conditionNotMatchedMessage(function));
-        }
-        break;
-      default:
-        throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
+  private void evaluateTagCommit(Function function) {
+    if (!function.getOperator().equals(Function.Operator.EQUALS)
+        || refBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.TAG
+        || !Id.of(refBuilder.getTag().getId()).toEntity().equals(function.getValue())) {
+      throw new ConditionFailedException(conditionNotMatchedMessage(function));
     }
   }
 
   @Override
   public Ref name(String name) {
-    protobufBuilder.setName(name);
+    refBuilder.setName(name);
     return this;
   }
 
   @Override
   public Tag tag() {
-    if (protobufBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.REFVALUE_NOT_SET) {
+    if (refBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.REFVALUE_NOT_SET) {
       throw new IllegalStateException("branch()/tag() has already been called");
     }
 
-    protobufBuilder.setTag(ValueProtos.Tag.newBuilder().build());
+    refBuilder.setTag(ValueProtos.Tag.newBuilder().build());
     return new RocksTag();
   }
 
   @Override
   public Branch branch() {
-    if (protobufBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.REFVALUE_NOT_SET) {
+    if (refBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.REFVALUE_NOT_SET) {
       throw new IllegalStateException("branch()/tag() has already been called");
     }
 
-    protobufBuilder.setBranch(ValueProtos.Branch.newBuilder().build());
+    refBuilder.setBranch(ValueProtos.Branch.newBuilder().build());
     return new RocksBranch();
   }
 
@@ -238,7 +178,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
   class RocksTag implements Tag {
     @Override
     public Tag commit(Id commit) {
-      protobufBuilder.setTag(ValueProtos.Tag.newBuilder().setId(commit.getValue()).build());
+      refBuilder.setTag(ValueProtos.Tag.newBuilder().setId(commit.getValue()).build());
       return this;
     }
 
@@ -251,11 +191,11 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
   class RocksBranch implements Branch {
     @Override
     public Branch metadata(Id metadata) {
-      if (protobufBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH) {
-        protobufBuilder.setBranch(ValueProtos.Branch.newBuilder().setMetadataId(metadata.getValue()));
+      if (refBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH) {
+        refBuilder.setBranch(ValueProtos.Branch.newBuilder().setMetadataId(metadata.getValue()));
       } else {
-        protobufBuilder.setBranch(
-            ValueProtos.Branch.newBuilder(protobufBuilder.getBranch()).setMetadataId(metadata.getValue())
+        refBuilder.setBranch(
+            ValueProtos.Branch.newBuilder(refBuilder.getBranch()).setMetadataId(metadata.getValue())
         );
       }
 
@@ -264,19 +204,19 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
     @Override
     public Branch children(Stream<Id> children) {
-      List<ByteString> childList = children.map(Id::getValue).collect(Collectors.toList());
+      final List<ByteString> childList = children.map(Id::getValue).collect(Collectors.toList());
 
-      if (protobufBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH) {
-        protobufBuilder.setBranch(
+      if (refBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH) {
+        refBuilder.setBranch(
             ValueProtos.Branch
                 .newBuilder()
                 .addAllChildren(childList)
                 .build()
         );
       } else {
-        protobufBuilder.setBranch(
+        refBuilder.setBranch(
             ValueProtos.Branch
-                .newBuilder(protobufBuilder.getBranch())
+                .newBuilder(refBuilder.getBranch())
                 .clearChildren()
                 .addAllChildren(childList)
                 .build()
@@ -333,7 +273,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
     @Override
     public BranchCommit done() {
-      protobufBuilder.setBranch(ValueProtos.Branch.newBuilder(protobufBuilder.getBranch()).addCommits(builder.build()));
+      refBuilder.setBranch(ValueProtos.Branch.newBuilder(refBuilder.getBranch()).addCommits(builder.build()));
       builder.clear();
       return this;
     }
@@ -364,7 +304,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
 
   @Override
   byte[] build() {
-    return protobufBuilder.build().toByteArray();
+    return refBuilder.build().toByteArray();
   }
 
   /**

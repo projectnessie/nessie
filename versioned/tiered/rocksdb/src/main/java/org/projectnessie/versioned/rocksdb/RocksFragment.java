@@ -36,7 +36,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
   static final String KEY_LIST = "keys";
 
-  ValueProtos.Fragment.Builder protobufBuilder = ValueProtos.Fragment.newBuilder();
+  private final ValueProtos.Fragment.Builder protobufBuilder = ValueProtos.Fragment.newBuilder();
 
   RocksFragment() {
     super();

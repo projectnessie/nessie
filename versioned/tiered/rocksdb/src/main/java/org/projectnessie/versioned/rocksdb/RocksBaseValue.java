@@ -43,8 +43,8 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
   @SuppressWarnings("unchecked")
   @Override
   public C id(Id id) {
-    ValueProtos.BaseValue base = getBase();
-    ValueProtos.BaseValue newBase = ValueProtos.BaseValue.newBuilder()
+    final ValueProtos.BaseValue base = getBase();
+    final ValueProtos.BaseValue newBase = ValueProtos.BaseValue.newBuilder()
         .setId(id.getValue())
         .setDatetime(base.getDatetime())
         .build();
@@ -55,8 +55,8 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
   @SuppressWarnings("unchecked")
   @Override
   public C dt(long dt) {
-    ValueProtos.BaseValue base = getBase();
-    ValueProtos.BaseValue newBase = ValueProtos.BaseValue.newBuilder()
+    final ValueProtos.BaseValue base = getBase();
+    final ValueProtos.BaseValue newBase = ValueProtos.BaseValue.newBuilder()
         .setId(base.getId())
         .setDatetime(dt)
         .build();
