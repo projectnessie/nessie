@@ -113,8 +113,6 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
           // Catch exceptions raise due to incorrect Entity type in FunctionExpression being compared to the
           // target attribute.
           throw new ConditionFailedException(invalidValueMessage(function));
-        } catch (ConditionFailedException e) {
-          throw e;
         }
       }
     }
