@@ -151,7 +151,7 @@ class RocksRef extends RocksBaseValue<Ref> implements Ref {
         if (function.getOperator().equals(Function.Operator.SIZE)) {
           if (function.getRootPathAsNameSegment().getChild().isPresent()
               || protobufBuilder.getRefValueCase() != ValueProtos.Ref.RefValueCase.BRANCH
-              || protobufBuilder.getBranch().getChildrenCount() != function.getValue().getNumber()) {
+              || protobufBuilder.getBranch().getCommitsCount() != function.getValue().getNumber()) {
             throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
         } else {
