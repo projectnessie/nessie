@@ -253,7 +253,7 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   private static ContentsKey fromKey(Key key) {
-    return new ContentsKey(key.getElements());
+    return ContentsKey.of(key.getElements());
   }
 
   private static Reference makeNamedRef(WithHash<NamedRef> refWithHash) {

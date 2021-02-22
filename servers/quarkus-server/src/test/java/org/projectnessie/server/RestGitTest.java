@@ -20,8 +20,6 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Arrays;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -92,13 +90,13 @@ public class RestGitTest {
     Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
       updates[i] =
-          ImmutablePut.builder().key(new ContentsKey(Arrays.asList("item", Integer.toString(i))))
+          ImmutablePut.builder().key(ContentsKey.of("item", Integer.toString(i)))
           .contents(ImmutableIcebergTable.builder()
                                  .metadataLocation("/the/directory/over/there/" + i)
                                  .build())
           .build();
     }
-    updates[10] = ImmutablePut.builder().key(new ContentsKey(Arrays.asList("xxx","test")))
+    updates[10] = ImmutablePut.builder().key(ContentsKey.of("xxx","test"))
         .contents(ImmutableIcebergTable.builder().metadataLocation("/the/directory/over/there/has/been/moved").build())
         .build();
 

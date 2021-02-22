@@ -45,7 +45,7 @@ class TestContentsKeyEncoding {
 
   private void assertRoundTrip(String... elements) {
     ContentsKey k = ContentsKey.of(elements);
-    ContentsKey k2 = ContentsKey.fromEncoded(k.toPathString());
+    ContentsKey k2 = ContentsKey.fromPathString(k.toPathString());
     assertEquals(k, k2);
   }
 }
