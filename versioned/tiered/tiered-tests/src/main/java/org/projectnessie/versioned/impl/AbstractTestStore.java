@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -29,6 +28,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.RandomSource;
+import org.projectnessie.WithSeed;
 import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.ExpressionFunction;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
@@ -54,6 +55,7 @@ import com.google.common.collect.Multimap;
  * This class should be moved to the versioned/tests project when it will not introduce a circular dependency.
  * @param <S> The type of the Store being tested.
  */
+@WithSeed(8612341233543L)
 public abstract class AbstractTestStore<S extends Store> {
 
   static class CreatorPair {
@@ -82,7 +84,6 @@ public abstract class AbstractTestStore<S extends Store> {
   protected static final Entity ONE = Entity.ofNumber(1);
   protected static final Entity TWO = Entity.ofNumber(2);
 
-  protected Random random;
   protected S store;
 
   /**
@@ -93,7 +94,6 @@ public abstract class AbstractTestStore<S extends Store> {
     if (store == null) {
       this.store = createStore();
       this.store.start();
-      random = new Random(getRandomSeed());
     }
   }
 
@@ -112,8 +112,6 @@ public abstract class AbstractTestStore<S extends Store> {
   protected abstract S createStore();
 
   protected abstract S createRawStore();
-
-  protected abstract long getRandomSeed();
 
   protected abstract void resetStoreState();
 
@@ -153,14 +151,14 @@ public abstract class AbstractTestStore<S extends Store> {
     @Test
     void load() {
       final ImmutableList<CreatorPair> creators = ImmutableList.<CreatorPair>builder()
-          .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createTag(random)))
-          .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createBranch(random)))
-          .add(new CreatorPair(ValueType.COMMIT_METADATA, () -> SampleEntities.createCommitMetadata(random)))
-          .add(new CreatorPair(ValueType.VALUE, () -> SampleEntities.createValue(random)))
-          .add(new CreatorPair(ValueType.L1, () -> SampleEntities.createL1(random)))
-          .add(new CreatorPair(ValueType.L2, () -> SampleEntities.createL2(random)))
-          .add(new CreatorPair(ValueType.L3, () -> SampleEntities.createL3(random)))
-          .add(new CreatorPair(ValueType.KEY_FRAGMENT, () -> SampleEntities.createFragment(random)))
+          .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createTag()))
+          .add(new CreatorPair(ValueType.REF, () -> SampleEntities.createBranch()))
+          .add(new CreatorPair(ValueType.COMMIT_METADATA, () -> SampleEntities.createCommitMetadata()))
+          .add(new CreatorPair(ValueType.VALUE, () -> SampleEntities.createValue()))
+          .add(new CreatorPair(ValueType.L1, () -> SampleEntities.createL1()))
+          .add(new CreatorPair(ValueType.L2, () -> SampleEntities.createL2()))
+          .add(new CreatorPair(ValueType.L3, () -> SampleEntities.createL3()))
+          .add(new CreatorPair(ValueType.KEY_FRAGMENT, () -> SampleEntities.createFragment()))
           .build();
       final ImmutableMultimap.Builder<ValueType<?>, HasId> builder = ImmutableMultimap.builder();
       for (int i = 0; i < 100; ++i) {
@@ -178,17 +176,17 @@ public abstract class AbstractTestStore<S extends Store> {
     @Test
     void loadSteps() {
       final Multimap<ValueType<?>, HasId> objs = ImmutableMultimap.<ValueType<?>, HasId>builder()
-          .put(ValueType.REF, SampleEntities.createBranch(random))
-          .put(ValueType.REF, SampleEntities.createBranch(random))
-          .put(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random))
+          .put(ValueType.REF, SampleEntities.createBranch())
+          .put(ValueType.REF, SampleEntities.createBranch())
+          .put(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata())
           .build();
 
       final Multimap<ValueType<?>, HasId> objs2 = ImmutableMultimap.<ValueType<?>, HasId>builder()
-          .put(ValueType.L3, SampleEntities.createL3(random))
-          .put(ValueType.VALUE, SampleEntities.createValue(random))
-          .put(ValueType.VALUE, SampleEntities.createValue(random))
-          .put(ValueType.VALUE, SampleEntities.createValue(random))
-          .put(ValueType.REF, SampleEntities.createTag(random))
+          .put(ValueType.L3, SampleEntities.createL3())
+          .put(ValueType.VALUE, SampleEntities.createValue())
+          .put(ValueType.VALUE, SampleEntities.createValue())
+          .put(ValueType.VALUE, SampleEntities.createValue())
+          .put(ValueType.REF, SampleEntities.createTag())
           .build();
 
       objs.forEach(AbstractTestStore.this::putThenLoad);
@@ -207,8 +205,8 @@ public abstract class AbstractTestStore<S extends Store> {
 
     @Test
     void loadInvalid() {
-      putThenLoad(ValueType.REF, SampleEntities.createBranch(random));
-      final Multimap<ValueType<?>, HasId> objs = ImmutableMultimap.of(ValueType.REF, SampleEntities.createBranch(random));
+      putThenLoad(ValueType.REF, SampleEntities.createBranch());
+      final Multimap<ValueType<?>, HasId> objs = ImmutableMultimap.of(ValueType.REF, SampleEntities.createBranch());
 
       Assertions.assertThrows(NotFoundException.class, () -> store.load(createTestLoadStep(objs)));
     }
@@ -219,7 +217,7 @@ public abstract class AbstractTestStore<S extends Store> {
       for (int i = 0; i < (10 + loadSize()); ++i) {
         // Only create a single type as this is meant to test the pagination within the store, not the variety. Variety is
         // taken care of by another test.
-        builder.put(ValueType.REF, SampleEntities.createTag(random));
+        builder.put(ValueType.REF, SampleEntities.createTag());
       }
 
       final Multimap<ValueType<?>, HasId> objs = builder.build();
@@ -245,47 +243,47 @@ public abstract class AbstractTestStore<S extends Store> {
   class LoadSingleTests {
     @Test
     void loadSingleInvalid() {
-      Assertions.assertThrows(NotFoundException.class, () -> EntityType.REF.loadSingle(store, SampleEntities.createId(random)));
+      Assertions.assertThrows(NotFoundException.class, () -> EntityType.REF.loadSingle(store, SampleEntities.createId()));
     }
 
     @Test
     void loadSingleL1() {
-      putThenLoad(ValueType.L1, SampleEntities.createL1(random));
+      putThenLoad(ValueType.L1, SampleEntities.createL1());
     }
 
     @Test
     void loadSingleL2() {
-      putThenLoad(ValueType.L2, SampleEntities.createL2(random));
+      putThenLoad(ValueType.L2, SampleEntities.createL2());
     }
 
     @Test
     void loadSingleL3() {
-      putThenLoad(ValueType.L3, SampleEntities.createL3(random));
+      putThenLoad(ValueType.L3, SampleEntities.createL3());
     }
 
     @Test
     void loadFragment() {
-      putThenLoad(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random));
+      putThenLoad(ValueType.KEY_FRAGMENT, SampleEntities.createFragment());
     }
 
     @Test
     void loadBranch() {
-      putThenLoad(ValueType.REF, SampleEntities.createBranch(random));
+      putThenLoad(ValueType.REF, SampleEntities.createBranch());
     }
 
     @Test
     void loadTag() {
-      putThenLoad(ValueType.REF, SampleEntities.createTag(random));
+      putThenLoad(ValueType.REF, SampleEntities.createTag());
     }
 
     @Test
     void loadCommitMetadata() {
-      putThenLoad(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
+      putThenLoad(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata());
     }
 
     @Test
     void loadValue() {
-      putThenLoad(ValueType.VALUE, SampleEntities.createValue(random));
+      putThenLoad(ValueType.VALUE, SampleEntities.createValue());
     }
   }
 
@@ -294,42 +292,42 @@ public abstract class AbstractTestStore<S extends Store> {
   class PutIfAbsentTests {
     @Test
     void putIfAbsentL1() {
-      testPutIfAbsent(ValueType.L1, SampleEntities.createL1(random));
+      testPutIfAbsent(ValueType.L1, SampleEntities.createL1());
     }
 
     @Test
     void putIfAbsentL2() {
-      testPutIfAbsent(ValueType.L2, SampleEntities.createL2(random));
+      testPutIfAbsent(ValueType.L2, SampleEntities.createL2());
     }
 
     @Test
     void putIfAbsentL3() {
-      testPutIfAbsent(ValueType.L3, SampleEntities.createL3(random));
+      testPutIfAbsent(ValueType.L3, SampleEntities.createL3());
     }
 
     @Test
     void putIfAbsentFragment() {
-      testPutIfAbsent(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random));
+      testPutIfAbsent(ValueType.KEY_FRAGMENT, SampleEntities.createFragment());
     }
 
     @Test
     void putIfAbsentBranch() {
-      testPutIfAbsent(ValueType.REF, SampleEntities.createBranch(random));
+      testPutIfAbsent(ValueType.REF, SampleEntities.createBranch());
     }
 
     @Test
     void putIfAbsentTag() {
-      testPutIfAbsent(ValueType.REF, SampleEntities.createTag(random));
+      testPutIfAbsent(ValueType.REF, SampleEntities.createTag());
     }
 
     @Test
     void putIfAbsentCommitMetadata() {
-      testPutIfAbsent(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
+      testPutIfAbsent(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata());
     }
 
     @Test
     void putIfAbsentValue() {
-      testPutIfAbsent(ValueType.VALUE, SampleEntities.createValue(random));
+      testPutIfAbsent(ValueType.VALUE, SampleEntities.createValue());
     }
 
     protected <C extends BaseValue<C>, T extends PersistentBase<C>> void testPutIfAbsent(ValueType<C> type, T sample) {
@@ -346,14 +344,14 @@ public abstract class AbstractTestStore<S extends Store> {
     @Test
     void save() {
       final List<EntitySaveOp<?>> entities = Arrays.asList(
-          new EntitySaveOp<>(ValueType.L1, SampleEntities.createL1(random)),
-          new EntitySaveOp<>(ValueType.L2, SampleEntities.createL2(random)),
-          new EntitySaveOp<>(ValueType.L3, SampleEntities.createL3(random)),
-          new EntitySaveOp<>(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random)),
-          new EntitySaveOp<>(ValueType.REF, SampleEntities.createBranch(random)),
-          new EntitySaveOp<>(ValueType.REF, SampleEntities.createTag(random)),
-          new EntitySaveOp<>(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random)),
-          new EntitySaveOp<>(ValueType.VALUE, SampleEntities.createValue(random))
+          new EntitySaveOp<>(ValueType.L1, SampleEntities.createL1()),
+          new EntitySaveOp<>(ValueType.L2, SampleEntities.createL2()),
+          new EntitySaveOp<>(ValueType.L3, SampleEntities.createL3()),
+          new EntitySaveOp<>(ValueType.KEY_FRAGMENT, SampleEntities.createFragment()),
+          new EntitySaveOp<>(ValueType.REF, SampleEntities.createBranch()),
+          new EntitySaveOp<>(ValueType.REF, SampleEntities.createTag()),
+          new EntitySaveOp<>(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata()),
+          new EntitySaveOp<>(ValueType.VALUE, SampleEntities.createValue())
       );
 
       store.save(entities.stream().map(e -> e.saveOp).collect(Collectors.toList()));
@@ -387,54 +385,54 @@ public abstract class AbstractTestStore<S extends Store> {
   class PutWithoutConditionExpressionTests {
     @Test
     void putWithConditionValue() {
-      putWithCondition(ValueType.VALUE, SampleEntities.createValue(random));
+      putWithCondition(ValueType.VALUE, SampleEntities.createValue());
     }
 
     @Test
     void putWithConditionBranch() {
-      putWithCondition(ValueType.REF, SampleEntities.createBranch(random));
+      putWithCondition(ValueType.REF, SampleEntities.createBranch());
     }
 
     @Test
     void putWithConditionTag() {
-      putWithCondition(ValueType.REF, SampleEntities.createTag(random));
+      putWithCondition(ValueType.REF, SampleEntities.createTag());
     }
 
     @Test
     void putWithConditionCommitMetadata() {
-      putWithCondition(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random));
+      putWithCondition(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata());
     }
 
     @Test
     void putWithConditionKeyFragment() {
-      putWithCondition(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random));
+      putWithCondition(ValueType.KEY_FRAGMENT, SampleEntities.createFragment());
     }
 
     @Test
     void putWithConditionL1() {
-      putWithCondition(ValueType.L1, SampleEntities.createL1(random));
+      putWithCondition(ValueType.L1, SampleEntities.createL1());
     }
 
     @Test
     void putWithConditionL2() {
-      putWithCondition(ValueType.L2, SampleEntities.createL2(random));
+      putWithCondition(ValueType.L2, SampleEntities.createL2());
     }
 
     @Test
     void putWithConditionL3() {
-      putWithCondition(ValueType.L3, SampleEntities.createL3(random));
+      putWithCondition(ValueType.L3, SampleEntities.createL3());
     }
 
     @Test
     void putTwice() {
-      final HasId l3 = SampleEntities.createL3(random);
+      final HasId l3 = SampleEntities.createL3();
       putThenLoad(ValueType.L3, l3);
       putThenLoad(ValueType.L3, l3);
     }
 
     @Test
     void putWithCompoundConditionTag() {
-      final InternalRef sample = SampleEntities.createTag(random);
+      final InternalRef sample = SampleEntities.createTag();
       putThenLoad(ValueType.REF, sample);
       final InternalRef.Type type = InternalRef.Type.TAG;
       final ConditionExpression condition = ConditionExpression.of(
@@ -446,7 +444,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
     @Test
     void putWithFailingConditionExpression() {
-      final InternalRef sample = SampleEntities.createBranch(random);
+      final InternalRef sample = SampleEntities.createBranch();
       final InternalRef.Type type = InternalRef.Type.BRANCH;
       final ConditionExpression condition = ConditionExpression.of(
           ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), type.toEntity()),
@@ -495,7 +493,7 @@ public abstract class AbstractTestStore<S extends Store> {
         return;
       }
 
-      deleteWithCondition(ValueType.VALUE, SampleEntities.createValue(random), true, Optional.empty());
+      deleteWithCondition(ValueType.VALUE, SampleEntities.createValue(), true, Optional.empty());
     }
 
     @Test
@@ -504,7 +502,7 @@ public abstract class AbstractTestStore<S extends Store> {
         return;
       }
 
-      deleteWithCondition(ValueType.L1, SampleEntities.createL1(random), true, Optional.empty());
+      deleteWithCondition(ValueType.L1, SampleEntities.createL1(), true, Optional.empty());
     }
 
     @Test
@@ -513,7 +511,7 @@ public abstract class AbstractTestStore<S extends Store> {
         return;
       }
 
-      deleteWithCondition(ValueType.L2, SampleEntities.createL2(random), true, Optional.empty());
+      deleteWithCondition(ValueType.L2, SampleEntities.createL2(), true, Optional.empty());
     }
 
     @Test
@@ -522,7 +520,7 @@ public abstract class AbstractTestStore<S extends Store> {
         return;
       }
 
-      deleteWithCondition(ValueType.L3, SampleEntities.createL3(random), true, Optional.empty());
+      deleteWithCondition(ValueType.L3, SampleEntities.createL3(), true, Optional.empty());
     }
 
     @Test
@@ -531,7 +529,7 @@ public abstract class AbstractTestStore<S extends Store> {
         return;
       }
 
-      deleteWithCondition(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(random), true, Optional.empty());
+      deleteWithCondition(ValueType.KEY_FRAGMENT, SampleEntities.createFragment(), true, Optional.empty());
     }
 
     @Test
@@ -540,7 +538,7 @@ public abstract class AbstractTestStore<S extends Store> {
         return;
       }
 
-      deleteWithCondition(ValueType.REF, SampleEntities.createBranch(random), true, Optional.empty());
+      deleteWithCondition(ValueType.REF, SampleEntities.createBranch(), true, Optional.empty());
     }
 
     @Test
@@ -549,7 +547,7 @@ public abstract class AbstractTestStore<S extends Store> {
         return;
       }
 
-      deleteWithCondition(ValueType.REF, SampleEntities.createTag(random), true, Optional.empty());
+      deleteWithCondition(ValueType.REF, SampleEntities.createTag(), true, Optional.empty());
     }
 
     @Test
@@ -558,7 +556,7 @@ public abstract class AbstractTestStore<S extends Store> {
         return;
       }
 
-      deleteWithCondition(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(random), true, Optional.empty());
+      deleteWithCondition(ValueType.COMMIT_METADATA, SampleEntities.createCommitMetadata(), true, Optional.empty());
     }
 
     @Test
@@ -568,9 +566,9 @@ public abstract class AbstractTestStore<S extends Store> {
       }
 
       final ExpressionFunction expressionFunction = ExpressionFunction.equals(ExpressionPath.builder("value").build(),
-          SampleEntities.createStringEntity(random, random.nextInt(10) + 1));
+          SampleEntities.createStringEntity(RandomSource.current().nextInt(10) + 1));
       final ConditionExpression ex = ConditionExpression.of(expressionFunction);
-      deleteWithCondition(ValueType.VALUE, SampleEntities.createValue(random), false, Optional.of(ex));
+      deleteWithCondition(ValueType.VALUE, SampleEntities.createValue(), false, Optional.of(ex));
     }
 
     @Test
@@ -580,9 +578,9 @@ public abstract class AbstractTestStore<S extends Store> {
       }
 
       final ExpressionFunction expressionFunction = ExpressionFunction.equals(ExpressionPath.builder("commit").build(),
-          SampleEntities.createStringEntity(random, random.nextInt(10) + 1));
+          SampleEntities.createStringEntity(RandomSource.current().nextInt(10) + 1));
       final ConditionExpression ex = ConditionExpression.of(expressionFunction);
-      deleteWithCondition(ValueType.REF, SampleEntities.createBranch(random), false, Optional.of(ex));
+      deleteWithCondition(ValueType.REF, SampleEntities.createBranch(), false, Optional.of(ex));
     }
 
     @Test
@@ -592,7 +590,7 @@ public abstract class AbstractTestStore<S extends Store> {
       }
 
       final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(COMMITS), ONE));
-      deleteWithCondition(ValueType.REF, SampleEntities.createBranch(random), false, Optional.of(expression));
+      deleteWithCondition(ValueType.REF, SampleEntities.createBranch(), false, Optional.of(expression));
     }
 
     @Test
@@ -602,7 +600,7 @@ public abstract class AbstractTestStore<S extends Store> {
       }
 
       final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(ExpressionFunction.size(COMMITS), TWO));
-      deleteWithCondition(ValueType.REF, SampleEntities.createBranch(random), true, Optional.of(expression));
+      deleteWithCondition(ValueType.REF, SampleEntities.createBranch(), true, Optional.of(expression));
     }
 
     protected <T extends HasId> void deleteWithCondition(ValueType<?> type, T sample, boolean shouldSucceed,
@@ -628,7 +626,7 @@ public abstract class AbstractTestStore<S extends Store> {
         return;
       }
 
-      final InternalRef tag = SampleEntities.createTag(random);
+      final InternalRef tag = SampleEntities.createTag();
       putThenLoad(ValueType.REF, tag);
       final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(
           ExpressionPath.builder("name").build(), Entity.ofString("badTagName")));
@@ -647,7 +645,7 @@ public abstract class AbstractTestStore<S extends Store> {
       }
 
       final String tagName = "myTag";
-      final InternalTag tag = SampleEntities.createTag(random).getTag();
+      final InternalTag tag = SampleEntities.createTag().getTag();
       putThenLoad(ValueType.REF, tag);
       final ConditionExpression expression = ConditionExpression.of(ExpressionFunction.equals(
           ExpressionPath.builder("name").build(), Entity.ofString("tagName")));
@@ -707,7 +705,7 @@ public abstract class AbstractTestStore<S extends Store> {
       }
 
       final String tagName = "myTag";
-      final InternalTag tag = SampleEntities.createTag(random).getTag();
+      final InternalTag tag = SampleEntities.createTag().getTag();
       putThenLoad(ValueType.REF, tag);
       final InternalRef.Builder<?> builder = EntityType.REF.newEntityProducer();
       final boolean result = store.update(
@@ -735,7 +733,7 @@ public abstract class AbstractTestStore<S extends Store> {
       }
 
       final String key = "newKey";
-      final InternalFragment fragment = SampleEntities.createFragment(random);
+      final InternalFragment fragment = SampleEntities.createFragment();
       putThenLoad(ValueType.KEY_FRAGMENT, fragment);
       final InternalFragment.Builder builder = EntityType.KEY_FRAGMENT.newEntityProducer();
       final boolean result = store.update(
@@ -762,7 +760,7 @@ public abstract class AbstractTestStore<S extends Store> {
         return;
       }
 
-      final InternalFragment fragment = SampleEntities.createFragment(random);
+      final InternalFragment fragment = SampleEntities.createFragment();
       putThenLoad(ValueType.KEY_FRAGMENT, fragment);
       final InternalFragment.Builder builder = EntityType.KEY_FRAGMENT.newEntityProducer();
       final boolean result = store.update(

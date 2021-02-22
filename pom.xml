@@ -80,6 +80,7 @@
     <module>perftest</module>
     <module>servers</module>
     <module>tools</module>
+    <module>utils</module>
   </modules>
 
   <scm>

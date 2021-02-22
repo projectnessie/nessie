@@ -21,24 +21,19 @@
 
   <parent>
     <groupId>org.projectnessie</groupId>
-    <artifactId>nessie-versioned-tiered</artifactId>
+    <artifactId>nessie</artifactId>
     <version>0.3.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-versioned-tiered-impl</artifactId>
+  <artifactId>nessie-utils</artifactId>
 
-  <name>Nessie - Versioned - Tiered - Core Implementation</name>
+  <name>Nessie - Utils</name>
 
   <dependencies>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-spi</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-utils</artifactId>
-      <version>${project.version}</version>
+  <dependency>
+      <groupId>com.google.errorprone</groupId>
+      <artifactId>error_prone_annotations</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
@@ -46,35 +41,13 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.immutables</groupId>
-      <artifactId>value</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-core</artifactId>
+      <artifactId>junit-jupiter-params</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

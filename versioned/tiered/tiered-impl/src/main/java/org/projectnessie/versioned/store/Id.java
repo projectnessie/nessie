@@ -20,9 +20,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
+import org.projectnessie.RandomSource;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 
@@ -151,7 +151,7 @@ public final class Id {
    */
   public static Id generateRandom() {
     byte[] bytes = new byte[LENGTH];
-    ThreadLocalRandom.current().nextBytes(bytes);
+    RandomSource.current().nextBytes(bytes);
     return Id.of(bytes);
   }
 

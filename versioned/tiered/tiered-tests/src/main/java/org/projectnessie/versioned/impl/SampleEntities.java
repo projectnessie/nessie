@@ -15,10 +15,10 @@
  */
 package org.projectnessie.versioned.impl;
 
-import java.util.Random;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.projectnessie.RandomSource;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
@@ -36,150 +36,138 @@ import com.google.protobuf.ByteString;
 public class SampleEntities {
   /**
    * Create a Sample L1 entity.
-   * @param random object to use for randomization of entity creation.
    * @return sample L1 entity.
    */
-  public static InternalL1 createL1(Random random) {
-    return EntityType.L1.buildEntity(producer -> producer.commitMetadataId(createId(random))
-        .children(IntStream.range(0, InternalL1.SIZE).mapToObj(x -> createId(random)))
+  public static InternalL1 createL1() {
+    return EntityType.L1.buildEntity(producer -> producer.commitMetadataId(createId())
+        .children(IntStream.range(0, InternalL1.SIZE).mapToObj(x -> createId()))
         .ancestors(Stream.of(InternalL1.EMPTY.getId(), Id.EMPTY))
-        .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
+        .keyMutations(Stream.of(Key.of(createString(8), createString(9)).asAddition()))
         .incrementalKeyList(InternalL1.EMPTY.getId(), 1));
   }
 
   /**
    * Create a Sample L2 entity.
-   * @param random object to use for randomization of entity creation.
    * @return sample L2 entity.
    */
-  public static InternalL2 createL2(Random random) {
-    return EntityType.L2.buildEntity(producer -> producer.id(createId(random))
-        .children(IntStream.range(0, InternalL2.SIZE).mapToObj(x -> createId(random))));
+  public static InternalL2 createL2() {
+    return EntityType.L2.buildEntity(producer -> producer.id(createId())
+        .children(IntStream.range(0, InternalL2.SIZE).mapToObj(x -> createId())));
   }
 
   /**
    * Create a Sample L3 entity.
-   * @param random object to use for randomization of entity creation.
    * @return sample L3 entity.
    */
-  public static InternalL3 createL3(Random random) {
+  public static InternalL3 createL3() {
     return EntityType.L3.buildEntity(producer -> producer.keyDelta(IntStream.range(0, 100)
         .mapToObj(i -> KeyDelta
-            .of(Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)),
-                createId(random)))));
+            .of(Key.of(createString(5), createString(9), String.valueOf(i)),
+                createId()))));
   }
 
   /**
    * Create a Sample Fragment entity.
-   * @param random object to use for randomization of entity creation.
    * @return sample Fragment entity.
    */
-  public static InternalFragment createFragment(Random random) {
+  public static InternalFragment createFragment() {
     return EntityType.KEY_FRAGMENT.buildEntity(producer -> producer.keys(IntStream.range(0, 10)
         .mapToObj(
-            i -> Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)))));
+            i -> Key.of(createString(5), createString(9), String.valueOf(i)))));
   }
 
   /**
    * Create a Sample Branch (InternalRef) entity.
-   * @param random object to use for randomization of entity creation.
    * @return sample Branch (InternalRef) entity.
    */
-  public static InternalRef createBranch(Random random) {
-    final String name = createString(random, 10);
+  public static InternalRef createBranch() {
+    final String name = createString(10);
 
     return EntityType.REF.buildEntity(producer -> producer.id(Id.build(name))
         .name(name)
         .branch()
-        .children(IntStream.range(0, InternalL1.SIZE).mapToObj(x -> createId(random)))
-        .metadata(createId(random))
+        .children(IntStream.range(0, InternalL1.SIZE).mapToObj(x -> createId()))
+        .metadata(createId())
         .commits(bc -> {
-          bc.id(createId(random))
-              .commit(createId(random))
+          bc.id(createId())
+              .commit(createId())
               .saved()
-              .parent(createId(random))
+              .parent(createId())
               .done();
-          bc.id(createId(random))
-              .commit(createId(random))
+          bc.id(createId())
+              .commit(createId())
               .unsaved()
-              .delta(1, createId(random), createId(random))
+              .delta(1, createId(), createId())
               .mutations()
-              .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
+              .keyMutation(Key.of(createString(8), createString(8)).asAddition())
               .done();
         }));
   }
 
   /**
    * Create a Sample Tag (InternalRef) entity.
-   * @param random object to use for randomization of entity creation.
    * @return sample Tag (InternalRef) entity.
    */
-  public static InternalRef createTag(Random random) {
-    return EntityType.REF.buildEntity(producer -> producer.id(createId(random))
+  public static InternalRef createTag() {
+    return EntityType.REF.buildEntity(producer -> producer.id(createId())
         .name("tagName")
         .tag()
-        .commit(createId(random)));
+        .commit(createId()));
   }
 
   /**
    * Create a Sample CommitMetadata entity.
-   * @param random object to use for randomization of entity creation.
    * @return sample CommitMetadata entity.
    */
-  public static InternalCommitMetadata createCommitMetadata(Random random) {
-    return EntityType.COMMIT_METADATA.buildEntity(producer -> producer.id(createId(random))
-        .value(ByteString.copyFrom(createBinary(random, 6))));
+  public static InternalCommitMetadata createCommitMetadata() {
+    return EntityType.COMMIT_METADATA.buildEntity(producer -> producer.id(createId())
+        .value(ByteString.copyFrom(createBinary(6))));
   }
 
   /**
    * Create a Sample Value entity.
-   * @param random object to use for randomization of entity creation.
    * @return sample Value entity.
    */
-  public static InternalValue createValue(Random random) {
-    return EntityType.VALUE.buildEntity(producer -> producer.id(createId(random))
-        .value(ByteString.copyFrom(createBinary(random, 6))));
+  public static InternalValue createValue() {
+    return EntityType.VALUE.buildEntity(producer -> producer.id(createId())
+        .value(ByteString.copyFrom(createBinary(6))));
   }
 
   /**
    * Create an array of random bytes.
-   * @param random random number generator to use.
    * @param numBytes the size of the array.
    * @return the array of random bytes.
    */
-  public static byte[] createBinary(Random random, int numBytes) {
+  public static byte[] createBinary(int numBytes) {
     final byte[] buffer = new byte[numBytes];
-    random.nextBytes(buffer);
+    RandomSource.current().nextBytes(buffer);
     return buffer;
   }
 
   /**
    * Create a Sample ID entity.
-   * @param random object to use for randomization of entity creation.
    * @return sample ID entity.
    */
-  public static Id createId(Random random) {
-    return Id.of(createBinary(random, 20));
+  public static Id createId() {
+    return Id.of(createBinary(20));
   }
 
   /**
    * Create a String Entity of random characters.
-   * @param random random number generator to use.
    * @param numChars the size of the String.
    * @return the String Entity of random characters.
    */
-  public static Entity createStringEntity(Random random, int numChars) {
-    return Entity.ofString(createString(random, numChars));
+  public static Entity createStringEntity(int numChars) {
+    return Entity.ofString(createString(numChars));
   }
 
   /**
    * Create a String of random characters.
-   * @param random random number generator to use.
    * @param numChars the size of the String.
    * @return the String of random characters.
    */
-  private static String createString(Random random, int numChars) {
-    return random.ints('a', 'z' + 1)
+  private static String createString(int numChars) {
+    return RandomSource.current().ints('a', 'z' + 1)
         .limit(numChars)
         .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
         .toString();

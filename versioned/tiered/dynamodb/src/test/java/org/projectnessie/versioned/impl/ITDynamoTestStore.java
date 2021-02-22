@@ -19,7 +19,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
-import org.projectnessie.versioned.impl.AbstractTestStore;
 
 /**
  * A test class that contains DynamoDB tests.
@@ -46,11 +45,6 @@ class ITDynamoTestStore extends AbstractTestStore<DynamoStore> {
   @Override
   protected DynamoStore createRawStore() {
     return fixture.createStoreImpl();
-  }
-
-  @Override
-  protected long getRandomSeed() {
-    return 8612341233543L;
   }
 
   @Override

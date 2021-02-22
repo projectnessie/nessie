@@ -68,7 +68,7 @@ public class ITDynamoMetrics {
 
   @Test
   void testMetrics() {
-    store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, SampleEntities.createBranch(random)));
+    store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, SampleEntities.createBranch()));
 
     //make sure standard Dynamo metrics are visible. Expect status codes for each of the 3 dynamo calls made (describe, create, put)
     Assertions.assertFalse(Metrics.globalRegistry.get("DynamoDB.HttpStatusCode.summary").meters().isEmpty());
