@@ -37,29 +37,36 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
 
   static final String ID = "id";
 
-  private Id id;
-  private long datetime;
-
   RocksBaseValue() {
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public C id(Id id) {
-    this.id = id;
+    ValueProtos.BaseValue base = getBase();
+    ValueProtos.BaseValue newBase = ValueProtos.BaseValue.newBuilder()
+        .setId(id.getValue())
+        .setDatetime(base.getDatetime())
+        .build();
+    setBase(newBase);
     return (C) this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public C dt(long dt) {
-    this.datetime = dt;
+    ValueProtos.BaseValue base = getBase();
+    ValueProtos.BaseValue newBase = ValueProtos.BaseValue.newBuilder()
+        .setId(base.getId())
+        .setDatetime(dt)
+        .build();
+    setBase(newBase);
     return (C) this;
   }
 
-  Id getId() {
-    return id;
-  }
+  public abstract ValueProtos.BaseValue getBase();
+
+  public abstract void setBase(ValueProtos.BaseValue base);
 
   /**
    * Converts a Stream of Ids into a List Entity.
@@ -140,6 +147,10 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
     }
   }
 
+  private Id getId() {
+    return Id.of(getBase().getId());
+  }
+
   protected String invalidOperatorSegmentMessage(Function function) {
     return String.format(String.format("Operator: %s is not applicable to segment %s",
       function.getOperator(), function.getRootPathAsNameSegment().getName()));
@@ -182,18 +193,6 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
 
   static List<ByteString> buildIds(List<Id> ids) {
     return ids.stream().map(Id::getValue).collect(Collectors.toList());
-  }
-
-  /**
-   * Build the base value as a protobuf entity.
-   * @return the protobuf entity for serialization.
-   */
-  ValueProtos.BaseValue buildBase() {
-    checkPresent(id, ID);
-    return ValueProtos.BaseValue.newBuilder()
-        .setId(id.getValue())
-        .setDatetime(datetime)
-        .build();
   }
 
   /**

@@ -45,53 +45,82 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
   static final String CHECKPOINT_ID = "checkpointId";
   static final String DISTANCE_FROM_CHECKPOINT = "distanceFromCheckpoint";
 
-  private Id metadataId; // commitMetadataId
-  private List<Id> parentList; // ancestors
-  private List<Id> tree; // children
-
-  private List<Key.Mutation> keyMutations; // keylist
-  private Id checkpointId; // checkpointId
-  private int distanceFromCheckpoint; // distanceFromCheckpoint
-  private List<Id> fragmentIds; // completeKeyList
+  private ValueProtos.L1.Builder protobufBuilder = ValueProtos.L1.newBuilder();
 
   RocksL1() {
     super();
   }
 
   @Override
+  public ValueProtos.BaseValue getBase() {
+    return protobufBuilder.getBase();
+  }
+
+  @Override
+  public void setBase(ValueProtos.BaseValue base) {
+    protobufBuilder.setBase(base);
+  }
+
+  @Override
   public L1 commitMetadataId(Id id) {
-    this.metadataId = id;
+    protobufBuilder.setMetadataId(id.getValue());
     return this;
   }
 
   @Override
   public L1 ancestors(Stream<Id> ids) {
-    this.parentList = ids.collect(Collectors.toList());
+    protobufBuilder
+        .clearAncestors()
+        .addAllAncestors(ids.map(Id::getValue).collect(Collectors.toList()));
     return this;
   }
 
   @Override
   public L1 children(Stream<Id> ids) {
-    this.tree = ids.collect(Collectors.toList());
+    protobufBuilder
+        .clearTree()
+        .addAllTree(ids.map(Id::getValue).collect(Collectors.toList()));
     return this;
   }
 
   @Override
   public L1 keyMutations(Stream<Key.Mutation> keyMutations) {
-    this.keyMutations = keyMutations.collect(Collectors.toList());
+    protobufBuilder
+        .clearKeyMutations()
+        .addAllKeyMutations(
+            keyMutations.map(km ->
+                ValueProtos.KeyMutation
+                    .newBuilder()
+                    .setTypeValue(km.getType().ordinal())
+                    .setKey(
+                        ValueProtos.Key.newBuilder().addAllElements(km.getKey().getElements()).build()
+                    )
+                    .build())
+            .collect(Collectors.toList())
+        );
     return this;
   }
 
   @Override
   public L1 incrementalKeyList(Id checkpointId, int distanceFromCheckpoint) {
-    this.checkpointId = checkpointId;
-    this.distanceFromCheckpoint = distanceFromCheckpoint;
+    protobufBuilder.setIncrementalList(
+        ValueProtos.IncrementalList
+            .newBuilder()
+            .setCheckpointId(checkpointId.getValue())
+            .setDistanceFromCheckpointId(distanceFromCheckpoint)
+            .build()
+    );
     return this;
   }
 
   @Override
   public L1 completeKeyList(Stream<Id> fragmentIds) {
-    this.fragmentIds = fragmentIds.collect(Collectors.toList());
+    protobufBuilder.setCompleteList(
+        ValueProtos.CompleteList
+          .newBuilder()
+          .addAllFragmentIds(fragmentIds.map(Id::getValue).collect(Collectors.toList()))
+          .build()
+    );
     return this;
   }
 
@@ -105,15 +134,15 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
         break;
       case COMMIT_METADATA:
         if (!function.isRootNameSegmentChildlessAndEquals()
-            || !metadataId.toEntity().equals(function.getValue())) {
+            || !Id.of(protobufBuilder.getMetadataId()).toEntity().equals(function.getValue())) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;
       case ANCESTORS:
-        evaluate(function, parentList);
+        evaluate(function, protobufBuilder.getAncestorsList().stream().map(Id::of).collect(Collectors.toList()));
         break;
       case CHILDREN:
-        evaluate(function, tree);
+        evaluate(function, protobufBuilder.getTreeList().stream().map(Id::of).collect(Collectors.toList()));
         break;
       case KEY_LIST:
         throw new ConditionFailedException(invalidOperatorSegmentMessage(function));
@@ -123,11 +152,11 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
         }
         final String childName = nameSegment.getChild().get().asName().getName();
         if (childName.equals(CHECKPOINT_ID)) {
-          if (!checkpointId.toEntity().equals(function.getValue())) {
+          if (!Id.of(protobufBuilder.getIncrementalList().getCheckpointId()).toEntity().equals(function.getValue())) {
             throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
         } else if (childName.equals((DISTANCE_FROM_CHECKPOINT))) {
-          if (!Entity.ofNumber(distanceFromCheckpoint).equals(function.getValue())) {
+          if (!Entity.ofNumber(protobufBuilder.getIncrementalList().getDistanceFromCheckpointId()).equals(function.getValue())) {
             throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
         } else {
@@ -136,7 +165,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
         }
         break;
       case COMPLETE_KEY_LIST:
-        evaluate(function, fragmentIds);
+        evaluate(function, protobufBuilder.getCompleteList().getFragmentIdsList().stream().map(Id::of).collect(Collectors.toList()));
         break;
       default:
         // Invalid Condition Function.
@@ -146,30 +175,7 @@ class RocksL1 extends RocksBaseValue<L1> implements L1 {
 
   @Override
   byte[] build() {
-    checkPresent(metadataId, COMMIT_METADATA);
-    checkPresent(parentList, ANCESTORS);
-    checkPresent(tree, CHILDREN);
-    checkPresent(keyMutations, KEY_LIST);
-
-    final ValueProtos.L1.Builder builder = ValueProtos.L1.newBuilder()
-        .setBase(buildBase())
-        .setMetadataId(metadataId.getValue())
-        .addAllAncestors(buildIds(parentList))
-        .addAllTree(buildIds(tree))
-        .addAllKeyMutations(keyMutations.stream().map(RocksBaseValue::buildKeyMutation).collect(Collectors.toList()));
-
-    if (null == fragmentIds) {
-      checkPresent(checkpointId, CHECKPOINT_ID);
-      builder.setIncrementalList(ValueProtos.IncrementalList.newBuilder()
-          .setCheckpointId(checkpointId.getValue())
-          .setDistanceFromCheckpointId(distanceFromCheckpoint)
-          .build());
-    } else {
-      checkPresent(fragmentIds, COMPLETE_KEY_LIST);
-      builder.setCompleteList(ValueProtos.CompleteList.newBuilder().addAllFragmentIds(buildIds(fragmentIds)).build());
-    }
-
-    return builder.build().toByteArray();
+    return protobufBuilder.build().toByteArray();
   }
 
   /**

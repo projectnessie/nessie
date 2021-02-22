@@ -34,15 +34,27 @@ import com.google.protobuf.InvalidProtocolBufferException;
 class RocksL2 extends RocksBaseValue<L2> implements L2 {
   private static final String CHILDREN = "children";
 
-  private List<Id> tree; // children
+  private ValueProtos.L2.Builder protobufBuilder = ValueProtos.L2.newBuilder();
 
   RocksL2() {
     super();
   }
 
   @Override
+  public ValueProtos.BaseValue getBase() {
+    return protobufBuilder.getBase();
+  }
+
+  @Override
+  public void setBase(ValueProtos.BaseValue base) {
+    protobufBuilder.setBase(base);
+  }
+
+  @Override
   public L2 children(Stream<Id> ids) {
-    this.tree = ids.collect(Collectors.toList());
+    protobufBuilder
+        .clearTree()
+        .addAllTree(ids.map(Id::getValue).collect(Collectors.toList()));
     return this;
   }
 
@@ -54,7 +66,7 @@ class RocksL2 extends RocksBaseValue<L2> implements L2 {
         evaluatesId(function);
         break;
       case CHILDREN:
-        evaluate(function, tree);
+        evaluate(function, protobufBuilder.getTreeList().stream().map(Id::of).collect(Collectors.toList()));
         break;
       default:
         // Invalid Condition Function.
@@ -64,12 +76,7 @@ class RocksL2 extends RocksBaseValue<L2> implements L2 {
 
   @Override
   byte[] build() {
-    checkPresent(tree, CHILDREN);
-    return ValueProtos.L2.newBuilder()
-      .setBase(buildBase())
-      .addAllTree(buildIds(tree))
-      .build()
-      .toByteArray();
+    return protobufBuilder.build().toByteArray();
   }
 
   /**
