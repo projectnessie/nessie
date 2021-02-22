@@ -69,6 +69,16 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
   public abstract void setBase(ValueProtos.BaseValue base);
 
   /**
+   * Consume the base value attributes.
+   * @param consumer the base value consumer.
+   * @param base the protobuf base value object.
+   */
+  static <C extends BaseValue<C>> void setBase(BaseValue<C> consumer, ValueProtos.BaseValue base) {
+    consumer.id(Id.of(base.getId()));
+    consumer.dt(base.getDatetime());
+  }
+
+  /**
    * Converts a Stream of Ids into a List Entity.
    * @param idList the stream of Id to convert.
    * @return the List Entity.
@@ -193,16 +203,6 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
 
   static List<ByteString> buildIds(List<Id> ids) {
     return ids.stream().map(Id::getValue).collect(Collectors.toList());
-  }
-
-  /**
-   * Consume the base value attributes.
-   * @param consumer the base value consumer.
-   * @param base the protobuf base value object.
-   */
-  static <C extends BaseValue<C>> void setBase(BaseValue<C> consumer, ValueProtos.BaseValue base) {
-    consumer.id(Id.of(base.getId()));
-    consumer.dt(base.getDatetime());
   }
 
   static Key createKey(ValueProtos.Key key) {
