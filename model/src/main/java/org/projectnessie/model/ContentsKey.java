@@ -15,19 +15,12 @@
  */
 package org.projectnessie.model;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import javax.ws.rs.ext.ParamConverter;
-import javax.ws.rs.ext.ParamConverterProvider;
-import javax.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -43,24 +36,19 @@ public class ContentsKey {
 
   private final List<String> elements;
 
-  @JsonCreator
-  public ContentsKey(@JsonProperty("elements") List<String> elements) {
-    this.elements = Collections.unmodifiableList(new ArrayList<>(elements));
-    validate();
-  }
-
   // internal constructor for a list that doesn't need a defensive copy.
-  private ContentsKey(List<String> elements, boolean dummy) {
+  private ContentsKey(List<String> elements) {
     this.elements = Collections.unmodifiableList(elements);
     validate();
   }
 
   public static ContentsKey of(String... elements) {
-    return new ContentsKey(Arrays.asList(elements), true);
+    return new ContentsKey(Arrays.asList(elements));
   }
 
-  public static ContentsKey of(List<String> elements) {
-    return new ContentsKey(elements);
+  @JsonCreator
+  public static ContentsKey of(@JsonProperty("elements") List<String> elements) {
+    return new ContentsKey(new ArrayList<>(elements));
   }
 
   public List<String> getElements() {
@@ -75,50 +63,24 @@ public class ContentsKey {
     }
   }
 
-  private static class NessieObjectKeyConverter implements ParamConverter<ContentsKey> {
-
-    @Override
-    public ContentsKey fromString(String value) {
-      if (value == null) {
-        return null;
-      }
-
-      return fromEncoded(value);
-    }
-
-    @Override
-    public String toString(ContentsKey value) {
-      if (value == null) {
-        return null;
-      }
-      return value.toPathString();
-    }
-
-  }
-
-  @Provider
-  public static class NessieObjectKeyConverterProvider implements ParamConverterProvider {
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
-      if (rawType.equals(ContentsKey.class)) {
-        return (ParamConverter<T>) new NessieObjectKeyConverter();
-      }
-      return null;
-    }
-
-  }
-
   /**
    * Convert from path encoded string to normal string.
    * @param encoded Path encoded string
    * @return Actual key.
    */
-  public static ContentsKey fromEncoded(String encoded) {
-    List<String> elements = StreamSupport.stream(Arrays.spliterator(encoded.split("\\.")), false)
+  public static ContentsKey fromPathString(String encoded) {
+    List<String> elements = Arrays.stream(encoded.split("\\."))
         .map(x -> x.replace('\u0000', '.')).collect(Collectors.toList());
-    return new ContentsKey(elements, true);
+    return new ContentsKey(elements);
+  }
+
+  /**
+   * Convert this key to a url encoded path string.
+   * @return String encoded for path use.
+   */
+  public String toPathString() {
+    String pathString = getElements().stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
+    return pathString;
   }
 
   @Override
@@ -141,14 +103,5 @@ public class ContentsKey {
   @Override
   public String toString() {
     return elements.stream().collect(Collectors.joining("."));
-  }
-
-  /**
-   * Convert this key to a url encoded path string.
-   * @return String encoded for path use.
-   */
-  public String toPathString() {
-    String pathString = getElements().stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
-    return pathString;
   }
 }
