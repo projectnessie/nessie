@@ -35,6 +35,7 @@ import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
+import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableHash;
 import org.projectnessie.model.ImmutableLogResponse;
 import org.projectnessie.model.ImmutableTag;
@@ -150,9 +151,9 @@ public class TreeResource extends BaseResource implements TreeApi {
   public LogResponse getCommitLog(String ref) throws NessieNotFoundException {
     // TODO: pagination.
     Hash hash = getHashOrThrow(ref);
-    try {
-      List<CommitMeta> items = getStore().getCommits(hash)
-          .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build()).collect(Collectors.toList());
+    try (Stream<ImmutableCommitMeta> s = getStore().getCommits(hash)
+        .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
+      List<CommitMeta> items = s.collect(Collectors.toList());
       return ImmutableLogResponse.builder().addAllOperations(items).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("Unable to find the requested ref [%s].", ref), e);
@@ -163,7 +164,10 @@ public class TreeResource extends BaseResource implements TreeApi {
   public void transplantCommitsIntoBranch(String branchName, String hash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     try {
-      List<Hash> transplants = transplant.getHashesToTransplant().stream().map(Hash::of).collect(Collectors.toList());
+      List<Hash> transplants;
+      try (Stream<Hash> s = transplant.getHashesToTransplant().stream().map(Hash::of)) {
+        transplants = s.collect(Collectors.toList());
+      }
       getStore().transplant(BranchName.of(branchName), toHash(hash, true), transplants);
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
@@ -191,9 +195,11 @@ public class TreeResource extends BaseResource implements TreeApi {
   public EntriesResponse getEntries(String refName) throws NessieNotFoundException {
     final Hash hash = getHashOrThrow(refName);
     try {
-      List<EntriesResponse.Entry> entries = getStore().getKeys(hash)
-          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key)).type(Type.UNKNOWN).build())
-          .collect(ImmutableList.toImmutableList());
+      List<EntriesResponse.Entry> entries;
+      try (Stream<EntriesResponse.Entry> s = getStore().getKeys(hash)
+          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key)).type(Type.UNKNOWN).build())) {
+        entries = s.collect(ImmutableList.toImmutableList());
+      }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("Unable to find the reference [%s].", refName), e);
