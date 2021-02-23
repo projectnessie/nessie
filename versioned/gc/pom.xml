@@ -31,6 +31,6 @@
   <name>Nessie - Versioned - GC for Spark - Parent</name>
 
   <modules>
-    <module>core</module>
+    <module>spark</module>
   </modules>
 </project>

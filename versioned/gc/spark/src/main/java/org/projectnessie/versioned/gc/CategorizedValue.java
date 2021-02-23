@@ -38,10 +38,10 @@ public final class CategorizedValue implements Serializable {
   /**
    * Construct asset key.
    */
-  public CategorizedValue(boolean referenced, String valueType, ByteString data, long timestamp) {
+  public CategorizedValue(boolean referenced, String entityType, ByteString data, long timestamp) {
     super();
     this.referenced = referenced;
-    this.entityType = valueType;
+    this.entityType = entityType;
     this.data = data.toByteArray();
     this.timestamp = timestamp;
   }

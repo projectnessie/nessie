@@ -25,10 +25,10 @@
     <version>0.3.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>nessie-versioned-gc-core</artifactId>
+  <artifactId>nessie-versioned-gc</artifactId>
   <packaging>jar</packaging>
 
-  <name>Nessie - Versioned - GC for Spark - Core</name>
+  <name>Nessie - Versioned - GC for Spark</name>
 
   <dependencies>
     <dependency>

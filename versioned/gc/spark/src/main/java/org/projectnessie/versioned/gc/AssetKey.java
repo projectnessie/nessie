@@ -45,6 +45,11 @@ public abstract class AssetKey {
    */
   public abstract List<String> toReportableName();
 
+  /**
+   * Expose a unique name for this asset for equality purposes.
+   */
+  public abstract String toUniqueName();
+
   // included to ensure that an implementor overrides.
   @Override
   public abstract boolean equals(Object other);

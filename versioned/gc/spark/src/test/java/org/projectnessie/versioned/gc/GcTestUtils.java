@@ -109,7 +109,12 @@ public final class GcTestUtils {
 
     @Override
     public List<String> toReportableName() {
-      return Arrays.asList(Integer.toString(id));
+      return Arrays.asList(toUniqueName());
+    }
+
+    @Override
+    public String toUniqueName() {
+      return Integer.toString(id);
     }
 
     @Override
