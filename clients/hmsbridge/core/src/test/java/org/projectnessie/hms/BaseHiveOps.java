@@ -52,7 +52,7 @@ public abstract class BaseHiveOps {
 
   @BeforeEach
   void resetData() throws NessieConflictException, NessieNotFoundException {
-    NessieClient client = NessieClient.withConfig(configFunction());
+    NessieClient client = NessieClient.builder().fromConfig(configFunction()).build();
     for (Reference r : client.getTreeApi().getAllReferences()) {
       if (r instanceof Branch) {
         client.getTreeApi().deleteBranch(r.getName(), r.getHash());

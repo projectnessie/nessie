@@ -15,9 +15,11 @@
  */
 package org.projectnessie.client.http;
 
+import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.net.ssl.SSLContext;
 
@@ -37,7 +39,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class HttpClient {
 
-  private final String baseUri;
+  private final URI baseUri;
   private final String accept;
   private final ObjectMapper mapper;
   private final SSLContext sslContext;
@@ -57,13 +59,14 @@ public class HttpClient {
    * @param baseUri uri base eg https://example.com
    * @param accept Accept header eg "application/json"
    */
-  private HttpClient(String baseUri, String accept, ObjectMapper mapper, SSLContext sslContext) {
-    this.baseUri = HttpUtils.checkNonNullTrim(baseUri);
+  private HttpClient(URI baseUri, String accept, ObjectMapper mapper, SSLContext sslContext) {
+    this.baseUri = Objects.requireNonNull(baseUri);
     this.accept = HttpUtils.checkNonNullTrim(accept);
     this.mapper = mapper;
     this.sslContext = sslContext;
-    HttpUtils.checkArgument(baseUri.startsWith("http://") || baseUri.startsWith("https://"),
-                            "Cannot start http client. %s must be a valid http or https address", baseUri);
+    if (!"http".equals(baseUri.getScheme()) && !"https".equals(baseUri.getScheme())) {
+      throw new IllegalArgumentException(String.format("Cannot start http client. %s must be a valid http or https address", baseUri));
+    }
   }
 
   /**
@@ -89,19 +92,19 @@ public class HttpClient {
   }
 
   public static class HttpClientBuilder {
-    private String baseUri;
+    private URI baseUri;
     private String accept = "application/json";
     private ObjectMapper mapper;
     private SSLContext sslContext;
 
-    public HttpClientBuilder() {
+    private HttpClientBuilder() {
     }
 
-    public String getBaseUri() {
+    public URI getBaseUri() {
       return baseUri;
     }
 
-    public HttpClientBuilder setBaseUri(String baseUri) {
+    public HttpClientBuilder setBaseUri(URI baseUri) {
       this.baseUri = baseUri;
       return this;
     }

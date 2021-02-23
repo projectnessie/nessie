@@ -17,168 +17,162 @@ package org.projectnessie.client;
 
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TYPE;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
-import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
 
-import java.io.Closeable;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.Objects;
+import java.net.URI;
 import java.util.function.Function;
 
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
-import org.projectnessie.client.auth.AwsAuth;
-import org.projectnessie.client.auth.BasicAuthFilter;
-import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.http.HttpClientException;
-import org.projectnessie.client.rest.NessieHttpResponseFilter;
-import org.projectnessie.error.NessieConflictException;
-import org.projectnessie.error.NessieNotFoundException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+public interface NessieClient extends AutoCloseable {
 
-public class NessieClient implements Closeable {
-
-  private final HttpClient client;
-  private final ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-                                                        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-
-  public enum AuthType {
+  enum AuthType {
     AWS,
     BASIC,
     NONE
   }
 
-  private final TreeApi tree;
-  private final ConfigApi config;
-  private final ContentsApi contents;
+  // Overridden to "remove 'throws Exception'"
+  void close();
+
+  TreeApi getTreeApi();
+
+  ContentsApi getContentsApi();
+
+  ConfigApi getConfigApi();
 
   /**
-   * create new nessie client. All REST api endpoints are mapped here. This client should support any jaxrs implementation
-   *
-   * @param authType authentication type (AWS, NONE, BASIC)
-   * @param path URL for the nessie client (eg http://localhost:19120/api/v1)
-   * @param username username (only for BASIC auth)
-   * @param password password (only for BASIC auth)
+   * Create a new {@link Builder} to configure a new {@link NessieClient}.
+   * Currently, the {@link Builder} is only capable of building a {@link NessieClient} for HTTP,
+   * but that may change.
    */
-  public NessieClient(AuthType authType, String path, String username, String password) {
-    client = HttpClient.builder().setBaseUri(path).setObjectMapper(mapper).build();
-    authFilter(client, authType, username, password);
-    client.register(new NessieHttpResponseFilter(mapper));
-    contents = wrap(ContentsApi.class, new ClientContentsApi(client));
-    tree = wrap(TreeApi.class, new ClientTreeApi(client));
-    config = wrap(ConfigApi.class, new ClientConfigApi(client));
-  }
-
-  private void authFilter(HttpClient client, AuthType authType, String username, String password) {
-    switch (authType) {
-      case AWS:
-        client.register(new AwsAuth(mapper));
-        break;
-      case BASIC:
-        client.register(new BasicAuthFilter(username, password));
-        break;
-      case NONE:
-        break;
-      default:
-        throw new IllegalArgumentException(String.format("Cannot instantiate auth filter for %s. Not a valid auth type", authType));
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T> T wrap(Class<T> iface, T delegate) {
-    return (T) Proxy.newProxyInstance(delegate.getClass().getClassLoader(), new Class[] {iface}, new ExceptionRewriter(delegate));
+  static Builder builder() {
+    return new Builder();
   }
 
   /**
-   * This will rewrite exceptions so they are correctly thrown by the api classes.
-   * (since the filter will cause them to be wrapped in ResposneProcessingException)
+   * Builder to configure a new {@link NessieClient}. Currently, the {@link Builder} is only
+   * capable of building a {@link NessieClient} for HTTP, but that may change.
    */
-  private static class ExceptionRewriter implements InvocationHandler {
+  class Builder {
+    private AuthType authType = AuthType.NONE;
+    private URI uri;
+    private String username;
+    private String password;
+    private boolean tracing;
 
-    private final Object delegate;
-
-    public ExceptionRewriter(Object delegate) {
-      this.delegate = delegate;
+    /**
+     * Same semantics as {@link #fromConfig(Function)}, uses the system properties.
+     * @return {@code this}
+     * @see #fromConfig(Function)
+     */
+    public Builder fromSystemProperties() {
+      return fromConfig(System::getProperty);
     }
 
-    @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-      try {
-        return method.invoke(delegate, args);
-      } catch (InvocationTargetException ex) {
-        Throwable targetException = ex.getTargetException();
-        if (targetException instanceof HttpClientException) {
-          if (targetException.getCause() instanceof NessieNotFoundException) {
-            throw (NessieNotFoundException) targetException.getCause();
-          }
-          if (targetException.getCause() instanceof NessieConflictException) {
-            throw (NessieConflictException) targetException.getCause();
-          }
-        }
-
-        if (targetException instanceof RuntimeException) {
-          throw targetException;
-        }
-
-
-        throw ex;
+    /**
+     * Configure this builder instance using a configuration object and standard Nessie
+     * configuration keys defined by the constants defined in {@link NessieConfigConstants}.
+     * Non-{@code null} values returned by the {@code configuration}-function will override
+     * previously configured values.
+     * @param configuration The function that returns a configuration value for a configuration key.
+     * @return {@code this}
+     * @see #fromSystemProperties()
+     */
+    public Builder fromConfig(Function<String, String> configuration) {
+      String uri = configuration.apply(CONF_NESSIE_URI);
+      if (uri != null) {
+        this.uri = URI.create(uri);
       }
-    }
-  }
-
-
-  public TreeApi getTreeApi() {
-    return tree;
-  }
-
-  public ContentsApi getContentsApi() {
-    return contents;
-  }
-
-  public ConfigApi getConfigApi() {
-    return config;
-  }
-
-  @Override
-  public void close() {
-  }
-
-  public static NessieClient basic(String path, String username, String password) {
-    return new NessieClient(AuthType.BASIC, path, username, password);
-  }
-
-  public static NessieClient aws(String path) {
-    return new NessieClient(AuthType.AWS, path, null, null);
-  }
-
-  public static NessieClient none(String path) {
-    return new NessieClient(AuthType.NONE, path, null, null);
-  }
-
-  /**
-   * Create a client using a configuration object and standard Nessie configuration keys.
-   * @param configuration The function that exploses configuration keys.
-   * @return A new Nessie client.
-   */
-  public static NessieClient withConfig(Function<String, String> configuration) {
-    String url = Objects.requireNonNull(configuration.apply(CONF_NESSIE_URL));
-    String authType = configuration.apply(CONF_NESSIE_AUTH_TYPE);
-    String username = configuration.apply(CONF_NESSIE_USERNAME);
-    String password = configuration.apply(CONF_NESSIE_PASSWORD);
-    if (authType == null) {
-      if (username != null && password != null) {
-        authType = AuthType.BASIC.name();
-      } else {
-        authType = AuthType.NONE.name();
+      String username = configuration.apply(CONF_NESSIE_USERNAME);
+      if (username != null) {
+        this.username = username;
       }
+      String password = configuration.apply(CONF_NESSIE_PASSWORD);
+      if (password != null) {
+        this.password = password;
+      }
+      String authType = configuration.apply(CONF_NESSIE_AUTH_TYPE);
+      if (authType != null) {
+        this.authType = AuthType.valueOf(authType);
+      }
+      String tracing = configuration.apply(CONF_NESSIE_TRACING);
+      if (tracing != null) {
+        this.tracing = Boolean.parseBoolean(tracing);
+      }
+      return this;
     }
-    return new NessieClient(AuthType.valueOf(authType), url, username, password);
-  }
 
+    /**
+     * Set the authentication type. Default is {@link AuthType#NONE}.
+     * @param authType new auth-type
+     * @return {@code this}
+     */
+    public Builder withAuthType(AuthType authType) {
+      this.authType = authType;
+      return this;
+    }
+
+    /**
+     * Set the Nessie server URI. A server URI must be configured.
+     * @param uri server URI
+     * @return {@code this}
+     */
+    public Builder withUri(URI uri) {
+      this.uri = uri;
+      return this;
+    }
+
+    /**
+     * Convenience method for {@link #withUri(URI)} taking a string.
+     * @param uri server URI
+     * @return {@code this}
+     */
+    public Builder withUri(String uri) {
+      return withUri(URI.create(uri));
+    }
+
+    /**
+     * Set the username for {@link AuthType#BASIC} authentication.
+     * @param username username
+     * @return {@code this}
+     */
+    public Builder withUsername(String username) {
+      this.username = username;
+      return this;
+    }
+
+    /**
+     * Set the password for {@link AuthType#BASIC} authentication.
+     * @param password password
+     * @return {@code this}
+     */
+    public Builder withPassword(String password) {
+      this.password = password;
+      return this;
+    }
+
+    /**
+     * Whether to enable adding the HTTP headers of an active OpenTracing span to all
+     * Nessie requests. If enabled, the OpenTracing dependencies must be present at runtime.
+     * @param tracing {@code true} to enable passing HTTP headers for active tracing spans.
+     * @return {@code this}
+     */
+    public Builder withTracing(boolean tracing) {
+      this.tracing = tracing;
+      return this;
+    }
+
+    /**
+     * Build a new {@link NessieClient}.
+     * @return new {@link NessieClient}
+     */
+    public NessieClient build() {
+      return new NessieHttpClient(authType, uri, username, password, tracing);
+    }
+  }
 }

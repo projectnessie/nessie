@@ -81,7 +81,7 @@ public class NessieStoreImpl implements NessieStore {
   @Override
   public void setConf(Configuration conf) {
     this.conf = conf;
-    client = NessieClient.withConfig(conf::get);
+    client = NessieClient.builder().fromConfig(conf::get).build();
     try {
       ref = client.getTreeApi().getDefaultBranch().getName();
     } catch (NessieNotFoundException e) {

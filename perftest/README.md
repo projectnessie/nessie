@@ -14,7 +14,7 @@ To Run:
   - cadvisor - docker image and host metrics
   - localstack - for dynamodb and future AWS services
 * build project (`mvn clean install`)  
-* enter `perftest` directory and execute `mvn exec:java jmeter:jmeter -Dnessie.jmeter.users=10 -Dnessie.jmeter.queries=100 -Dnessie.jmeter.dbsize=10000 -Dnessie.jmeter.path=http://localhost:19131/api/v1`
+* enter `perftest` directory and execute `mvn exec:java jmeter:jmeter -Dnessie.jmeter.users=10 -Dnessie.jmeter.queries=100 -Dnessie.jmeter.dbsize=10000 -Dnessie.jmeter.uri=http://localhost:19131/api/v1`
 * have a look at `target/jmeter/results` for results and check grafana and jaeger for timings
 
 
@@ -39,7 +39,7 @@ These instructions are for running nessie on an EC2 instance and using dynamodb.
     - [jaeger](http://localhost:16686) - trace executions
     - cadvisor - docker image and host metrics
 1. build project (`mvn clean install`)  
-1. enter `perftest` directory and execute `mvn jmeter:jmeter -Dnessie.jmeter.users=10 -Dnessie.jmeter.queries=100 -Dnessie.jmeter.dbsize=10000 -Dnessie.jmeter.path=http://<ec2_host>:19131/api/v1 -Dnessie.dynamo.region=us-west-2 -Dnessie.dynamo.endpoint=https://dynamodb.us-west-2.amazonaws.com`
+1. enter `perftest` directory and execute `mvn jmeter:jmeter -Dnessie.jmeter.users=10 -Dnessie.jmeter.queries=100 -Dnessie.jmeter.dbsize=10000 -Dnessie.jmeter.uri=http://<ec2_host>:19131/api/v1 -Dnessie.dynamo.region=us-west-2 -Dnessie.dynamo.endpoint=https://dynamodb.us-west-2.amazonaws.com`
 1. have a look at `target/jmeter/results` for results and check grafana and jaeger for timings
 
 ## ECS test

@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -49,7 +50,7 @@ public class HttpRequest {
   private final List<ResponseFilter> responseFilters;
   private SSLContext sslContext;
 
-  HttpRequest(String baseUri, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters,
+  HttpRequest(URI baseUri, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters,
               List<ResponseFilter> responseFilters, SSLContext context) {
     this.uriBuilder = new UriBuilder(baseUri);
     this.mapper = mapper;
@@ -83,38 +84,52 @@ public class HttpRequest {
 
   private HttpResponse executeRequest(Method method, Object body) throws HttpClientException {
     try {
-      String uri = uriBuilder.build();
-      URL url = new URL(uri);
-      HttpURLConnection con = (HttpURLConnection) url.openConnection();
+      URI uri = uriBuilder.build();
+      HttpURLConnection con = (HttpURLConnection) uri.toURL().openConnection();
       if (con instanceof HttpsURLConnection) {
         ((HttpsURLConnection) con).setSSLSocketFactory(sslContext.getSocketFactory());
       }
       RequestContext context = new RequestContext(headers, uri, method, body);
-      requestFilters.forEach(a -> a.filter(context));
-      headers.entrySet()
-             .stream()
-             .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
-             .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
-      con.setRequestMethod(method.name());
-      if (method.equals(Method.PUT) || method.equals(Method.POST)) {
-        // Need to set the Content-Type even if body==null, otherwise the server responds with
-        // RESTEASY003065: Cannot consume content type
-        con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-        if (body != null) {
-          con.setDoOutput(true);
-          Class<?> bodyType = body.getClass();
-          if (bodyType != String.class) {
-            mapper.writerFor(bodyType).writeValue(con.getOutputStream(), body);
-          } else {
-            // This is mostly used for testing bad/broken JSON
-            con.getOutputStream().write(((String) body).getBytes(StandardCharsets.UTF_8));
+      ResponseContext responseContext = new ResponseContextImpl(con);
+      try {
+        requestFilters.forEach(a -> a.filter(context));
+        headers.entrySet()
+               .stream()
+               .flatMap(e -> e.getValue().stream().map(x -> new SimpleImmutableEntry<>(e.getKey(), x)))
+               .forEach(x -> con.setRequestProperty(x.getKey(), x.getValue()));
+        con.setRequestMethod(method.name());
+        if (method.equals(Method.PUT) || method.equals(Method.POST)) {
+          // Need to set the Content-Type even if body==null, otherwise the server responds with
+          // RESTEASY003065: Cannot consume content type
+          con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+          if (body != null) {
+            con.setDoOutput(true);
+            Class<?> bodyType = body.getClass();
+            if (bodyType != String.class) {
+              mapper.writerFor(bodyType).writeValue(con.getOutputStream(), body);
+            } else {
+              // This is mostly used for testing bad/broken JSON
+              con.getOutputStream().write(((String) body).getBytes(StandardCharsets.UTF_8));
+            }
           }
         }
+        con.connect();
+        con.getResponseCode(); // call to ensure http request is complete
+
+        List<BiConsumer<ResponseContext, Exception>> callbacks = context.getResponseCallbacks();
+        if (callbacks != null) {
+          callbacks.forEach(callback -> callback.accept(responseContext, null));
+        }
+      } catch (IOException e) {
+        List<BiConsumer<ResponseContext, Exception>> callbacks = context.getResponseCallbacks();
+        if (callbacks != null) {
+          callbacks.forEach(callback -> callback.accept(null, e));
+        }
+        throw e;
       }
-      con.connect();
-      con.getResponseCode(); // call to ensure http request is complete
-      ResponseContext responseContext = new ResponseContextImpl(con);
-      responseFilters.forEach(a -> a.filter(responseContext));
+
+      responseFilters.forEach(responseFilter -> responseFilter.filter(responseContext));
+
       return new HttpResponse(responseContext, mapper);
     } catch (ProtocolException e) {
       throw new HttpClientException(String.format("Cannot perform request. Invalid protocol %s", method), e);

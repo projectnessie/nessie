@@ -23,7 +23,7 @@ class ResponseContextImpl implements ResponseContext {
 
   private final HttpURLConnection connection;
 
-  public ResponseContextImpl(HttpURLConnection connection) {
+  ResponseContextImpl(HttpURLConnection connection) {
     this.connection = connection;
   }
 

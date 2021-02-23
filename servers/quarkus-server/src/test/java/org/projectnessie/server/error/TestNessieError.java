@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.net.URI;
+
 import javax.ws.rs.core.Response;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -56,7 +58,7 @@ class TestNessieError {
     ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
         .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     client = HttpClient.builder()
-        .setBaseUri(baseURI)
+        .setBaseUri(URI.create(baseURI))
         .setObjectMapper(mapper)
         .build();
     client.register(new NessieHttpResponseFilter(mapper));

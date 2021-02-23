@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.server;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -60,7 +59,7 @@ class TestAuth {
   }
 
   void getCatalog(String branch) throws NessieNotFoundException, NessieConflictException {
-    client = NessieClient.none("http://localhost:19121/api/v1");
+    client = NessieClient.builder().withUri("http://localhost:19121/api/v1").build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
     if (branch != null) {

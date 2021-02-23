@@ -31,6 +31,7 @@ import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_OR_HASH_MESSAGE;
 import static org.projectnessie.server.ReferenceMatchers.referenceWithNameAndType;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -88,14 +89,14 @@ class TestRest {
 
   @BeforeEach
   void init() {
-    String path = "http://localhost:19121/api/v1";
-    client = NessieClient.none("http://localhost:19121/api/v1");
+    URI uri = URI.create("http://localhost:19121/api/v1");
+    client = NessieClient.builder().withUri(uri).build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 
     ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
         .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    httpClient = HttpClient.builder().setBaseUri(path).setObjectMapper(mapper).build();
+    httpClient = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).build();
     httpClient.register(new NessieHttpResponseFilter(mapper));
   }
 

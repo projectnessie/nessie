@@ -16,24 +16,25 @@
 package org.projectnessie.client.http;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Construct a URI from base and paths. Adds query parameters, supports templates and handles url encoding of path.
  */
 class UriBuilder {
 
-  private final String baseUri;
+  private final URI baseUri;
   private final StringBuilder uri = new StringBuilder();
   private final StringBuilder query = new StringBuilder();
   private final Map<String, String> templateValues = new HashMap<>();
 
-  UriBuilder(String baseUri) {
-    this.baseUri = HttpUtils.checkNonNullTrim(baseUri);
-    HttpUtils.checkArgument(this.baseUri.length() > 0, "Base uri %s must be of length greater than 0", this.baseUri);
+  UriBuilder(URI baseUri) {
+    this.baseUri = Objects.requireNonNull(baseUri);
   }
 
   UriBuilder path(String path) {
@@ -75,7 +76,7 @@ class UriBuilder {
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
-  String build() throws HttpClientException {
+  URI build() throws HttpClientException {
     StringBuilder uriBuilder = new StringBuilder();
     uriBuilder.append(baseUri);
 
@@ -99,7 +100,7 @@ class UriBuilder {
 
       // clean off the last / that the joiner added
       if ('/' == uriBuilder.charAt(uriBuilder.length() - 1)) {
-        return uriBuilder.subSequence(0, uriBuilder.length() - 1).toString();
+        return URI.create(uriBuilder.subSequence(0, uriBuilder.length() - 1).toString());
       }
     } else {
       checkEmpty(templateValues, uri);
@@ -110,7 +111,7 @@ class UriBuilder {
       uriBuilder.append(query);
     }
 
-    return uriBuilder.toString();
+    return URI.create(uriBuilder.toString());
   }
 
   private static String encode(String s) throws HttpClientException {

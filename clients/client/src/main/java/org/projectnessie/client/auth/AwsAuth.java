@@ -53,9 +53,8 @@ public class AwsAuth implements RequestFilter {
     this.objectMapper = objectMapper;
   }
 
-  private SdkHttpFullRequest prepareRequest(String url, HttpClient.Method method, Optional<Object> entity) {
+  private SdkHttpFullRequest prepareRequest(URI uri, HttpClient.Method method, Optional<Object> entity) {
     try {
-      URI uri = new URI(url);
       SdkHttpFullRequest.Builder builder = SdkHttpFullRequest.builder()
                                                              .uri(uri)
                                                              .method(SdkHttpMethod.fromValue(method.name()));

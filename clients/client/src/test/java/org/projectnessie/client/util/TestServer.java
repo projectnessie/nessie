@@ -13,25 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.client.util;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.function.Consumer;
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
 
-class TestServer implements AutoCloseable {
+/**
+ * A HTTP test server.
+ */
+public class TestServer implements AutoCloseable {
 
-  final HttpServer server;
+  private final HttpServer server;
 
-  TestServer(String context, HttpHandler handler) throws IOException {
+  public TestServer(String context, HttpHandler handler) throws IOException {
     this(context, handler, null);
   }
 
-  TestServer(String context, HttpHandler handler, Consumer<HttpsServer> init) throws IOException {
+  /**
+   * Constructor.
+   * @param context server context
+   * @param handler http request handler
+   * @param init init method (optional)
+   * @throws IOException maybe
+   */
+  public TestServer(String context, HttpHandler handler, Consumer<HttpsServer> init) throws IOException {
     HttpHandler safeHandler = exchange -> {
       try {
         handler.handle(exchange);
@@ -52,12 +63,20 @@ class TestServer implements AutoCloseable {
     server.start();
   }
 
-  TestServer(HttpHandler handler) throws IOException {
+  public TestServer(HttpHandler handler) throws IOException {
     this("/", handler);
   }
 
+  public InetSocketAddress getAddress() {
+    return server.getAddress();
+  }
+
+  public URI getUri() {
+    return URI.create("http://" + getAddress().getAddress().getHostAddress() + ":" + getAddress().getPort() + "/");
+  }
+
   @Override
-  public void close() throws Exception {
+  public void close() {
     server.stop(0);
   }
 }

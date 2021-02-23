@@ -19,21 +19,18 @@ import java.io.IOError;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.http.HttpClient;
-import org.projectnessie.client.http.HttpClientException;
-import org.projectnessie.client.http.HttpRequest;
-import org.projectnessie.client.http.RequestFilter;
-import org.projectnessie.client.http.ResponseFilter;
-import org.projectnessie.client.http.Status;
+import org.projectnessie.client.util.TestServer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpHandler;
@@ -43,7 +40,7 @@ public class TestHttpClient {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   private static HttpRequest get(InetSocketAddress address) {
-    return HttpClient.builder().setBaseUri("http://localhost:" + address.getPort()).setObjectMapper(MAPPER).build().newRequest();
+    return HttpClient.builder().setBaseUri(URI.create("http://localhost:" + address.getPort())).setObjectMapper(MAPPER).build().newRequest();
   }
 
   @Test
@@ -58,7 +55,7 @@ public class TestHttpClient {
       os.close();
     };
     try (TestServer server = new TestServer(handler)) {
-      ExampleBean bean = get(server.server.getAddress()).get().readEntity(ExampleBean.class);
+      ExampleBean bean = get(server.getAddress()).get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
     }
   }
@@ -73,7 +70,7 @@ public class TestHttpClient {
       h.sendResponseHeaders(200, 0);
     };
     try (TestServer server = new TestServer(handler)) {
-      get(server.server.getAddress()).put(inputBean);
+      get(server.getAddress()).put(inputBean);
     }
   }
 
@@ -87,7 +84,7 @@ public class TestHttpClient {
       h.sendResponseHeaders(200, 0);
     };
     try (TestServer server = new TestServer(handler)) {
-      get(server.server.getAddress()).post(inputBean);
+      get(server.getAddress()).post(inputBean);
     }
   }
 
@@ -98,7 +95,7 @@ public class TestHttpClient {
       h.sendResponseHeaders(200, 0);
     };
     try (TestServer server = new TestServer(handler)) {
-      get(server.server.getAddress()).delete();
+      get(server.getAddress()).delete();
     }
   }
 
@@ -115,7 +112,7 @@ public class TestHttpClient {
       os.close();
     };
     try (TestServer server = new TestServer(handler)) {
-      ExampleBean bean = get(server.server.getAddress()).queryParam("x", "y").get().readEntity(ExampleBean.class);
+      ExampleBean bean = get(server.getAddress()).queryParam("x", "y").get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
     }
   }
@@ -137,7 +134,7 @@ public class TestHttpClient {
       os.close();
     };
     try (TestServer server = new TestServer(handler)) {
-      ExampleBean bean = get(server.server.getAddress())
+      ExampleBean bean = get(server.getAddress())
           .queryParam("x", "y").queryParam("a", "b").get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
     }
@@ -157,7 +154,7 @@ public class TestHttpClient {
       os.close();
     };
     try (TestServer server = new TestServer(handler)) {
-      ExampleBean bean = get(server.server.getAddress())
+      ExampleBean bean = get(server.getAddress())
           .queryParam("x", null).get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
     }
@@ -175,9 +172,9 @@ public class TestHttpClient {
       os.close();
     };
     try (TestServer server = new TestServer("/a/b", handler)) {
-      ExampleBean bean = get(server.server.getAddress()).path("a/b").get().readEntity(ExampleBean.class);
+      ExampleBean bean = get(server.getAddress()).path("a/b").get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
-      bean = get(server.server.getAddress()).path("a/{b}").resolveTemplate("b", "b").get().readEntity(ExampleBean.class);
+      bean = get(server.getAddress()).path("a/{b}").resolveTemplate("b", "b").get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
     }
   }
@@ -187,9 +184,9 @@ public class TestHttpClient {
     HttpHandler handler = h -> Assertions.fail();
     try (TestServer server = new TestServer("/a/b", handler)) {
       Assertions.assertThrows(HttpClientException.class,
-          () -> get(server.server.getAddress()).path("a/{b}").get().readEntity(ExampleBean.class));
+          () -> get(server.getAddress()).path("a/{b}").get().readEntity(ExampleBean.class));
       Assertions.assertThrows(HttpClientException.class,
-          () -> get(server.server.getAddress()).path("a/b").resolveTemplate("b", "b")
+          () -> get(server.getAddress()).path("a/b").resolveTemplate("b", "b")
                                                                    .get().readEntity(ExampleBean.class));
     }
   }
@@ -198,13 +195,15 @@ public class TestHttpClient {
   void testFilters() throws Exception {
     AtomicBoolean requestFilterCalled = new AtomicBoolean(false);
     AtomicBoolean responseFilterCalled = new AtomicBoolean(false);
+    AtomicReference<ResponseContext> responseContextGotCallback = new AtomicReference<>();
+    AtomicReference<ResponseContext> responseContextGotFilter = new AtomicReference<>();
     HttpHandler handler = h -> {
       Assertions.assertTrue(h.getRequestHeaders().containsKey("x"));
       h.sendResponseHeaders(200, 0);
     };
     try (TestServer server = new TestServer(handler)) {
       HttpClient client = HttpClient.builder()
-                                    .setBaseUri("http://localhost:" + server.server.getAddress().getPort())
+                                    .setBaseUri(URI.create("http://localhost:" + server.getAddress().getPort()))
                                     .setObjectMapper(MAPPER)
                                     .build();
       client.register((RequestFilter) context -> {
@@ -212,16 +211,23 @@ public class TestHttpClient {
         Set<String> headers = new HashSet<>();
         headers.add("y");
         context.getHeaders().put("x", headers);
+        context.addResponseCallback((responseContext, failure) -> {
+          responseContextGotCallback.set(responseContext);
+          Assertions.assertNull(failure);
+        });
       });
       client.register((ResponseFilter) con -> {
         try {
           Assertions.assertEquals(Status.OK, con.getResponseCode());
           responseFilterCalled.set(true);
+          responseContextGotFilter.set(con);
         } catch (IOException e) {
           throw new IOError(e);
         }
       });
       client.newRequest().get();
+      Assertions.assertNotNull(responseContextGotFilter.get());
+      Assertions.assertSame(responseContextGotFilter.get(), responseContextGotCallback.get());
       Assertions.assertTrue(responseFilterCalled.get());
       Assertions.assertTrue(requestFilterCalled.get());
     }
@@ -234,7 +240,7 @@ public class TestHttpClient {
       h.sendResponseHeaders(200, 0);
     };
     try (TestServer server = new TestServer(handler)) {
-      get(server.server.getAddress()).header("x", "y").get();
+      get(server.getAddress()).header("x", "y").get();
     }
   }
 
@@ -249,7 +255,7 @@ public class TestHttpClient {
       h.sendResponseHeaders(200, 0);
     };
     try (TestServer server = new TestServer(handler)) {
-      get(server.server.getAddress()).header("x", "y").header("x", "z").get();
+      get(server.getAddress()).header("x", "y").header("x", "z").get();
     }
   }
 
