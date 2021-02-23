@@ -35,4 +35,10 @@ public interface VersionStoreConfig {
 
   @ConfigProperty(name = "type", defaultValue = "INMEMORY")
   VersionStoreType getVersionStoreType();
+
+  /**
+   * Whether metrics for the version-store are enabled (enabled by default).
+   */
+  @ConfigProperty(name = "metrics.enable", defaultValue = "true")
+  boolean isMetricsEnabled();
 }
