@@ -48,7 +48,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-gc-core</artifactId>
+      <artifactId>nessie-versioned-gc</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -102,7 +102,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-versioned-gc-core</artifactId>
+      <artifactId>nessie-versioned-gc</artifactId>
       <version>${project.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>

@@ -100,8 +100,8 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
 
     @Override
     public boolean call(Row r) throws Exception {
-      long hashCode = r.getAs("hashedData");
-      return !filter.mightContainLong(hashCode);
+      String hashCode = r.getAs("uniqueName");
+      return !filter.mightContainString(hashCode);
     }
 
   }
