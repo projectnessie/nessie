@@ -22,6 +22,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.LogManager;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -107,6 +108,9 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
   @Parameter
   private Properties outputProperties;
 
+  @Parameter(defaultValue = "true")
+  private boolean resetJavaUtilLogging;
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (isSkipped()) {
@@ -138,6 +142,13 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
 
     // Use MavenProject classloader as parent classloader as Maven classloader hierarchy is not linear
     final URLClassLoader mirrorCL = new URLClassLoader(urls, MavenProject.class.getClassLoader());
+
+    String oldLogManager = System.getProperty("java.util.logging.manager");
+    if (resetJavaUtilLogging) {
+      // Quarkus uses the JBoss LogManager, have to set it
+      System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+      LogManager.getLogManager().reset();
+    }
 
     final AutoCloseable quarkusApp;
     try {
@@ -173,6 +184,16 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
         quarkusApp.close();
       } finally {
         mirrorCL.close();
+
+        if (resetJavaUtilLogging) {
+          // Quarkus uses the JBoss LogManager, have to set it
+          if (oldLogManager == null) {
+            System.getProperties().remove("java.util.logging.manager");
+          } else {
+            System.setProperty("java.util.logging.manager", oldLogManager);
+          }
+          LogManager.getLogManager().reset();
+        }
       }
     });
   }
