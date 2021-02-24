@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned;
 
+import java.nio.ByteBuffer;
 import java.util.stream.Stream;
 
 import com.google.protobuf.ByteString;
@@ -53,12 +54,14 @@ public interface StoreWorker<VALUE, COMMIT_METADATA> {
 
           @Override
           public ByteString toBytes(WithEntityType<VALUE> value) {
-            return ByteString.copyFrom(new byte[]{value.getEntityType()}).concat(valueWorker.toBytes(value.getValue()));
+            return ByteString.copyFrom(ByteBuffer.allocate(4).putInt(value.getEntityType()).array())
+                .concat(valueWorker.toBytes(value.getValue()));
           }
 
           @Override
           public WithEntityType<VALUE> fromBytes(ByteString bytes) {
-            return WithEntityType.of(bytes.byteAt(0), valueWorker.fromBytes(bytes.substring(1)));
+            return WithEntityType.of(bytes.substring(0, 4).asReadOnlyByteBuffer().getInt(),
+                valueWorker.fromBytes(bytes.substring(4)));
           }
         };
       }

@@ -65,7 +65,7 @@ class TestTreeBuilder {
 
       @Override
       public WithEntityType<String> fromBytes(ByteString bytes) {
-        return WithEntityType.of((byte)0, bytes.toStringUtf8());
+        return WithEntityType.of(0, bytes.toStringUtf8());
       }
     };
     ObjectId oid1 = TreeBuilder.commitObjects(ImmutableList.of(Put.of(Key.of("a", "b", "c.txt"), entityType("foobar")),
@@ -104,6 +104,6 @@ class TestTreeBuilder {
   }
 
   private WithEntityType<String> entityType(String foobar) {
-    return WithEntityType.of((byte)0, foobar);
+    return WithEntityType.of(0, foobar);
   }
 }

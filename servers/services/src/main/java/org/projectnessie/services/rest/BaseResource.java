@@ -24,12 +24,7 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
-import org.projectnessie.model.DeltaLakeTable;
-import org.projectnessie.model.HiveDatabase;
-import org.projectnessie.model.HiveTable;
-import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
-import org.projectnessie.model.SqlView;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
@@ -105,7 +100,7 @@ abstract class BaseResource {
     return operations.stream().map(o -> {
       if (o instanceof Put) {
         Put<Contents> p = (Put<Contents>) o;
-        return Put.of(p.getKey(), WithEntityType.of(Contents.entityTypeFromContents(p.getValue()), p.getValue()));
+        return Put.of(p.getKey(), WithEntityType.of(p.getValue().getEntityType().ordinal(), p.getValue()));
       } else if (o instanceof Delete) {
         return Delete.<WithEntityType<Contents>>of(o.getKey());
       } else if (o instanceof Unchanged) {

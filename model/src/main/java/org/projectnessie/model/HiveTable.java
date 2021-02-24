@@ -33,4 +33,8 @@ public interface HiveTable extends Contents {
 
   List<byte[]> getPartitions();
 
+  @Override
+  default Type getEntityType() {
+    return Type.HIVE_TABLE;
+  }
 }

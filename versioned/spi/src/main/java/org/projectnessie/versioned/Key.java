@@ -106,7 +106,7 @@ public abstract class Key implements Comparable<Key> {
     @Override
     public abstract Key getKey();
 
-    public abstract byte getEntityType();
+    public abstract int getEntityType();
   }
 
   @Immutable
@@ -121,7 +121,7 @@ public abstract class Key implements Comparable<Key> {
     public abstract Key getKey();
   }
 
-  public Addition asAddition(byte entityType) {
+  public Addition asAddition(int entityType) {
     return ImmutableAddition.builder().key(this).entityType(entityType).build();
   }
 

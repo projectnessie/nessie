@@ -38,23 +38,23 @@ class InternalL3 extends PersistentBase<L3> {
 
   private static final long HASH_SEED = 4604180344422375655L;
 
-  private final TreeMap<InternalKey, Map.Entry<PositionDelta, Byte>> map;
+  private final TreeMap<InternalKey, Map.Entry<PositionDelta, Integer>> map;
 
   static InternalL3 EMPTY = new InternalL3(new TreeMap<>());
   static Id EMPTY_ID = EMPTY.getId();
 
-  private InternalL3(TreeMap<InternalKey, Map.Entry<PositionDelta, Byte>> keys) {
+  private InternalL3(TreeMap<InternalKey, Map.Entry<PositionDelta, Integer>> keys) {
     this(null, keys, DT.now());
   }
 
-  private InternalL3(Id id, TreeMap<InternalKey, Map.Entry<PositionDelta, Byte>> keys, Long dt) {
+  private InternalL3(Id id, TreeMap<InternalKey, Map.Entry<PositionDelta, Integer>> keys, Long dt) {
     super(id, dt);
     this.map = keys;
     ensureConsistentId();
   }
 
   Id getId(InternalKey key) {
-    Map.Entry<PositionDelta, Byte> delta = map.get(key);
+    Map.Entry<PositionDelta, Integer> delta = map.get(key);
     if (delta == null) {
       return Id.EMPTY;
     }
@@ -75,14 +75,14 @@ class InternalL3 extends PersistentBase<L3> {
   }
 
   @SuppressWarnings("unchecked")
-  InternalL3 set(InternalKey key, Id valueId, byte entityType) {
-    TreeMap<InternalKey, Map.Entry<PositionDelta, Byte>> newMap = (TreeMap<InternalKey, Map.Entry<PositionDelta, Byte>>) map.clone();
-    Map.Entry<PositionDelta, Byte> newDelta = newMap.get(key);
+  InternalL3 set(InternalKey key, Id valueId, int entityType) {
+    TreeMap<InternalKey, Map.Entry<PositionDelta, Integer>> newMap = (TreeMap<InternalKey, Map.Entry<PositionDelta, Integer>>) map.clone();
+    Map.Entry<PositionDelta, Integer> newDelta = newMap.get(key);
     if (newDelta == null) {
-      newDelta = new AbstractMap.SimpleImmutableEntry<>(PositionDelta.SINGLE_ZERO, Byte.MIN_VALUE);
+      newDelta = new AbstractMap.SimpleImmutableEntry<>(PositionDelta.SINGLE_ZERO, Integer.MIN_VALUE);
     }
 
-    byte newEntityType = entityType == Byte.MIN_VALUE && newMap.containsKey(key) ? newMap.get(key).getValue() : entityType;
+    int newEntityType = entityType == Integer.MIN_VALUE && newMap.containsKey(key) ? newMap.get(key).getValue() : entityType;
     newDelta =  new AbstractMap.SimpleImmutableEntry<>(ImmutablePositionDelta.builder().from(newDelta.getKey()).newId(valueId).build(),
         newEntityType);
     if (!newDelta.getKey().isDirty()) {
@@ -115,7 +115,7 @@ class InternalL3 extends PersistentBase<L3> {
   Stream<KeyMutation> getMutations() {
     return map.entrySet().stream().filter(e -> e.getValue().getKey().wasAddedOrRemoved())
         .map(e -> {
-          Map.Entry<PositionDelta, Byte> d = e.getValue();
+          Map.Entry<PositionDelta, Integer> d = e.getValue();
           if (d.getKey().wasAdded()) {
             return KeyAddition.of(e.getKey(), d.getValue());
           } else if (d.getKey().wasRemoved()) {
@@ -195,7 +195,7 @@ class InternalL3 extends PersistentBase<L3> {
           keyDelta.collect(
               Collectors.toMap(
                   kd -> new InternalKey(ImmutableKey.builder().addAllElements(kd.getKey().getElements()).build()),
-                  kd -> new AbstractMap.SimpleImmutableEntry<>(PositionDelta.of(0, kd.getId()), Byte.MIN_VALUE),
+                  kd -> new AbstractMap.SimpleImmutableEntry<>(PositionDelta.of(0, kd.getId()), Integer.MIN_VALUE),
                   (a, b) -> {
                     throw new IllegalArgumentException(String.format("Got Id %s and %s for same key",
                         a.getKey().getNewId(), b.getKey().getNewId()));

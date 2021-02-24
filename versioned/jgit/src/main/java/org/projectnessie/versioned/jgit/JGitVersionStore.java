@@ -500,7 +500,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         treeWalk.setRecursive(true);
         while (treeWalk.next()) {
           byte[] bytes = getTable(treeWalk, repository);
-          byte type = storeWorker.getValueWorker().fromBytes(ByteString.copyFrom(bytes)).getEntityType();
+          int type = storeWorker.getValueWorker().fromBytes(ByteString.copyFrom(bytes)).getEntityType();
           tables.add(WithEntityType.of(type, keyFromUrlString(treeWalk.getPathString())));
 
         }

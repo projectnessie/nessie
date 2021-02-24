@@ -129,24 +129,24 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
           if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
             builder.lastCheckpoint(contents.getDeltaLakeTable().getLastCheckpoint());
           }
-          return WithEntityType.of((byte)contents.getDeltaLakeTable().getEntityType(), builder.build());
+          return WithEntityType.of(contents.getDeltaLakeTable().getEntityType(), builder.build());
 
         case HIVE_DATABASE:
-          return WithEntityType.of((byte)contents.getHiveDatabase().getEntityType(), ImmutableHiveDatabase.builder()
+          return WithEntityType.of(contents.getHiveDatabase().getEntityType(), ImmutableHiveDatabase.builder()
               .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build());
 
         case HIVE_TABLE:
-          return WithEntityType.of((byte)contents.getHiveTable().getEntityType(), ImmutableHiveTable.builder()
+          return WithEntityType.of(contents.getHiveTable().getEntityType(), ImmutableHiveTable.builder()
               .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray)
               .collect(Collectors.toList())).tableDefinition(contents.getHiveTable().getTable().toByteArray()).build());
 
         case ICEBERG_TABLE:
-          return WithEntityType.of((byte)contents.getIcebergTable().getEntityType(), ImmutableIcebergTable.builder()
+          return WithEntityType.of(contents.getIcebergTable().getEntityType(), ImmutableIcebergTable.builder()
               .metadataLocation(contents.getIcebergTable().getMetadataLocation()).build());
 
         case SQL_VIEW:
           PSqlView view = contents.getSqlView();
-          return WithEntityType.of((byte)contents.getSqlView().getEntityType(), ImmutableSqlView.builder()
+          return WithEntityType.of(contents.getSqlView().getEntityType(), ImmutableSqlView.builder()
               .dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText()).build());
 
         case OBJECTTYPE_NOT_SET:

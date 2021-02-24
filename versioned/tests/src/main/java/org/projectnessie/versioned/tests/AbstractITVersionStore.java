@@ -969,22 +969,22 @@ public abstract class AbstractITVersionStore {
 
     List<Diff<WithEntityType<String>>> startToSecond = store().getDiffs(initial, secondCommit).collect(Collectors.toList());
     assertThat(startToSecond, containsInAnyOrder(
-        Diff.of(Key.of("k1"), Optional.empty(), Optional.of(WithEntityType.of((byte)0, "v1"))),
-        Diff.of(Key.of("k2"), Optional.empty(), Optional.of(WithEntityType.of((byte)0, "v2a"))),
-        Diff.of(Key.of("k3"), Optional.empty(), Optional.of(WithEntityType.of((byte)0, "v3")))
+        Diff.of(Key.of("k1"), Optional.empty(), Optional.of(WithEntityType.of(0, "v1"))),
+        Diff.of(Key.of("k2"), Optional.empty(), Optional.of(WithEntityType.of(0, "v2a"))),
+        Diff.of(Key.of("k3"), Optional.empty(), Optional.of(WithEntityType.of(0, "v3")))
     ));
 
     List<Diff<WithEntityType<String>>> secondToStart = store().getDiffs(secondCommit, initial).collect(Collectors.toList());
     assertThat(secondToStart, containsInAnyOrder(
-        Diff.of(Key.of("k1"), Optional.of(WithEntityType.of((byte)0, "v1")), Optional.empty()),
-        Diff.of(Key.of("k2"), Optional.of(WithEntityType.of((byte)0, "v2a")), Optional.empty()),
-        Diff.of(Key.of("k3"), Optional.of(WithEntityType.of((byte)0, "v3")), Optional.empty())
+        Diff.of(Key.of("k1"), Optional.of(WithEntityType.of(0, "v1")), Optional.empty()),
+        Diff.of(Key.of("k2"), Optional.of(WithEntityType.of(0, "v2a")), Optional.empty()),
+        Diff.of(Key.of("k3"), Optional.of(WithEntityType.of(0, "v3")), Optional.empty())
     ));
 
     List<Diff<WithEntityType<String>>> firstToSecond = store().getDiffs(firstCommit, secondCommit).collect(Collectors.toList());
     assertThat(firstToSecond, containsInAnyOrder(
-        Diff.of(Key.of("k2"), Optional.of(WithEntityType.of((byte)0, "v2")), Optional.of(WithEntityType.of((byte)0, "v2a"))),
-        Diff.of(Key.of("k3"), Optional.empty(), Optional.of(WithEntityType.of((byte)0, "v3")))
+        Diff.of(Key.of("k2"), Optional.of(WithEntityType.of(0, "v2")), Optional.of(WithEntityType.of(0, "v2a"))),
+        Diff.of(Key.of("k3"), Optional.empty(), Optional.of(WithEntityType.of(0, "v3")))
     ));
 
     List<Diff<WithEntityType<String>>> firstToFirst = store().getDiffs(firstCommit, firstCommit).collect(Collectors.toList());
@@ -1000,7 +1000,7 @@ public abstract class AbstractITVersionStore {
   }
 
   protected Put<WithEntityType<String>> put(String key, String value) {
-    return Put.of(Key.of(key), WithEntityType.of((byte)0, value));
+    return Put.of(Key.of(key), WithEntityType.of(0, value));
   }
 
   protected Delete<String> delete(String key) {

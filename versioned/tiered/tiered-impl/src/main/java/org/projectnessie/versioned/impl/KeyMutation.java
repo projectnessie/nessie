@@ -61,9 +61,9 @@ abstract class KeyMutation {
       return MutationType.ADDITION;
     }
 
-    public abstract byte getEntityType();
+    public abstract int getEntityType();
 
-    public static KeyAddition of(InternalKey key, byte entityType) {
+    public static KeyAddition of(InternalKey key, int entityType) {
       return ImmutableKeyAddition.builder().key(key).entityType(entityType).build();
     }
 

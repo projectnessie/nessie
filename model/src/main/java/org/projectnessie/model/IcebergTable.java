@@ -29,6 +29,11 @@ public interface IcebergTable extends Contents {
 
   String getMetadataLocation();
 
+  @Override
+  default Type getEntityType() {
+    return Type.ICEBERG_TABLE;
+  }
+
   public static IcebergTable of(String metadataLocation) {
     return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).build();
   }

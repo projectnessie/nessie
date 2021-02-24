@@ -94,7 +94,7 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch = BranchName.of("entity-types");
     versionStore().create(branch, Optional.empty());
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), WithEntityType.of((byte) 24, "world")))
+        Put.of(Key.of("hi"), WithEntityType.of(24, "world")))
     );
 
     assertEquals("world", versionStore().getValue(branch, Key.of("hi")).getValue());
@@ -102,11 +102,11 @@ public abstract class AbstractITTieredVersionStore {
     List<Optional<WithEntityType<String>>> values = versionStore().getValues(branch, Lists.newArrayList(Key.of("hi")));
     assertEquals(1, values.size());
     assertTrue(values.get(0).isPresent());
-    assertEquals(WithEntityType.of((byte) 24, "world"), values.get(0).get());
+    assertEquals(WithEntityType.of(24, "world"), values.get(0).get());
 
     List<WithEntityType<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
     assertEquals(1, keys.size());
-    assertEquals(WithEntityType.of((byte) 24, Key.of("hi")), keys.get(0));
+    assertEquals(WithEntityType.of(24, Key.of("hi")), keys.get(0));
   }
 
   @Test
@@ -115,7 +115,7 @@ public abstract class AbstractITTieredVersionStore {
     versionStore().create(branch, Optional.empty());
     for (int i = 0; i < 128; i++) {
       versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
-          Put.of(Key.of("hi" + i), WithEntityType.of((byte) i, "world" + i)))
+          Put.of(Key.of("hi" + i), WithEntityType.of(i, "world" + i)))
       );
     }
 
@@ -575,6 +575,6 @@ public abstract class AbstractITTieredVersionStore {
   }
 
   private static WithEntityType<String> entityType(String value) {
-    return WithEntityType.of((byte)0, value);
+    return WithEntityType.of(0, value);
   }
 }

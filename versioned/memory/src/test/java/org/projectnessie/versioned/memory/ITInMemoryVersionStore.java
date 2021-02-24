@@ -50,7 +50,7 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
 
         @Override
         public WithEntityType<String> fromBytes(ByteString bytes) {
-          return WithEntityType.of((byte)0, StringWorker.getInstance().fromBytes(bytes));
+          return WithEntityType.of(0, StringWorker.getInstance().fromBytes(bytes));
         }
       })
       .metadataSerializer(StringWorker.getInstance());
@@ -78,7 +78,7 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
     assertNotNull(inMemoryVersionStore.toRef("foo"));
     inMemoryVersionStore.commit(fooBranch, Optional.empty(), "foo",
         Collections.singletonList(
-          ImmutablePut.<WithEntityType<String>>builder().key(Key.of("bar")).value(WithEntityType.of((byte)0, "baz")).build()));
+          ImmutablePut.<WithEntityType<String>>builder().key(Key.of("bar")).value(WithEntityType.of(0, "baz")).build()));
     assertEquals(1L, inMemoryVersionStore.getCommits(fooBranch).count());
 
     inMemoryVersionStore.clearUnsafe();

@@ -316,7 +316,7 @@ class PartialTree<V> {
       valueId = Id.EMPTY;
     }
 
-    final Id newL3Id = l3.apply(l -> l.set(key, valueId, Byte.MIN_VALUE));
+    final Id newL3Id = l3.apply(l -> l.set(key, valueId, Integer.MIN_VALUE));
     final Id newL2Id = l2.apply(l -> l.set(key.getL2Position(), newL3Id));
     l1.apply(l -> l.set(key.getL1Position(), newL2Id));
   }
@@ -329,7 +329,7 @@ class PartialTree<V> {
 
     // now we'll do the save.
     Id valueId;
-    byte entityType;
+    int entityType;
     if (value.isPresent()) {
       ValueHolder<WithEntityType<V>> holder = ValueHolder.of(serializer,  value.get());
       values.put(key, holder);
@@ -338,7 +338,7 @@ class PartialTree<V> {
     } else {
       values.remove(key);
       valueId = Id.EMPTY;
-      entityType = Byte.MIN_VALUE;
+      entityType = Integer.MIN_VALUE;
     }
 
     final Id newL3Id = l3.apply(l -> l.set(key, valueId, entityType));

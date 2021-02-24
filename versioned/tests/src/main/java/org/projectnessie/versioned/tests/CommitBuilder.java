@@ -62,7 +62,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @return the builder instance
    */
   public CommitBuilder<ValueT, MetadataT> put(Key key, ValueT value) {
-    return add(Put.of(key, WithEntityType.of((byte)0, value)));
+    return add(Put.of(key, WithEntityType.of(0, value)));
   }
 
   /**

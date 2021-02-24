@@ -195,7 +195,7 @@ public final class AttributeValueUtil {
     Map<String, AttributeValue> m = mutation.m();
     AttributeValue raw = m.get(KEY_ADDITION);
     AttributeValue entityType = m.get(ENTITY_TYPE);
-    byte entityTypeValue = entityType != null ? Byte.parseByte(entityType.n()) : Byte.MIN_VALUE;
+    int entityTypeValue = entityType != null ? Integer.parseInt(entityType.n()) : Integer.MIN_VALUE;
     if (raw != null) {
       return deserializeKey(raw).asAddition(entityTypeValue);
     }
@@ -256,7 +256,7 @@ public final class AttributeValueUtil {
    * consist of a list of strings.
    */
   static WithEntityType<Key> deserializeKeyWithEntityType(AttributeValue key) {
-    byte entityType = Byte.parseByte(key.m().get(ENTITY_TYPE).n());
+    int entityType = Integer.parseInt(key.m().get(ENTITY_TYPE).n());
     return WithEntityType.of(entityType, deserializeKey(key.m().get(KEY)));
   }
 

@@ -38,4 +38,8 @@ public interface DeltaLakeTable extends Contents {
   @Nullable
   String getLastCheckpoint();
 
+  @Override
+  default Type getEntityType() {
+    return Type.DELTA_LAKE_TABLE;
+  }
 }

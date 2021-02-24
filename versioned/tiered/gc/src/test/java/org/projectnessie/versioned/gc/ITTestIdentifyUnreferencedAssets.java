@@ -268,7 +268,7 @@ public class ITTestIdentifyUnreferencedAssets {
 
     @Override
     public WithEntityType<DummyValue> fromBytes(ByteString bytes) {
-      return WithEntityType.of((byte)0, internal.fromBytes(bytes));
+      return WithEntityType.of(0, internal.fromBytes(bytes));
     }
   }
 

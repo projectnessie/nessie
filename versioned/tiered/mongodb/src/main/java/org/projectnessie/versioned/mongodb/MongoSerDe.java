@@ -157,7 +157,7 @@ final class MongoSerDe {
     List<Object> l = (List<Object>) document.get(param);
     return l.stream().map(x -> (Document)x).map(x -> {
       Key value = deserializeKey((List<String>) x.get(KEY));
-      byte entityType = Byte.parseByte((String)x.getOrDefault(ENTITY_TYPE, Byte.toString(Byte.MIN_VALUE)));
+      int entityType = Integer.parseInt((String)x.getOrDefault(ENTITY_TYPE, Integer.toString(Integer.MIN_VALUE)));
       return WithEntityType.of(entityType, value);
     });
   }
@@ -182,7 +182,7 @@ final class MongoSerDe {
     writer.writeStartDocument();
     serializeKey(writer, mutationName(keyMutation.getType()), keyMutation.getKey());
     if (keyMutation instanceof Key.Addition) {
-      writer.writeString(ENTITY_TYPE, Byte.toString(((Key.Addition) keyMutation).getEntityType()));
+      writer.writeString(ENTITY_TYPE, Integer.toString(((Key.Addition) keyMutation).getEntityType()));
     }
     writer.writeEndDocument();
   }
@@ -206,7 +206,7 @@ final class MongoSerDe {
   private static Key.Mutation deserializeKeyMutation(Document d) {
     if (d.containsKey(KEY_ADDITION)) {
       Key key = deserializeKey((List<String>) d.get(KEY_ADDITION));
-      byte entityType = Byte.parseByte((String) d.getOrDefault(ENTITY_TYPE, "-127"));
+      int entityType = Integer.parseInt((String) d.getOrDefault(ENTITY_TYPE, "-127"));
       return key.asAddition(entityType);
     } else if (d.containsKey(KEY_REMOVAL)) {
       Key key = deserializeKey((List<String>) d.get(KEY_REMOVAL));

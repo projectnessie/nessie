@@ -28,7 +28,7 @@ public interface WithEntityType<T> {
   /**
    * Get the byte identifier of the type of this value.
    */
-  byte getEntityType();
+  int getEntityType();
 
   /**
    * Get the value this object wraps.
@@ -42,7 +42,7 @@ public interface WithEntityType<T> {
    * @param value The value held.
    * @return A new WithEntityType object.
    */
-  public static <T> WithEntityType<T> of(byte entityType, T value) {
+  public static <T> WithEntityType<T> of(int entityType, T value) {
     return ImmutableWithEntityType.<T>builder().entityType(entityType).value(value).build();
   }
 }

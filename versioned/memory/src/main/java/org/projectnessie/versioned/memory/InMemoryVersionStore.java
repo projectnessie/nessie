@@ -444,7 +444,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
         })
         // extract the keys
         .map(x -> {
-          byte entityType = (byte)-1;
+          int entityType = -1;
           if (x instanceof Put) {
             entityType = ((Put<WithEntityType<ValueT>>) x).getValue().getEntityType();
           }

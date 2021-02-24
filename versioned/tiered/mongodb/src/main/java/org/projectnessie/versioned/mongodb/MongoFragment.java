@@ -49,7 +49,7 @@ final class MongoFragment extends MongoBaseValue<Fragment> implements Fragment {
       bsonWriter.writeStartArray(KEY);
       k.getValue().getElements().forEach(bsonWriter::writeString);
       bsonWriter.writeEndArray();
-      bsonWriter.writeString(ENTITY_TYPE, Byte.toString(k.getEntityType()));
+      bsonWriter.writeString(ENTITY_TYPE, Integer.toString(k.getEntityType()));
       bsonWriter.writeEndDocument();
     });
     bsonWriter.writeEndArray();

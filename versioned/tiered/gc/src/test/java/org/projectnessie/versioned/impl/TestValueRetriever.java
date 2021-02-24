@@ -157,7 +157,7 @@ public class TestValueRetriever {
   public void l3() {
     Id val1 = Id.generateRandom();
     Id val2 = Id.generateRandom();
-    InternalL3 l3 = InternalL3.EMPTY.set(new InternalKey(Key.of("foo")), val1, (byte)0).set(new InternalKey(Key.of("bar")), val2, (byte)0);
+    InternalL3 l3 = InternalL3.EMPTY.set(new InternalKey(Key.of("foo")), val1, 0).set(new InternalKey(Key.of("bar")), val2, 0);
     store.put(l3.toSaveOp(), Optional.empty());
 
     IdCarrier carrier1 = single(IdCarrier

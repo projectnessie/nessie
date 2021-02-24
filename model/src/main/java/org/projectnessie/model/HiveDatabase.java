@@ -29,5 +29,8 @@ public interface HiveDatabase extends Contents {
 
   byte[] getDatabaseDefinition();
 
-
+  @Override
+  default Type getEntityType() {
+    return Type.HIVE_DATABASE;
+  }
 }

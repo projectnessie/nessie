@@ -39,4 +39,9 @@ public interface SqlView extends Contents {
   Dialect getDialect();
 
   // Schema getSchema();
+
+  @Override
+  default Type getEntityType() {
+    return Type.VIEW;
+  }
 }

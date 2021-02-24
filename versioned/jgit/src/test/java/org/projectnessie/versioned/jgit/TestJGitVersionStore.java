@@ -465,6 +465,6 @@ class TestJGitVersionStore {
 
 
   private WithEntityType<String> entityType(String foobar) {
-    return WithEntityType.of((byte)0, foobar);
+    return WithEntityType.of(0, foobar);
   }
 }
