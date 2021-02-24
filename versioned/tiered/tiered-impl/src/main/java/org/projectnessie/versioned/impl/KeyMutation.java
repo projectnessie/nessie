@@ -41,7 +41,7 @@ abstract class KeyMutation {
   static KeyMutation fromMutation(Key.Mutation km) {
     switch (km.getType()) {
       case ADDITION:
-        return KeyMutation.KeyAddition.of(new InternalKey(km.getKey()));
+        return KeyMutation.KeyAddition.of(new InternalKey(km.getKey()), ((Key.Addition) km).getEntityType());
       case REMOVAL:
         return KeyMutation.KeyRemoval.of(new InternalKey(km.getKey()));
       default:
@@ -51,6 +51,8 @@ abstract class KeyMutation {
 
   abstract Key.Mutation toMutation();
 
+  abstract Entity toEntity();
+
   @Immutable
   public abstract static class KeyAddition extends KeyMutation {
 
@@ -59,13 +61,20 @@ abstract class KeyMutation {
       return MutationType.ADDITION;
     }
 
-    public static KeyAddition of(InternalKey key) {
-      return ImmutableKeyAddition.builder().key(key).build();
+    public abstract byte getEntityType();
+
+    public static KeyAddition of(InternalKey key, byte entityType) {
+      return ImmutableKeyAddition.builder().key(key).entityType(entityType).build();
     }
 
     @Override
     Key.Mutation toMutation() {
-      return getKey().toKey().asAddition();
+      return getKey().toKey().asAddition(getEntityType());
+    }
+
+    @Override
+    Entity toEntity() {
+      return Entity.ofMap(ImmutableMap.of(getType().field, getKey().toEntity(), "et", Entity.ofNumber(getEntityType())));
     }
   }
 
@@ -85,9 +94,10 @@ abstract class KeyMutation {
     Key.Mutation toMutation() {
       return getKey().toKey().asRemoval();
     }
-  }
 
-  Entity toEntity() {
-    return Entity.ofMap(ImmutableMap.of(getType().field, getKey().toEntity()));
+    @Override
+    Entity toEntity() {
+      return Entity.ofMap(ImmutableMap.of(getType().field, getKey().toEntity()));
+    }
   }
 }

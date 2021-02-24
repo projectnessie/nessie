@@ -50,6 +50,7 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.impl.DiffFinder.KeyDiff;
 import org.projectnessie.versioned.impl.HistoryRetriever.HistoryItem;
@@ -86,7 +87,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   private static final int MAX_MERGE_DEPTH = 200;
 
-  private final Serializer<DATA> serializer;
+  private final Serializer<WithEntityType<DATA>> serializer;
   private final Serializer<METADATA> metadataSerializer;
   private final ExecutorService executor;
   private final Store store;
@@ -218,7 +219,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public void commit(BranchName branchName, Optional<Hash> expectedHash, METADATA incomingCommit, List<Operation<DATA>> ops)
+  public void commit(BranchName branchName, Optional<Hash> expectedHash, METADATA incomingCommit, List<Operation<WithEntityType<DATA>>> ops)
       throws ReferenceConflictException, ReferenceNotFoundException {
     final InternalCommitMetadata metadata = InternalCommitMetadata.of(metadataSerializer.toBytes(incomingCommit));
     final List<InternalKey> keys = ops.stream().map(op -> new InternalKey(op.getKey())).collect(Collectors.toList());
@@ -435,7 +436,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithEntityType<Key>> getKeys(Ref ref) throws ReferenceNotFoundException {
     // naive implementation.
     InternalRefId refId = InternalRefId.of(ref);
     final InternalL1 start;
@@ -457,11 +458,11 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         throw new UnsupportedOperationException();
     }
 
-    return start.getKeys(store).map(InternalKey::toKey);
+    return start.getKeys(store).map(x -> WithEntityType.of(x.getEntityType(), x.getValue().toKey()));
   }
 
   @Override
-  public DATA getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public WithEntityType<DATA> getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     InternalKey ikey = new InternalKey(key);
     PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.singletonList(ikey));
     store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
@@ -469,7 +470,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public List<Optional<DATA>> getValues(Ref ref, List<Key> key) throws ReferenceNotFoundException {
+  public List<Optional<WithEntityType<DATA>>> getValues(Ref ref, List<Key> key) throws ReferenceNotFoundException {
     List<InternalKey> keys = key.stream().map(InternalKey::new).collect(Collectors.toList());
     PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), keys);
     store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
@@ -735,7 +736,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public Stream<Diff<DATA>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+  public Stream<Diff<WithEntityType<DATA>>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
     PartialTree<DATA> fromTree = PartialTree.of(serializer, InternalRefId.of(from), Collections.emptyList());
     PartialTree<DATA> toTree = PartialTree.of(serializer, InternalRefId.of(to), Collections.emptyList());
     store.load(fromTree.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
@@ -765,10 +766,11 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   class OperationHolder {
     private final PartialTree<DATA> current;
     private final PartialTree<DATA> expected;
-    private final Operation<DATA> operation;
+    private final Operation<WithEntityType<DATA>> operation;
     private final InternalKey key;
 
-    public OperationHolder(PartialTree<DATA> current, PartialTree<DATA> expected, Operation<DATA> operation) {
+    public OperationHolder(PartialTree<DATA> current, PartialTree<DATA> expected,
+        Operation<WithEntityType<DATA>> operation) {
       this.current = Preconditions.checkNotNull(current);
       this.expected = Preconditions.checkNotNull(expected);
       this.operation = Preconditions.checkNotNull(operation);
@@ -795,7 +797,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     public void apply() {
       if (operation instanceof Put) {
-        current.setValueForKey(key, Optional.of(((Put<DATA>) operation).getValue()));
+        WithEntityType<DATA> et = ((Put<WithEntityType<DATA>>) operation).getValue();
+        current.setValueForKey(key, Optional.of(et));
       } else if (operation instanceof Delete) {
         current.setValueForKey(key, Optional.empty());
       } else if (operation instanceof Unchanged) {

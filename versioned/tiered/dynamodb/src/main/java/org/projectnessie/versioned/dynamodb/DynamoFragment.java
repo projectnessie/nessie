@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.Fragment;
 
@@ -36,10 +37,10 @@ class DynamoFragment extends DynamoBaseValue<Fragment> implements Fragment {
   }
 
   @Override
-  public Fragment keys(Stream<Key> keys) {
+  public Fragment keys(Stream<WithEntityType<Key>> keys) {
     return addEntitySafe(
         KEY_LIST,
-        list(keys.map(AttributeValueUtil::keyElements)));
+        list(keys.map(AttributeValueUtil::keyElementsWithEntityType)));
   }
 
   @Override
@@ -53,7 +54,7 @@ class DynamoFragment extends DynamoBaseValue<Fragment> implements Fragment {
    */
   static void toConsumer(Map<String, AttributeValue> entity, Fragment consumer) {
     baseToConsumer(entity, consumer)
-        .keys(attributeValue(entity, KEY_LIST).l().stream().map(AttributeValueUtil::deserializeKey));
+        .keys(attributeValue(entity, KEY_LIST).l().stream().map(AttributeValueUtil::deserializeKeyWithEntityType));
   }
 
 }

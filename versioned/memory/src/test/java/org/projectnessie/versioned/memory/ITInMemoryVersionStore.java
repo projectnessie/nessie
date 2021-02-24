@@ -31,14 +31,28 @@ import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.ImmutablePut;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StringWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.tests.AbstractITVersionStore;
+
+import com.google.protobuf.ByteString;
 
 public class ITInMemoryVersionStore extends AbstractITVersionStore {
   private static final InMemoryVersionStore.Builder<String, String> BUILDER = InMemoryVersionStore.<String, String>builder()
-      .valueSerializer(StringWorker.getInstance())
+      .valueSerializer(new Serializer<WithEntityType<String>>() {
+        @Override
+        public ByteString toBytes(WithEntityType<String> value) {
+          return StringWorker.getInstance().toBytes(value.getValue());
+        }
+
+        @Override
+        public WithEntityType<String> fromBytes(ByteString bytes) {
+          return WithEntityType.of((byte)0, StringWorker.getInstance().fromBytes(bytes));
+        }
+      })
       .metadataSerializer(StringWorker.getInstance());
 
   private VersionStore<String, String> store;
@@ -63,7 +77,8 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
     inMemoryVersionStore.create(fooBranch, Optional.empty());
     assertNotNull(inMemoryVersionStore.toRef("foo"));
     inMemoryVersionStore.commit(fooBranch, Optional.empty(), "foo",
-                                Collections.singletonList(ImmutablePut.<String>builder().key(Key.of("bar")).value("baz").build()));
+        Collections.singletonList(
+          ImmutablePut.<WithEntityType<String>>builder().key(Key.of("bar")).value(WithEntityType.of((byte)0, "baz")).build()));
     assertEquals(1L, inMemoryVersionStore.getCommits(fooBranch).count());
 
     inMemoryVersionStore.clearUnsafe();

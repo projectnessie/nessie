@@ -16,9 +16,12 @@
 package org.projectnessie.versioned.impl;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
@@ -51,6 +55,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.impl.InconsistentValue.InconsistentValueException;
 import org.projectnessie.versioned.store.Id;
@@ -58,6 +63,7 @@ import org.projectnessie.versioned.store.Store;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 public abstract class AbstractITTieredVersionStore {
 
@@ -84,16 +90,54 @@ public abstract class AbstractITTieredVersionStore {
   protected abstract AbstractTieredStoreFixture<?, ?> createNewFixture();
 
   @Test
+  void checkValueEntityType() throws Exception {
+    BranchName branch = BranchName.of("entity-types");
+    versionStore().create(branch, Optional.empty());
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), WithEntityType.of((byte) 24, "world")))
+    );
+
+    assertEquals("world", versionStore().getValue(branch, Key.of("hi")).getValue());
+    assertEquals(24, versionStore().getValue(branch, Key.of("hi")).getEntityType());
+    List<Optional<WithEntityType<String>>> values = versionStore().getValues(branch, Lists.newArrayList(Key.of("hi")));
+    assertEquals(1, values.size());
+    assertTrue(values.get(0).isPresent());
+    assertEquals(WithEntityType.of((byte) 24, "world"), values.get(0).get());
+
+    List<WithEntityType<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertEquals(1, keys.size());
+    assertEquals(WithEntityType.of((byte) 24, Key.of("hi")), keys.get(0));
+  }
+
+  @Test
+  void checkValueEntityTypeAfterKeyRoll() throws Exception {
+    BranchName branch = BranchName.of("entity-types-key-roll");
+    versionStore().create(branch, Optional.empty());
+    for (int i = 0; i < 128; i++) {
+      versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+          Put.of(Key.of("hi" + i), WithEntityType.of((byte) i, "world" + i)))
+      );
+    }
+
+    List<WithEntityType<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertEquals(128, keys.size());
+    assertThat(keys.stream().map(WithEntityType::getValue).map(x -> x.getElements().get(0)).collect(Collectors.toList()),
+        containsInAnyOrder(IntStream.range(0, 128).mapToObj(i -> "hi" + i).toArray(String[]::new)));
+    assertThat(keys.stream().mapToInt(x -> (int) x.getEntityType()).boxed().collect(Collectors.toList()),
+        containsInAnyOrder(IntStream.range(0, 128).boxed().toArray(Integer[]::new)));
+  }
+
+  @Test
   void checkDuplicateValueCommit() throws Exception {
     BranchName branch = BranchName.of("dupe-values");
     versionStore().create(branch, Optional.empty());
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), "world"),
-        Put.of(Key.of("no"), "world"))
+        Put.of(Key.of("hi"), entityType("world")),
+        Put.of(Key.of("no"), entityType("world")))
     );
 
-    assertEquals("world", versionStore().getValue(branch, Key.of("hi")));
-    assertEquals("world", versionStore().getValue(branch, Key.of("no")));
+    assertEquals("world", versionStore().getValue(branch, Key.of("hi")).getValue());
+    assertEquals("world", versionStore().getValue(branch, Key.of("no")).getValue());
   }
 
   @Test
@@ -103,8 +147,8 @@ public abstract class AbstractITTieredVersionStore {
     versionStore().create(branch1, Optional.empty());
     versionStore().create(branch2, Optional.empty());
     versionStore().commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), "world"),
-        Put.of(Key.of("no"), "world")));
+        Put.of(Key.of("hi"), entityType("world")),
+        Put.of(Key.of("no"), entityType("world"))));
     versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1)));
   }
 
@@ -114,19 +158,19 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch2 = BranchName.of("b2");
     versionStore().create(branch1, Optional.empty());
     versionStore().commit(branch1, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("foo"), "world1"),
-        Put.of(Key.of("bar"), "world2")));
+        Put.of(Key.of("foo"), entityType("world1")),
+        Put.of(Key.of("bar"), entityType("world2"))));
 
     versionStore().create(branch2, Optional.empty());
     versionStore().commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), "world3"),
-        Put.of(Key.of("no"), "world4")));
+        Put.of(Key.of("hi"), entityType("world3")),
+        Put.of(Key.of("no"), entityType("world4"))));
     versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1)));
 
-    assertEquals("world1", versionStore().getValue(branch1, Key.of("foo")));
-    assertEquals("world2", versionStore().getValue(branch1, Key.of("bar")));
-    assertEquals("world3", versionStore().getValue(branch1, Key.of("hi")));
-    assertEquals("world4", versionStore().getValue(branch1, Key.of("no")));
+    assertEquals("world1", versionStore().getValue(branch1, Key.of("foo")).getValue());
+    assertEquals("world2", versionStore().getValue(branch1, Key.of("bar")).getValue());
+    assertEquals("world3", versionStore().getValue(branch1, Key.of("hi")).getValue());
+    assertEquals("world4", versionStore().getValue(branch1, Key.of("no")).getValue());
 
   }
 
@@ -135,10 +179,10 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch1 = BranchName.of("b1");
     BranchName branch2 = BranchName.of("b2");
     versionStore().create(branch1, Optional.empty());
-    versionStore().commit(branch1, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("conflictKey"), "world1")));
+    versionStore().commit(branch1, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("conflictKey"), entityType("world1"))));
 
     versionStore().create(branch2, Optional.empty());
-    versionStore().commit(branch2, Optional.empty(), "metadata2", ImmutableList.of(Put.of(Key.of("conflictKey"), "world2")));
+    versionStore().commit(branch2, Optional.empty(), "metadata2", ImmutableList.of(Put.of(Key.of("conflictKey"), entityType("world2"))));
 
     ReferenceConflictException ex = assertThrows(ReferenceConflictException.class, () ->
         versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1))));
@@ -151,12 +195,12 @@ public abstract class AbstractITTieredVersionStore {
     versionStore().create(branch, Optional.empty());
     assertEquals(0, EntityType.L2.loadSingle(store(), InternalL2.EMPTY_ID).size());
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), "world"),
-        Put.of(Key.of("no"), "world"),
-        Put.of(Key.of("mad mad"), "world")));
+        Put.of(Key.of("hi"), entityType("world")),
+        Put.of(Key.of("no"), entityType("world")),
+        Put.of(Key.of("mad mad"), entityType("world"))));
     assertEquals(0, EntityType.L2.loadSingle(store(), InternalL2.EMPTY_ID).size());
-    assertThat(versionStore().getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
-        Matchers.containsInAnyOrder("hi", "no", "mad mad"));
+    assertThat(versionStore().getKeys(branch).map(WithEntityType::getValue).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
+        containsInAnyOrder("hi", "no", "mad mad"));
   }
 
   @Test
@@ -167,7 +211,7 @@ public abstract class AbstractITTieredVersionStore {
     Random r = new Random(1234);
     char[] longName = new char[4096];
     Arrays.fill(longName, 'a');
-    String prefix = new String(longName);
+    String prefix = "A";//new String(longName);
     List<Key> names = new LinkedList<>();
     for (int i = 1; i < 200; i++) {
       if (i % 5 == 0) {
@@ -177,18 +221,18 @@ public abstract class AbstractITTieredVersionStore {
       } else {
         Key name = Key.of(prefix + i);
         names.add(name);
-        versionStore().commit(branch, Optional.of(current), "commit " + i, Collections.singletonList(Put.of(name, "bar")));
+        versionStore().commit(branch, Optional.of(current), "commit " + i, Collections.singletonList(Put.of(name, entityType("bar"))));
       }
       current = versionStore().toHash(branch);
     }
 
-    List<Key> keysFromStore = versionStore().getKeys(branch).collect(Collectors.toList());
+    List<Key> keysFromStore = versionStore().getKeys(branch).map(WithEntityType::getValue).collect(Collectors.toList());
 
     // ensure that our total key size is greater than a single dynamo page.
     assertThat(keysFromStore.size() * longName.length, Matchers.greaterThan(400000));
 
     // ensure that keys stored match those expected.
-    assertThat(keysFromStore, Matchers.containsInAnyOrder(names.toArray(new Key[0])));
+    assertThat(keysFromStore, containsInAnyOrder(names.toArray(new Key[0])));
   }
 
   @Test
@@ -196,15 +240,16 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch = BranchName.of("my-key-list");
     versionStore().create(branch, Optional.empty());
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
-        Put.of(Key.of("hi"), "world1"),
-        Put.of(Key.of("no"), "world2"),
-        Put.of(Key.of("mad mad"), "world3")));
+        Put.of(Key.of("hi"), entityType("world1")),
+        Put.of(Key.of("no"), entityType("world2")),
+        Put.of(Key.of("mad mad"), entityType("world3"))));
 
     assertEquals(
         Arrays.asList("world1", "world2", "world3"),
         versionStore().getValues(branch, Arrays.asList(Key.of("hi"), Key.of("no"), Key.of("mad mad")))
           .stream()
           .map(Optional::get)
+          .map(WithEntityType::getValue)
           .collect(Collectors.toList()));
   }
 
@@ -281,7 +326,7 @@ public abstract class AbstractITTieredVersionStore {
     assertThrows(ReferenceNotFoundException.class, () -> versionStore().delete(branch, Optional.empty()));
 
     versionStore().create(branch, Optional.empty());
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("world"))));
     // check that wrong id is rejected for deletion (valid but not matching)
     assertThrows(ReferenceConflictException.class, () -> versionStore().delete(branch, Optional.of(InternalL1.EMPTY_ID.toHash())));
 
@@ -294,20 +339,20 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch = BranchName.of("foo");
     versionStore().create(branch, Optional.empty());
     // first commit.
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("hello world"))));
 
     //first hash.
     Hash originalHash = versionStore().getCommits(branch).findFirst().get().getHash();
 
     //second commit.
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("goodbye world"))));
 
     // do an extra commit to make sure it has a different hash even though it has the same value.
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("goodbye world"))));
 
     //attempt commit using first hash which has conflicting key change.
     assertThrows(InconsistentValueException.class, () -> versionStore().commit(branch, Optional.of(originalHash),
-        "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+        "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("my world")))));
   }
 
   @Test
@@ -333,18 +378,18 @@ public abstract class AbstractITTieredVersionStore {
     String v1p = "goodbye world";
     Key k2 = Key.of("my", "friend");
     String v2 = "not here";
-    versionStore().commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, v1), Put.of(k2, v2)));
-    versionStore().commit(branch, Optional.empty(), c2, ImmutableList.of(Put.of(k1, v1p)));
+    versionStore().commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, entityType(v1)), Put.of(k2, entityType(v2))));
+    versionStore().commit(branch, Optional.empty(), c2, ImmutableList.of(Put.of(k1, entityType(v1p))));
     List<WithHash<String>> commits = versionStore().getCommits(branch).collect(Collectors.toList());
-    assertEquals(ImmutableList.of(c2, c1), commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
+    assertEquals(ImmutableList.of(c2, c1), commits.stream().map(WithHash::getValue).collect(Collectors.toList()));
 
     // changed across commits
-    assertEquals(v1, versionStore().getValue(commits.get(1).getHash(), k1));
-    assertEquals(v1p, versionStore().getValue(commits.get(0).getHash(), k1));
+    assertEquals(v1, versionStore().getValue(commits.get(1).getHash(), k1).getValue());
+    assertEquals(v1p, versionStore().getValue(commits.get(0).getHash(), k1).getValue());
 
     // not changed across commits
-    assertEquals(v2, versionStore().getValue(commits.get(0).getHash(), k2));
-    assertEquals(v2, versionStore().getValue(commits.get(1).getHash(), k2));
+    assertEquals(v2, versionStore().getValue(commits.get(0).getHash(), k2).getValue());
+    assertEquals(v2, versionStore().getValue(commits.get(1).getHash(), k2).getValue());
 
     assertEquals(2, versionStore().getCommits(commits.get(0).getHash()).count());
 
@@ -358,32 +403,32 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
     versionStore().create(branch, Optional.empty());
-    versionStore().commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, "v1")));
+    versionStore().commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, entityType("v1"))));
     Hash c1 = versionStore().toHash(branch);
-    versionStore().commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, "v2")));
+    versionStore().commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, entityType("v2"))));
     Hash c2 = versionStore().toHash(branch);
     TagName t1 = TagName.of("t1");
     BranchName b2 = BranchName.of("b2");
 
     // ensure tag create assignment is correct.
     versionStore().create(t1, Optional.of(c1));
-    assertEquals("v1", versionStore().getValue(t1, k1));
+    assertEquals("v1", versionStore().getValue(t1, k1).getValue());
 
     // ensure branch create non-assignment works
     versionStore().create(b2, Optional.empty());
-    assertEquals(null, versionStore().getValue(b2, k1));
+    assertNull(versionStore().getValue(b2, k1));
 
     // ensure tag reassignment is correct.
     versionStore().assign(t1, Optional.of(c1), c2);
-    assertEquals("v2", versionStore().getValue(t1, k1));
+    assertEquals("v2", versionStore().getValue(t1, k1).getValue());
 
     // ensure branch assignment (no current) is correct
     versionStore().assign(b2, Optional.empty(), c1);
-    assertEquals("v1", versionStore().getValue(b2, k1));
+    assertEquals("v1", versionStore().getValue(b2, k1).getValue());
 
     // ensure branch assignment (with current) is current
     versionStore().assign(b2, Optional.of(c1), c2);
-    assertEquals("v2", versionStore().getValue(b2, k1));
+    assertEquals("v2", versionStore().getValue(b2, k1).getValue());
 
   }
 
@@ -392,11 +437,11 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
     versionStore().create(branch, Optional.empty());
-    versionStore().commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, "v1")));
-    assertEquals("v1", versionStore().getValue(branch, k1));
+    versionStore().commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, entityType("v1"))));
+    assertEquals("v1", versionStore().getValue(branch, k1).getValue());
 
     versionStore().commit(branch, Optional.empty(), "c1", ImmutableList.of(Delete.of(k1)));
-    assertEquals(null, versionStore().getValue(branch, k1));
+    assertNull(versionStore().getValue(branch, k1));
   }
 
   @Test
@@ -404,24 +449,24 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch = BranchName.of("foo");
     versionStore().create(branch, Optional.empty());
     // first commit.
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("hello world"))));
 
     //first hash.
     Hash originalHash = versionStore().getCommits(branch).findFirst().get().getHash();
 
     //second commit.
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("goodbye world"))));
 
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("goodbye world"))));
 
     //attempt commit using first hash which has conflicting key change.
     assertThrows(InconsistentValueException.class, () -> versionStore().commit(branch, Optional.of(originalHash),
-        "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+        "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("my world")))));
 
     // attempt commit using first hash, put on on-conflicting key, unchanged on conflicting key.
     assertThrows(ReferenceConflictException.class,
         () -> versionStore().commit(branch, Optional.of(originalHash), "metadata",
-            ImmutableList.of(Put.of(Key.of("bar"), "mellow"), Unchanged.of(Key.of("hi")))));
+            ImmutableList.of(Put.of(Key.of("bar"), entityType("mellow")), Unchanged.of(Key.of("hi")))));
   }
 
   @Test
@@ -448,43 +493,43 @@ public abstract class AbstractITTieredVersionStore {
 
     try {
       versionStore().create(branch, Optional.empty());
-      assertFalse(true, "Creating the a branch with the same name as an existing one should fail but didn't.");
+      fail("Creating the a branch with the same name as an existing one should fail but didn't.");
     } catch (ReferenceAlreadyExistsException ex) {
       // expected.
     }
 
     versionStore().commit(branch, Optional.empty(), commit1, ImmutableList.of(
-        ImmutablePut.<String>builder().key(
+        ImmutablePut.<WithEntityType<String>>builder().key(
             p1
             )
         .shouldMatchHash(false)
-        .value(v1)
+        .value(entityType(v1))
         .build()
         )
     );
 
-    assertEquals(v1, versionStore().getValue(branch, p1));
+    assertEquals(v1, versionStore().getValue(branch, p1).getValue());
 
     versionStore().create(tag, Optional.of(versionStore().toHash(branch)));
 
     versionStore().commit(branch, Optional.empty(), commit2, ImmutableList.of(
-        ImmutablePut.<String>builder().key(
+        ImmutablePut.<WithEntityType<String>>builder().key(
             p1
             )
         .shouldMatchHash(false)
-        .value(v2)
+        .value(entityType(v2))
         .build()
         )
     );
 
-    assertEquals(v2, versionStore().getValue(branch, p1));
-    assertEquals(v1, versionStore().getValue(tag, p1));
+    assertEquals(v2, versionStore().getValue(branch, p1).getValue());
+    assertEquals(v1, versionStore().getValue(tag, p1).getValue());
 
     List<WithHash<String>> commits = versionStore().getCommits(branch).collect(Collectors.toList());
 
-    assertEquals(v1, versionStore().getValue(commits.get(1).getHash(), p1));
+    assertEquals(v1, versionStore().getValue(commits.get(1).getHash(), p1).getValue());
     assertEquals(commit1, commits.get(1).getValue());
-    assertEquals(v2, versionStore().getValue(commits.get(0).getHash(), p1));
+    assertEquals(v2, versionStore().getValue(commits.get(0).getHash(), p1).getValue());
     assertEquals(commit2, commits.get(0).getValue());
 
     versionStore().assign(tag, Optional.of(commits.get(1).getHash()), commits.get(0).getHash());
@@ -504,7 +549,7 @@ public abstract class AbstractITTieredVersionStore {
       assertEquals(2, str.count());
     }
 
-    assertEquals(v1, versionStore().getValue(branch2, p1));
+    assertEquals(v1, versionStore().getValue(branch2, p1).getValue());
 
 
   }
@@ -513,7 +558,7 @@ public abstract class AbstractITTieredVersionStore {
   void unknownRef() throws Exception {
     BranchName branch = BranchName.of("bar");
     versionStore().create(branch, Optional.empty());
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("hello world"))));
     TagName tag = TagName.of("foo");
     Hash expected = versionStore().toHash(branch);
     versionStore().create(tag, Optional.of(expected));
@@ -527,5 +572,9 @@ public abstract class AbstractITTieredVersionStore {
     WithHash<Ref> val = versionStore().toRef(name);
     assertEquals(ref, val.getValue());
     assertEquals(hash, val.getHash());
+  }
+
+  private static WithEntityType<String> entityType(String value) {
+    return WithEntityType.of((byte)0, value);
   }
 }

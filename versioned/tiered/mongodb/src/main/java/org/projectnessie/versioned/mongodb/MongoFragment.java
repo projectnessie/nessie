@@ -15,13 +15,16 @@
  */
 package org.projectnessie.versioned.mongodb;
 
-import static org.projectnessie.versioned.mongodb.MongoSerDe.deserializeKeys;
+import static org.projectnessie.versioned.mongodb.MongoSerDe.ENTITY_TYPE;
+import static org.projectnessie.versioned.mongodb.MongoSerDe.KEY;
+import static org.projectnessie.versioned.mongodb.MongoSerDe.deserializeKeysWithEntityType;
 
 import java.util.stream.Stream;
 
 import org.bson.BsonWriter;
 import org.bson.Document;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.tiered.Fragment;
 
 final class MongoFragment extends MongoBaseValue<Fragment> implements Fragment {
@@ -30,7 +33,7 @@ final class MongoFragment extends MongoBaseValue<Fragment> implements Fragment {
 
   static void produce(Document document, Fragment v) {
     produceBase(document, v)
-        .keys(deserializeKeys(document, KEY_LIST));
+        .keys(deserializeKeysWithEntityType(document, KEY_LIST));
   }
 
   MongoFragment(BsonWriter bsonWriter) {
@@ -38,13 +41,16 @@ final class MongoFragment extends MongoBaseValue<Fragment> implements Fragment {
   }
 
   @Override
-  public Fragment keys(Stream<Key> keys) {
+  public Fragment keys(Stream<WithEntityType<Key>> keys) {
     addProperty(KEY_LIST);
     bsonWriter.writeStartArray(KEY_LIST);
     keys.forEach(k -> {
-      bsonWriter.writeStartArray();
-      k.getElements().forEach(bsonWriter::writeString);
+      bsonWriter.writeStartDocument();
+      bsonWriter.writeStartArray(KEY);
+      k.getValue().getElements().forEach(bsonWriter::writeString);
       bsonWriter.writeEndArray();
+      bsonWriter.writeString(ENTITY_TYPE, Byte.toString(k.getEntityType()));
+      bsonWriter.writeEndDocument();
     });
     bsonWriter.writeEndArray();
     return this;

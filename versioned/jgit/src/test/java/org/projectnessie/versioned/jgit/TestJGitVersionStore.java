@@ -16,8 +16,9 @@
 package org.projectnessie.versioned.jgit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +62,7 @@ import org.projectnessie.versioned.StringWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 
 import com.google.common.collect.ImmutableList;
@@ -158,7 +160,7 @@ class TestJGitVersionStore {
   void unknownRef(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
     BranchName branch = BranchName.of("bar");
     impl.create(branch, Optional.empty());
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("hello world"))));
     TagName tag = TagName.of("foo");
     Hash expected = impl.toHash(branch);
     impl.create(tag, Optional.of(expected));
@@ -209,7 +211,7 @@ class TestJGitVersionStore {
     assertThrows(ReferenceNotFoundException.class, () -> impl.delete(branch, Optional.empty()));
 
     impl.create(branch, Optional.empty());
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("world"))));
     // check that wrong id is rejected for deletion (valid but not matching)
     assertThrows(ReferenceConflictException.class, () -> impl.delete(branch, Optional.of(EMPTY_HASH)));
 
@@ -223,20 +225,20 @@ class TestJGitVersionStore {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     // first commit.
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("hello world"))));
 
     //first hash.
     Hash originalHash = impl.getCommits(branch).findFirst().get().getHash();
 
     //second commit.
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("goodbye world"))));
 
     // do an extra commit to make sure it has a different hash even though it has the same value.
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("goodbye world"))));
 
     //attempt commit using first hash which has conflicting key change.
     assertThrows(ReferenceConflictException.class, () -> impl.commit(branch, Optional.of(originalHash),
-                                                                     "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+        "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("my world")))));
   }
 
   @ParameterizedTest
@@ -265,18 +267,18 @@ class TestJGitVersionStore {
     String v1p = "goodbye world";
     Key k2 = Key.of("my", "friend");
     String v2 = "not here";
-    impl.commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, v1), Put.of(k2, v2)));
-    impl.commit(branch, Optional.empty(), c2, ImmutableList.of(Put.of(k1, v1p)));
+    impl.commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, entityType(v1)), Put.of(k2, entityType(v2))));
+    impl.commit(branch, Optional.empty(), c2, ImmutableList.of(Put.of(k1, entityType(v1p))));
     List<WithHash<String>> commits = impl.getCommits(branch).collect(Collectors.toList());
-    assertEquals(ImmutableList.of(c2, c1), commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
+    assertEquals(ImmutableList.of(c2, c1), commits.stream().map(WithHash::getValue).collect(Collectors.toList()));
 
     // changed across commits
-    assertEquals(v1, impl.getValue(commits.get(1).getHash(), k1));
-    assertEquals(v1p, impl.getValue(commits.get(0).getHash(), k1));
+    assertEquals(v1, impl.getValue(commits.get(1).getHash(), k1).getValue());
+    assertEquals(v1p, impl.getValue(commits.get(0).getHash(), k1).getValue());
 
     // not changed across commits
-    assertEquals(v2, impl.getValue(commits.get(0).getHash(), k2));
-    assertEquals(v2, impl.getValue(commits.get(1).getHash(), k2));
+    assertEquals(v2, impl.getValue(commits.get(0).getHash(), k2).getValue());
+    assertEquals(v2, impl.getValue(commits.get(1).getHash(), k2).getValue());
 
     assertEquals(2, impl.getCommits(commits.get(0).getHash()).count());
     assertEquals(1, impl.getCommits(commits.get(1).getHash()).count());
@@ -291,32 +293,32 @@ class TestJGitVersionStore {
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
     impl.create(branch, Optional.empty());
-    impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, "v1")));
+    impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, entityType("v1"))));
     Hash c1 = impl.toHash(branch);
-    impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, "v2")));
+    impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, entityType("v2"))));
     Hash c2 = impl.toHash(branch);
     TagName t1 = TagName.of("t1");
     BranchName b2 = BranchName.of("b2");
 
     // ensure tag create assignment is correct.
     impl.create(t1, Optional.of(c1));
-    assertEquals("v1", impl.getValue(t1, k1));
+    assertEquals("v1", impl.getValue(t1, k1).getValue());
 
     // ensure branch create non-assignment works
     impl.create(b2, Optional.empty());
-    assertEquals(null, impl.getValue(b2, k1));
+    assertNull(impl.getValue(b2, k1));
 
     // ensure tag reassignment is correct.
     impl.assign(t1, Optional.of(c1), c2);
-    assertEquals("v2", impl.getValue(t1, k1));
+    assertEquals("v2", impl.getValue(t1, k1).getValue());
 
     // ensure branch assignment (no current) is correct
     impl.assign(b2, Optional.empty(), c1);
-    assertEquals("v1", impl.getValue(b2, k1));
+    assertEquals("v1", impl.getValue(b2, k1).getValue());
 
     // ensure branch assignment (with current) is current
     impl.assign(b2, Optional.of(c1), c2);
-    assertEquals("v2", impl.getValue(b2, k1));
+    assertEquals("v2", impl.getValue(b2, k1).getValue());
 
   }
 
@@ -327,11 +329,11 @@ class TestJGitVersionStore {
     final Key k1 = Key.of("p1");
     impl.create(branch, Optional.empty());
 
-    impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, "v1")));
-    assertEquals("v1", impl.getValue(branch, k1));
+    impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Put.of(k1, entityType("v1"))));
+    assertEquals("v1", impl.getValue(branch, k1).getValue());
 
     impl.commit(branch, Optional.empty(), "c1", ImmutableList.of(Delete.of(k1)));
-    assertEquals(null, impl.getValue(branch, k1));
+    assertNull(impl.getValue(branch, k1));
   }
 
   @ParameterizedTest
@@ -340,22 +342,23 @@ class TestJGitVersionStore {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     // first commit.
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("hello world"))));
 
     //first hash.
     Hash originalHash = impl.getCommits(branch).findFirst().get().getHash();
 
     //second commit. Ensure first hasn't changed
-    impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world"), Unchanged.of(Key.of("hi"))));
+    impl.commit(branch, Optional.empty(), "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), entityType("goodbye world")), Unchanged.of(Key.of("hi"))));
 
     //attempt commit using first hash which has conflicting key change.
     assertThrows(ReferenceConflictException.class, () -> impl.commit(branch, Optional.of(originalHash),
-                                                                     "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+        "metadata", ImmutableList.of(Put.of(Key.of("hi"), entityType("my world")))));
 
     // attempt commit using first hash, put on on-conflicting key, unchanged on conflicting key.
     assertThrows(ReferenceConflictException.class,
         () -> impl.commit(branch, Optional.of(originalHash), "metadata",
-                          ImmutableList.of(Put.of(Key.of("bar"), "mellow"), Unchanged.of(Key.of("hi")))));
+                          ImmutableList.of(Put.of(Key.of("bar"), entityType("mellow")), Unchanged.of(Key.of("hi")))));
   }
 
   @ParameterizedTest
@@ -385,7 +388,7 @@ class TestJGitVersionStore {
 
     try {
       impl.create(branch, Optional.empty());
-      assertFalse(true, "Creating the a branch with the same name as an existing one should fail but didn't.");
+      fail("Creating the a branch with the same name as an existing one should fail but didn't.");
     } catch (ReferenceAlreadyExistsException ex) {
       // expected.
     }
@@ -393,25 +396,27 @@ class TestJGitVersionStore {
     impl.commit(branch,
                 Optional.empty(),
                 commit1,
-                ImmutableList.of(ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v1).build()));
+                ImmutableList.of(
+                  ImmutablePut.<WithEntityType<String>>builder().key(p1).shouldMatchHash(false).value(entityType(v1)).build()));
 
-    assertEquals(v1, impl.getValue(branch, p1));
+    assertEquals(v1, impl.getValue(branch, p1).getValue());
 
     impl.create(tag, Optional.of(impl.toHash(branch)));
 
     impl.commit(branch,
                 Optional.empty(),
                 commit2,
-                ImmutableList.of(ImmutablePut.<String>builder().key(p1).shouldMatchHash(false).value(v2).build()));
+                ImmutableList.of(
+                  ImmutablePut.<WithEntityType<String>>builder().key(p1).shouldMatchHash(false).value(entityType(v2)).build()));
 
-    assertEquals(v2, impl.getValue(branch, p1));
-    assertEquals(v1, impl.getValue(tag, p1));
+    assertEquals(v2, impl.getValue(branch, p1).getValue());
+    assertEquals(v1, impl.getValue(tag, p1).getValue());
 
     List<WithHash<String>> commits = impl.getCommits(branch).collect(Collectors.toList());
 
-    assertEquals(v1, impl.getValue(commits.get(1).getHash(), p1));
+    assertEquals(v1, impl.getValue(commits.get(1).getHash(), p1).getValue());
     assertEquals(commit1, commits.get(1).getValue());
-    assertEquals(v2, impl.getValue(commits.get(0).getHash(), p1));
+    assertEquals(v2, impl.getValue(commits.get(0).getHash(), p1).getValue());
     assertEquals(commit2, commits.get(0).getValue());
 
     impl.assign(tag, Optional.of(commits.get(1).getHash()), commits.get(0).getHash());
@@ -431,7 +436,7 @@ class TestJGitVersionStore {
       assertEquals(2, str.count());
     }
 
-    assertEquals(v1, impl.getValue(branch2, p1));
+    assertEquals(v1, impl.getValue(branch2, p1).getValue());
 
 
   }
@@ -456,5 +461,10 @@ class TestJGitVersionStore {
       }
       throw new RuntimeException(String.format("couldn't convert input %s", source));
     }
+  }
+
+
+  private WithEntityType<String> entityType(String foobar) {
+    return WithEntityType.of((byte)0, foobar);
   }
 }

@@ -35,6 +35,7 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.Unchanged;
+import org.projectnessie.versioned.WithEntityType;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -56,28 +57,28 @@ class TestTreeBuilder {
     } catch (IOException e) {
       throw new RuntimeException();
     }
-    Serializer<String> serializer = new Serializer<String>() {
+    Serializer<WithEntityType<String>> serializer = new Serializer<WithEntityType<String>>() {
       @Override
-      public ByteString toBytes(String value) {
-        return ByteString.copyFrom(value.getBytes());
+      public ByteString toBytes(WithEntityType<String> value) {
+        return ByteString.copyFrom(value.getValue().getBytes());
       }
 
       @Override
-      public String fromBytes(ByteString bytes) {
-        return bytes.toStringUtf8();
+      public WithEntityType<String> fromBytes(ByteString bytes) {
+        return WithEntityType.of((byte)0, bytes.toStringUtf8());
       }
     };
-    ObjectId oid1 = TreeBuilder.commitObjects(ImmutableList.of(Put.of(Key.of("a", "b", "c.txt"), "foobar"),
-                                                               Put.of(Key.of("a", "b", "d.txt"), "foobar"),
-                                                               Put.of(Key.of("a", "i", "j.txt"), "foobar"),
-                                                               Put.of(Key.of("a", "f.txt"), "foobar1"),
-                                                               Put.of(Key.of("k", "l.txt"), "foobar")),
+    ObjectId oid1 = TreeBuilder.commitObjects(ImmutableList.of(Put.of(Key.of("a", "b", "c.txt"), entityType("foobar")),
+                                                               Put.of(Key.of("a", "b", "d.txt"), entityType("foobar")),
+                                                               Put.of(Key.of("a", "i", "j.txt"), entityType("foobar")),
+                                                               Put.of(Key.of("a", "f.txt"), entityType("foobar1")),
+                                                               Put.of(Key.of("k", "l.txt"), entityType("foobar"))),
                                               repository, serializer, emptyObject);
-    ObjectId oid2 = TreeBuilder.commitObjects(ImmutableList.of(Put.of(Key.of("a", "g", "h.txt"), "foobar"),
+    ObjectId oid2 = TreeBuilder.commitObjects(ImmutableList.of(Put.of(Key.of("a", "g", "h.txt"), entityType("foobar")),
                                                                Delete.of(Key.of("a", "b", "d.txt")),
-                                                               Put.of(Key.of("a", "f.txt"), "foobar"),
-                                                               Put.of(Key.of("a","b","p.txt"), "foobar"),
-                                                               Put.of(Key.of("m", "n", "o.txt"), "foobar"),
+                                                               Put.of(Key.of("a", "f.txt"), entityType("foobar")),
+                                                               Put.of(Key.of("a","b","p.txt"), entityType("foobar")),
+                                                               Put.of(Key.of("m", "n", "o.txt"), entityType("foobar")),
                                                                Unchanged.of(Key.of("a","b","c.txt"))),
                                               repository, serializer, emptyObject);
 
@@ -91,13 +92,18 @@ class TestTreeBuilder {
       if (ObjectId.zeroId().equals(tw.getObjectId(0))) {
         continue;
       }
-      String value = serializer.fromBytes(ByteString.copyFrom(repository.newObjectReader().open(tw.getObjectId(0)).getBytes()));
-      results.put(tw.getPathString(), value);
+      WithEntityType<String> value = serializer.fromBytes(
+          ByteString.copyFrom(repository.newObjectReader().open(tw.getObjectId(0)).getBytes()));
+      results.put(tw.getPathString(), value.getValue());
     }
     Assertions.assertTrue(Sets.difference(expected, results.keySet()).isEmpty());
     Set<String> valueSet = new HashSet<>(results.values());
     Assertions.assertEquals(1, valueSet.size());
     String value = valueSet.iterator().next();
     Assertions.assertEquals("foobar", value);
+  }
+
+  private WithEntityType<String> entityType(String foobar) {
+    return WithEntityType.of((byte)0, foobar);
   }
 }

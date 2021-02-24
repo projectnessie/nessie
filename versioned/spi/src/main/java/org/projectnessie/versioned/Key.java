@@ -96,7 +96,7 @@ public abstract class Key implements Comparable<Key> {
   }
 
   @Immutable
-  abstract static class Addition implements Mutation {
+  public abstract static class Addition implements Mutation {
 
     @Override
     public final MutationType getType() {
@@ -105,6 +105,8 @@ public abstract class Key implements Comparable<Key> {
 
     @Override
     public abstract Key getKey();
+
+    public abstract byte getEntityType();
   }
 
   @Immutable
@@ -119,8 +121,8 @@ public abstract class Key implements Comparable<Key> {
     public abstract Key getKey();
   }
 
-  public Addition asAddition() {
-    return ImmutableAddition.builder().key(this).build();
+  public Addition asAddition(byte entityType) {
+    return ImmutableAddition.builder().key(this).entityType(entityType).build();
   }
 
   public Removal asRemoval() {

@@ -18,19 +18,30 @@ package org.projectnessie.services.rest;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
+import org.projectnessie.model.DeltaLakeTable;
+import org.projectnessie.model.HiveDatabase;
+import org.projectnessie.model.HiveTable;
+import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
+import org.projectnessie.model.SqlView;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
+import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.Operation;
+import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 
 abstract class BaseResource {
@@ -79,7 +90,7 @@ abstract class BaseResource {
           BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
           Optional.ofNullable(hash).map(Hash::of),
           meta(principal, message),
-          operations
+          transformOperations(operations)
       );
     } catch (IllegalArgumentException e) {
       throw new NessieNotFoundException("Invalid hash provided. " + e.getMessage(), e);
@@ -88,6 +99,21 @@ abstract class BaseResource {
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException("Failed to commit data. " + e.getMessage(), e);
     }
+  }
+
+  private static List<Operation<WithEntityType<Contents>>> transformOperations(List<Operation<Contents>> operations) {
+    return operations.stream().map(o -> {
+      if (o instanceof Put) {
+        Put<Contents> p = (Put<Contents>) o;
+        return Put.of(p.getKey(), WithEntityType.of(Contents.entityTypeFromContents(p.getValue()), p.getValue()));
+      } else if (o instanceof Delete) {
+        return Delete.<WithEntityType<Contents>>of(o.getKey());
+      } else if (o instanceof Unchanged) {
+        return Unchanged.<WithEntityType<Contents>>of(o.getKey());
+      } else {
+        throw new RuntimeException(String.format("Cannot convert unknown operation %s", o));
+      }
+    }).collect(Collectors.toList());
   }
 
   private static CommitMeta meta(Principal principal, String message) {

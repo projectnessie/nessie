@@ -32,6 +32,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringWorker;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.store.Store;
 
@@ -74,7 +75,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
 
   @Override
   public void commit(BranchName branch, Optional<Hash> expectedHash, String metadata,
-      List<Operation<String>> operations)
+      List<Operation<WithEntityType<String>>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     impl.commit(branch, expectedHash, metadata, operations);
   }
@@ -121,17 +122,17 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithEntityType<Key>> getKeys(Ref ref) throws ReferenceNotFoundException {
     return impl.getKeys(ref);
   }
 
   @Override
-  public String getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public WithEntityType<String> getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     return impl.getValue(ref, key);
   }
 
   @Override
-  public List<Optional<String>> getValues(Ref ref, List<Key> key)
+  public List<Optional<WithEntityType<String>>> getValues(Ref ref, List<Key> key)
       throws ReferenceNotFoundException {
     return impl.getValues(ref, key);
   }
@@ -142,7 +143,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   }
 
   @Override
-  public Stream<Diff<String>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
+  public Stream<Diff<WithEntityType<String>>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
     return impl.getDiffs(from, to);
   }
 

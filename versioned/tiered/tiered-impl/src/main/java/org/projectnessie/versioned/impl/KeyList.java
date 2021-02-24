@@ -17,14 +17,17 @@ package org.projectnessie.versioned.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import org.immutables.value.Value.Immutable;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.impl.KeyMutation.MutationType;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
@@ -62,7 +65,7 @@ abstract class KeyList {
         .mutations(mutations).build();
   }
 
-  abstract Stream<InternalKey> getKeys(InternalL1 startingPoint, Store store);
+  abstract Stream<WithEntityType<InternalKey>> getKeys(InternalL1 startingPoint, Store store);
 
 
   abstract List<KeyMutation> getMutations();
@@ -108,7 +111,7 @@ abstract class KeyList {
 
 
     @Override
-    Stream<InternalKey> getKeys(InternalL1 startingPoint, Store store) {
+    Stream<WithEntityType<InternalKey>> getKeys(InternalL1 startingPoint, Store store) {
       IterResult keys = getKeysIter(startingPoint, store);
       if (keys.isChanged()) {
         return keys.keyList;
@@ -151,7 +154,7 @@ abstract class KeyList {
       }
 
       Set<InternalKey> removals = new HashSet<>();
-      Set<InternalKey> adds = new HashSet<>();
+      Map<InternalKey, WithEntityType<InternalKey>> adds = new HashMap<>();
 
 
       // determine the unique list of mutations. Operations that cancel each other out are ignored for checkpoint purposes.
@@ -164,10 +167,10 @@ abstract class KeyList {
             if (removals.contains(key)) {
               removals.remove(key);
             } else {
-              adds.add(key);
+              adds.put(key, WithEntityType.of(((KeyMutation.KeyAddition) m).getEntityType(), key));
             }
           } else if (m.getType() == MutationType.REMOVAL) {
-            if (adds.contains(key)) {
+            if (adds.containsKey(key)) {
               adds.remove(key);
             } else {
               removals.add(key);
@@ -186,8 +189,8 @@ abstract class KeyList {
       return IterResult.changed(
           complete.fragmentIds.stream().collect(ImmutableSet.toImmutableSet()),
           Stream.concat(
-              complete.getKeys(startingPoint, store).filter(k -> !removals.contains(k)),
-              adds.stream()));
+              complete.getKeys(startingPoint, store).filter(k -> !removals.contains(k.getValue())),
+              adds.values().stream()));
     }
 
     @Override
@@ -197,10 +200,10 @@ abstract class KeyList {
 
     private static class IterResult {
       private final CompleteList list;
-      private final Stream<InternalKey> keyList;
+      private final Stream<WithEntityType<InternalKey>> keyList;
       private final Set<Id> previousFragmentIds;
 
-      private IterResult(CompleteList list, Stream<InternalKey> keyList, Set<Id> previousFragmentIds) {
+      private IterResult(CompleteList list, Stream<WithEntityType<InternalKey>> keyList, Set<Id> previousFragmentIds) {
         super();
         this.list = list;
         this.keyList = keyList;
@@ -211,7 +214,7 @@ abstract class KeyList {
         return new IterResult(list, null, null);
       }
 
-      public static IterResult changed(Set<Id> previousFragmentIds, Stream<InternalKey> keys) {
+      public static IterResult changed(Set<Id> previousFragmentIds, Stream<WithEntityType<InternalKey>> keys) {
         return new IterResult(null, keys, previousFragmentIds);
       }
 
@@ -284,7 +287,7 @@ abstract class KeyList {
     }
 
     @Override
-    Stream<InternalKey> getKeys(InternalL1 startingPoint, Store store) {
+    Stream<WithEntityType<InternalKey>> getKeys(InternalL1 startingPoint, Store store) {
       return fragmentIds.stream().flatMap(f -> {
         InternalFragment fragment = EntityType.KEY_FRAGMENT.loadSingle(store, f);
         return fragment.getKeys().stream();
@@ -314,7 +317,7 @@ abstract class KeyList {
     private static final int MAX_SIZE = 400_000 - 8096;
     private final Store store;
     private final Set<Id> presaved;
-    private final List<InternalKey> currentList = new ArrayList<>();
+    private final List<WithEntityType<InternalKey>> currentList = new ArrayList<>();
     private final List<Id> fragmentIds = new ArrayList<>();
     private int currentListSize;
 
@@ -324,9 +327,9 @@ abstract class KeyList {
       this.presaved = presaved;
     }
 
-    public void addKey(InternalKey key) {
+    public void addKey(WithEntityType<InternalKey> key) {
       currentList.add(key);
-      currentListSize += key.estimatedSize();
+      currentListSize += key.getValue().estimatedSize();
 
       rotate(false);
     }

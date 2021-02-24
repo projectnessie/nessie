@@ -31,7 +31,6 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
-import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.ImmutableBranch;
@@ -192,7 +191,8 @@ public class TreeResource extends BaseResource implements TreeApi {
     final Hash hash = getHashOrThrow(refName);
     try {
       List<EntriesResponse.Entry> entries = getStore().getKeys(hash)
-          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key)).type(Type.UNKNOWN).build())
+          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key.getValue()))
+              .type(Contents.contentsTypeFromEntityType(key.getEntityType())).build())
           .collect(ImmutableList.toImmutableList());
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {

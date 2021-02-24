@@ -79,6 +79,7 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -185,7 +186,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
 
   @Override
   public void commit(BranchName branch, Optional<Hash> expectedHash, METADATA metadata,
-                     List<Operation<TABLE>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
+                     List<Operation<WithEntityType<TABLE>>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     toHash(branch);
     try {
       testExpectedHash(branch, expectedHash);
@@ -490,15 +491,18 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) {
+  public Stream<WithEntityType<Key>> getKeys(Ref ref) {
     try {
-      List<Key> tables = new ArrayList<>();
+      List<WithEntityType<Key>> tables = new ArrayList<>();
       try (TreeWalk treeWalk = new TreeWalk(repository)) {
         ObjectId treeId = repository.resolve(refName(ref) + "^{tree}");
         treeWalk.addTree(treeId);
         treeWalk.setRecursive(true);
         while (treeWalk.next()) {
-          tables.add(keyFromUrlString(treeWalk.getPathString()));
+          byte[] bytes = getTable(treeWalk, repository);
+          byte type = storeWorker.getValueWorker().fromBytes(ByteString.copyFrom(bytes)).getEntityType();
+          tables.add(WithEntityType.of(type, keyFromUrlString(treeWalk.getPathString())));
+
         }
       }
       return tables.stream();
@@ -508,7 +512,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   @Override
-  public TABLE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public WithEntityType<TABLE> getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     final String hashName = refName(ref);
     String table = stringFromKey(key);
     try {
@@ -529,10 +533,10 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   @Override
-  public List<Optional<TABLE>> getValues(Ref ref, List<Key> key) {
+  public List<Optional<WithEntityType<TABLE>>> getValues(Ref ref, List<Key> key) {
     final String hashName = refName(ref);
     Map<String, Key> keys = key.stream().collect(Collectors.toMap(JGitVersionStore::stringFromKey, k -> k));
-    Map<Key, TABLE> tables = new HashMap<>();
+    Map<Key, WithEntityType<TABLE>> tables = new HashMap<>();
     try {
       try (TreeWalk treeWalk = new TreeWalk(repository)) {
         ObjectId treeId = repository.resolve(hashName + "^{tree}");
@@ -716,7 +720,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   @Override
-  public Stream<Diff<TABLE>> getDiffs(Ref from, Ref to) {
+  public Stream<Diff<WithEntityType<TABLE>>> getDiffs(Ref from, Ref to) {
     throw new UnsupportedOperationException("Not yet implemented.");
   }
 

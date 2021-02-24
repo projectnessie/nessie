@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.impl.InternalBranch.Commit;
 import org.projectnessie.versioned.impl.InternalBranch.UnsavedDelta;
 import org.projectnessie.versioned.impl.InternalKey.Position;
@@ -64,21 +65,22 @@ class PartialTree<V> {
     NO_VALUES, SELECT_VALUES
   }
 
-  private final Serializer<V> serializer;
+  private final Serializer<WithEntityType<V>> serializer;
   private final InternalRefId refId;
   private InternalRef.Type refType;
   private Id rootId;
   private Pointer<InternalL1> l1;
   private final Map<Integer, Pointer<InternalL2>> l2s = new HashMap<>();
   private final Map<Position, Pointer<InternalL3>> l3s = new HashMap<>();
-  private final Map<InternalKey, ValueHolder<V>> values = new HashMap<>();
+  private final Map<InternalKey, ValueHolder<WithEntityType<V>>> values = new HashMap<>();
   private final Collection<InternalKey> keys;
 
-  static <V> PartialTree<V> of(Serializer<V> serializer, InternalRefId id, List<InternalKey> keys) {
+  static <V> PartialTree<V> of(Serializer<WithEntityType<V>> serializer, InternalRefId id, List<InternalKey> keys) {
     return new PartialTree<>(serializer, id, keys);
   }
 
-  static <V> PartialTree<V> of(Serializer<V> serializer, InternalRef.Type refType, InternalL1 l1, Collection<InternalKey> keys) {
+  static <V> PartialTree<V> of(Serializer<WithEntityType<V>> serializer, InternalRef.Type refType, InternalL1 l1,
+                               Collection<InternalKey> keys) {
     PartialTree<V> tree = new PartialTree<>(serializer, InternalRefId.ofHash(l1.getId()), keys);
     tree.l1 = new Pointer<>(l1);
     tree.refType = refType;
@@ -90,7 +92,7 @@ class PartialTree<V> {
         "You can only mutate a partial tree that references a branch. This is type %s.", refType.name());
   }
 
-  private PartialTree(Serializer<V> serializer, InternalRefId refId, Collection<InternalKey> keys) {
+  private PartialTree(Serializer<WithEntityType<V>> serializer, InternalRefId refId, Collection<InternalKey> keys) {
     super();
     this.refId = refId;
     this.serializer = serializer;
@@ -281,8 +283,8 @@ class PartialTree<V> {
     return l3s.get(key.getPosition()).get().getPossibleId(key);
   }
 
-  public Optional<V> getValueForKey(InternalKey key) {
-    ValueHolder<V> vh = values.get(key);
+  public Optional<WithEntityType<V>> getValueForKey(InternalKey key) {
+    ValueHolder<WithEntityType<V>> vh = values.get(key);
     if (vh == null) {
       return Optional.empty();
     }
@@ -314,12 +316,12 @@ class PartialTree<V> {
       valueId = Id.EMPTY;
     }
 
-    final Id newL3Id = l3.apply(l -> l.set(key, valueId));
+    final Id newL3Id = l3.apply(l -> l.set(key, valueId, Byte.MIN_VALUE));
     final Id newL2Id = l2.apply(l -> l.set(key.getL2Position(), newL3Id));
     l1.apply(l -> l.set(key.getL1Position(), newL2Id));
   }
 
-  public void setValueForKey(InternalKey key, Optional<V> value) {
+  public void setValueForKey(InternalKey key, Optional<WithEntityType<V>> value) {
     checkMutable();
     final Pointer<InternalL1> l1 = this.l1;
     final Pointer<InternalL2> l2 = l2s.get(key.getL1Position());
@@ -327,16 +329,19 @@ class PartialTree<V> {
 
     // now we'll do the save.
     Id valueId;
+    byte entityType;
     if (value.isPresent()) {
-      ValueHolder<V> holder = ValueHolder.of(serializer,  value.get());
+      ValueHolder<WithEntityType<V>> holder = ValueHolder.of(serializer,  value.get());
       values.put(key, holder);
       valueId = holder.getId();
+      entityType = value.get().getEntityType();
     } else {
       values.remove(key);
       valueId = Id.EMPTY;
+      entityType = Byte.MIN_VALUE;
     }
 
-    final Id newL3Id = l3.apply(l -> l.set(key, valueId));
+    final Id newL3Id = l3.apply(l -> l.set(key, valueId, entityType));
     final Id newL2Id = l2.apply(l -> l.set(key.getL2Position(), newL3Id));
     l1.apply(l -> l.set(key.getL1Position(), newL2Id));
   }

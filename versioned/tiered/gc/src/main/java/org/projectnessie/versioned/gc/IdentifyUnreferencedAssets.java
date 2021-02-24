@@ -32,6 +32,7 @@ import org.projectnessie.versioned.AssetKey;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.ValueWorker;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 
@@ -75,7 +76,7 @@ public class IdentifyUnreferencedAssets<T> {
       SparkSession spark,
       GcOptions options) throws AnalysisException {
 
-    final ValueWorker<T> valueWorker = storeWorker.getValueWorker();
+    final ValueWorker<WithEntityType<T>> valueWorker = storeWorker.getValueWorker();
 
     // get bloomfilter of valid l2s (based on the given gc policy).
     final BinaryBloomFilter l2BloomFilter = RefToL2Producer
@@ -233,7 +234,7 @@ public class IdentifyUnreferencedAssets<T> {
     private static final long serialVersionUID = -4605489080345105845L;
 
     private final BinaryBloomFilter bloomFilter;
-    private final ValueWorker<T> valueWorker;
+    private final ValueWorker<WithEntityType<T>> valueWorker;
     private final long recentValues;
 
     /**
@@ -243,7 +244,7 @@ public class IdentifyUnreferencedAssets<T> {
      * @param valueWorker serde for values and their asset keys.
      * @param maxSlopMicros minimum age of a value to consider it as being unreferenced.
      */
-    public AssetCategorizer(BinaryBloomFilter bloomFilter, ValueWorker<T> valueWorker, long maxSlopMicros) {
+    public AssetCategorizer(BinaryBloomFilter bloomFilter, ValueWorker<WithEntityType<T>> valueWorker, long maxSlopMicros) {
       this.bloomFilter = bloomFilter;
       this.valueWorker = valueWorker;
       this.recentValues = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) - maxSlopMicros;
@@ -253,7 +254,7 @@ public class IdentifyUnreferencedAssets<T> {
     public Iterator<CategorizedAssetKey> call(ValueFrame r) throws Exception {
       boolean referenced = r.getDt() > recentValues || bloomFilter.mightContain(r.getId());
       final Serializer<AssetKey> serializer = valueWorker.getAssetKeySerializer();
-      T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getBytes()));
+      WithEntityType<T> contents = valueWorker.fromBytes(ByteString.copyFrom(r.getBytes()));
       return valueWorker.getAssetKeys(contents).map(ak -> new CategorizedAssetKey(referenced, serializer.toBytes(ak))).iterator();
     }
 

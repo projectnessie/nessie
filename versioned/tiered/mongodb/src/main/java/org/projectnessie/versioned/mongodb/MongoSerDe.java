@@ -18,9 +18,9 @@ package org.projectnessie.versioned.mongodb;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.bson.BsonBinary;
@@ -32,6 +32,7 @@ import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.SaveOp;
 import org.projectnessie.versioned.store.ValueType;
@@ -71,6 +72,8 @@ final class MongoSerDe {
 
   private static final String KEY_ADDITION = "a";
   private static final String KEY_REMOVAL = "d";
+  static final String ENTITY_TYPE = "et";
+  static final String KEY = "k";
 
   static {
     if (!CONSUMERS.keySet().equals(DESERIALIZERS.keySet())) {
@@ -150,6 +153,15 @@ final class MongoSerDe {
         .map(MongoSerDe::deserializeKey);
   }
 
+  static Stream<WithEntityType<Key>> deserializeKeysWithEntityType(Document document, String param) {
+    List<Object> l = (List<Object>) document.get(param);
+    return l.stream().map(x -> (Document)x).map(x -> {
+      Key value = deserializeKey((List<String>) x.get(KEY));
+      byte entityType = Byte.parseByte((String)x.getOrDefault(ENTITY_TYPE, Byte.toString(Byte.MIN_VALUE)));
+      return WithEntityType.of(entityType, value);
+    });
+  }
+
   static void serializeKey(BsonWriter bsonWriter, String prop, Key key) {
     bsonWriter.writeStartArray(prop);
     key.getElements().forEach(bsonWriter::writeString);
@@ -169,6 +181,9 @@ final class MongoSerDe {
   static void serializeKeyMutation(BsonWriter writer, Key.Mutation keyMutation) {
     writer.writeStartDocument();
     serializeKey(writer, mutationName(keyMutation.getType()), keyMutation.getKey());
+    if (keyMutation instanceof Key.Addition) {
+      writer.writeString(ENTITY_TYPE, Byte.toString(((Key.Addition) keyMutation).getEntityType()));
+    }
     writer.writeEndDocument();
   }
 
@@ -189,16 +204,15 @@ final class MongoSerDe {
   }
 
   private static Key.Mutation deserializeKeyMutation(Document d) {
-    Entry<String, Object> e = d.entrySet().stream().findFirst().get();
-    String addRemove = e.getKey();
-    Key key = deserializeKey((List<String>) e.getValue());
-    switch (addRemove) {
-      case KEY_ADDITION:
-        return key.asAddition();
-      case KEY_REMOVAL:
-        return key.asRemoval();
-      default:
-        throw new IllegalArgumentException(String.format("Unsupported key '%s' in key-mutation map", addRemove));
+    if (d.containsKey(KEY_ADDITION)) {
+      Key key = deserializeKey((List<String>) d.get(KEY_ADDITION));
+      byte entityType = Byte.parseByte((String) d.getOrDefault(ENTITY_TYPE, "-127"));
+      return key.asAddition(entityType);
+    } else if (d.containsKey(KEY_REMOVAL)) {
+      Key key = deserializeKey((List<String>) d.get(KEY_REMOVAL));
+      return key.asRemoval();
     }
+    throw new IllegalArgumentException(String.format("Unsupported key '%s' in key-mutation map",
+        d.keySet().stream().collect(Collectors.joining(", "))));
   }
 }

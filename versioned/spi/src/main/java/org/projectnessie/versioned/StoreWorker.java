@@ -15,6 +15,10 @@
  */
 package org.projectnessie.versioned;
 
+import java.util.stream.Stream;
+
+import com.google.protobuf.ByteString;
+
 /**
  * A set of helpers that users of a VersionStore must implement.
  *
@@ -23,20 +27,40 @@ package org.projectnessie.versioned;
  */
 public interface StoreWorker<VALUE, COMMIT_METADATA> {
 
-  ValueWorker<VALUE> getValueWorker();
+  ValueWorker<WithEntityType<VALUE>> getValueWorker();
 
   Serializer<COMMIT_METADATA> getMetadataSerializer();
 
   /**
-   * Create StoreWorker for provided helpers.
+   * Create StoreWorker for provided helpers. Adding single byte data type as first byte in serialized value.
    */
   static <VALUE, COMMIT_METADATA> StoreWorker<VALUE, COMMIT_METADATA>
       of(ValueWorker<VALUE> valueWorker, Serializer<COMMIT_METADATA> commitSerializer) {
     return new StoreWorker<VALUE, COMMIT_METADATA>() {
 
       @Override
-      public ValueWorker<VALUE> getValueWorker() {
-        return valueWorker;
+      public ValueWorker<WithEntityType<VALUE>> getValueWorker() {
+        return new ValueWorker<WithEntityType<VALUE>>() {
+          @Override
+          public Stream<? extends AssetKey> getAssetKeys(WithEntityType<VALUE> valueWithEntityType) {
+            return valueWorker.getAssetKeys(valueWithEntityType.getValue());
+          }
+
+          @Override
+          public Serializer<AssetKey> getAssetKeySerializer() {
+            return valueWorker.getAssetKeySerializer();
+          }
+
+          @Override
+          public ByteString toBytes(WithEntityType<VALUE> value) {
+            return ByteString.copyFrom(new byte[]{value.getEntityType()}).concat(valueWorker.toBytes(value.getValue()));
+          }
+
+          @Override
+          public WithEntityType<VALUE> fromBytes(ByteString bytes) {
+            return WithEntityType.of(bytes.byteAt(0), valueWorker.fromBytes(bytes.substring(1)));
+          }
+        };
       }
 
       @Override

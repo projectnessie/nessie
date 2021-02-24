@@ -73,7 +73,7 @@ public interface VersionStore<VALUE, METADATA> {
    * @throws NullPointerException if one of the argument is {@code null}
    */
   void commit(@Nonnull BranchName branch, @Nonnull Optional<Hash> referenceHash,
-      @Nonnull METADATA metadata, @Nonnull List<Operation<VALUE>> operations)
+      @Nonnull METADATA metadata, @Nonnull List<Operation<WithEntityType<VALUE>>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
   /**
@@ -174,7 +174,7 @@ public interface VersionStore<VALUE, METADATA> {
    * @return The stream of keys available for this ref.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException;
+  Stream<WithEntityType<Key>> getKeys(Ref ref) throws ReferenceNotFoundException;
 
   /**
    * Get the value for a provided ref.
@@ -183,7 +183,7 @@ public interface VersionStore<VALUE, METADATA> {
    * @return The value.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException;
+  WithEntityType<VALUE> getValue(Ref ref, Key key) throws ReferenceNotFoundException;
 
   /**
    * Get the values for a list of keys.
@@ -192,7 +192,7 @@ public interface VersionStore<VALUE, METADATA> {
    * @return A parallel list of values.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  List<Optional<VALUE>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException;
+  List<Optional<WithEntityType<VALUE>>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException;
 
 
   /**
@@ -201,7 +201,7 @@ public interface VersionStore<VALUE, METADATA> {
    * @param to The to part of the diff.
    * @return A stream of values that are different.
    */
-  Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
+  Stream<Diff<WithEntityType<VALUE>>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException;
 
   /**
    * Collect some garbage. Each time this is called, it collects some garbage and reports the progress of what has been collected

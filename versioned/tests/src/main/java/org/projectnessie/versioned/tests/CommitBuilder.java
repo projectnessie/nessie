@@ -29,12 +29,13 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 
 /**
  * Helper to generate commits against a store.
  */
 public class CommitBuilder<ValueT, MetadataT> {
-  private final List<Operation<ValueT>> operations = new ArrayList<>();
+  private final List<Operation<WithEntityType<ValueT>>> operations = new ArrayList<>();
   private final VersionStore<ValueT, MetadataT> store;
   private MetadataT metadata = null;
   private Optional<Hash> referenceHash = Optional.empty();
@@ -61,7 +62,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @return the builder instance
    */
   public CommitBuilder<ValueT, MetadataT> put(Key key, ValueT value) {
-    return add(Put.of(key, value));
+    return add(Put.of(key, WithEntityType.of((byte)0, value)));
   }
 
   /**
@@ -105,7 +106,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param operation operation to commit
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> add(Operation<ValueT> operation) {
+  public CommitBuilder<ValueT, MetadataT> add(Operation<WithEntityType<ValueT>> operation) {
     operations.add(operation);
     return this;
   }

@@ -47,6 +47,7 @@ import org.projectnessie.versioned.AssetKey.NoOpAssetKey;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.ValueWorker;
+import org.projectnessie.versioned.WithEntityType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,11 +59,11 @@ import com.google.protobuf.UnsafeByteOperations;
 public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitMeta> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private final ValueWorker<Contents> tableSerializer = new TableValueWorker();
+  private final ValueWorker<WithEntityType<Contents>> tableSerializer = new TableValueWorker();
   private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
 
   @Override
-  public ValueWorker<Contents> getValueWorker() {
+  public ValueWorker<WithEntityType<Contents>> getValueWorker() {
     return tableSerializer;
   }
 
@@ -71,18 +72,21 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     return metaSerializer;
   }
 
-  private static class TableValueWorker implements ValueWorker<Contents> {
-    public ByteString toBytes(Contents value) {
+  private static class TableValueWorker implements ValueWorker<WithEntityType<Contents>> {
+    public ByteString toBytes(WithEntityType<Contents> wrappedValue) {
       PContents.Builder builder = PContents.newBuilder();
+      Contents value = wrappedValue.getValue();
       if (value instanceof IcebergTable) {
         builder.setIcebergTable(
-            PIcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
+            PIcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation())
+                .setEntityType(wrappedValue.getEntityType()));
 
       } else if (value instanceof DeltaLakeTable) {
 
         PDeltaLakeTable.Builder table = PDeltaLakeTable.newBuilder()
             .addAllMetadataLocationHistory(((DeltaLakeTable) value).getMetadataLocationHistory())
-            .addAllCheckpointLocationHistory(((DeltaLakeTable) value).getCheckpointLocationHistory());
+            .addAllCheckpointLocationHistory(((DeltaLakeTable) value).getCheckpointLocationHistory())
+            .setEntityType(wrappedValue.getEntityType());
         String lastCheckpoint = ((DeltaLakeTable) value).getLastCheckpoint();
         if (lastCheckpoint != null) {
           table.setLastCheckpoint(lastCheckpoint);
@@ -91,16 +95,17 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
       } else if (value instanceof HiveTable) {
         HiveTable ht = (HiveTable) value;
-        builder.setHiveTable(PHiveTable.newBuilder()
+        builder.setHiveTable(PHiveTable.newBuilder().setEntityType(wrappedValue.getEntityType())
             .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition())).addAllPartition(
                 ht.getPartitions().stream().map(UnsafeByteOperations::unsafeWrap).collect(Collectors.toList())));
 
       } else if (value instanceof HiveDatabase) {
-        builder.setHiveDatabase(PHiveDatabase.newBuilder()
+        builder.setHiveDatabase(PHiveDatabase.newBuilder().setEntityType(wrappedValue.getEntityType())
             .setDatabase(UnsafeByteOperations.unsafeWrap(((HiveDatabase) value).getDatabaseDefinition())));
       } else if (value instanceof SqlView) {
         SqlView view = (SqlView) value;
-        builder.setSqlView(PSqlView.newBuilder().setDialect(view.getDialect().name()).setSqlText(view.getSqlText()));
+        builder.setSqlView(PSqlView.newBuilder().setEntityType(wrappedValue.getEntityType()).setDialect(view.getDialect().name())
+            .setSqlText(view.getSqlText()));
       } else {
         throw new IllegalArgumentException("Unknown type" + value);
       }
@@ -109,7 +114,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     }
 
     @Override
-    public Contents fromBytes(ByteString bytes) {
+    public WithEntityType<Contents> fromBytes(ByteString bytes) {
       PContents contents;
       try {
         contents = PContents.parseFrom(bytes);
@@ -124,26 +129,25 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
           if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
             builder.lastCheckpoint(contents.getDeltaLakeTable().getLastCheckpoint());
           }
-          return builder.build();
+          return WithEntityType.of((byte)contents.getDeltaLakeTable().getEntityType(), builder.build());
 
         case HIVE_DATABASE:
-          return ImmutableHiveDatabase.builder()
-              .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build();
+          return WithEntityType.of((byte)contents.getHiveDatabase().getEntityType(), ImmutableHiveDatabase.builder()
+              .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build());
 
         case HIVE_TABLE:
-          return ImmutableHiveTable.builder()
+          return WithEntityType.of((byte)contents.getHiveTable().getEntityType(), ImmutableHiveTable.builder()
               .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray)
-                  .collect(Collectors.toList()))
-              .tableDefinition(contents.getHiveTable().getTable().toByteArray()).build();
+              .collect(Collectors.toList())).tableDefinition(contents.getHiveTable().getTable().toByteArray()).build());
 
         case ICEBERG_TABLE:
-          return ImmutableIcebergTable.builder().metadataLocation(contents.getIcebergTable().getMetadataLocation())
-              .build();
+          return WithEntityType.of((byte)contents.getIcebergTable().getEntityType(), ImmutableIcebergTable.builder()
+              .metadataLocation(contents.getIcebergTable().getMetadataLocation()).build());
 
         case SQL_VIEW:
           PSqlView view = contents.getSqlView();
-          return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
-              .build();
+          return WithEntityType.of((byte)contents.getSqlView().getEntityType(), ImmutableSqlView.builder()
+              .dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText()).build());
 
         case OBJECTTYPE_NOT_SET:
         default:
@@ -153,7 +157,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     }
 
     @Override
-    public Stream<AssetKey> getAssetKeys(Contents value) {
+    public Stream<AssetKey> getAssetKeys(WithEntityType<Contents> value) {
       return Stream.of();
     }
 

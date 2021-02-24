@@ -32,24 +32,29 @@ message PContents {
 
 message PIcebergTable {
   string metadata_location = 1;
+  int32 entityType = 2;
 }
 
 message PHiveTable {
   bytes table = 1;
   repeated bytes partition = 2;
+  int32 entityType = 3;
 }
 
 message PHiveDatabase {
   bytes database = 1;
+  int32 entityType = 2;
 }
 
 message PSqlView {
   string sql_text = 1;
   string dialect = 2;
+  int32 entityType = 3;
 }
 
 message PDeltaLakeTable {
   string last_checkpoint = 1;
   repeated string checkpoint_location_history = 2;
   repeated string metadata_location_history = 3;
+  int32 entityType = 4;
 }

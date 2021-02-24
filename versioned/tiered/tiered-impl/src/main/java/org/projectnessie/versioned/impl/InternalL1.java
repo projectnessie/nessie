@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.impl.KeyList.IncrementalList;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
@@ -98,7 +99,7 @@ class InternalL1 extends PersistentBase<L1> {
     });
   }
 
-  Stream<InternalKey> getKeys(Store store) {
+  Stream<WithEntityType<InternalKey>> getKeys(Store store) {
     return keyList.getKeys(this, store);
   }
 

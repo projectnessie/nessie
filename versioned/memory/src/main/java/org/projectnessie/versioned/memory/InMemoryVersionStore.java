@@ -51,6 +51,7 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.WithHash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,16 +72,16 @@ import com.google.common.collect.Streams;
 public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<ValueT, MetadataT> {
   private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryVersionStore.class);
 
-  private final ConcurrentMap<Hash, Commit<ValueT, MetadataT>> commits = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Hash, Commit<WithEntityType<ValueT>, MetadataT>> commits = new ConcurrentHashMap<>();
   private final ConcurrentMap<NamedRef, Hash> namedReferences = new ConcurrentHashMap<>();
-  private final Serializer<ValueT> valueSerializer;
+  private final Serializer<WithEntityType<ValueT>> valueSerializer;
   private final Serializer<MetadataT> metadataSerializer;
 
   public static final class Builder<ValueT, MetadataT> {
-    private Serializer<ValueT> valueSerializer = null;
+    private Serializer<WithEntityType<ValueT>> valueSerializer = null;
     private Serializer<MetadataT> metadataSerializer = null;
 
-    public Builder<ValueT, MetadataT> valueSerializer(Serializer<ValueT> serializer) {
+    public Builder<ValueT, MetadataT> valueSerializer(Serializer<WithEntityType<ValueT>> serializer) {
       this.valueSerializer = requireNonNull(serializer);
       return this;
     }
@@ -148,7 +149,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     if (referenceHash.equals(NO_ANCESTOR)) {
       return;
     }
-    final Optional<Hash> foundHash = Streams.stream(new CommitsIterator<ValueT, MetadataT>(commits::get, currentBranchHash))
+    final Optional<Hash> foundHash = Streams.stream(new CommitsIterator<>(commits::get, currentBranchHash))
         .map(WithHash::getHash)
         .filter(hash -> hash.equals(referenceHash))
         .collect(MoreCollectors.toOptional());
@@ -176,8 +177,8 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   }
 
   @Override
-  public void commit(BranchName branch, Optional<Hash> referenceHash,
-      MetadataT metadata, List<Operation<ValueT>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
+  public void commit(BranchName branch, Optional<Hash> referenceHash, MetadataT metadata,
+      List<Operation<WithEntityType<ValueT>>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     final Hash currentHash = toHash(branch);
 
     // Validate commit
@@ -186,7 +187,8 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
 
     // Storing
     compute(namedReferences, branch, (key, hash) -> {
-      final Commit<ValueT, MetadataT> commit = Commit.of(valueSerializer, metadataSerializer, currentHash, metadata, operations);
+      final Commit<WithEntityType<ValueT>, MetadataT> commit = Commit.of(valueSerializer, metadataSerializer, currentHash, metadata,
+          operations);
       final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
       if (!previousHash.equals(currentHash)) {
         // Concurrent modification
@@ -213,14 +215,14 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     }
 
     final Set<Key> keys = new HashSet<>();
-    final List<Commit<ValueT, MetadataT>> toStore = new ArrayList<>(sequenceToTransplant.size());
+    final List<Commit<WithEntityType<ValueT>, MetadataT>> toStore = new ArrayList<>(sequenceToTransplant.size());
 
     // check that all hashes exist in the store
     Hash ancestor = null;
     Hash newAncestor = currentHash;
 
     for (final Hash hash: sequenceToTransplant) {
-      final Commit<ValueT, MetadataT> commit = commits.get(hash);
+      final Commit<WithEntityType<ValueT>, MetadataT> commit = commits.get(hash);
       if (commit == null) {
         throw ReferenceNotFoundException.forReference(hash);
       }
@@ -231,7 +233,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
 
       commit.getOperations().forEach(op -> keys.add(op.getKey()));
 
-      Commit<ValueT, MetadataT> newCommit = Commit.of(valueSerializer, metadataSerializer,
+      Commit<WithEntityType<ValueT>, MetadataT> newCommit = Commit.of(valueSerializer, metadataSerializer,
           newAncestor, commit.getMetadata(), commit.getOperations());
       toStore.add(newCommit);
 
@@ -252,7 +254,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
 
       toStore.forEach(commit -> commits.putIfAbsent(commit.getHash(), commit));
 
-      final Commit<ValueT, MetadataT> lastCommit = Iterables.getLast(toStore);
+      final Commit<WithEntityType<ValueT>, MetadataT> lastCommit = Iterables.getLast(toStore);
       return lastCommit.getHash();
     });
   }
@@ -264,8 +266,8 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
       ifPresent(referenceHash, hash -> {
         checkValidReferenceHash(targetBranch, currentHash, hash);
 
-        final List<Optional<ValueT>> referenceValues = getValues(hash, keyList);
-        final List<Optional<ValueT>> currentValues = getValues(currentHash, keyList);
+        final List<Optional<WithEntityType<ValueT>>> referenceValues = getValues(hash, keyList);
+        final List<Optional<WithEntityType<ValueT>>> currentValues = getValues(currentHash, keyList);
 
         if (!referenceValues.equals(currentValues)) {
           throw ReferenceConflictException.forReference(targetBranch, referenceHash, Optional.of(currentHash));
@@ -296,11 +298,11 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
         .collect(Collectors.toSet());
 
     final Set<Key> keys = new HashSet<>();
-    final List<Commit<ValueT, MetadataT>> toMerge = new ArrayList<>();
+    final List<Commit<WithEntityType<ValueT>, MetadataT>> toMerge = new ArrayList<>();
     Hash commonAncestor = null;
-    for (final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator = new CommitsIterator<ValueT, MetadataT>(
+    for (final Iterator<WithHash<Commit<WithEntityType<ValueT>, MetadataT>>> iterator = new CommitsIterator<>(
         commits::get, fromHash); iterator.hasNext();) {
-      final WithHash<Commit<ValueT, MetadataT>> commit = iterator.next();
+      final WithHash<Commit<WithEntityType<ValueT>, MetadataT>> commit = iterator.next();
       if (toBranchHashes.contains(commit.getHash())) {
         commonAncestor = commit.getHash();
         break;
@@ -313,10 +315,10 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     checkConcurrentModification(toBranch, currentHash, expectedBranchHash, new ArrayList<>(keys));
 
     // Create new commits
-    final List<Commit<ValueT, MetadataT>> toStore = new ArrayList<>(toMerge.size());
+    final List<Commit<WithEntityType<ValueT>, MetadataT>> toStore = new ArrayList<>(toMerge.size());
     Hash newAncestor = currentHash;
-    for (final Commit<ValueT, MetadataT> commit : Lists.reverse(toMerge)) {
-      final Commit<ValueT, MetadataT> newCommit = Commit.of(valueSerializer, metadataSerializer,
+    for (final Commit<WithEntityType<ValueT>, MetadataT> commit : Lists.reverse(toMerge)) {
+      final Commit<WithEntityType<ValueT>, MetadataT> newCommit = Commit.of(valueSerializer, metadataSerializer,
           newAncestor, commit.getMetadata(), commit.getOperations());
       toStore.add(newCommit);
       newAncestor = newCommit.getHash();
@@ -331,7 +333,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
       }
 
       toStore.forEach(commit -> commits.putIfAbsent(commit.getHash(), commit));
-      final Commit<ValueT, MetadataT> lastCommit = Iterables.getLast(toStore);
+      final Commit<WithEntityType<ValueT>, MetadataT> lastCommit = Iterables.getLast(toStore);
       return lastCommit.getHash();
     });
   }
@@ -419,15 +421,15 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   public Stream<WithHash<MetadataT>> getCommits(Ref ref) throws ReferenceNotFoundException {
     final Hash hash = toHash(ref);
 
-    final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
+    final Iterator<WithHash<Commit<WithEntityType<ValueT>, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
     return Streams.stream(iterator).map(wh -> WithHash.of(wh.getHash(), wh.getValue().getMetadata()));
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithEntityType<Key>> getKeys(Ref ref) throws ReferenceNotFoundException {
     final Hash hash = toHash(ref);
 
-    final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
+    final Iterator<WithHash<Commit<WithEntityType<ValueT>, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
     final Set<Key> deleted = new HashSet<>();
     return Streams.stream(iterator)
         // flatten the operations (in reverse order)
@@ -441,36 +443,44 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
           return !deleted.contains(key);
         })
         // extract the keys
-        .map(Operation::getKey)
+        .map(x -> {
+          byte entityType = (byte)-1;
+          if (x instanceof Put) {
+            entityType = ((Put<WithEntityType<ValueT>>) x).getValue().getEntityType();
+          }
+          return WithEntityType.of(entityType, x.getKey());
+        })
         // filter keys which have been seen already
-        .distinct();
+        .collect(Collectors.toMap(WithEntityType::getValue, x -> x, (x, y) -> y))
+        .values()
+        .stream();
   }
 
   @Override
-  public ValueT getValue(Ref ref, Key key) throws ReferenceNotFoundException {
+  public WithEntityType<ValueT> getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     return getValues(ref, Collections.singletonList(key)).get(0).orElse(null);
   }
 
   @Override
-  public List<Optional<ValueT>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException {
+  public List<Optional<WithEntityType<ValueT>>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException {
     final Hash hash = toHash(ref);
 
     final int size = keys.size();
-    final List<Optional<ValueT>> results = new ArrayList<>(size);
+    final List<Optional<WithEntityType<ValueT>>> results = new ArrayList<>(size);
     results.addAll(Collections.nCopies(size, Optional.empty()));
 
     final Set<Key> toFind = new HashSet<Key>();
     toFind.addAll(keys);
 
-    final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
+    final Iterator<WithHash<Commit<WithEntityType<ValueT>, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
     while (iterator.hasNext()) {
       if (toFind.isEmpty()) {
         // early exit if all keys have been found
         break;
       }
 
-      final Commit<ValueT, MetadataT> commit = iterator.next().getValue();
-      for (Operation<ValueT> operation: Lists.reverse(commit.getOperations())) {
+      final Commit<WithEntityType<ValueT>, MetadataT> commit = iterator.next().getValue();
+      for (Operation<WithEntityType<ValueT>> operation: Lists.reverse(commit.getOperations())) {
         final Key operationKey = operation.getKey();
         // ignore keys of no interest
         if (!toFind.contains(operationKey)) {
@@ -478,7 +488,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
         }
 
         if (operation instanceof Put) {
-          final Put<ValueT> put = (Put<ValueT>) operation;
+          final Put<WithEntityType<ValueT>> put = (Put<WithEntityType<ValueT>>) operation;
           int index = keys.indexOf(operationKey);
           results.set(index, Optional.of(put.getValue()));
           toFind.remove(operationKey);
@@ -497,7 +507,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   }
 
   @Override
-  public Stream<Diff<ValueT>> getDiffs(Ref from, Ref to) {
+  public Stream<Diff<WithEntityType<ValueT>>> getDiffs(Ref from, Ref to) {
     throw new UnsupportedOperationException("Not yet implemented.");
   }
 

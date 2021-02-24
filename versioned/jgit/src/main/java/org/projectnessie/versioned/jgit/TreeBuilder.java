@@ -39,6 +39,7 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.Unchanged;
+import org.projectnessie.versioned.WithEntityType;
 
 public class TreeBuilder {
 
@@ -52,16 +53,16 @@ public class TreeBuilder {
    * @return objectId of new tree
    * @throws IOException error in speaking w/ git
    */
-  public static <TABLE> ObjectId commitObjects(List<Operation<TABLE>> ops,
+  public static <TABLE> ObjectId commitObjects(List<Operation<WithEntityType<TABLE>>> ops,
                                                Repository repository,
-                                               Serializer<TABLE> serializer,
+                                               Serializer<WithEntityType<TABLE>> serializer,
                                                ObjectId emptyObjectId) throws IOException {
     ObjectInserter inserter = repository.newObjectInserter();
 
     DirCache dc = DirCache.newInCore();
 
     DirCacheBuilder builder = dc.builder();
-    for (Operation<TABLE> op: ops) {
+    for (Operation<WithEntityType<TABLE>> op: ops) {
       final ObjectId objectId;
       final FileMode fileMode;
       if (op instanceof Unchanged) {
@@ -75,7 +76,7 @@ public class TreeBuilder {
         objectId = emptyObjectId;
         fileMode = FileMode.GITLINK;
       } else if (op instanceof Put) {
-        byte[] data = serializer.toBytes(((Put<TABLE>) op).getValue()).toByteArray();
+        byte[] data = serializer.toBytes(((Put<WithEntityType<TABLE>>) op).getValue()).toByteArray();
         objectId = inserter.insert(Constants.OBJ_BLOB, data);
         fileMode = FileMode.REGULAR_FILE;
       } else {

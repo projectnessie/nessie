@@ -19,12 +19,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.builder;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.ImmutableKey;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
 
@@ -46,6 +47,8 @@ public final class AttributeValueUtil {
   private static final String KEY_ADDITION = "a";
   private static final String KEY_REMOVAL = "d";
   private static final String DT = "dt";
+  private static final String ENTITY_TYPE = "et";
+  private static final String KEY = "k";
 
   private AttributeValueUtil() {
     // empty
@@ -106,6 +109,17 @@ public final class AttributeValueUtil {
    */
   static AttributeValue keyElements(Key key) {
     return list(checkNotNull(key).getElements().stream().map(AttributeValueUtil::string));
+  }
+
+  /**
+   * Convenience method to produce a built {@link AttributeValue} for an {@link Key},
+   * consist of a list of strings.
+   */
+  static AttributeValue keyElementsWithEntityType(WithEntityType<Key> key) {
+    Map<String, AttributeValue> keyWithEntityType = new HashMap<>();
+    keyWithEntityType.put(ENTITY_TYPE, number(checkNotNull(key).getEntityType()));
+    keyWithEntityType.put(KEY, keyElements(key.getValue()));
+    return map(keyWithEntityType);
   }
 
   static long getDt(Map<String, AttributeValue> map) {
@@ -180,8 +194,10 @@ public final class AttributeValueUtil {
   static Key.Mutation deserializeKeyMutation(AttributeValue mutation) {
     Map<String, AttributeValue> m = mutation.m();
     AttributeValue raw = m.get(KEY_ADDITION);
+    AttributeValue entityType = m.get(ENTITY_TYPE);
+    byte entityTypeValue = entityType != null ? Byte.parseByte(entityType.n()) : Byte.MIN_VALUE;
     if (raw != null) {
-      return deserializeKey(raw).asAddition();
+      return deserializeKey(raw).asAddition(entityTypeValue);
     }
     raw = m.get(KEY_REMOVAL);
     if (raw != null) {
@@ -191,7 +207,12 @@ public final class AttributeValueUtil {
   }
 
   static AttributeValue serializeKeyMutation(Key.Mutation km) {
-    return map(Collections.singletonMap(mutationName(km.getType()), keyElements(km.getKey())));
+    Map<String, AttributeValue> kmMap = new HashMap<>();
+    kmMap.put(mutationName(km.getType()), keyElements(km.getKey()));
+    if (km instanceof Key.Addition) {
+      kmMap.put(ENTITY_TYPE, number(((Key.Addition) km).getEntityType()));
+    }
+    return map(kmMap);
   }
 
   private static String mutationName(Key.MutationType type) {
@@ -228,6 +249,15 @@ public final class AttributeValueUtil {
     ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
     raw.l().forEach(keyPart -> keyBuilder.addElements(keyPart.s()));
     return keyBuilder.build();
+  }
+
+  /**
+   * Convenience method to produce a built {@link AttributeValue} for an {@link Key},
+   * consist of a list of strings.
+   */
+  static WithEntityType<Key> deserializeKeyWithEntityType(AttributeValue key) {
+    byte entityType = Byte.parseByte(key.m().get(ENTITY_TYPE).n());
+    return WithEntityType.of(entityType, deserializeKey(key.m().get(KEY)));
   }
 
   /**

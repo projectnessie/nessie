@@ -43,6 +43,7 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.WithEntityType;
 
 /**
  * REST endpoint for contents.
@@ -60,9 +61,9 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   public Contents getContents(ContentsKey key, String incomingRef) throws NessieNotFoundException {
     Hash ref = getHashOrThrow(incomingRef);
     try {
-      Contents obj = getStore().getValue(ref, toKey(key));
+      WithEntityType<Contents> obj = getStore().getValue(ref, toKey(key));
       if (obj != null) {
-        return obj;
+        return obj.getValue();
       }
       throw new NessieNotFoundException("Requested contents do not exist for specified reference.");
     } catch (ReferenceNotFoundException e) {
@@ -78,7 +79,8 @@ public class ContentsResource extends BaseResource implements ContentsApi {
       Hash ref = getHashOrThrow(refName);
       List<ContentsKey> externalKeys = request.getRequestedKeys();
       List<Key> internalKeys = externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
-      List<Optional<Contents>> values = getStore().getValues(ref, internalKeys);
+      List<Optional<Contents>> values = getStore().getValues(ref, internalKeys).stream().map(x -> x.map(WithEntityType::getValue))
+          .collect(Collectors.toList());
       List<ContentsWithKey> output = new ArrayList<>();
 
       for (int i = 0; i < externalKeys.size(); i++) {

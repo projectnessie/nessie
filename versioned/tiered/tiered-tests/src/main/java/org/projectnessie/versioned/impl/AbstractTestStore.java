@@ -15,7 +15,6 @@
  */
 package org.projectnessie.versioned.impl;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.ExpressionFunction;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
@@ -46,6 +46,7 @@ import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 
@@ -742,7 +743,8 @@ public abstract class AbstractTestStore<S extends Store> {
           ValueType.KEY_FRAGMENT,
           fragment.getId(),
           UpdateExpression.of(SetClause.appendToList(
-              ExpressionPath.builder("keys").build(), Entity.ofList(Entity.ofList(Entity.ofString(key))))),
+              ExpressionPath.builder("keys").build(), Entity.ofList(
+                Entity.ofMap(ImmutableMap.of("k",Entity.ofList(Entity.ofString(key)), "et", Entity.ofNumber(0)))))),
           Optional.empty(),
           Optional.of(builder));
       Assertions.assertTrue(result);
@@ -750,9 +752,9 @@ public abstract class AbstractTestStore<S extends Store> {
 
       Assertions.assertEquals(fragment.getId(), updated.getId());
 
-      final List<InternalKey> oldKeys = new ArrayList<>(fragment.getKeys());
+      final List<InternalKey> oldKeys = fragment.getKeys().stream().map(WithEntityType::getValue).collect(Collectors.toList());
       oldKeys.add(InternalKey.fromEntity(Entity.ofList(Entity.ofString(key))));
-      Assertions.assertEquals(oldKeys, updated.getKeys());
+      Assertions.assertEquals(oldKeys, updated.getKeys().stream().map(WithEntityType::getValue).collect(Collectors.toList()));
 
       testLoadSingle(ValueType.KEY_FRAGMENT, updated);
     }
@@ -776,8 +778,9 @@ public abstract class AbstractTestStore<S extends Store> {
 
       Assertions.assertEquals(fragment.getId(), updated.getId());
 
-      final List<InternalKey> oldKeys = fragment.getKeys().subList(beginArrayIndex, endArrayIndex);
-      Assertions.assertEquals(oldKeys, updated.getKeys());
+      final List<InternalKey> oldKeys = fragment.getKeys().subList(beginArrayIndex, endArrayIndex).stream().map(WithEntityType::getValue)
+          .collect(Collectors.toList());
+      Assertions.assertEquals(oldKeys, updated.getKeys().stream().map(WithEntityType::getValue).collect(Collectors.toList()));
 
       testLoadSingle(ValueType.KEY_FRAGMENT, updated);
     }

@@ -71,4 +71,35 @@ public interface Contents {
     return Optional.empty();
   }
 
+  public static byte entityTypeFromContents(Contents contents) {
+    if (contents instanceof IcebergTable) {
+      return 0;
+    } else if (contents instanceof DeltaLakeTable) {
+      return 1;
+    } else if (contents instanceof HiveDatabase) {
+      return 2;
+    } else if (contents instanceof HiveTable) {
+      return 3;
+    } else if (contents instanceof SqlView) {
+      return 4;
+    } else {
+      throw new RuntimeException(String.format("Cannot get entity type of unknown contents: %s", contents));
+    }
+  }
+
+  public static Contents.Type contentsTypeFromEntityType(byte entityType) {
+    if (entityType == 0) {
+      return Contents.Type.ICEBERG_TABLE;
+    } else if (entityType  == 1) {
+      return Contents.Type.DELTA_LAKE_TABLE;
+    } else if (entityType == 2) {
+      return Contents.Type.HIVE_DATABASE;
+    } else if (entityType == 3) {
+      return Contents.Type.HIVE_TABLE;
+    } else if (entityType == 4) {
+      return Contents.Type.VIEW;
+    } else {
+      throw new RuntimeException(String.format("Cannot get contents type of unknown entity type: %s", entityType));
+    }
+  }
 }

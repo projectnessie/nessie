@@ -46,6 +46,7 @@ import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringWorker;
 import org.projectnessie.versioned.ValueWorker;
+import org.projectnessie.versioned.WithEntityType;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
@@ -199,7 +200,7 @@ public class ITTestIdentifyUnreferencedAssets {
 
   private static class StoreW implements StoreWorker<DummyValue, String> {
     @Override
-    public ValueWorker<DummyValue> getValueWorker() {
+    public ValueWorker<WithEntityType<DummyValue>> getValueWorker() {
       return new ValueValueWorker();
     }
 
@@ -239,23 +240,35 @@ public class ITTestIdentifyUnreferencedAssets {
 
   }
 
-  private static class ValueValueWorker extends JsonSerializer<DummyValue> implements ValueWorker<DummyValue>, Serializable {
+  private static class ValueValueWorker implements ValueWorker<WithEntityType<DummyValue>>, Serializable {
 
     private static final long serialVersionUID = 3651529251225721177L;
 
+    private final JsonSerializer<DummyValue> internal = new JsonSerializer<>(DummyValue.class);
+
     public ValueValueWorker() {
-      super(DummyValue.class);
+
     }
 
     @Override
-    public Stream<? extends AssetKey> getAssetKeys(DummyValue value) {
-      return value.assets.stream();
+    public Stream<? extends AssetKey> getAssetKeys(WithEntityType<DummyValue> value) {
+      return value.getValue().assets.stream();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Serializer<AssetKey> getAssetKeySerializer() {
       return (Serializer<AssetKey>) (Object) new JsonSerializer<DummyAsset>(DummyAsset.class);
+    }
+
+    @Override
+    public ByteString toBytes(WithEntityType<DummyValue> value) {
+      return internal.toBytes(value.getValue());
+    }
+
+    @Override
+    public WithEntityType<DummyValue> fromBytes(ByteString bytes) {
+      return WithEntityType.of((byte)0, internal.fromBytes(bytes));
     }
   }
 
