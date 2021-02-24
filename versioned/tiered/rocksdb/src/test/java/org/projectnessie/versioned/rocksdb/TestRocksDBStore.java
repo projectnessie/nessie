@@ -18,6 +18,7 @@ package org.projectnessie.versioned.rocksdb;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,11 +27,13 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.versioned.impl.AbstractTestStore;
+import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.RocksDBException;
 
 import com.google.common.collect.ImmutableList;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
+class TestRocksDBStore extends AbstractTestStore<TestRocksDBStore.RocksDBStoreUUT> {
   @TempDir
   static Path DB_PATH;
 
@@ -51,14 +54,14 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
    * @return the store to test.
    */
   @Override
-  protected RocksDBStore createStore() {
-    return new RocksDBStore(createConfig(DB_PATH.toString()));
+  protected RocksDBStoreUUT createStore() {
+    return new RocksDBStoreUUT(createConfig(DB_PATH.toString()));
   }
 
   @Override
-  protected RocksDBStore createRawStore() {
+  protected RocksDBStoreUUT createRawStore() {
     // Need to use a separate path to avoid reusing the file created by the normal store.
-    return new RocksDBStore(createConfig(getRawPath().toString()));
+    return new RocksDBStoreUUT(createConfig(getRawPath().toString()));
   }
 
   @Override
@@ -92,5 +95,40 @@ class TestRocksDBStore extends AbstractTestStore<RocksDBStore> {
   @Override
   protected boolean supportsUpdate() {
     return false;
+  }
+
+  /**
+   * A Unit Under Test version of RocksDBStore that provides the facility to delete all column families.
+   */
+  static class RocksDBStoreUUT extends RocksDBStore {
+    /**
+     * Creates a store ready for connection to RocksDB.
+     * @param config the configuration for the store.
+     */
+    public RocksDBStoreUUT(RocksDBStoreConfig config) {
+      super(config);
+    }
+
+    /**
+     * Delete all the data in all column families, used for testing only.
+     */
+    void deleteAllData() {
+      // RocksDB doesn't expose a way to get the min/max key for a column family, so just use the min/max possible.
+      byte[] minId = new byte[20];
+      byte[] maxId = new byte[20];
+      Arrays.fill(minId, (byte)0);
+      Arrays.fill(maxId, (byte)255);
+
+      for (ColumnFamilyHandle handle : valueTypeToColumnFamily.values()) {
+        try {
+          rocksDB.deleteRange(handle, minId, maxId);
+          // Since RocksDB#deleteRange() is exclusive of the max key, delete it to ensure the column family is empty.
+          rocksDB.delete(maxId);
+        } catch (RocksDBException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }
+
   }
 }

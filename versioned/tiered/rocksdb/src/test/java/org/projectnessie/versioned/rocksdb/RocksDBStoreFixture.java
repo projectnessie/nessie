@@ -29,7 +29,7 @@ import org.projectnessie.versioned.impl.AbstractTieredStoreFixture;
  *
  * <p>Combine a local RocksDB database with a {@code VersionStore} instance to be used for tests.
  */
-public class RocksDBStoreFixture extends AbstractTieredStoreFixture<RocksDBStore, RocksDBStoreConfig> {
+public class RocksDBStoreFixture extends AbstractTieredStoreFixture<TestRocksDBStore.RocksDBStoreUUT, RocksDBStoreConfig> {
 
   /**
    * Create the RocksDB store-fixture.
@@ -45,8 +45,8 @@ public class RocksDBStoreFixture extends AbstractTieredStoreFixture<RocksDBStore
     });
   }
 
-  public RocksDBStore createStoreImpl() {
-    return new RocksDBStore(getConfig());
+  public TestRocksDBStore.RocksDBStoreUUT createStoreImpl() {
+    return new TestRocksDBStore.RocksDBStoreUUT(getConfig());
   }
 
   @Override

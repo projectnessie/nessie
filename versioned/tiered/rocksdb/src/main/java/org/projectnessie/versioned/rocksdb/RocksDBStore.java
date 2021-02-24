@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -78,8 +77,8 @@ public class RocksDBStore implements Store {
     RocksDB.loadLibrary();
   }
 
-  private TransactionDB rocksDB;
-  private Map<ValueType<?>, ColumnFamilyHandle> valueTypeToColumnFamily;
+  protected TransactionDB rocksDB;
+  protected Map<ValueType<?>, ColumnFamilyHandle> valueTypeToColumnFamily;
   private final RocksDBStoreConfig config;
 
   /**
@@ -294,27 +293,6 @@ public class RocksDBStore implements Store {
     return stream;
   }
 
-  /**
-   * Delete all the data in all column families, used for testing only.
-   */
-  @VisibleForTesting
-  void deleteAllData() {
-    // RocksDB doesn't expose a way to get the min/max key for a column family, so just use the min/max possible.
-    byte[] minId = new byte[20];
-    byte[] maxId = new byte[20];
-    Arrays.fill(minId, (byte)0);
-    Arrays.fill(maxId, (byte)255);
-
-    for (ColumnFamilyHandle handle : valueTypeToColumnFamily.values()) {
-      try {
-        rocksDB.deleteRange(handle, minId, maxId);
-        // Since RocksDB#deleteRange() is exclusive of the max key, delete it to ensure the column family is empty.
-        rocksDB.delete(maxId);
-      } catch (RocksDBException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
 
   @VisibleForTesting
   static List<Function> translate(ConditionExpression conditionExpression) {
