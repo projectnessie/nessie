@@ -28,7 +28,6 @@ public final class CategorizedValue implements Serializable {
 
   private boolean referenced;
   private byte[] data;
-  private String entityType;
   private long timestamp;
 
   public CategorizedValue() {
@@ -38,10 +37,9 @@ public final class CategorizedValue implements Serializable {
   /**
    * Construct asset key.
    */
-  public CategorizedValue(boolean referenced, String entityType, ByteString data, long timestamp) {
+  public CategorizedValue(boolean referenced, ByteString data, long timestamp) {
     super();
     this.referenced = referenced;
-    this.entityType = entityType;
     this.data = data.toByteArray();
     this.timestamp = timestamp;
   }
@@ -60,14 +58,6 @@ public final class CategorizedValue implements Serializable {
 
   public byte[] getData() {
     return data;
-  }
-
-  public String getEntityType() {
-    return entityType;
-  }
-
-  public void setEntityType(String entityType) {
-    this.entityType = entityType;
   }
 
   public long getTimestamp() {

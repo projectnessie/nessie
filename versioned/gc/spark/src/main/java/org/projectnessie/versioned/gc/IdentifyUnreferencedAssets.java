@@ -25,7 +25,6 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.util.sketch.BloomFilter;
 import org.projectnessie.versioned.Serializer;
 
 import com.google.protobuf.ByteString;
@@ -72,12 +71,12 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
     Dataset<CategorizedAssetKey> assets = categorizedValues.flatMap(mapper, Encoders.bean(CategorizedAssetKey.class));
 
     // generate a bloom filter of referenced items.
-    final BloomFilter referencedAssets = assets.filter("referenced = true").stat().bloomFilter("uniqueName", 10_000_000, 0.03);
-
+    final BinaryBloomFilter referencedAssets = BinaryBloomFilter.aggregate(assets.filter("referenced = true").select("uniqueKey"),
+        "uniqueKey");
     // generate list of maybe referenced assets (note that a single asset may be referenced by both referenced and non-referenced values).
     // TODO: convert this to a group by asset, date and then figure out the latest date so we can include that
     // in the written file to avoid stale -> not stale -> stale values.
-    Dataset<Row> unreferencedAssets = assets.filter("referenced = false").select("data", "timestamp", "uniqueName")
+    Dataset<Row> unreferencedAssets = assets.filter("referenced = false").select("data", "timestamp", "uniqueKey")
         .filter(new AssetFilter(referencedAssets));
 
     // map the generic spark Row back to a concrete type.
@@ -92,16 +91,16 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
 
     private static final long serialVersionUID = 2411246084016802962L;
 
-    private BloomFilter filter;
+    private BinaryBloomFilter filter;
 
-    public AssetFilter(BloomFilter filter) {
+    public AssetFilter(BinaryBloomFilter filter) {
       this.filter = filter;
     }
 
     @Override
     public boolean call(Row r) throws Exception {
-      String hashCode = r.getAs("uniqueName");
-      return !filter.mightContainString(hashCode);
+      byte[] bytes = r.getAs("uniqueKey");
+      return !filter.mightContain(bytes);
     }
 
   }
@@ -115,7 +114,7 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
 
     private boolean referenced;
     private byte[] data;
-    private String uniqueName;
+    private byte[] uniqueKey;
     private long timestamp;
 
     public CategorizedAssetKey() {
@@ -124,11 +123,11 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
     /**
      * Construct asset key.
      */
-    public CategorizedAssetKey(boolean referenced, ByteString data, String uniqueName, long timestamp) {
+    public CategorizedAssetKey(boolean referenced, ByteString data, byte[] uniqueKey, long timestamp) {
       super();
       this.referenced = referenced;
       this.data = data.toByteArray();
-      this.uniqueName = uniqueName;
+      this.uniqueKey = uniqueKey;
       this.timestamp = timestamp;
     }
 
@@ -148,12 +147,12 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
       return data;
     }
 
-    public String getUniqueName() {
-      return uniqueName;
+    public byte[] getUniqueKey() {
+      return uniqueKey;
     }
 
-    public void setUniqueName(String uniqueName) {
-      this.uniqueName = uniqueName;
+    public void setUniqueKey(byte[] uniqueKey) {
+      this.uniqueKey = uniqueKey;
     }
 
     public long getTimestamp() {
@@ -252,7 +251,7 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
     public Iterator<CategorizedAssetKey> call(CategorizedValue r) throws Exception {
       T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getData()));
       return assetKeyConverter.apply(contents)
-        .map(ak -> new CategorizedAssetKey(r.isReferenced(), assetKeySerializer.toBytes(ak), ak.toUniqueName(),
+        .map(ak -> new CategorizedAssetKey(r.isReferenced(), assetKeySerializer.toBytes(ak), ak.toUniqueKey(),
           r.getTimestamp())).iterator();
     }
 

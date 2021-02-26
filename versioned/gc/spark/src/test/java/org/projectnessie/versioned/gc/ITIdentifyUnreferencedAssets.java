@@ -98,7 +98,7 @@ class ITIdentifyUnreferencedAssets {
            boolean referenced = Boolean.parseBoolean(x.getString(1));
            DummyValue value = new DummyValue(x.getString(0));
            ByteString data = ser.toBytes(value);
-           return new CategorizedValue(referenced, "dummy", data, 0L);
+           return new CategorizedValue(referenced, data, 0L);
          }, Encoders.bean(CategorizedValue.class));
   }
 

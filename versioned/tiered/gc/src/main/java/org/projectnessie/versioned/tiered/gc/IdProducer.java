@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
+import org.projectnessie.versioned.gc.BinaryBloomFilter;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.Store.Acceptor;
 import org.projectnessie.versioned.store.ValueType;

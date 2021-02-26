@@ -17,6 +17,7 @@ package org.projectnessie.versioned.gc;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -109,12 +110,12 @@ public final class GcTestUtils {
 
     @Override
     public List<String> toReportableName() {
-      return Arrays.asList(toUniqueName());
+      return Arrays.asList(Integer.toString(id));
     }
 
     @Override
-    public String toUniqueName() {
-      return Integer.toString(id);
+    public byte[] toUniqueKey() {
+      return Integer.toString(id).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override

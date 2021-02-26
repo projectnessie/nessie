@@ -23,8 +23,8 @@ import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
-import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.gc.BinaryBloomFilter;
 import org.projectnessie.versioned.gc.CategorizedValue;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
@@ -91,7 +91,7 @@ public class IdentifyUnreferencedValues<T> {
     final Dataset<ValueFrame> values = ValueFrame.asDataset(store, spark);
 
     // for each value, determine if it is a valid value.
-    ValueCategorizer<T> categorizer = new ValueCategorizer<T>(validValueIds, storeWorker.getValueSerializer(), maxSlopMicros);
+    ValueCategorizer<T> categorizer = new ValueCategorizer<T>(validValueIds, maxSlopMicros);
     //todo can we enrich this more w/o having to interpret the object? Eg related commit/commit message
     return values.map(categorizer, Encoders.bean(CategorizedValue.class));
 
@@ -105,28 +105,23 @@ public class IdentifyUnreferencedValues<T> {
     private static final long serialVersionUID = -4605489080345105845L;
 
     private final BinaryBloomFilter bloomFilter;
-    private final Serializer<T> valueWorker;
     private final long recentValues;
 
     /**
      * Construct categorizer.
      *
      * @param bloomFilter bloom filter to determine if a value is referenced.
-     * @param valueWorker serde for values and their asset keys.
      * @param maxSlopMicros minimum age of a value to consider it as being unreferenced.
      */
-    public ValueCategorizer(BinaryBloomFilter bloomFilter, Serializer<T> valueWorker, long maxSlopMicros) {
+    public ValueCategorizer(BinaryBloomFilter bloomFilter, long maxSlopMicros) {
       this.bloomFilter = bloomFilter;
-      this.valueWorker = valueWorker;
       this.recentValues = maxSlopMicros;
     }
 
     @Override
     public CategorizedValue call(ValueFrame r) throws Exception {
       boolean referenced = r.getDt() > recentValues || bloomFilter.mightContain(r.getId().getId());
-      T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getBytes()));
-      //todo once we add entity type to store we should add it here to avoid the useless serialization.
-      return new CategorizedValue(referenced, contents.getClass().getSimpleName(), ByteString.copyFrom(r.getBytes()), r.getDt());
+      return new CategorizedValue(referenced, ByteString.copyFrom(r.getBytes()), r.getDt());
     }
 
   }
