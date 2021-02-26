@@ -33,6 +33,11 @@ public abstract class AddClause implements UpdateClause {
   }
 
   @Override
+  public <T> T accept(UpdateClauseVisitor<T> visitor) {
+    return visitor.visit(this);
+  }
+
+  @Override
   public UpdateClause alias(AliasCollector c) {
     return ImmutableAddClause.builder().path(getPath().alias(c)).value(getValue().alias(c)).build();
   }

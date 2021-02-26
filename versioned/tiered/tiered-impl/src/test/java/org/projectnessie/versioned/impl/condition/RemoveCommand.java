@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.projectnessie.versioned.impl.condition;
 
-import org.projectnessie.versioned.impl.condition.AliasCollector.Aliasable;
+import org.immutables.value.Value.Immutable;
 
-public interface UpdateClause extends Aliasable<UpdateClause> {
-
-  enum Type {
-    SET, REMOVE, DELETE, ADD;
-  }
-
-  Type getType();
-
-  String toClauseString();
-
-  /**
-   * Entry point for visitation.
-   * @param visitor the visitor that will be invoked.
-   * @param <T> the type of the returned value.
-   * @return the possibly transformed value resulting from the visitation.
-   */
-  abstract  <T> T accept(UpdateClauseVisitor<T> visitor);
+/**
+ * Sample of a specific type of update command into which UpdateClauses are converted.
+ */
+@Immutable
+abstract class RemoveCommand implements UpdateCommand {
 }

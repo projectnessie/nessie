@@ -35,84 +35,38 @@ public class TestUpdateClauseVisitor {
   private static final ExpressionPath PATH = ExpressionPath.builder(PATH_STR).build();
 
   /**
-   * Sample interface or class into which UpdateClauses are converted.
-   */
-  interface UpdateCommand {
-    /**
-     * An enum encapsulating.
-     */
-    enum Operator {
-      // An operator to remove some part or all of an entity.
-      REMOVE,
-
-      // An operator to set some part or all of an entity.
-      SET
-    }
-
-    Operator getOperator();
-
-    ExpressionPath getPath();
-
-    class SetCommand implements UpdateCommand {
-      private final Entity entity;
-      private final ExpressionPath path;
-
-      SetCommand(ExpressionPath path, Entity entity) {
-        this.path = path;
-        this.entity = entity;
-      }
-
-      @Override
-      public Operator getOperator() {
-        return Operator.SET;
-      }
-
-      @Override
-      public ExpressionPath getPath() {
-        return path;
-      }
-
-      Entity getEntity() {
-        return entity;
-      }
-    }
-
-    class RemoveCommand implements UpdateCommand {
-      private final ExpressionPath path;
-
-      RemoveCommand(ExpressionPath path) {
-        this.path = path;
-      }
-
-      @Override
-      public Operator getOperator() {
-        return Operator.REMOVE;
-      }
-
-      @Override
-      public ExpressionPath getPath() {
-        return path;
-      }
-    }
-  }
-
-  /**
    * A test visitor which builds up an UpdateCommand representation of the passed in UpdateClause.
    */
   static class Visitor implements UpdateClauseVisitor<UpdateCommand> {
 
     @Override
+    public UpdateCommand visit(final AddClause clause) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public UpdateCommand visit(final RemoveClause clause) {
-      return new UpdateCommand.RemoveCommand(clause.getPath());
+      return ImmutableRemoveCommand.builder()
+          .operator(UpdateCommand.Operator.REMOVE)
+          .path(clause.getPath())
+          .build();
     }
 
     @Override
     public UpdateCommand visit(final SetClause clause) {
       switch (clause.getValue().getType()) {
         case VALUE:
-          return new UpdateCommand.SetCommand(clause.getPath(), clause.getValue().getValue());
+          return ImmutableSetCommand.builder()
+              .operator(UpdateCommand.Operator.SET)
+              .path(clause.getPath())
+              .entity(clause.getValue().getValue())
+              .build();
         case FUNCTION:
-          return new UpdateCommand.SetCommand(clause.getPath(), handleFunction(clause.getValue().getFunction()));
+          return ImmutableSetCommand.builder()
+            .operator(UpdateCommand.Operator.SET)
+            .path(clause.getPath())
+            .entity(handleFunction(clause.getValue().getFunction()))
+            .build();
         default:
           throw new UnsupportedOperationException(String.format("Unsupported SetClause type: %s", clause.getValue().getType().name()));
       }
@@ -148,6 +102,6 @@ public class TestUpdateClauseVisitor {
     final UpdateCommand command = clause.accept(VISITOR);
     Assertions.assertEquals(UpdateCommand.Operator.SET, command.getOperator());
     Assertions.assertEquals(path, command.getPath());
-    Assertions.assertEquals(entity, ((UpdateCommand.SetCommand)command).getEntity());
+    Assertions.assertEquals(entity, ((SetCommand)command).getEntity());
   }
 }

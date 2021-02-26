@@ -21,6 +21,13 @@ package org.projectnessie.versioned.impl.condition;
  */
 public interface UpdateClauseVisitor<T> {
   /**
+   * Visit the passed in AddClause.
+   * @param clause the clause to visit.
+   * @return the possibly transformed value resulting from the visitation.
+   */
+  T visit(AddClause clause);
+
+  /**
    * Visit the passed in RemoveClause.
    * @param clause the clause to visit.
    * @return the possibly transformed value resulting from the visitation.

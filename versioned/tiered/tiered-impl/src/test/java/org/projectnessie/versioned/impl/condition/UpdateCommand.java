@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.projectnessie.versioned.impl.condition;
 
-import org.projectnessie.versioned.impl.condition.AliasCollector.Aliasable;
+/**
+ * Sample interface or class into which UpdateClauses are converted.
+ */
+interface UpdateCommand {
+  /**
+   * An enum encapsulating.
+   */
+  enum Operator {
+    // An operator to remove some part or all of an entity.
+    REMOVE,
 
-public interface UpdateClause extends Aliasable<UpdateClause> {
-
-  enum Type {
-    SET, REMOVE, DELETE, ADD;
+    // An operator to set some part or all of an entity.
+    SET
   }
 
-  Type getType();
+  Operator getOperator();
 
-  String toClauseString();
+  ExpressionPath getPath();
 
-  /**
-   * Entry point for visitation.
-   * @param visitor the visitor that will be invoked.
-   * @param <T> the type of the returned value.
-   * @return the possibly transformed value resulting from the visitation.
-   */
-  abstract  <T> T accept(UpdateClauseVisitor<T> visitor);
 }
