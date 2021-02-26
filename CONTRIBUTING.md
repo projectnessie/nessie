@@ -53,4 +53,4 @@ must be unanimous for a change to be merged.
 
 ### Reporting security issues
 
-Any security issues should be reported to security@projectnessie.org, please refrain from posting publicly until the team can investigate and patch the code.
+Please see our [Security Policy](SECURITY.md)
