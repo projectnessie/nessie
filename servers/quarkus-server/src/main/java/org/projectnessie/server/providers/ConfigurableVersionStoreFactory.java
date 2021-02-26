@@ -43,6 +43,8 @@ import org.projectnessie.versioned.WithHash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.quarkus.runtime.Startup;
+
 /**
  * A version store factory leveraging CDI to delegate to a {@code VersionStoreFactory} instance
  * based on the store type.
@@ -79,6 +81,7 @@ public class ConfigurableVersionStoreFactory {
    */
   @Produces
   @Singleton
+  @Startup
   public VersionStore<Contents, CommitMeta> getVersionStore() {
     VersionStore<Contents, CommitMeta> store = newVersionStore();
     try (Stream<WithHash<NamedRef>> str = store.getNamedRefs()) {
