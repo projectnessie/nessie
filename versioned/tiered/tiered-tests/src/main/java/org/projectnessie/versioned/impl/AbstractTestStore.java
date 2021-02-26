@@ -78,6 +78,11 @@ public abstract class AbstractTestStore<S extends Store> {
     }
   }
 
+  @FunctionalInterface
+  interface FailValidator {
+    void validate();
+  }
+
   protected static final ExpressionPath COMMITS = ExpressionPath.builder("commits").build();
   protected static final Entity ONE = Entity.ofNumber(1);
   protected static final Entity TWO = Entity.ofNumber(2);
@@ -384,7 +389,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
   @Nested
   @DisplayName("put() tests")
-  class PutWithoutConditionExpressionTests {
+  class PutTests {
     @Test
     void putWithConditionValue() {
       putWithCondition(ValueType.VALUE, SampleEntities.createValue(random));
@@ -441,7 +446,21 @@ public abstract class AbstractTestStore<S extends Store> {
           ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), type.toEntity()),
           ExpressionFunction.equals(ExpressionPath.builder("name").build(), Entity.ofString("tagName"))
       );
-      putConditional(ValueType.REF, sample, true, Optional.of(condition));
+      putConditional(ValueType.REF, sample, null, Optional.of(condition));
+    }
+
+    @Test
+    void putWithNoEntityAndConditionExpression() {
+      final InternalRef sample = SampleEntities.createBranch(random);
+      final InternalRef.Type type = InternalRef.Type.BRANCH;
+      final ConditionExpression condition = ConditionExpression.of(
+          ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), type.toEntity()),
+          ExpressionFunction.equals(ExpressionPath.builder("commit").build(), Entity.ofString("notEqual")));
+      putConditional(
+          ValueType.REF,
+          sample,
+          () -> Assertions.assertThrows(NotFoundException.class, () -> EntityType.forType(ValueType.REF).loadSingle(store, sample.getId())),
+          Optional.of(condition));
     }
 
     @Test
@@ -452,7 +471,11 @@ public abstract class AbstractTestStore<S extends Store> {
       final ConditionExpression condition = ConditionExpression.of(
           ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), type.toEntity()),
           ExpressionFunction.equals(ExpressionPath.builder("commit").build(), Entity.ofString("notEqual")));
-      putConditional(ValueType.REF, sample, false, Optional.of(condition));
+      putConditional(
+          ValueType.REF,
+          sample,
+          () -> {}, // Do no extra validation here.
+          Optional.of(condition));
     }
 
     private <T extends HasId> void putWithCondition(ValueType<?> type, T sample) {
@@ -461,11 +484,11 @@ public abstract class AbstractTestStore<S extends Store> {
 
       final ExpressionPath keyName = ExpressionPath.builder(Store.KEY_NAME).build();
       final ConditionExpression conditionExpression = ConditionExpression.of(ExpressionFunction.equals(keyName, sample.getId().toEntity()));
-      putConditional(type, sample, true, Optional.of(conditionExpression));
+      putConditional(type, sample, null, Optional.of(conditionExpression));
     }
 
     @SuppressWarnings("unchecked")
-    private <C extends BaseValue<C>> void putConditional(ValueType<C> type, HasId sample, boolean shouldSucceed,
+    private <C extends BaseValue<C>> void putConditional(ValueType<C> type, HasId sample, FailValidator failValidator,
                                                            Optional<ConditionExpression> conditionExpression) {
       if (!supportsConditionExpression()) {
         return;
@@ -473,14 +496,16 @@ public abstract class AbstractTestStore<S extends Store> {
 
       try {
         store.put(new EntitySaveOp<>(type, (PersistentBase<C>) sample).saveOp, conditionExpression);
-        if (!shouldSucceed) {
+        if (null != failValidator) {
           Assertions.fail();
         }
         testLoadSingle(type, sample);
       } catch (ConditionFailedException cfe) {
-        if (shouldSucceed) {
+        if (null == failValidator) {
           Assertions.fail(cfe);
         }
+
+        failValidator.validate();
       }
     }
   }

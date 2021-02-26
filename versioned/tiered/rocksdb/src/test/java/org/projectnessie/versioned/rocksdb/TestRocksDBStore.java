@@ -24,13 +24,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.versioned.impl.AbstractTestStore;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
-
-import com.google.common.collect.ImmutableList;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestRocksDBStore extends AbstractTestStore<TestRocksDBStore.RocksDBStoreUUT> {
@@ -39,14 +38,12 @@ class TestRocksDBStore extends AbstractTestStore<TestRocksDBStore.RocksDBStoreUU
 
   @AfterAll
   static void tearDown() throws IOException {
-    for (Path path : ImmutableList.of(DB_PATH, getRawPath())) {
-      if (Files.exists(path)) {
-        final List<Path> pathList = Files.walk(path).sorted(Comparator.reverseOrder()).collect(Collectors.toList());
-        for (Path pathToDelete : pathList) {
-          Files.delete(pathToDelete);
-        }
-      }
-    }
+    cleanFiles();
+  }
+
+  @BeforeAll
+  static void setupClean() throws IOException {
+    cleanFiles();
   }
 
   /**
@@ -97,6 +94,15 @@ class TestRocksDBStore extends AbstractTestStore<TestRocksDBStore.RocksDBStoreUU
     return false;
   }
 
+  private static void cleanFiles() throws IOException {
+    if (Files.exists(DB_PATH)) {
+      final List<Path> pathList = Files.walk(DB_PATH).sorted(Comparator.reverseOrder()).collect(Collectors.toList());
+      for (Path pathToDelete : pathList) {
+        Files.delete(pathToDelete);
+      }
+    }
+  }
+
   /**
    * A Unit Under Test version of RocksDBStore that provides the facility to delete all column families.
    */
@@ -129,6 +135,5 @@ class TestRocksDBStore extends AbstractTestStore<TestRocksDBStore.RocksDBStoreUU
         }
       }
     }
-
   }
 }

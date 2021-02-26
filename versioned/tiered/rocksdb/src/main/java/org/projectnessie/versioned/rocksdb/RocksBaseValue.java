@@ -27,7 +27,6 @@ import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.BaseValue;
 
 import com.google.common.base.Preconditions;
-import com.google.protobuf.ByteString;
 
 /**
  * An implementation of @{BaseValue} used for ConditionExpression and UpdateExpression evaluation.
@@ -36,6 +35,7 @@ import com.google.protobuf.ByteString;
 abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, Evaluator {
 
   static final String ID = "id";
+  private final ValueProtos.BaseValue.Builder builder = ValueProtos.BaseValue.newBuilder();
 
   RocksBaseValue() {
   }
@@ -43,30 +43,20 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
   @SuppressWarnings("unchecked")
   @Override
   public C id(Id id) {
-    final ValueProtos.BaseValue base = getBase();
-    final ValueProtos.BaseValue newBase = ValueProtos.BaseValue.newBuilder()
-        .setId(id.getValue())
-        .setDatetime(base.getDatetime())
-        .build();
-    setBase(newBase);
+    builder.setId(id.getValue());
     return (C) this;
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public C dt(long dt) {
-    final ValueProtos.BaseValue base = getBase();
-    final ValueProtos.BaseValue newBase = ValueProtos.BaseValue.newBuilder()
-        .setId(base.getId())
-        .setDatetime(dt)
-        .build();
-    setBase(newBase);
+    builder.setDatetime(dt);
     return (C) this;
   }
 
-  public abstract ValueProtos.BaseValue getBase();
-
-  public abstract void setBase(ValueProtos.BaseValue base);
+  protected ValueProtos.BaseValue buildBase() {
+    return builder.build();
+  }
 
   /**
    * Consume the base value attributes.
@@ -83,7 +73,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
    * @param idList the stream of Id to convert.
    * @return the List Entity.
    */
-  Entity toEntity(List<Id> idList) {
+  static Entity toEntity(List<Id> idList) {
     return Entity.ofList(idList.stream().map(Id::toEntity).collect(Collectors.toList()));
   }
 
@@ -93,7 +83,7 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
    * @param position the element in the Stream to retrieve.
    * @return the List Entity.
    */
-  Entity toEntity(List<Id> idList, int position) {
+  static Entity toEntity(List<Id> idList, int position) {
     return idList.stream().skip(position).findFirst().orElseThrow(NoSuchElementException::new).toEntity();
   }
 
@@ -156,22 +146,22 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
   }
 
   private Id getId() {
-    return Id.of(getBase().getId());
+    return Id.of(buildBase().getId());
   }
 
-  protected String invalidOperatorSegmentMessage(Function function) {
-    return String.format(String.format("Operator: %s is not applicable to segment %s",
-      function.getOperator(), function.getRootPathAsNameSegment().getName()));
+  protected static String invalidOperatorSegmentMessage(Function function) {
+    return String.format("Operator: %s is not applicable to segment %s",
+      function.getOperator(), function.getRootPathAsNameSegment().getName());
   }
 
-  protected String invalidValueMessage(Function function) {
-    return String.format(String.format("Not able to apply type: %s to segment: %s", function.getValue().getType(),
-      function.getRootPathAsNameSegment().getName()));
+  protected static String invalidValueMessage(Function function) {
+    return String.format("Not able to apply type: %s to segment: %s", function.getValue().getType(),
+      function.getRootPathAsNameSegment().getName());
   }
 
-  protected String conditionNotMatchedMessage(Function function) {
-    return String.format(String.format("Condition %s did not match the actual value for %s", function.getValue().getType(),
-      function.getRootPathAsNameSegment().getName()));
+  protected static String conditionNotMatchedMessage(Function function) {
+    return String.format("Condition %s did not match the actual value for %s", function.getValue().getType(),
+      function.getRootPathAsNameSegment().getName());
   }
 
   /**
@@ -199,10 +189,6 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
     }
   }
 
-  static List<ByteString> buildIds(List<Id> ids) {
-    return ids.stream().map(Id::getValue).collect(Collectors.toList());
-  }
-
   static Key createKey(ValueProtos.Key key) {
     return Key.of(key.getElementsList().toArray(new String[0]));
   }
@@ -222,11 +208,5 @@ abstract class RocksBaseValue<C extends BaseValue<C>> implements BaseValue<C>, E
     Preconditions.checkArgument(
         null != element,
         String.format("Method %s of consumer %s has not been called", name, getClass().getSimpleName()));
-  }
-
-  <E> void checkNotPresent(E element, String name) {
-    Preconditions.checkArgument(
-        null == element,
-        String.format("Method %s of consumer %s must not be called", name, getClass().getSimpleName()));
   }
 }

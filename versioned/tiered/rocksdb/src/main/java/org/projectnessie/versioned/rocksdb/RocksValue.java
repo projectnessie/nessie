@@ -15,20 +15,13 @@
  */
 package org.projectnessie.versioned.rocksdb;
 
-import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.Value;
-
-import com.google.protobuf.ByteString;
 
 /**
  * A RocksDB specific implementation of {@link org.projectnessie.versioned.tiered.Value} providing
  * SerDe and Condition evaluation.
  */
 class RocksValue extends RocksWrappedValue<Value> implements Value {
-  static Value of(Id id, long dt, ByteString value) {
-    return new RocksValue().id(id).dt(dt).value(value);
-  }
-
   RocksValue() {
     super();
   }

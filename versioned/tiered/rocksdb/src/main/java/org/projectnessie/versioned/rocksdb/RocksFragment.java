@@ -36,25 +36,15 @@ import com.google.protobuf.InvalidProtocolBufferException;
 class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
   static final String KEY_LIST = "keys";
 
-  private final ValueProtos.Fragment.Builder protobufBuilder = ValueProtos.Fragment.newBuilder();
+  private final ValueProtos.Fragment.Builder builder = ValueProtos.Fragment.newBuilder();
 
   RocksFragment() {
     super();
   }
 
   @Override
-  public ValueProtos.BaseValue getBase() {
-    return protobufBuilder.getBase();
-  }
-
-  @Override
-  public void setBase(ValueProtos.BaseValue base) {
-    protobufBuilder.setBase(base);
-  }
-
-  @Override
   public Fragment keys(Stream<Key> keys) {
-    protobufBuilder
+    builder
         .clearKeys()
         .addAllKeys(keys.map(key -> ValueProtos.Key
             .newBuilder()
@@ -67,7 +57,9 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
 
   @Override
   byte[] build() {
-    return protobufBuilder.build().toByteArray();
+    checkPresent(builder.getKeysList(), KEY_LIST);
+
+    return builder.setBase(buildBase()).build().toByteArray();
   }
 
   /**
@@ -101,7 +93,7 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
             throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
         } else if (function.getOperator().equals(Function.Operator.SIZE)) {
-          if (protobufBuilder.getKeysCount() != function.getValue().getNumber()) {
+          if (builder.getKeysCount() != function.getValue().getNumber()) {
             throw new ConditionFailedException(conditionNotMatchedMessage(function));
           }
         } else {
@@ -115,7 +107,7 @@ class RocksFragment extends RocksBaseValue<Fragment> implements Fragment {
   }
 
   private List<Key> getKeys() {
-    return protobufBuilder.getKeysList()
+    return builder.getKeysList()
       .stream()
       .map(key ->
         ImmutableKey

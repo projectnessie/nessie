@@ -44,7 +44,6 @@ import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
-import org.rocksdb.FlushOptions;
 import org.rocksdb.Options;
 import org.rocksdb.ReadOptions;
 import org.rocksdb.RocksDB;
@@ -115,17 +114,6 @@ public class RocksDBStore implements Store {
   @Override
   public void close() {
     if (null != rocksDB) {
-      try (FlushOptions options = new FlushOptions().setWaitForFlush(true)) {
-        valueTypeToColumnFamily.values().forEach(cf -> {
-          try {
-            rocksDB.flush(options, cf);
-          } catch (RocksDBException e) {
-            LOGGER.error("Error flushing column family while closing Nessie RocksDB store.", e);
-          }
-          cf.close();
-        });
-      }
-
       rocksDB.close();
       rocksDB = null;
     }
@@ -196,8 +184,8 @@ public class RocksDBStore implements Store {
     try (final Transaction transaction = rocksDB.beginTransaction(WRITE_OPTIONS)) {
       try {
         isConditionExpressionValid(transaction, columnFamilyHandle, saveOp.getId(), saveOp.getType(), condition, "put");
-      } catch (ConditionFailedException e) {
-        throw new ConditionFailedException(String.format("Condition failed during put operation. %s", e.getMessage()));
+      } catch (ConditionFailedException | NotFoundException e) {
+        throw new ConditionFailedException(String.format("Condition failed during put operation. %s", e.getMessage()), e);
       }
       transaction.put(columnFamilyHandle, saveOp.getId().toBytes(), RocksSerDe.serializeWithConsumer(saveOp));
       transaction.commit();
@@ -264,9 +252,9 @@ public class RocksDBStore implements Store {
   @Override
   public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
     final ColumnFamilyHandle columnFamilyHandle = getColumnFamilyHandle(ValueType.REF);
+    final RocksIterator rocksIter = rocksDB.newIterator(columnFamilyHandle);
 
     final Iterable<Acceptor<C>> iterable = () -> new AbstractIterator<Acceptor<C>>() {
-      private final RocksIterator rocksIter = rocksDB.newIterator(columnFamilyHandle);
       private boolean isFirst = true;
 
       @Override
@@ -287,10 +275,7 @@ public class RocksDBStore implements Store {
       }
     };
 
-    Stream<Acceptor<C>> stream = StreamSupport.stream(iterable.spliterator(), false);
-    // Explicitly close stream as spliterator does not do this automatically.
-    stream.close();
-    return stream;
+    return StreamSupport.stream(iterable.spliterator(), false).onClose(rocksIter::close);
   }
 
 
@@ -302,7 +287,7 @@ public class RocksDBStore implements Store {
   }
 
   private <C extends BaseValue<C>> void isConditionExpressionValid(Transaction transaction, ColumnFamilyHandle columnFamilyHandle,
-                                                                      Id id, ValueType type, Optional<ConditionExpression> condition,
+                                                                      Id id, ValueType<C> type, Optional<ConditionExpression> condition,
                                                                       String operation) throws RocksDBException, ConditionFailedException {
     if (condition.isPresent()) {
       final byte[] value = getAndCheckValue(transaction, columnFamilyHandle, id, operation);

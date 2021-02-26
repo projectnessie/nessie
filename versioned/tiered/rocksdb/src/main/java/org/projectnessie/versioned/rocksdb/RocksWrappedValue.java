@@ -29,20 +29,10 @@ import com.google.protobuf.InvalidProtocolBufferException;
 class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C> implements BaseWrappedValue<C> {
 
   static final String VALUE = "value";
-  private final ValueProtos.WrappedValue.Builder wrappedValueBuilder = ValueProtos.WrappedValue.newBuilder();
+  private final ValueProtos.WrappedValue.Builder builder = ValueProtos.WrappedValue.newBuilder();
 
   RocksWrappedValue() {
     super();
-  }
-
-  @Override
-  public ValueProtos.BaseValue getBase() {
-    return wrappedValueBuilder.getBase();
-  }
-
-  @Override
-  public void setBase(ValueProtos.BaseValue base) {
-    wrappedValueBuilder.setBase(base);
   }
 
   @Override
@@ -54,7 +44,7 @@ class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C>
         break;
       case VALUE:
         if (!function.isRootNameSegmentChildlessAndEquals()
-            || !wrappedValueBuilder.getValue().equals(function.getValue().getBinary())) {
+            || !builder.getValue().equals(function.getValue().getBinary())) {
           throw new ConditionFailedException(conditionNotMatchedMessage(function));
         }
         break;
@@ -67,13 +57,15 @@ class RocksWrappedValue<C extends BaseWrappedValue<C>> extends RocksBaseValue<C>
   @SuppressWarnings("unchecked")
   @Override
   public C value(ByteString value) {
-    wrappedValueBuilder.setValue(value);
+    builder.setValue(value);
     return (C) this;
   }
 
   @Override
   byte[] build() {
-    return wrappedValueBuilder.build().toByteArray();
+    checkPresent(builder.getValue(), VALUE);
+
+    return builder.setBase(buildBase()).build().toByteArray();
   }
 
   /**
