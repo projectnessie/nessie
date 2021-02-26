@@ -15,8 +15,8 @@ You must agree to abide by the Project Nessie [Code of Conduct](CODE_OF_CONDUCT.
 
 ## Reporting issues
 Issues can be filed on GitHub. Please use the template and add as much detail as possible. Including the 
-version of the client and server, how the server is being run (eg docker image) etc. The more we 
-know the more we can help :-)
+version of the client and server, how the server is being run (eg docker image) etc. The more the community 
+knows the more it can help :-)
 
 ### Feature Requests
 
@@ -33,10 +33,24 @@ on the new feature or improvement.
 
 ### Development process
 
-The development process doesn't contain many surprises.
+The development process doesn't contain many surprises. As most projects on github anyone can contribute by
+forking the repo and posting a pull request. See 
+[GitHub's documentation](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork) 
+for more information. Small changes don't require an issue however it is good practice to open up an issue for
+larger changes. If you are unsure of where to start ask on the slack channel or look at [existing issues](https://github.com/projectnessie/nessie/issues).
+The 'good first issue' label marks issues that are particularly good for people new to the codebase.
+
+### Style guide
+
+Changes must adhere to the style guide and this will be verified by the continuous integration build. Java code style is approximately 
+google style and can be checked with checkstyle. Python adheres to the pep8 standard.
 
 ### Submitting a pull request
-CLA
+
+Upon submission of a pull request you will be asked to sign our contributor license agreement. We use [Reviewable.io](https://reviewable.io/) for reviews.
+Anyone can take part in the review process and once the community is happy and the build actions are passing a Pull Request will be merged. Support 
+must be unanimous for a change to be merged.
 
 ### Reporting security issues
-(Via some “private@projectnessie.org” mailing list??
+
+Any security issues should be reported to security@projectnessie.org, please refrain from posting publicly until the team can investigate and patch the code.
