@@ -18,6 +18,8 @@ package org.projectnessie.versioned.gc;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
+import com.google.protobuf.ByteString;
+
 /**
  * Assets associated with one or more values.
  *
@@ -48,7 +50,7 @@ public abstract class AssetKey {
   /**
    * Expose a unique key for this asset for equality purposes.
    */
-  public abstract byte[] toUniqueKey();
+  public abstract ByteString toUniqueKey();
 
   // included to ensure that an implementor overrides.
   @Override

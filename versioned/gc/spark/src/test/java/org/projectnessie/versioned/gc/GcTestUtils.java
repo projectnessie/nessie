@@ -114,8 +114,8 @@ public final class GcTestUtils {
     }
 
     @Override
-    public byte[] toUniqueKey() {
-      return Integer.toString(id).getBytes(StandardCharsets.UTF_8);
+    public ByteString toUniqueKey() {
+      return ByteString.copyFromUtf8(Integer.toString(id));
     }
 
     @Override

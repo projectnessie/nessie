@@ -123,11 +123,11 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
     /**
      * Construct asset key.
      */
-    public CategorizedAssetKey(boolean referenced, ByteString data, byte[] uniqueKey, long timestamp) {
+    public CategorizedAssetKey(boolean referenced, ByteString data, ByteString uniqueKey, long timestamp) {
       super();
       this.referenced = referenced;
       this.data = data.toByteArray();
-      this.uniqueKey = uniqueKey;
+      this.uniqueKey = uniqueKey.toByteArray();
       this.timestamp = timestamp;
     }
 
