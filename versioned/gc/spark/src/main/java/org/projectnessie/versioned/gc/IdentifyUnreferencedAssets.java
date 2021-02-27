@@ -37,7 +37,7 @@ import scala.Function1;
  */
 public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
 
-  private final Serializer<T> valueSerializer;
+  protected final Serializer<T> valueSerializer;
   private final Serializer<AssetKey> assetKeySerializer;
   private final AssetKeyConverter<T, R> assetKeyConverter;
   private final SparkSession spark;

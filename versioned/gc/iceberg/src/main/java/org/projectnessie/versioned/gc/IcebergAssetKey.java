@@ -30,6 +30,7 @@ import org.apache.spark.util.SerializableConfiguration;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
+import com.google.protobuf.ByteString;
 
 /**
  * Specialization of AssetKey to denote a file on a disk/store.
@@ -90,6 +91,11 @@ public class IcebergAssetKey extends AssetKey implements Serializable {
     return name;
   }
 
+  @Override
+  public ByteString toUniqueKey() {
+    return ByteString.copyFromUtf8(path);
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -100,12 +106,12 @@ public class IcebergAssetKey extends AssetKey implements Serializable {
       return false;
     }
     IcebergAssetKey that = (IcebergAssetKey) o;
-    return path.equals(that.path) && tableName.equals(that.tableName);
+    return path.equals(that.path);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(path, tableName);
+    return Objects.hash(path);
   }
 
   public String getSnapshotId() {

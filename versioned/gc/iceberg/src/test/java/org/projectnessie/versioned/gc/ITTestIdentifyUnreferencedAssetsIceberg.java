@@ -79,6 +79,7 @@ import org.projectnessie.versioned.tiered.gc.DynamoSupplier;
 import org.projectnessie.versioned.tiered.gc.GcOptions;
 import org.projectnessie.versioned.tiered.gc.IdentifyUnreferencedValues;
 import org.projectnessie.versioned.tiered.gc.ImmutableGcOptions;
+import org.projectnessie.versioned.tiered.gc.SystemClock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -159,7 +160,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
 
   @BeforeEach
   void beforeEach() throws NessieConflictException, NessieNotFoundException {
-    this.client = NessieClient.none(NESSIE_ENDPOINT);
+    this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 
@@ -255,7 +256,8 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
         .timeSlopMicros(1)
         .maxAgeMicros((System.currentTimeMillis() - commitTime) * 1000)
         .build();
-    IdentifyUnreferencedValues<Contents> app = new IdentifyUnreferencedValues<>(helper, new DynamoSupplier(), spark, options);
+    IdentifyUnreferencedValues<Contents> app = new IdentifyUnreferencedValues<>(helper, new DynamoSupplier(), spark, options,
+        new SystemClock());
     Dataset<CategorizedValue> values = app.identify();
 
     SerializableConfiguration hadoopConfig = new SerializableConfiguration(spark.sessionState().newHadoopConf());

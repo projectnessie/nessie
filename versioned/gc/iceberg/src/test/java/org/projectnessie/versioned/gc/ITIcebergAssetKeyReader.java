@@ -83,7 +83,7 @@ public class ITIcebergAssetKeyReader {
 
   @BeforeEach
   void init() throws NessieNotFoundException, NessieConflictException {
-    this.client = NessieClient.none(NESSIE_ENDPOINT);
+    this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
     tree = client.getTreeApi();
     tree.createReference(Branch.of("ITIcebergAssetKeyReader", null));
 
@@ -137,7 +137,7 @@ public class ITIcebergAssetKeyReader {
   }
 
   private void check(IcebergAssetKeyConverter akr, Table table, ImmutableMap<String, Long> expected) {
-    Set<AssetKey> fileList = akr.getAssetKeys(IcebergTable.of(((BaseTable) table).operations().current().metadataFileLocation()))
+    Set<AssetKey> fileList = akr.apply(IcebergTable.of(((BaseTable) table).operations().current().metadataFileLocation()))
         .collect(Collectors.toSet());
 
     Multimap<String, AssetKey> unreferencedItems = fileList
