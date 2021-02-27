@@ -17,7 +17,6 @@ package org.projectnessie.server.providers;
 
 import java.io.IOException;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.inject.Singleton;
 
@@ -42,11 +41,8 @@ import org.projectnessie.store.ObjectTypes.PHiveDatabase;
 import org.projectnessie.store.ObjectTypes.PHiveTable;
 import org.projectnessie.store.ObjectTypes.PIcebergTable;
 import org.projectnessie.store.ObjectTypes.PSqlView;
-import org.projectnessie.versioned.AssetKey;
-import org.projectnessie.versioned.AssetKey.NoOpAssetKey;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.ValueWorker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,11 +54,11 @@ import com.google.protobuf.UnsafeByteOperations;
 public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitMeta> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private final ValueWorker<Contents> tableSerializer = new TableValueWorker();
+  private final Serializer<Contents> tableSerializer = new TableValueSerializer();
   private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
 
   @Override
-  public ValueWorker<Contents> getValueWorker() {
+  public Serializer<Contents> getValueSerializer() {
     return tableSerializer;
   }
 
@@ -71,7 +67,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     return metaSerializer;
   }
 
-  private static class TableValueWorker implements ValueWorker<Contents> {
+  private static class TableValueSerializer implements Serializer<Contents> {
     public ByteString toBytes(Contents value) {
       PContents.Builder builder = PContents.newBuilder();
       if (value instanceof IcebergTable) {
@@ -150,16 +146,6 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
           throw new IllegalArgumentException("Unknown type" + contents.getObjectTypeCase());
 
       }
-    }
-
-    @Override
-    public Stream<AssetKey> getAssetKeys(Contents value) {
-      return Stream.of();
-    }
-
-    @Override
-    public Serializer<AssetKey> getAssetKeySerializer() {
-      return NoOpAssetKey.SERIALIZER;
     }
   }
 

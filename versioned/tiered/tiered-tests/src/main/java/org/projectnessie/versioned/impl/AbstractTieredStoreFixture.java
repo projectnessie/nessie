@@ -30,14 +30,14 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.StringWorker;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.store.Store;
 
 public abstract class AbstractTieredStoreFixture<S extends Store, C> implements VersionStore<String, String>, AutoCloseable {
   protected static final StoreWorker<String, String> WORKER =
-      StoreWorker.of(StringWorker.getInstance(), StringWorker.getInstance());
+      StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
   private final S store;
   private final C config;

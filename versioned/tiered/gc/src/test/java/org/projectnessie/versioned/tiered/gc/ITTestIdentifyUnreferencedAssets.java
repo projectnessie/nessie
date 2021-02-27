@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.gc;
+package org.projectnessie.versioned.tiered.gc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,22 +35,20 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.AssetKey;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.StringWorker;
-import org.projectnessie.versioned.ValueWorker;
-import org.projectnessie.versioned.dynamodb.DynamoStore;
-import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
-import org.projectnessie.versioned.gc.IdentifyUnreferencedAssets.UnreferencedItem;
+import org.projectnessie.versioned.gc.AssetKeyConverter;
+import org.projectnessie.versioned.gc.CategorizedValue;
+import org.projectnessie.versioned.gc.GcTestUtils;
+import org.projectnessie.versioned.gc.IdentifyUnreferencedAssets;
 import org.projectnessie.versioned.impl.TieredVersionStore;
 import org.projectnessie.versioned.store.HasId;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.SaveOp;
-import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tests.CommitBuilder;
 import org.projectnessie.versioned.tiered.Value;
@@ -65,8 +59,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
-
-import software.amazon.awssdk.regions.Region;
 
 @ExtendWith(LocalDynamoDB.class)
 public class ITTestIdentifyUnreferencedAssets {
@@ -86,34 +78,48 @@ public class ITTestIdentifyUnreferencedAssets {
 
   @Test
   public void run() throws Exception {
+    Set<DummyValue> expectedValues = new HashSet<>(59);
+    Set<DummyValue> expectedReferencedValues = new HashSet<>(59);
     // commit one asset on main branch.
     BranchName main = BranchName.of("main");
 
     // create an old commit referencing both unique and non-unique assets.
     //The unique asset should be identified by the gc policy below since they are older than 1 day.
     store.setOverride(FIVE_DAYS_IN_PAST_MICROS);
-    commit().put("k1", new DummyValue().add(-3).add(0).add(100)).withMetadata("cOld").toBranch(main);
+    DummyValue dv = new DummyValue().add(-3).add(0).add(100);
+    expectedValues.add(dv);
+    commit().put("k1", dv).withMetadata("cOld").toBranch(main);
 
     // work beyond slop but within gc allowed age.
     store.setOverride(TWO_HOURS_IN_PAST_MICROS);
     // create commits that have time-valid assets. Create more commits than ParentList.MAX_PARENT_LIST to confirm recursion.
     for (int i = 0; i < 55; i++) {
-      commit().put("k1", new DummyValue().add(i).add(i + 100)).withMetadata("c2").toBranch(main);
+      dv = new DummyValue().add(i).add(i + 100);
+      expectedValues.add(dv);
+      expectedReferencedValues.add(dv);
+      commit().put("k1", dv).withMetadata("c2").toBranch(main);
     }
 
     // create a new branch, commit two assets, then delete the branch.
     BranchName toBeDeleted = BranchName.of("toBeDeleted");
     versionStore.create(toBeDeleted, Optional.empty());
-    Hash h = commit().put("k1", new DummyValue().add(-1).add(-2)).withMetadata("c1").toBranch(toBeDeleted);
+    dv = new DummyValue().add(-1).add(-2);
+    expectedValues.add(dv);
+    Hash h = commit().put("k1", dv).withMetadata("c1").toBranch(toBeDeleted);
     versionStore.delete(toBeDeleted, Optional.of(h));
 
     store.clearOverride();
     {
       // Create a dangling value to ensure that the slop factor avoids deletion of the assets of this otherwise dangling value.
-      save(TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()), new DummyValue().add(-50).add(-51));
+      dv = new DummyValue().add(-50).add(-51);
+      expectedValues.add(dv);
+      expectedReferencedValues.add(dv);
+      save(TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()), dv);
 
       // create a dangling value that should be cleaned up.
-      save(TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) - TimeUnit.DAYS.toMicros(2), new DummyValue().add(-60).add(-61));
+      dv = new DummyValue().add(-60).add(-61);
+      expectedValues.add(dv);
+      save(TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) - TimeUnit.DAYS.toMicros(2), dv);
     }
 
     SparkSession spark = SparkSession
@@ -129,9 +135,24 @@ public class ITTestIdentifyUnreferencedAssets {
         .maxAgeMicros(ONE_DAY_OLD_MICROS)
         .timeSlopMicros(ONE_HOUR_OLD_MICROS)
         .build();
-    IdentifyUnreferencedAssets<DummyValue> app = new IdentifyUnreferencedAssets<DummyValue>(helper, new DynamoSupplier(), spark, options);
-    Dataset<UnreferencedItem> items = app.identify();
-    Set<String> unreferencedItems = items.collectAsList().stream().map(UnreferencedItem::getName).collect(Collectors.toSet());
+    IdentifyUnreferencedValues<DummyValue> identifyValues = new IdentifyUnreferencedValues<>(helper, new DynamoSupplier(), spark, options,
+        new SystemClock());
+    Dataset<CategorizedValue> values = identifyValues.identify();
+
+    // test to make sure values are correct and correctly referenced.
+    List<CategorizedValue> valuesList = values.collectAsList();
+    Set<DummyValue> actualReferencedValues = valuesList.stream().filter(CategorizedValue::isReferenced).map(CategorizedValue::getData)
+        .map(x -> helper.getValueSerializer().fromBytes(ByteString.copyFrom(x))).collect(Collectors.toSet());
+    Set<DummyValue> actualValues = valuesList.stream().map(CategorizedValue::getData)
+        .map(x -> helper.getValueSerializer().fromBytes(ByteString.copyFrom(x))).collect(Collectors.toSet());
+    assertThat(actualReferencedValues, containsInAnyOrder(expectedReferencedValues.toArray(new DummyValue[0])));
+    assertThat(actualValues, containsInAnyOrder(expectedValues.toArray(new DummyValue[0])));
+
+    IdentifyUnreferencedAssets<DummyValue, GcTestUtils.DummyAsset> identifyAssets = new IdentifyUnreferencedAssets<>(
+        helper.getValueSerializer(), new GcTestUtils.DummyAssetKeySerializer(), new DummyAssetConverter(), spark);
+    Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = identifyAssets.identify(values);
+    Set<String> unreferencedItems = items.collectAsList().stream().map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
+        .collect(Collectors.toSet());
     assertThat(unreferencedItems, containsInAnyOrder("-1", "-2", "-3", "-60", "-61"));
   }
 
@@ -150,29 +171,6 @@ public class ITTestIdentifyUnreferencedAssets {
       }
     };
     store.put(saveOp, Optional.empty());
-  }
-
-  private static class DynamoSupplier implements Supplier<Store>, Serializable {
-
-    private static final long serialVersionUID = 5030232198230089450L;
-
-    static DynamoStore createStore() throws URISyntaxException {
-      return new DynamoStore(DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000"))
-          .region(Region.US_WEST_2).build());
-    }
-
-    @Override
-    public Store get() {
-      Store store;
-      try {
-        store = createStore();
-        store.start();
-        return store;
-      } catch (URISyntaxException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
   }
 
   @BeforeEach
@@ -199,73 +197,39 @@ public class ITTestIdentifyUnreferencedAssets {
 
   private static class StoreW implements StoreWorker<DummyValue, String> {
     @Override
-    public ValueWorker<DummyValue> getValueWorker() {
-      return new ValueValueWorker();
+    public Serializer<DummyValue> getValueSerializer() {
+      return new DummyValueSerializer();
     }
 
     @Override
     public Serializer<String> getMetadataSerializer() {
-      return StringWorker.getInstance();
+      return StringSerializer.getInstance();
     }
   }
 
-  private static class JsonSerializer<T> implements Serializer<T>, Serializable {
+  private static class DummyValueSerializer extends GcTestUtils.JsonSerializer<DummyValue> implements Serializable {
 
-    private static final long serialVersionUID = 4052464280276785753L;
-
-    private final Class<T> clazz;
-
-    public JsonSerializer(Class<T> clazz) {
-      this.clazz = clazz;
-    }
-
-    @Override
-    public ByteString toBytes(T value) {
-      try {
-        return ByteString.copyFrom(MAPPER.writer().writeValueAsBytes(value));
-      } catch (JsonProcessingException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    public T fromBytes(ByteString bytes) {
-      try {
-        return MAPPER.reader().readValue(bytes.toByteArray(), clazz);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-  }
-
-  private static class ValueValueWorker extends JsonSerializer<DummyValue> implements ValueWorker<DummyValue>, Serializable {
-
-    private static final long serialVersionUID = 3651529251225721177L;
-
-    public ValueValueWorker() {
+    public DummyValueSerializer() {
       super(DummyValue.class);
     }
 
-    @Override
-    public Stream<? extends AssetKey> getAssetKeys(DummyValue value) {
-      return value.assets.stream();
-    }
+  }
 
-    @SuppressWarnings("unchecked")
+  private static class DummyAssetConverter implements AssetKeyConverter<DummyValue, GcTestUtils.DummyAsset>, Serializable {
+
     @Override
-    public Serializer<AssetKey> getAssetKeySerializer() {
-      return (Serializer<AssetKey>) (Object) new JsonSerializer<DummyAsset>(DummyAsset.class);
+    public Stream<GcTestUtils.DummyAsset> apply(DummyValue value) {
+      return value.assets.stream();
     }
   }
 
   private static class DummyValue implements HasId {
 
     private final Id id;
-    private final List<DummyAsset> assets;
+    private final List<GcTestUtils.DummyAsset> assets;
 
     @JsonCreator
-    public DummyValue(@JsonProperty("id") byte[] id, @JsonProperty("assets") List<DummyAsset> assets) {
+    public DummyValue(@JsonProperty("id") byte[] id, @JsonProperty("assets") List<GcTestUtils.DummyAsset> assets) {
       super();
       this.id = Id.of(id);
       this.assets = assets;
@@ -288,51 +252,31 @@ public class ITTestIdentifyUnreferencedAssets {
     }
 
     public DummyValue add(int id) {
-      assets.add(new DummyAsset(id));
+      assets.add(new GcTestUtils.DummyAsset(id));
       return this;
     }
 
-    public List<DummyAsset> getAssets() {
+    public List<GcTestUtils.DummyAsset> getAssets() {
       return assets;
     }
-  }
-
-  private static class DummyAsset extends AssetKey {
-
-    private int id;
-
-    @JsonCreator
-    public DummyAsset(@JsonProperty("id") int id) {
-      this.id = id;
-    }
-
-    public DummyAsset() {
-    }
-
-
-    public int getId() {
-      return id;
-    }
 
     @Override
-    public CompletableFuture<Boolean> delete() {
-      return CompletableFuture.completedFuture(true);
-    }
-
-    @Override
-    public List<String> toReportableName() {
-      return Arrays.asList(Integer.toString(id));
-    }
-
-    @Override
-    public boolean equals(Object other) {
-      return other != null && other instanceof DummyAsset && ((DummyAsset)other).id == id;
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      DummyValue that = (DummyValue) o;
+      return Objects.equals(id, that.id) && Objects.equals(assets, that.assets);
     }
 
     @Override
     public int hashCode() {
-      return Integer.hashCode(id);
+      return Objects.hash(id, assets);
     }
-
   }
+
+
 }

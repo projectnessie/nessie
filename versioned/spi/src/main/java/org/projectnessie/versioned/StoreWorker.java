@@ -23,7 +23,7 @@ package org.projectnessie.versioned;
  */
 public interface StoreWorker<VALUE, COMMIT_METADATA> {
 
-  ValueWorker<VALUE> getValueWorker();
+  Serializer<VALUE> getValueSerializer();
 
   Serializer<COMMIT_METADATA> getMetadataSerializer();
 
@@ -31,12 +31,12 @@ public interface StoreWorker<VALUE, COMMIT_METADATA> {
    * Create StoreWorker for provided helpers.
    */
   static <VALUE, COMMIT_METADATA> StoreWorker<VALUE, COMMIT_METADATA>
-      of(ValueWorker<VALUE> valueWorker, Serializer<COMMIT_METADATA> commitSerializer) {
+      of(Serializer<VALUE> valueSerializer, Serializer<COMMIT_METADATA> commitSerializer) {
     return new StoreWorker<VALUE, COMMIT_METADATA>() {
 
       @Override
-      public ValueWorker<VALUE> getValueWorker() {
-        return valueWorker;
+      public Serializer<VALUE> getValueSerializer() {
+        return valueSerializer;
       }
 
       @Override

@@ -21,7 +21,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.StringWorker;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.tests.AbstractITVersionStore;
@@ -31,7 +31,7 @@ public abstract class AbstractITJGitVersionStore extends AbstractITVersionStore 
   protected VersionStore<String, String> store;
 
   protected static final StoreWorker<String, String> WORKER =
-      StoreWorker.of(StringWorker.getInstance(), StringWorker.getInstance());
+      StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
   abstract void setUp() throws IOException;
 

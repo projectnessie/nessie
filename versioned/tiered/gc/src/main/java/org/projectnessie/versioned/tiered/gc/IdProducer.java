@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.gc;
+package org.projectnessie.versioned.tiered.gc;
 
 import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.explode;
@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
+import org.projectnessie.versioned.gc.BinaryBloomFilter;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.Store.Acceptor;
 import org.projectnessie.versioned.store.ValueType;
@@ -49,7 +50,7 @@ final class IdProducer {
       long targetCount,
       Function<Acceptor<T>, IdCarrier> converter) {
 
-    Predicate<IdCarrier> predicate = t -> idFilter.mightContain(t.getId());
+    Predicate<IdCarrier> predicate = t -> idFilter.mightContain(t.getId().getId());
     Dataset<IdCarrier> carriers = IdCarrier.asDataset(valueType, store, converter, Optional.of(predicate), spark);
     return BinaryBloomFilter.aggregate(carriers.withColumn("id", explode(col("children"))), "id.id");
 

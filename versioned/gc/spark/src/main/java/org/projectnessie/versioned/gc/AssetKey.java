@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned;
+package org.projectnessie.versioned.gc;
 
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -47,6 +47,11 @@ public abstract class AssetKey {
    */
   public abstract List<String> toReportableName();
 
+  /**
+   * Expose a unique key for this asset for equality purposes.
+   */
+  public abstract ByteString toUniqueKey();
+
   // included to ensure that an implementor overrides.
   @Override
   public abstract boolean equals(Object other);
@@ -55,26 +60,5 @@ public abstract class AssetKey {
   // included to ensure that an implementor overrides.
   @Override
   public abstract int hashCode();
-
-  public abstract static class NoOpAssetKey extends AssetKey {
-
-    public static final Serializer<AssetKey> SERIALIZER = new Serializer<AssetKey>() {
-
-      @Override
-      public ByteString toBytes(AssetKey value) {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public NoOpAssetKey fromBytes(ByteString bytes) {
-        throw new UnsupportedOperationException();
-      }
-    };
-
-    private NoOpAssetKey() {
-    }
-
-
-  }
 
 }

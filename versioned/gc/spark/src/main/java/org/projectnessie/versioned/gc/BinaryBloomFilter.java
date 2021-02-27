@@ -29,7 +29,6 @@ import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.functions;
-import org.projectnessie.versioned.store.Id;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
@@ -62,20 +61,12 @@ public class BinaryBloomFilter implements Externalizable {
     return filter.mightContain(ByteBuffer.wrap(bytes));
   }
 
-  public boolean mightContain(IdFrame id) {
-    return filter.mightContain(ByteBuffer.wrap(id.getId()));
-  }
-
   public boolean mightContain(ByteString bytes) {
     return filter.mightContain(bytes.asReadOnlyByteBuffer());
   }
 
   public boolean mightContain(ByteBuffer bytes) {
     return filter.mightContain(bytes);
-  }
-
-  public boolean mightContain(Id id) {
-    return mightContain(id.getValue());
   }
 
   private static class BloomFilterAggregator extends
@@ -134,7 +125,12 @@ public class BinaryBloomFilter implements Externalizable {
     }
   }
 
-  static BinaryBloomFilter aggregate(Dataset<Row> data, String column) {
+  /**
+   * Run aggregation on dataset to add all rows to the bloom filter.
+   * @param data a Spark Dataset to add to binary bloom filter
+   * @param column the column to aggregate on
+   */
+  public static BinaryBloomFilter aggregate(Dataset<Row> data, String column) {
     Row[] aggregated = (Row[]) data.agg(functions.udaf(new BloomFilterAggregator(), Encoders.BINARY()).apply(data.col(column))).collect();
     byte[] bytes = aggregated[0].getAs(0);
     return fromBinary(bytes);

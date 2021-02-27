@@ -17,21 +17,17 @@ package org.projectnessie.versioned;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.util.stream.Stream;
-
 import javax.annotation.Nonnull;
-
-import org.projectnessie.versioned.AssetKey.NoOpAssetKey;
 
 import com.google.protobuf.ByteString;
 
 /**
  * ValueWorker implementation for {@code String class}. Can also be used as simple {@link Serializer}.
  */
-public final class StringWorker implements ValueWorker<String> {
-  private static final ValueWorker<String> INSTANCE = new StringWorker();
+public final class StringSerializer implements Serializer<String> {
+  private static final Serializer<String> INSTANCE = new StringSerializer();
 
-  private StringWorker() {
+  private StringSerializer() {
   }
 
   /**
@@ -39,7 +35,7 @@ public final class StringWorker implements ValueWorker<String> {
    * @return the instance
    */
   @Nonnull
-  public static ValueWorker<String> getInstance() {
+  public static Serializer<String> getInstance() {
     return INSTANCE;
   }
 
@@ -53,13 +49,4 @@ public final class StringWorker implements ValueWorker<String> {
     return ByteString.copyFrom(value, UTF_8);
   }
 
-  @Override
-  public Stream<AssetKey> getAssetKeys(String value) {
-    return Stream.of();
-  }
-
-  @Override
-  public Serializer<AssetKey> getAssetKeySerializer() {
-    return NoOpAssetKey.SERIALIZER;
-  }
 }

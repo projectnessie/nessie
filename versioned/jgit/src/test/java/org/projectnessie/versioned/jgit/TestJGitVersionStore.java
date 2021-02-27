@@ -57,7 +57,7 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.StringWorker;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
@@ -437,7 +437,7 @@ class TestJGitVersionStore {
   }
 
   private static final StoreWorker<String, String> WORKER =
-      StoreWorker.of(StringWorker.getInstance(), StringWorker.getInstance());
+      StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
 
   /**

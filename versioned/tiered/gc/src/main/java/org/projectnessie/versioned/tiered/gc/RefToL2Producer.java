@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.gc;
+package org.projectnessie.versioned.tiered.gc;
 
 import static org.apache.spark.sql.functions.col;
 import static org.apache.spark.sql.functions.explode;
 
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.apache.spark.sql.AnalysisException;
@@ -28,6 +27,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
 import org.apache.spark.sql.types.DataTypes;
+import org.projectnessie.versioned.gc.BinaryBloomFilter;
 import org.projectnessie.versioned.store.Store;
 
 /**
@@ -97,7 +97,7 @@ class RefToL2Producer {
 
 
     // find any l1 that is within the time slop and thus should always be considered referenced.
-    final long recentL1s = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) - slopMicros;
+    final long recentL1s = slopMicros;
     Dataset<Row> slopL1s = l1s.filter(String.format("dt > %d", recentL1s)).select("id", "children");
 
     // build a bloomfilter of all referenced l2's by exploding the tree of each l1's children.

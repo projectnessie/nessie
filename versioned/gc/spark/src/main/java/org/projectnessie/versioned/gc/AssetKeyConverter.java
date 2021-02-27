@@ -15,27 +15,15 @@
  */
 package org.projectnessie.versioned.gc;
 
-import org.apache.spark.sql.Column;
-import org.apache.spark.sql.functions;
-import org.apache.spark.sql.types.DataTypes;
-import org.projectnessie.versioned.store.Id;
-
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
- * Spark function to convert binary ids into string guids.
+ * convert a value into a stream of asset keys.
+ *
+ * @param <T> Value type. Each value is assumed to have a set of assets it depends on.
+ * @param <R> Concrete type of asset key. eg path on a filesystem or database record.
  */
-class BytesToGuid implements org.apache.spark.sql.api.java.UDF1<byte[], String> {
+public interface AssetKeyConverter<T, R extends AssetKey> extends Function<T, Stream<R>> {
 
-  private static final long serialVersionUID = -6415976956653691170L;
-
-  @Override
-  public String call(byte[] t1) throws Exception {
-    return Id.of(t1).toString();
-  }
-
-
-  public static Column toString(Column col) {
-    return functions.udf(new BytesToGuid(), DataTypes.StringType).apply(col);
-
-  }
 }

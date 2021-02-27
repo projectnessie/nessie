@@ -126,7 +126,7 @@ public class VersionStoreFactory {
           LOGGER.info("Using In Memory version store");
           versionStore = InMemoryVersionStore.<Contents, CommitMeta>builder()
               .metadataSerializer(storeWorker.getMetadataSerializer())
-              .valueSerializer(storeWorker.getValueWorker())
+              .valueSerializer(storeWorker.getValueSerializer())
               .build();
           break;
         default:

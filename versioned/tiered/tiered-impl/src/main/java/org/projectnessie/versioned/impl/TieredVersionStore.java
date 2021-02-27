@@ -102,7 +102,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
    * @param waitOnCollapse Whether to block on collapsing the InternalBranch commit log before returning valid L1s.
    */
   public TieredVersionStore(StoreWorker<DATA,METADATA> storeWorker, Store store, boolean waitOnCollapse) {
-    this.serializer = storeWorker.getValueWorker();
+    this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
     this.executor = Executors.newCachedThreadPool();

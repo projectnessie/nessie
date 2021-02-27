@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.gc;
-
-import java.util.concurrent.TimeUnit;
+package org.projectnessie.versioned.tiered.gc;
 
 import org.apache.spark.sql.api.java.UDF2;
 
@@ -27,8 +25,8 @@ class GcPolicy implements UDF2<String, Long, Boolean> {
 
   private final long youngestAllowedMicros;
 
-  public GcPolicy(long global) {
-    this.youngestAllowedMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) - global;
+  public GcPolicy(long youngestAllowedMicros) {
+    this.youngestAllowedMicros = youngestAllowedMicros;
   }
 
   @Override

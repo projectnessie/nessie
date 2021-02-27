@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.projectnessie.versioned.impl.EntityType;
+import org.projectnessie.versioned.impl.PersistentBase;
 import org.projectnessie.versioned.impl.PersistentBase.EntityBuilder;
 import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.UpdateExpression;

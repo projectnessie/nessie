@@ -34,13 +34,13 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.Key;
-import org.projectnessie.versioned.gc.IdCarrier;
-import org.projectnessie.versioned.gc.IdFrame;
-import org.projectnessie.versioned.gc.L1Frame;
-import org.projectnessie.versioned.gc.RefFrame;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
+import org.projectnessie.versioned.tiered.gc.IdCarrier;
+import org.projectnessie.versioned.tiered.gc.IdFrame;
+import org.projectnessie.versioned.tiered.gc.L1Frame;
+import org.projectnessie.versioned.tiered.gc.RefFrame;
 
 public class TestValueRetriever {
 
