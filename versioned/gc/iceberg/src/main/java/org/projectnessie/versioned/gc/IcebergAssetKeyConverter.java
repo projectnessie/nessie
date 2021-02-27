@@ -31,7 +31,7 @@ import org.projectnessie.model.IcebergTable;
 import com.google.common.base.Preconditions;
 
 
-public class IcebergAssetKeyConverter implements AssetKeyConverter<Contents>, Serializable {
+public class IcebergAssetKeyConverter implements AssetKeyConverter<Contents, IcebergAssetKey>, Serializable {
 
   private final SerializableConfiguration hadoopConfig;
 
@@ -39,11 +39,11 @@ public class IcebergAssetKeyConverter implements AssetKeyConverter<Contents>, Se
     hadoopConfig = configuration;
   }
 
-  private Stream<AssetKey> allFiles(TableMetadata metadata) {
+  private Stream<IcebergAssetKey> allFiles(TableMetadata metadata) {
     //note the namespace is not stored here so we can't know for sure what the full table path is
     final String tableName = new Path(metadata.location()).getName();
     final long snapshotId = metadata.currentSnapshot() == null ? -1L : metadata.currentSnapshot().snapshotId();
-    Stream<AssetKey> metadataFiles = Stream.of(
+    Stream<IcebergAssetKey> metadataFiles = Stream.of(
       new IcebergAssetKey(metadata.metadataFileLocation(), hadoopConfig, IcebergAssetKey.AssetKeyType.ICEBERG_METADATA, snapshotId,
           tableName), new IcebergAssetKey(metadata.location(), hadoopConfig, IcebergAssetKey.AssetKeyType.TABLE, 0, tableName));
 
@@ -64,10 +64,11 @@ public class IcebergAssetKeyConverter implements AssetKeyConverter<Contents>, Se
 
 
   @Override
-  public Stream<? extends AssetKey> getAssetKeys(Contents contents) {
+  public Stream<IcebergAssetKey> apply(Contents contents) {
     Preconditions.checkArgument(contents instanceof IcebergTable);
     TableMetadata metadata = TableMetadataParser.read(new HadoopFileIO(hadoopConfig.value()),
         ((IcebergTable) contents).getMetadataLocation());
     return allFiles(metadata);
   }
+
 }
