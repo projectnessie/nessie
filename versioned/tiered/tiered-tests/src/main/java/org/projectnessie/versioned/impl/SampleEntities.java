@@ -20,9 +20,11 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.KeyDelta;
+import org.projectnessie.versioned.tiered.Mutation;
 
 import com.google.protobuf.ByteString;
 
@@ -43,7 +45,7 @@ public class SampleEntities {
     return EntityType.L1.buildEntity(producer -> producer.commitMetadataId(createId(random))
         .children(IntStream.range(0, InternalL1.SIZE).mapToObj(x -> createId(random)))
         .ancestors(Stream.of(InternalL1.EMPTY.getId(), Id.EMPTY))
-        .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
+        .keyMutations(Stream.of(Mutation.Addition.of(Key.of(createString(random, 8), createString(random, 9)), (byte) 0)))
         .incrementalKeyList(InternalL1.EMPTY.getId(), 1));
   }
 
@@ -66,7 +68,7 @@ public class SampleEntities {
     return EntityType.L3.buildEntity(producer -> producer.keyDelta(IntStream.range(0, 100)
         .mapToObj(i -> KeyDelta
             .of(Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)),
-                createId(random)))));
+                createId(random), (byte) 0))));
   }
 
   /**
@@ -77,7 +79,7 @@ public class SampleEntities {
   public static InternalFragment createFragment(Random random) {
     return EntityType.KEY_FRAGMENT.buildEntity(producer -> producer.keys(IntStream.range(0, 10)
         .mapToObj(
-            i -> Key.of(createString(random, 5), createString(random, 9), String.valueOf(i)))));
+            i -> WithPayload.of((byte) 0, Key.of(createString(random, 5), createString(random, 9), String.valueOf(i))))));
   }
 
   /**
@@ -104,7 +106,7 @@ public class SampleEntities {
               .unsaved()
               .delta(1, createId(random), createId(random))
               .mutations()
-              .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
+              .keyMutation(Mutation.Addition.of(Key.of(createString(random, 8), createString(random, 8)), (byte) 0))
               .done();
         }));
   }

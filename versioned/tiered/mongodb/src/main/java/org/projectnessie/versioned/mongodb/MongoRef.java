@@ -25,8 +25,8 @@ import java.util.stream.Stream;
 
 import org.bson.BsonWriter;
 import org.bson.Document;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Id;
+import org.projectnessie.versioned.tiered.Mutation;
 import org.projectnessie.versioned.tiered.Ref;
 
 import com.google.common.primitives.Ints;
@@ -200,7 +200,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     }
 
     @Override
-    public UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
+    public UnsavedCommitMutations keyMutation(Mutation keyMutation) {
       maybeStart();
       if (state == 2) {
         state = 1;

@@ -84,48 +84,6 @@ public abstract class Key implements Comparable<Key> {
     return ImmutableKey.builder().addElements(elements).build();
   }
 
-  public enum MutationType {
-    ADDITION,
-    REMOVAL
-  }
-
-  public interface Mutation {
-    MutationType getType();
-
-    Key getKey();
-  }
-
-  @Immutable
-  abstract static class Addition implements Mutation {
-
-    @Override
-    public final MutationType getType() {
-      return MutationType.ADDITION;
-    }
-
-    @Override
-    public abstract Key getKey();
-  }
-
-  @Immutable
-  abstract static class Removal implements Mutation {
-
-    @Override
-    public final MutationType getType() {
-      return MutationType.REMOVAL;
-    }
-
-    @Override
-    public abstract Key getKey();
-  }
-
-  public Addition asAddition() {
-    return ImmutableAddition.builder().key(this).build();
-  }
-
-  public Removal asRemoval() {
-    return ImmutableRemoval.builder().key(this).build();
-  }
 
   @Override
   public String toString() {

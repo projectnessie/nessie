@@ -66,7 +66,13 @@ class TestTreeBuilder {
       public String fromBytes(ByteString bytes) {
         return bytes.toStringUtf8();
       }
+
+      @Override
+      public Byte getPayload(String value) {
+        return null;
+      }
     };
+
     ObjectId oid1 = TreeBuilder.commitObjects(ImmutableList.of(Put.of(Key.of("a", "b", "c.txt"), "foobar"),
                                                                Put.of(Key.of("a", "b", "d.txt"), "foobar"),
                                                                Put.of(Key.of("a", "i", "j.txt"), "foobar"),
@@ -91,7 +97,8 @@ class TestTreeBuilder {
       if (ObjectId.zeroId().equals(tw.getObjectId(0))) {
         continue;
       }
-      String value = serializer.fromBytes(ByteString.copyFrom(repository.newObjectReader().open(tw.getObjectId(0)).getBytes()));
+      ByteString table = ByteString.copyFrom(repository.newObjectReader().open(tw.getObjectId(0)).getBytes());
+      String value = serializer.fromBytes(table);
       results.put(tw.getPathString(), value);
     }
     Assertions.assertTrue(Sets.difference(expected, results.keySet()).isEmpty());

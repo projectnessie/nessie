@@ -22,10 +22,10 @@ import java.util.stream.Stream;
 import org.bson.BsonWriter;
 import org.bson.Document;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.tiered.Fragment;
 
 final class MongoFragment extends MongoBaseValue<Fragment> implements Fragment {
-
   static final String KEY_LIST = "keys";
 
   static void produce(Document document, Fragment v) {
@@ -38,12 +38,14 @@ final class MongoFragment extends MongoBaseValue<Fragment> implements Fragment {
   }
 
   @Override
-  public Fragment keys(Stream<Key> keys) {
+  public Fragment keys(Stream<WithPayload<Key>> keys) {
     addProperty(KEY_LIST);
     bsonWriter.writeStartArray(KEY_LIST);
     keys.forEach(k -> {
+      String payload = k.getPayload() == null ? Character.toString(MongoSerDe.ZERO_BYTE) : k.getPayload().toString();
       bsonWriter.writeStartArray();
-      k.getElements().forEach(bsonWriter::writeString);
+      bsonWriter.writeString(payload);
+      k.getValue().getElements().forEach(bsonWriter::writeString);
       bsonWriter.writeEndArray();
     });
     bsonWriter.writeEndArray();

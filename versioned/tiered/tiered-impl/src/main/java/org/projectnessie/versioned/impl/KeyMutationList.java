@@ -26,14 +26,14 @@ import org.projectnessie.versioned.store.Entity;
 @Immutable
 abstract class KeyMutationList {
 
-  abstract List<KeyMutation> getMutations();
+  abstract List<InternalMutation> getMutations();
 
-  static KeyMutationList of(List<KeyMutation> mutations) {
+  static KeyMutationList of(List<InternalMutation> mutations) {
     return ImmutableKeyMutationList.builder().mutations(mutations).build();
   }
 
   public Entity toEntity() {
-    return Entity.ofList(getMutations().stream().map(KeyMutation::toEntity).collect(Collectors.toList()));
+    return Entity.ofList(getMutations().stream().map(InternalMutation::toEntity).collect(Collectors.toList()));
   }
 
   /**
@@ -62,14 +62,14 @@ abstract class KeyMutationList {
       return false;
     }
 
-    List<KeyMutation> mm = getMutations();
-    List<KeyMutation> om = o.getMutations();
+    List<InternalMutation> mm = getMutations();
+    List<InternalMutation> om = o.getMutations();
     if (mm.size() != om.size()) {
       return false;
     }
 
-    Set<KeyMutation> s = new HashSet<>(mm);
-    for (KeyMutation km : om) {
+    Set<InternalMutation> s = new HashSet<>(mm);
+    for (InternalMutation km : om) {
       if (!s.contains(km)) {
         return false;
       }

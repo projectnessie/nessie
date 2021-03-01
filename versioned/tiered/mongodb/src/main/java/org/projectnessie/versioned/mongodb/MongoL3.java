@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import org.bson.BsonWriter;
 import org.bson.Document;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.KeyDelta;
 import org.projectnessie.versioned.tiered.L3;
@@ -49,7 +50,7 @@ final class MongoL3 extends MongoBaseValue<L3> implements L3 {
   private static void serializeKeyDelta(BsonWriter writer, KeyDelta keyDelta) {
     writer.writeStartDocument();
 
-    MongoSerDe.serializeKey(writer, TREE_KEY, keyDelta.getKey());
+    MongoSerDe.serializeKeyWithPayload(writer, TREE_KEY, WithPayload.of(keyDelta.getPayload(), keyDelta.getKey()));
     writer.writeBinaryData(TREE_ID, MongoSerDe.serializeId(keyDelta.getId()));
 
     writer.writeEndDocument();
@@ -62,9 +63,9 @@ final class MongoL3 extends MongoBaseValue<L3> implements L3 {
   }
 
   private static KeyDelta deserializeKeyDelta(Document d) {
-    Key key = MongoSerDe.deserializeKey((List<String>) d.get(TREE_KEY));
+    WithPayload<Key> key = MongoSerDe.deserializeKeyWithPayload((List<String>) d.get(TREE_KEY));
     Id id = MongoSerDe.deserializeId(d, TREE_ID);
-    return KeyDelta.of(key, id);
+    return KeyDelta.of(key.getValue(), id, key.getPayload());
   }
 
   @Override

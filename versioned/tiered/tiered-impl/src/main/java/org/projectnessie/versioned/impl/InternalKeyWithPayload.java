@@ -13,26 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.store;
+package org.projectnessie.versioned.impl;
 
 import javax.annotation.Nullable;
 
-import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithPayload;
 
-/**
- * Key-deltas of an L3.
- */
-@Immutable
-public interface KeyDelta {
-  Key getKey();
+@Value.Immutable
+public interface InternalKeyWithPayload {
 
-  Id getId();
+  InternalKey getKey();
 
   @Nullable
   Byte getPayload();
 
-  static KeyDelta of(Key key, Id id, Byte payload) {
-    return ImmutableKeyDelta.builder().key(key).id(id).payload(payload).build();
+  default WithPayload<Key> toKey() {
+    return WithPayload.of(getPayload(), getKey().toKey());
+  }
+
+  static InternalKeyWithPayload of(Byte payload, Key key) {
+    return ImmutableInternalKeyWithPayload.builder().payload(payload).key(new InternalKey(key)).build();
+  }
+
+  static InternalKeyWithPayload of(Byte payload, InternalKey key) {
+    return ImmutableInternalKeyWithPayload.builder().payload(payload).key(key).build();
   }
 }

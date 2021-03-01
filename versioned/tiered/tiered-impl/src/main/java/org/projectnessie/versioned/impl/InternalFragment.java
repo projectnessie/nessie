@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.Fragment;
 
@@ -28,24 +29,24 @@ import com.google.common.collect.ImmutableList;
 
 class InternalFragment extends PersistentBase<Fragment> {
 
-  private final List<InternalKey> keys;
+  private final List<InternalKeyWithPayload> keys;
 
-  InternalFragment(List<InternalKey> keys) {
+  InternalFragment(List<InternalKeyWithPayload> keys) {
     super();
     this.keys = ImmutableList.copyOf(keys);
   }
 
-  InternalFragment(Id id, List<InternalKey> keys, Long dt) {
+  InternalFragment(Id id, List<InternalKeyWithPayload> keys, Long dt) {
     super(id, dt);
     this.keys = ImmutableList.copyOf(keys);
   }
 
   @Override
   Id generateId() {
-    return Id.build(h -> keys.forEach(k -> InternalKey.addToHasher(k, h)));
+    return Id.build(h -> keys.forEach(k -> InternalKey.addToHasher(k.getKey(), h)));
   }
 
-  List<InternalKey> getKeys() {
+  List<InternalKeyWithPayload> getKeys() {
     return keys;
   }
 
@@ -69,7 +70,7 @@ class InternalFragment extends PersistentBase<Fragment> {
   @Override
   Fragment applyToConsumer(Fragment consumer) {
     return super.applyToConsumer(consumer)
-        .keys(keys.stream().map(InternalKey::toKey));
+        .keys(keys.stream().map(InternalKeyWithPayload::toKey));
   }
 
   /**
@@ -78,12 +79,12 @@ class InternalFragment extends PersistentBase<Fragment> {
   // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
   static class Builder extends EntityBuilder<InternalFragment, Fragment> implements Fragment {
 
-    private List<InternalKey> keys;
+    private List<InternalKeyWithPayload> keys;
 
     @Override
-    public Builder keys(Stream<Key> keys) {
+    public Builder keys(Stream<WithPayload<Key>> keys) {
       checkCalled(this.keys, "keys");
-      this.keys = keys.map(InternalKey::new).collect(Collectors.toList());
+      this.keys = keys.map(k -> InternalKeyWithPayload.of(k.getPayload(), k.getValue())).collect(Collectors.toList());
       return this;
     }
 

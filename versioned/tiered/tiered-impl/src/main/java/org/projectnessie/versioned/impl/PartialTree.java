@@ -314,7 +314,7 @@ class PartialTree<V> {
       valueId = Id.EMPTY;
     }
 
-    final Id newL3Id = l3.apply(l -> l.set(key, valueId));
+    final Id newL3Id = l3.apply(l -> l.set(key, valueId, null));
     final Id newL2Id = l2.apply(l -> l.set(key.getL2Position(), newL3Id));
     l1.apply(l -> l.set(key.getL1Position(), newL2Id));
   }
@@ -327,16 +327,19 @@ class PartialTree<V> {
 
     // now we'll do the save.
     Id valueId;
+    Byte payload;
     if (value.isPresent()) {
       ValueHolder<V> holder = ValueHolder.of(serializer,  value.get());
       values.put(key, holder);
       valueId = holder.getId();
+      payload = serializer.getPayload(value.get());
     } else {
       values.remove(key);
       valueId = Id.EMPTY;
+      payload = null;
     }
 
-    final Id newL3Id = l3.apply(l -> l.set(key, valueId));
+    final Id newL3Id = l3.apply(l -> l.set(key, valueId, payload));
     final Id newL2Id = l2.apply(l -> l.set(key.getL2Position(), newL3Id));
     l1.apply(l -> l.set(key.getL1Position(), newL2Id));
   }
