@@ -51,6 +51,7 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.impl.DiffFinder.KeyDiff;
 import org.projectnessie.versioned.impl.HistoryRetriever.HistoryItem;
 import org.projectnessie.versioned.impl.InternalBranch.Commit;
@@ -240,6 +241,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
 
       List<OperationHolder> holders = ops.stream().map(o -> new OperationHolder(current, expected, o)).collect(Collectors.toList());
+
       List<InconsistentValue> mismatches = holders.stream()
           .map(OperationHolder::verify)
           .filter(Optional::isPresent)
@@ -435,7 +437,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithPayload<Key>> getKeys(Ref ref) throws ReferenceNotFoundException {
     // naive implementation.
     InternalRefId refId = InternalRefId.of(ref);
     final InternalL1 start;
@@ -457,7 +459,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         throw new UnsupportedOperationException();
     }
 
-    return start.getKeys(store).map(InternalKey::toKey);
+    return start.getKeys(store).map(InternalKeyWithPayload::toKey);
   }
 
   @Override

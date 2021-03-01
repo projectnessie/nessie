@@ -17,7 +17,6 @@ package org.projectnessie.versioned.impl;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
-import org.projectnessie.versioned.impl.AbstractITTieredVersionStore;
 
 @ExtendWith(LocalDynamoDB.class)
 class ITDynamoTieredVersionStore extends AbstractITTieredVersionStore {

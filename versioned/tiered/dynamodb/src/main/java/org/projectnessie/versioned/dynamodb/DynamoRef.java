@@ -35,9 +35,9 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.ValueType;
+import org.projectnessie.versioned.tiered.Mutation;
 import org.projectnessie.versioned.tiered.Ref;
 
 import com.google.common.base.Preconditions;
@@ -190,7 +190,7 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
     }
 
     @Override
-    public UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
+    public UnsavedCommitMutations keyMutation(Mutation keyMutation) {
       if (keyMutations == null) {
         keyMutations = new ArrayList<>();
       }

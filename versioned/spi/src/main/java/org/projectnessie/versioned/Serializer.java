@@ -26,4 +26,6 @@ public interface Serializer<V> {
 
   V fromBytes(ByteString bytes);
 
+  Byte getPayload(V value);
+
 }

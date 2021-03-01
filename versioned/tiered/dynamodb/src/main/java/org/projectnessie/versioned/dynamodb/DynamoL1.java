@@ -30,10 +30,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.L1;
+import org.projectnessie.versioned.tiered.Mutation;
 
 import com.google.common.base.Preconditions;
 
@@ -74,7 +74,7 @@ class DynamoL1 extends DynamoBaseValue<L1> implements L1 {
   }
 
   @Override
-  public L1 keyMutations(Stream<Key.Mutation> keyMutations) {
+  public L1 keyMutations(Stream<Mutation> keyMutations) {
     addKeysSafe(MUTATIONS, list(keyMutations.map(AttributeValueUtil::serializeKeyMutation)));
     return this;
   }

@@ -197,7 +197,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       List<EntriesResponse.Entry> entries;
       try (Stream<EntriesResponse.Entry> s = getStore().getKeys(hash)
-          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key)).type(Type.UNKNOWN).build())) {
+          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key.getValue())).type(Type.fromPayload(key.getPayload())).build())) {
         entries = s.collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();

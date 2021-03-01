@@ -28,12 +28,12 @@ import java.util.stream.Stream;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
-import org.projectnessie.versioned.Key.Mutation;
 import org.projectnessie.versioned.impl.Ids;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.L1;
+import org.projectnessie.versioned.tiered.Mutation;
 
 /**
  * Class used for L1 records within Spark.

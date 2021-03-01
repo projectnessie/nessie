@@ -21,11 +21,11 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.impl.KeyList.IncrementalList;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.tiered.L1;
+import org.projectnessie.versioned.tiered.Mutation;
 
 class InternalL1 extends PersistentBase<L1> {
 
@@ -98,7 +98,7 @@ class InternalL1 extends PersistentBase<L1> {
     });
   }
 
-  Stream<InternalKey> getKeys(Store store) {
+  Stream<InternalKeyWithPayload> getKeys(Store store) {
     return keyList.getKeys(this, store);
   }
 
@@ -154,7 +154,7 @@ class InternalL1 extends PersistentBase<L1> {
   L1 applyToConsumer(L1 consumer) {
     super.applyToConsumer(consumer)
         .commitMetadataId(this.metadataId)
-        .keyMutations(this.keyList.getMutations().stream().map(KeyMutation::toMutation))
+        .keyMutations(this.keyList.getMutations().stream().map(InternalMutation::toMutation))
         .children(this.tree.stream())
         .ancestors(parentList.getParents().stream());
 
@@ -177,7 +177,7 @@ class InternalL1 extends PersistentBase<L1> {
     private Id metadataId;
     private Stream<Id> ancestors;
     private Stream<Id> children;
-    private final List<KeyMutation> keyChanges = new ArrayList<>();
+    private final List<InternalMutation> keyChanges = new ArrayList<>();
     private Id checkpointId;
     private int distanceFromCheckpoint;
     private Stream<Id> fragmentIds;
@@ -208,8 +208,8 @@ class InternalL1 extends PersistentBase<L1> {
     }
 
     @Override
-    public L1 keyMutations(Stream<Key.Mutation> keyMutations) {
-      keyMutations.map(KeyMutation::fromMutation)
+    public L1 keyMutations(Stream<Mutation> keyMutations) {
+      keyMutations.map(InternalMutation::fromMutation)
           .forEach(keyChanges::add);
       return this;
     }
