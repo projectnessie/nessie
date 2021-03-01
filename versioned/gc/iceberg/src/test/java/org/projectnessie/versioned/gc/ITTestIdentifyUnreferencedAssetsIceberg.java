@@ -104,7 +104,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
   private static final String NESSIE_ENDPOINT = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
 
   @TempDir
-  static File ALLEY_LOCAL_DIR;
+  static File LOCAL_DIR;
   private static SparkSession spark;
   private static SparkSession sparkDeleteBranch;
 
@@ -123,12 +123,12 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
     SparkConf conf = new SparkConf();
     conf.set("spark.sql.catalog.nessie.url", NESSIE_ENDPOINT)
         .set("spark.sql.catalog.nessie.ref", BRANCH)
-        .set("spark.sql.catalog.nessie.warehouse", ALLEY_LOCAL_DIR.toURI().toString())
+        .set("spark.sql.catalog.nessie.warehouse", LOCAL_DIR.toURI().toString())
         .set("spark.sql.catalog.nessie.catalog-impl", NessieCatalog.class.getName())
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
         .set("spark.sql.catalog.default_iceberg.url", NESSIE_ENDPOINT)
         .set("spark.sql.catalog.default_iceberg.ref", BRANCH)
-        .set("spark.sql.catalog.default_iceberg.warehouse", ALLEY_LOCAL_DIR.toURI().toString())
+        .set("spark.sql.catalog.default_iceberg.warehouse", LOCAL_DIR.toURI().toString())
         .set("spark.sql.catalog.default_iceberg.catalog-impl", NessieCatalog.class.getName())
         .set("spark.sql.catalog.default_iceberg", "org.apache.iceberg.spark.SparkCatalog")
         .set("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
@@ -169,7 +169,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
     Map<String, String> props = new HashMap<>();
     props.put("ref", BRANCH);
     props.put("url", NESSIE_ENDPOINT);
-    props.put("warehouse", ALLEY_LOCAL_DIR.toURI().toString());
+    props.put("warehouse", LOCAL_DIR.toURI().toString());
     Configuration hadoopConfig = spark.sessionState().newHadoopConf();
     catalog = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
 
@@ -298,9 +298,9 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
 
     // assert correct set of files still exists
     // we dont check exact file names as we can't know uuid. So we count extensions and directories
-    List<Path> paths = Files.walk(ALLEY_LOCAL_DIR.toPath()).filter(Files::isRegularFile).collect(Collectors.toList());
+    List<Path> paths = Files.walk(LOCAL_DIR.toPath()).filter(Files::isRegularFile).collect(Collectors.toList());
     Map<String, Long> existingPathCount = paths.stream()
-        .map(x -> x.toString().replace(ALLEY_LOCAL_DIR.toString() + "/test/table/", ""))
+        .map(x -> x.toString().replace(LOCAL_DIR.toString() + "/test/table/", ""))
         .map(x -> x.split("/",2)[0])
         .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     Map<String, Long> extensionCount = paths.stream()

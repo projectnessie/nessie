@@ -65,7 +65,8 @@ public class IcebergAssetKeyConverter implements AssetKeyConverter<Contents, Ice
 
   @Override
   public Stream<IcebergAssetKey> apply(Contents contents) {
-    Preconditions.checkArgument(contents instanceof IcebergTable);
+    Preconditions.checkArgument(contents instanceof IcebergTable,
+        String.format("Cannot process contents of type %s, only Iceberg Tables", contents.getClass().getName()));
     TableMetadata metadata = TableMetadataParser.read(new HadoopFileIO(hadoopConfig.value()),
         ((IcebergTable) contents).getMetadataLocation());
     return allFiles(metadata);
