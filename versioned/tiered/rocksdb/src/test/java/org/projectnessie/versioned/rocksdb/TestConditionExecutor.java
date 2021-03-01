@@ -37,23 +37,23 @@ import com.google.protobuf.ByteString;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestConditionExecutor {
-  private static final Random RANDOM = new Random(8612341233543L);
+  private static final Random RANDOM = new Random(getRandomSeed());
   private static final Entity TRUE_ENTITY = Entity.ofBoolean(true);
   private static final Entity ONE = Entity.ofNumber(1L);
   protected static final Random random = new Random(getRandomSeed());
-  private static final String sampleName = createString(random, 10);
-  private static final String sampleKey1 = createString(random, 5);
-  private static final String sampleKey2 = createString(random, 9);
+  private static final String sampleName = SampleEntities.createString(random, 10);
+  private static final String sampleKey1 = SampleEntities.createString(random, 5);
+  private static final String sampleKey2 = SampleEntities.createString(random, 9);
   private static final int keyListSize = 10;
 
   protected static long getRandomSeed() {
     return -2938423452345L;
   }
 
-  static final Id ID = createId(new Random(getRandomSeed()));
-  static final Id ID_2 = createId(new Random(getRandomSeed()));
-  static final Id ID_3 = createId(new Random(getRandomSeed()));
-  static final Id ID_4 = createId(new Random(getRandomSeed()));
+  static final Id ID = SampleEntities.createId(new Random(getRandomSeed()));
+  static final Id ID_2 = SampleEntities.createId(new Random(getRandomSeed()));
+  static final Id ID_3 = SampleEntities.createId(new Random(getRandomSeed()));
+  static final Id ID_4 = SampleEntities.createId(new Random(getRandomSeed()));
 
   @Test
   void executorL1Empty() {
@@ -335,7 +335,7 @@ class TestConditionExecutor {
 
   @Test
   void executorCommitMetadataValue() {
-    final ByteString value = ByteString.copyFrom(createBinary(random, 6));
+    final ByteString value = ByteString.copyFrom(SampleEntities.createBinary(random, 6));
     final List<Function> expectedFunctions = ImmutableList.of(
         ImmutableFunction.builder()
           .operator(Function.Operator.EQUALS)
@@ -366,8 +366,8 @@ class TestConditionExecutor {
 
   @Test
   void executorCommitMetadataValueNoMatch() {
-    final ByteString searchValue = ByteString.copyFrom(createBinary(random, 6));
-    final ByteString actualValue = ByteString.copyFrom(createBinary(random, 6));
+    final ByteString searchValue = ByteString.copyFrom(SampleEntities.createBinary(random, 6));
+    final ByteString actualValue = ByteString.copyFrom(SampleEntities.createBinary(random, 6));
     final List<Function> expectedFunctions = ImmutableList.of(
         ImmutableFunction.builder()
           .operator(Function.Operator.EQUALS)
@@ -576,7 +576,7 @@ class TestConditionExecutor {
         .commitMetadataId(ID)
         .children(Stream.generate(() -> ID).limit(RocksL1.SIZE))
         .ancestors(Stream.generate(() -> ID).limit(RocksL1.SIZE))
-        .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
+        .keyMutations(Stream.of(Key.of(SampleEntities.createString(random, 8), SampleEntities.createString(random, 9)).asAddition()))
         .incrementalKeyList(ID, 1);
   }
 
@@ -591,7 +591,7 @@ class TestConditionExecutor {
         .commitMetadataId(ID)
         .children(Stream.generate(() -> ID).limit(RocksL1.SIZE))
         .ancestors(Stream.generate(() -> ID).limit(RocksL1.SIZE))
-        .keyMutations(Stream.of(Key.of(createString(random, 8), createString(random, 9)).asAddition()))
+        .keyMutations(Stream.of(Key.of(SampleEntities.createString(random, 8), SampleEntities.createString(random, 9)).asAddition()))
         .completeKeyList(Stream.generate(() -> ID).limit(RocksL1.SIZE));
   }
 
@@ -611,7 +611,7 @@ class TestConditionExecutor {
     return (RocksL3) new RocksL3()
       .id(Id.EMPTY)
       .keyDelta(Stream.of(KeyDelta.of(
-        Key.of(createString(random, 8), createString(random, 9)),
+        Key.of(SampleEntities.createString(random, 8), SampleEntities.createString(random, 9)),
         Id.EMPTY)));
   }
 
@@ -638,7 +638,7 @@ class TestConditionExecutor {
             .unsaved()
               .delta(1, ID_2, ID_3)
               .mutations()
-                .keyMutation(Key.of(createString(random, 8), createString(random, 8)).asAddition())
+                .keyMutation(Key.of(SampleEntities.createString(random, 8), SampleEntities.createString(random, 8)).asAddition())
                 .done();
         })
       .backToRef();
@@ -666,40 +666,6 @@ class TestConditionExecutor {
       .keys(IntStream.range(0, keyListSize)
       .mapToObj(
         i -> Key.of(sampleKey1, sampleKey2, String.valueOf(i))));
-  }
-
-  /**
-   * Create a Sample ID entity.
-   * @param random object to use for randomization of entity creation.
-   * @return sample ID entity.
-   */
-  static Id createId(Random random) {
-    return Id.of(createBinary(random, 20));
-  }
-
-  /**
-   * Create an array of random bytes.
-   * @param random random number generator to use.
-   * @param numBytes the size of the array.
-   * @return the array of random bytes.
-   */
-  static byte[] createBinary(Random random, int numBytes) {
-    final byte[] buffer = new byte[numBytes];
-    random.nextBytes(buffer);
-    return buffer;
-  }
-
-  /**
-   * Create a String of random characters.
-   * @param random random number generator to use.
-   * @param numChars the size of the String.
-   * @return the String of random characters.
-   */
-  static String createString(Random random, int numChars) {
-    return random.ints('a', 'z' + 1)
-      .limit(numChars)
-      .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-      .toString();
   }
 
   /**
