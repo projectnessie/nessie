@@ -142,7 +142,8 @@ def delete_tag(base_url: str, tag: str, hash_: str, reason: str = None, ssl_veri
 
 
 def list_tables(
-    base_url: str, ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None, ssl_verify: bool = True
+    base_url: str, ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None,
+    entity_types: Optional[list] = None, ssl_verify: bool = True
 ) -> list:
     """Fetch a list of all tables from a known reference.
 
@@ -150,10 +151,14 @@ def list_tables(
     :param ref: reference
     :param max_result_hint: hint for the server, maximum number of results to return
     :param page_token: the token retrieved from a previous page returned for the same ref
+    :param entity_types: list of types to filter keys on
     :param ssl_verify: ignore ssl errors if False
     :return: json list of Nessie table names
     """
-    params = {}
+    if not entity_types:
+        entity_types = list()
+    entity_type_header = ",".join(entity_types)
+    params = {"types": entity_type_header}
     if max_result_hint:
         params["max"] = str(max_result_hint)
     if page_token:

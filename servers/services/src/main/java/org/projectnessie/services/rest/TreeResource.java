@@ -17,8 +17,10 @@
 package org.projectnessie.services.rest;
 
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -202,7 +204,15 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(String refName, Integer maxEntriesHint, String pageToken) throws NessieNotFoundException {
+  public EntriesResponse getEntries(String refName, Integer maxEntriesHint, String pageToken, List<String> types)
+      throws NessieNotFoundException {
+    final Set<Type> payloads;
+    if (types.isEmpty()) {
+      payloads = Arrays.stream(Type.values()).collect(Collectors.toSet());
+    } else {
+      payloads = types.stream().map(Type::valueOf).collect(Collectors.toSet());
+    }
+
     final Hash hash = getHashOrThrow(refName);
     // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
     //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
@@ -210,8 +220,10 @@ public class TreeResource extends BaseResource implements TreeApi {
     //  whether we shall just do the whole computation for a specific hash for every page or have
     //  a more sophisticated approach, potentially with support from the (tiered-)version-store.
     try {
+      // note currently we are filtering types at the REST level. This could in theory be pushed down to the store though
+      // all existing VersionStore implementations have to read all keys anyways so we don't get much
       List<EntriesResponse.Entry> entries;
-      try (Stream<EntriesResponse.Entry> s = getStore().getKeys(hash)
+      try (Stream<EntriesResponse.Entry> s = getStore().getKeys(hash).filter(x -> payloads.contains(x.getType()))
           .map(key -> EntriesResponse.Entry.builder().name(fromKey(key.getValue())).type((Type) key.getType()).build())) {
         entries = s.collect(ImmutableList.toImmutableList());
       }

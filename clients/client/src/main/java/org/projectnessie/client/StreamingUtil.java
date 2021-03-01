@@ -15,6 +15,7 @@
  */
 package org.projectnessie.client;
 
+import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.Stream;
 
@@ -38,18 +39,19 @@ public final class StreamingUtil {
 
   /**
    * Default implementation to return a stream of objects for a ref, functionally equivalent to
-   * calling {@link TreeApi#getEntries(String, Integer, String)} with manual paging.
+   * calling {@link TreeApi#getEntries(String, Integer, String, List)} with manual paging.
    * <p>The {@link Stream} returned by {@code getEntriesStream(ref, OptionalInt.empty())},
    * if not limited, returns all commit-log entries.</p>
    *
    * @param ref a named reference (branch or tag name) or a commit-hash
    * @param pageSizeHint page-size hint for the backend
+   * @param types types to filter on. Empty list means no filtering.
    * @return stream of {@link Entry} objects
    */
   public static Stream<Entry> getEntriesStream(@NotNull TreeApi treeApi, @NotNull String ref,
-      OptionalInt pageSizeHint) throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(EntriesResponse::getEntries, treeApi::getEntries)
-        .generateStream(ref, pageSizeHint);
+      OptionalInt pageSizeHint, List<String> types) throws NessieNotFoundException {
+    return new ResultStreamPaginator<>(EntriesResponse::getEntries,
+        (ref1, pageSize, token) -> treeApi.getEntries(ref1, pageSize, token, types)).generateStream(ref, pageSizeHint);
   }
 
   /**
