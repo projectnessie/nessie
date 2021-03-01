@@ -48,13 +48,16 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.WithPayload;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 /**
  * Base class used for integration tests against version store implementations.
@@ -243,18 +246,18 @@ public abstract class AbstractITVersionStore {
         WithHash.of(initialCommit, "Initial Commit")
         ));
 
-    assertThat(store().getKeys(branch).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(branch).map(WithPayload::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t4")
         ));
 
-    assertThat(store().getKeys(secondCommit).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(secondCommit).map(WithPayload::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t4")
         ));
 
-    assertThat(store().getKeys(initialCommit).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(initialCommit).map(WithPayload::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t3")
@@ -338,7 +341,7 @@ public abstract class AbstractITVersionStore {
         WithHash.of(initialCommit, "Initial Commit")
         ));
 
-    assertThat(store().getKeys(branch).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(branch).map(WithPayload::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t3")
@@ -969,6 +972,33 @@ public abstract class AbstractITVersionStore {
     List<Diff<String>> firstToFirst = store().getDiffs(firstCommit, firstCommit).collect(Collectors.toList());
     assertTrue(firstToFirst.isEmpty());
   }
+
+  @Test
+  void checkValueEntityType() throws Exception {
+    BranchName branch = BranchName.of("entity-types");
+    store().create(branch, Optional.empty());
+
+    // have to do this here as tiered store stores payload at commit time
+    StringSerializer.setPayload((byte) 24);
+    store().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"))
+    );
+    StringSerializer.unsetPayload();
+
+    assertEquals("world", store().getValue(branch, Key.of("hi")));
+    List<Optional<String>> values = store().getValues(branch, Lists.newArrayList(Key.of("hi")));
+    assertEquals(1, values.size());
+    assertTrue(values.get(0).isPresent());
+
+    // have to do this here as non-tiered store reads payload when getKeys is called
+    StringSerializer.setPayload((byte) 24);
+    List<WithPayload<Key>> keys = store().getKeys(branch).collect(Collectors.toList());
+    StringSerializer.unsetPayload();
+    assertEquals(1, keys.size());
+    assertEquals(Key.of("hi"), keys.get(0).getValue());
+    assertEquals((byte)24, keys.get(0).getPayload());
+  }
+
 
   protected CommitBuilder<String, String> forceCommit(String message) {
     return new CommitBuilder<>(store()).withMetadata(message);

@@ -55,6 +55,25 @@ public interface Contents {
 
   static enum Type {
     UNKNOWN, ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
+
+    public static Type fromPayload(Byte payload) {
+      if (payload == null || payload == 0 || payload > 5) {
+        return UNKNOWN;
+      }
+      if (payload == 1) {
+        return ICEBERG_TABLE;
+      }
+      if (payload == 2) {
+        return DELTA_LAKE_TABLE;
+      }
+      if (payload == 3) {
+        return HIVE_TABLE;
+      }
+      if (payload == 4) {
+        return HIVE_DATABASE;
+      }
+      return VIEW;
+    }
   }
 
   /**
@@ -71,4 +90,22 @@ public interface Contents {
     return Optional.empty();
   }
 
+  /**
+   * Convert this contents into a payload byte.
+   */
+  default byte toPayload() {
+    if (this instanceof IcebergTable) {
+      return 1;
+    } else if (this instanceof DeltaLakeTable) {
+      return 2;
+    } else if (this instanceof HiveTable) {
+      return 3;
+    } else if (this instanceof HiveDatabase) {
+      return 4;
+    } else if (this instanceof SqlView) {
+      return 5;
+    } else {
+      throw new IllegalArgumentException("Unknown type" + this);
+    }
+  }
 }

@@ -742,7 +742,8 @@ public abstract class AbstractTestStore<S extends Store> {
           ValueType.KEY_FRAGMENT,
           fragment.getId(),
           UpdateExpression.of(SetClause.appendToList(
-              ExpressionPath.builder("keys").build(), Entity.ofList(Entity.ofList(Entity.ofString(key))))),
+              ExpressionPath.builder("keys").build(),
+                Entity.ofList(Entity.ofList(Entity.ofString("24"), Entity.ofString(key))))),
           Optional.empty(),
           Optional.of(builder));
       Assertions.assertTrue(result);
@@ -750,8 +751,8 @@ public abstract class AbstractTestStore<S extends Store> {
 
       Assertions.assertEquals(fragment.getId(), updated.getId());
 
-      final List<InternalKey> oldKeys = new ArrayList<>(fragment.getKeys());
-      oldKeys.add(InternalKey.fromEntity(Entity.ofList(Entity.ofString(key))));
+      final List<InternalKeyWithPayload> oldKeys = new ArrayList<>(fragment.getKeys());
+      oldKeys.add(InternalKeyWithPayload.of((byte) 24, InternalKey.fromEntity(Entity.ofList(Entity.ofString(key)))));
       Assertions.assertEquals(oldKeys, updated.getKeys());
 
       testLoadSingle(ValueType.KEY_FRAGMENT, updated);
@@ -776,7 +777,7 @@ public abstract class AbstractTestStore<S extends Store> {
 
       Assertions.assertEquals(fragment.getId(), updated.getId());
 
-      final List<InternalKey> oldKeys = fragment.getKeys().subList(beginArrayIndex, endArrayIndex);
+      final List<InternalKeyWithPayload> oldKeys = fragment.getKeys().subList(beginArrayIndex, endArrayIndex);
       Assertions.assertEquals(oldKeys, updated.getKeys());
 
       testLoadSingle(ValueType.KEY_FRAGMENT, updated);

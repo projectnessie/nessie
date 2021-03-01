@@ -17,15 +17,17 @@ package org.projectnessie.versioned.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import org.immutables.value.Value.Immutable;
-import org.projectnessie.versioned.impl.KeyMutation.MutationType;
+import org.projectnessie.versioned.impl.InternalMutation.MutationType;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
 
@@ -46,7 +48,7 @@ abstract class KeyList {
     FULL
   }
 
-  abstract KeyList plus(Id parent, List<KeyMutation> mutations);
+  abstract KeyList plus(Id parent, List<InternalMutation> mutations);
 
   abstract Optional<KeyList> createCheckpointIfNeeded(InternalL1 startingPoint, Store store);
 
@@ -54,7 +56,7 @@ abstract class KeyList {
 
   static IncrementalList incremental(
       Id previousCheckpointL1,
-      List<KeyMutation> mutations,
+      List<InternalMutation> mutations,
       int distanceFromCheckpointCommits) {
     return ImmutableIncrementalList.builder()
         .previousCheckpoint(previousCheckpointL1)
@@ -62,10 +64,9 @@ abstract class KeyList {
         .mutations(mutations).build();
   }
 
-  abstract Stream<InternalKey> getKeys(InternalL1 startingPoint, Store store);
+  abstract Stream<InternalKeyWithPayload> getKeys(InternalL1 startingPoint, Store store);
 
-
-  abstract List<KeyMutation> getMutations();
+  abstract List<InternalMutation> getMutations();
 
   abstract List<Id> getFragments();
 
@@ -82,14 +83,14 @@ abstract class KeyList {
 
     public static final int MAX_DELTAS = 50;
 
-    public abstract List<KeyMutation> getMutations();
+    public abstract List<InternalMutation> getMutations();
 
     public abstract Id getPreviousCheckpoint();
 
     public abstract int getDistanceFromCheckpointCommits();
 
     @Override
-    public KeyList plus(Id parent, List<KeyMutation> mutations) {
+    public KeyList plus(Id parent, List<InternalMutation> mutations) {
       return ImmutableIncrementalList.builder()
           .addAllMutations(mutations)
           .distanceFromCheckpointCommits(getDistanceFromCheckpointCommits() + 1)
@@ -108,7 +109,7 @@ abstract class KeyList {
 
 
     @Override
-    Stream<InternalKey> getKeys(InternalL1 startingPoint, Store store) {
+    Stream<InternalKeyWithPayload> getKeys(InternalL1 startingPoint, Store store) {
       IterResult keys = getKeysIter(startingPoint, store);
       if (keys.isChanged()) {
         return keys.keyList;
@@ -152,7 +153,7 @@ abstract class KeyList {
 
       Set<InternalKey> removals = new HashSet<>();
       Set<InternalKey> adds = new HashSet<>();
-
+      Map<InternalKey, Byte> payloads = new HashMap<>();
 
       // determine the unique list of mutations. Operations that cancel each other out are ignored for checkpoint purposes.
       for (KeyList kl : incrementals) {
@@ -165,6 +166,7 @@ abstract class KeyList {
               removals.remove(key);
             } else {
               adds.add(key);
+              payloads.put(key, ((InternalMutation.InternalAddition) m).getPayload());
             }
           } else if (m.getType() == MutationType.REMOVAL) {
             if (adds.contains(key)) {
@@ -172,6 +174,8 @@ abstract class KeyList {
             } else {
               removals.add(key);
             }
+          } else if (m.getType() == MutationType.MODIFICATION) {
+            payloads.put(key, ((InternalMutation.InternalModification) m).getPayload());
           } else {
             throw new IllegalStateException("Invalid mutation type: " + m.getType().name());
           }
@@ -186,8 +190,9 @@ abstract class KeyList {
       return IterResult.changed(
           complete.fragmentIds.stream().collect(ImmutableSet.toImmutableSet()),
           Stream.concat(
-              complete.getKeys(startingPoint, store).filter(k -> !removals.contains(k)),
-              adds.stream()));
+              complete.getKeys(startingPoint, store).filter(k -> !removals.contains(k.getKey()))
+                  .map(k -> payloads.containsKey(k.getKey()) ? InternalKeyWithPayload.of(payloads.get(k.getKey()), k.getKey()) : k),
+              adds.stream().map(x -> InternalKeyWithPayload.of(payloads.get(x), x))));
     }
 
     @Override
@@ -197,10 +202,10 @@ abstract class KeyList {
 
     private static class IterResult {
       private final CompleteList list;
-      private final Stream<InternalKey> keyList;
+      private final Stream<InternalKeyWithPayload> keyList;
       private final Set<Id> previousFragmentIds;
 
-      private IterResult(CompleteList list, Stream<InternalKey> keyList, Set<Id> previousFragmentIds) {
+      private IterResult(CompleteList list, Stream<InternalKeyWithPayload> keyList, Set<Id> previousFragmentIds) {
         super();
         this.list = list;
         this.keyList = keyList;
@@ -211,7 +216,7 @@ abstract class KeyList {
         return new IterResult(list, null, null);
       }
 
-      public static IterResult changed(Set<Id> previousFragmentIds, Stream<InternalKey> keys) {
+      public static IterResult changed(Set<Id> previousFragmentIds, Stream<InternalKeyWithPayload> keys) {
         return new IterResult(null, keys, previousFragmentIds);
       }
 
@@ -234,15 +239,15 @@ abstract class KeyList {
    */
   static class CompleteList extends KeyList {
     private final List<Id> fragmentIds;
-    private final List<KeyMutation> mutations;
+    private final List<InternalMutation> mutations;
 
-    public CompleteList(List<Id> fragmentIds, List<KeyMutation> mutations) {
+    public CompleteList(List<Id> fragmentIds, List<InternalMutation> mutations) {
       this.fragmentIds = Preconditions.checkNotNull(fragmentIds);
       this.mutations = ImmutableList.copyOf(mutations);
     }
 
     @Override
-    public KeyList plus(Id parent, List<KeyMutation> mutations) {
+    public KeyList plus(Id parent, List<InternalMutation> mutations) {
       return ImmutableIncrementalList.builder()
           .addAllMutations(mutations)
           .distanceFromCheckpointCommits(1)
@@ -284,7 +289,7 @@ abstract class KeyList {
     }
 
     @Override
-    Stream<InternalKey> getKeys(InternalL1 startingPoint, Store store) {
+    Stream<InternalKeyWithPayload> getKeys(InternalL1 startingPoint, Store store) {
       return fragmentIds.stream().flatMap(f -> {
         InternalFragment fragment = EntityType.KEY_FRAGMENT.loadSingle(store, f);
         return fragment.getKeys().stream();
@@ -292,7 +297,7 @@ abstract class KeyList {
     }
 
     @Override
-    List<KeyMutation> getMutations() {
+    List<InternalMutation> getMutations() {
       return mutations;
     }
 
@@ -314,7 +319,7 @@ abstract class KeyList {
     private static final int MAX_SIZE = 400_000 - 8096;
     private final Store store;
     private final Set<Id> presaved;
-    private final List<InternalKey> currentList = new ArrayList<>();
+    private final List<InternalKeyWithPayload> currentList = new ArrayList<>();
     private final List<Id> fragmentIds = new ArrayList<>();
     private int currentListSize;
 
@@ -324,9 +329,9 @@ abstract class KeyList {
       this.presaved = presaved;
     }
 
-    public void addKey(InternalKey key) {
+    public void addKey(InternalKeyWithPayload key) {
       currentList.add(key);
-      currentListSize += key.estimatedSize();
+      currentListSize += key.getKey().estimatedSize() + 1;
 
       rotate(false);
     }
@@ -353,7 +358,7 @@ abstract class KeyList {
       rotate(true);
     }
 
-    public CompleteList getCompleteList(List<KeyMutation> mutations) {
+    public CompleteList getCompleteList(List<InternalMutation> mutations) {
       Preconditions.checkArgument(currentList.isEmpty());
       return new CompleteList(fragmentIds, mutations);
     }

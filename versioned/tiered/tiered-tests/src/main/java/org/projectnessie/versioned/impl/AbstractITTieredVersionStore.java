@@ -16,17 +16,22 @@
 package org.projectnessie.versioned.impl;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.hamcrest.Matchers;
@@ -48,16 +53,19 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.impl.InconsistentValue.InconsistentValueException;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 public abstract class AbstractITTieredVersionStore {
 
@@ -82,6 +90,127 @@ public abstract class AbstractITTieredVersionStore {
   }
 
   protected abstract AbstractTieredStoreFixture<?, ?> createNewFixture();
+
+  @Test
+  void checkValueEntityType() throws Exception {
+
+    BranchName branch = BranchName.of("entity-types");
+    versionStore().create(branch, Optional.empty());
+    StringSerializer.setPayload((byte) 24);
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"))
+    );
+    StringSerializer.unsetPayload();
+
+    assertEquals("world", versionStore().getValue(branch, Key.of("hi")));
+    List<Optional<String>> values = versionStore().getValues(branch, Lists.newArrayList(Key.of("hi")));
+    assertEquals(1, values.size());
+    assertTrue(values.get(0).isPresent());
+
+    List<WithPayload<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertEquals(1, keys.size());
+    assertEquals(Key.of("hi"), keys.get(0).getValue());
+    assertEquals((byte)24, keys.get(0).getPayload());
+
+  }
+
+  @Test
+  void checkValueEntityTypeWithRemoval() throws Exception {
+
+    BranchName branch = BranchName.of("entity-types-with-removal");
+    versionStore().create(branch, Optional.empty());
+    StringSerializer.setPayload((byte) 24);
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"))
+    );
+    StringSerializer.unsetPayload();
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Delete.of(Key.of("hi"))));
+
+    List<WithPayload<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertTrue(keys.isEmpty());
+
+  }
+
+  @Test
+  void checkValueEntityTypeAfterKeyRoll() throws Exception {
+    BranchName branch = BranchName.of("entity-types-key-roll");
+    versionStore().create(branch, Optional.empty());
+    for (int i = 0; i < 128; i++) {
+      StringSerializer.setPayload((byte) i);
+      versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+          Put.of(Key.of("hi" + i), "world" + i))
+      );
+      StringSerializer.unsetPayload();
+    }
+
+    List<WithPayload<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertEquals(128, keys.size());
+    assertThat(keys.stream().map(x -> x.getValue().getElements().get(0)).collect(Collectors.toList()),
+        containsInAnyOrder(IntStream.range(0, 128).mapToObj(i -> "hi" + i).toArray(String[]::new)));
+    assertThat(keys.stream().map(WithPayload::getPayload).collect(Collectors.toList()),
+        containsInAnyOrder(IntStream.range(0, 128).mapToObj(i -> (byte)i).toArray(Byte[]::new)));
+  }
+
+  @Test
+  void checkValueEntityTypeAfterKeyRollWithModification() throws Exception {
+    BranchName branch = BranchName.of("entity-types-key-roll-modification");
+    versionStore().create(branch, Optional.empty());
+    for (int i = 0; i < 128; i++) {
+      StringSerializer.setPayload((byte) i);
+      versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+          Put.of(Key.of("hi" + i), "world" + i))
+      );
+      StringSerializer.unsetPayload();
+    }
+    StringSerializer.setPayload((byte) 22);
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi" + 12), "world-weary" + 12))
+    );
+    StringSerializer.unsetPayload();
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Delete.of(Key.of("hi" + 22))));
+
+    List<WithPayload<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertEquals(127, keys.size());
+    assertThat(keys.stream().map(x -> x.getValue().getElements().get(0)).collect(Collectors.toList()),
+        containsInAnyOrder(IntStream.range(0, 128).filter(i -> i != 22).mapToObj(i -> "hi" + i).toArray(String[]::new)));
+    assertThat(keys.stream().map(WithPayload::getPayload).collect(Collectors.toList()),
+        containsInAnyOrder(IntStream.range(0, 128)
+          .filter(i -> i != 22).map(i -> i == 12 ? 22 : i).mapToObj(i -> (byte)i).toArray(Byte[]::new)));
+  }
+
+  @Test
+  void checkValueEntityTypeAfterKeyRollWithModification2() throws Exception {
+    BranchName branch = BranchName.of("entity-types-key-roll-modification2");
+    versionStore().create(branch, Optional.empty());
+    Map<String, Byte> payloads = new HashMap<>();
+    for (int i = 0; i < 128; i++) {
+      StringSerializer.setPayload((byte) i);
+      versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+          Put.of(Key.of("hi" + i), "world" + i))
+      );
+      payloads.put("hi" + i, (byte) i);
+      StringSerializer.unsetPayload();
+      if (i % 26 == 0 && i > 25) {
+        StringSerializer.setPayload((byte) (i + 10));
+        versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+            Put.of(Key.of("hi" + i), "world-weary" + i))
+        );
+        payloads.put("hi" + i, (byte) (i + 10));
+        StringSerializer.unsetPayload();
+      }
+      if (i % 26 == 0 && i > 25) {
+        versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Delete.of(Key.of("hi" + i))));
+        payloads.remove("hi" + i);
+      }
+    }
+
+    List<WithPayload<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertEquals(payloads.size(), keys.size());
+    assertThat(keys.stream().map(x -> x.getValue().getElements().get(0)).collect(Collectors.toList()),
+        containsInAnyOrder(payloads.keySet().toArray(new String[0])));
+    assertThat(keys.stream().map(WithPayload::getPayload).collect(Collectors.toList()),
+        containsInAnyOrder(payloads.values().toArray(new Byte[0])));
+  }
 
   @Test
   void checkDuplicateValueCommit() throws Exception {
@@ -155,7 +284,7 @@ public abstract class AbstractITTieredVersionStore {
         Put.of(Key.of("no"), "world"),
         Put.of(Key.of("mad mad"), "world")));
     assertEquals(0, EntityType.L2.loadSingle(store(), InternalL2.EMPTY_ID).size());
-    assertThat(versionStore().getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
+    assertThat(versionStore().getKeys(branch).map(WithPayload::getValue).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
         Matchers.containsInAnyOrder("hi", "no", "mad mad"));
   }
 
@@ -182,7 +311,7 @@ public abstract class AbstractITTieredVersionStore {
       current = versionStore().toHash(branch);
     }
 
-    List<Key> keysFromStore = versionStore().getKeys(branch).collect(Collectors.toList());
+    List<Key> keysFromStore = versionStore().getKeys(branch).map(WithPayload::getValue).collect(Collectors.toList());
 
     // ensure that our total key size is greater than a single dynamo page.
     assertThat(keysFromStore.size() * longName.length, Matchers.greaterThan(400000));

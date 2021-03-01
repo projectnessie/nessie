@@ -140,6 +140,11 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
       }
     }
+
+    @Override
+    public Byte getPayload(Contents value) {
+      return value.toPayload();
+    }
   }
 
   private static class MetadataSerializer implements Serializer<CommitMeta> {
@@ -164,6 +169,11 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
             .hash("unknown")
             .build();
       }
+    }
+
+    @Override
+    public Byte getPayload(CommitMeta value) {
+      return null;
     }
   }
 

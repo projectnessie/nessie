@@ -18,7 +18,6 @@ package org.projectnessie.versioned.tiered;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Id;
 
 /**
@@ -307,7 +306,7 @@ public interface Ref extends BaseValue<Ref> {
      * @param keyMutation key-mutation
      * @return this consumer
      */
-    default UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
+    default UnsavedCommitMutations keyMutation(Mutation keyMutation) {
       return this;
     }
 

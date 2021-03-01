@@ -23,6 +23,7 @@ import org.projectnessie.versioned.store.Id;
  * Describes the current and previous state of the value.
  */
 @Value.Immutable
+@Value.Style(builder = "getBuilder")
 abstract class PositionDelta {
 
   static final PositionDelta SINGLE_ZERO = PositionDelta.builder().newId(Id.EMPTY).oldId(Id.EMPTY).position(0).build();
@@ -35,7 +36,7 @@ abstract class PositionDelta {
   abstract Id getNewId();
 
   static ImmutablePositionDelta.Builder builder() {
-    return ImmutablePositionDelta.builder();
+    return ImmutablePositionDelta.getBuilder();
   }
 
   boolean isDirty() {
@@ -59,7 +60,7 @@ abstract class PositionDelta {
   }
 
   static PositionDelta of(int position, Id id) {
-    return ImmutablePositionDelta.builder().oldId(id).newId(id).position(position).build();
+    return ImmutablePositionDelta.getBuilder().oldId(id).newId(id).position(position).build();
   }
 
   final UnsavedDelta toUnsavedDelta() {

@@ -22,8 +22,6 @@ import java.util.stream.Stream;
 
 import org.projectnessie.versioned.ImmutableKey;
 import org.projectnessie.versioned.impl.DiffFinder.KeyDiff;
-import org.projectnessie.versioned.impl.KeyMutation.KeyAddition;
-import org.projectnessie.versioned.impl.KeyMutation.KeyRemoval;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.KeyDelta;
 import org.projectnessie.versioned.tiered.L3;
@@ -36,23 +34,23 @@ class InternalL3 extends PersistentBase<L3> {
 
   private static final long HASH_SEED = 4604180344422375655L;
 
-  private final TreeMap<InternalKey, PositionDelta> map;
+  private final TreeMap<InternalKey, PositionDeltaWithPayload> map;
 
   static InternalL3 EMPTY = new InternalL3(new TreeMap<>());
   static Id EMPTY_ID = EMPTY.getId();
 
-  private InternalL3(TreeMap<InternalKey, PositionDelta> keys) {
+  private InternalL3(TreeMap<InternalKey, PositionDeltaWithPayload> keys) {
     this(null, keys, DT.now());
   }
 
-  private InternalL3(Id id, TreeMap<InternalKey, PositionDelta> keys, Long dt) {
+  private InternalL3(Id id, TreeMap<InternalKey, PositionDeltaWithPayload> keys, Long dt) {
     super(id, dt);
     this.map = keys;
     ensureConsistentId();
   }
 
   Id getId(InternalKey key) {
-    PositionDelta delta = map.get(key);
+    PositionDeltaWithPayload delta = map.get(key);
     if (delta == null) {
       return Id.EMPTY;
     }
@@ -73,14 +71,14 @@ class InternalL3 extends PersistentBase<L3> {
   }
 
   @SuppressWarnings("unchecked")
-  InternalL3 set(InternalKey key, Id valueId) {
-    TreeMap<InternalKey, PositionDelta> newMap = (TreeMap<InternalKey, PositionDelta>) map.clone();
-    PositionDelta newDelta = newMap.get(key);
+  InternalL3 set(InternalKey key, Id valueId, Byte payload) {
+    TreeMap<InternalKey, PositionDeltaWithPayload> newMap = (TreeMap<InternalKey, PositionDeltaWithPayload>) map.clone();
+    PositionDeltaWithPayload newDelta = newMap.get(key);
     if (newDelta == null) {
-      newDelta = PositionDelta.SINGLE_ZERO;
+      newDelta = PositionDeltaWithPayload.SINGLE_ZERO;
     }
 
-    newDelta = ImmutablePositionDelta.builder().from(newDelta).newId(valueId).build();
+    newDelta = PositionDeltaWithPayload.builderWithPayload().from(newDelta).newId(valueId).newPayload(payload).build();
     if (!newDelta.isDirty()) {
       // this turned into a no-op delta, remove it entirely from the map.
       newMap.remove(key);
@@ -108,18 +106,21 @@ class InternalL3 extends PersistentBase<L3> {
     });
   }
 
-  Stream<KeyMutation> getMutations() {
-    return map.entrySet().stream().filter(e -> e.getValue().wasAddedOrRemoved())
+  Stream<InternalMutation> getMutations() {
+    return map.entrySet().stream().filter(e -> e.getValue().isDirty())
         .map(e -> {
-          PositionDelta d = e.getValue();
+          PositionDeltaWithPayload d = e.getValue();
           if (d.wasAdded()) {
-            return KeyAddition.of(e.getKey());
+            return InternalMutation.InternalAddition.of(e.getKey(), d.getNewPayload());
           } else if (d.wasRemoved()) {
-            return KeyRemoval.of(e.getKey());
+            return InternalMutation.InternalRemoval.of(e.getKey());
+          } else if (e.getValue().isPayloadDirty()) {
+            // existing key that has changed type
+            return InternalMutation.InternalModification.of(e.getKey(), e.getValue().getNewPayload());
           } else {
-            throw new IllegalStateException("This list should have been filtered to only items that were either added or removed.");
+            return null;
           }
-        });
+        }).filter(java.util.Objects::nonNull);
   }
 
   Stream<InternalKey> getKeys() {
@@ -156,7 +157,7 @@ class InternalL3 extends PersistentBase<L3> {
 
     Stream<KeyDelta> keyDelta = this.map.entrySet().stream()
         .filter(e -> !e.getValue().getNewId().isEmpty())
-        .map(e -> KeyDelta.of(e.getKey().toKey(), e.getValue().getNewId()));
+        .map(e -> KeyDelta.of(e.getKey().toKey(), e.getValue().getNewId(), e.getValue().getNewPayload()));
     consumer.keyDelta(keyDelta);
 
     return consumer;
@@ -191,7 +192,7 @@ class InternalL3 extends PersistentBase<L3> {
           keyDelta.collect(
               Collectors.toMap(
                   kd -> new InternalKey(ImmutableKey.builder().addAllElements(kd.getKey().getElements()).build()),
-                  kd -> PositionDelta.of(0, kd.getId()),
+                  kd -> PositionDeltaWithPayload.of(0, kd.getId()),
                   (a, b) -> {
                     throw new IllegalArgumentException(String.format("Got Id %s and %s for same key",
                         a.getNewId(), b.getNewId()));

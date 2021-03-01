@@ -28,4 +28,6 @@ public interface Serializer<V> extends Serializable {
 
   V fromBytes(ByteString bytes);
 
+  Byte getPayload(V value);
+
 }

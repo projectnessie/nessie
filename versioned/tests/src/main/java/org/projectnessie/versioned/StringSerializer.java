@@ -25,6 +25,7 @@ import com.google.protobuf.ByteString;
  * ValueWorker implementation for {@code String class}. Can also be used as simple {@link Serializer}.
  */
 public final class StringSerializer implements Serializer<String> {
+  private static Byte PAYLOAD = null;
   private static final Serializer<String> INSTANCE = new StringSerializer();
 
   private StringSerializer() {
@@ -45,8 +46,26 @@ public final class StringSerializer implements Serializer<String> {
   }
 
   @Override
+  public Byte getPayload(String value) {
+    return PAYLOAD;
+  }
+
+  @Override
   public ByteString toBytes(String value) {
     return ByteString.copyFrom(value, UTF_8);
   }
 
+  /**
+   * set the byte payload for testing purposes.
+   */
+  public static void setPayload(Byte payload) {
+    PAYLOAD = payload;
+  }
+
+  /**
+   * reset the byte payload for testing purposes.
+   */
+  public static void unsetPayload() {
+    setPayload(null);
+  }
 }
