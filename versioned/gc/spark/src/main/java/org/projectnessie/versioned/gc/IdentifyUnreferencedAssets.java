@@ -40,6 +40,7 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
   protected final Serializer<T> valueSerializer;
   private final Serializer<AssetKey> assetKeySerializer;
   private final AssetKeyConverter<T, R> assetKeyConverter;
+  private final FilterFunction<CategorizedValue> valueTypeFilter;
   private final SparkSession spark;
 
   /**
@@ -49,26 +50,29 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
       Serializer<T> valueSerializer,
       Serializer<AssetKey> assetKeySerializer,
       AssetKeyConverter<T, R> assetKeyConverter,
+      FilterFunction<CategorizedValue> valueTypeFilter,
       SparkSession spark) {
     super();
     this.valueSerializer = valueSerializer;
     this.assetKeySerializer = assetKeySerializer;
     this.assetKeyConverter = assetKeyConverter;
+    this.valueTypeFilter = valueTypeFilter;
     this.spark = spark;
   }
 
   public Dataset<UnreferencedItem> identify(Dataset<CategorizedValue> categorizedValues) {
-    return go(valueSerializer, categorizedValues, assetKeySerializer, assetKeyConverter, spark);
+    return go(valueSerializer, categorizedValues, assetKeySerializer, assetKeyConverter, valueTypeFilter, spark);
   }
 
   private static <T, R extends AssetKey> Dataset<UnreferencedItem> go(Serializer<T> valueSerializer,
       Dataset<CategorizedValue> categorizedValues, Serializer<AssetKey> assetKeySerializer, AssetKeyConverter<T, R> assetKeyConverter,
-      SparkSession spark) {
+      FilterFunction<CategorizedValue> valueTypeFilter, SparkSession spark) {
 
     // If it is, generate a referenced asset. If not, generate a non-referenced asset.
     // this is a single output that has a categorization column
     AssetFlatMapper<T, R> mapper = new AssetFlatMapper<T, R>(valueSerializer, assetKeySerializer, assetKeyConverter);
-    Dataset<CategorizedAssetKey> assets = categorizedValues.flatMap(mapper, Encoders.bean(CategorizedAssetKey.class));
+    Dataset<CategorizedAssetKey> assets = categorizedValues.filter(valueTypeFilter)
+        .flatMap(mapper, Encoders.bean(CategorizedAssetKey.class));
 
     // generate a bloom filter of referenced items.
     final BinaryBloomFilter referencedAssets = BinaryBloomFilter.aggregate(assets.filter("referenced = true").select("uniqueKey"),

@@ -149,7 +149,7 @@ public class ITTestIdentifyUnreferencedAssets {
     assertThat(actualValues, containsInAnyOrder(expectedValues.toArray(new DummyValue[0])));
 
     IdentifyUnreferencedAssets<DummyValue, GcTestUtils.DummyAsset> identifyAssets = new IdentifyUnreferencedAssets<>(
-        helper.getValueSerializer(), new GcTestUtils.DummyAssetKeySerializer(), new DummyAssetConverter(), spark);
+        helper.getValueSerializer(), new GcTestUtils.DummyAssetKeySerializer(), new DummyAssetConverter(), v -> true, spark);
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = identifyAssets.identify(values);
     Set<String> unreferencedItems = items.collectAsList().stream().map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
         .collect(Collectors.toSet());

@@ -68,7 +68,7 @@ class ITIdentifyUnreferencedAssets {
 
 
     IdentifyUnreferencedAssets<DummyValue, GcTestUtils.DummyAsset> ident = new IdentifyUnreferencedAssets<>(new DummyValueSerializer(),
-        new GcTestUtils.DummyAssetKeySerializer(), new DummyAssetConverter(), spark);
+        new GcTestUtils.DummyAssetKeySerializer(), new DummyAssetConverter(), v -> true, spark);
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = ident.identify(generate(spark));
     Set<String> unreferencedItems = items.collectAsList().stream().map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
         .collect(Collectors.toSet());

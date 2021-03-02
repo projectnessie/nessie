@@ -72,6 +72,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.Reference;
+import org.projectnessie.server.providers.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
@@ -178,7 +179,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
     hadoopConfig = sparkDeleteBranch.sessionState().newHadoopConf();
     catalogDeleteBranch = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
 
-    helper = new GcStoreWorker();
+    helper = new TableCommitMetaStoreWorker();
   }
 
 
@@ -263,7 +264,9 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
     SerializableConfiguration hadoopConfig = new SerializableConfiguration(spark.sessionState().newHadoopConf());
     AssetKeySerializer assetKeySerializer = new AssetKeySerializer(hadoopConfig);
     Serializer<Contents> valueSerializer = helper.getValueSerializer();
-    IdentifyUnreferencedIcebergAssets assets = new IdentifyUnreferencedIcebergAssets(valueSerializer, assetKeySerializer, spark);
+    IcebergAssetKeyConverter converter = new IcebergAssetKeyConverter(hadoopConfig);
+    IdentifyUnreferencedAssets<Contents, IcebergAssetKey> assets =
+        new IdentifyUnreferencedAssets<>(valueSerializer, assetKeySerializer, converter, new ValueTypeFilter(valueSerializer), spark);
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = assets.identify(values);
 
     //collect into a multimap for assertions
