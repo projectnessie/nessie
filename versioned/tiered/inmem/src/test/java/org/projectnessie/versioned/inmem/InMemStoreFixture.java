@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.config;
+package org.projectnessie.versioned.inmem;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import io.quarkus.arc.config.ConfigProperties;
-import io.quarkus.runtime.annotations.RegisterForReflection;
+import org.projectnessie.versioned.impl.AbstractTieredStoreFixture;
 
 /**
- * Version store configuration.
+ * DynamoDB Store fixture.
+ *
+ * <p>Combine a local dynamodb server with a {@code VersionStore} instance to be used for tests.
  */
-@ConfigProperties(prefix = "nessie.version.store")
-public interface VersionStoreConfig {
-
-  @RegisterForReflection
-  public enum VersionStoreType {
-    DYNAMO,
-    INMEMORY,
-    JGIT,
-    TIERED_INMEMORY
+public class InMemStoreFixture extends AbstractTieredStoreFixture<InMemStore, String> {
+  public InMemStoreFixture() {
+    super("");
   }
 
-  @ConfigProperty(name = "type", defaultValue = "INMEMORY")
-  VersionStoreType getVersionStoreType();
+  @Override
+  public InMemStore createStoreImpl() {
+    return new InMemStore();
+  }
+
+  @Override
+  public void close() {
+    getStore().close();
+  }
 }

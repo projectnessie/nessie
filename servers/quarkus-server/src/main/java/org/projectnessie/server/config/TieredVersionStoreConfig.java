@@ -17,23 +17,7 @@ package org.projectnessie.server.config;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import io.quarkus.arc.config.ConfigProperties;
-import io.quarkus.runtime.annotations.RegisterForReflection;
-
-/**
- * Version store configuration.
- */
-@ConfigProperties(prefix = "nessie.version.store")
-public interface VersionStoreConfig {
-
-  @RegisterForReflection
-  public enum VersionStoreType {
-    DYNAMO,
-    INMEMORY,
-    JGIT,
-    TIERED_INMEMORY
-  }
-
-  @ConfigProperty(name = "type", defaultValue = "INMEMORY")
-  VersionStoreType getVersionStoreType();
+public interface TieredVersionStoreConfig {
+  @ConfigProperty(name = "tracing", defaultValue = "true")
+  boolean enableTracing();
 }

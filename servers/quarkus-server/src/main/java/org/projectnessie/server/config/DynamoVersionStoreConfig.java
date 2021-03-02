@@ -24,14 +24,11 @@ import io.quarkus.arc.config.ConfigProperties;
  * DynamoDB version store configuration.
  */
 @ConfigProperties(prefix = "nessie.version.store.dynamo")
-public interface DynamoVersionStoreConfig {
+public interface DynamoVersionStoreConfig extends TieredVersionStoreConfig {
 
   @ConfigProperty(name = "initialize", defaultValue = "false")
   boolean isDynamoInitialize();
 
   @ConfigProperty(defaultValue = DynamoStoreConfig.TABLE_PREFIX)
   String getTablePrefix();
-
-  @ConfigProperty(name = "tracing", defaultValue = "true")
-  boolean enableTracing();
 }

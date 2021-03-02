@@ -17,7 +17,6 @@ package org.projectnessie.server.providers;
 
 import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.DYNAMO;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -27,11 +26,9 @@ import javax.inject.Inject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.server.config.DynamoVersionStoreConfig;
-import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
-import org.projectnessie.versioned.impl.TieredVersionStore;
+import org.projectnessie.versioned.store.Store;
 
 import software.amazon.awssdk.regions.Region;
 
@@ -40,7 +37,7 @@ import software.amazon.awssdk.regions.Region;
  */
 @StoreType(DYNAMO)
 @Dependent
-public class DynamoVersionStoreFactory implements VersionStoreFactory {
+public class DynamoVersionStoreFactory extends TieredVersionStoreFactory {
   private final DynamoVersionStoreConfig config;
 
   private final String region;
@@ -53,21 +50,15 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
   public DynamoVersionStoreFactory(DynamoVersionStoreConfig config,
       @ConfigProperty(name = "quarkus.dynamodb.aws.region") String region,
       @ConfigProperty(name = "quarkus.dynamodb.endpoint-override") Optional<String> endpoint) {
+    super(config);
     this.config = config;
     this.region = region;
     this.endpoint = endpoint;
   }
 
   @Override
-  public <VALUE, METADATA> VersionStore<VALUE, METADATA> newStore(StoreWorker<VALUE, METADATA> worker) throws IOException {
-    return new TieredVersionStore<>(worker, newDynamoConnection(), false);
-  }
-
-  /**
-   * create a dynamo store based on config.
-   */
-  private DynamoStore newDynamoConnection() {
-    DynamoStore dynamo = new DynamoStore(
+  protected Store createStore() {
+    return new DynamoStore(
         DynamoStoreConfig.builder()
           .endpoint(endpoint.map(e -> {
             try {
@@ -81,7 +72,5 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
           .tablePrefix(config.getTablePrefix())
           .enableTracing(config.enableTracing())
           .build());
-    dynamo.start();
-    return dynamo;
   }
 }

@@ -13,27 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.config;
+package org.projectnessie.versioned.inmem;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.projectnessie.versioned.impl.AbstractITTieredVersionStore;
 
-import io.quarkus.arc.config.ConfigProperties;
-import io.quarkus.runtime.annotations.RegisterForReflection;
-
-/**
- * Version store configuration.
- */
-@ConfigProperties(prefix = "nessie.version.store")
-public interface VersionStoreConfig {
-
-  @RegisterForReflection
-  public enum VersionStoreType {
-    DYNAMO,
-    INMEMORY,
-    JGIT,
-    TIERED_INMEMORY
+class ITInMemTieredVersionStore extends AbstractITTieredVersionStore {
+  @Override
+  protected InMemStoreFixture createNewFixture() {
+    return new InMemStoreFixture();
   }
-
-  @ConfigProperty(name = "type", defaultValue = "INMEMORY")
-  VersionStoreType getVersionStoreType();
 }
