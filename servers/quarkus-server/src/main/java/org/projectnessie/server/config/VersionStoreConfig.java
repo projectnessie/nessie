@@ -30,7 +30,8 @@ public interface VersionStoreConfig {
   public enum VersionStoreType {
     DYNAMO,
     INMEMORY,
-    JGIT
+    JGIT,
+    TIERED_INMEMORY
   }
 
   @ConfigProperty(name = "type", defaultValue = "INMEMORY")

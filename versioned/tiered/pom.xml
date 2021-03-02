@@ -31,6 +31,7 @@
   <name>Nessie - Versioned - Tiered - Parent</name>
 
   <modules>
+    <module>inmem</module>
     <module>dynamodb</module>
     <module>gc</module>
     <module>mongodb</module>

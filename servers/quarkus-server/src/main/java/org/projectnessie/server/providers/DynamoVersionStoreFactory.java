@@ -26,12 +26,8 @@ import javax.inject.Inject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.server.config.DynamoVersionStoreConfig;
-import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
-import org.projectnessie.versioned.impl.ImmutableTieredVersionStoreConfig;
-import org.projectnessie.versioned.impl.TieredVersionStore;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.TracingStore;
 
@@ -42,7 +38,7 @@ import software.amazon.awssdk.regions.Region;
  */
 @StoreType(DYNAMO)
 @Dependent
-public class DynamoVersionStoreFactory implements VersionStoreFactory {
+public class DynamoVersionStoreFactory extends TieredVersionStoreFactory {
   private final DynamoVersionStoreConfig config;
 
   private final String region;
@@ -55,22 +51,17 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
   public DynamoVersionStoreFactory(DynamoVersionStoreConfig config,
       @ConfigProperty(name = "quarkus.dynamodb.aws.region") String region,
       @ConfigProperty(name = "quarkus.dynamodb.endpoint-override") Optional<String> endpoint) {
+    super(config);
     this.config = config;
     this.region = region;
     this.endpoint = endpoint;
   }
 
-  @Override
-  public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> VersionStore<VALUE, METADATA, VALUE_TYPE>
-      newStore(StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) {
-    return new TieredVersionStore<>(worker, newDynamoConnection(), ImmutableTieredVersionStoreConfig.builder()
-        .enableTracing(config.enableTracing()).build());
-  }
-
   /**
    * create a dynamo store based on config.
    */
-  private Store newDynamoConnection() {
+  @Override
+  protected Store createStore() {
     Store store = new DynamoStore(
         DynamoStoreConfig.builder()
           .endpoint(endpoint.map(e -> {

@@ -53,6 +53,11 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-tiered-inmem</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-tiered-dynamodb</artifactId>
       <version>${project.version}</version>
     </dependency>

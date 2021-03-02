@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.config;
+package org.projectnessie.versioned.inmem;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
+import org.projectnessie.versioned.impl.AbstractITTieredVersionStore;
 
-import io.quarkus.arc.config.ConfigProperties;
-
-/**
- * DynamoDB version store configuration.
- */
-@ConfigProperties(prefix = "nessie.version.store.dynamo")
-public interface DynamoVersionStoreConfig extends TieredVersionStoreConfig {
-
-  @ConfigProperty(name = "initialize", defaultValue = "false")
-  boolean isDynamoInitialize();
-
-  @ConfigProperty(defaultValue = DynamoStoreConfig.TABLE_PREFIX)
-  String getTablePrefix();
+class ITInMemTieredVersionStore extends AbstractITTieredVersionStore {
+  @Override
+  protected InMemStoreFixture createNewFixture() {
+    return new InMemStoreFixture();
+  }
 }

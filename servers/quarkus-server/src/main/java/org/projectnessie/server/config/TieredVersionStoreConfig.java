@@ -16,19 +16,8 @@
 package org.projectnessie.server.config;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 
-import io.quarkus.arc.config.ConfigProperties;
-
-/**
- * DynamoDB version store configuration.
- */
-@ConfigProperties(prefix = "nessie.version.store.dynamo")
-public interface DynamoVersionStoreConfig extends TieredVersionStoreConfig {
-
-  @ConfigProperty(name = "initialize", defaultValue = "false")
-  boolean isDynamoInitialize();
-
-  @ConfigProperty(defaultValue = DynamoStoreConfig.TABLE_PREFIX)
-  String getTablePrefix();
+public interface TieredVersionStoreConfig {
+  @ConfigProperty(name = "tracing", defaultValue = "true")
+  boolean enableTracing();
 }
