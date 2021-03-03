@@ -15,24 +15,33 @@
  */
 package org.projectnessie.server.providers;
 
+import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.INMEMORY;
+
 import java.io.IOException;
+
+import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
 
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
+import org.projectnessie.versioned.memory.InMemoryVersionStore;
 
 /**
- * Factory interface for creating version store instances.
+ * In-memory version store factory.
  */
-public interface VersionStoreFactory {
+@StoreType(INMEMORY)
+@Dependent
+public class InMemoryVersionStoreFactory implements VersionStoreFactory {
 
-  /**
-   * Creates a new store using the provided worker.
-   *
-   * @param <VALUE> the value type
-   * @param <METADATA> the metadata type
-   * @param worker the worker instance
-   * @return a store instance
-   * @throws IOException if an exception occurs during store instantiation
-   */
-  <VALUE, METADATA> VersionStore<VALUE, METADATA> newStore(StoreWorker<VALUE, METADATA> worker) throws IOException;
+  @Inject
+  public InMemoryVersionStoreFactory() {
+  }
+
+  @Override
+  public <VALUE, METADATA> VersionStore<VALUE, METADATA> newStore(StoreWorker<VALUE, METADATA> worker) throws IOException {
+    return InMemoryVersionStore.<VALUE, METADATA>builder()
+        .metadataSerializer(worker.getMetadataSerializer())
+        .valueSerializer(worker.getValueSerializer())
+        .build();
+  }
 }

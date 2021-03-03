@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.config.converters;
+package org.projectnessie.server.config;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.projectnessie.services.config.ServerConfig;
 
-@RegisterForReflection
-public enum VersionStoreType {
+import io.quarkus.arc.config.ConfigProperties;
 
-  DYNAMO,
-  INMEMORY,
-  JGIT;
+/**
+ * Nessie server config for Quarkus.
+ */
+@ConfigProperties(prefix = "nessie.server")
+public interface QuarkusServerConfig extends ServerConfig {
 
+  @ConfigProperty(name = "default-branch", defaultValue = "main")
+  @Override
+  String getDefaultBranch();
+
+  @ConfigProperty(name = "send-stacktrace-to-client", defaultValue = "false")
+  @Override
+  boolean sendStacktraceToClient();
 }
