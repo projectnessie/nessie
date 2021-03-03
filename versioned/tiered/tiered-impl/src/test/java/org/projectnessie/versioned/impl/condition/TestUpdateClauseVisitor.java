@@ -16,6 +16,7 @@
 
 package org.projectnessie.versioned.impl.condition;
 
+import org.immutables.value.Value.Immutable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -83,25 +84,61 @@ public class TestUpdateClauseVisitor {
   @Test
   void testRemoveClause() {
     final UpdateClause clause = RemoveClause.of(PATH);
-    final UpdateCommand command = clause.accept(VISITOR);
-    Assertions.assertEquals(UpdateCommand.Operator.REMOVE, command.getOperator());
-    Assertions.assertEquals(PATH, command.getPath());
+    testClause(RemoveClause.of(PATH), UpdateCommand.Operator.REMOVE, PATH);
   }
 
   @Test
   void testSetClauseEquals() {
-    testSetClause(SetClause.equals(PATH, ENTITY_STR), PATH, ENTITY_STR);
+    final UpdateCommand command = testClause(SetClause.equals(PATH, ENTITY_STR), UpdateCommand.Operator.SET, PATH);
+    Assertions.assertEquals(ENTITY_STR, ((UpdateCommand.SetCommand)command).getEntity());
   }
 
   @Test
   void testSetClauseAppendToList() {
-    testSetClause(SetClause.appendToList(PATH, ENTITY_STR), PATH, ENTITY_STR);
+    final UpdateCommand command = testClause(SetClause.appendToList(PATH, ENTITY_STR), UpdateCommand.Operator.SET, PATH);
+    Assertions.assertEquals(ENTITY_STR, ((UpdateCommand.SetCommand)command).getEntity());
   }
 
-  void testSetClause(UpdateClause clause, ExpressionPath path, Entity entity) {
+  UpdateCommand testClause(UpdateClause clause, UpdateCommand.Operator operator, ExpressionPath path) {
     final UpdateCommand command = clause.accept(VISITOR);
-    Assertions.assertEquals(UpdateCommand.Operator.SET, command.getOperator());
+    Assertions.assertEquals(operator, command.getOperator());
     Assertions.assertEquals(path, command.getPath());
-    Assertions.assertEquals(entity, ((SetCommand)command).getEntity());
+    return command;
+  }
+
+  /**
+   * Sample interface or class into which UpdateClauses are converted.
+   */
+  static interface UpdateCommand {
+    /**
+     * An enum encapsulating the type of update.
+     */
+    enum Operator {
+      // An operator to remove some part or all of an entity.
+      REMOVE,
+
+      // An operator to set some part or all of an entity.
+      SET
+    }
+
+    Operator getOperator();
+
+    ExpressionPath getPath();
+
+    /**
+     * Sample of a specific type of update command into which UpdateClauses are converted.
+     */
+    @Immutable
+    abstract class RemoveCommand implements UpdateCommand {
+    }
+
+    /**
+     * Sample of a specific type of update command into which UpdateClauses are converted.
+     */
+    @Immutable
+    abstract class SetCommand implements UpdateCommand {
+
+      abstract Entity getEntity();
+    }
   }
 }
