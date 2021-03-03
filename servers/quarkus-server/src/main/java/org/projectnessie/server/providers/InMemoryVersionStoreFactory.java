@@ -20,7 +20,6 @@ import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreTyp
 import java.io.IOException;
 
 import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
 
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
@@ -32,11 +31,6 @@ import org.projectnessie.versioned.memory.InMemoryVersionStore;
 @StoreType(INMEMORY)
 @Dependent
 public class InMemoryVersionStoreFactory implements VersionStoreFactory {
-
-  @Inject
-  public InMemoryVersionStoreFactory() {
-  }
-
   @Override
   public <VALUE, METADATA> VersionStore<VALUE, METADATA> newStore(StoreWorker<VALUE, METADATA> worker) throws IOException {
     return InMemoryVersionStore.<VALUE, METADATA>builder()
