@@ -13,14 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.config.converters;
+package org.projectnessie.server.config;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+import io.quarkus.arc.config.ConfigProperties;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
-@RegisterForReflection
-public enum JGitStoreType {
+/**
+ * Version store configuration.
+ */
+@ConfigProperties(prefix = "nessie.version.store")
+public interface VersionStoreConfig {
 
-  DISK,
-  INMEMORY;
+  @RegisterForReflection
+  public enum VersionStoreType {
+    DYNAMO,
+    INMEMORY,
+    JGIT
+  }
 
+  @ConfigProperty(name = "type", defaultValue = "INMEMORY")
+  VersionStoreType getVersionStoreType();
 }

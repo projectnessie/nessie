@@ -18,8 +18,6 @@ package org.projectnessie.server.providers;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
-import javax.inject.Singleton;
-
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.DeltaLakeTable;
@@ -50,7 +48,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.UnsafeByteOperations;
 
-@Singleton
 public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitMeta> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -68,6 +65,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
   }
 
   private static class TableValueSerializer implements Serializer<Contents> {
+    @Override
     public ByteString toBytes(Contents value) {
       PContents.Builder builder = PContents.newBuilder();
       if (value instanceof IcebergTable) {
