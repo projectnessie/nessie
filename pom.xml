@@ -647,14 +647,7 @@
         <plugin>
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
-          <version>4.4.0</version>
-          <dependencies>
-            <dependency>
-              <groupId>org.scala-lang</groupId>
-              <artifactId>scala-library</artifactId>
-              <version>${scala2.12.version}</version>
-            </dependency>
-          </dependencies>
+          <version>4.4.1</version>
           <configuration>
             <sendJavaToScalac>false</sendJavaToScalac>
             <scalaVersion>${scala2.12.version}</scalaVersion>
