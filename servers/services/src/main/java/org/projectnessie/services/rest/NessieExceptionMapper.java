@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.providers;
+package org.projectnessie.services.rest;
 
+import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -22,6 +23,7 @@ import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
 import org.projectnessie.error.BaseNessieClientServerException;
+import org.projectnessie.services.config.ServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +42,17 @@ public class NessieExceptionMapper
     extends BaseExceptionMapper
     implements ExceptionMapper<Exception> {
   private static final Logger LOGGER = LoggerFactory.getLogger(NessieExceptionMapper.class);
+
+  // Unused constructor
+  // Required because of https://issues.jboss.org/browse/RESTEASY-1538
+  public NessieExceptionMapper() {
+    this(null);
+  }
+
+  @Inject
+  public NessieExceptionMapper(ServerConfig config) {
+    super(config);
+  }
 
   @Override
   public Response toResponse(Exception exception) {

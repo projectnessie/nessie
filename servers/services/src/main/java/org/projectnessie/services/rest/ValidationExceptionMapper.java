@@ -13,63 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.providers;
+package org.projectnessie.services.rest;
 
-import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.validation.ValidationException;
-import javax.ws.rs.Priorities;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
-import org.jboss.resteasy.api.validation.ResteasyViolationException;
-import org.jboss.resteasy.api.validation.Validation;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.rest.BaseExceptionMapper;
-import org.projectnessie.services.rest.NessieExceptionMapper;
 
 /**
  * "Special" implementation for exceptions that extend {@link ValidationException}, as those
  * do not "go through" {@link NessieExceptionMapper} and there need to be two
  * {@link ExceptionMapper} beans for the Nessie-server.
  */
-// Use our exception-mapper instead of io.quarkus.hibernate.validator.runtime.jaxrs.ResteasyViolationExceptionMapper
-@Priority(Priorities.USER)
 @Provider
-public class ResteasyExceptionMapper
+public class ValidationExceptionMapper
     extends BaseExceptionMapper
-    implements ExceptionMapper<ResteasyViolationException> {
+    implements ExceptionMapper<ValidationException> {
 
 
   // Unused constructor
   // Required because of https://issues.jboss.org/browse/RESTEASY-1538
-  public ResteasyExceptionMapper() {
+  public ValidationExceptionMapper() {
     this(null);
   }
 
   @Inject
-  public ResteasyExceptionMapper(ServerConfig config) {
+  public ValidationExceptionMapper(ServerConfig config) {
     super(config);
   }
 
   @Override
-  public Response toResponse(ResteasyViolationException exception) {
-    ResteasyViolationException violationException = exception;
-    Exception e = violationException.getException();
-    if (e == null) {
-      boolean returnValueViolation = !violationException.getReturnValueViolations().isEmpty();
-      Status st = returnValueViolation ? Status.INTERNAL_SERVER_ERROR : Status.BAD_REQUEST;
-      return buildExceptionResponse(
-          st.getStatusCode(),
-          st.getReasonPhrase(),
-          exception.getMessage(),
-          exception,
-          false, // no need to send the stack trace for a validation-error
-          b -> b.header(Validation.VALIDATION_HEADER, "true"));
-    }
-
+  public Response toResponse(ValidationException exception) {
     return buildExceptionResponse(
         Status.INTERNAL_SERVER_ERROR.getStatusCode(),
         Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
