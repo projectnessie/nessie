@@ -15,10 +15,8 @@
  */
 package org.projectnessie.server.providers;
 
-import javax.annotation.Priority;
 import javax.inject.Inject;
 import javax.validation.ValidationException;
-import javax.ws.rs.Priorities;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -36,7 +34,6 @@ import org.projectnessie.services.rest.NessieExceptionMapper;
  * {@link ExceptionMapper} beans for the Nessie-server.
  */
 // Use our exception-mapper instead of io.quarkus.hibernate.validator.runtime.jaxrs.ResteasyViolationExceptionMapper
-@Priority(Priorities.USER)
 @Provider
 public class ResteasyExceptionMapper
     extends BaseExceptionMapper
@@ -56,10 +53,9 @@ public class ResteasyExceptionMapper
 
   @Override
   public Response toResponse(ResteasyViolationException exception) {
-    ResteasyViolationException violationException = exception;
-    Exception e = violationException.getException();
+    Exception e = exception.getException();
     if (e == null) {
-      boolean returnValueViolation = !violationException.getReturnValueViolations().isEmpty();
+      boolean returnValueViolation = !exception.getReturnValueViolations().isEmpty();
       Status st = returnValueViolation ? Status.INTERNAL_SERVER_ERROR : Status.BAD_REQUEST;
       return buildExceptionResponse(
           st.getStatusCode(),
