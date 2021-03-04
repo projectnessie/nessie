@@ -38,6 +38,7 @@ import org.projectnessie.model.Contents;
 import org.projectnessie.server.config.ApplicationConfig;
 import org.projectnessie.server.config.ApplicationConfig.VersionStoreDynamoConfig;
 import org.projectnessie.server.config.converters.VersionStoreType;
+import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
@@ -77,6 +78,7 @@ public class VersionStoreFactory {
   private volatile long lastUnsuccessfulStart = 0L;
 
   @Produces
+  @Singleton
   public StoreWorker<Contents, CommitMeta> worker() {
     return new TableCommitMetaStoreWorker();
   }
@@ -87,7 +89,7 @@ public class VersionStoreFactory {
   @Produces
   @Singleton
   public VersionStore<Contents, CommitMeta> configuration(
-      TableCommitMetaStoreWorker storeWorker, Repository repository, ServerConfig config) {
+      StoreWorker<Contents, CommitMeta> storeWorker, Repository repository, ServerConfig config) {
     VersionStore<Contents, CommitMeta> store = getVersionStore(storeWorker, repository);
     try (Stream<WithHash<NamedRef>> str = store.getNamedRefs()) {
       if (!str.findFirst().isPresent()) {
@@ -103,7 +105,7 @@ public class VersionStoreFactory {
     return store;
   }
 
-  private VersionStore<Contents, CommitMeta> getVersionStore(TableCommitMetaStoreWorker storeWorker, Repository repository) {
+  private VersionStore<Contents, CommitMeta> getVersionStore(StoreWorker<Contents, CommitMeta> storeWorker, Repository repository) {
     if (System.nanoTime() - lastUnsuccessfulStart < START_RETRY_MIN_INTERVAL_NANOS) {
       LOGGER.warn("{} version store failed to start recently, try again later.",
           config.getVersionStoreConfig().getVersionStoreType());

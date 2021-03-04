@@ -20,35 +20,35 @@ option java_package = "org.projectnessie.store";
 option java_outer_classname = "ObjectTypes";
 option java_generate_equals_and_hash = true;
 
-message PContents {
-  oneof ObjectType {
-    PIcebergTable iceberg_table = 1;
-    PHiveTable hive_table = 2;
-    PHiveDatabase hive_database = 3;
-    PSqlView sql_view = 4;
-    PDeltaLakeTable delta_lake_table = 5;
+message Contents {
+  oneof object_type {
+    IcebergTable iceberg_table = 1;
+    HiveTable hive_table = 2;
+    HiveDatabase hive_database = 3;
+    SqlView sql_view = 4;
+    DeltaLakeTable delta_lake_table = 5;
   }
 }
 
-message PIcebergTable {
+message IcebergTable {
   string metadata_location = 1;
 }
 
-message PHiveTable {
+message HiveTable {
   bytes table = 1;
   repeated bytes partition = 2;
 }
 
-message PHiveDatabase {
+message HiveDatabase {
   bytes database = 1;
 }
 
-message PSqlView {
+message SqlView {
   string sql_text = 1;
   string dialect = 2;
 }
 
-message PDeltaLakeTable {
+message DeltaLakeTable {
   string last_checkpoint = 1;
   repeated string checkpoint_location_history = 2;
   repeated string metadata_location_history = 3;
