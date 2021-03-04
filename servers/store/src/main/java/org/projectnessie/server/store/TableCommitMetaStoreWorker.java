@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.providers;
+package org.projectnessie.server.store;
 
 import java.io.IOException;
 import java.util.stream.Collectors;
-
-import javax.inject.Singleton;
 
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
@@ -35,12 +33,7 @@ import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
-import org.projectnessie.store.ObjectTypes.PContents;
-import org.projectnessie.store.ObjectTypes.PDeltaLakeTable;
-import org.projectnessie.store.ObjectTypes.PHiveDatabase;
-import org.projectnessie.store.ObjectTypes.PHiveTable;
-import org.projectnessie.store.ObjectTypes.PIcebergTable;
-import org.projectnessie.store.ObjectTypes.PSqlView;
+import org.projectnessie.store.ObjectTypes;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 
@@ -50,7 +43,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.UnsafeByteOperations;
 
-@Singleton
 public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitMeta> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -68,15 +60,16 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
   }
 
   private static class TableValueSerializer implements Serializer<Contents> {
+    @Override
     public ByteString toBytes(Contents value) {
-      PContents.Builder builder = PContents.newBuilder();
+      ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder();
       if (value instanceof IcebergTable) {
         builder.setIcebergTable(
-            PIcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
+            ObjectTypes.IcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
 
       } else if (value instanceof DeltaLakeTable) {
 
-        PDeltaLakeTable.Builder table = PDeltaLakeTable.newBuilder()
+        ObjectTypes.DeltaLakeTable.Builder table = ObjectTypes.DeltaLakeTable.newBuilder()
             .addAllMetadataLocationHistory(((DeltaLakeTable) value).getMetadataLocationHistory())
             .addAllCheckpointLocationHistory(((DeltaLakeTable) value).getCheckpointLocationHistory());
         String lastCheckpoint = ((DeltaLakeTable) value).getLastCheckpoint();
@@ -87,16 +80,16 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
       } else if (value instanceof HiveTable) {
         HiveTable ht = (HiveTable) value;
-        builder.setHiveTable(PHiveTable.newBuilder()
+        builder.setHiveTable(ObjectTypes.HiveTable.newBuilder()
             .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition())).addAllPartition(
                 ht.getPartitions().stream().map(UnsafeByteOperations::unsafeWrap).collect(Collectors.toList())));
 
       } else if (value instanceof HiveDatabase) {
-        builder.setHiveDatabase(PHiveDatabase.newBuilder()
+        builder.setHiveDatabase(ObjectTypes.HiveDatabase.newBuilder()
             .setDatabase(UnsafeByteOperations.unsafeWrap(((HiveDatabase) value).getDatabaseDefinition())));
       } else if (value instanceof SqlView) {
         SqlView view = (SqlView) value;
-        builder.setSqlView(PSqlView.newBuilder().setDialect(view.getDialect().name()).setSqlText(view.getSqlText()));
+        builder.setSqlView(ObjectTypes.SqlView.newBuilder().setDialect(view.getDialect().name()).setSqlText(view.getSqlText()));
       } else {
         throw new IllegalArgumentException("Unknown type" + value);
       }
@@ -106,9 +99,9 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
     @Override
     public Contents fromBytes(ByteString bytes) {
-      PContents contents;
+      ObjectTypes.Contents contents;
       try {
-        contents = PContents.parseFrom(bytes);
+        contents = ObjectTypes.Contents.parseFrom(bytes);
       } catch (InvalidProtocolBufferException e) {
         throw new RuntimeException("Failure parsing data", e);
       }
@@ -137,7 +130,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
               .build();
 
         case SQL_VIEW:
-          PSqlView view = contents.getSqlView();
+          ObjectTypes.SqlView view = contents.getSqlView();
           return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
               .build();
 

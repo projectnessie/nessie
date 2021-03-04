@@ -31,8 +31,9 @@
   <name>Nessie - Servers - Parent</name>
 
   <modules>
-    <module>services</module>
-    <module>quarkus-server</module>
     <module>lambda</module>
+    <module>quarkus-server</module>
+    <module>services</module>
+    <module>store</module>
   </modules>
 </project>
