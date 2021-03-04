@@ -32,53 +32,63 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.server.config.VersionStoreConfig;
 import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
+import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A version store factory leveraging CDI to delegate to a {@code VersionStoreFactory} instance
+ * based on the store type.
+ */
 @ApplicationScoped
 public class ConfigurableVersionStoreFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurableVersionStoreFactory.class);
 
-  private final VersionStoreConfig config;
   private final Instance<VersionStoreFactory> versionStoreFactory;
-  private final StoreWorker<Contents, CommitMeta> storeWorker;
+  private final VersionStoreConfig storeConfig;
+  private final ServerConfig serverConfig;
 
   /**
    * Configurable version store factory.
+   *
+   * @param versionStoreFactory a CDI injector for {@code VersionStoreFactory}
+   * @param storeConfig the version store configuration
+   * @param serverConfig the server configuration
    */
   @Inject
-  public ConfigurableVersionStoreFactory(VersionStoreConfig config, @Any Instance<VersionStoreFactory> versionStoreFactory) {
-    this.config = config;
+  public ConfigurableVersionStoreFactory(@Any Instance<VersionStoreFactory> versionStoreFactory,
+      VersionStoreConfig storeConfig, ServerConfig serverConfig) {
     this.versionStoreFactory = versionStoreFactory;
-    this.storeWorker = new TableCommitMetaStoreWorker();
+    this.storeConfig = storeConfig;
+    this.serverConfig = serverConfig;
   }
 
   private static final long START_RETRY_MIN_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(2);
   private volatile long lastUnsuccessfulStart = 0L;
 
   /**
-   * default config for lambda function.
+   * Version store producer.
+   * @s
    */
   @Produces
   @Singleton
-  public VersionStore<Contents, CommitMeta> configuration(ServerConfig config) {
-    VersionStore<Contents, CommitMeta> store = getVersionStore();
+  public VersionStore<Contents, CommitMeta> getVersionStore() {
+    VersionStore<Contents, CommitMeta> store = newVersionStore();
     try (Stream<WithHash<NamedRef>> str = store.getNamedRefs()) {
       if (!str.findFirst().isPresent()) {
         // if this is a new database, create a branch with the default branch name.
         try {
-          store.create(BranchName.of(config.getDefaultBranch()), Optional.empty());
+          store.create(BranchName.of(serverConfig.getDefaultBranch()), Optional.empty());
         } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
-          LOGGER.warn("Failed to create default branch of {}.", config.getDefaultBranch(), e);
+          LOGGER.warn("Failed to create default branch of {}.", serverConfig.getDefaultBranch(), e);
         }
       }
     }
@@ -86,8 +96,8 @@ public class ConfigurableVersionStoreFactory {
     return store;
   }
 
-  private VersionStore<Contents, CommitMeta> getVersionStore() {
-    final VersionStoreType versionStoreType = config.getVersionStoreType();
+  private VersionStore<Contents, CommitMeta> newVersionStore() {
+    final VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
     if (System.nanoTime() - lastUnsuccessfulStart < START_RETRY_MIN_INTERVAL_NANOS) {
       LOGGER.warn("{} version store failed to start recently, try again later.",
           versionStoreType);
@@ -100,7 +110,7 @@ public class ConfigurableVersionStoreFactory {
       LOGGER.info("Using {} Version store", versionStoreType);
       VersionStore<Contents, CommitMeta> versionStore;
       try {
-        versionStore = factory.newStore(storeWorker);
+        versionStore = factory.newStore(new TableCommitMetaStoreWorker());
       } catch (IOException e) {
         throw new IOError(e);
       }
