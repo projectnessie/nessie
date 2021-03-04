@@ -76,7 +76,6 @@ public class ConfigurableVersionStoreFactory {
 
   /**
    * Version store producer.
-   * @s
    */
   @Produces
   @Singleton
