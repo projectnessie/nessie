@@ -126,7 +126,7 @@
     <hamcrest.version>2.2</hamcrest.version>
     <iceberg.version>0.11.0</iceberg.version>
     <immutables.version>2.8.9-ea-1</immutables.version>
-    <jackson.version>2.11.3</jackson.version>
+    <jackson.version>2.12.1</jackson.version>
     <javax.version>4.0.1</javax.version>
     <jaeger.version>1.3.2</jaeger.version>
     <jetty.version>9.4.31.v20200723</jetty.version>

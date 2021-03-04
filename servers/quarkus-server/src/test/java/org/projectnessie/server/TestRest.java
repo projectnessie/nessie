@@ -392,7 +392,7 @@ class TestRest {
                         .put(different))
             ).getMessage(),
             startsWith("Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
-                + "`org.projectnessie.model.Tag`: known type ids = [BRANCH, HASH, TAG]\n"))
+                + "`org.projectnessie.model.Tag`: known type ids = []\n"))
     );
   }
 
