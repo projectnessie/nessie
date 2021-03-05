@@ -36,6 +36,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.Nonnull;
+
 import org.projectnessie.versioned.dynamodb.metrics.DynamoMetricsPublisher;
 import org.projectnessie.versioned.dynamodb.metrics.TracingExecutionInterceptor;
 import org.projectnessie.versioned.impl.EntityStoreHelper;
@@ -43,6 +45,7 @@ import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.ExpressionFunction;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
 import org.projectnessie.versioned.impl.condition.UpdateExpression;
+import org.projectnessie.versioned.store.BackendLimitExceededException;
 import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
@@ -51,6 +54,7 @@ import org.projectnessie.versioned.store.LoadStep;
 import org.projectnessie.versioned.store.NotFoundException;
 import org.projectnessie.versioned.store.SaveOp;
 import org.projectnessie.versioned.store.Store;
+import org.projectnessie.versioned.store.StoreException;
 import org.projectnessie.versioned.store.StoreOperationException;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
@@ -60,7 +64,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
@@ -86,14 +89,16 @@ import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
-import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
+import software.amazon.awssdk.services.dynamodb.model.LimitExceededException;
+import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughputExceededException;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutRequest;
+import software.amazon.awssdk.services.dynamodb.model.RequestLimitExceededException;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
@@ -132,6 +137,21 @@ public class DynamoStore implements Store {
 
     if (tableNames.size() != new HashSet<>(tableNames.values()).size()) {
       throw new IllegalArgumentException("Each Nessie dynamo table must be named distinctly.");
+    }
+  }
+
+  @Nonnull
+  private RuntimeException unhandledException(String operation, Throwable e) {
+    if (e instanceof RequestLimitExceededException) {
+      return new BackendLimitExceededException(String.format("Dynamo request-limit exceeded during %s.", operation), e);
+    } else if (e instanceof LimitExceededException) {
+      return new BackendLimitExceededException(String.format("Dynamo limit exceeded during %s.", operation), e);
+    } else if (e instanceof ProvisionedThroughputExceededException) {
+      return new BackendLimitExceededException(String.format("Dynamo provisioned throughput exceeded during %s.", operation), e);
+    } else if (e instanceof StoreException) {
+      throw (StoreException) e;
+    } else {
+      throw new StoreOperationException(String.format("Failure during %s", operation), e);
     }
   }
 
@@ -201,59 +221,63 @@ public class DynamoStore implements Store {
   @Override
   public void load(LoadStep loadstep) throws NotFoundException {
 
-    while (true) { // for each load step in the chain.
-      List<ListMultimap<String, LoadOp<?>>> stepPages = paginateLoads(loadstep, paginationSize);
+    try {
+      while (true) { // for each load step in the chain.
+        List<ListMultimap<String, LoadOp<?>>> stepPages = paginateLoads(loadstep, paginationSize);
 
-      for (ListMultimap<String, LoadOp<?>> l : stepPages) {
-        Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
-          List<LoadOp<?>> loadList = l.get(table);
-          List<Map<String, AttributeValue>> keys = loadList.stream()
-              .map(load -> Collections.singletonMap(DynamoBaseValue.ID, idValue(load.getId())))
-              .collect(Collectors.toList());
-          return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
-        }));
+        for (ListMultimap<String, LoadOp<?>> l : stepPages) {
+          Map<String, KeysAndAttributes> loads = l.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
+            List<LoadOp<?>> loadList = l.get(table);
+            List<Map<String, AttributeValue>> keys = loadList.stream()
+                .map(load -> Collections.singletonMap(DynamoBaseValue.ID, idValue(load.getId())))
+                .collect(Collectors.toList());
+            return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
+          }));
 
-        BatchGetItemResponse response = client.batchGetItem(BatchGetItemRequest.builder().requestItems(loads).build());
-        Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
-        Sets.SetView<String> missingElements = Sets.difference(loads.keySet(), responses.keySet());
-        Preconditions.checkArgument(missingElements.isEmpty(), "Did not receive any objects for table(s) %s.", missingElements);
+          BatchGetItemResponse response = client.batchGetItem(BatchGetItemRequest.builder().requestItems(loads).build());
+          Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
+          Sets.SetView<String> missingElements = Sets.difference(loads.keySet(), responses.keySet());
+          Preconditions.checkArgument(missingElements.isEmpty(), "Did not receive any objects for table(s) %s.", missingElements);
 
-        for (String table : responses.keySet()) {
-          List<LoadOp<?>> loadList = l.get(table);
-          List<Map<String, AttributeValue>> values = responses.get(table);
-          int missingResponses = loadList.size() - values.size();
-          if (missingResponses != 0) {
-            ValueType<?> loadType = loadList.get(0).getValueType();
-            if (loadType == ValueType.REF || loadType == ValueType.L1) {
-              throw new NotFoundException("Unable to find requested ref.");
+          for (String table : responses.keySet()) {
+            List<LoadOp<?>> loadList = l.get(table);
+            List<Map<String, AttributeValue>> values = responses.get(table);
+            int missingResponses = loadList.size() - values.size();
+            if (missingResponses != 0) {
+              ValueType<?> loadType = loadList.get(0).getValueType();
+              if (loadType == ValueType.REF || loadType == ValueType.L1) {
+                throw new NotFoundException("Unable to find requested ref.");
+              }
+
+              throw new NotFoundException(
+                  String.format("[%d] object(s) missing in table read [%s]. \n\nObjects expected: %s\n\nObjects Received: %s",
+                  missingResponses, table, loadList, responses));
             }
 
-            throw new NotFoundException(
-                String.format("[%d] object(s) missing in table read [%s]. \n\nObjects expected: %s\n\nObjects Received: %s",
-                missingResponses, table, loadList, responses));
-          }
+            // unfortunately, responses don't come in the order of the requests so we need to map between ids.
+            Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
+            for (Map<String, AttributeValue> item : values) {
+              @SuppressWarnings("rawtypes") ValueType valueType = ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
+              Id id = deserializeId(item, ID);
+              LoadOp<?> loadOp = opMap.get(id);
+              if (loadOp == null) {
+                throw new IllegalStateException("No load-op for loaded ID " + id);
+              }
 
-          // unfortunately, responses don't come in the order of the requests so we need to map between ids.
-          Map<Id, LoadOp<?>> opMap = loadList.stream().collect(Collectors.toMap(LoadOp::getId, Function.identity()));
-          for (Map<String, AttributeValue> item : values) {
-            @SuppressWarnings("rawtypes") ValueType valueType = ValueType.byValueName(attributeValue(item, ValueType.SCHEMA_TYPE).s());
-            Id id = deserializeId(item, ID);
-            LoadOp<?> loadOp = opMap.get(id);
-            if (loadOp == null) {
-              throw new IllegalStateException("No load-op for loaded ID " + id);
+              deserializeToConsumer(valueType, item, loadOp.getReceiver());
+              loadOp.done();
             }
-
-            deserializeToConsumer(valueType, item, loadOp.getReceiver());
-            loadOp.done();
           }
         }
-      }
-      Optional<LoadStep> next = loadstep.getNext();
+        Optional<LoadStep> next = loadstep.getNext();
 
-      if (!next.isPresent()) {
-        break;
+        if (!next.isPresent()) {
+          break;
+        }
+        loadstep = next.get();
       }
-      loadstep = next.get();
+    } catch (RuntimeException e) {
+      throw unhandledException("load", e);
     }
   }
 
@@ -291,6 +315,8 @@ public class DynamoStore implements Store {
         client.deleteTable(DeleteTableRequest.builder().tableName(table).build());
       } catch (ResourceNotFoundException ex) {
         // ignore.
+      } catch (RuntimeException e) {
+        throw unhandledException("deleteTables", e);
       }
     });
 
@@ -313,8 +339,8 @@ public class DynamoStore implements Store {
       client.putItem(builder.build());
     } catch (ConditionalCheckFailedException ex) {
       throw new ConditionFailedException("Condition failed during put operation.", ex);
-    } catch (DynamoDbException ex) {
-      throw new StoreOperationException("Failure during put.", ex);
+    } catch (RuntimeException e) {
+      throw unhandledException("put", e);
     }
   }
 
@@ -335,8 +361,8 @@ public class DynamoStore implements Store {
     } catch (ConditionalCheckFailedException ex) {
       LOGGER.debug("Failure during conditional check.", ex);
       return false;
-    } catch (DynamoDbException ex) {
-      throw new StoreOperationException("Failure during delete.", ex);
+    } catch (RuntimeException e) {
+      throw unhandledException("delete", e);
     }
   }
 
@@ -433,26 +459,25 @@ public class DynamoStore implements Store {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
-      if (e.getCause() instanceof DynamoDbException) {
-        throw new StoreOperationException("Dynamo failure during save.", e.getCause());
-      } else {
-        Throwables.throwIfUnchecked(e.getCause());
-        throw new RuntimeException(e.getCause());
-      }
+      throw unhandledException("save", e.getCause());
     }
   }
 
   @Override
   public <C extends BaseValue<C>> void loadSingle(ValueType<C> valueType, Id id, C consumer) {
-    GetItemResponse response = client.getItem(GetItemRequest.builder()
-        .tableName(tableNames.get(valueType))
-        .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
-        .consistentRead(true)
-        .build());
-    if (!response.hasItem()) {
-      throw new NotFoundException(String.format("Unable to load item %s:%s.", valueType, id));
+    try {
+      GetItemResponse response = client.getItem(GetItemRequest.builder()
+          .tableName(tableNames.get(valueType))
+          .key(Collections.singletonMap(DynamoBaseValue.ID, idValue(id)))
+          .consistentRead(true)
+          .build());
+      if (!response.hasItem()) {
+        throw new NotFoundException(String.format("Unable to load item %s:%s.", valueType, id));
+      }
+      deserializeToConsumer(valueType, response.item(), consumer);
+    } catch (RuntimeException e) {
+      throw unhandledException("loadSingle", e);
     }
-    deserializeToConsumer(valueType, response.item(), consumer);
   }
 
   @Override
@@ -477,27 +502,34 @@ public class DynamoStore implements Store {
     } catch (ConditionalCheckFailedException checkFailed) {
       LOGGER.debug("Conditional check failed.", checkFailed);
       return false;
+    } catch (RuntimeException e) {
+      throw unhandledException("update", e);
     }
   }
 
   private boolean tableExists(String name) {
     try {
-
-      DescribeTableResponse refTable = client.describeTable(DescribeTableRequest.builder().tableName(name).build());
-      verifyKeySchema(refTable.table());
+      DescribeTableResponse table = client.describeTable(DescribeTableRequest.builder().tableName(name).build());
+      verifyKeySchema(table.table());
       return true;
     } catch (ResourceNotFoundException e) {
-      LOGGER.debug("Didn't find ref table, going to create one.", e);
+      LOGGER.debug("Didn't find table '{}', going to create one.", name, e);
       return false;
+    } catch (RuntimeException e) {
+      throw unhandledException("tableExists", e);
     }
   }
 
   @Override
   public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
-    return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
-        .stream()
-        .flatMap(r -> r.items().stream())
-        .map(i -> consumer -> deserializeToConsumer(type, i, consumer));
+    try {
+      return client.scanPaginator(ScanRequest.builder().tableName(tableNames.get(type)).build())
+          .stream()
+          .flatMap(r -> r.items().stream())
+          .map(i -> consumer -> deserializeToConsumer(type, i, consumer));
+    } catch (RuntimeException e) {
+      throw unhandledException("getValues", e);
+    }
   }
 
   private void createIfMissing(String name) {
