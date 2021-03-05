@@ -70,7 +70,7 @@ import com.google.common.collect.ImmutableList;
 public class TreeResource extends BaseResource implements TreeApi {
 
   @Inject
-  protected TreeResource(ServerConfig config, Principal principal,
+  public TreeResource(ServerConfig config, Principal principal,
       VersionStore<Contents, CommitMeta> store) {
     super(config, principal, store);
   }
