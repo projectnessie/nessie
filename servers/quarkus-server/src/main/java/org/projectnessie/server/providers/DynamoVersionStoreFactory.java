@@ -26,7 +26,6 @@ import javax.inject.Inject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.projectnessie.server.config.DynamoVersionStoreConfig;
-import org.projectnessie.server.config.TieredVersionStoreConfig;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.store.Store;
@@ -48,10 +47,10 @@ public class DynamoVersionStoreFactory extends TieredVersionStoreFactory {
    * Creates a factory for dynamodb version stores.
    */
   @Inject
-  public DynamoVersionStoreFactory(DynamoVersionStoreConfig config, TieredVersionStoreConfig tieredVersionStoreConfig,
+  public DynamoVersionStoreFactory(DynamoVersionStoreConfig config,
       @ConfigProperty(name = "quarkus.dynamodb.aws.region") String region,
       @ConfigProperty(name = "quarkus.dynamodb.endpoint-override") Optional<String> endpoint) {
-    super(tieredVersionStoreConfig);
+    super(config);
     this.config = config;
     this.region = region;
     this.endpoint = endpoint;

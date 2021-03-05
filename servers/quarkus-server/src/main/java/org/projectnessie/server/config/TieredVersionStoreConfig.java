@@ -20,9 +20,6 @@ import static org.projectnessie.versioned.impl.TieredVersionStoreConfig.DEFAULT_
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import io.quarkus.arc.config.ConfigProperties;
-
-@ConfigProperties(prefix = "nessie.version.store.tiered")
 public interface TieredVersionStoreConfig {
 
   @ConfigProperty(name = "commit-retry-count", defaultValue = DEFAULT_COMMIT_RETRY_COUNT)
