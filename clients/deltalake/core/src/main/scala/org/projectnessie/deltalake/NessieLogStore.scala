@@ -196,7 +196,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   def pathToKey(path: String): ContentsKey = {
     val parts = path.split("/").toList
-    new ContentsKey(parts.asJava)
+    ContentsKey.of(parts.asJava)
   }
 
   def numCheckpointParts(path: Path): Option[Int] = {

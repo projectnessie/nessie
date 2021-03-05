@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server.providers;
+package org.projectnessie.services.rest;
 
 import java.util.function.Consumer;
 
@@ -28,33 +28,23 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Throwables;
 
-import io.quarkus.arc.Arc;
-import io.quarkus.arc.InjectableInstance;
-
 /**
  * Code shared between concrete exception-mapper implementations.
  */
-abstract class BaseExceptionMapper {
+public abstract class BaseExceptionMapper {
   private static final Logger LOGGER = LoggerFactory.getLogger(BaseExceptionMapper.class);
 
-  protected BaseExceptionMapper() {
-    // empty
+  private final ServerConfig serverConfig;
+
+  protected BaseExceptionMapper(ServerConfig serverConfig) {
+    this.serverConfig = serverConfig;
   }
 
-  Response buildExceptionResponse(
+  protected Response buildExceptionResponse(
       int status,
       String reason,
       String message,
       Exception e) {
-
-    // Must not use `@Inject ServerConfig serverConfig`, because once that's being used
-    // for our exception-mappers, it will actually not be injected and the field will be `null`.
-    // That only happens, if there is a `implements ExceptionMapper<ValidationException>`
-    // bean, probably a bean that uses some infra/library-stuff and then the DI mechanism
-    // fails to inject it.
-    InjectableInstance<ServerConfig> injectableInstance = Arc.container()
-        .select(ServerConfig.class);
-    ServerConfig serverConfig = injectableInstance.get();
 
     return buildExceptionResponse(
         status,
@@ -65,7 +55,7 @@ abstract class BaseExceptionMapper {
         h -> {});
   }
 
-  Response buildExceptionResponse(
+  protected Response buildExceptionResponse(
       int status,
       String reason,
       String message,
