@@ -25,7 +25,7 @@
   </appender>
   <logger name="org.apache.spark.sql.delta" level="WARN"/>
   <root>
-    <level value="warn"/>
+    <level value="${test.log.level:-WARN}"/>
     <appender-ref ref="console"/>
   </root>
 </configuration>
