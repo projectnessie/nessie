@@ -17,6 +17,7 @@ package org.projectnessie.versioned.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -263,15 +264,16 @@ class InternalBranch extends InternalRef {
     Id lastId = null;
     final List<SaveOp<?>> toSave = new ArrayList<>();
 
+    Map<Id, InternalL1> unsavedL1s = new HashMap<>();
     for (Commit c : unsavedCommits) {
       for (UnsavedDelta delta : c.deltas) {
         tree = delta.apply(tree);
       }
 
-      lastL1 = lastL1.getChildWithTree(c.commit, tree, c.keyMutationList);
-      if (lastL1 == lastSavedL1) {
-        lastL1 = lastL1.withCheckpointAsNecessary(store);
-      }
+      unsavedL1s.put(lastL1.getId(), lastL1);
+
+      lastL1 = lastL1.getChildWithTree(c.commit, tree, c.keyMutationList)
+          .withCheckpointAsNecessary(store, unsavedL1s);
 
       toSave.add(EntityType.L1.createSaveOpForEntity(lastL1));
       lastId = c.id;
