@@ -31,7 +31,7 @@
 
   <properties>
     <quarkus.smallrye-openapi.store-schema-directory>${project.build.directory}/openapi</quarkus.smallrye-openapi.store-schema-directory>
-    <test.log.level>WARN</test.log.level>
+    <test.log.level>INFO</test.log.level>
   </properties>
 
   <dependencies>
