@@ -38,6 +38,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
@@ -197,7 +198,7 @@ public class ITTestIdentifyUnreferencedAssets {
 
   private static class StoreW implements StoreWorker<DummyValue, String> {
     @Override
-    public Serializer<DummyValue> getValueSerializer() {
+    public SerializerWithPayload<DummyValue> getValueSerializer() {
       return new DummyValueSerializer();
     }
 
@@ -207,12 +208,17 @@ public class ITTestIdentifyUnreferencedAssets {
     }
   }
 
-  private static class DummyValueSerializer extends GcTestUtils.JsonSerializer<DummyValue> implements Serializable {
+  private static class DummyValueSerializer extends GcTestUtils.JsonSerializer<DummyValue> implements Serializable,
+      SerializerWithPayload<DummyValue> {
 
     public DummyValueSerializer() {
       super(DummyValue.class);
     }
 
+    @Override
+    public Byte getPayload(DummyValue value) {
+      return 0;
+    }
   }
 
   private static class DummyAssetConverter implements AssetKeyConverter<DummyValue, GcTestUtils.DummyAsset>, Serializable {

@@ -47,7 +47,6 @@ public final class AttributeValueUtil {
   private static final char ZERO_BYTE = '\u0000';
   private static final String KEY_ADDITION = "a";
   private static final String KEY_REMOVAL = "d";
-  private static final String KEY_MODIFICATION = "m";
   private static final String DT = "dt";
 
   private AttributeValueUtil() {
@@ -109,8 +108,12 @@ public final class AttributeValueUtil {
    */
   static AttributeValue keyElementsWithPayload(WithPayload<Key> key) {
     Stream<AttributeValue> keyValue = checkNotNull(key.getValue()).getElements().stream().map(AttributeValueUtil::string);
-    AttributeValue payload = AttributeValueUtil.string(key.getPayload() == null
-        ? Character.toString(ZERO_BYTE) : key.getPayload().toString());
+    AttributeValue payload;
+    if (key.getPayload() == null) {
+      payload = AttributeValueUtil.string(Character.toString(ZERO_BYTE));
+    } else {
+      payload = AttributeValueUtil.string(key.getPayload().toString());
+    }
     return list(Stream.concat(Stream.of(payload), keyValue));
   }
 
@@ -196,11 +199,6 @@ public final class AttributeValueUtil {
       WithPayload<Key> key = deserializeKeyWithPayload(raw);
       return Mutation.Removal.of(key.getValue());
     }
-    raw = m.get(KEY_MODIFICATION);
-    if (raw != null) {
-      WithPayload<Key> key = deserializeKeyWithPayload(raw);
-      return Mutation.Modification.of(key.getValue(), key.getPayload());
-    }
     throw new IllegalStateException("keys.mutations map has unsupported entries: " + m);
   }
 
@@ -209,9 +207,6 @@ public final class AttributeValueUtil {
     switch (km.getType()) {
       case ADDITION:
         key = WithPayload.of(((Mutation.Addition) km).getPayload(), km.getKey());
-        break;
-      case MODIFICATION:
-        key = WithPayload.of(((Mutation.Modification) km).getPayload(), km.getKey());
         break;
       case REMOVAL:
         key = WithPayload.of(null, km.getKey());
@@ -228,8 +223,6 @@ public final class AttributeValueUtil {
         return KEY_ADDITION;
       case REMOVAL:
         return KEY_REMOVAL;
-      case MODIFICATION:
-        return KEY_MODIFICATION;
       default:
         throw new IllegalArgumentException("unknown mutation type " + type);
     }

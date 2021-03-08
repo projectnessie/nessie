@@ -37,6 +37,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
@@ -979,11 +980,10 @@ public abstract class AbstractITVersionStore {
     store().create(branch, Optional.empty());
 
     // have to do this here as tiered store stores payload at commit time
-    StringSerializer.setPayload((byte) 24);
+    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
     store().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"))
     );
-    StringSerializer.unsetPayload();
 
     assertEquals("world", store().getValue(branch, Key.of("hi")));
     List<Optional<String>> values = store().getValues(branch, Lists.newArrayList(Key.of("hi")));
@@ -991,9 +991,9 @@ public abstract class AbstractITVersionStore {
     assertTrue(values.get(0).isPresent());
 
     // have to do this here as non-tiered store reads payload when getKeys is called
-    StringSerializer.setPayload((byte) 24);
+    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
     List<WithPayload<Key>> keys = store().getKeys(branch).collect(Collectors.toList());
-    StringSerializer.unsetPayload();
+
     assertEquals(1, keys.size());
     assertEquals(Key.of("hi"), keys.get(0).getValue());
     assertEquals((byte)24, keys.get(0).getPayload());

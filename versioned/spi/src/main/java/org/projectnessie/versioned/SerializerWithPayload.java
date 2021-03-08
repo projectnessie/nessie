@@ -15,15 +15,11 @@
  */
 package org.projectnessie.versioned;
 
-import com.google.protobuf.ByteString;
-
 /**
- * Used to serialize &amp; deserialize the values in the store. Provided to an implementation of VersionStore on construction.
+ * Extension of Serializable that includes a single byte payload.
  */
-public interface Serializer<V> {
+public interface SerializerWithPayload<V> extends Serializer<V> {
 
-  ByteString toBytes(V value);
-
-  V fromBytes(ByteString bytes);
+  Byte getPayload(V value);
 
 }

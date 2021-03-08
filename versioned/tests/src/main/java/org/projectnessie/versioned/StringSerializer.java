@@ -16,6 +16,7 @@
 package org.projectnessie.versioned;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.mockito.Mockito.spy;
 
 import javax.annotation.Nonnull;
 
@@ -24,9 +25,8 @@ import com.google.protobuf.ByteString;
 /**
  * ValueWorker implementation for {@code String class}. Can also be used as simple {@link Serializer}.
  */
-public final class StringSerializer implements Serializer<String> {
-  private static Byte PAYLOAD = null;
-  private static final Serializer<String> INSTANCE = new StringSerializer();
+public class StringSerializer implements SerializerWithPayload<String> {
+  private static final SerializerWithPayload<String> INSTANCE = spy(new StringSerializer());
 
   private StringSerializer() {
   }
@@ -36,7 +36,7 @@ public final class StringSerializer implements Serializer<String> {
    * @return the instance
    */
   @Nonnull
-  public static Serializer<String> getInstance() {
+  public static SerializerWithPayload<String> getInstance() {
     return INSTANCE;
   }
 
@@ -46,26 +46,12 @@ public final class StringSerializer implements Serializer<String> {
   }
 
   @Override
-  public Byte getPayload(String value) {
-    return PAYLOAD;
-  }
-
-  @Override
   public ByteString toBytes(String value) {
     return ByteString.copyFrom(value, UTF_8);
   }
 
-  /**
-   * set the byte payload for testing purposes.
-   */
-  public static void setPayload(Byte payload) {
-    PAYLOAD = payload;
-  }
-
-  /**
-   * reset the byte payload for testing purposes.
-   */
-  public static void unsetPayload() {
-    setPayload(null);
+  @Override
+  public Byte getPayload(String value) {
+    return 0;
   }
 }

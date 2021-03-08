@@ -51,28 +51,34 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @Type(HiveDatabase.class)
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-public interface Contents {
+public abstract class Contents {
 
-  static enum Type {
-    UNKNOWN, ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
+  public static enum Type {
+    UNKNOWN((byte) 0),
+    ICEBERG_TABLE((byte) 1),
+    DELTA_LAKE_TABLE((byte) 2),
+    HIVE_TABLE((byte) 3),
+    HIVE_DATABASE((byte) 4),
+    VIEW((byte) 5);
 
+    private final byte payloadId;
+
+    Type(byte payloadId) {
+      this.payloadId = payloadId;
+    }
+
+    /**
+     * Convert a single byte payload into a Content Type.
+     */
     public static Type fromPayload(Byte payload) {
-      if (payload == null || payload == 0 || payload > 5) {
-        return UNKNOWN;
+      if (payload == null || payload > 5 || payload < 0) {
+        throw new IllegalArgumentException(String.format("Cannot create type from payload. Payload %s does not exist", payload));
       }
-      if (payload == 1) {
-        return ICEBERG_TABLE;
-      }
-      if (payload == 2) {
-        return DELTA_LAKE_TABLE;
-      }
-      if (payload == 3) {
-        return HIVE_TABLE;
-      }
-      if (payload == 4) {
-        return HIVE_DATABASE;
-      }
-      return VIEW;
+      return Type.values()[payload];
+    }
+
+    public byte getPayloadId() {
+      return payloadId;
     }
   }
 
@@ -82,7 +88,7 @@ public interface Contents {
    * @param clazz Class we're trying to return.
    * @return The return value
    */
-  default <T> Optional<T> unwrap(Class<T> clazz) {
+  public <T> Optional<T> unwrap(Class<T> clazz) {
     Objects.requireNonNull(clazz);
     if (clazz.isAssignableFrom(getClass())) {
       return Optional.of(clazz.cast(this));
@@ -93,19 +99,9 @@ public interface Contents {
   /**
    * Convert this contents into a payload byte.
    */
-  default byte toPayload() {
-    if (this instanceof IcebergTable) {
-      return 1;
-    } else if (this instanceof DeltaLakeTable) {
-      return 2;
-    } else if (this instanceof HiveTable) {
-      return 3;
-    } else if (this instanceof HiveDatabase) {
-      return 4;
-    } else if (this instanceof SqlView) {
-      return 5;
-    } else {
-      throw new IllegalArgumentException("Unknown type" + this);
-    }
+  protected abstract Type getType();
+
+  public static Byte toPayload(Contents contents) {
+    return contents.getType().getPayloadId();
   }
 }

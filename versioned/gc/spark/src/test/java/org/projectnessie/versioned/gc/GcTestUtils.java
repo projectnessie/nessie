@@ -64,11 +64,6 @@ public final class GcTestUtils {
       }
     }
 
-    @Override
-    public Byte getPayload(T value) {
-      return 0;
-    }
-
   }
 
   // annoying games w/ Java generics.
@@ -85,10 +80,6 @@ public final class GcTestUtils {
       return delegate.fromBytes(bytes);
     }
 
-    @Override
-    public Byte getPayload(AssetKey value) {
-      return null;
-    }
   }
 
 

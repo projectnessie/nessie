@@ -50,7 +50,7 @@ final class MongoL3 extends MongoBaseValue<L3> implements L3 {
   private static void serializeKeyDelta(BsonWriter writer, KeyDelta keyDelta) {
     writer.writeStartDocument();
 
-    MongoSerDe.serializeKeyWithPayload(writer, TREE_KEY, WithPayload.of(keyDelta.getPayload(), keyDelta.getKey()));
+    MongoSerDe.serializeKeyWithPayload(writer, TREE_KEY, keyDelta.toKeyWithPayload());
     writer.writeBinaryData(TREE_ID, MongoSerDe.serializeId(keyDelta.getId()));
 
     writer.writeEndDocument();
@@ -65,7 +65,7 @@ final class MongoL3 extends MongoBaseValue<L3> implements L3 {
   private static KeyDelta deserializeKeyDelta(Document d) {
     WithPayload<Key> key = MongoSerDe.deserializeKeyWithPayload((List<String>) d.get(TREE_KEY));
     Id id = MongoSerDe.deserializeId(d, TREE_ID);
-    return KeyDelta.of(key.getValue(), id, key.getPayload());
+    return KeyDelta.of(key, id);
   }
 
   @Override

@@ -75,7 +75,6 @@ final class MongoSerDe {
 
   private static final String KEY_ADDITION = "a";
   private static final String KEY_REMOVAL = "d";
-  private static final String KEY_MODIFICATION = "m";
 
   static {
     if (!CONSUMERS.keySet().equals(DESERIALIZERS.keySet())) {
@@ -183,9 +182,6 @@ final class MongoSerDe {
       case ADDITION:
         key = WithPayload.of(((Mutation.Addition) keyMutation).getPayload(), keyMutation.getKey());
         break;
-      case MODIFICATION:
-        key = WithPayload.of(((Mutation.Modification) keyMutation).getPayload(), keyMutation.getKey());
-        break;
       case REMOVAL:
         key = WithPayload.of(null, keyMutation.getKey());
         break;
@@ -203,8 +199,6 @@ final class MongoSerDe {
         return KEY_ADDITION;
       case REMOVAL:
         return KEY_REMOVAL;
-      case MODIFICATION:
-        return KEY_MODIFICATION;
       default:
         throw new IllegalArgumentException("unknown mutation type " + type);
     }
@@ -224,8 +218,6 @@ final class MongoSerDe {
         return Mutation.Addition.of(key.getValue(), key.getPayload());
       case KEY_REMOVAL:
         return Mutation.Removal.of(key.getValue());
-      case KEY_MODIFICATION:
-        return Mutation.Modification.of(key.getValue(), key.getPayload());
       default:
         throw new IllegalArgumentException(String.format("Unsupported key '%s' in key-mutation map", addRemove));
     }

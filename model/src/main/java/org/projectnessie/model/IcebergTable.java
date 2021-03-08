@@ -25,11 +25,16 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(as = ImmutableIcebergTable.class)
 @JsonDeserialize(as = ImmutableIcebergTable.class)
 @JsonTypeName("ICEBERG_TABLE")
-public interface IcebergTable extends Contents {
+public abstract class IcebergTable extends Contents {
 
-  String getMetadataLocation();
+  public abstract String getMetadataLocation();
 
   public static IcebergTable of(String metadataLocation) {
     return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).build();
+  }
+
+  @Override
+  protected Type getType() {
+    return Type.ICEBERG_TABLE;
   }
 }

@@ -35,6 +35,7 @@ import org.projectnessie.model.SqlView;
 import org.projectnessie.model.SqlView.Dialect;
 import org.projectnessie.store.ObjectTypes;
 import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StoreWorker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -46,11 +47,11 @@ import com.google.protobuf.UnsafeByteOperations;
 public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitMeta> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private final Serializer<Contents> tableSerializer = new TableValueSerializer();
+  private final SerializerWithPayload<Contents> tableSerializer = new TableValueSerializer();
   private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
 
   @Override
-  public Serializer<Contents> getValueSerializer() {
+  public SerializerWithPayload<Contents> getValueSerializer() {
     return tableSerializer;
   }
 
@@ -59,7 +60,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     return metaSerializer;
   }
 
-  private static class TableValueSerializer implements Serializer<Contents> {
+  private static class TableValueSerializer implements SerializerWithPayload<Contents> {
     @Override
     public ByteString toBytes(Contents value) {
       ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder();
@@ -143,7 +144,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
     @Override
     public Byte getPayload(Contents value) {
-      return value.toPayload();
+      return Contents.toPayload(value);
     }
   }
 
@@ -171,10 +172,6 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
       }
     }
 
-    @Override
-    public Byte getPayload(CommitMeta value) {
-      return null;
-    }
   }
 
 }

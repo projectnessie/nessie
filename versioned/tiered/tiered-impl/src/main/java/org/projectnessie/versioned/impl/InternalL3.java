@@ -108,19 +108,20 @@ class InternalL3 extends PersistentBase<L3> {
 
   Stream<InternalMutation> getMutations() {
     return map.entrySet().stream().filter(e -> e.getValue().isDirty())
-        .map(e -> {
+        .flatMap(e -> {
           PositionDeltaWithPayload d = e.getValue();
           if (d.wasAdded()) {
-            return InternalMutation.InternalAddition.of(e.getKey(), d.getNewPayload());
+            return Stream.of(InternalMutation.InternalAddition.of(e.getKey(), d.getNewPayload()));
           } else if (d.wasRemoved()) {
-            return InternalMutation.InternalRemoval.of(e.getKey());
+            return Stream.of(InternalMutation.InternalRemoval.of(e.getKey()));
           } else if (e.getValue().isPayloadDirty()) {
             // existing key that has changed type
-            return InternalMutation.InternalModification.of(e.getKey(), e.getValue().getNewPayload());
+            return Stream.of(InternalMutation.InternalAddition.of(e.getKey(), d.getNewPayload()),
+                InternalMutation.InternalRemoval.of(e.getKey()));
           } else {
-            return null;
+            return Stream.of();
           }
-        }).filter(java.util.Objects::nonNull);
+        });
   }
 
   Stream<InternalKey> getKeys() {
@@ -192,7 +193,7 @@ class InternalL3 extends PersistentBase<L3> {
           keyDelta.collect(
               Collectors.toMap(
                   kd -> new InternalKey(ImmutableKey.builder().addAllElements(kd.getKey().getElements()).build()),
-                  kd -> PositionDeltaWithPayload.of(0, kd.getId()),
+                  kd -> PositionDeltaWithPayload.of(0, kd.getId(), kd.getPayload()),
                   (a, b) -> {
                     throw new IllegalArgumentException(String.format("Got Id %s and %s for same key",
                         a.getNewId(), b.getNewId()));

@@ -47,6 +47,7 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
@@ -74,14 +75,14 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
 
   private final ConcurrentMap<Hash, Commit<ValueT, MetadataT>> commits = new ConcurrentHashMap<>();
   private final ConcurrentMap<NamedRef, Hash> namedReferences = new ConcurrentHashMap<>();
-  private final Serializer<ValueT> valueSerializer;
+  private final SerializerWithPayload<ValueT> valueSerializer;
   private final Serializer<MetadataT> metadataSerializer;
 
   public static final class Builder<ValueT, MetadataT> {
-    private Serializer<ValueT> valueSerializer = null;
+    private SerializerWithPayload<ValueT> valueSerializer = null;
     private Serializer<MetadataT> metadataSerializer = null;
 
-    public Builder<ValueT, MetadataT> valueSerializer(Serializer<ValueT> serializer) {
+    public Builder<ValueT, MetadataT> valueSerializer(SerializerWithPayload<ValueT> serializer) {
       this.valueSerializer = requireNonNull(serializer);
       return this;
     }

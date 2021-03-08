@@ -19,6 +19,7 @@ import javax.annotation.Nullable;
 
 import org.immutables.value.Value.Immutable;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithPayload;
 
 /**
  * Key-deltas of an L3.
@@ -34,5 +35,14 @@ public interface KeyDelta {
 
   static KeyDelta of(Key key, Id id, Byte payload) {
     return ImmutableKeyDelta.builder().key(key).id(id).payload(payload).build();
+  }
+
+  static KeyDelta of(WithPayload<Key> key, Id id) {
+    return ImmutableKeyDelta.builder().key(key.getValue()).id(id).payload(key.getPayload()).build();
+  }
+
+
+  default WithPayload<Key> toKeyWithPayload() {
+    return WithPayload.of(getPayload(), getKey());
   }
 }
