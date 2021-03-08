@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.server;
+package org.projectnessie.jaxrs;
 
-import io.quarkus.test.junit.QuarkusTest;
-import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
-import org.projectnessie.jaxrs.AbstractTestRest;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@QuarkusTest
-class TestRest extends AbstractTestRest {
+public class TestJerseyRest extends AbstractTestRest {
+  @RegisterExtension static NessieJaxRsExtension server = new NessieJaxRsExtension();
 
   @Override
   @BeforeEach
   public void setUp() throws Exception {
-    super.init(URI.create("http://localhost:19121/api/v1"));
+    init(server.getURI());
     super.setUp();
   }
 }

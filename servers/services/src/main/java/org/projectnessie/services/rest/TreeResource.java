@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
@@ -78,13 +80,19 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
+  @Context SecurityContext securityContext;
+
   @Inject
   public TreeResource(
       ServerConfig config,
       MultiTenant multiTenant,
-      Principal principal,
       VersionStore<Contents, CommitMeta, Contents.Type> store) {
-    super(config, multiTenant, principal, store);
+    super(config, multiTenant, store);
+  }
+
+  @Override
+  protected SecurityContext getSecurityContext() {
+    return securityContext;
   }
 
   @Override
