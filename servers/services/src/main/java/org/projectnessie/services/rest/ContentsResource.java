@@ -15,13 +15,14 @@
  */
 package org.projectnessie.services.rest;
 
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.SecurityContext;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -41,12 +42,17 @@ import org.projectnessie.versioned.VersionStore;
 @RequestScoped
 public class ContentsResource extends BaseResource implements ContentsApi {
 
+  @Context SecurityContext securityContext;
+
   @Inject
   public ContentsResource(
-      ServerConfig config,
-      Principal principal,
-      VersionStore<Contents, CommitMeta, Contents.Type> store) {
-    super(config, principal, store);
+      ServerConfig config, VersionStore<Contents, CommitMeta, Contents.Type> store) {
+    super(config, store);
+  }
+
+  @Override
+  protected SecurityContext getSecurityContext() {
+    return securityContext;
   }
 
   @Override
