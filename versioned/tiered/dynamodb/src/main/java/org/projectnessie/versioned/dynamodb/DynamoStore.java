@@ -511,8 +511,7 @@ public class DynamoStore implements Store {
         .tableName(name)
         .attributeDefinitions(AttributeDefinition.builder()
             .attributeName(KEY_NAME)
-            .attributeType(
-                ScalarAttributeType.B)
+            .attributeType(ScalarAttributeType.B)
             .build())
         .billingMode(BillingMode.PAY_PER_REQUEST)
         .keySchema(KeySchemaElement.builder()
