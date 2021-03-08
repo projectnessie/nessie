@@ -35,13 +35,13 @@ export interface Put {
      * @type {ContentsKey}
      * @memberof Put
      */
-    key?: ContentsKey;
+    key: ContentsKey;
     /**
      * 
      * @type {Contents}
      * @memberof Put
      */
-    contents?: Contents;
+    contents: Contents;
 }
 
 export function PutFromJSON(json: any): Put {
@@ -54,8 +54,8 @@ export function PutFromJSONTyped(json: any, ignoreDiscriminator: boolean): Put {
     }
     return {
         
-        'key': !exists(json, 'key') ? undefined : ContentsKeyFromJSON(json['key']),
-        'contents': !exists(json, 'contents') ? undefined : ContentsFromJSON(json['contents']),
+        'key': ContentsKeyFromJSON(json['key']),
+        'contents': ContentsFromJSON(json['contents']),
     };
 }
 

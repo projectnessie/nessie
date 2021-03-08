@@ -35,13 +35,13 @@ export interface ContentsWithKey {
      * @type {Contents}
      * @memberof ContentsWithKey
      */
-    contents?: Contents;
+    contents: Contents;
     /**
      * 
      * @type {ContentsKey}
      * @memberof ContentsWithKey
      */
-    key?: ContentsKey;
+    key: ContentsKey;
 }
 
 export function ContentsWithKeyFromJSON(json: any): ContentsWithKey {
@@ -54,8 +54,8 @@ export function ContentsWithKeyFromJSONTyped(json: any, ignoreDiscriminator: boo
     }
     return {
         
-        'contents': !exists(json, 'contents') ? undefined : ContentsFromJSON(json['contents']),
-        'key': !exists(json, 'key') ? undefined : ContentsKeyFromJSON(json['key']),
+        'contents': ContentsFromJSON(json['contents']),
+        'key': ContentsKeyFromJSON(json['key']),
     };
 }
 

@@ -31,7 +31,7 @@ export interface Unchanged {
      * @type {ContentsKey}
      * @memberof Unchanged
      */
-    key?: ContentsKey;
+    key: ContentsKey;
 }
 
 export function UnchangedFromJSON(json: any): Unchanged {
@@ -44,7 +44,7 @@ export function UnchangedFromJSONTyped(json: any, ignoreDiscriminator: boolean):
     }
     return {
         
-        'key': !exists(json, 'key') ? undefined : ContentsKeyFromJSON(json['key']),
+        'key': ContentsKeyFromJSON(json['key']),
     };
 }
 

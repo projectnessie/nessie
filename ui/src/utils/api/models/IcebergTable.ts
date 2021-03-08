@@ -30,7 +30,7 @@ export interface IcebergTable {
      * @type {string}
      * @memberof IcebergTable
      */
-    metadataLocation?: string;
+    metadataLocation: string;
 }
 
 export function IcebergTableFromJSON(json: any): IcebergTable {
@@ -44,7 +44,7 @@ export function IcebergTableFromJSONTyped(json: any, ignoreDiscriminator: boolea
     return {
         
         'id': !exists(json, 'id') ? undefined : json['id'],
-        'metadataLocation': !exists(json, 'metadataLocation') ? undefined : json['metadataLocation'],
+        'metadataLocation': json['metadataLocation'],
     };
 }
 

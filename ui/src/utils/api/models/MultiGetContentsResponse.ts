@@ -31,7 +31,7 @@ export interface MultiGetContentsResponse {
      * @type {Array<ContentsWithKey>}
      * @memberof MultiGetContentsResponse
      */
-    contents?: Array<ContentsWithKey>;
+    contents: Array<ContentsWithKey>;
 }
 
 export function MultiGetContentsResponseFromJSON(json: any): MultiGetContentsResponse {
@@ -44,7 +44,7 @@ export function MultiGetContentsResponseFromJSONTyped(json: any, ignoreDiscrimin
     }
     return {
         
-        'contents': !exists(json, 'contents') ? undefined : ((json['contents'] as Array<any>).map(ContentsWithKeyFromJSON)),
+        'contents': ((json['contents'] as Array<any>).map(ContentsWithKeyFromJSON)),
     };
 }
 
@@ -57,7 +57,7 @@ export function MultiGetContentsResponseToJSON(value?: MultiGetContentsResponse 
     }
     return {
         
-        'contents': value.contents === undefined ? undefined : ((value.contents as Array<any>).map(ContentsWithKeyToJSON)),
+        'contents': ((value.contents as Array<any>).map(ContentsWithKeyToJSON)),
     };
 }
 

@@ -37,7 +37,7 @@ export interface EntriesResponse {
      * @type {Array<Entry>}
      * @memberof EntriesResponse
      */
-    entries?: Array<Entry>;
+    entries: Array<Entry>;
 }
 
 export function EntriesResponseFromJSON(json: any): EntriesResponse {
@@ -51,7 +51,7 @@ export function EntriesResponseFromJSONTyped(json: any, ignoreDiscriminator: boo
     return {
         
         'token': !exists(json, 'token') ? undefined : json['token'],
-        'entries': !exists(json, 'entries') ? undefined : ((json['entries'] as Array<any>).map(EntryFromJSON)),
+        'entries': ((json['entries'] as Array<any>).map(EntryFromJSON)),
     };
 }
 
@@ -65,7 +65,7 @@ export function EntriesResponseToJSON(value?: EntriesResponse | null): any {
     return {
         
         'token': value.token,
-        'entries': value.entries === undefined ? undefined : ((value.entries as Array<any>).map(EntryToJSON)),
+        'entries': ((value.entries as Array<any>).map(EntryToJSON)),
     };
 }
 

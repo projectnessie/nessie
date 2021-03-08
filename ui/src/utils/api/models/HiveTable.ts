@@ -30,7 +30,7 @@ export interface HiveTable {
      * @type {Array<any>}
      * @memberof HiveTable
      */
-    partitions?: Array<any>;
+    partitions: Array<any>;
     /**
      * 
      * @type {Array<string>}
@@ -50,7 +50,7 @@ export function HiveTableFromJSONTyped(json: any, ignoreDiscriminator: boolean):
     return {
         
         'id': !exists(json, 'id') ? undefined : json['id'],
-        'partitions': !exists(json, 'partitions') ? undefined : json['partitions'],
+        'partitions': json['partitions'],
         'tableDefinition': !exists(json, 'tableDefinition') ? undefined : json['tableDefinition'],
     };
 }
