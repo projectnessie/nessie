@@ -19,6 +19,9 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
+import javax.ws.rs.core.SecurityContext;
+
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -42,7 +45,16 @@ abstract class BaseResource {
 
   // Mandated by CDI 2.0
   protected BaseResource() {
-    this(null, null, null);
+    this(null, (Principal) null, null);
+  }
+
+  protected BaseResource(
+      ServerConfig config,
+      SecurityContext securityContext,
+      VersionStore<Contents, CommitMeta, Contents.Type> store) {
+    this.config = config;
+    this.principal = securityContext.getUserPrincipal();
+    this.store = store;
   }
 
   protected BaseResource(

@@ -19,18 +19,18 @@ import static org.projectnessie.services.cel.CELUtil.COMMIT_LOG_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.ENTRIES_DECLARATIONS;
 import static org.projectnessie.services.cel.CELUtil.SCRIPT_HOST;
 
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.SecurityContext;
+
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.cel.tools.Script;
 import org.projectnessie.cel.tools.ScriptException;
@@ -70,6 +70,10 @@ import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
 /** REST endpoint for trees. */
 @RequestScoped
 public class TreeResource extends BaseResource implements TreeApi {
@@ -79,9 +83,9 @@ public class TreeResource extends BaseResource implements TreeApi {
   @Inject
   public TreeResource(
       ServerConfig config,
-      Principal principal,
+      @Context SecurityContext securityContext,
       VersionStore<Contents, CommitMeta, Contents.Type> store) {
-    super(config, principal, store);
+    super(config, securityContext, store);
   }
 
   @Override

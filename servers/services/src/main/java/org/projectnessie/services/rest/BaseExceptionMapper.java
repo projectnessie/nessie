@@ -15,18 +15,22 @@
  */
 package org.projectnessie.services.rest;
 
-import com.google.common.base.Throwables;
 import java.util.function.Consumer;
+
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.ext.ExceptionMapper;
+
 import org.projectnessie.error.NessieError;
 import org.projectnessie.services.config.ServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Throwables;
+
 /** Code shared between concrete exception-mapper implementations. */
-public abstract class BaseExceptionMapper {
+public abstract class BaseExceptionMapper<T extends Throwable> implements ExceptionMapper<T> {
   private static final Logger LOGGER = LoggerFactory.getLogger(BaseExceptionMapper.class);
 
   private final ServerConfig serverConfig;

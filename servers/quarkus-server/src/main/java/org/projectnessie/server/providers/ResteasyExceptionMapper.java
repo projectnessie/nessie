@@ -21,6 +21,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+
 import org.jboss.resteasy.api.validation.ResteasyViolationException;
 import org.jboss.resteasy.api.validation.Validation;
 import org.projectnessie.services.config.ServerConfig;
@@ -35,8 +36,7 @@ import org.projectnessie.services.rest.NessieExceptionMapper;
 // Use our exception-mapper instead of
 // io.quarkus.hibernate.validator.runtime.jaxrs.ResteasyViolationExceptionMapper
 @Provider
-public class ResteasyExceptionMapper extends BaseExceptionMapper
-    implements ExceptionMapper<ResteasyViolationException> {
+public class ResteasyExceptionMapper extends BaseExceptionMapper<ResteasyViolationException> {
 
   // Unused constructor
   // Required because of https://issues.jboss.org/browse/RESTEASY-1538

@@ -15,21 +15,23 @@
  */
 package org.projectnessie.services.rest;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.google.common.base.Throwables;
 import java.util.stream.Collectors;
+
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.common.base.Throwables;
 
 /**
  * "Default" exception mapper implementations, mostly used to serialize the {@link
@@ -38,8 +40,7 @@ import org.slf4j.LoggerFactory;
  * (internal server errors) with a JSON-serialized {@link org.projectnessie.error.NessieError}.
  */
 @Provider
-public class NessieExceptionMapper extends BaseExceptionMapper
-    implements ExceptionMapper<Exception> {
+public class NessieExceptionMapper extends BaseExceptionMapper<Exception> {
   private static final Logger LOGGER = LoggerFactory.getLogger(NessieExceptionMapper.class);
 
   // Unused constructor
