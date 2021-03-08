@@ -31,6 +31,7 @@
 
   <properties>
     <quarkus.smallrye-openapi.store-schema-directory>${project.build.directory}/openapi</quarkus.smallrye-openapi.store-schema-directory>
+    <test.log.level>INFO</test.log.level>
   </properties>
 
   <dependencies>
@@ -188,6 +189,9 @@
         <configuration>
           <systemPropertyVariables>
             <maven.home>${maven.home}</maven.home>
+            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+            <quarkus.log.level>${test.log.level}</quarkus.log.level>
+            <quarkus.log.console.level>${test.log.level}</quarkus.log.console.level>
           </systemPropertyVariables>
         </configuration>
       </plugin>
