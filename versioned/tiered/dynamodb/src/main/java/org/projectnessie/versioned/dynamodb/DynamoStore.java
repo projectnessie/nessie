@@ -92,7 +92,6 @@ import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.KeysAndAttributes;
-import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughput;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutRequest;
 import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
@@ -508,23 +507,14 @@ public class DynamoStore implements Store {
   }
 
   private void createTable(String name) {
-    CreateTableRequest.Builder createRequest = CreateTableRequest.builder()
+    client.createTable(CreateTableRequest.builder()
         .tableName(name)
         .attributeDefinitions(AttributeDefinition.builder()
             .attributeName(KEY_NAME)
             .attributeType(
                 ScalarAttributeType.B)
             .build())
-        .billingMode(config.getBillingMode());
-
-    if (config.getBillingMode() == BillingMode.PROVISIONED) {
-      createRequest = createRequest.provisionedThroughput(ProvisionedThroughput.builder()
-          .readCapacityUnits(config.getCreateTableReadCapacityUnits())
-          .writeCapacityUnits(config.getCreateTableWriteCapacityUnits())
-          .build());
-    }
-
-    client.createTable(createRequest
+        .billingMode(BillingMode.PAY_PER_REQUEST)
         .keySchema(KeySchemaElement.builder()
             .attributeName(KEY_NAME)
             .keyType(KeyType.HASH)
