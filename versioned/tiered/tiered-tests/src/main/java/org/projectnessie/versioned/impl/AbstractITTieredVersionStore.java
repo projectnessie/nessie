@@ -39,6 +39,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
@@ -96,11 +97,10 @@ public abstract class AbstractITTieredVersionStore {
 
     BranchName branch = BranchName.of("entity-types");
     versionStore().create(branch, Optional.empty());
-    StringSerializer.setPayload((byte) 24);
+    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"))
     );
-    StringSerializer.unsetPayload();
 
     assertEquals("world", versionStore().getValue(branch, Key.of("hi")));
     List<Optional<String>> values = versionStore().getValues(branch, Lists.newArrayList(Key.of("hi")));
@@ -119,11 +119,11 @@ public abstract class AbstractITTieredVersionStore {
 
     BranchName branch = BranchName.of("entity-types-with-removal");
     versionStore().create(branch, Optional.empty());
-    StringSerializer.setPayload((byte) 24);
+    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"))
     );
-    StringSerializer.unsetPayload();
+
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Delete.of(Key.of("hi"))));
 
     List<WithPayload<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
@@ -136,11 +136,10 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch = BranchName.of("entity-types-key-roll");
     versionStore().create(branch, Optional.empty());
     for (int i = 0; i < 128; i++) {
-      StringSerializer.setPayload((byte) i);
+      Mockito.doReturn((byte) i).when(StringSerializer.getInstance()).getPayload("world" + i);
       versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
           Put.of(Key.of("hi" + i), "world" + i))
       );
-      StringSerializer.unsetPayload();
     }
 
     List<WithPayload<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
@@ -156,17 +155,17 @@ public abstract class AbstractITTieredVersionStore {
     BranchName branch = BranchName.of("entity-types-key-roll-modification");
     versionStore().create(branch, Optional.empty());
     for (int i = 0; i < 128; i++) {
-      StringSerializer.setPayload((byte) i);
+      Mockito.doReturn((byte) i).when(StringSerializer.getInstance()).getPayload("world" + i);
       versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
           Put.of(Key.of("hi" + i), "world" + i))
       );
-      StringSerializer.unsetPayload();
     }
-    StringSerializer.setPayload((byte) 22);
+
+    Mockito.doReturn((byte) 22).when(StringSerializer.getInstance()).getPayload("world-weary" + 12);
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi" + 12), "world-weary" + 12))
     );
-    StringSerializer.unsetPayload();
+
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Delete.of(Key.of("hi" + 22))));
 
     List<WithPayload<Key>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
@@ -184,19 +183,18 @@ public abstract class AbstractITTieredVersionStore {
     versionStore().create(branch, Optional.empty());
     Map<String, Byte> payloads = new HashMap<>();
     for (int i = 0; i < 128; i++) {
-      StringSerializer.setPayload((byte) i);
+      Mockito.doReturn((byte) i).when(StringSerializer.getInstance()).getPayload("world" + i);
       versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
           Put.of(Key.of("hi" + i), "world" + i))
       );
       payloads.put("hi" + i, (byte) i);
-      StringSerializer.unsetPayload();
+
       if (i % 26 == 0 && i > 25) {
-        StringSerializer.setPayload((byte) (i + 10));
+        Mockito.doReturn((byte) (i + 10)).when(StringSerializer.getInstance()).getPayload("world-weary" + i);
         versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
             Put.of(Key.of("hi" + i), "world-weary" + i))
         );
         payloads.put("hi" + i, (byte) (i + 10));
-        StringSerializer.unsetPayload();
       }
       if (i % 26 == 0 && i > 25) {
         versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Delete.of(Key.of("hi" + i))));

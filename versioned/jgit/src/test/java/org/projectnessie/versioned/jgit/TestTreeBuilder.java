@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
-import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.Unchanged;
 
 import com.google.common.collect.ImmutableList;
@@ -56,7 +56,7 @@ class TestTreeBuilder {
     } catch (IOException e) {
       throw new RuntimeException();
     }
-    Serializer<String> serializer = new Serializer<String>() {
+    SerializerWithPayload<String> serializer = new SerializerWithPayload<String>() {
       @Override
       public ByteString toBytes(String value) {
         return ByteString.copyFrom(value.getBytes());

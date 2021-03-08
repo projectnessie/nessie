@@ -46,6 +46,7 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
@@ -87,7 +88,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   private static final int MAX_MERGE_DEPTH = 200;
 
-  private final Serializer<DATA> serializer;
+  private final SerializerWithPayload<DATA> serializer;
   private final Serializer<METADATA> metadataSerializer;
   private final ExecutorService executor;
   private final Store store;

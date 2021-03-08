@@ -174,8 +174,6 @@ abstract class KeyList {
             } else {
               removals.add(key);
             }
-          } else if (m.getType() == MutationType.MODIFICATION) {
-            payloads.put(key, ((InternalMutation.InternalModification) m).getPayload());
           } else {
             throw new IllegalStateException("Invalid mutation type: " + m.getType().name());
           }

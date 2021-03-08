@@ -29,13 +29,17 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(as = ImmutableDeltaLakeTable.class)
 @JsonDeserialize(as = ImmutableDeltaLakeTable.class)
 @JsonTypeName("DELTA_LAKE_TABLE")
-public interface DeltaLakeTable extends Contents {
+public abstract class DeltaLakeTable extends Contents {
 
-  List<String> getMetadataLocationHistory();
+  public abstract List<String> getMetadataLocationHistory();
 
-  List<String> getCheckpointLocationHistory();
+  public abstract List<String> getCheckpointLocationHistory();
 
   @Nullable
-  String getLastCheckpoint();
+  public abstract String getLastCheckpoint();
 
+  @Override
+  protected Type getType() {
+    return Type.DELTA_LAKE_TABLE;
+  }
 }

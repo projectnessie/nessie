@@ -43,7 +43,7 @@ import org.projectnessie.versioned.tiered.gc.L1Frame;
 import org.projectnessie.versioned.tiered.gc.RefFrame;
 
 public class TestValueRetriever {
-
+  private static final Byte DEFAULT_PAYLOAD = (byte) 0;
   private final Store store = new MockStore();
 
   private SparkSession spark() {
@@ -157,8 +157,8 @@ public class TestValueRetriever {
   public void l3() {
     Id val1 = Id.generateRandom();
     Id val2 = Id.generateRandom();
-    InternalL3 l3 = InternalL3.EMPTY.set(new InternalKey(Key.of("foo")), val1, (byte) 0)
-        .set(new InternalKey(Key.of("bar")), val2, (byte) 0);
+    InternalL3 l3 = InternalL3.EMPTY.set(new InternalKey(Key.of("foo")), val1, DEFAULT_PAYLOAD)
+        .set(new InternalKey(Key.of("bar")), val2, DEFAULT_PAYLOAD);
     store.put(l3.toSaveOp(), Optional.empty());
 
     IdCarrier carrier1 = single(IdCarrier

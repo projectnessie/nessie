@@ -48,8 +48,9 @@ abstract class PositionDeltaWithPayload extends PositionDelta {
     return ImmutablePositionDeltaWithPayload.getBuilder();
   }
 
-  static PositionDeltaWithPayload of(int position, Id id) {
-    return ImmutablePositionDeltaWithPayload.getBuilder().oldId(id).newId(id).position(position).build();
+  static PositionDeltaWithPayload of(int position, Id id, Byte payload) {
+    return ImmutablePositionDeltaWithPayload.getBuilder().oldId(id).newId(id).position(position).oldPayload(payload).newPayload(payload)
+        .build();
   }
 
 

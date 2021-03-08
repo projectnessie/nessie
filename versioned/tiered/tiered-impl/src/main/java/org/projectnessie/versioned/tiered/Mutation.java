@@ -28,7 +28,6 @@ import org.projectnessie.versioned.Key;
 public interface Mutation {
   enum MutationType {
     ADDITION,
-    MODIFICATION,
     REMOVAL
   }
 
@@ -52,25 +51,6 @@ public interface Mutation {
 
     public static Addition of(Key key, Byte payload) {
       return ImmutableAddition.builder().key(key).payload(payload).build();
-    }
-  }
-
-  @Value.Immutable
-  abstract class Modification implements Mutation {
-
-    @Override
-    public final MutationType getType() {
-      return MutationType.MODIFICATION;
-    }
-
-    @Override
-    public abstract Key getKey();
-
-    @Nullable
-    public abstract Byte getPayload();
-
-    public static Modification of(Key key, Byte payload) {
-      return ImmutableModification.builder().key(key).payload(payload).build();
     }
   }
 

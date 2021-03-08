@@ -30,7 +30,6 @@ abstract class InternalMutation {
 
   enum MutationType {
     ADDITION("a"),
-    MODIFICATION("m"),
     REMOVAL("d");
 
     private final String field;
@@ -51,9 +50,6 @@ abstract class InternalMutation {
         return InternalAddition.of(new InternalKey(a.getKey()), a.getPayload());
       case REMOVAL:
         return InternalRemoval.of(new InternalKey(km.getKey()));
-      case MODIFICATION:
-        Mutation.Modification m = (Mutation.Modification) km;
-        return InternalModification.of(new InternalKey(m.getKey()), m.getPayload());
       default:
         throw new IllegalArgumentException("Unknown mutation-type " + km.getType());
     }
@@ -81,33 +77,6 @@ abstract class InternalMutation {
     @Override
     Mutation toMutation() {
       return Mutation.Addition.of(getKey().toKey(), getPayload());
-    }
-
-    public Entity toEntity() {
-      Entity key = getKey().toEntity();
-      Entity payload = Entity.ofString(getPayload() == null ? Character.toString(ZERO_BYTE) : getPayload().toString());
-      return Entity.ofMap(ImmutableMap.of(getType().field, Entity.ofList(Stream.concat(Stream.of(payload), key.getList().stream()))));
-    }
-  }
-
-  @Immutable
-  public abstract static class InternalModification extends InternalMutation {
-
-    @Override
-    public final MutationType getType() {
-      return MutationType.MODIFICATION;
-    }
-
-    public static InternalModification of(InternalKey key, Byte payload) {
-      return ImmutableInternalModification.builder().key(key).payload(payload).build();
-    }
-
-    @Nullable
-    public abstract Byte getPayload();
-
-    @Override
-    Mutation toMutation() {
-      return Mutation.Modification.of(getKey().toKey(), getPayload());
     }
 
     public Entity toEntity() {

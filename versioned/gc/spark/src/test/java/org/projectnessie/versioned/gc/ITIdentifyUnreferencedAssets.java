@@ -108,10 +108,6 @@ class ITIdentifyUnreferencedAssets {
       super(DummyValue.class);
     }
 
-    @Override
-    public Byte getPayload(DummyValue value) {
-      return null;
-    }
   }
 
   private static class DummyAssetConverter implements AssetKeyConverter<DummyValue, GcTestUtils.DummyAsset>, Serializable {

@@ -30,7 +30,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.impl.InternalBranch.Commit;
 import org.projectnessie.versioned.impl.InternalBranch.UnsavedDelta;
 import org.projectnessie.versioned.impl.InternalKey.Position;
@@ -64,7 +64,7 @@ class PartialTree<V> {
     NO_VALUES, SELECT_VALUES
   }
 
-  private final Serializer<V> serializer;
+  private final SerializerWithPayload<V> serializer;
   private final InternalRefId refId;
   private InternalRef.Type refType;
   private Id rootId;
@@ -74,11 +74,11 @@ class PartialTree<V> {
   private final Map<InternalKey, ValueHolder<V>> values = new HashMap<>();
   private final Collection<InternalKey> keys;
 
-  static <V> PartialTree<V> of(Serializer<V> serializer, InternalRefId id, List<InternalKey> keys) {
+  static <V> PartialTree<V> of(SerializerWithPayload<V> serializer, InternalRefId id, List<InternalKey> keys) {
     return new PartialTree<>(serializer, id, keys);
   }
 
-  static <V> PartialTree<V> of(Serializer<V> serializer, InternalRef.Type refType, InternalL1 l1, Collection<InternalKey> keys) {
+  static <V> PartialTree<V> of(SerializerWithPayload<V> serializer, InternalRef.Type refType, InternalL1 l1, Collection<InternalKey> keys) {
     PartialTree<V> tree = new PartialTree<>(serializer, InternalRefId.ofHash(l1.getId()), keys);
     tree.l1 = new Pointer<>(l1);
     tree.refType = refType;
@@ -90,7 +90,7 @@ class PartialTree<V> {
         "You can only mutate a partial tree that references a branch. This is type %s.", refType.name());
   }
 
-  private PartialTree(Serializer<V> serializer, InternalRefId refId, Collection<InternalKey> keys) {
+  private PartialTree(SerializerWithPayload<V> serializer, InternalRefId refId, Collection<InternalKey> keys) {
     super();
     this.refId = refId;
     this.serializer = serializer;

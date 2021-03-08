@@ -52,7 +52,7 @@ class DynamoL3 extends DynamoBaseValue<L3> implements L3 {
 
   private static AttributeValue treeKeyId(KeyDelta kd) {
     Map<String, AttributeValue> map = new HashMap<>();
-    map.put(DynamoL3.TREE_KEY, keyElementsWithPayload(WithPayload.of(kd.getPayload(), kd.getKey())));
+    map.put(DynamoL3.TREE_KEY, keyElementsWithPayload(kd.toKeyWithPayload()));
     map.put(DynamoL3.TREE_ID, idValue(kd.getId()));
     return map(map);
   }
@@ -75,7 +75,7 @@ class DynamoL3 extends DynamoBaseValue<L3> implements L3 {
           .map(AttributeValue::m)
           .map(m -> {
             WithPayload<Key> key = deserializeKeyWithPayload(attributeValue(m, TREE_KEY));
-            return KeyDelta.of(key.getValue(), deserializeId(m, TREE_ID), key.getPayload());
+            return KeyDelta.of(key, deserializeId(m, TREE_ID));
           });
       consumer.keyDelta(keyDelta);
     }
