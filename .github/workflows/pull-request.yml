@@ -81,9 +81,6 @@ jobs:
     - uses: codecov/codecov-action@v1
       with:
         flags: java
-    - name: Populate version from maven
-      run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout --file ../pom.xml > version.txt
-      working-directory: ./tools/apprunner-gradle-plugin
     - name: Build with Gradle
       run: ./gradlew build
       working-directory: ./tools/apprunner-gradle-plugin

@@ -10,16 +10,12 @@ exec {
   standardOutput = quarkusVersionBuffer
 }.assertNormalExitValue()
 
-if (!file('version.txt').exists()) {
-  def nessieVersionBuffer = new ByteArrayOutputStream()
-  exec {
-    commandLine = ['../../mvnw', 'help:evaluate', '-Dexpression=project.version', '-q', '-DforceStdout']
-    standardOutput = nessieVersionBuffer
-  }.assertNormalExitValue()
-  version = nessieVersionBuffer.toString()
-} else {
-  version = file('version.txt').text.trim()
-}
+def nessieVersionBuffer = new ByteArrayOutputStream()
+exec {
+  commandLine = ['../../mvnw', 'help:evaluate', '-Dexpression=project.version', '-q', '-DforceStdout']
+  standardOutput = nessieVersionBuffer
+}.assertNormalExitValue()
+version = nessieVersionBuffer.toString()
 
 allprojects {
   group = "org.projectnessie"
