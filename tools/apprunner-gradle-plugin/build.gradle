@@ -4,7 +4,11 @@ plugins {
   id 'com.gradle.plugin-publish' version '0.12.0'
 }
 
-version = file('version.txt').text.trim()
+if (!file('version.txt').exists()) {
+  version = file('../pom.xml').readLines().find {l -> l.contains('<version>') }.replaceFirst(~/.*<version>(.*)<\/version>.*/, '$1' )
+} else {
+  version = file('version.txt').text.trim()
+}
 
 allprojects {
   group = "org.projectnessie"
