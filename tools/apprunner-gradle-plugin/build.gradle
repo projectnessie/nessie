@@ -4,6 +4,7 @@ plugins {
   id 'com.gradle.plugin-publish' version '0.12.0'
 }
 
+def quarkusVersion = file('../../pom.xml').readLines().find {l -> l.contains('<quarkus.version>') }.replaceFirst(~/.*<quarkus.version>(.*)<\/quarkus.version>.*/, '$1' )
 if (!file('version.txt').exists()) {
   version = file('../pom.xml').readLines().find {l -> l.contains('<version>') }.replaceFirst(~/.*<version>(.*)<\/version>.*/, '$1' )
 } else {
@@ -40,7 +41,7 @@ compileJava {
 }
 
 dependencies {
-  implementation platform('io.quarkus:quarkus-bom:1.9.1.Final')
+  implementation platform("io.quarkus:quarkus-bom:$quarkusVersion")
 
   compile "io.quarkus:quarkus-bootstrap-core"
   compile "org.projectnessie:nessie-apprunner-maven-plugin:$version"
