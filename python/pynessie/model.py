@@ -308,3 +308,13 @@ class MultiContents:
 
 
 MultiContentsSchema = desert.schema_class(MultiContents)
+
+
+@attr.dataclass
+class CommitMultipleOperationsResponse:
+    """Contents container for commit response."""
+
+    reference: Reference = desert.ib(fields.Nested(ReferenceSchema, data_key="reference"))
+
+
+CommitMultipleOperationsResponseSchema = desert.schema_class(CommitMultipleOperationsResponse)

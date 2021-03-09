@@ -18,11 +18,13 @@ package org.projectnessie.versioned.impl;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -192,15 +195,17 @@ public abstract class AbstractITTieredVersionStore {
   void mergeNoConflict() throws Exception {
     BranchName branch1 = BranchName.of("b1");
     BranchName branch2 = BranchName.of("b2");
-    versionStore().create(branch1, Optional.empty());
-    versionStore().commit(branch1, Optional.empty(), "metadata", ImmutableList.of(
+    Hash initial1 = versionStore().create(branch1, Optional.empty());
+    Hash commit1 = versionStore().commit(branch1, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("foo"), "world1"),
         Put.of(Key.of("bar"), "world2")));
+    assertNotEquals(initial1, commit1);
 
-    versionStore().create(branch2, Optional.empty());
-    versionStore().commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
+    Hash initial2 = versionStore().create(branch2, Optional.empty());
+    Hash commit2 = versionStore().commit(branch2, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world3"),
         Put.of(Key.of("no"), "world4")));
+    assertNotEquals(initial2, commit2);
     versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1)));
 
     assertEquals("world1", versionStore().getValue(branch1, Key.of("foo")));
@@ -214,11 +219,15 @@ public abstract class AbstractITTieredVersionStore {
   void mergeConflict() throws Exception {
     BranchName branch1 = BranchName.of("b1");
     BranchName branch2 = BranchName.of("b2");
-    versionStore().create(branch1, Optional.empty());
-    versionStore().commit(branch1, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("conflictKey"), "world1")));
+    Hash initial1 = versionStore().create(branch1, Optional.empty());
+    Hash commit1 = versionStore().commit(branch1, Optional.empty(), "metadata",
+        ImmutableList.of(Put.of(Key.of("conflictKey"), "world1")));
+    assertNotEquals(initial1, commit1);
 
-    versionStore().create(branch2, Optional.empty());
-    versionStore().commit(branch2, Optional.empty(), "metadata2", ImmutableList.of(Put.of(Key.of("conflictKey"), "world2")));
+    Hash initial2 = versionStore().create(branch2, Optional.empty());
+    Hash commit2 = versionStore().commit(branch2, Optional.empty(), "metadata2",
+        ImmutableList.of(Put.of(Key.of("conflictKey"), "world2")));
+    assertNotEquals(initial2, commit2);
 
     ReferenceConflictException ex = assertThrows(ReferenceConflictException.class, () ->
         versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1))));
@@ -242,24 +251,30 @@ public abstract class AbstractITTieredVersionStore {
   @Test
   void ensureKeyCheckpointsAndMultiFragmentsWork() throws Exception {
     BranchName branch = BranchName.of("lots-of-keys");
-    versionStore().create(branch, Optional.empty());
+    Hash initial = versionStore().create(branch, Optional.empty());
     Hash current = versionStore().toHash(branch);
+    assertEquals(current, initial);
     Random r = new Random(1234);
     char[] longName = new char[4096];
     Arrays.fill(longName, 'a');
     String prefix = new String(longName);
     List<Key> names = new LinkedList<>();
+    Hash last = current;
     for (int i = 1; i < 200; i++) {
+      Hash commitHash;
       if (i % 5 == 0) {
         // every so often, remove a key.
         Key removal = names.remove(r.nextInt(names.size()));
-        versionStore().commit(branch, Optional.of(current), "commit " + i, Collections.singletonList(Delete.of(removal)));
+        commitHash = versionStore().commit(branch, Optional.of(current), "commit " + i, Collections.singletonList(Delete.of(removal)));
       } else {
         Key name = Key.of(prefix + i);
         names.add(name);
-        versionStore().commit(branch, Optional.of(current), "commit " + i, Collections.singletonList(Put.of(name, "bar")));
+        commitHash = versionStore().commit(branch, Optional.of(current), "commit " + i, Collections.singletonList(Put.of(name, "bar")));
       }
       current = versionStore().toHash(branch);
+      assertEquals(current, commitHash);
+      assertNotEquals(last, current);
+      last = current;
     }
 
     List<Key> keysFromStore = versionStore().getKeys(branch).map(WithType::getValue).collect(Collectors.toList());
@@ -274,11 +289,12 @@ public abstract class AbstractITTieredVersionStore {
   @Test
   void multiload() throws Exception {
     BranchName branch = BranchName.of("my-key-list");
-    versionStore().create(branch, Optional.empty());
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+    Hash initialHash = versionStore().create(branch, Optional.empty());
+    Hash commitHash = versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world1"),
         Put.of(Key.of("no"), "world2"),
         Put.of(Key.of("mad mad"), "world3")));
+    assertNotEquals(initialHash, commitHash);
 
     assertEquals(
         Arrays.asList("world1", "world2", "world3"),
@@ -367,6 +383,67 @@ public abstract class AbstractITTieredVersionStore {
 
     // can't use tag delete on branch.
     assertThrows(ReferenceConflictException.class, () -> versionStore().delete(TagName.of("foo"), Optional.empty()));
+  }
+
+  /**
+   * Use case simulation: single branch, multiple users, each user updating a separate table.
+   */
+  @Test
+  void singleBranchManyUsersDistinctTables() throws Exception {
+    singleBranchTest("singleBranchManyUsersDistinctTables", user -> String.format("user-table-%d", user), false);
+  }
+
+  /**
+   * Use case simulation: single branch, multiple users, all users updating a single table.
+   */
+  @Test
+  void singleBranchManyUsersSingleTable() throws Exception {
+    singleBranchTest("singleBranchManyUsersSingleTable", user -> "single-table", true);
+  }
+
+  private void singleBranchTest(String branchName, IntFunction<String> tableNameGen,
+      boolean allowInconsistentValueException) throws Exception {
+    BranchName branch = BranchName.of(branchName);
+
+    int numUsers = 5;
+    int numCommits = 50;
+
+    Hash[] hashesKnownByUser = new Hash[numUsers];
+    Hash createHash = versionStore().create(branch, Optional.empty());
+    Arrays.fill(hashesKnownByUser, createHash);
+
+    List<String> expectedValues = new ArrayList<>();
+    for (int commitNum = 0; commitNum < numCommits; commitNum++) {
+      for (int user = 0; user < numUsers; user++) {
+        Hash hashKnownByUser = hashesKnownByUser[user];
+
+        String msg = String.format("user %03d/commit %03d", user, commitNum);
+        expectedValues.add(msg);
+        String value = String.format("data_file_%03d_%03d", user, commitNum);
+        Put<String> put = Put.of(Key.of(tableNameGen.apply(user)), value);
+
+        Hash commitHash;
+        try {
+          commitHash = versionStore().commit(branch, Optional.of(hashKnownByUser), msg, ImmutableList.of(put));
+        } catch (InconsistentValueException inconsistentValueException) {
+          if (allowInconsistentValueException) {
+            hashKnownByUser = versionStore().toHash(branch);
+            commitHash = versionStore().commit(branch, Optional.of(hashKnownByUser), msg, ImmutableList.of(put));
+          } else {
+            throw inconsistentValueException;
+          }
+        }
+
+        assertNotEquals(hashKnownByUser, commitHash);
+
+        hashesKnownByUser[user] = commitHash;
+      }
+    }
+
+    // Verify that all commits are there and that the order of the commits is correct
+    List<String> committedValues = versionStore().getCommits(branch).map(WithHash::getValue).collect(Collectors.toList());
+    Collections.reverse(expectedValues);
+    assertEquals(expectedValues, committedValues);
   }
 
   @Test
@@ -461,19 +538,58 @@ public abstract class AbstractITTieredVersionStore {
 
   @Test
   void conflictingCommit() throws Exception {
-    BranchName branch = BranchName.of("foo");
-    versionStore().create(branch, Optional.empty());
+    BranchName branch = BranchName.of("conflictingCommit");
+    Hash createHash = versionStore().create(branch, Optional.empty());
+
     // first commit.
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    Hash initialHash = versionStore().commit(branch, Optional.empty(), "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    assertNotEquals(createHash, initialHash);
 
     //first hash.
     Hash originalHash = versionStore().getCommits(branch).findFirst().get().getHash();
+    assertEquals(initialHash, originalHash);
 
     //second commit.
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    Hash firstHash = versionStore().commit(branch, Optional.empty(), "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    assertNotEquals(originalHash, firstHash);
 
     // do an extra commit to make sure it has a different hash even though it has the same value.
-    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    Hash secondHash = versionStore().commit(branch, Optional.empty(), "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    assertNotEquals(originalHash, secondHash);
+    assertNotEquals(firstHash, secondHash);
+
+    //attempt commit using first hash which has conflicting key change.
+    assertThrows(InconsistentValueException.class, () -> versionStore().commit(branch, Optional.of(originalHash),
+        "metadata", ImmutableList.of(Put.of(Key.of("hi"), "my world"))));
+  }
+
+  @Test
+  void conflictingCommitWithHash() throws Exception {
+    BranchName branch = BranchName.of("conflictingCommitWithHash");
+    Hash createHash = versionStore().create(branch, Optional.empty());
+
+    // first commit.
+    Hash initialHash = versionStore().commit(branch, Optional.of(createHash), "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
+    assertNotEquals(createHash, initialHash);
+
+    //first hash.
+    Hash originalHash = versionStore().getCommits(branch).findFirst().get().getHash();
+    assertEquals(initialHash, originalHash);
+
+    //second commit.
+    Hash firstHash = versionStore().commit(branch, Optional.of(originalHash), "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    assertNotEquals(originalHash, firstHash);
+
+    // do an extra commit to make sure it has a different hash even though it has the same value.
+    Hash secondHash = versionStore().commit(branch, Optional.of(firstHash), "metadata",
+        ImmutableList.of(Put.of(Key.of("hi"), "goodbye world")));
+    assertNotEquals(originalHash, secondHash);
+    assertNotEquals(firstHash, secondHash);
 
     //attempt commit using first hash which has conflicting key change.
     assertThrows(InconsistentValueException.class, () -> versionStore().commit(branch, Optional.of(originalHash),

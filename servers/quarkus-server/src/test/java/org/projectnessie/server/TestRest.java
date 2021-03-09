@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -77,6 +78,7 @@ import org.projectnessie.model.ImmutableSqlView;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
+import org.projectnessie.model.Operation.Put;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.SqlView;
@@ -119,10 +121,39 @@ class TestRest {
   }
 
   @Test
-  void illegalArgumentException() {
-    assertThat(
-        assertThrows(NessieBadRequestException.class, () -> tree.createReference(Hash.of("12341234cafebeef"))).getMessage(),
-        startsWith("Bad Request (HTTP/400): Only tag and branch references can be created"));
+  void createReferences() throws NessieNotFoundException {
+    String mainHash = tree.getReferenceByName("main").getHash();
+
+    String tagName1 = "createReferences_tag1";
+    String tagName2 = "createReferences_tag2";
+    String branchName1 = "createReferences_branch1";
+    String branchName2 = "createReferences_branch2";
+    assertAll(
+        // Tag without hash
+        () -> assertThat(
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.createReference(Tag.of(tagName1, null))).getMessage(),
+            startsWith("Bad Request (HTTP/400): Cannot create an unassigned tag reference")),
+        // legit Tag with name + hash
+        () -> {
+          Reference refTag1 = tree.createReference(Tag.of(tagName2, mainHash));
+          assertEquals(Tag.of(tagName2, mainHash), refTag1);
+        },
+        // Branch without hash
+        () -> {
+          Reference refBranch1 = tree.createReference(Branch.of(branchName1, null));
+          assertEquals(Branch.of(branchName1, mainHash), refBranch1);
+        },
+        // Branch with name + hash
+        () -> {
+          Reference refBranch2 = tree.createReference(Branch.of(branchName2, mainHash));
+          assertEquals(Branch.of(branchName2, mainHash), refBranch2);
+        },
+        // Hash
+        () -> assertThat(
+            assertThrows(NessieBadRequestException.class,
+                () -> tree.createReference(Hash.of("cafebabedeafbeef"))).getMessage(),
+            startsWith("Bad Request (HTTP/400): Only tag and branch references can be created")));
   }
 
   @ParameterizedTest
@@ -138,9 +169,12 @@ class TestRest {
 
     String someHash = tree.getReferenceByName("main").getHash();
 
-    tree.createReference(Tag.of(tagName, someHash));
-    tree.createReference(Branch.of(branchName, someHash));
-    tree.createReference(Branch.of(branchName2, someHash));
+    Reference createdTag = tree.createReference(Tag.of(tagName, someHash));
+    assertEquals(Tag.of(tagName, someHash), createdTag);
+    Reference creadedBranch1 = tree.createReference(Branch.of(branchName, someHash));
+    assertEquals(Branch.of(branchName, someHash), creadedBranch1);
+    Reference creadedBranch2 = tree.createReference(Branch.of(branchName2, someHash));
+    assertEquals(Branch.of(branchName2, someHash), creadedBranch2);
 
     Map<String, Reference> references = tree.getAllReferences().stream()
         .filter(r -> "main".equals(r.getName()) || r.getName().endsWith(refNamePart))
@@ -203,9 +237,13 @@ class TestRest {
     for (int i = 0; i < commits; i++) {
       String msg = "message-for-" + i;
       allMessages.add(msg);
-      contents.setContents(ContentsKey.of("table"), branchName, currentHash, msg,
-          IcebergTable.of("some-file-" + i));
-      currentHash = tree.getReferenceByName(branchName).getHash();
+      String nextHash = tree.commitMultipleOperations(branchName, currentHash,
+          ImmutableOperations.builder()
+              .commitMeta(CommitMeta.fromMessage(msg))
+              .addOperations(Put.of(ContentsKey.of("table"), IcebergTable.of("some-file-" + i)))
+              .build()).getReference().getHash();
+      assertNotEquals(currentHash, nextHash);
+      currentHash = nextHash;
     }
     Collections.reverse(allMessages);
 
@@ -242,8 +280,7 @@ class TestRest {
   @Test
   void multiget() throws NessieNotFoundException, NessieConflictException {
     final String branch = "foo";
-    tree.createReference(Branch.of(branch, null));
-    Reference r = tree.getReferenceByName(branch);
+    Reference r = tree.createReference(Branch.of(branch, null));
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
     IcebergTable ta = IcebergTable.of("path1");
@@ -260,8 +297,7 @@ class TestRest {
   @Test
   void filters() throws NessieNotFoundException, NessieConflictException {
     final String branch = "filterTypes";
-    tree.createReference(Branch.of(branch, null));
-    Reference r = tree.getReferenceByName(branch);
+    Reference r = tree.createReference(Branch.of(branch, null));
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
     IcebergTable ta = IcebergTable.of("path1");
@@ -289,8 +325,7 @@ class TestRest {
   @Test
   void checkSpecialCharacterRoundTrip() throws NessieNotFoundException, NessieConflictException {
     final String branch = "specialchar";
-    tree.createReference(Branch.of(branch, null));
-    Reference r = tree.getReferenceByName(branch);
+    Reference r = tree.createReference(Branch.of(branch, null));
     //ContentsKey k = ContentsKey.of("/%国","国.国");
     ContentsKey k = ContentsKey.of("a.b","c.d");
     IcebergTable ta = IcebergTable.of("path1");

@@ -73,10 +73,10 @@ abstract class BaseResource {
     return store;
   }
 
-  protected void doOps(String branch, String hash, CommitMeta commitMeta, List<Operation<Contents>> operations)
+  protected Hash doOps(String branch, String hash, CommitMeta commitMeta, List<Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
-      store.commit(
+      return store.commit(
           BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
           Optional.ofNullable(hash).map(Hash::of),
           meta(principal, commitMeta),

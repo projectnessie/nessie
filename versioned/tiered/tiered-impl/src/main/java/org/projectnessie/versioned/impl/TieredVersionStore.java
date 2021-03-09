@@ -133,7 +133,7 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
   }
 
   @Override
-  public void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+  public Hash create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     if (!targetHash.isPresent()) {
       if (ref instanceof TagName) {
         throw new IllegalArgumentException("You must provide a target hash to create a tag.");
@@ -144,7 +144,7 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
         throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
       }
 
-      return;
+      return branch.getLastDefinedParent().toHash();
     }
 
     // with a hash.
@@ -164,6 +164,7 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
     if (!store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, newRef))) {
       throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
     }
+    return l1.getId().toHash();
   }
 
   @Override
@@ -241,7 +242,7 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
   }
 
   @Override
-  public void commit(BranchName branchName, Optional<Hash> expectedHash, METADATA incomingCommit, List<Operation<DATA>> ops)
+  public Hash commit(BranchName branchName, Optional<Hash> expectedHash, METADATA incomingCommit, List<Operation<DATA>> ops)
       throws ReferenceConflictException, ReferenceNotFoundException {
     final InternalCommitMetadata metadata = InternalCommitMetadata.of(metadataSerializer.toBytes(incomingCommit));
     final List<InternalKey> keys = ops.stream().map(op -> new InternalKey(op.getKey())).collect(Collectors.toList());
@@ -309,16 +310,11 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
       break;
     }
 
-    // Now we'll try to collapse the intention log. Note that this is done post official commit so we need to return
-    // successfully even if this fails.
     try {
-      updatedBranch.getUpdateState(store).ensureAvailable(store, executor, config);
-    } catch (Exception ex) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.info("Failure while collapsing intention log after commit.", ex);
-      } else {
-        LOGGER.info("Failure while collapsing intention log after commit: {}", ex.toString());
-      }
+      return ensureValidL1(updatedBranch).getId().toHash();
+    } catch (RuntimeException e) {
+      LOGGER.warn("Failure during post-commit({}, {}, ...)", branchName, expectedHash, e);
+      throw e;
     }
   }
 

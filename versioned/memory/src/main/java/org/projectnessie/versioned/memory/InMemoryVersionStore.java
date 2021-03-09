@@ -180,7 +180,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
   }
 
   @Override
-  public void commit(BranchName branch, Optional<Hash> referenceHash,
+  public Hash commit(BranchName branch, Optional<Hash> referenceHash,
       MetadataT metadata, List<Operation<ValueT>> operations) throws ReferenceNotFoundException, ReferenceConflictException {
     final Hash currentHash = toHash(branch);
 
@@ -189,7 +189,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
     checkConcurrentModification(branch, currentHash, referenceHash, keys);
 
     // Storing
-    compute(namedReferences, branch, (key, hash) -> {
+    return compute(namedReferences, branch, (key, hash) -> {
       final Commit<ValueT, MetadataT> commit = Commit.of(valueSerializer, metadataSerializer, currentHash, metadata, operations);
       final Hash previousHash = Optional.ofNullable(hash).orElse(NO_ANCESTOR);
       if (!previousHash.equals(currentHash)) {
@@ -375,11 +375,11 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
   }
 
   @Override
-  public void create(NamedRef ref, Optional<Hash> targetHash)
+  public Hash create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
     Preconditions.checkArgument(ref instanceof BranchName || targetHash.isPresent(), "Cannot create an unassigned tag reference");
 
-    compute(namedReferences, ref, (key, currentHash) -> {
+    return compute(namedReferences, ref, (key, currentHash) -> {
       if (currentHash != null) {
         throw ReferenceAlreadyExistsException.forReference(ref);
       }

@@ -72,7 +72,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code branch} is not present in the store
    * @throws NullPointerException if one of the argument is {@code null}
    */
-  void commit(@Nonnull BranchName branch, @Nonnull Optional<Hash> referenceHash,
+  Hash commit(@Nonnull BranchName branch, @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata, @Nonnull List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException;
 
@@ -139,7 +139,7 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
    * @throws ReferenceNotFoundException if {@code targetHash} is not empty and not present in the store
    * @throws ReferenceAlreadyExistsException if {@code ref} already exists
    */
-  void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
+  Hash create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
 
   /**
    * Delete the provided NamedRef
