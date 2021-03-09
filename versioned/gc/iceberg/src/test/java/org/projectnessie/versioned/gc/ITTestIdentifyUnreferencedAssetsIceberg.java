@@ -72,7 +72,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.Reference;
-import org.projectnessie.server.providers.TableCommitMetaStoreWorker;
+import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;

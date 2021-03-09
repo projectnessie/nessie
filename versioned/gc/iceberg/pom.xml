@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie-versioned-gc-parent</artifactId>
-    <version>0.3.1-SNAPSHOT</version>
+    <version>0.4.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>nessie-versioned-gc-iceberg</artifactId>
@@ -38,7 +38,7 @@
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
-      <artifactId>nessie-quarkus</artifactId>
+      <artifactId>nessie-server-store</artifactId>
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
