@@ -361,16 +361,16 @@ class InternalBranch extends InternalRef {
      *
      * @param store The store to save to.
      * @param executor The executor to do any necessary clean up of the commit log.
-     * @param config Config object holdingt he number of times we'll attempt to clean up the commit log and
+     * @param config Config object holding the number of times we'll attempt to clean up the commit log and
      *        whether or not the operation should wait on the final operation of collapsing the commit log successfully
      *        before returning/failing. If false, the final collapse will be done in a separate thread.
      */
-    CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, TieredVersionStoreConfig config) {
+    void ensureAvailable(Store store, Executor executor, TieredVersionStoreConfig config) {
 
       save(store);
 
       if (saves.isEmpty()) {
-        return CompletableFuture.completedFuture(initialBranch);
+        return;
       }
 
       CompletableFuture<InternalBranch> future = CompletableFuture.supplyAsync(() -> {
@@ -382,7 +382,7 @@ class InternalBranch extends InternalRef {
       }, executor);
 
       if (!config.waitOnCollapse()) {
-        return future;
+        return;
       }
 
       try {
@@ -393,7 +393,6 @@ class InternalBranch extends InternalRef {
         Throwables.throwIfUnchecked(e.getCause());
         throw new IllegalStateException(e.getCause());
       }
-      return future;
     }
 
     /**

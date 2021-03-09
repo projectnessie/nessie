@@ -94,7 +94,8 @@ class TestTracingVersionStore {
             .tag("nessie.version-store.branch", "mock-branch")
             .tag("nessie.version-store.num-ops", 0)
             .tag("nessie.version-store.hash", "Optional.empty")
-            .method(vs -> vs.commit(BranchName.of("mock-branch"), Optional.empty(), "metadata", Collections.emptyList())),
+            .function(vs -> vs.commit(BranchName.of("mock-branch"), Optional.empty(), "metadata", Collections.emptyList()),
+                () -> Hash.of("deadbeefcafebabe")),
         new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("Transplant", refNotFoundAndRefConflictThrows)
             .tag("nessie.version-store.target-branch", "mock-branch")
             .tag("nessie.version-store.transplants", 0)
@@ -113,7 +114,7 @@ class TestTracingVersionStore {
         new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("Create", refNotFoundAndRefAlreadyExistsThrows)
             .tag("nessie.version-store.target-hash", "Optional[Hash cafebabe]")
             .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
-            .method(vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe")))),
+            .function(vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))), () -> Hash.of("deadbeefcafebabe")),
         new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("Delete", refNotFoundAndRefConflictThrows)
             .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
             .tag("nessie.version-store.hash", "Optional[Hash cafebabe]")

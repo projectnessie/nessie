@@ -25,6 +25,7 @@ from ._endpoints import list_tables
 from ._endpoints import merge
 from .model import Branch
 from .model import CommitMeta
+from .model import CommitMultipleOperationsResponseSchema
 from .model import Contents
 from .model import ContentsKey
 from .model import ContentsSchema
@@ -78,14 +79,17 @@ class NessieClient(object):
         ref = ReferenceSchema().load(ref_obj)
         return ref
 
-    def create_branch(self: "NessieClient", branch: str, ref: str = None) -> None:
+    def create_branch(self: "NessieClient", branch: str, ref: str = None) -> Reference:
         """Create a branch.
 
         :param branch: name of new branch
         :param ref: ref to fork from
+        :return: Nessie reference
         """
         ref_json = ReferenceSchema().dump(Branch(branch, ref))
-        create_reference(self._base_url, ref_json, self._ssl_verify)
+        ref_obj = create_reference(self._base_url, ref_json, self._ssl_verify)
+        ref = ReferenceSchema().load(ref_obj)
+        return ref
 
     def delete_branch(self: "NessieClient", branch: str, hash_: str) -> None:
         """Delete a branch.
@@ -95,14 +99,16 @@ class NessieClient(object):
         """
         delete_branch(self._base_url, branch, hash_, self._ssl_verify)
 
-    def create_tag(self: "NessieClient", tag: str, ref: str = None) -> None:
+    def create_tag(self: "NessieClient", tag: str, ref: str = None) -> Reference:
         """Create a tag.
 
         :param tag: name of new tag
         :param ref: ref to fork from
         """
         ref_json = ReferenceSchema().dump(Tag(tag, ref))
-        create_reference(self._base_url, ref_json, self._ssl_verify)
+        ref_obj = create_reference(self._base_url, ref_json, self._ssl_verify)
+        ref = ReferenceSchema().load(ref_obj)
+        return ref
 
     def delete_tag(self: "NessieClient", tag: str, hash_: str) -> None:
         """Delete a tag.
@@ -138,10 +144,12 @@ class NessieClient(object):
         """
         return (ContentsSchema().load(get_table(self._base_url, ref, _format_key(i), self._ssl_verify)) for i in tables)
 
-    def commit(self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, *ops: Operation) -> None:
+    def commit(self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, *ops: Operation) -> dict:
         """Modify a set of Nessie tables."""
         meta = CommitMeta(message=reason if reason else "")
-        commit(self._base_url, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
+        ref_obj = commit(self._base_url, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
+        ref = CommitMultipleOperationsResponseSchema().load(ref_obj)
+        return ref
 
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a branch."""

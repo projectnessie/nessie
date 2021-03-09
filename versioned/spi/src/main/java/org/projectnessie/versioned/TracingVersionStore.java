@@ -84,12 +84,12 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public void commit(@Nonnull BranchName branch,
+  public Hash commit(@Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Commit", b -> b
+    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Commit", b -> b
         .withTag(TAG_BRANCH, safeRefName(branch))
         .withTag(TAG_HASH, safeToString(referenceHash))
         .withTag(TAG_NUM_OPS, safeSize(operations)),
@@ -129,9 +129,9 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   @Override
-  public void create(NamedRef ref, Optional<Hash> targetHash)
+  public Hash create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    this.<ReferenceNotFoundException, ReferenceAlreadyExistsException>callWithTwoExceptions("Create", b -> b
+    return this.<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>callWithTwoExceptions("Create", b -> b
         .withTag(TAG_REF, safeToString(ref))
         .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
         () -> delegate.create(ref, targetHash));
@@ -292,6 +292,20 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     }
   }
 
+  private <R, E1 extends VersionStoreException, E2 extends VersionStoreException> R callWithTwoExceptions(String spanName,
+      Consumer<SpanBuilder> spanBuilder, InvokerWithTwoExceptionsR<R, E1, E2> invoker) throws E1, E2 {
+    try (Scope scope = createActiveScope(spanName, spanBuilder)) {
+      try {
+        return invoker.handle();
+      } catch (IllegalArgumentException e) {
+        // IllegalArgumentException is a special kind of exception that indicates a user-error.
+        throw e;
+      } catch (RuntimeException e) {
+        throw traceError(scope, e);
+      }
+    }
+  }
+
   @FunctionalInterface
   interface Invoker<R> {
     R handle();
@@ -305,6 +319,11 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   @FunctionalInterface
   interface InvokerWithTwoExceptions<E1 extends VersionStoreException, E2 extends VersionStoreException> {
     void handle() throws E1, E2;
+  }
+
+  @FunctionalInterface
+  interface InvokerWithTwoExceptionsR<R, E1 extends VersionStoreException, E2 extends VersionStoreException> {
+    R handle() throws E1, E2;
   }
 
   private static String safeRefName(NamedRef ref) {
