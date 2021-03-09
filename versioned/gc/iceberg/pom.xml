@@ -126,6 +126,12 @@
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-tiered-dynamodb</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-tiered-dynamodb</artifactId>
+      <version>${project.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
@@ -146,6 +152,31 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <configuration>
+          <async>true</async>
+          <classpathScope>test</classpathScope>
+          <executable>java</executable>
+          <arguments>
+            <argument>-Djava.library.path=${project.build.directory}/native-libraries</argument>
+            <argument>-classpath</argument>
+            <classpath/>
+            <argument>com.amazonaws.services.dynamodbv2.local.main.ServerRunner</argument>
+            <argument>-port</argument>
+            <argument>8000</argument>
+            <argument>-inMemory</argument>
+          </arguments>
+        </configuration>
+        <executions>
+          <execution>
+            <id>start</id>
+            <phase>pre-integration-test</phase>
+            <goals><goal>exec</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>

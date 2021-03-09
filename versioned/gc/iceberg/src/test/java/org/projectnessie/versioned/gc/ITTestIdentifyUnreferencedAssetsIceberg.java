@@ -61,7 +61,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
@@ -75,7 +74,6 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
-import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
 import org.projectnessie.versioned.tiered.gc.DynamoSupplier;
 import org.projectnessie.versioned.tiered.gc.GcOptions;
 import org.projectnessie.versioned.tiered.gc.IdentifyUnreferencedValues;
@@ -89,7 +87,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.protobuf.ByteString;
 
-@ExtendWith(LocalDynamoDB.class)
 class ITTestIdentifyUnreferencedAssetsIceberg {
   private static final Logger LOGGER = LoggerFactory.getLogger(ITTestIdentifyUnreferencedAssetsIceberg.class);
 
@@ -120,7 +117,6 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
 
   @BeforeAll
   static void create() throws Exception {
-    new DynamoSupplier().get(); // make sure tables are created
     SparkConf conf = new SparkConf();
     conf.set("spark.sql.catalog.nessie.url", NESSIE_ENDPOINT)
         .set("spark.sql.catalog.nessie.ref", BRANCH)
