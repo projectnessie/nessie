@@ -4,9 +4,19 @@ plugins {
   id 'com.gradle.plugin-publish' version '0.12.0'
 }
 
-def quarkusVersion = file('../../pom.xml').readLines().find {l -> l.contains('<quarkus.version>') }.replaceFirst(~/.*<quarkus.version>(.*)<\/quarkus.version>.*/, '$1' )
+def quarkusVersionBuffer = new ByteArrayOutputStream()
+exec {
+  commandLine = ['../../mvnw', 'help:evaluate', '-Dexpression=quarkus.version', '-q', '-DforceStdout', '-f', '../../pom.xml']
+  standardOutput = quarkusVersionBuffer
+}.assertNormalExitValue()
+
 if (!file('version.txt').exists()) {
-  version = file('../pom.xml').readLines().find {l -> l.contains('<version>') }.replaceFirst(~/.*<version>(.*)<\/version>.*/, '$1' )
+  def nessieVersionBuffer = new ByteArrayOutputStream()
+  exec {
+    commandLine = ['../../mvnw', 'help:evaluate', '-Dexpression=project.version', '-q', '-DforceStdout']
+    standardOutput = nessieVersionBuffer
+  }.assertNormalExitValue()
+  version = nessieVersionBuffer.toString()
 } else {
   version = file('version.txt').text.trim()
 }
@@ -41,7 +51,7 @@ compileJava {
 }
 
 dependencies {
-  implementation platform("io.quarkus:quarkus-bom:$quarkusVersion")
+  implementation platform("io.quarkus:quarkus-bom:${quarkusVersionBuffer}")
 
   compile "io.quarkus:quarkus-bootstrap-core"
   compile "org.projectnessie:nessie-apprunner-maven-plugin:$version"
