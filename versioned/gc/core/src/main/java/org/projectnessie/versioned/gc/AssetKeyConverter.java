@@ -13,19 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned;
+package org.projectnessie.versioned.gc;
 
-import java.io.Serializable;
+import java.util.stream.Stream;
 
-import com.google.protobuf.ByteString;
-
-/**
- * Used to serialize &amp; deserialize the values in the store. Provided to an implementation of VersionStore on construction.
- */
-public interface Serializer<V> extends Serializable {
-
-  ByteString toBytes(V value);
-
-  V fromBytes(ByteString bytes);
-
+@FunctionalInterface
+public interface AssetKeyConverter<T> {
+  Stream<? extends AssetKey> getAssetKeys(T contents);
 }

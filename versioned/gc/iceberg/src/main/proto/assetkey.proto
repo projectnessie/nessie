@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned;
+syntax = "proto3";
+package nessie.versioned.gc;
 
-import java.io.Serializable;
+option java_package = "org.projectnessie.versioned.gc";
+option java_outer_classname = "ObjectTypes";
+option java_generate_equals_and_hash = true;
 
-import com.google.protobuf.ByteString;
-
-/**
- * Used to serialize &amp; deserialize the values in the store. Provided to an implementation of VersionStore on construction.
- */
-public interface Serializer<V> extends Serializable {
-
-  ByteString toBytes(V value);
-
-  V fromBytes(ByteString bytes);
-
+message PIcebergAssetKey {
+  string path = 1;
+  string type = 2;
+  int64 snapshot_id = 3;
+  string table_name = 4;
 }

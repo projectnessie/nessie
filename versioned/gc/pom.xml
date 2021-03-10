@@ -32,5 +32,6 @@
 
   <modules>
     <module>spark</module>
+    <module>iceberg</module>
   </modules>
 </project>

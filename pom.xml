@@ -324,6 +324,11 @@
         <version>${iceberg.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.apache.iceberg</groupId>
+        <artifactId>iceberg-spark3-runtime</artifactId>
+        <version>${iceberg.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
@@ -690,6 +695,11 @@
           <configuration>
             <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
           </configuration>
+        </plugin>
+        <plugin>
+          <groupId>com.bazaarvoice.maven.plugins</groupId>
+          <artifactId>process-exec-maven-plugin</artifactId>
+          <version>0.9</version>
         </plugin>
       </plugins>
     </pluginManagement>
