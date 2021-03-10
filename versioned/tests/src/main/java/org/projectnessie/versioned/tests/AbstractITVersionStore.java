@@ -22,9 +22,11 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -111,6 +113,55 @@ public abstract class AbstractITVersionStore {
       assertThat(str.count(), is(2L)); // bar + baz
     }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(hash)));
+  }
+
+  @Test
+  public void commitLogPaging() throws Exception {
+    BranchName branch = BranchName.of("commitLogPaging");
+    store().create(branch, Optional.empty());
+
+    int commits = 95; // this should be enough
+    List<String> messages = new ArrayList<>(commits);
+    for (int i = 0; i < commits; i++) {
+      String msg = String.format("commit#%05d", i);
+      messages.add(msg);
+      store().commit(branch, Optional.empty(),
+          msg, ImmutableList.of(Put.of(Key.of("table"), String.format("value#%05d", i))));
+    }
+    Collections.reverse(messages);
+
+    Stream<WithHash<String>> justTwo = store().getCommits(branch).limit(2);
+    assertEquals(messages.subList(0, 2), justTwo.map(WithHash::getValue).collect(Collectors.toList()));
+    Stream<WithHash<String>> justTen = store().getCommits(branch).limit(10);
+    assertEquals(messages.subList(0, 10), justTen.map(WithHash::getValue).collect(Collectors.toList()));
+
+    int pageSize = 10;
+
+    // Test parameter sanity check. Want the last page to be smaller than the page-size.
+    assertNotEquals(0, commits % (pageSize - 1));
+
+    Hash lastHash = null;
+    for (int offset = 0; ; ) {
+      List<WithHash<String>> logPage = store().getCommits(lastHash == null ? branch : lastHash)
+          .limit(pageSize).collect(Collectors.toList());
+
+      assertEquals(
+          messages.subList(offset, Math.min(offset + pageSize, commits)),
+          logPage.stream().map(WithHash::getValue).collect(Collectors.toList()));
+
+      lastHash = logPage.get(logPage.size() - 1).getHash();
+
+      offset += pageSize - 1;
+      if (offset >= commits) {
+        // The "next after last page" should always return just a single commit, that's basically
+        // the "end of commit-log"-condition.
+        logPage = store().getCommits(lastHash).limit(pageSize).collect(Collectors.toList());
+        assertEquals(
+            Collections.singletonList(messages.get(commits - 1)),
+            logPage.stream().map(WithHash::getValue).collect(Collectors.toList()));
+        break;
+      }
+    }
   }
 
   /*

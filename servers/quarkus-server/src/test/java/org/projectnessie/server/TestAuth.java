@@ -90,7 +90,7 @@ class TestAuth {
   void testAdmin() throws NessieNotFoundException, NessieConflictException {
     getCatalog("testx");
     Branch branch = (Branch) tree.getReferenceByName("testx");
-    List<Entry> tables = tree.getEntries("testx").getEntries();
+    List<Entry> tables = tree.getEntries("testx", null, null).getEntries();
     Assertions.assertTrue(tables.isEmpty());
     ContentsKey key = ContentsKey.of("x","x");
     tryEndpointPass(() -> contents.setContents(key, branch.getName(), branch.getHash(), "empty message", IcebergTable.of("foo")));

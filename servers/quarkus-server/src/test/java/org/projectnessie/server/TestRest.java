@@ -25,16 +25,23 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.projectnessie.model.Validation.HASH_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_OR_HASH_MESSAGE;
 import static org.projectnessie.server.ReferenceMatchers.referenceWithNameAndType;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,6 +63,7 @@ import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
@@ -142,21 +150,21 @@ class TestRest {
     assertThat(tree.getReferenceByName(tagName), equalTo(tagRef));
     assertThat(tree.getReferenceByName(branchName), equalTo(branchRef));
 
-    EntriesResponse entries = tree.getEntries(tagName);
+    EntriesResponse entries = tree.getEntries(tagName, null, null);
     assertThat(entries, notNullValue());
-    entries = tree.getEntries(branchName);
+    entries = tree.getEntries(branchName, null, null);
     assertThat(entries, notNullValue());
 
-    LogResponse log = tree.getCommitLog(tagName);
+    LogResponse log = tree.getCommitLog(tagName, null, null);
     assertThat(log, notNullValue());
-    log = tree.getCommitLog(branchName);
+    log = tree.getCommitLog(branchName, null, null);
     assertThat(log, notNullValue());
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
     ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
     Operations ops = ImmutableOperations.builder().addOperations(op).build();
     tree.commitMultipleOperations(branchName, branchHash, "One dummy op", ops);
-    log = tree.getCommitLog(branchName);
+    log = tree.getCommitLog(branchName, null, null);
     String newHash = log.getOperations().get(0).getHash();
 
     tree.assignTag(tagName, tagHash, Tag.of(tagName, newHash));
@@ -166,6 +174,56 @@ class TestRest {
 
     tree.deleteTag(tagName, newHash);
     tree.deleteBranch(branchName, newHash);
+  }
+
+  @Test
+  void commitLogPaging() throws NessieNotFoundException, NessieConflictException {
+    String someHash = tree.getReferenceByName("main").getHash();
+    String branchName = "commitLogPaging";
+    Branch branch = Branch.of(branchName, someHash);
+    tree.createReference(branch);
+
+    int commits = 95;
+    int pageSizeHint = 10;
+
+    String currentHash = someHash;
+    List<String> allMessages = new ArrayList<>();
+    for (int i = 0; i < commits; i++) {
+      String msg = "message-for-" + i;
+      allMessages.add(msg);
+      contents.setContents(ContentsKey.of("table"), branchName, currentHash, msg,
+          IcebergTable.of("some-file-" + i));
+      currentHash = tree.getReferenceByName(branchName).getHash();
+    }
+    Collections.reverse(allMessages);
+
+    String pageToken = null;
+    for (int pos = 0; pos < commits; pos += pageSizeHint) {
+      LogResponse response = tree.getCommitLog(branchName, pageSizeHint, pageToken);
+      if (pos + pageSizeHint <= commits) {
+        assertTrue(response.hasMore());
+        assertNotNull(response.getToken());
+        assertEquals(
+            allMessages.subList(pos, pos + pageSizeHint),
+            response.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList())
+        );
+        pageToken = response.getToken();
+      } else {
+        assertFalse(response.hasMore());
+        assertNull(response.getToken());
+        assertEquals(
+            allMessages.subList(pos, allMessages.size()),
+            response.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList())
+        );
+        break;
+      }
+    }
+
+    List<CommitMeta> completeLog = tree.getCommitLogStream(branchName, OptionalInt.of(pageSizeHint)).collect(Collectors.toList());
+    assertEquals(
+        completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()),
+        allMessages
+    );
   }
 
   @Test
@@ -232,10 +290,10 @@ class TestRest {
                 () -> tree.deleteBranch(invalidBranchName, validHash)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): getCommitLog.ref: " + REF_NAME_OR_HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.getCommitLog(invalidBranchName)).getMessage()),
+                () -> tree.getCommitLog(invalidBranchName, null, null)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): getEntries.refName: " + REF_NAME_OR_HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.getEntries(invalidBranchName)).getMessage()),
+                () -> tree.getEntries(invalidBranchName, null, null)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): getReferenceByName.refName: " + REF_NAME_OR_HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.getReferenceByName(invalidBranchName)).getMessage()),
