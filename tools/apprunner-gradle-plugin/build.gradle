@@ -4,7 +4,17 @@ plugins {
   id 'com.gradle.plugin-publish' version '0.12.0'
 }
 
-version = file('version.txt').text.trim()
+def readVersion(expr) {
+  def buffer = new ByteArrayOutputStream()
+  exec {
+    commandLine = ['../../mvnw', 'help:evaluate', "-Dexpression=$expr", '-q', '-DforceStdout', '-f', '../../pom.xml']
+    standardOutput = buffer
+  }.assertNormalExitValue()
+  return buffer.toString()
+}
+
+def quarkusVersion = readVersion('quarkus.version')
+version = readVersion('project.version')
 
 allprojects {
   group = "org.projectnessie"
@@ -36,7 +46,7 @@ compileJava {
 }
 
 dependencies {
-  implementation platform('io.quarkus:quarkus-bom:1.9.1.Final')
+  implementation platform("io.quarkus:quarkus-bom:${quarkusVersion}")
 
   compile "io.quarkus:quarkus-bootstrap-core"
   compile "org.projectnessie:nessie-apprunner-maven-plugin:$version"

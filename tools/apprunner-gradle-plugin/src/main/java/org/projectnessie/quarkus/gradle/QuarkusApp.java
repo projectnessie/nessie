@@ -49,7 +49,6 @@ import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.MoreCollectors;
 
 import io.quarkus.bootstrap.BootstrapConstants;
 import io.quarkus.bootstrap.app.RunningQuarkusApplication;
@@ -74,7 +73,7 @@ public class QuarkusApp extends org.projectnessie.quarkus.maven.QuarkusApp {
     Configuration deploy = project.getConfigurations().create("quarkusAppDeploy");
     final AppModel appModel;
 
-    appModel = convert(configuration, deploy);
+    appModel = convert(configuration, deploy, props);
     URL[] urls = appModel.getFullDeploymentDeps().stream().map(QuarkusApp::toUrl).toArray(URL[]::new);
     ClassLoader cl = new URLClassLoader(urls, org.projectnessie.quarkus.maven.QuarkusApp.class.getClassLoader());
     try {
@@ -93,7 +92,7 @@ public class QuarkusApp extends org.projectnessie.quarkus.maven.QuarkusApp {
     }
   }
 
-  public static AppModel convert(Configuration configuration, Configuration deploy) {
+  public static AppModel convert(Configuration configuration, Configuration deploy, Properties props) {
 
     AppModel.Builder appBuilder = new AppModel.Builder();
 
@@ -139,6 +138,7 @@ public class QuarkusApp extends org.projectnessie.quarkus.maven.QuarkusApp {
     // combine user and deploy deps and build app model
     List<AppDependency> allDeps = new ArrayList<>(userDeps);
     allDeps.addAll(deployDeps);
+    props.forEach((k, v) -> System.setProperty(k.toString(), v.toString()));
     appBuilder.addRuntimeDeps(new ArrayList<>(userDeps))
       .addFullDeploymentDeps(allDeps)
       .addDeploymentDeps(new ArrayList<>(deployDeps))
