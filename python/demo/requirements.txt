@@ -1,5 +1,5 @@
 pynessie==0.3.0
-jupyterlab==3.0.9
+jupyterlab==3.0.10
 findspark==1.4.2
 pyspark==3.0.2
 pandas==1.2.3
