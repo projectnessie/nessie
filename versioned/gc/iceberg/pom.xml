@@ -153,27 +153,35 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <configuration>
-          <async>true</async>
-          <classpathScope>test</classpathScope>
-          <executable>java</executable>
-          <arguments>
-            <argument>-Djava.library.path=${project.build.directory}/native-libraries</argument>
-            <argument>-classpath</argument>
-            <classpath/>
-            <argument>com.amazonaws.services.dynamodbv2.local.main.ServerRunner</argument>
-            <argument>-port</argument>
-            <argument>8000</argument>
-            <argument>-inMemory</argument>
-          </arguments>
-        </configuration>
+        <groupId>com.bazaarvoice.maven.plugins</groupId>
+        <artifactId>process-exec-maven-plugin</artifactId>
         <executions>
           <execution>
             <id>start</id>
             <phase>pre-integration-test</phase>
-            <goals><goal>exec</goal></goals>
+            <goals><goal>start</goal></goals>
+            <configuration>
+              <name>dynamolocal</name>
+              <waitAfterLaunch>1</waitAfterLaunch>
+              <workingDir>${project.basedir}</workingDir>
+              <arguments>
+                <argument>java</argument>
+                <argument>-Djava.library.path=${project.build.directory}/native-libraries</argument>
+                <argument>-classpath</argument>
+                <argument>${project.build.directory}/dynamo-libraries/*</argument>
+                <argument>com.amazonaws.services.dynamodbv2.local.main.ServerRunner</argument>
+                <argument>-port</argument>
+                <argument>8000</argument>
+                <argument>-inMemory</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>stop-all</id>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>stop-all</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
@@ -213,6 +221,20 @@
               <overWriteSnapshots>false</overWriteSnapshots>
               <overWriteIfNewer>true</overWriteIfNewer>
               <includeTypes>dll,so,dylib</includeTypes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy-dynamo-libraries</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/dynamo-libraries</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+              <includeGroupIds>com.amazonaws,com.google.guava,commons-cli,org.apache.commons,org.eclipse.jetty,org.apache.logging.log4j,com.fasterxml,com.almworks,org.antlr</includeGroupIds>
             </configuration>
           </execution>
         </executions>

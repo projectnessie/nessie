@@ -47,4 +47,8 @@ public class DynamoSupplier implements Supplier<Store>, Serializable {
     }
   }
 
+  public static void deleteAllTables() {
+    ((DynamoStore) new DynamoSupplier().get()).deleteTables();
+  }
+
 }

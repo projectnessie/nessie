@@ -82,6 +82,7 @@ public class ITIcebergAssetKeyReader {
   void init() throws NessieNotFoundException, NessieConflictException {
     this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
     tree = client.getTreeApi();
+    TestUtils.resetData(tree);
     tree.createReference(Branch.of("ITIcebergAssetKeyReader", null));
 
     Map<String, String> props = new HashMap<>();
@@ -148,7 +149,8 @@ public class ITIcebergAssetKeyReader {
 
   @AfterEach
   void stop() throws NessieNotFoundException, NessieConflictException {
-    tree.deleteBranch("ITIcebergAssetKeyReader", tree.getReferenceByName("ITIcebergAssetKeyReader").getHash());
+    TestUtils.resetData(tree);
+    DynamoSupplier.deleteAllTables();
     client.close();
   }
 

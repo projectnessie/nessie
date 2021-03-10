@@ -70,7 +70,6 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
-import org.projectnessie.model.Reference;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
@@ -142,26 +141,16 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
     sparkDeleteBranch.conf().set("spark.sql.catalog.nessie.ref", DELETE_BRANCH);
   }
 
-  private void resetData() throws NessieConflictException, NessieNotFoundException {
-    for (Reference r : tree.getAllReferences()) {
-      if (r instanceof Branch) {
-        tree.deleteBranch(r.getName(), r.getHash());
-      } else {
-        tree.deleteTag(r.getName(), r.getHash());
-      }
-    }
-    tree.createReference(Branch.of("main", null));
-    tree.createReference(Branch.of(BRANCH, null));
-    client.getTreeApi().createReference(Branch.of(DELETE_BRANCH, null));
-  }
-
   @BeforeEach
   void beforeEach() throws NessieConflictException, NessieNotFoundException {
+    new DynamoSupplier().get();
     this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
     tree = client.getTreeApi();
     contents = client.getContentsApi();
 
-    resetData();
+    TestUtils.resetData(tree);
+    tree.createReference(Branch.of(BRANCH, null));
+    tree.createReference(Branch.of(DELETE_BRANCH, null));
 
     Map<String, String> props = new HashMap<>();
     props.put("ref", BRANCH);
@@ -180,7 +169,9 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
 
 
   @AfterEach
-  void after() {
+  void after() throws NessieNotFoundException, NessieConflictException {
+    TestUtils.resetData(tree);
+    DynamoSupplier.deleteAllTables();
     helper = null;
   }
 

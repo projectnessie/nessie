@@ -696,6 +696,11 @@
             <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>com.bazaarvoice.maven.plugins</groupId>
+          <artifactId>process-exec-maven-plugin</artifactId>
+          <version>0.9</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
