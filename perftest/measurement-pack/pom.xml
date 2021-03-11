@@ -28,4 +28,16 @@
   <artifactId>nessie-perftest-measurement-pack</artifactId>
 
   <name>Nessie - Perf Test - Measurement Pack</name>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <skipIfEmpty>true</skipIfEmpty>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
