@@ -155,7 +155,7 @@ def list_tables(
     """
     params = {}
     if max_result_hint:
-        params["max"] = max_result_hint
+        params["max"] = str(max_result_hint)
     if page_token:
         params["pageToken"] = page_token
     return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), ssl_verify=ssl_verify, params=params))
@@ -175,7 +175,7 @@ def list_logs(
     """
     params = {}
     if max_result_hint:
-        params["max"] = max_result_hint
+        params["max"] = str(max_result_hint)
     if page_token:
         params["pageToken"] = page_token
     return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), ssl_verify=ssl_verify, params=params))
