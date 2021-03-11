@@ -246,6 +246,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
           .map(Optional::get)
           .collect(Collectors.toList());
       if (!mismatches.isEmpty()) {
+        LOGGER.debug("Inconsistency during commit against '{}' w/ expected-hash={}: {}", branchName.getName(), expectedHash, mismatches);
         throw new InconsistentValue.InconsistentValueException(mismatches);
       }
 
