@@ -142,7 +142,7 @@ def delete_tag(base_url: str, tag: str, hash_: str, reason: str = None, ssl_veri
 
 
 def list_tables(base_url: str, ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None,
-    ssl_verify: bool = True) -> list:
+                ssl_verify: bool = True) -> list:
     """Fetch a list of all tables from a known reference.
 
     :param base_url: base Nessie url
@@ -161,7 +161,7 @@ def list_tables(base_url: str, ref: str, max_result_hint: Optional[int] = None, 
 
 
 def list_logs(base_url: str, ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None,
-    ssl_verify: bool = True) -> dict:
+              ssl_verify: bool = True) -> dict:
     """Fetch a list of all logs from a known starting reference.
 
     :param base_url: base Nessie url
