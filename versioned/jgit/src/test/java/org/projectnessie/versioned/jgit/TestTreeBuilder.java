@@ -34,6 +34,7 @@ import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.SerializerWithPayload;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.Unchanged;
 
 import com.google.common.collect.ImmutableList;
@@ -56,7 +57,7 @@ class TestTreeBuilder {
     } catch (IOException e) {
       throw new RuntimeException();
     }
-    SerializerWithPayload<String> serializer = new SerializerWithPayload<String>() {
+    SerializerWithPayload<String, StringSerializer.TestEnum> serializer = new SerializerWithPayload<String, StringSerializer.TestEnum>() {
       @Override
       public ByteString toBytes(String value) {
         return ByteString.copyFrom(value.getBytes());
@@ -70,6 +71,11 @@ class TestTreeBuilder {
       @Override
       public Byte getPayload(String value) {
         return null;
+      }
+
+      @Override
+      public StringSerializer.TestEnum getType(Byte payload) {
+        return StringSerializer.TestEnum.NO;
       }
     };
 

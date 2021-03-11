@@ -116,8 +116,8 @@ class InternalL3 extends PersistentBase<L3> {
             return Stream.of(InternalMutation.InternalRemoval.of(e.getKey()));
           } else if (e.getValue().isPayloadDirty()) {
             // existing key that has changed type
-            return Stream.of(InternalMutation.InternalAddition.of(e.getKey(), d.getNewPayload()),
-                InternalMutation.InternalRemoval.of(e.getKey()));
+            return Stream.of(InternalMutation.InternalRemoval.of(e.getKey()),
+                InternalMutation.InternalAddition.of(e.getKey(), d.getNewPayload()));
           } else {
             return Stream.of();
           }

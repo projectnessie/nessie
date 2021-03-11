@@ -82,7 +82,7 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
-import org.projectnessie.versioned.WithPayload;
+import org.projectnessie.versioned.WithType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,20 +92,20 @@ import com.google.protobuf.ByteString;
 /**
  * VersionStore interface for JGit backend.
  */
-public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, METADATA> {
+public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYPE>> implements VersionStore<TABLE, METADATA, TABLE_TYPE> {
 
   private static final Logger logger = LoggerFactory.getLogger(JGitVersionStore.class);
   private static final String SLASH = "/";
 
   private final Repository repository;
-  private final StoreWorker<TABLE, METADATA> storeWorker;
+  private final StoreWorker<TABLE, METADATA, TABLE_TYPE> storeWorker;
   private final ObjectId emptyObject;
 
   /**
    * Construct a JGitVersionStore.
    */
   @Inject
-  public JGitVersionStore(Repository repository, StoreWorker<TABLE, METADATA> storeWorker) {
+  public JGitVersionStore(Repository repository, StoreWorker<TABLE, METADATA, TABLE_TYPE> storeWorker) {
     this.storeWorker = storeWorker;
     this.repository = repository;
     ObjectId objectId;
@@ -493,7 +493,7 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   @Override
-  public Stream<WithPayload<Key>> getKeys(Ref ref) {
+  public Stream<WithType<Key, TABLE_TYPE>> getKeys(Ref ref) {
     try {
       try (TreeWalk treeWalk = new TreeWalk(repository)) {
         ObjectId treeId = repository.resolve(refName(ref) + "^{tree}");
@@ -520,8 +520,8 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
               try {
                 Key key = keyFromUrlString(treeWalk.getPathString());
                 ByteString table = getTable(treeWalk, repository);
-                Byte payload = storeWorker.getValueSerializer().getPayload(storeWorker.getValueSerializer().fromBytes(table));
-                return WithPayload.of(payload, key);
+                TABLE_TYPE payload = storeWorker.getValueSerializer().getType(storeWorker.getValueSerializer().fromBytes(table));
+                return WithType.of(payload, key);
               } catch (IOException e) {
                 throw new RuntimeException("Unknown error whilst iterating", e);
               }

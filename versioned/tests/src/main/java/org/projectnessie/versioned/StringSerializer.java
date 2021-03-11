@@ -25,8 +25,14 @@ import com.google.protobuf.ByteString;
 /**
  * ValueWorker implementation for {@code String class}. Can also be used as simple {@link Serializer}.
  */
-public class StringSerializer implements SerializerWithPayload<String> {
-  private static final SerializerWithPayload<String> INSTANCE = spy(new StringSerializer());
+public class StringSerializer implements SerializerWithPayload<String, StringSerializer.TestEnum> {
+  private static final SerializerWithPayload<String, TestEnum> INSTANCE = spy(new StringSerializer());
+
+  public enum TestEnum {
+    YES,
+    NO,
+    NULL;
+  }
 
   private StringSerializer() {
   }
@@ -36,7 +42,7 @@ public class StringSerializer implements SerializerWithPayload<String> {
    * @return the instance
    */
   @Nonnull
-  public static SerializerWithPayload<String> getInstance() {
+  public static SerializerWithPayload<String, TestEnum> getInstance() {
     return INSTANCE;
   }
 
@@ -53,5 +59,13 @@ public class StringSerializer implements SerializerWithPayload<String> {
   @Override
   public Byte getPayload(String value) {
     return 0;
+  }
+
+  @Override
+  public TestEnum getType(Byte payload) {
+    if (payload == null) {
+      return TestEnum.NULL;
+    }
+    return payload > 60 ? TestEnum.YES : TestEnum.NO;
   }
 }

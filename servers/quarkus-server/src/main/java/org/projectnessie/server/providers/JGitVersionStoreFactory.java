@@ -51,7 +51,8 @@ public class JGitVersionStoreFactory implements VersionStoreFactory {
   }
 
   @Override
-  public <VALUE, METADATA> VersionStore<VALUE, METADATA> newStore(StoreWorker<VALUE, METADATA> worker) throws IOException {
+  public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> VersionStore<VALUE, METADATA, VALUE_TYPE>
+      newStore(StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) throws IOException {
     final Repository repository = newRepository();
     return new JGitVersionStore<>(repository, worker);
   }

@@ -33,7 +33,7 @@ import javax.annotation.concurrent.ThreadSafe;
  *                   associated Serializer.
  */
 @ThreadSafe
-public interface VersionStore<VALUE, METADATA> {
+public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> {
 
   /**
    * Provide the current hash for the given NamedRef.
@@ -174,7 +174,7 @@ public interface VersionStore<VALUE, METADATA> {
    * @return The stream of keys available for this ref.
    * @throws ReferenceNotFoundException if {@code ref} is not present in the store
    */
-  Stream<WithPayload<Key>> getKeys(Ref ref) throws ReferenceNotFoundException;
+  Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException;
 
   /**
    * Get the value for a provided ref.

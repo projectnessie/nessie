@@ -33,16 +33,17 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
-import org.projectnessie.versioned.WithPayload;
+import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.store.Store;
 
-public abstract class AbstractTieredStoreFixture<S extends Store, C> implements VersionStore<String, String>, AutoCloseable {
-  protected static final StoreWorker<String, String> WORKER =
+public abstract class AbstractTieredStoreFixture<S extends Store, C> implements VersionStore<String, String, StringSerializer.TestEnum>,
+    AutoCloseable {
+  protected static final StoreWorker<String, String, StringSerializer.TestEnum> WORKER =
       StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
   private final S store;
   private final C config;
-  private final VersionStore<String, String> impl;
+  private final VersionStore<String, String, StringSerializer.TestEnum> impl;
 
   /**
    * Create a new fixture.
@@ -64,7 +65,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
     return store;
   }
 
-  public VersionStore<String, String> getWrapped() {
+  public VersionStore<String, String, StringSerializer.TestEnum> getWrapped() {
     return impl;
   }
 
@@ -122,7 +123,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   }
 
   @Override
-  public Stream<WithPayload<Key>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithType<Key, StringSerializer.TestEnum>> getKeys(Ref ref) throws ReferenceNotFoundException {
     return impl.getKeys(ref);
   }
 

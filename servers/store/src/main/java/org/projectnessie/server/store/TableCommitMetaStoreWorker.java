@@ -44,14 +44,14 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.UnsafeByteOperations;
 
-public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitMeta> {
+public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitMeta, Contents.Type> {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private final SerializerWithPayload<Contents> tableSerializer = new TableValueSerializer();
+  private final SerializerWithPayload<Contents, Contents.Type> tableSerializer = new TableValueSerializer();
   private final Serializer<CommitMeta> metaSerializer = new MetadataSerializer();
 
   @Override
-  public SerializerWithPayload<Contents> getValueSerializer() {
+  public SerializerWithPayload<Contents, Contents.Type> getValueSerializer() {
     return tableSerializer;
   }
 
@@ -60,7 +60,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     return metaSerializer;
   }
 
-  private static class TableValueSerializer implements SerializerWithPayload<Contents> {
+  private static class TableValueSerializer implements SerializerWithPayload<Contents, Contents.Type> {
     @Override
     public ByteString toBytes(Contents value) {
       ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder();
@@ -144,7 +144,27 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
     @Override
     public Byte getPayload(Contents value) {
-      return Contents.toPayload(value);
+      if (value instanceof IcebergTable) {
+        return 1;
+      } else if (value instanceof DeltaLakeTable) {
+        return 2;
+      } else if (value instanceof HiveTable) {
+        return 3;
+      } else if (value instanceof HiveDatabase) {
+        return 4;
+      } else if (value instanceof SqlView) {
+        return 5;
+      } else {
+        throw new IllegalArgumentException("Unknown type" + value);
+      }
+    }
+
+    @Override
+    public Contents.Type getType(Byte payload) {
+      if (payload == null || payload > Contents.Type.values().length || payload < 0) {
+        throw new IllegalArgumentException(String.format("Cannot create type from payload. Payload %d does not exist", payload));
+      }
+      return Contents.Type.values()[payload];
     }
   }
 

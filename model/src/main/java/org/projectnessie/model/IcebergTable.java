@@ -33,8 +33,4 @@ public abstract class IcebergTable extends Contents {
     return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).build();
   }
 
-  @Override
-  protected Type getType() {
-    return Type.ICEBERG_TABLE;
-  }
 }

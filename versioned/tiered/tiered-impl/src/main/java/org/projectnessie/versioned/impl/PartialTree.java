@@ -58,13 +58,13 @@ import com.google.common.collect.Streams;
  * populate the tree from the underlying storage.
  *
  */
-class PartialTree<V> {
+class PartialTree<V, E extends Enum<E>> {
 
   public enum LoadType {
     NO_VALUES, SELECT_VALUES
   }
 
-  private final SerializerWithPayload<V> serializer;
+  private final SerializerWithPayload<V, E> serializer;
   private final InternalRefId refId;
   private InternalRef.Type refType;
   private Id rootId;
@@ -74,12 +74,13 @@ class PartialTree<V> {
   private final Map<InternalKey, ValueHolder<V>> values = new HashMap<>();
   private final Collection<InternalKey> keys;
 
-  static <V> PartialTree<V> of(SerializerWithPayload<V> serializer, InternalRefId id, List<InternalKey> keys) {
+  static <V, E extends Enum<E>> PartialTree<V, E> of(SerializerWithPayload<V, E> serializer, InternalRefId id, List<InternalKey> keys) {
     return new PartialTree<>(serializer, id, keys);
   }
 
-  static <V> PartialTree<V> of(SerializerWithPayload<V> serializer, InternalRef.Type refType, InternalL1 l1, Collection<InternalKey> keys) {
-    PartialTree<V> tree = new PartialTree<>(serializer, InternalRefId.ofHash(l1.getId()), keys);
+  static <V, E extends Enum<E>> PartialTree<V, E> of(SerializerWithPayload<V, E> serializer, InternalRef.Type refType, InternalL1 l1,
+        Collection<InternalKey> keys) {
+    PartialTree<V, E> tree = new PartialTree<>(serializer, InternalRefId.ofHash(l1.getId()), keys);
     tree.l1 = new Pointer<>(l1);
     tree.refType = refType;
     return tree;
@@ -90,7 +91,7 @@ class PartialTree<V> {
         "You can only mutate a partial tree that references a branch. This is type %s.", refType.name());
   }
 
-  private PartialTree(SerializerWithPayload<V> serializer, InternalRefId refId, Collection<InternalKey> keys) {
+  private PartialTree(SerializerWithPayload<V, E> serializer, InternalRefId refId, Collection<InternalKey> keys) {
     super();
     this.refId = refId;
     this.serializer = serializer;
@@ -344,8 +345,8 @@ class PartialTree<V> {
     l1.apply(l -> l.set(key.getL1Position(), newL2Id));
   }
 
-  public PartialTree<V> cleanClone() {
-    PartialTree<V> clone = new PartialTree<>(serializer, refId, keys);
+  public PartialTree<V, E> cleanClone() {
+    PartialTree<V, E> clone = new PartialTree<>(serializer, refId, keys);
     this.l3s.entrySet().stream()
             .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(EntityType.L3, x.getValue())))
             .forEach(x -> clone.l3s.put(x.getKey(), x.getValue()));

@@ -33,8 +33,4 @@ public abstract class HiveTable extends Contents {
 
   public abstract List<byte[]> getPartitions();
 
-  @Override
-  protected Type getType() {
-    return Type.HIVE_TABLE;
-  }
 }

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
@@ -45,7 +46,7 @@ public class ITDynamoVersionStore extends AbstractITVersionStore {
   }
 
   @Override
-  protected VersionStore<String, String> store() {
+  protected VersionStore<String, String, StringSerializer.TestEnum> store() {
     return fixture;
   }
 

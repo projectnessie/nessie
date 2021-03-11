@@ -33,14 +33,14 @@ import org.projectnessie.versioned.VersionStore;
 /**
  * Helper to generate commits against a store.
  */
-public class CommitBuilder<ValueT, MetadataT> {
+public class CommitBuilder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
   private final List<Operation<ValueT>> operations = new ArrayList<>();
-  private final VersionStore<ValueT, MetadataT> store;
+  private final VersionStore<ValueT, MetadataT, EnumT> store;
   private MetadataT metadata = null;
   private Optional<Hash> referenceHash = Optional.empty();
   private boolean fromLatest = false;
 
-  public CommitBuilder(VersionStore<ValueT, MetadataT> store) {
+  public CommitBuilder(VersionStore<ValueT, MetadataT, EnumT> store) {
     this.store = store;
   }
 
@@ -50,7 +50,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param value the value associated with the key
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> put(String key, ValueT value) {
+  public CommitBuilder<ValueT, MetadataT, EnumT> put(String key, ValueT value) {
     return put(Key.of(key), value);
   }
 
@@ -60,7 +60,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param value the value associated with the key
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> put(Key key, ValueT value) {
+  public CommitBuilder<ValueT, MetadataT, EnumT> put(Key key, ValueT value) {
     return add(Put.of(key, value));
   }
 
@@ -69,7 +69,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param key key's name to delete
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> delete(String key) {
+  public CommitBuilder<ValueT, MetadataT, EnumT> delete(String key) {
     return delete(Key.of(key));
   }
 
@@ -78,7 +78,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param key key to delete
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> delete(Key key) {
+  public CommitBuilder<ValueT, MetadataT, EnumT> delete(Key key) {
     return add(Delete.of(key));
   }
 
@@ -87,7 +87,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param key key's name for the operation
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> unchanged(String key) {
+  public CommitBuilder<ValueT, MetadataT, EnumT> unchanged(String key) {
     return unchanged(Key.of(key));
   }
 
@@ -96,7 +96,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param key key for the operation
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> unchanged(Key key) {
+  public CommitBuilder<ValueT, MetadataT, EnumT> unchanged(Key key) {
     return add(Unchanged.of(key));
   }
 
@@ -105,7 +105,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param operation operation to commit
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> add(Operation<ValueT> operation) {
+  public CommitBuilder<ValueT, MetadataT, EnumT> add(Operation<ValueT> operation) {
     operations.add(operation);
     return this;
   }
@@ -115,7 +115,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param metadata metadata to associate with the commit
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> withMetadata(MetadataT metadata) {
+  public CommitBuilder<ValueT, MetadataT, EnumT> withMetadata(MetadataT metadata) {
     this.metadata = metadata;
     return this;
   }
@@ -125,7 +125,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * @param reference the reference's hash
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> fromReference(Hash reference) {
+  public CommitBuilder<ValueT, MetadataT, EnumT> fromReference(Hash reference) {
     referenceHash = Optional.of(reference);
     fromLatest = false;
     return this;
@@ -135,7 +135,7 @@ public class CommitBuilder<ValueT, MetadataT> {
    * Uses the latest remote hash as a reference to base the commit on.
    * @return the builder instance
    */
-  public CommitBuilder<ValueT, MetadataT> fromLatest() {
+  public CommitBuilder<ValueT, MetadataT, EnumT> fromLatest() {
     fromLatest = true;
     return this;
   }

@@ -52,10 +52,10 @@ public class TreeBuilder {
    * @return objectId of new tree
    * @throws IOException error in speaking w/ git
    */
-  public static <TABLE> ObjectId commitObjects(List<Operation<TABLE>> ops,
-                                               Repository repository,
-                                               SerializerWithPayload<TABLE> serializer,
-                                               ObjectId emptyObjectId) throws IOException {
+  public static <TABLE, TABLE_VALUE extends Enum<TABLE_VALUE>> ObjectId commitObjects(List<Operation<TABLE>> ops,
+                                                                                      Repository repository,
+                                                                                      SerializerWithPayload<TABLE, TABLE_VALUE> serializer,
+                                                                                      ObjectId emptyObjectId) throws IOException {
     ObjectInserter inserter = repository.newObjectInserter();
 
     DirCache dc = DirCache.newInCore();

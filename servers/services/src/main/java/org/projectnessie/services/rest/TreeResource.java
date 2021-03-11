@@ -72,7 +72,7 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   @Inject
   public TreeResource(ServerConfig config, Principal principal,
-      VersionStore<Contents, CommitMeta> store) {
+      VersionStore<Contents, CommitMeta, Contents.Type> store) {
     super(config, principal, store);
   }
 
@@ -197,7 +197,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       List<EntriesResponse.Entry> entries;
       try (Stream<EntriesResponse.Entry> s = getStore().getKeys(hash)
-          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key.getValue())).type(Type.fromPayload(key.getPayload())).build())) {
+          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key.getValue())).type((Type) key.getType()).build())) {
         entries = s.collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();

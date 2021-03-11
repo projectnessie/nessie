@@ -29,8 +29,4 @@ public abstract class HiveDatabase extends Contents {
 
   public abstract byte[] getDatabaseDefinition();
 
-  @Override
-  protected Type getType() {
-    return Type.HIVE_DATABASE;
-  }
 }

@@ -53,7 +53,7 @@ import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
-import org.projectnessie.versioned.WithPayload;
+import org.projectnessie.versioned.WithType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,25 +69,26 @@ import com.google.common.collect.Streams;
  *
  * @param <ValueT> Value type
  * @param <MetadataT> Commit metadata type
+ * @param <EnumT> the value enum type
  */
-public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<ValueT, MetadataT> {
+public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> implements VersionStore<ValueT, MetadataT, EnumT> {
   private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryVersionStore.class);
 
   private final ConcurrentMap<Hash, Commit<ValueT, MetadataT>> commits = new ConcurrentHashMap<>();
   private final ConcurrentMap<NamedRef, Hash> namedReferences = new ConcurrentHashMap<>();
-  private final SerializerWithPayload<ValueT> valueSerializer;
+  private final SerializerWithPayload<ValueT, EnumT> valueSerializer;
   private final Serializer<MetadataT> metadataSerializer;
 
-  public static final class Builder<ValueT, MetadataT> {
-    private SerializerWithPayload<ValueT> valueSerializer = null;
+  public static final class Builder<ValueT, MetadataT, EnumT extends Enum<EnumT>> {
+    private SerializerWithPayload<ValueT, EnumT> valueSerializer = null;
     private Serializer<MetadataT> metadataSerializer = null;
 
-    public Builder<ValueT, MetadataT> valueSerializer(SerializerWithPayload<ValueT> serializer) {
+    public Builder<ValueT, MetadataT, EnumT> valueSerializer(SerializerWithPayload<ValueT, EnumT> serializer) {
       this.valueSerializer = requireNonNull(serializer);
       return this;
     }
 
-    public Builder<ValueT, MetadataT> metadataSerializer(Serializer<MetadataT> serializer) {
+    public Builder<ValueT, MetadataT, EnumT> metadataSerializer(Serializer<MetadataT> serializer) {
       this.metadataSerializer = requireNonNull(serializer);
       return this;
     }
@@ -96,7 +97,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
      * Build a instance of the memory store.
      * @return a memory store instance
      */
-    public InMemoryVersionStore<ValueT, MetadataT> build() {
+    public InMemoryVersionStore<ValueT, MetadataT, EnumT> build() {
       checkState(this.valueSerializer != null, "Value serializer hasn't been set");
       checkState(this.metadataSerializer != null, "Metadata serializer hasn't been set");
 
@@ -104,7 +105,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     }
   }
 
-  private InMemoryVersionStore(Builder<ValueT, MetadataT> builder) {
+  private InMemoryVersionStore(Builder<ValueT, MetadataT, EnumT> builder) {
     this.valueSerializer = builder.valueSerializer;
     this.metadataSerializer = builder.metadataSerializer;
   }
@@ -114,9 +115,10 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
    *
    * @param <ValueT> the value type
    * @param <MetadataT> the metadata type
+   * @param <EnumT> the value enum type
    * @return a builder for a in memory store
    */
-  public static <ValueT, MetadataT> Builder<ValueT, MetadataT> builder() {
+  public static <ValueT, MetadataT, EnumT extends Enum<EnumT>> Builder<ValueT, MetadataT, EnumT> builder() {
     return new Builder<>();
   }
 
@@ -426,7 +428,7 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
   }
 
   @Override
-  public Stream<WithPayload<Key>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithType<Key, EnumT>> getKeys(Ref ref) throws ReferenceNotFoundException {
     final Hash hash = toHash(ref);
 
     final Iterator<WithHash<Commit<ValueT, MetadataT>>> iterator = new CommitsIterator<>(commits::get, hash);
@@ -442,16 +444,11 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
           }
           return !deleted.contains(key);
         })
+        .filter(x -> x instanceof Put)
         // extract the keys
-        .map(o -> {
-          if (o instanceof Put) {
-            return WithPayload.of(valueSerializer.getPayload(((Put<ValueT>) o).getValue()), o.getKey());
-          } else {
-            return WithPayload.of(null, o.getKey());
-          }
-        })
+        .map(o -> WithType.of(valueSerializer.getType(((Put<ValueT>) o).getValue()), o.getKey()))
         // filter keys which have been seen already
-        .collect(Collectors.toMap(WithPayload::getValue, Function.identity(), (k1, k2) -> k2))
+        .collect(Collectors.toMap(WithType::getValue, Function.identity(), (k1, k2) -> k2))
         .values()
         .stream();
   }

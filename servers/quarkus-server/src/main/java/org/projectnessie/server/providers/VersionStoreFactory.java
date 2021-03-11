@@ -30,9 +30,11 @@ public interface VersionStoreFactory {
    *
    * @param <VALUE> the value type
    * @param <METADATA> the metadata type
+   * @param <VALUE_TYPE> the value type enum
    * @param worker the worker instance
    * @return a store instance
    * @throws IOException if an exception occurs during store instantiation
    */
-  <VALUE, METADATA> VersionStore<VALUE, METADATA> newStore(StoreWorker<VALUE, METADATA> worker) throws IOException;
+  <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> VersionStore<VALUE, METADATA, VALUE_TYPE>
+      newStore(StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) throws IOException;
 }

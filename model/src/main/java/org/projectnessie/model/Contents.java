@@ -54,32 +54,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 public abstract class Contents {
 
   public static enum Type {
-    UNKNOWN((byte) 0),
-    ICEBERG_TABLE((byte) 1),
-    DELTA_LAKE_TABLE((byte) 2),
-    HIVE_TABLE((byte) 3),
-    HIVE_DATABASE((byte) 4),
-    VIEW((byte) 5);
-
-    private final byte payloadId;
-
-    Type(byte payloadId) {
-      this.payloadId = payloadId;
-    }
-
-    /**
-     * Convert a single byte payload into a Content Type.
-     */
-    public static Type fromPayload(Byte payload) {
-      if (payload == null || payload > 5 || payload < 0) {
-        throw new IllegalArgumentException(String.format("Cannot create type from payload. Payload %s does not exist", payload));
-      }
-      return Type.values()[payload];
-    }
-
-    public byte getPayloadId() {
-      return payloadId;
-    }
+    UNKNOWN, ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
   }
 
   /**
@@ -96,12 +71,4 @@ public abstract class Contents {
     return Optional.empty();
   }
 
-  /**
-   * Convert this contents into a payload byte.
-   */
-  protected abstract Type getType();
-
-  public static Byte toPayload(Contents contents) {
-    return contents.getType().getPayloadId();
-  }
 }

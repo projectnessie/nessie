@@ -116,7 +116,8 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void createAndDeleteTag(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+  void createAndDeleteTag(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+      throws Exception {
     impl.create(BranchName.of("bar"), Optional.empty());
     Optional<Hash> baseCommit = Optional.of(impl.toHash(BranchName.of("bar")));
     TagName tag = TagName.of("foo");
@@ -155,7 +156,8 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void unknownRef(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+  void unknownRef(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+      throws Exception {
     BranchName branch = BranchName.of("bar");
     impl.create(branch, Optional.empty());
     impl.commit(branch, Optional.empty(), "metadata", ImmutableList.of(Put.of(Key.of("hi"), "hello world")));
@@ -168,7 +170,7 @@ class TestJGitVersionStore {
     testRefMatchesToRef(impl, expected, expected, expected.asString());
   }
 
-  private void testRefMatchesToRef(JGitVersionStore<String, String> impl, Ref ref, Hash hash, String name)
+  private void testRefMatchesToRef(JGitVersionStore<String, String, StringSerializer.TestEnum> impl, Ref ref, Hash hash, String name)
       throws ReferenceNotFoundException {
     WithHash<Ref> val = impl.toRef(name);
     assertEquals(ref, val.getValue());
@@ -177,7 +179,8 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void createAndDeleteBranch(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+  void createAndDeleteBranch(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+      throws Exception {
     BranchName branch = BranchName.of("foo");
 
     // create a tag using the default empty hash.
@@ -219,7 +222,8 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void conflictingCommit(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+  void conflictingCommit(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+      throws Exception {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     // first commit.
@@ -241,7 +245,8 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void checkRefs(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+  void checkRefs(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+      throws Exception {
     impl.create(BranchName.of("b1"), Optional.empty());
     Optional<Hash> baseCommit = Optional.of(impl.toHash(BranchName.of("b1")));
     impl.create(BranchName.of("b2"), Optional.empty());
@@ -255,7 +260,8 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void checkCommits(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+  void checkCommits(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+      throws Exception {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     String c1 = "c1";
@@ -287,7 +293,8 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void assignments(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+  void assignments(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+      throws Exception {
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
     impl.create(branch, Optional.empty());
@@ -322,7 +329,7 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void delete(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+  void delete(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl) throws Exception {
     BranchName branch = BranchName.of("foo");
     final Key k1 = Key.of("p1");
     impl.create(branch, Optional.empty());
@@ -336,7 +343,8 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void unchangedOperation(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+  void unchangedOperation(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+      throws Exception {
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
     // first commit.
@@ -360,7 +368,8 @@ class TestJGitVersionStore {
 
   @ParameterizedTest
   @EnumSource(RepoType.class)
-  void checkEmptyHistory(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String> impl) throws Exception {
+  void checkEmptyHistory(@ConvertWith(RepositoryConverter.class) JGitVersionStore<String, String, StringSerializer.TestEnum> impl)
+      throws Exception {
 
     BranchName branch = BranchName.of("foo");
     impl.create(branch, Optional.empty());
@@ -370,7 +379,7 @@ class TestJGitVersionStore {
   @ParameterizedTest
   @EnumSource(RepoType.class)
   void completeFlow(RepoType repoType) throws Exception {
-    VersionStore<String, String> impl = new JGitVersionStore<>(repository(repoType), WORKER);
+    VersionStore<String, String, StringSerializer.TestEnum> impl = new JGitVersionStore<>(repository(repoType), WORKER);
     final BranchName branch = ImmutableBranchName.builder().name("main").build();
     final BranchName branch2 = ImmutableBranchName.builder().name("b2").build();
     final TagName tag = ImmutableTagName.builder().name("t1").build();
@@ -436,7 +445,7 @@ class TestJGitVersionStore {
 
   }
 
-  private static final StoreWorker<String, String> WORKER =
+  private static final StoreWorker<String, String, StringSerializer.TestEnum> WORKER =
       StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
 

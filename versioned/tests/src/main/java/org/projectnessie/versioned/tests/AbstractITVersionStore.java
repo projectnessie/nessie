@@ -55,7 +55,7 @@ import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
-import org.projectnessie.versioned.WithPayload;
+import org.projectnessie.versioned.WithType;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -65,7 +65,7 @@ import com.google.common.collect.Lists;
  */
 public abstract class AbstractITVersionStore {
 
-  protected abstract VersionStore<String, String> store();
+  protected abstract VersionStore<String, String, StringSerializer.TestEnum> store();
 
   /*
    * Test:
@@ -247,18 +247,18 @@ public abstract class AbstractITVersionStore {
         WithHash.of(initialCommit, "Initial Commit")
         ));
 
-    assertThat(store().getKeys(branch).map(WithPayload::getValue).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(branch).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t4")
         ));
 
-    assertThat(store().getKeys(secondCommit).map(WithPayload::getValue).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(secondCommit).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t4")
         ));
 
-    assertThat(store().getKeys(initialCommit).map(WithPayload::getValue).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(initialCommit).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t3")
@@ -342,7 +342,7 @@ public abstract class AbstractITVersionStore {
         WithHash.of(initialCommit, "Initial Commit")
         ));
 
-    assertThat(store().getKeys(branch).map(WithPayload::getValue).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(branch).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t3")
@@ -980,7 +980,7 @@ public abstract class AbstractITVersionStore {
     store().create(branch, Optional.empty());
 
     // have to do this here as tiered store stores payload at commit time
-    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
+    Mockito.doReturn(StringSerializer.TestEnum.NO).when(StringSerializer.getInstance()).getType("world");
     store().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"))
     );
@@ -991,20 +991,20 @@ public abstract class AbstractITVersionStore {
     assertTrue(values.get(0).isPresent());
 
     // have to do this here as non-tiered store reads payload when getKeys is called
-    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
-    List<WithPayload<Key>> keys = store().getKeys(branch).collect(Collectors.toList());
+    Mockito.doReturn(StringSerializer.TestEnum.NO).when(StringSerializer.getInstance()).getType("world");
+    List<WithType<Key, StringSerializer.TestEnum>> keys = store().getKeys(branch).collect(Collectors.toList());
 
     assertEquals(1, keys.size());
     assertEquals(Key.of("hi"), keys.get(0).getValue());
-    assertEquals((byte)24, keys.get(0).getPayload());
+    assertEquals(StringSerializer.TestEnum.NO, keys.get(0).getType());
   }
 
 
-  protected CommitBuilder<String, String> forceCommit(String message) {
+  protected CommitBuilder<String, String, StringSerializer.TestEnum> forceCommit(String message) {
     return new CommitBuilder<>(store()).withMetadata(message);
   }
 
-  protected CommitBuilder<String, String> commit(String message) {
+  protected CommitBuilder<String, String, StringSerializer.TestEnum> commit(String message) {
     return new CommitBuilder<>(store()).withMetadata(message).fromLatest();
   }
 

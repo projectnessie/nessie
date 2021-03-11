@@ -38,14 +38,14 @@ abstract class BaseResource {
 
   private final Principal principal;
 
-  private final VersionStore<Contents, CommitMeta> store;
+  private final VersionStore<Contents, CommitMeta, Contents.Type> store;
 
   // Mandated by CDI 2.0
   protected BaseResource() {
     this(null, null, null);
   }
 
-  protected BaseResource(ServerConfig config, Principal principal, VersionStore<Contents, CommitMeta> store) {
+  protected BaseResource(ServerConfig config, Principal principal, VersionStore<Contents, CommitMeta, Contents.Type> store) {
     this.config = config;
     this.principal = principal;
     this.store = store;
@@ -68,7 +68,7 @@ abstract class BaseResource {
     return config;
   }
 
-  protected VersionStore<Contents, CommitMeta> getStore() {
+  protected VersionStore<Contents, CommitMeta, Contents.Type> getStore() {
     return store;
   }
 

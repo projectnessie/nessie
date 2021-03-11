@@ -73,9 +73,9 @@ public class ITTestIdentifyUnreferencedAssets {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private StoreWorker<DummyValue,String> helper;
+  private StoreWorker<DummyValue,String, StringSerializer.TestEnum> helper;
   private DtAdjustingStore store;
-  private TieredVersionStore<DummyValue, String> versionStore;
+  private TieredVersionStore<DummyValue, String, StringSerializer.TestEnum> versionStore;
 
   @Test
   public void run() throws Exception {
@@ -192,13 +192,13 @@ public class ITTestIdentifyUnreferencedAssets {
   }
 
 
-  private CommitBuilder<DummyValue, String> commit() {
-    return new CommitBuilder<DummyValue, String>(versionStore);
+  private CommitBuilder<DummyValue, String, StringSerializer.TestEnum> commit() {
+    return new CommitBuilder<DummyValue, String, StringSerializer.TestEnum>(versionStore);
   }
 
-  private static class StoreW implements StoreWorker<DummyValue, String> {
+  private static class StoreW implements StoreWorker<DummyValue, String, StringSerializer.TestEnum> {
     @Override
-    public SerializerWithPayload<DummyValue> getValueSerializer() {
+    public SerializerWithPayload<DummyValue, StringSerializer.TestEnum> getValueSerializer() {
       return new DummyValueSerializer();
     }
 
@@ -209,7 +209,7 @@ public class ITTestIdentifyUnreferencedAssets {
   }
 
   private static class DummyValueSerializer extends GcTestUtils.JsonSerializer<DummyValue> implements Serializable,
-      SerializerWithPayload<DummyValue> {
+      SerializerWithPayload<DummyValue, StringSerializer.TestEnum> {
 
     public DummyValueSerializer() {
       super(DummyValue.class);
@@ -218,6 +218,11 @@ public class ITTestIdentifyUnreferencedAssets {
     @Override
     public Byte getPayload(DummyValue value) {
       return 0;
+    }
+
+    @Override
+    public StringSerializer.TestEnum getType(Byte payload) {
+      return StringSerializer.TestEnum.NO;
     }
   }
 

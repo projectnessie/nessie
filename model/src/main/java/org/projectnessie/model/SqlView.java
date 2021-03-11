@@ -40,9 +40,4 @@ public abstract class SqlView extends Contents {
 
   // Schema getSchema();
 
-
-  @Override
-  protected Type getType() {
-    return Type.VIEW;
-  }
 }
