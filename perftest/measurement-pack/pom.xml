@@ -26,18 +26,7 @@
   </parent>
 
   <artifactId>nessie-perftest-measurement-pack</artifactId>
+  <packaging>pom</packaging>
 
   <name>Nessie - Perf Test - Measurement Pack</name>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <skipIfEmpty>true</skipIfEmpty>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>
