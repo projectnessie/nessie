@@ -145,15 +145,15 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
     @Override
     public Byte getPayload(Contents value) {
       if (value instanceof IcebergTable) {
-        return 1;
+        return (byte) Contents.Type.ICEBERG_TABLE.ordinal();
       } else if (value instanceof DeltaLakeTable) {
-        return 2;
+        return (byte) Contents.Type.DELTA_LAKE_TABLE.ordinal();
       } else if (value instanceof HiveTable) {
-        return 3;
+        return (byte) Contents.Type.HIVE_TABLE.ordinal();
       } else if (value instanceof HiveDatabase) {
-        return 4;
+        return (byte) Contents.Type.HIVE_DATABASE.ordinal();
       } else if (value instanceof SqlView) {
-        return 5;
+        return (byte) Contents.Type.VIEW.ordinal();
       } else {
         throw new IllegalArgumentException("Unknown type" + value);
       }
