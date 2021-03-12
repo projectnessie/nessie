@@ -21,22 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.dynamodb.AliasCollectorImpl;
 import org.projectnessie.versioned.dynamodb.AttributeValueUtil;
-import org.projectnessie.versioned.impl.condition.AddClause;
-import org.projectnessie.versioned.impl.condition.ConditionExpression;
-import org.projectnessie.versioned.impl.condition.ExpressionFunction;
-import org.projectnessie.versioned.impl.condition.ExpressionPath;
-import org.projectnessie.versioned.impl.condition.ImmutableUpdateExpression;
-import org.projectnessie.versioned.impl.condition.RemoveClause;
-import org.projectnessie.versioned.impl.condition.SetClause;
-import org.projectnessie.versioned.impl.condition.UpdateExpression;
-import org.projectnessie.versioned.impl.condition.Value;
 import org.projectnessie.versioned.store.Entity;
 
 class TestExpressions {
 
   private final Entity av0 = Entity.ofBoolean(true);
   private final Entity av1 = Entity.ofBoolean(false);
-  private final Entity av2 = Entity.ofString("mystr");
 
   private final ExpressionPath p0 = ExpressionPath.builder("p0").build();
   private final ExpressionPath p1 = ExpressionPath.builder("p1").build();
@@ -106,17 +96,6 @@ class TestExpressions {
     Value v0p = v0.alias(c);
     assertEquals("list_append(p0, :v0)", v0p.asString());
     assertEquals(AttributeValueUtil.fromEntity(av0), c.getAttributesValues().get(":v0").l().get(0));
-  }
-
-  @Test
-  void updateAddClause() {
-    UpdateExpression e0 = ImmutableUpdateExpression.builder().addClauses(
-        AddClause.addToSetOrNumber(p0, av2)
-        ).build();
-    AliasCollectorImpl c = new AliasCollectorImpl();
-    UpdateExpression e0p = e0.alias(c);
-    assertEquals(" ADD p0 :v0", e0p.toUpdateExpressionString());
-    assertEquals(AttributeValueUtil.fromEntity(av2), c.getAttributesValues().get(":v0"));
   }
 
   @Test

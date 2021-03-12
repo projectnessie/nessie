@@ -41,11 +41,6 @@ public class TestUpdateClauseVisitor {
   static class Visitor implements UpdateClauseVisitor<UpdateCommand> {
 
     @Override
-    public UpdateCommand visit(final AddClause clause) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
     public UpdateCommand visit(final RemoveClause clause) {
       return ImmutableRemoveCommand.builder()
           .operator(UpdateCommand.Operator.REMOVE)
@@ -83,7 +78,6 @@ public class TestUpdateClauseVisitor {
 
   @Test
   void testRemoveClause() {
-    final UpdateClause clause = RemoveClause.of(PATH);
     testClause(RemoveClause.of(PATH), UpdateCommand.Operator.REMOVE, PATH);
   }
 
