@@ -16,6 +16,7 @@
 package org.projectnessie.services.rest;
 
 import java.security.Principal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +28,7 @@ import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
+import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -72,13 +74,13 @@ abstract class BaseResource {
     return store;
   }
 
-  protected void doOps(String branch, String hash, String message, List<org.projectnessie.versioned.Operation<Contents>> operations)
+  protected void doOps(String branch, String hash, CommitMeta commitMeta, List<Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
       store.commit(
           BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
           Optional.ofNullable(hash).map(Hash::of),
-          meta(principal, message),
+          meta(principal, commitMeta),
           operations
       );
     } catch (IllegalArgumentException e) {
@@ -90,11 +92,17 @@ abstract class BaseResource {
     }
   }
 
-  private static CommitMeta meta(Principal principal, String message) {
-    return ImmutableCommitMeta.builder()
-        .commiter(principal == null ? "" : principal.getName())
-        .message(message == null ? "" : message)
-        .commitTime(System.currentTimeMillis())
+  private static CommitMeta meta(Principal principal, CommitMeta commitMeta) throws NessieConflictException {
+    if (commitMeta.getCommiter() != null) {
+      throw new NessieConflictException("Cannot set the committer on the client side. It is set by the server.");
+    }
+    String committer = principal == null ? "" : principal.getName();
+    long now = Instant.now().toEpochMilli();
+    return commitMeta.toBuilder()
+        .commiter(committer)
+        .commitTime(now)
+        .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
+        .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
         .build();
   }
 }

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
@@ -80,11 +81,12 @@ public class RestGitTest {
     IcebergTable table = ImmutableIcebergTable.builder()
                                 .metadataLocation("/the/directory/over/there")
                                 .build();
-
+    Operations op = ImmutableOperations.builder().addOperations(Put.of(ContentsKey.of("xxx", "test"), table))
+        .commitMeta(CommitMeta.builder().message("msg").build()).build();
     rest()
-      .body(table)
-      .queryParam("branch", newReference.getName()).queryParam("hash", newReference.getHash())
-      .post("contents/xxx.test")
+      .body(op)
+      .queryParam("expectedHash", newReference.getHash())
+      .post(String.format("trees/branch/%s/commit", newReference.getName()))
         .then().statusCode(204);
 
     Put[] updates = new Put[11];
@@ -103,6 +105,7 @@ public class RestGitTest {
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
     Operations contents = ImmutableOperations.builder()
         .addOperations(updates)
+        .commitMeta(CommitMeta.builder().message("msg").build())
         .build();
 
     rest().body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
@@ -116,9 +119,13 @@ public class RestGitTest {
         .build();
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
-    rest().body(table)
-           .queryParam("branch", b2.getName()).queryParam("hash", b2.getHash())
-           .post("contents/xxx.test").then().statusCode(204);
+    op = ImmutableOperations.builder().addOperations(Put.of(ContentsKey.of("xxx", "test"), table))
+        .commitMeta(CommitMeta.builder().message("msg").build()).build();
+    rest()
+      .body(op)
+      .queryParam("expectedHash", b2.getHash())
+      .post(String.format("trees/branch/%s/commit", b2.getName()))
+      .then().statusCode(204);
     Contents returned = rest()
         .queryParam("ref", "test")
         .get("contents/xxx.test").then().statusCode(200).extract().as(Contents.class);
@@ -150,11 +157,13 @@ public class RestGitTest {
     return given().when().basePath("/api/v1/").contentType(ContentType.JSON);
   }
 
-  private void commit(Branch b, String path, String metadataUrl) {
+  private void commit(Branch b, String metadataUrl) {
+    Operations op = ImmutableOperations.builder().addOperations(Put.of(ContentsKey.of("xxx", "test"), IcebergTable.of(metadataUrl)))
+        .commitMeta(CommitMeta.builder().message("msg").build()).build();
     rest()
-      .body(IcebergTable.of(metadataUrl))
-      .queryParam("branch", b.getName()).queryParam("hash", b.getHash())
-      .post("contents/xxx.test")
+      .body(op)
+      .queryParam("expectedHash", b.getHash())
+      .post(String.format("trees/branch/%s/commit", b.getName()))
       .then().statusCode(204);
   }
 
@@ -175,13 +184,13 @@ public class RestGitTest {
   public void testOptimisticLocking() {
     makeBranch("test3");
     Branch b1 = getBranch("test3");
-    commit(b1, "xxx.test", "/the/directory/over/there");
+    commit(b1, "/the/directory/over/there");
 
     Branch b2 = getBranch("test3");
-    commit(b2, "xxx.test", "/the/directory/over/there/has/been/moved");
+    commit(b2, "/the/directory/over/there/has/been/moved");
 
     Branch b3 = getBranch("test3");
-    commit(b3, "xxx.test", "/the/directory/over/there/has/been/moved/again");
+    commit(b3, "/the/directory/over/there/has/been/moved/again");
   }
 
 }

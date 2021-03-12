@@ -330,9 +330,6 @@ public interface TreeApi {
       @Parameter(description = "Expected hash of branch.")
       @QueryParam("expectedHash")
           String hash,
-      @Parameter(description = "Commit message")
-      @QueryParam("message")
-          String message,
       @Valid
       @NotNull
       @RequestBody(description = "Operations")

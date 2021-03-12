@@ -16,6 +16,8 @@
 
 package org.projectnessie.model;
 
+import java.util.Map;
+
 import javax.annotation.Nullable;
 
 import org.immutables.value.Value;
@@ -31,17 +33,45 @@ public abstract class CommitMeta {
   @Nullable
   public abstract String getHash();
 
+  @Nullable
   public abstract String getCommiter();
 
   @Nullable
   public abstract String getEmail();
+
+  /**
+   * according to git the author == the committer unless set otherwise.
+   */
+  @Nullable
+  public abstract String getAuthor();
+
+  @Nullable
+  public abstract String getAuthorEmail();
+
+  @Nullable
+  public abstract String getSignedOffBy();
+
+  @Nullable
+  public abstract String getSignedOffByEmail();
 
   public abstract String getMessage();
 
   @Nullable
   public abstract Long getCommitTime();
 
+  /**
+   * according to git the author time == the commit time unless set otherwise.
+   */
+  @Nullable
+  public abstract Long getAuthorTime();
+
+  public abstract Map<String, String> getProperties();
+
   public ImmutableCommitMeta.Builder toBuilder() {
     return ImmutableCommitMeta.builder().from(this);
+  }
+
+  public static ImmutableCommitMeta.Builder builder() {
+    return ImmutableCommitMeta.builder();
   }
 }

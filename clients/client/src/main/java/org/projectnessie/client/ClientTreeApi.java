@@ -147,12 +147,10 @@ class ClientTreeApi implements TreeApi {
   public void commitMultipleOperations(
       String branch,
       @NotNull String expectedHash,
-      String message,
       @NotNull Operations operations) throws NessieNotFoundException, NessieConflictException {
     client.newRequest().path("trees/branch/{branchName}/commit")
           .resolveTemplate("branchName", branch)
           .queryParam("expectedHash", expectedHash)
-          .queryParam("message", message)
           .post(operations);
   }
 }

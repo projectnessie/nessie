@@ -52,6 +52,7 @@ class ClientContentsApi implements ContentsApi {
   }
 
 
+  @Deprecated
   @Override
   public void setContents(@NotNull ContentsKey key, String branch, @NotNull String hash, String message,
                           @NotNull Contents contents) throws NessieNotFoundException, NessieConflictException {
@@ -62,6 +63,7 @@ class ClientContentsApi implements ContentsApi {
           .post(contents);
   }
 
+  @Deprecated
   @Override
   public void deleteContents(ContentsKey key, String branch, String hash, String message)
       throws NessieNotFoundException, NessieConflictException {
