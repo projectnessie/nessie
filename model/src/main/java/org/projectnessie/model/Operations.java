@@ -33,5 +33,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableOperations.class)
 public interface Operations {
 
+  CommitMeta getCommitMeta();
+
   List<Operation> getOperations();
 }
