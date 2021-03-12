@@ -95,14 +95,14 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   @Override
   public void setContents(ContentsKey key, String branch, String hash, String message, Contents contents)
       throws NessieNotFoundException, NessieConflictException {
-    CommitMeta meta = CommitMeta.builder().message(message).build();
+    CommitMeta meta = CommitMeta.builder().message(message == null ? "" : message).build();
     doOps(branch, hash, meta, Arrays.asList(Put.of(toKey(key), contents)));
   }
 
   @Override
   public void deleteContents(ContentsKey key, String branch, String hash, String message)
       throws NessieNotFoundException, NessieConflictException {
-    CommitMeta meta = CommitMeta.builder().message(message).build();
+    CommitMeta meta = CommitMeta.builder().message(message == null ? "" : message).build();
     doOps(branch, hash, meta, Arrays.asList(Delete.of(toKey(key))));
   }
 

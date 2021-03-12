@@ -32,6 +32,7 @@ import org.projectnessie.api.TreeApi;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse.Entry;
@@ -137,8 +138,9 @@ class TransactionStore {
     }
 
     checkWritable();
+    CommitMeta commitMeta = CommitMeta.builder().message("").build();
     tree.commitMultipleOperations(reference.getName(), reference.getHash(),
-        ImmutableOperations.builder().addAllOperations(operations.stream().collect(Collectors.toList())).build());
+        ImmutableOperations.builder().addAllOperations(new ArrayList<>(operations)).commitMeta(commitMeta).build());
   }
 
   void deleteItem(ContentsKey key) {

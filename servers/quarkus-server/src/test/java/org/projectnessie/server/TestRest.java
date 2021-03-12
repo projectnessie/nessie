@@ -67,7 +67,6 @@ import org.projectnessie.model.ImmutablePut;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
-import org.projectnessie.model.Operation;
 import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
@@ -156,7 +155,7 @@ class TestRest {
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
     ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
-    Operations ops = ImmutableOperations.builder().addOperations(op).commitMeta(CommitMeta.builder().message("message").build()).build();
+    Operations ops = ImmutableOperations.builder().addOperations(op).commitMeta(CommitMeta.fromMessage("One dummy op")).build();
     tree.commitMultipleOperations(branchName, branchHash, ops);
     log = tree.getCommitLog(branchName);
     String newHash = log.getOperations().get(0).getHash();
@@ -179,12 +178,8 @@ class TestRest {
     ContentsKey b = ContentsKey.of("b");
     IcebergTable ta = IcebergTable.of("path1");
     IcebergTable tb = IcebergTable.of("path2");
-    Operation.Put pa = Operation.Put.of(a, ta);
-    Operation.Put pb = Operation.Put.of(b, tb);
-    CommitMeta ca = CommitMeta.builder().message("commit 1").build();
-    CommitMeta cb = CommitMeta.builder().message("commit 2").build();
-    tree.commitMultipleOperations(branch, r.getHash(), ImmutableOperations.builder().addOperations(pa).commitMeta(ca).build());
-    tree.commitMultipleOperations(branch, r.getHash(), ImmutableOperations.builder().addOperations(pb).commitMeta(cb).build());
+    contents.setContents(a, branch, r.getHash(), "commit 1", ta);
+    contents.setContents(b, branch, r.getHash(), "commit 2", tb);
     List<ContentsWithKey> keys =
         contents.getMultipleContents("foo", MultiGetContentsRequest.of(a, b, ContentsKey.of("noexist"))).getContents();
     List<ContentsWithKey> expected = Arrays.asList(ContentsWithKey.of(a, ta), ContentsWithKey.of(b,  tb));
@@ -200,9 +195,7 @@ class TestRest {
     //ContentsKey k = ContentsKey.of("/%国","国.国");
     ContentsKey k = ContentsKey.of("a.b","c.d");
     IcebergTable ta = IcebergTable.of("path1");
-    Operation.Put p = Operation.Put.of(k, ta);
-    CommitMeta ca = CommitMeta.builder().message("commit 1").build();
-    tree.commitMultipleOperations(branch, r.getHash(), ImmutableOperations.builder().addOperations(p).commitMeta(ca).build());
+    contents.setContents(k, branch, r.getHash(), "commit 1", ta);
     assertEquals(ContentsWithKey.of(k, ta), contents.getMultipleContents(branch, MultiGetContentsRequest.of(k)).getContents().get(0));
     assertEquals(ta, contents.getContents(k, branch));
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
@@ -226,7 +219,7 @@ class TestRest {
       "abc'de@{blah" + COMMA_VALID_HASH_3
   })
   void invalidBranchNames(String invalidBranchName, String validHash) {
-    Operations ops = ImmutableOperations.builder().commitMeta(CommitMeta.builder().message("message").build()).build();
+    Operations ops = ImmutableOperations.builder().commitMeta(CommitMeta.fromMessage("")).build();
     ContentsKey key = ContentsKey.of("x");
     Contents cts = IcebergTable.of("moo");
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
@@ -264,6 +257,12 @@ class TestRest {
         () -> assertEquals("Bad Request (HTTP/400): transplantCommitsIntoBranch.branchName: " + REF_NAME_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.transplantCommitsIntoBranch(invalidBranchName, validHash, null, null)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): setContents.branch: " + REF_NAME_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.setContents(key, invalidBranchName, validHash, null, cts)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): deleteContents.branch: " + REF_NAME_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.deleteContents(key, invalidBranchName, validHash, null)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): getContents.ref: " + REF_NAME_OR_HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> contents.getContents(key, invalidBranchName)).getMessage()),
@@ -287,7 +286,7 @@ class TestRest {
     String invalidHash = invalidHashIn != null ? invalidHashIn : "";
 
     String validBranchName = "hello";
-    Operations ops = ImmutableOperations.builder().commitMeta(CommitMeta.builder().message("message").build()).build();
+    Operations ops = ImmutableOperations.builder().commitMeta(CommitMeta.fromMessage("")).build();
     ContentsKey key = ContentsKey.of("x");
     Contents cts = IcebergTable.of("moo");
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
@@ -316,6 +315,12 @@ class TestRest {
         () -> assertEquals("Bad Request (HTTP/400): transplantCommitsIntoBranch.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.transplantCommitsIntoBranch(validBranchName, invalidHash, null, null)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): setContents.hash: " + HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.setContents(key, validBranchName, invalidHash, null, cts)).getMessage()),
+        () -> assertEquals("Bad Request (HTTP/400): deleteContents.hash: " + HASH_MESSAGE,
+            assertThrows(NessieBadRequestException.class,
+                () -> contents.deleteContents(key, validBranchName, invalidHash, null)).getMessage()),
         () -> assertThat(
             assertThrows(NessieBadRequestException.class,
                 () -> contents.getMultipleContents(invalidHash, null)).getMessage(),
