@@ -39,12 +39,12 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n}, {\n  \"type\" : \"BRANCH\"\
-        ,\n  \"name\" : \"dev\",\n  \"hash\" : \"e0b41c30f0710277532f51242994e10acfdc46bf\"\
+        \ \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n},\
+        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\
         \n} ]"
     headers:
       Content-Length:
-      - '199'
+      - '247'
       Content-Type:
       - application/json
     status:
@@ -66,25 +66,20 @@ interactions:
   response:
     body:
       string: "{\n  \"message\" : \"Requested contents do not exist for specified\
-        \ reference.\",\n  \"status\" : \"NOT_FOUND\",\n  \"serverStackTrace\" : \"\
-        org.projectnessie.error.NessieNotFoundException: Requested contents do not\
-        \ exist for specified reference.\\n\\tat org.projectnessie.services.rest.ContentsResource.getContents(ContentsResource.java:72)\\\
-        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass.getContents$$superaccessor2(ContentsResource_Subclass.zig:766)\\\
-        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass$$function$$2.apply(ContentsResource_Subclass$$function$$2.zig:41)\\\
+        \ reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"\
+        serverStackTrace\" : \"org.projectnessie.error.NessieNotFoundException: Requested\
+        \ contents do not exist for specified reference.\\n\\tat org.projectnessie.services.rest.ContentsResource.getContents(ContentsResource.java:67)\\\
+        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass.getContents$$superaccessor3(ContentsResource_Subclass.zig:638)\\\
+        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass$$function$$3.apply(ContentsResource_Subclass$$function$$3.zig:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.time(TimedInterceptor.java:54)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.timedMethod(TimedInterceptor.java:35)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:326)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.increment(CountedInterceptor.java:51)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.countedMethod(CountedInterceptor.java:33)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor_Bean.intercept(CountedInterceptor_Bean.zig:326)\\\
+        n\\tat io.quarkus.hibernate.validator.runtime.interceptor.AbstractMethodValidationInterceptor.validateMethodInvocation(AbstractMethodValidationInterceptor.java:68)\\\
+        n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor.validateMethodInvocation(JaxrsEndPointValidationInterceptor.java:35)\\\
+        n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor_Bean.intercept(JaxrsEndPointValidationInterceptor_Bean.zig:392)\\\
         n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
         n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
         n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
-        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass.getContents(ContentsResource_Subclass.zig:712)\\\
-        n\\tat org.projectnessie.services.rest.ContentsResource_ClientProxy.getContents(ContentsResource_ClientProxy.zig:408)\\\
+        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass.getContents(ContentsResource_Subclass.zig:584)\\\
+        n\\tat org.projectnessie.services.rest.ContentsResource_ClientProxy.getContents(ContentsResource_ClientProxy.zig:228)\\\
         n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native\
         \ Method)\\n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\\\
         n\\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\\\
@@ -106,23 +101,21 @@ interactions:
         n\\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:164)\\\
         n\\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:247)\\\
         n\\tat io.quarkus.resteasy.runtime.standalone.RequestDispatcher.service(RequestDispatcher.java:73)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.dispatch(VertxRequestHandler.java:131)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.access$000(VertxRequestHandler.java:37)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler$1.run(VertxRequestHandler.java:94)\\\
+        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.dispatch(VertxRequestHandler.java:138)\\\
+        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.access$000(VertxRequestHandler.java:41)\\\
+        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler$1.run(VertxRequestHandler.java:93)\\\
         n\\tat io.quarkus.runtime.CleanableExecutor$CleaningRunnable.run(CleanableExecutor.java:231)\\\
         n\\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)\\\
         n\\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)\\\
-        n\\tat org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:2046)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1578)\\\
+        n\\tat org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2415)\\\
         n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1452)\\\
         n\\tat org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)\\\
         n\\tat org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)\\\
-        n\\tat java.base/java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
+        n\\tat java.base/java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:501)\\\
         n\"\n}"
     headers:
       Content-Length:
-      - '5358'
+      - '4784'
       Content-Type:
       - application/json
     status:
@@ -130,7 +123,10 @@ interactions:
       message: Not Found
 - request:
     body: '{"operations": [{"contents": {"metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"},
-      "key": {"elements": ["foo", "bar"]}, "type": "PUT"}]}'
+      "key": {"elements": ["foo", "bar"]}, "type": "PUT"}], "commitMeta": {"authorTime":
+      0, "author": null, "commitTime": 0, "properties": null, "authorEmail": null,
+      "message": "test_message", "commiter": null, "email": null, "signedOffByEmail":
+      null, "signedOffBy": null, "hash": null}}'
     headers:
       Accept:
       - '*/*'
@@ -139,13 +135,13 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '139'
+      - '367'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.24.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=e0b41c30f0710277532f51242994e10acfdc46bf&message=test_message
+    uri: http://localhost:19120/api/v1/trees/branch/dev/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
       string: ''
@@ -169,12 +165,12 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n}, {\n  \"type\" : \"BRANCH\"\
-        ,\n  \"name\" : \"dev\",\n  \"hash\" : \"795df2d04c7661233b978c8a9547b00a0bb9d466\"\
+        \ \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n},\
+        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"323435c6f8770ef79394ffa021d0605aff81a18581eae45498ec880b5ded03e4\"\
         \n} ]"
     headers:
       Content-Length:
-      - '199'
+      - '247'
       Content-Type:
       - application/json
     status:
@@ -196,17 +192,17 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"\
-        795df2d04c7661233b978c8a9547b00a0bb9d466\"\n}"
+        323435c6f8770ef79394ffa021d0605aff81a18581eae45498ec880b5ded03e4\"\n}"
     headers:
       Content-Length:
-      - '96'
+      - '120'
       Content-Type:
       - application/json
     status:
       code: 200
       message: OK
 - request:
-    body: '{"fromHash": "795df2d04c7661233b978c8a9547b00a0bb9d466"}'
+    body: '{"fromHash": "323435c6f8770ef79394ffa021d0605aff81a18581eae45498ec880b5ded03e4"}'
     headers:
       Accept:
       - '*/*'
@@ -215,13 +211,13 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '56'
+      - '80'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.24.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/merge?expectedHash=e0b41c30f0710277532f51242994e10acfdc46bf
+    uri: http://localhost:19120/api/v1/trees/branch/main/merge?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
       string: ''
@@ -245,12 +241,12 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"795df2d04c7661233b978c8a9547b00a0bb9d466\"\n}, {\n  \"type\" : \"BRANCH\"\
-        ,\n  \"name\" : \"dev\",\n  \"hash\" : \"795df2d04c7661233b978c8a9547b00a0bb9d466\"\
+        \ \"323435c6f8770ef79394ffa021d0605aff81a18581eae45498ec880b5ded03e4\"\n},\
+        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"323435c6f8770ef79394ffa021d0605aff81a18581eae45498ec880b5ded03e4\"\
         \n} ]"
     headers:
       Content-Length:
-      - '199'
+      - '247'
       Content-Type:
       - application/json
     status:
@@ -272,10 +268,10 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"dev\",\n  \"hash\" : \"\
-        795df2d04c7661233b978c8a9547b00a0bb9d466\"\n}"
+        323435c6f8770ef79394ffa021d0605aff81a18581eae45498ec880b5ded03e4\"\n}"
     headers:
       Content-Length:
-      - '96'
+      - '120'
       Content-Type:
       - application/json
     status:
@@ -295,7 +291,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=795df2d04c7661233b978c8a9547b00a0bb9d466
+    uri: http://localhost:19120/api/v1/trees/branch/dev?expectedHash=323435c6f8770ef79394ffa021d0605aff81a18581eae45498ec880b5ded03e4
   response:
     body:
       string: ''
@@ -319,12 +315,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
-        \ [ {\n    \"hash\" : \"795df2d04c7661233b978c8a9547b00a0bb9d466\",\n    \"\
-        commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
-        ,\n    \"commitTime\" : 1604578540327\n  } ]\n}"
+        \ [ {\n    \"hash\" : \"323435c6f8770ef79394ffa021d0605aff81a18581eae45498ec880b5ded03e4\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"author\" : \"\"\
+        ,\n    \"authorEmail\" : null,\n    \"signedOffBy\" : null,\n    \"signedOffByEmail\"\
+        \ : null,\n    \"message\" : \"test_message\",\n    \"commitTime\" : 1615561409329,\n\
+        \    \"authorTime\" : 0,\n    \"properties\" : { }\n  } ]\n}"
     headers:
       Content-Length:
-      - '232'
+      - '404'
       Content-Type:
       - application/json
     status:
@@ -356,7 +354,10 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "type": "DELETE"}]}'
+    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "type": "DELETE"}],
+      "commitMeta": {"authorTime": 0, "author": null, "commitTime": 0, "properties":
+      null, "authorEmail": null, "message": "delete_message", "commiter": null, "email":
+      null, "signedOffByEmail": null, "signedOffBy": null, "hash": null}}'
     headers:
       Accept:
       - '*/*'
@@ -365,13 +366,13 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '73'
+      - '303'
       Content-Type:
       - application/json
       User-Agent:
       - python-requests/2.24.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=795df2d04c7661233b978c8a9547b00a0bb9d466&message=delete_message
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=323435c6f8770ef79394ffa021d0605aff81a18581eae45498ec880b5ded03e4
   response:
     body:
       string: ''
@@ -395,10 +396,10 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"\
-        4711e80009d1ca8c1bc1e0899d2bd82c8e446053\"\n}"
+        df96b972b5df1aa8ee0f4b3309d180ebe828f7a95c9dead8ef78dc02f74e97c2\"\n}"
     headers:
       Content-Length:
-      - '97'
+      - '121'
       Content-Type:
       - application/json
     status:
@@ -418,7 +419,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=4711e80009d1ca8c1bc1e0899d2bd82c8e446053
+    uri: http://localhost:19120/api/v1/trees/branch/main?expectedHash=df96b972b5df1aa8ee0f4b3309d180ebe828f7a95c9dead8ef78dc02f74e97c2
   response:
     body:
       string: ''

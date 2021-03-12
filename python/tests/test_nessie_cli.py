@@ -164,16 +164,16 @@ def test_tag() -> None:
     result = _run(runner, ["--json", "tag"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 0
-    _run(runner, ["tag", "dev", "main"])
+    _run(runner, ["tag", "dev-tag", "main"])
     result = _run(runner, ["--json", "tag"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 1
-    _run(runner, ["tag", "etl", "main"])
+    _run(runner, ["tag", "etl-tag", "main"])
     result = _run(runner, ["--json", "tag"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 2
-    _run(runner, ["tag", "-d", "etl"])
-    _run(runner, ["tag", "-d", "dev"])
+    _run(runner, ["tag", "-d", "etl-tag"])
+    _run(runner, ["tag", "-d", "dev-tag"])
     result = _run(runner, ["--json", "tag"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 0
@@ -186,7 +186,7 @@ def test_assign() -> None:
     runner = CliRunner()
     _run(runner, ["branch", "dev"])
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "dev"]).output, many=True)
-    empty_hash = refs[0].hash_
+    empty_hash = next(i.hash_ for i in refs if i.name == "dev")
     _run(
         runner,
         [
