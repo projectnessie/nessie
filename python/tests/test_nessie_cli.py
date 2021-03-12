@@ -164,16 +164,16 @@ def test_tag() -> None:
     result = _run(runner, ["--json", "tag"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 0
-    _run(runner, ["tag", "dev", "main"])
+    _run(runner, ["tag", "dev-tag", "main"])
     result = _run(runner, ["--json", "tag"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 1
-    _run(runner, ["tag", "etl", "main"])
+    _run(runner, ["tag", "etl-tag", "main"])
     result = _run(runner, ["--json", "tag"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 2
-    _run(runner, ["tag", "-d", "etl"])
-    _run(runner, ["tag", "-d", "dev"])
+    _run(runner, ["tag", "-d", "etl-tag"])
+    _run(runner, ["tag", "-d", "dev-tag"])
     result = _run(runner, ["--json", "tag"])
     references = ReferenceSchema().loads(result.output, many=True)
     assert len(references) == 0

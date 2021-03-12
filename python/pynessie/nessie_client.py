@@ -36,6 +36,7 @@ from .model import Merge
 from .model import MergeSchema
 from .model import MultiContents
 from .model import MultiContentsSchema
+from .model import Operation
 from .model import Reference
 from .model import ReferenceSchema
 from .model import Tag
@@ -128,15 +129,10 @@ class NessieClient(object):
         """
         return (ContentsSchema().load(get_table(self._base_url, ref, _format_key(i), self._ssl_verify)) for i in tables)
 
-    def commit(
-        self: "NessieClient",
-        branch: str,
-        args: MultiContents,
-        old_hash: str,
-        reason: Optional[str] = None,
-    ) -> None:
+    def commit(self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, *ops: Operation) -> None:
         """Modify a set of Nessie tables."""
-        commit(self._base_url, branch, MultiContentsSchema().dumps(args), old_hash, reason)
+        meta = CommitMeta(message=reason if reason else "")
+        commit(self._base_url, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
 
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a branch."""
