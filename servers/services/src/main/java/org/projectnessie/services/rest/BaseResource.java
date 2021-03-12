@@ -92,13 +92,13 @@ abstract class BaseResource {
   }
 
   private static CommitMeta meta(Principal principal, CommitMeta commitMeta) throws NessieConflictException {
-    if (commitMeta.getCommiter() != null) {
+    if (commitMeta.getCommitter() != null) {
       throw new NessieConflictException("Cannot set the committer on the client side. It is set by the server.");
     }
     String committer = principal == null ? "" : principal.getName();
     long now = Instant.now().toEpochMilli();
     return commitMeta.toBuilder()
-        .commiter(committer)
+        .committer(committer)
         .commitTime(now)
         .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
         .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())

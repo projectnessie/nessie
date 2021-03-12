@@ -159,8 +159,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
       } catch (IOException e) {
         return ImmutableCommitMeta.builder()
             .message("unknown")
-            .commiter("unknown")
-            .email("unknown")
+            .committer("unknown")
             .hash("unknown")
             .build();
       }

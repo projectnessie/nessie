@@ -22,14 +22,11 @@ import java.net.URI;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.ContentsApi;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.rest.NessieBadRequestException;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
-import org.projectnessie.model.ImmutableOperations;
-import org.projectnessie.model.Operation;
 
 import io.quarkus.test.junit.NativeImageTest;
 
@@ -41,13 +38,13 @@ import io.quarkus.test.junit.NativeImageTest;
 @NativeImageTest
 public class ITNativeNessieError {
 
-  private TreeApi tree;
+  private ContentsApi contents;
 
   @BeforeEach
   void init() {
     URI uri = URI.create("http://localhost:19121/api/v1");
     NessieClient client = NessieClient.builder().withUri(uri).build();
-    tree = client.getTreeApi();
+    contents = client.getContentsApi();
   }
 
   @Test
@@ -58,9 +55,7 @@ public class ITNativeNessieError {
         "Bad Request (HTTP/400): setContents.hash: must not be null",
         assertThrows(
             NessieBadRequestException.class,
-            () -> tree.commitMultipleOperations("branchName", null,
-                ImmutableOperations.builder().addOperations(Operation.Put.of(k, t))
-                    .commitMeta(CommitMeta.builder().message("message").build()).build()))
+            () -> contents.setContents(k, "branchName", null, "message", t))
               .getMessage());
   }
 
