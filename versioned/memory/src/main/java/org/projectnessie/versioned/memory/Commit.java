@@ -43,7 +43,7 @@ import com.google.protobuf.UnsafeByteOperations;
  * @param <ValueT> commit value
  * @param <MetadataT> commit metadata
  */
-class Commit<ValueT, MetadataT> {
+public class Commit<ValueT, MetadataT> {
   private static final HashFunction COMMIT_HASH_FUNCTION = Hashing.sha256();
 
   public static final Hash NO_ANCESTOR = Hash.of(
@@ -54,6 +54,9 @@ class Commit<ValueT, MetadataT> {
   private final MetadataT metadata;
   private final List<Operation<ValueT>> operations;
 
+  /**
+   * Creates a commit object with a given hash.
+   */
   public Commit(Hash hash, Hash ancestor, MetadataT metadata, List<Operation<ValueT>> operations) {
     this.hash = requireNonNull(hash);
     this.ancestor = requireNonNull(ancestor);
@@ -61,6 +64,10 @@ class Commit<ValueT, MetadataT> {
     this.operations = ImmutableList.copyOf(requireNonNull(operations));
   }
 
+  /**
+   * Creates a commit object.
+   * @return a commit object
+   */
   public static <ValueT, MetadataT> Commit<ValueT, MetadataT> of(final Serializer<ValueT> valueSerializer,
       final Serializer<MetadataT> metadataSerializer, Hash ancestor, MetadataT metadata,
       List<Operation<ValueT>> operations) {

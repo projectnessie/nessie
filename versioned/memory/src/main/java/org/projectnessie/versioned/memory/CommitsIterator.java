@@ -22,7 +22,13 @@ import java.util.function.Function;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.WithHash;
 
-final class CommitsIterator<ValueT, MetadataT> implements Iterator<WithHash<Commit<ValueT, MetadataT>>> {
+/**
+ * Iterator for the Commit class.
+ *
+ * @param <ValueT> commit value
+ * @param <MetadataT> commit metadata
+ */
+public final class CommitsIterator<ValueT, MetadataT> implements Iterator<WithHash<Commit<ValueT, MetadataT>>> {
   private final Function<Hash, Commit<ValueT, MetadataT>> commitAccessor;
 
   private WithHash<Commit<ValueT, MetadataT>> current;
