@@ -47,8 +47,8 @@ public class TestExceptionHandling {
     assertEquals("Failure during testCheckedException",
         assertThrows(RuntimeException.class,
             () -> {
-          throw TieredVersionStore.unhandledException("testCheckedException", new Exception("foo"));
-        }).getMessage());
+              throw TieredVersionStore.unhandledException("testCheckedException", new Exception("foo"));
+            }).getMessage());
   }
 
   @Test
