@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -113,7 +114,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Nonnull
-  private RuntimeException unhandledException(String operation, Throwable e) {
+  @VisibleForTesting
+  static RuntimeException unhandledException(String operation, Throwable e) {
     LOGGER.warn("Failure during {}", operation, e);
     Throwables.throwIfUnchecked(e);
     return new RuntimeException(String.format("Failure during %s", operation), e);

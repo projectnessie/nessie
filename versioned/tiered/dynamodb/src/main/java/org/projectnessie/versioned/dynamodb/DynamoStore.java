@@ -141,7 +141,8 @@ public class DynamoStore implements Store {
   }
 
   @Nonnull
-  private RuntimeException unhandledException(String operation, Throwable e) {
+  @VisibleForTesting
+  static RuntimeException unhandledException(String operation, Throwable e) {
     if (e instanceof RequestLimitExceededException) {
       return new BackendLimitExceededException(String.format("Dynamo request-limit exceeded during %s.", operation), e);
     } else if (e instanceof LimitExceededException) {
@@ -149,9 +150,9 @@ public class DynamoStore implements Store {
     } else if (e instanceof ProvisionedThroughputExceededException) {
       return new BackendLimitExceededException(String.format("Dynamo provisioned throughput exceeded during %s.", operation), e);
     } else if (e instanceof StoreException) {
-      throw (StoreException) e;
+      return (StoreException) e;
     } else {
-      throw new StoreOperationException(String.format("Failure during %s", operation), e);
+      return new StoreOperationException(String.format("Failure during %s", operation), e);
     }
   }
 
