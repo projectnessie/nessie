@@ -23,10 +23,10 @@ import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.KeyDelta;
-
-import com.google.protobuf.ByteString;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
+
+import com.google.protobuf.ByteString;
 
 /**
  * This utility class generates sample objects mapping to each enumerate in
