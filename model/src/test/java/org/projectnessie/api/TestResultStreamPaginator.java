@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.OptionalInt;
@@ -105,6 +106,54 @@ class TestResultStreamPaginator {
             });
     assertEquals(Arrays.asList("1", "2", "3", "4", "5", "6"),
         paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()));
+  }
+
+  @Test
+  void testEmptyResult() throws Exception {
+    ResultStreamPaginator<MockPaginatedResponse, String> paginator =
+        new ResultStreamPaginator<>(MockPaginatedResponse::getElements,
+            (ref, pageSize, token) -> new MockPaginatedResponse(false, null, Collections.emptyList()));
+    assertEquals(Collections.emptyList(),
+        paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()));
+  }
+
+  @Test
+  void testEmptyResultInPage() throws Exception {
+    Iterator<String> expectedTokens = Arrays.asList(null, "token").iterator();
+    Iterator<MockPaginatedResponse> responses = Arrays.asList(
+        new MockPaginatedResponse(true, "token", Arrays.asList("1", "2", "3")),
+        new MockPaginatedResponse(false, null, Collections.emptyList())
+    ).iterator();
+
+    ResultStreamPaginator<MockPaginatedResponse, String> paginator =
+        new ResultStreamPaginator<>(MockPaginatedResponse::getElements,
+            (ref, pageSize, token) -> {
+              assertEquals(5, pageSize);
+              assertEquals(expectedTokens.next(), token);
+              return responses.next();
+            });
+    assertEquals(Arrays.asList("1", "2", "3"),
+        paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()));
+  }
+
+  @SuppressWarnings("ResultOfMethodCallIgnored")
+  @Test
+  void testEmptyResultButMoreInPage() {
+    Iterator<String> expectedTokens = Arrays.asList(null, "token").iterator();
+    Iterator<MockPaginatedResponse> responses = Arrays.asList(
+        new MockPaginatedResponse(true, "token", Arrays.asList("1", "2", "3")),
+        new MockPaginatedResponse(true, "wtf", Collections.emptyList())
+    ).iterator();
+
+    ResultStreamPaginator<MockPaginatedResponse, String> paginator =
+        new ResultStreamPaginator<>(MockPaginatedResponse::getElements,
+            (ref, pageSize, token) -> {
+              assertEquals(5, pageSize);
+              assertEquals(expectedTokens.next(), token);
+              return responses.next();
+            });
+    assertThrows(IllegalStateException.class,
+        () -> paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()));
   }
 
   private static class MockPaginatedResponse implements PaginatedResponse {

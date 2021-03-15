@@ -96,7 +96,11 @@ final class ResultStreamPaginator<R extends PaginatedResponse, E> {
           try {
             currentPage = fetcher.fetch(ref, pageSizeHint.isPresent() ? pageSizeHint.getAsInt() : null, pageToken);
             offsetInPage = 0;
+            // an empty returned page is probably an error, let's assume something went wrong
             if (entriesFromResponse.apply(currentPage).isEmpty()) {
+              if (currentPage.hasMore()) {
+                throw new IllegalStateException("Backend returned empty page, but indicates there are more results");
+              }
               eof = true;
               return false;
             }
