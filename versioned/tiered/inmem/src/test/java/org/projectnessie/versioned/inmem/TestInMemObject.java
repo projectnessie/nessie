@@ -15,25 +15,32 @@
  */
 package org.projectnessie.versioned.inmem;
 
-import java.util.List;
 import java.util.Random;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.projectnessie.versioned.impl.SampleEntities;
 import org.projectnessie.versioned.inmem.BaseObj.BaseObjProducer;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
 
-public class TestObjectEquals {
+public class TestInMemObject {
 
   private final InMemStore store = new InMemStore();
 
-  @RepeatedTest(1000)
-  void testEqualsAndHashCode() {
-    Random r = new Random();
+  private static Stream<ValueType<?>> allTypes() {
+    return ValueType.values().stream()
+        // repeat 20 times, cannot mix @ParameterizedTest + @RepeatedTest
+        .flatMap(t -> IntStream.range(0, 20).mapToObj(x -> t));
+  }
 
-    ValueType<?> type = randomType(r);
+  @ParameterizedTest
+  @MethodSource("allTypes")
+  void testEqualsAndHashCode(ValueType<?> type) {
+    Random r = new Random();
 
     long seed = r.nextLong();
     BaseObj<?> inst1 = createInstance(type, new Random(seed));
@@ -43,10 +50,15 @@ public class TestObjectEquals {
     Assertions.assertEquals(inst1.hashCode(), inst2.hashCode());
   }
 
-  private ValueType<?> randomType(Random r) {
-    List<ValueType<?>> types = ValueType.values();
-    int typeIndex = r.nextInt(types.size());
-    return types.get(typeIndex);
+  @ParameterizedTest
+  @MethodSource("allTypes")
+  void testCopy(ValueType<?> type) {
+    Random r = new Random();
+
+    BaseObj<?> inst = createInstance(type, r);
+    BaseObj<?> copy = inst.copy();
+
+    Assertions.assertEquals(inst, copy);
   }
 
   @SuppressWarnings("unchecked")
