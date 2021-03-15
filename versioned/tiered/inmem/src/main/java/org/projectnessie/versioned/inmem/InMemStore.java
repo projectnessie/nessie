@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.inmem;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -134,9 +135,16 @@ public class InMemStore implements Store {
 
   @SuppressWarnings("unchecked")
   private <C extends BaseValue<C>> BaseObj<C> produce(SaveOp<C> saveOp) {
-    BaseObjProducer<C> objProducer = (BaseObjProducer<C>) typeSupplierMap.get(saveOp.getType()).get();
+    BaseObjProducer<C> objProducer = newProducer(saveOp.getType());
     saveOp.serialize((C) objProducer);
     return objProducer.build();
+  }
+
+  @SuppressWarnings("unchecked")
+  @VisibleForTesting
+  <C extends BaseValue<C>> BaseObjProducer<C> newProducer(ValueType<C> type) {
+    BaseObjProducer<C> objProducer = (BaseObjProducer<C>) typeSupplierMap.get(type).get();
+    return objProducer;
   }
 
   @Override

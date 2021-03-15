@@ -25,6 +25,8 @@ import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.KeyDelta;
 
 import com.google.protobuf.ByteString;
+import org.projectnessie.versioned.store.ValueType;
+import org.projectnessie.versioned.tiered.BaseValue;
 
 /**
  * This utility class generates sample objects mapping to each enumerate in
@@ -34,6 +36,36 @@ import com.google.protobuf.ByteString;
  * objects, and should be moved once possible.
  */
 public class SampleEntities {
+  public static <C extends BaseValue<C>> void produceRandomTo(ValueType<C> type, C consumer, Random r) {
+    PersistentBase<C> internalRandom = createRandom(type, r);
+    internalRandom.applyToConsumer(consumer);
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <C extends BaseValue<C>> PersistentBase<C> createRandom(ValueType<C> type, Random r) {
+    if (type == ValueType.L1) {
+      return (PersistentBase<C>) createL1(r);
+    } else if (type == ValueType.L2) {
+      return (PersistentBase<C>) createL2(r);
+    } else if (type == ValueType.L3) {
+      return (PersistentBase<C>) createL3(r);
+    } else if (type == ValueType.VALUE) {
+      return (PersistentBase<C>) createValue(r);
+    } else if (type == ValueType.COMMIT_METADATA) {
+      return (PersistentBase<C>) createCommitMetadata(r);
+    } else if (type == ValueType.KEY_FRAGMENT) {
+      return (PersistentBase<C>) createFragment(r);
+    } else if (type == ValueType.REF) {
+      if (r.nextBoolean()) {
+        return (PersistentBase<C>) createBranch(r);
+      } else {
+        return (PersistentBase<C>) createTag(r);
+      }
+    } else {
+      throw new IllegalArgumentException("Unknown type " + type);
+    }
+  }
+
   /**
    * Create a Sample L1 entity.
    * @param random object to use for randomization of entity creation.

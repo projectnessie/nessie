@@ -18,6 +18,7 @@ package org.projectnessie.versioned.inmem;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
@@ -31,8 +32,18 @@ import org.projectnessie.versioned.impl.condition.UpdateExpression;
 import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
+import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
 
+/**
+ * Base class of all value-types in of the in-memory {@link org.projectnessie.versioned.store.Store}
+ * implementation.
+ * <p>All subclasses <em>must</em> implement {@link Object#hashCode()} and
+ * {@link Object#equals(Object)}, because the some functionality in the
+ * {@link org.projectnessie.versioned.store.Store} implementation require this, for example
+ * {@link InMemStore#delete(ValueType, Id, Optional)}.</p>
+ * @param <C> value-type
+ */
 abstract class BaseObj<C extends BaseValue<C>> {
   static final String ID = "id";
 

@@ -529,6 +529,34 @@ public class RefObj extends BaseObj<Ref> {
           throw new UnsupportedOperationException();
       }
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      Commit commit1 = (Commit) o;
+
+      return Objects.equals(id, commit1.id)
+          && Objects.equals(commit, commit1.commit)
+          && Objects.equals(parent, commit1.parent)
+          && Objects.equals(deltas, commit1.deltas)
+          && Objects.equals(keyMutations, commit1.keyMutations);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = id != null ? id.hashCode() : 0;
+      result = 31 * result + (commit != null ? commit.hashCode() : 0);
+      result = 31 * result + (parent != null ? parent.hashCode() : 0);
+      result = 31 * result + (deltas != null ? deltas.hashCode() : 0);
+      result = 31 * result + (keyMutations != null ? keyMutations.hashCode() : 0);
+      return result;
+    }
   }
 
   private static final class UnsavedDelta {
@@ -563,6 +591,24 @@ public class RefObj extends BaseObj<Ref> {
       return new UnsavedDelta(Ints.saturatedCast(map.get(POSITION).getNumber()),
         Id.fromEntity(map.get(OLD)),
         Id.fromEntity(map.get(NEW)));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      UnsavedDelta that = (UnsavedDelta) o;
+      return position == that.position && Objects.equals(oldId, that.oldId)
+          && Objects.equals(newId, that.newId);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(position, oldId, newId);
     }
   }
 
