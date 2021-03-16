@@ -17,7 +17,9 @@ package org.projectnessie.api;
 
 import java.util.OptionalInt;
 import java.util.stream.Stream;
+
 import javax.validation.constraints.NotNull;
+
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.EntriesResponse;
