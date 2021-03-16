@@ -9,6 +9,7 @@ def readVersion(expr) {
   exec {
     commandLine = ['../../mvnw', 'help:evaluate', "-Dexpression=$expr", '-q', '-DforceStdout', '-f', '../../pom.xml']
     standardOutput = buffer
+    environment('JAVA_HOME', System.properties['java.home'])
   }.assertNormalExitValue()
   return buffer.toString()
 }
@@ -38,6 +39,9 @@ gradlePlugin {
 
 repositories {
   mavenCentral()
+  if (version.endsWith("-SNAPSHOT")) {
+    mavenLocal()
+  }
 }
 
 compileJava {

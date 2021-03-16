@@ -32,52 +32,48 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.testing.Test;
 
 public class StartTask extends DefaultTask {
-  private static final Object lock = new Object();
   private Configuration dataFiles;
   private Map<String, Object> props;
 
   public StartTask() {
-
+    // intentionally empty
   }
-
 
   @TaskAction
   public void start() {
     getLogger().info("Starting Quarkus application.");
 
-    synchronized (lock) {
-      final URL[] urls = getDataFiles().getFiles().stream().map(StartTask::toURL).toArray(URL[]::new);
+    final URL[] urls = getDataFiles().getFiles().stream().map(StartTask::toURL).toArray(URL[]::new);
 
-      final URLClassLoader mirrorCL = new URLClassLoader(urls, this.getClass().getClassLoader());
+    final URLClassLoader mirrorCL = new URLClassLoader(urls, this.getClass().getClassLoader());
 
-      Properties properties = new Properties();
-      properties.putAll(props);
+    Properties properties = new Properties();
+    properties.putAll(props);
 
-      final AutoCloseable quarkusApp;
-      try {
-        Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
-        Method newApplicationMethod = clazz.getMethod("newApplication", Configuration.class, Project.class, Properties.class);
-        quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, dataFiles, getProject(), properties);
-      } catch (ReflectiveOperationException e) {
-        throw new RuntimeException(e);
-      }
-
-      for (String key: props.keySet()) {
-        String value = System.getProperty(key);
-        if (value != null) {
-          ((Test) getProject().getTasks().getByName("test")).systemProperty(key, value);
-        }
-      }
-
-      getLogger().info("Quarkus application started.");
-      setApplicationHandle(() -> {
-        try {
-          quarkusApp.close();
-        } finally {
-          mirrorCL.close();
-        }
-      });
+    final AutoCloseable quarkusApp;
+    try {
+      Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
+      Method newApplicationMethod = clazz.getMethod("newApplication", Configuration.class, Project.class, Properties.class);
+      quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, dataFiles, getProject(), properties);
+    } catch (ReflectiveOperationException e) {
+      throw new RuntimeException(e);
     }
+
+    for (String key: props.keySet()) {
+      String value = System.getProperty(key);
+      if (value != null) {
+        ((Test) getProject().getTasks().getByName("test")).systemProperty(key, value);
+      }
+    }
+
+    getLogger().info("Quarkus application started.");
+    setApplicationHandle(() -> {
+      try {
+        quarkusApp.close();
+      } finally {
+        mirrorCL.close();
+      }
+    });
   }
 
   @InputFiles

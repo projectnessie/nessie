@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.quarkus.gradle;
 
 import static io.quarkus.bootstrap.resolver.maven.DeploymentInjectingDependencyVisitor.toArtifact;
@@ -57,7 +56,6 @@ import io.quarkus.bootstrap.model.AppDependency;
 import io.quarkus.bootstrap.model.AppModel;
 import io.quarkus.bootstrap.util.QuarkusModelHelper;
 import io.quarkus.bootstrap.util.ZipUtils;
-
 
 /**
  * Start and Stop quarkus.
