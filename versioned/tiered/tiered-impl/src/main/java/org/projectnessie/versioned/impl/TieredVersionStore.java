@@ -31,8 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.Nonnull;
-
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
@@ -74,9 +72,7 @@ import org.projectnessie.versioned.store.ValueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
@@ -111,14 +107,6 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     this.store = store;
     this.executor = Executors.newCachedThreadPool();
     this.waitOnCollapse = waitOnCollapse;
-  }
-
-  @Nonnull
-  @VisibleForTesting
-  static RuntimeException unhandledException(String operation, Throwable e) {
-    LOGGER.warn("Failure during {}", operation, e);
-    Throwables.throwIfUnchecked(e);
-    return new RuntimeException(String.format("Failure during %s", operation), e);
   }
 
   @Override
@@ -157,7 +145,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("create", e);
+      LOGGER.warn("Failure during create({}, {})", ref, targetHash, e);
+      throw e;
     }
   }
 
@@ -176,7 +165,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("toRef", e);
+      LOGGER.warn("Failure during toRef({})", refOfUnknownType, e);
+      throw e;
     }
 
     try {
@@ -240,7 +230,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("delete", e);
+      LOGGER.warn("Failure during delete({}, {})", ref, hash, e);
+      throw e;
     }
   }
 
@@ -311,7 +302,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       } catch (IllegalArgumentException e) {
         throw e;
       } catch (RuntimeException e) {
-        throw unhandledException("commit", e);
+        LOGGER.warn("Failure during commit({}, {}, ...)", branchName, expectedHash, e);
+        throw e;
       }
     }
 
@@ -353,7 +345,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("getCommits", e);
+      LOGGER.warn("Failure during getCommits({})", ref, e);
+      throw e;
     }
   }
 
@@ -402,7 +395,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("toHash", e);
+      LOGGER.warn("Failure during toHash({})", ref, e);
+      throw e;
     }
   }
 
@@ -430,7 +424,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("assign", e);
+      LOGGER.warn("Failure during L1-load in assign({}, {}, {})", namedRef, currentTarget, targetHash, e);
+      throw e;
     }
 
     final boolean isTag = namedRef instanceof TagName;
@@ -480,7 +475,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("assign", e);
+      LOGGER.warn("Failure during ref-store in assign({}, {}, {})", namedRef, currentTarget, targetHash, e);
+      throw e;
     }
 
   }
@@ -521,7 +517,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("getValue", e);
+      LOGGER.warn("Failure during getValue({}, {})", ref, key, e);
+      throw e;
     }
   }
 
@@ -535,7 +532,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("getValues", e);
+      LOGGER.warn("Failure during getValues({}, {})", ref, key, e);
+      throw e;
     }
   }
 
@@ -566,7 +564,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("getValue", e);
+      LOGGER.warn("Failure during transplant({}, {}, {})", targetBranch, currentBranchHash, sequenceToTransplant, e);
+      throw e;
     }
   }
 
@@ -599,7 +598,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("merge", e);
+      LOGGER.warn("Failure during merge({}, {}, {})", fromHash, toBranch, expectedBranchHash, e);
+      throw e;
     }
   }
 
@@ -838,7 +838,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     } catch (IllegalArgumentException e) {
       throw e;
     } catch (RuntimeException e) {
-      throw unhandledException("getDiffs", e);
+      LOGGER.warn("Failure during getDiffs({}, {})", from, to, e);
+      throw e;
     }
   }
 
