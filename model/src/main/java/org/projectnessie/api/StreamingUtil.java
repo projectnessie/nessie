@@ -45,7 +45,8 @@ public final class StreamingUtil {
    * @param pageSizeHint page-size hint for the backend
    * @return stream of {@link Entry} objects
    */
-  public static Stream<Entry> getEntriesStream(@NotNull TreeApi treeApi, @NotNull String ref, OptionalInt pageSizeHint) throws NessieNotFoundException {
+  public static Stream<Entry> getEntriesStream(@NotNull TreeApi treeApi, @NotNull String ref,
+      OptionalInt pageSizeHint) throws NessieNotFoundException {
     return new ResultStreamPaginator<>(EntriesResponse::getEntries, treeApi::getEntries)
         .generateStream(ref, pageSizeHint);
   }
@@ -60,7 +61,8 @@ public final class StreamingUtil {
    * @param pageSizeHint page-size hint for the backend
    * @return stream of {@link CommitMeta} objects
    */
-  public static Stream<CommitMeta> getCommitLogStream(@NotNull TreeApi treeApi, @NotNull String ref, OptionalInt pageSizeHint) throws NessieNotFoundException {
+  public static Stream<CommitMeta> getCommitLogStream(@NotNull TreeApi treeApi, @NotNull String ref,
+      OptionalInt pageSizeHint) throws NessieNotFoundException {
     return new ResultStreamPaginator<>(LogResponse::getOperations, treeApi::getCommitLog)
         .generateStream(ref, pageSizeHint);
   }
