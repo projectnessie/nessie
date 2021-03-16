@@ -131,7 +131,7 @@
     <jaeger.version>1.3.2</jaeger.version>
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jjwt.version>0.11.2</jjwt.version>
-    <jgit.version>5.10.0.202012080955-r</jgit.version>
+    <jgit.version>5.11.0.202103091610-r</jgit.version>
     <jmeter.version>5.4.1</jmeter.version>
     <junit.version>5.7.1</junit.version>
     <logback.version>1.2.3</logback.version>
