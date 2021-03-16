@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
-import org.projectnessie.versioned.impl.condition.AddClause;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
 import org.projectnessie.versioned.impl.condition.RemoveClause;
 import org.projectnessie.versioned.impl.condition.SetClause;
@@ -188,9 +187,6 @@ abstract class BaseObj<C extends BaseValue<C>> {
 
   private void apply(UpdateClause updateClause, Consumer<DeferredRemove> deferredRemoveConsumer) {
     switch (updateClause.getType()) {
-      case ADD:
-        applyAdd((AddClause) updateClause);
-        break;
       case DELETE:
         applyDelete(updateClause);
         break;
@@ -203,10 +199,6 @@ abstract class BaseObj<C extends BaseValue<C>> {
       default:
         throw new UnsupportedOperationException(updateClause.toString());
     }
-  }
-
-  void applyAdd(AddClause addClause) {
-    throw new UnsupportedOperationException(String.format("%s does not support AddClause", getClass().getSimpleName()));
   }
 
   void applyDelete(UpdateClause updateClause) {
