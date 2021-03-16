@@ -17,7 +17,6 @@ package org.projectnessie.api;
 
 import java.util.List;
 import java.util.OptionalInt;
-import java.util.stream.Stream;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -41,9 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.EntriesResponse;
-import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
 import org.projectnessie.model.Operations;
@@ -130,7 +127,7 @@ public interface TreeApi {
    * {@code true}, pass the value of {@link EntriesResponse#getToken() EntriesResponse.getToken()}
    * in the next invocation of {@code getEntries()} as the {@code pageToken} parameter.</p>
    *
-   * @see #getEntriesStream(String, OptionalInt)
+   * @see StreamingUtil#getEntriesStream(TreeApi, String, OptionalInt)
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
@@ -188,7 +185,7 @@ public interface TreeApi {
    * {@code true}, pass the value of {@link LogResponse#getToken() LogResponse.getToken()}
    * in the next invocation of {@code getCommitLog()} as the {@code pageToken} parameter.</p>
    *
-   * @see #getCommitLogStream(String, OptionalInt)
+   * @see StreamingUtil#getCommitLogStream(TreeApi, String, OptionalInt)
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
@@ -227,36 +224,6 @@ public interface TreeApi {
       @QueryParam("pageToken")
           String pageToken)
           throws NessieNotFoundException;
-
-  /**
-   * Default implementation to return a stream of objects for a ref, functionally equivalent to
-   * calling {@link #getEntries(String, Integer, String)} with manual paging.
-   * <p>The {@link Stream} returned by {@code getEntriesStream(ref, OptionalInt.empty())},
-   * if not limited, returns all commit-log entries.</p>
-   *
-   * @param ref a named reference (branch or tag name) or a commit-hash
-   * @param pageSizeHint page-size hint for the backend
-   * @return stream of {@link Entry} objects
-   */
-  default Stream<Entry> getEntriesStream(@NotNull String ref, OptionalInt pageSizeHint) throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(EntriesResponse::getEntries, this::getEntries)
-        .generateStream(ref, pageSizeHint);
-  }
-
-  /**
-   * Default implementation to return a stream of commit-log entries, functionally equivalent to
-   * calling {@link #getCommitLog(String, Integer, String)} with manual paging.
-   * <p>The {@link Stream} returned by {@code getCommitLogStream(ref, OptionalInt.empty())},
-   * if not limited, returns all commit-log entries.</p>
-   *
-   * @param ref a named reference (branch or tag name) or a commit-hash
-   * @param pageSizeHint page-size hint for the backend
-   * @return stream of {@link CommitMeta} objects
-   */
-  default Stream<CommitMeta> getCommitLogStream(@NotNull String ref, OptionalInt pageSizeHint) throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(LogResponse::getOperations, this::getCommitLog)
-        .generateStream(ref, pageSizeHint);
-  }
 
   /**
    * Update a tag.

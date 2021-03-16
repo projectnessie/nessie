@@ -54,6 +54,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.api.ContentsApi;
+import org.projectnessie.api.StreamingUtil;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.http.HttpClient;
@@ -219,7 +220,8 @@ class TestRest {
       }
     }
 
-    List<CommitMeta> completeLog = tree.getCommitLogStream(branchName, OptionalInt.of(pageSizeHint)).collect(Collectors.toList());
+    List<CommitMeta> completeLog = StreamingUtil.getCommitLogStream(tree, branchName, OptionalInt.of(pageSizeHint))
+        .collect(Collectors.toList());
     assertEquals(
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()),
         allMessages
