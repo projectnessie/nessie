@@ -22,11 +22,11 @@ public class StopTask extends DefaultTask {
   private AutoCloseable application;
 
   public StopTask() {
-
+    // intentionally empty
   }
 
   @TaskAction
-  public void start() {
+  public void stop() {
 
     if (application == null) {
       getLogger().warn("No application found.");
