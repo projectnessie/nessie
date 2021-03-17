@@ -46,6 +46,7 @@ import org.projectnessie.versioned.tiered.Ref.UnsavedCommitMutations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -314,6 +315,11 @@ class InternalBranch extends InternalRef {
       if (finalL1position == 0 && !deletes.isEmpty()) {
         throw new IllegalStateException("We should never have deletes if the final position is zero.");
       }
+    }
+
+    @VisibleForTesting
+    InternalL1 unsafeGetL1() {
+      return finalL1;
     }
 
     /**
@@ -589,4 +595,8 @@ class InternalBranch extends InternalRef {
         .backToRef();
   }
 
+  @VisibleForTesting
+  List<Commit> getCommits() {
+    return Collections.unmodifiableList(commits);
+  }
 }
