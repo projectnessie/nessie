@@ -127,7 +127,7 @@ public interface TreeApi {
    * {@code true}, pass the value of {@link EntriesResponse#getToken() EntriesResponse.getToken()}
    * in the next invocation of {@code getEntries()} as the {@code pageToken} parameter.</p>
    *
-   * @see StreamingUtil#getEntriesStream(TreeApi, String, OptionalInt)
+   * See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
@@ -185,7 +185,7 @@ public interface TreeApi {
    * {@code true}, pass the value of {@link LogResponse#getToken() LogResponse.getToken()}
    * in the next invocation of {@code getCommitLog()} as the {@code pageToken} parameter.</p>
    *
-   * @see StreamingUtil#getCommitLogStream(TreeApi, String, OptionalInt)
+   * See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
