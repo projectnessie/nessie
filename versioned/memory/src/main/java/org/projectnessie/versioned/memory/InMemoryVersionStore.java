@@ -444,7 +444,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
           }
           return !deleted.contains(key);
         })
-        .filter(x -> x instanceof Put)
+        .filter(Put.class::isInstance)
         // extract the keys
         .map(o -> WithType.of(valueSerializer.getType(((Put<ValueT>) o).getValue()), o.getKey()))
         // filter keys which have been seen already

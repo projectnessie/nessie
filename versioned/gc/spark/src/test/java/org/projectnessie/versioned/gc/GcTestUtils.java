@@ -79,7 +79,6 @@ public final class GcTestUtils {
     public AssetKey fromBytes(ByteString bytes) {
       return delegate.fromBytes(bytes);
     }
-
   }
 
 
