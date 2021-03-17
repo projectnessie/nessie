@@ -27,9 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -304,40 +301,34 @@ public abstract class AbstractITTieredVersionStore {
     // and those that are still in the branch's REF. This test verifies that generateNewCheckpoint
     // does not fail in that case.
 
-    ExecutorService executor = Executors.newCachedThreadPool();
-    try {
+    BranchName branch = BranchName.of("checkpointWithUnsavedL1");
 
-      BranchName branch = BranchName.of("checkpointWithUnsavedL1");
+    versionStore().create(branch, Optional.empty());
 
-      versionStore().create(branch, Optional.empty());
+    InternalRefId ref = InternalRefId.of(branch);
 
-      InternalRefId ref = InternalRefId.of(branch);
+    // generate MAX_DELTAS-1 keys in the key-list - just enough to *NOT*
+    // trigger KeyList.IncrementalList.generateNewCheckpoint
+    for (int i = 1; i < KeyList.IncrementalList.MAX_DELTAS; i++) {
+      InternalBranch internalBranch = simulateCommit(ref, i);
 
-      // generate MAX_DELTAS-1 keys in the key-list - just enough to *NOT*
-      // trigger KeyList.IncrementalList.generateNewCheckpoint
-      for (int i = 1; i < KeyList.IncrementalList.MAX_DELTAS; i++) {
-        InternalBranch internalBranch = simulateCommit(ref, executor, i);
-
-        // verify that the branch has an unsaved L1
-        assertEquals(i, internalBranch.getCommits().stream().filter(c -> !c.isSaved()).count());
-        KeyList keyList = internalBranch.getUpdateState(store()).unsafeGetL1().getKeyList();
-        assertFalse(keyList.isFull());
-        assertFalse(keyList.isEmptyIncremental());
-        KeyList.IncrementalList incrementalList = (KeyList.IncrementalList) keyList;
-        assertEquals(i, incrementalList.getDistanceFromCheckpointCommits());
-      }
-
-      InternalBranch internalBranch = simulateCommit(ref, executor, KeyList.IncrementalList.MAX_DELTAS);
+      // verify that the branch has an unsaved L1
+      assertEquals(i, internalBranch.getCommits().stream().filter(c -> !c.isSaved()).count());
       KeyList keyList = internalBranch.getUpdateState(store()).unsafeGetL1().getKeyList();
-      assertTrue(keyList.isFull());
+      assertFalse(keyList.isFull());
       assertFalse(keyList.isEmptyIncremental());
-    } finally {
-      executor.shutdown();
+      KeyList.IncrementalList incrementalList = (KeyList.IncrementalList) keyList;
+      assertEquals(i, incrementalList.getDistanceFromCheckpointCommits());
     }
+
+    InternalBranch internalBranch = simulateCommit(ref, KeyList.IncrementalList.MAX_DELTAS);
+    KeyList keyList = internalBranch.getUpdateState(store()).unsafeGetL1().getKeyList();
+    assertTrue(keyList.isFull());
+    assertFalse(keyList.isEmptyIncremental());
 
   }
 
-  private InternalBranch simulateCommit(InternalRefId ref, Executor executor, int num) {
+  private InternalBranch simulateCommit(InternalRefId ref, int num) {
     List<Operation<String>> ops = Collections.singletonList(Put.of(Key.of("key" + num), "foo" + num));
     List<InternalKey> keys = ops.stream().map(op -> new InternalKey(op.getKey())).collect(Collectors.toList());
 
