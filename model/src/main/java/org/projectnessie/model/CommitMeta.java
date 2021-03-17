@@ -43,6 +43,9 @@ public abstract class CommitMeta {
    *
    * <p>This is the logged in user/account who performs this action. Populated on the server.
    * Nessie will return an error if this is populated by the client side.
+   *
+   * <p>The committer should follow the git spec for names eg Committer Name &lt;committer.name@example.com&gt; but this is not enforced.
+   * See https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---authorltauthorgt
    */
   @Nullable
   public abstract String getCommitter();
