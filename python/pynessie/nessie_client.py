@@ -111,13 +111,13 @@ class NessieClient(object):
         """
         delete_tag(self._base_url, tag, hash_, self._ssl_verify)
 
-    def list_keys(self: "NessieClient", ref: str) -> Entries:
+    def list_keys(self: "NessieClient", ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None) -> Entries:
         """Fetch a list of all tables from a known branch.
 
         :param ref: name of branch
         :return: list of Nessie table names
         """
-        return EntriesSchema().load(list_tables(self._base_url, ref, self._ssl_verify))
+        return EntriesSchema().load(list_tables(self._base_url, ref, max_result_hint, page_token, self._ssl_verify))
 
     def get_values(self: "NessieClient", ref: str, *tables: str) -> Generator[Contents, Any, None]:
         """Fetch a table from a known ref.
@@ -172,7 +172,9 @@ class NessieClient(object):
         transplant_json = TransplantSchema().dump(Transplant(list(hashes)))
         cherry_pick(self._base_url, branch, transplant_json, old_hash, self._ssl_verify)
 
-    def get_log(self: "NessieClient", start_ref: str) -> Generator[CommitMeta, Any, None]:
+    def get_log(
+        self: "NessieClient", start_ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None
+    ) -> Generator[CommitMeta, Any, None]:
         """Fetch all logs starting at start_ref.
 
         start_ref can be any ref.
@@ -182,8 +184,8 @@ class NessieClient(object):
             primitives in the REST api to limit logs or perform paging. TODO
         """
 
-        def fetch_logs() -> LogResponse:
-            fetched_logs = list_logs(self._base_url, start_ref, self._ssl_verify)
+        def fetch_logs(token: Optional[str] = page_token) -> LogResponse:
+            fetched_logs = list_logs(self._base_url, start_ref, max_result_hint, token, self._ssl_verify)
             log_schema = LogResponseSchema().load(fetched_logs)
             return log_schema
 
@@ -194,7 +196,7 @@ class NessieClient(object):
                 for i in log_schema.operations:
                     yield i
                 if log_schema.has_more:
-                    log_schema = fetch_logs()
+                    log_schema = fetch_logs(log_schema.token)
                 else:
                     break
 

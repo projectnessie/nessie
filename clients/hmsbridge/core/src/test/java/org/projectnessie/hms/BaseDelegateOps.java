@@ -57,7 +57,7 @@ public abstract class BaseDelegateOps extends BaseHiveOps {
     assertTrue(HiveTable.class.isAssignableFrom(tbl.getClass()));
 
     // ensure only one table was created in Nessie.
-    assertEquals(2, client.getTreeApi().getEntries("main").getEntries().size());
+    assertEquals(2, client.getTreeApi().getEntries("main", null, null).getEntries().size());
   }
 
 }

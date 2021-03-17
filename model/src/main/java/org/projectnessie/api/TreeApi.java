@@ -110,12 +110,44 @@ public interface TreeApi {
       throws NessieNotFoundException;
 
   /**
-   * get all objects for a ref.
+   * Retrieve objects for a ref, potentially truncated by the backend.
+   *
+   * <p>Retrieves up to {@code maxRecords} objects for the
+   * given named reference (tag or branch) or the given {@link org.projectnessie.model.Hash}.
+   * The backend <em>may</em> respect the given {@code max} records hint, but return less or
+   * more entries. Backends may also cap the returned entries at a hard-coded limit, the default
+   * REST server implementation has such a hard-coded limit.</p>
+   *
+   * <p>Invoking {@code getEntries()} does <em>not</em> guarantee to return
+   * all commit log entries of a given reference, because the result can be truncated by the
+   * backend.</p>
+   *
+   * <p>To implement paging, check {@link EntriesResponse#hasMore() EntriesResponse.hasMore()} and, if
+   * {@code true}, pass the value of {@link EntriesResponse#getToken() EntriesResponse.getToken()}
+   * in the next invocation of {@code getEntries()} as the {@code pageToken} parameter.</p>
+   *
+   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.</p>
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("tree/{ref}/entries")
-  @Operation(summary = "Fetch all entries for a given reference")
+  @Operation(summary = "Fetch all entries for a given reference", description =
+      "Retrieves objects for a ref, potentially truncated by the backend.\n"
+          + "\n"
+          + "Retrieves up to 'maxRecords' entries for the "
+          + "given named reference (tag or branch) or the given hash. "
+          + "The backend may respect the given 'max' records hint, but return less or more entries. "
+          + "Backends may also cap the returned entries at a hard-coded limit, the default "
+          + "REST server implementation has such a hard-coded limit.\n"
+          + "\n"
+          + "To implement paging, check 'hasMore' in the response and, if 'true', pass the value "
+          + "returned as 'token' in the next invocation as the 'pageToken' parameter.\n"
+          + "\n"
+          + "The content and meaning of the returned 'token' is \"private\" to the implementation,"
+          + "treat is as an opaque value.\n"
+          + "\n"
+          + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
+          + "will return all commit log entries.")
   @APIResponses({
       @APIResponse(description = "all objects for a reference"),
       @APIResponse(responseCode = "200", description = "Returned successfully."),
@@ -126,16 +158,54 @@ public interface TreeApi {
       @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
       @Parameter(description = "name of ref to fetch from")
       @PathParam("ref")
-          String refName)
+          String refName,
+      @Parameter(description = "maximum number of entries to return, just a hint for the server")
+      @QueryParam("max")
+          Integer maxRecords,
+      @Parameter(description = "pagination continuation token, as returned in the previous EntriesResponse.token")
+      @QueryParam("pageToken")
+          String pageToken)
           throws NessieNotFoundException;
 
   /**
-   * commit log for a ref.
+   * Retrieve the commit log for a ref, potentially truncated by the backend.
+   *
+   * <p>Retrieves up to {@code maxRecords} commit-log-entries starting at the HEAD of the
+   * given named reference (tag or branch) or the given {@link org.projectnessie.model.Hash}.
+   * The backend <em>may</em> respect the given {@code max} records hint, but return less or
+   * more entries. Backends may also cap the returned entries at a hard-coded limit, the default
+   * REST server implementation has such a hard-coded limit.</p>
+   *
+   * <p>Invoking {@code getCommitLog()} does <em>not</em> guarantee to return
+   * all commit log entries of a given reference, because the result can be truncated by the
+   * backend.</p>
+   *
+   * <p>To implement paging, check {@link LogResponse#hasMore() LogResponse.hasMore()} and, if
+   * {@code true}, pass the value of {@link LogResponse#getToken() LogResponse.getToken()}
+   * in the next invocation of {@code getCommitLog()} as the {@code pageToken} parameter.</p>
+   *
+   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.</p>
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Path("tree/{ref}/log")
-  @Operation(summary = "Get commit log for a reference")
+  @Operation(summary = "Get commit log for a reference", description =
+      "Retrieve the commit log for a ref, potentially truncated by the backend.\n"
+          + "\n"
+          + "Retrieves up to 'maxRecords' commit-log-entries starting at the HEAD of the "
+          + "given named reference (tag or branch) or the given hash. "
+          + "The backend may respect the given 'max' records hint, but return less or more entries. "
+          + "Backends may also cap the returned entries at a hard-coded limit, the default "
+          + "REST server implementation has such a hard-coded limit.\n"
+          + "\n"
+          + "To implement paging, check 'hasMore' in the response and, if 'true', pass the value "
+          + "returned as 'token' in the next invocation as the 'pageToken' parameter.\n"
+          + "\n"
+          + "The content and meaning of the returned 'token' is \"private\" to the implementation,"
+          + "treat is as an opaque value.\n"
+          + "\n"
+          + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
+          + "will return all commit log entries.")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Returned commits."),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists")
@@ -144,7 +214,14 @@ public interface TreeApi {
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
       @Parameter(description = "ref to show log from")
-      @PathParam("ref") String ref)
+      @PathParam("ref")
+          String ref,
+      @Parameter(description = "maximum number of commit-log entries to return, just a hint for the server")
+      @QueryParam("max")
+          Integer maxRecords,
+      @Parameter(description = "pagination continuation token, as returned in the previous LogResponse.token")
+      @QueryParam("pageToken")
+          String pageToken)
           throws NessieNotFoundException;
 
   /**

@@ -17,6 +17,7 @@ package org.projectnessie.client;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -103,10 +104,12 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(@NotNull String ref) throws NessieNotFoundException {
+  public LogResponse getCommitLog(@NotNull String ref, @Nullable Integer maxEntriesHint,
+      @Nullable String pageToken) throws NessieNotFoundException {
     return client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref)
-                 .get()
-                 .readEntity(LogResponse.class);
+        .queryParam("max", maxEntriesHint != null ? maxEntriesHint.toString() : null)
+        .queryParam("pageToken", pageToken)
+        .get().readEntity(LogResponse.class);
   }
 
   @Override
@@ -136,9 +139,12 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(@NotNull String refName) throws NessieNotFoundException {
+  public EntriesResponse getEntries(@NotNull String refName, @Nullable Integer maxEntriesHint,
+      @Nullable String pageToken) throws NessieNotFoundException {
     return client.newRequest().path("trees/tree/{ref}/entries")
                  .resolveTemplate("ref", refName)
+                 .queryParam("max", maxEntriesHint != null ? maxEntriesHint.toString() : null)
+                 .queryParam("pageToken", pageToken)
                  .get()
                  .readEntity(EntriesResponse.class);
   }

@@ -141,26 +141,44 @@ def delete_tag(base_url: str, tag: str, hash_: str, reason: str = None, ssl_veri
     _delete(base_url + "/trees/tag/{}".format(tag), ssl_verify=ssl_verify, params=params)
 
 
-def list_tables(base_url: str, ref: str, ssl_verify: bool = True) -> list:
+def list_tables(
+    base_url: str, ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None, ssl_verify: bool = True
+) -> list:
     """Fetch a list of all tables from a known reference.
 
     :param base_url: base Nessie url
     :param ref: reference
+    :param max_result_hint: hint for the server, maximum number of results to return
+    :param page_token: the token retrieved from a previous page returned for the same ref
     :param ssl_verify: ignore ssl errors if False
     :return: json list of Nessie table names
     """
-    return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), ssl_verify=ssl_verify))
+    params = {}
+    if max_result_hint:
+        params["max"] = str(max_result_hint)
+    if page_token:
+        params["pageToken"] = page_token
+    return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), ssl_verify=ssl_verify, params=params))
 
 
-def list_logs(base_url: str, ref: str, ssl_verify: bool = True) -> dict:
+def list_logs(
+    base_url: str, ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None, ssl_verify: bool = True
+) -> dict:
     """Fetch a list of all logs from a known starting reference.
 
     :param base_url: base Nessie url
     :param ref: starting reference
+    :param max_result_hint: hint for the server, maximum number of results to return
+    :param page_token: the token retrieved from a previous page returned for the same ref
     :param ssl_verify: ignore ssl errors if False
     :return: json dict of Nessie logs
     """
-    return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), ssl_verify=ssl_verify))
+    params = {}
+    if max_result_hint:
+        params["max"] = str(max_result_hint)
+    if page_token:
+        params["pageToken"] = page_token
+    return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), ssl_verify=ssl_verify, params=params))
 
 
 def get_table(base_url: str, ref: str, table: str, ssl_verify: bool = True) -> dict:

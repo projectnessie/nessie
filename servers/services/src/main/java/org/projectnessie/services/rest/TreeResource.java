@@ -70,6 +70,8 @@ import com.google.common.collect.ImmutableList;
 @RequestScoped
 public class TreeResource extends BaseResource implements TreeApi {
 
+  private static final int MAX_COMMIT_LOG_ENTRIES = 250;
+
   @Inject
   public TreeResource(ServerConfig config, Principal principal,
       VersionStore<Contents, CommitMeta> store) {
@@ -148,13 +150,21 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(String ref) throws NessieNotFoundException {
-    // TODO: pagination.
-    Hash hash = getHashOrThrow(ref);
-    try (Stream<ImmutableCommitMeta> s = getStore().getCommits(hash)
+  public LogResponse getCommitLog(String ref, Integer maxEntriesHint, String pageToken) throws NessieNotFoundException {
+    int max = Math.min(maxEntriesHint != null ? maxEntriesHint : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
+    Hash startRef = getHashOrThrow(pageToken != null ? pageToken : ref);
+    try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef).limit(max + 1)
         .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
       List<CommitMeta> items = s.collect(Collectors.toList());
-      return ImmutableLogResponse.builder().addAllOperations(items).build();
+      if (items.size() == max + 1) {
+        return ImmutableLogResponse.builder()
+            .addAllOperations(items.subList(0, max))
+            .hasMore(true).token(items.get(max).getHash())
+            .build();
+      }
+      return ImmutableLogResponse.builder()
+          .addAllOperations(items)
+          .build();
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("Unable to find the requested ref [%s].", ref), e);
     }
@@ -192,8 +202,13 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(String refName) throws NessieNotFoundException {
+  public EntriesResponse getEntries(String refName, Integer maxEntriesHint, String pageToken) throws NessieNotFoundException {
     final Hash hash = getHashOrThrow(refName);
+    // TODO Implement paging. At the moment, we do not expect that many keys/entries to be returned.
+    //  So the size of the whole result is probably reasonable and unlikely to "kill" either the
+    //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
+    //  whether we shall just do the whole computation for a specific hash for every page or have
+    //  a more sophisticated approach, potentially with support from the (tiered-)version-store.
     try {
       List<EntriesResponse.Entry> entries;
       try (Stream<EntriesResponse.Entry> s = getStore().getKeys(hash)
