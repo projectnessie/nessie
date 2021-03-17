@@ -29,7 +29,7 @@ import org.projectnessie.versioned.store.Entity;
  * This uses the Visitor design pattern to retrieve object attributes.
  */
 class InMemValueVisitor implements ValueVisitor<Function> {
-  private static class RocksDBExpressionPathVisitor implements ValueVisitor<ExpressionPath> {
+  private static class ExpressionPathVisitor implements ValueVisitor<ExpressionPath> {
     @Override
     public ExpressionPath visit(Entity entity) {
       throw new UnsupportedOperationException();
@@ -47,7 +47,7 @@ class InMemValueVisitor implements ValueVisitor<Function> {
     }
   }
 
-  private static final RocksDBExpressionPathVisitor EXPRESSION_PATH_VALUE_VISITOR = new RocksDBExpressionPathVisitor();
+  private static final ExpressionPathVisitor EXPRESSION_PATH_VALUE_VISITOR = new ExpressionPathVisitor();
 
   @Override
   public Function visit(Entity entity) {
