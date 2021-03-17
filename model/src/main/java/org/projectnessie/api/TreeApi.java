@@ -16,7 +16,6 @@
 package org.projectnessie.api;
 
 import java.util.List;
-import java.util.OptionalInt;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -127,7 +126,7 @@ public interface TreeApi {
    * {@code true}, pass the value of {@link EntriesResponse#getToken() EntriesResponse.getToken()}
    * in the next invocation of {@code getEntries()} as the {@code pageToken} parameter.</p>
    *
-   * See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
+   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.</p>
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
@@ -185,7 +184,7 @@ public interface TreeApi {
    * {@code true}, pass the value of {@link LogResponse#getToken() LogResponse.getToken()}
    * in the next invocation of {@code getCommitLog()} as the {@code pageToken} parameter.</p>
    *
-   * See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.
+   * <p>See {@code org.projectnessie.client.StreamingUtil} in {@code nessie-client}.</p>
    */
   @GET
   @Produces(MediaType.APPLICATION_JSON)
