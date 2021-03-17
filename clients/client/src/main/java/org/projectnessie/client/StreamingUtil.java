@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api;
+package org.projectnessie.client;
 
 import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 import javax.validation.constraints.NotNull;
 
+import org.projectnessie.api.TreeApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.EntriesResponse;
