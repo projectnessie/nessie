@@ -96,7 +96,7 @@ abstract class BaseResource {
       throw new NessieConflictException("Cannot set the committer on the client side. It is set by the server.");
     }
     String committer = principal == null ? "" : principal.getName();
-    long now = Instant.now().toEpochMilli();
+    Instant now = Instant.now();
     return commitMeta.toBuilder()
         .committer(committer)
         .commitTime(now)
