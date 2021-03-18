@@ -16,14 +16,26 @@
 
 package org.projectnessie.model;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import javax.annotation.Nullable;
 
 import org.immutables.value.Value;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableCommitMeta.class)
@@ -75,13 +87,17 @@ public abstract class CommitMeta {
    * Commit time in UTC. Set by the server.
    */
   @Nullable
-  public abstract Long getCommitTime();
+  @JsonSerialize(using = CustomInstantSerializer.class)
+  @JsonDeserialize(using = CustomInstantDeserializer.class)
+  public abstract Instant getCommitTime();
 
   /**
    * Original commit time in UTC. Set by the server.
    */
   @Nullable
-  public abstract Long getAuthorTime();
+  @JsonSerialize(using = CustomInstantSerializer.class)
+  @JsonDeserialize(using = CustomInstantDeserializer.class)
+  public abstract Instant getAuthorTime();
 
   /**
    * Set of properties to help further identify this commit.
@@ -100,5 +116,43 @@ public abstract class CommitMeta {
 
   public static CommitMeta fromMessage(String message) {
     return ImmutableCommitMeta.builder().message(message).build();
+  }
+
+  /**
+   * Used to serialize an instant to ISO-8601 format. Required because not all platforms we work with support jackson's jdk8 modules.
+   */
+  public static class CustomInstantSerializer extends StdSerializer<Instant> {
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.from(ZoneOffset.UTC));
+
+    public CustomInstantSerializer() {
+      this(null);
+    }
+
+    protected CustomInstantSerializer(Class<Instant> t) {
+      super(t);
+    }
+
+    @Override
+    public void serialize(Instant value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+      gen.writeString(FORMATTER.format(value));
+    }
+  }
+
+  /**
+   * Used to deserialize an instant to ISO-8601 format. Required because not all platforms we work with support jackson's jdk8 modules.
+   */
+  public static class CustomInstantDeserializer extends StdDeserializer<Instant> {
+    public CustomInstantDeserializer() {
+      this(null);
+    }
+
+    protected CustomInstantDeserializer(Class<?> vc) {
+      super(vc);
+    }
+
+    @Override
+    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+      return Instant.parse(p.getText());
+    }
   }
 }
