@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -31,13 +32,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.util.TestServer;
+import org.projectnessie.model.CommitMeta;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.sun.net.httpserver.HttpHandler;
 
 public class TestHttpClient {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final Instant NOW = Instant.now();
 
   private static HttpRequest get(InetSocketAddress address) {
     return HttpClient.builder().setBaseUri(URI.create("http://localhost:" + address.getPort())).setObjectMapper(MAPPER).build().newRequest();
@@ -45,7 +50,7 @@ public class TestHttpClient {
 
   @Test
   void testGet() throws Exception {
-    ExampleBean inputBean = new ExampleBean("x", 1);
+    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpHandler handler = h -> {
       Assertions.assertEquals("GET", h.getRequestMethod());
       String response = MAPPER.writeValueAsString(inputBean);
@@ -62,7 +67,7 @@ public class TestHttpClient {
 
   @Test
   void testPut() throws Exception {
-    ExampleBean inputBean = new ExampleBean("x", 1);
+    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpHandler handler = h -> {
       Assertions.assertEquals("PUT", h.getRequestMethod());
       Object bean = MAPPER.readerFor(ExampleBean.class).readValue(h.getRequestBody());
@@ -76,7 +81,7 @@ public class TestHttpClient {
 
   @Test
   void testPost() throws Exception {
-    ExampleBean inputBean = new ExampleBean("x", 1);
+    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpHandler handler = h -> {
       Assertions.assertEquals("POST", h.getRequestMethod());
       Object bean = MAPPER.readerFor(ExampleBean.class).readValue(h.getRequestBody());
@@ -101,7 +106,7 @@ public class TestHttpClient {
 
   @Test
   void testGetQueryParam() throws Exception {
-    ExampleBean inputBean = new ExampleBean("x", 1);
+    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpHandler handler = h -> {
       Assertions.assertEquals("x=y", h.getRequestURI().getQuery());
       Assertions.assertEquals("GET", h.getRequestMethod());
@@ -119,7 +124,7 @@ public class TestHttpClient {
 
   @Test
   void testGetMultipleQueryParam() throws Exception {
-    ExampleBean inputBean = new ExampleBean("x", 1);
+    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpHandler handler = h -> {
       String[] queryParams = h.getRequestURI().getQuery().split("&");
       Assertions.assertEquals(2, queryParams.length);
@@ -142,7 +147,7 @@ public class TestHttpClient {
 
   @Test
   void testGetNullQueryParam() throws Exception {
-    ExampleBean inputBean = new ExampleBean("x", 1);
+    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpHandler handler = h -> {
       String queryParams = h.getRequestURI().getQuery();
       Assertions.assertNull(queryParams);
@@ -162,7 +167,7 @@ public class TestHttpClient {
 
   @Test
   void testGetTemplate() throws Exception {
-    ExampleBean inputBean = new ExampleBean("x", 1);
+    ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpHandler handler = h -> {
       Assertions.assertEquals("GET", h.getRequestMethod());
       String response = MAPPER.writeValueAsString(inputBean);
@@ -263,13 +268,18 @@ public class TestHttpClient {
   public static class ExampleBean {
     private String field1;
     private int field2;
+    private Instant field3;
 
     public ExampleBean() {
     }
 
-    public ExampleBean(String field1, int field2) {
+    /**
+     * all-args constructor.
+     */
+    public ExampleBean(String field1, int field2, Instant field3) {
       this.field1 = field1;
       this.field2 = field2;
+      this.field3 = field3;
     }
 
     public String getField1() {
@@ -290,6 +300,16 @@ public class TestHttpClient {
       return this;
     }
 
+    @JsonSerialize(using = CommitMeta.InstantSerializer.class)
+    @JsonDeserialize(using = CommitMeta.InstantDeserializer.class)
+    public Instant getField3() {
+      return field3;
+    }
+
+    public void setField3(Instant field3) {
+      this.field3 = field3;
+    }
+
     @Override
     public boolean equals(Object o) {
       if (this == o) {
@@ -299,12 +319,12 @@ public class TestHttpClient {
         return false;
       }
       ExampleBean that = (ExampleBean) o;
-      return field2 == that.field2 && Objects.equals(field1, that.field1);
+      return field2 == that.field2 && Objects.equals(field1, that.field1) && Objects.equals(field3, that.field3);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(field1, field2);
+      return Objects.hash(field1, field2, field3);
     }
   }
 }

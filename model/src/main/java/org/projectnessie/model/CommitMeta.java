@@ -87,16 +87,16 @@ public abstract class CommitMeta {
    * Commit time in UTC. Set by the server.
    */
   @Nullable
-  @JsonSerialize(using = CustomInstantSerializer.class)
-  @JsonDeserialize(using = CustomInstantDeserializer.class)
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getCommitTime();
 
   /**
    * Original commit time in UTC. Set by the server.
    */
   @Nullable
-  @JsonSerialize(using = CustomInstantSerializer.class)
-  @JsonDeserialize(using = CustomInstantDeserializer.class)
+  @JsonSerialize(using = InstantSerializer.class)
+  @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getAuthorTime();
 
   /**
@@ -121,14 +121,14 @@ public abstract class CommitMeta {
   /**
    * Used to serialize an instant to ISO-8601 format. Required because not all platforms we work with support jackson's jdk8 modules.
    */
-  public static class CustomInstantSerializer extends StdSerializer<Instant> {
+  public static class InstantSerializer extends StdSerializer<Instant> {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.from(ZoneOffset.UTC));
 
-    public CustomInstantSerializer() {
-      this(null);
+    public InstantSerializer() {
+      this(Instant.class);
     }
 
-    protected CustomInstantSerializer(Class<Instant> t) {
+    protected InstantSerializer(Class<Instant> t) {
       super(t);
     }
 
@@ -141,12 +141,12 @@ public abstract class CommitMeta {
   /**
    * Used to deserialize an instant to ISO-8601 format. Required because not all platforms we work with support jackson's jdk8 modules.
    */
-  public static class CustomInstantDeserializer extends StdDeserializer<Instant> {
-    public CustomInstantDeserializer() {
+  public static class InstantDeserializer extends StdDeserializer<Instant> {
+    public InstantDeserializer() {
       this(null);
     }
 
-    protected CustomInstantDeserializer(Class<?> vc) {
+    protected InstantDeserializer(Class<?> vc) {
       super(vc);
     }
 
