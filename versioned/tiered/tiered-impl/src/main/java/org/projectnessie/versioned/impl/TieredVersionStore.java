@@ -111,42 +111,35 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   @Override
   public void create(NamedRef ref, Optional<Hash> targetHash) throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    try {
-      if (!targetHash.isPresent()) {
-        if (ref instanceof TagName) {
-          throw new IllegalArgumentException("You must provide a target hash to create a tag.");
-        }
-
-        InternalBranch branch = new InternalBranch(ref.getName());
-        if (!store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, branch))) {
-          throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
-        }
-
-        return;
-      }
-
-      // with a hash.
-      final InternalL1 l1;
-      try {
-        l1 = EntityType.L1.loadSingle(store, Id.of(targetHash.get()));
-      } catch (NotFoundException ex) {
-        throw new ReferenceNotFoundException("Unable to find target hash.", ex);
-      }
-
-      InternalRef newRef;
+    if (!targetHash.isPresent()) {
       if (ref instanceof TagName) {
-        newRef = new InternalTag(null, ref.getName(), l1.getId(), DT.now());
-      } else {
-        newRef = new InternalBranch(ref.getName(), l1);
+        throw new IllegalArgumentException("You must provide a target hash to create a tag.");
       }
-      if (!store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, newRef))) {
+
+      InternalBranch branch = new InternalBranch(ref.getName());
+      if (!store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, branch))) {
         throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
       }
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during create({}, {})", ref, targetHash, e);
-      throw e;
+
+      return;
+    }
+
+    // with a hash.
+    final InternalL1 l1;
+    try {
+      l1 = EntityType.L1.loadSingle(store, Id.of(targetHash.get()));
+    } catch (NotFoundException ex) {
+      throw new ReferenceNotFoundException("Unable to find target hash.", ex);
+    }
+
+    InternalRef newRef;
+    if (ref instanceof TagName) {
+      newRef = new InternalTag(null, ref.getName(), l1.getId(), DT.now());
+    } else {
+      newRef = new InternalBranch(ref.getName(), l1);
+    }
+    if (!store.putIfAbsent(new EntitySaveOp<>(ValueType.REF, newRef))) {
+      throw new ReferenceAlreadyExistsException("A branch or tag already exists with that name.");
     }
   }
 
@@ -162,11 +155,6 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       return WithHash.of(id.toHash(), BranchName.of(ref.getBranch().getName()));
     } catch (NotFoundException ex) {
       // ignore. could be a hash.
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during toRef({})", refOfUnknownType, e);
-      throw e;
     }
 
     try {
@@ -182,57 +170,51 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash) throws ReferenceNotFoundException, ReferenceConflictException {
+    InternalRefId id = InternalRefId.of(ref);
+
+    // load ref so we can figure out how to apply condition, and do first condition check.
+    final InternalRef iref;
     try {
-      InternalRefId id = InternalRefId.of(ref);
-
-      // load ref so we can figure out how to apply condition, and do first condition check.
-      final InternalRef iref;
-      try {
-        iref = EntityType.REF.loadSingle(store, id.getId());
-      } catch (NotFoundException ex) {
-        throw new ReferenceNotFoundException(String.format("Unable to find '%s'.", ref.getName()), ex);
-      }
-
-      if (iref.getType() != id.getType()) {
-        String t1 = iref.getType() == Type.BRANCH ? "tag" : "branch";
-        String t2 = iref.getType() == Type.BRANCH ? "branch" : "tag";
-        throw new ReferenceConflictException(String.format("You attempted to delete a %s using a %s invocation.", t1, t2));
-      }
-
-      ConditionExpression c = ConditionExpression.of(id.getType().typeVerification());
-      if (iref.getType() == Type.TAG) {
-        if (hash.isPresent()) {
-          c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(), Id.of(hash.get()).toEntity()));
-        }
-
-        if (!store.delete(ValueType.REF, iref.getTag().getId(), Optional.of(c))) {
-          String message = "Unable to delete tag. " + (hash.isPresent() ? "The tag does not point to the hash that was referenced."
-              : "The tag was changed to a branch while the delete was occurring.");
-          throw new ReferenceConflictException(message);
-        }
-      } else {
-
-        // set the condition that the commit log is in a clean state, with a single saved commit and that commit is pointing
-        // to the desired hash.
-        if (hash.isPresent()) {
-          c = c.and(ExpressionFunction.equals(
-              ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toEntity()));
-          c = c.and(ExpressionFunction.equals(
-              ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), Entity.ofNumber(1)));
-        }
-
-        if (!store.delete(ValueType.REF,  iref.getBranch().getId(), Optional.of(c))) {
-          String message = "Unable to delete branch. " + (hash.isPresent() ? "The branch does not point to the hash that was referenced."
-              : "The branch was changed to a tag while the delete was occurring.");
-          throw new ReferenceConflictException(message);
-        }
-      }
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during delete({}, {})", ref, hash, e);
-      throw e;
+      iref = EntityType.REF.loadSingle(store, id.getId());
+    } catch (NotFoundException ex) {
+      throw new ReferenceNotFoundException(String.format("Unable to find '%s'.", ref.getName()), ex);
     }
+
+    if (iref.getType() != id.getType()) {
+      String t1 = iref.getType() == Type.BRANCH ? "tag" : "branch";
+      String t2 = iref.getType() == Type.BRANCH ? "branch" : "tag";
+      throw new ReferenceConflictException(String.format("You attempted to delete a %s using a %s invocation.", t1, t2));
+    }
+
+    ConditionExpression c = ConditionExpression.of(id.getType().typeVerification());
+    if (iref.getType() == Type.TAG) {
+      if (hash.isPresent()) {
+        c = c.and(ExpressionFunction.equals(ExpressionPath.builder(InternalTag.COMMIT).build(), Id.of(hash.get()).toEntity()));
+      }
+
+      if (!store.delete(ValueType.REF, iref.getTag().getId(), Optional.of(c))) {
+        String message = "Unable to delete tag. " + (hash.isPresent() ? "The tag does not point to the hash that was referenced."
+            : "The tag was changed to a branch while the delete was occurring.");
+        throw new ReferenceConflictException(message);
+      }
+    } else {
+
+      // set the condition that the commit log is in a clean state, with a single saved commit and that commit is pointing
+      // to the desired hash.
+      if (hash.isPresent()) {
+        c = c.and(ExpressionFunction.equals(
+            ExpressionPath.builder(InternalBranch.COMMITS).position(0).name(Commit.ID).build(), Id.of(hash.get()).toEntity()));
+        c = c.and(ExpressionFunction.equals(
+            ExpressionFunction.size(ExpressionPath.builder(InternalBranch.COMMITS).build()), Entity.ofNumber(1)));
+      }
+
+      if (!store.delete(ValueType.REF,  iref.getBranch().getId(), Optional.of(c))) {
+        String message = "Unable to delete branch. " + (hash.isPresent() ? "The branch does not point to the hash that was referenced."
+            : "The branch was changed to a tag while the delete was occurring.");
+        throw new ReferenceConflictException(message);
+      }
+    }
+
   }
 
   @Override
@@ -244,67 +226,59 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     InternalRefId ref = InternalRefId.ofBranch(branchName.getName());
     InternalBranch updatedBranch;
     while (true) {
+
+      final PartialTree<DATA> current = PartialTree.of(serializer, ref, keys);
+      final PartialTree<DATA> expected = expectedHash.isPresent()
+          ? PartialTree.of(serializer, InternalRefId.ofHash(expectedHash.get()), keys) : current;
+
       try {
-        final PartialTree<DATA> current = PartialTree.of(serializer, ref, keys);
-        final PartialTree<DATA> expected = expectedHash.isPresent()
-            ? PartialTree.of(serializer, InternalRefId.ofHash(expectedHash.get()), keys) : current;
-
-        try {
-          // load both trees (excluding values)
-          store.load(current.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
-              .combine(expected.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
-        } catch (NotFoundException ex) {
-          throw new ReferenceNotFoundException("Unable to find requested ref.", ex);
-        }
-
-        List<OperationHolder> holders = ops.stream().map(o -> new OperationHolder(current, expected, o)).collect(Collectors.toList());
-        List<InconsistentValue> mismatches = holders.stream()
-            .map(OperationHolder::verify)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .collect(Collectors.toList());
-        if (!mismatches.isEmpty()) {
-          LOGGER.debug("Inconsistency during commit against '{}' w/ expected-hash={}: {}", branchName.getName(), expectedHash, mismatches);
-          throw new InconsistentValue.InconsistentValueException(mismatches);
-        }
-
-
-        // do updates.
-        holders.forEach(OperationHolder::apply);
-
-        // save all but l1 and branch.
-        store.save(
-            Streams.concat(
-                current.getMostSaveOps(),
-                Stream.of(EntityType.COMMIT_METADATA.createSaveOpForEntity(metadata))
-            ).collect(Collectors.toList()));
-
-        CommitOp commitOp = current.getCommitOp(
-            metadata.getId(),
-            holders.stream().filter(OperationHolder::isUnchangedOperation).map(OperationHolder::getKey).collect(Collectors.toList()),
-            true,
-            true);
-
-        InternalRef.Builder<?> builder = EntityType.REF.newEntityProducer();
-        boolean updated = store.update(ValueType.REF, ref.getId(),
-            commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(builder));
-        if (!updated) {
-          if (loop++ < commitRetryCount) {
-            continue;
-          }
-          throw new ReferenceConflictException(
-              String.format("Unable to complete commit due to conflicting events. "
-                  + "Retried %d times before failing.", commitRetryCount));
-        }
-
-        updatedBranch = builder.build().getBranch();
-        break;
-      } catch (IllegalArgumentException e) {
-        throw e;
-      } catch (RuntimeException e) {
-        LOGGER.warn("Failure during commit({}, {}, ...)", branchName, expectedHash, e);
-        throw e;
+        // load both trees (excluding values)
+        store.load(current.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
+            .combine(expected.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
+      } catch (NotFoundException ex) {
+        throw new ReferenceNotFoundException("Unable to find requested ref.", ex);
       }
+
+      List<OperationHolder> holders = ops.stream().map(o -> new OperationHolder(current, expected, o)).collect(Collectors.toList());
+      List<InconsistentValue> mismatches = holders.stream()
+          .map(OperationHolder::verify)
+          .filter(Optional::isPresent)
+          .map(Optional::get)
+          .collect(Collectors.toList());
+      if (!mismatches.isEmpty()) {
+        LOGGER.debug("Inconsistency during commit against '{}' w/ expected-hash={}: {}", branchName.getName(), expectedHash, mismatches);
+        throw new InconsistentValue.InconsistentValueException(mismatches);
+      }
+
+      // do updates.
+      holders.forEach(OperationHolder::apply);
+
+      // save all but l1 and branch.
+      store.save(
+          Streams.concat(
+              current.getMostSaveOps(),
+              Stream.of(EntityType.COMMIT_METADATA.createSaveOpForEntity(metadata))
+          ).collect(Collectors.toList()));
+
+      CommitOp commitOp = current.getCommitOp(
+          metadata.getId(),
+          holders.stream().filter(OperationHolder::isUnchangedOperation).map(OperationHolder::getKey).collect(Collectors.toList()),
+          true,
+          true);
+
+      InternalRef.Builder<?> builder = EntityType.REF.newEntityProducer();
+      boolean updated = store.update(ValueType.REF, ref.getId(),
+          commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(builder));
+      if (!updated) {
+        if (loop++ < commitRetryCount) {
+          continue;
+        }
+        throw new ReferenceConflictException(
+            String.format("Unable to complete commit due to conflicting events. Retried %d times before failing.", commitRetryCount));
+      }
+
+      updatedBranch = builder.build().getBranch();
+      break;
     }
 
     // Now we'll try to collapse the intention log. Note that this is done post official commit so we need to return
@@ -342,11 +316,6 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
     } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException("Unable to find request reference.", ex);
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during getCommits({})", ref, e);
-      throw e;
     }
   }
 
@@ -392,11 +361,6 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
     } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException(String.format("Unable to find ref %s", ref.getName()), ex);
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during toHash({})", ref, e);
-      throw e;
     }
   }
 
@@ -421,11 +385,6 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       l1 = EntityType.L1.loadSingle(store, newId);
     } catch (NotFoundException ex) {
       throw new ReferenceNotFoundException("Unable to find target hash.");
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during L1-load in assign({}, {}, {})", namedRef, currentTarget, targetHash, e);
-      throw e;
     }
 
     final boolean isTag = namedRef instanceof TagName;
@@ -472,11 +431,6 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
             String.format("Unable to assign ref %s. The reference doesn't exist or you are "
                 + "trying to overwrite a %s with a %s.", name, unexpectedType, expectedType), ex);
       }
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during ref-store in assign({}, {}, {})", namedRef, currentTarget, targetHash, e);
-      throw e;
     }
 
   }
@@ -509,32 +463,18 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   @Override
   public DATA getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    try {
-      InternalKey ikey = new InternalKey(key);
-      PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.singletonList(ikey));
-      store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
-      return tree.getValueForKey(ikey).orElse(null);
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during getValue({}, {})", ref, key, e);
-      throw e;
-    }
+    InternalKey ikey = new InternalKey(key);
+    PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.singletonList(ikey));
+    store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
+    return tree.getValueForKey(ikey).orElse(null);
   }
 
   @Override
   public List<Optional<DATA>> getValues(Ref ref, List<Key> key) throws ReferenceNotFoundException {
-    try {
-      List<InternalKey> keys = key.stream().map(InternalKey::new).collect(Collectors.toList());
-      PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), keys);
-      store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
-      return keys.stream().map(tree::getValueForKey).collect(Collectors.toList());
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during getValues({}, {})", ref, key, e);
-      throw e;
-    }
+    List<InternalKey> keys = key.stream().map(InternalKey::new).collect(Collectors.toList());
+    PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), keys);
+    store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
+    return keys.stream().map(tree::getValueForKey).collect(Collectors.toList());
   }
 
   @Override
@@ -545,28 +485,21 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   @Override
   public void transplant(BranchName targetBranch, Optional<Hash> currentBranchHash, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    try {
-      Id endTarget = Id.of(sequenceToTransplant.get(0));
-      internalTransplant(sequenceToTransplant.get(sequenceToTransplant.size() - 1), targetBranch, currentBranchHash,
-          true,
-          (from, commonParent) -> {
-            // first we need to validate that the actual history matches the provided sequence.
-            Stream<InternalL1> historyStream = new HistoryRetriever(store, from, null, true, false, true)
-                .getStream().map(HistoryItem::getL1);
-            List<InternalL1> l1s = Lists.reverse(takeUntilNext(historyStream, endTarget).collect(ImmutableList.toImmutableList()));
-            List<Hash> hashes = l1s.stream().map(InternalL1::getId).map(Id::toHash).skip(1).collect(Collectors.toList());
-            if (!hashes.equals(sequenceToTransplant)) {
-              throw new IllegalArgumentException("Provided are not sequential and consistent with history.");
-            }
 
-            return l1s;
-          });
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during transplant({}, {}, {})", targetBranch, currentBranchHash, sequenceToTransplant, e);
-      throw e;
-    }
+    Id endTarget = Id.of(sequenceToTransplant.get(0));
+    internalTransplant(sequenceToTransplant.get(sequenceToTransplant.size() - 1), targetBranch, currentBranchHash,
+        true,
+        (from, commonParent) -> {
+          // first we need to validate that the actual history matches the provided sequence.
+          Stream<InternalL1> historyStream = new HistoryRetriever(store, from, null, true, false, true).getStream().map(HistoryItem::getL1);
+          List<InternalL1> l1s = Lists.reverse(takeUntilNext(historyStream, endTarget).collect(ImmutableList.toImmutableList()));
+          List<Hash> hashes = l1s.stream().map(InternalL1::getId).map(Id::toHash).skip(1).collect(Collectors.toList());
+          if (!hashes.equals(sequenceToTransplant)) {
+            throw new IllegalArgumentException("Provided are not sequential and consistent with history.");
+          }
+
+          return l1s;
+        });
   }
 
   private static Stream<InternalL1> takeUntilNext(Stream<InternalL1> stream, Id endTarget) {
@@ -590,17 +523,11 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   @Override
   public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedBranchHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    try {
-      internalTransplant(fromHash, toBranch, expectedBranchHash, false, (from, commonParent) -> {
-        return Lists.reverse(new HistoryRetriever(store, from, commonParent, true, false, true)
-            .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
-      });
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during merge({}, {}, {})", fromHash, toBranch, expectedBranchHash, e);
-      throw e;
-    }
+
+    internalTransplant(fromHash, toBranch, expectedBranchHash, false, (from, commonParent) -> {
+      return Lists.reverse(new HistoryRetriever(store, from, commonParent, true, false, true)
+          .getStream().map(HistoryItem::getL1).collect(ImmutableList.toImmutableList()));
+    });
   }
 
   private interface HistoryHelper {
@@ -810,37 +737,30 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   @Override
   public Stream<Diff<DATA>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    try {
-      PartialTree<DATA> fromTree = PartialTree.of(serializer, InternalRefId.of(from), Collections.emptyList());
-      PartialTree<DATA> toTree = PartialTree.of(serializer, InternalRefId.of(to), Collections.emptyList());
-      store.load(fromTree.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
-          .combine(toTree.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
+    PartialTree<DATA> fromTree = PartialTree.of(serializer, InternalRefId.of(from), Collections.emptyList());
+    PartialTree<DATA> toTree = PartialTree.of(serializer, InternalRefId.of(to), Collections.emptyList());
+    store.load(fromTree.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
+        .combine(toTree.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
 
-      DiffFinder finder = new DiffFinder(fromTree.getCurrentL1(), toTree.getCurrentL1());
-      store.load(finder.getLoad());
+    DiffFinder finder = new DiffFinder(fromTree.getCurrentL1(), toTree.getCurrentL1());
+    store.load(finder.getLoad());
 
-      // For now, we'll load all the values at once. In the future, we should paginate diffs.
-      Map<Id, InternalValue> values = new HashMap<>();
-      EntityLoadOps loadOps = new EntityLoadOps();
-      finder.getKeyDiffs()
-          .flatMap(k -> Stream.of(k.getFrom(), k.getTo()))
-          .distinct()
-          .filter(id -> !id.isEmpty())
-          .forEach(id -> loadOps.load(EntityType.VALUE, InternalValue.class, id, val -> values.put(id, val)));
-      store.load(loadOps.build());
+    // For now, we'll load all the values at once. In the future, we should paginate diffs.
+    Map<Id, InternalValue> values = new HashMap<>();
+    EntityLoadOps loadOps = new EntityLoadOps();
+    finder.getKeyDiffs()
+        .flatMap(k -> Stream.of(k.getFrom(), k.getTo()))
+        .distinct()
+        .filter(id -> !id.isEmpty())
+        .forEach(id -> loadOps.load(EntityType.VALUE, InternalValue.class, id, val -> values.put(id, val)));
+    store.load(loadOps.build());
 
-      return finder.getKeyDiffs().map(kd -> Diff.of(
-          kd.getKey().toKey(),
-          Optional.ofNullable(kd.getFrom()).map(values::get).map(v -> serializer.fromBytes(v.getBytes())),
-          Optional.ofNullable(kd.getTo()).map(values::get).map(v -> serializer.fromBytes(v.getBytes()))
-        )
-      );
-    } catch (IllegalArgumentException e) {
-      throw e;
-    } catch (RuntimeException e) {
-      LOGGER.warn("Failure during getDiffs({}, {})", from, to, e);
-      throw e;
-    }
+    return finder.getKeyDiffs().map(kd -> Diff.of(
+        kd.getKey().toKey(),
+        Optional.ofNullable(kd.getFrom()).map(values::get).map(v -> serializer.fromBytes(v.getBytes())),
+        Optional.ofNullable(kd.getTo()).map(values::get).map(v -> serializer.fromBytes(v.getBytes()))
+      )
+    );
   }
 
   class OperationHolder {
