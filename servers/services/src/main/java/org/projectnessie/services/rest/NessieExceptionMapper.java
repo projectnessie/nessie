@@ -15,6 +15,8 @@
  */
 package org.projectnessie.services.rest;
 
+import java.util.stream.Collectors;
+
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -29,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.common.base.Throwables;
 
 /**
  * "Default" exception mapper implementations, mostly used to serialize the
@@ -58,28 +61,34 @@ public class NessieExceptionMapper
   public Response toResponse(Exception exception) {
     int status;
     String reason;
+    String message;
 
     if (exception instanceof WebApplicationException) {
       WebApplicationException e = (WebApplicationException) exception;
       Status st = Status.fromStatusCode(e.getResponse().getStatus());
       status = st.getStatusCode();
       reason = st.getReasonPhrase();
+      message = exception.getMessage();
     } else if (exception instanceof BaseNessieClientServerException) {
       // log message at debug level so we can review stack traces if enabled.
       LOGGER.debug("Exception on server with appropriate error sent to client.", exception);
       BaseNessieClientServerException e = (BaseNessieClientServerException) exception;
       status = e.getStatus();
       reason = e.getReason();
+      message = exception.getMessage();
     } else if (exception instanceof JsonParseException
         || exception instanceof JsonMappingException
         || exception instanceof IllegalArgumentException) {
       status = Status.BAD_REQUEST.getStatusCode();
       reason = Status.BAD_REQUEST.getReasonPhrase();
+      message = exception.getMessage();
     } else {
+      LOGGER.warn("Unhandled exception returned as HTTP/500 to client", exception);
       status = Status.INTERNAL_SERVER_ERROR.getStatusCode();
       reason = Status.INTERNAL_SERVER_ERROR.getReasonPhrase();
+      message = Throwables.getCausalChain(exception).stream().map(Throwable::toString).collect(Collectors.joining(", caused by"));
     }
 
-    return buildExceptionResponse(status, reason, exception.getMessage(), exception);
+    return buildExceptionResponse(status, reason, message, exception);
   }
 }
