@@ -211,14 +211,13 @@ def log(ctx: ContextObject, number: int, since: str, until: str, author: str, re
 
 def _format_log_result(x: CommitMeta) -> str:
     result = click.style("commit {}\n".format(x.hash_), fg="yellow")
-    result += click.style("Author: {} <{}>\n".format(x.commiter, x.email))
+    result += click.style("Author: {} <{}>\n".format(x.committer, x.email))
     result += click.style("Date: {}\n".format(_format_time(x.commitTime)))
     result += click.style("\n\t{}\n\n".format(x.message))
     return result
 
 
-def _format_time(epoch: int) -> str:
-    dt = datetime.datetime.fromtimestamp(epoch / 1000, datetime.timezone.utc)
+def _format_time(dt: datetime.datetime) -> str:
     return dt.astimezone(tzlocal()).strftime("%c %z")
 
 
