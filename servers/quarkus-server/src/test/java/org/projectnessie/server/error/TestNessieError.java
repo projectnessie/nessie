@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.rest.NessieBackendThrottledException;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.client.rest.NessieInternalServerException;
@@ -218,6 +219,27 @@ class TestNessieError {
                         .path("groupDefinitionException")
                         .get())).getMessage())
     );
+  }
+
+  @Test
+  void unhandledRuntimeExceptionInStore() {
+    // see org.projectnessie.server.error.ErrorTestService.unhandledExceptionInTvsStore
+    assertEquals("Internal Server Error (HTTP/500): java.lang.RuntimeException: Store.getValues-throwing",
+        assertThrows(NessieInternalServerException.class,
+            () -> client.newRequest()
+                .path("unhandledExceptionInTvsStore/runtime")
+                .get()).getMessage());
+  }
+
+  @Test
+  void backendThrottledExceptionInStore() {
+    // see org.projectnessie.server.error.ErrorTestService.unhandledExceptionInTvsStore
+    assertEquals("Too Many Requests (HTTP/429): Backend store refused to process the request: "
+            + "org.projectnessie.versioned.BackendLimitExceededException: Store.getValues-throttled",
+        assertThrows(NessieBackendThrottledException.class,
+            () -> client.newRequest()
+                .path("unhandledExceptionInTvsStore/throttle")
+                .get()).getMessage());
   }
 
   void unwrap(Executable exec) throws Throwable {

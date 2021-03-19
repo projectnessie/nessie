@@ -13,22 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.store;
+package org.projectnessie.versioned;
 
 /**
- * Thrown when some limit against the store's backend is exceeded and requests
- * against the store or a specific part of the store (e.g. a DynamoDB partition) should be throttled
- * by the client.
+ * Base unchecked exception for technical error conditions of a backend store.
  */
-@SuppressWarnings("serial")
-public class BackendLimitExceededException extends StoreException {
+public class VersionStoreError extends RuntimeException {
+  private static final long serialVersionUID = 1L;
 
-  public BackendLimitExceededException(String message, Throwable cause) {
+  public VersionStoreError() {
+    super();
+  }
+
+  public VersionStoreError(String message, Throwable cause, boolean enableSuppression,
+      boolean writableStackTrace) {
+    super(message, cause, enableSuppression, writableStackTrace);
+  }
+
+  public VersionStoreError(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public BackendLimitExceededException(String message) {
+  public VersionStoreError(String message) {
     super(message);
   }
 
+  public VersionStoreError(Throwable cause) {
+    super(cause);
+  }
 }

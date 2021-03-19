@@ -26,6 +26,7 @@ import javax.ws.rs.ext.Provider;
 
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.services.config.ServerConfig;
+import org.projectnessie.versioned.BackendLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +83,11 @@ public class NessieExceptionMapper
       status = Status.BAD_REQUEST.getStatusCode();
       reason = Status.BAD_REQUEST.getReasonPhrase();
       message = exception.getMessage();
+    } else if (exception instanceof BackendLimitExceededException) {
+      LOGGER.warn("Backend throttled/refused the request: {}", exception.toString());
+      status = Status.TOO_MANY_REQUESTS.getStatusCode();
+      reason = Status.TOO_MANY_REQUESTS.getReasonPhrase();
+      message = "Backend store refused to process the request: " + exception.toString();
     } else {
       LOGGER.warn("Unhandled exception returned as HTTP/500 to client", exception);
       status = Status.INTERNAL_SERVER_ERROR.getStatusCode();
