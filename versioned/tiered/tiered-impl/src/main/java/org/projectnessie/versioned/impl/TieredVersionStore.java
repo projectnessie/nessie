@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators.AbstractSpliterator;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -76,6 +76,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
+import com.google.common.util.concurrent.MoreExecutors;
 
 /**
  * A version store that uses a tree of levels to store version information.
@@ -88,7 +89,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   private final Serializer<DATA> serializer;
   private final Serializer<METADATA> metadataSerializer;
-  private final ExecutorService executor;
+  private final Executor executor;
   private final Store store;
   private final int commitRetryCount = 5;
   private final int p2commitRetry = 5;
@@ -105,7 +106,10 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
-    this.executor = Executors.newCachedThreadPool();
+    // We actually do not need an executor at all, when waitOnCollapse==true. Unit tests use
+    // waitOnCollapse==true. It is not nice to instantiate an executor-service but never shut it
+    // down, like unit tests did.
+    this.executor =  waitOnCollapse ? MoreExecutors.directExecutor() : Executors.newCachedThreadPool();
     this.waitOnCollapse = waitOnCollapse;
   }
 

@@ -28,11 +28,19 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.mockito.Mockito;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.versioned.BackendLimitExceededException;
+import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.impl.TieredVersionStore;
+import org.projectnessie.versioned.store.Store;
+import org.projectnessie.versioned.store.ValueType;
 
 /**
  * REST service used to generate a bunch of violations for {@link TestNessieError}.
@@ -102,5 +110,37 @@ public class ErrorTestService {
   @Consumes(MediaType.APPLICATION_JSON)
   public String groupDefinitionException() {
     throw new GroupDefinitionException("meep");
+  }
+
+  /**
+   * Throws an exception depending on the parameter via {@link Store#getValues(ValueType)}.
+   * @return nothing
+   * @see TestNessieError#unhandledRuntimeExceptionInStore()
+   * @see TestNessieError#backendThrottledExceptionInStore()
+   */
+  @Path("unhandledExceptionInTvsStore/{exception}")
+  @GET
+  @Consumes(MediaType.APPLICATION_JSON)
+  public String unhandledExceptionInTvsStore(@PathParam("exception") String exception) {
+    Exception ex;
+    switch (exception) {
+      case "runtime":
+        ex = new RuntimeException("Store.getValues-throwing");
+        break;
+      case "throttle":
+        ex = new BackendLimitExceededException("Store.getValues-throttled");
+        break;
+      default:
+        throw new IllegalArgumentException("test code error");
+    }
+
+    Store store = Mockito.mock(Store.class);
+    Mockito.when(store.getValues(ValueType.REF)).thenThrow(ex);
+
+    TieredVersionStore<String, String> tvs = new TieredVersionStore<>(
+        StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance()), store,
+        true);
+    tvs.getNamedRefs().forEach(ref -> {});
+    return "we should not get here";
   }
 }

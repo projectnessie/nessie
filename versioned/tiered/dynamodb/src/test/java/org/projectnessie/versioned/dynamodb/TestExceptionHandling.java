@@ -17,7 +17,7 @@ package org.projectnessie.versioned.dynamodb;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.projectnessie.versioned.store.BackendLimitExceededException;
+import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.NotFoundException;
 import org.projectnessie.versioned.store.StoreException;
@@ -63,7 +63,7 @@ public class TestExceptionHandling {
   @Test
   void testRuntimeException() {
     testException("testRuntimeException", new RuntimeException("foo bar"),
-        StoreOperationException.class, "Failure during testRuntimeException");
+        RuntimeException.class, "foo bar");
   }
 
   private void testException(String operation, RuntimeException e, Class<?> expectedExceptionClass, String expectedMessage) {

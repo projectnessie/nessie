@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
+import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.dynamodb.metrics.DynamoMetricsPublisher;
 import org.projectnessie.versioned.dynamodb.metrics.TracingExecutionInterceptor;
 import org.projectnessie.versioned.impl.EntityStoreHelper;
@@ -45,7 +46,6 @@ import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.ExpressionFunction;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
 import org.projectnessie.versioned.impl.condition.UpdateExpression;
-import org.projectnessie.versioned.store.BackendLimitExceededException;
 import org.projectnessie.versioned.store.ConditionFailedException;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
@@ -54,7 +54,6 @@ import org.projectnessie.versioned.store.LoadStep;
 import org.projectnessie.versioned.store.NotFoundException;
 import org.projectnessie.versioned.store.SaveOp;
 import org.projectnessie.versioned.store.Store;
-import org.projectnessie.versioned.store.StoreException;
 import org.projectnessie.versioned.store.StoreOperationException;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
@@ -142,17 +141,15 @@ public class DynamoStore implements Store {
 
   @Nonnull
   @VisibleForTesting
-  static RuntimeException unhandledException(String operation, Throwable e) {
+  static RuntimeException unhandledException(String operation, RuntimeException e) {
     if (e instanceof RequestLimitExceededException) {
       return new BackendLimitExceededException(String.format("Dynamo request-limit exceeded during %s.", operation), e);
     } else if (e instanceof LimitExceededException) {
       return new BackendLimitExceededException(String.format("Dynamo limit exceeded during %s.", operation), e);
     } else if (e instanceof ProvisionedThroughputExceededException) {
       return new BackendLimitExceededException(String.format("Dynamo provisioned throughput exceeded during %s.", operation), e);
-    } else if (e instanceof StoreException) {
-      return (StoreException) e;
     } else {
-      return new StoreOperationException(String.format("Failure during %s", operation), e);
+      return e;
     }
   }
 
@@ -460,7 +457,12 @@ public class DynamoStore implements Store {
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     } catch (ExecutionException e) {
-      throw unhandledException("save", e.getCause());
+      Throwable cause = e.getCause();
+      if (cause instanceof RuntimeException) {
+        throw unhandledException("save", (RuntimeException) cause);
+      } else {
+        throw unhandledException("save", new RuntimeException(cause));
+      }
     }
   }
 
