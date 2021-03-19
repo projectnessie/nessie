@@ -399,6 +399,20 @@ public abstract class AbstractITTieredVersionStore {
 
   }
 
+  /**
+   * This is a copy of {@link TieredVersionStore#commit(BranchName, Optional, Object, List)} that
+   * allows the test {@link #checkpointWithUnsavedL1()} to produce commits to a branch with
+   * unsaved commits and without collapsing the intention log.
+   * <p>It is not particularly great to have a "stripped down" and "heavily adjusted" version
+   * of the original {@link TieredVersionStore#commit(BranchName, Optional, Object, List)} in
+   * a unit test, but the other option to prepare the pre-requisites for
+   * {@link #checkpointWithUnsavedL1()}, namely unsaved commits + uncollapsed branch, would have
+   * been to refactor the original method and add a bunch of hooks, which felt too heavy.</p>
+   *
+   * @param ref branch ID
+   * @param num number of the commit
+   * @return the updated branch
+   */
   private InternalBranch simulateCommit(InternalRefId ref, int num) {
     List<Operation<String>> ops = Collections.singletonList(Put.of(Key.of("key" + num), "foo" + num));
     List<InternalKey> keys = ops.stream().map(op -> new InternalKey(op.getKey())).collect(Collectors.toList());
