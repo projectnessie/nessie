@@ -15,10 +15,11 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n} ]"
+        \ \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}\
+        \ ]"
     headers:
       Content-Length:
-      - '101'
+      - '125'
       Content-Type:
       - application/json
     status:
@@ -44,79 +45,19 @@ interactions:
   response:
     body:
       string: "{\n  \"message\" : \"A reference of name [main] already exists.\",\n\
-        \  \"status\" : \"CONFLICT\",\n  \"serverStackTrace\" : \"org.projectnessie.error.NessieConflictException:\
-        \ A reference of name [main] already exists.\\n\\tat org.projectnessie.services.rest.TreeResource.createReference(TreeResource.java:119)\\\
-        n\\tat org.projectnessie.services.rest.TreeResource.createReference(TreeResource.java:110)\\\
-        n\\tat org.projectnessie.services.rest.TreeResource_Subclass.createReference$$superaccessor6(TreeResource_Subclass.zig:2283)\\\
-        n\\tat org.projectnessie.services.rest.TreeResource_Subclass$$function$$6.apply(TreeResource_Subclass$$function$$6.zig:33)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
-        n\\tat io.quarkus.hibernate.validator.runtime.interceptor.AbstractMethodValidationInterceptor.validateMethodInvocation(AbstractMethodValidationInterceptor.java:69)\\\
-        n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor.validateMethodInvocation(JaxrsEndPointValidationInterceptor.java:32)\\\
-        n\\tat io.quarkus.hibernate.validator.runtime.jaxrs.JaxrsEndPointValidationInterceptor_Bean.intercept(JaxrsEndPointValidationInterceptor_Bean.zig:341)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.time(TimedInterceptor.java:54)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.timedMethod(TimedInterceptor.java:35)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:326)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.increment(CountedInterceptor.java:51)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.countedMethod(CountedInterceptor.java:33)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor_Bean.intercept(CountedInterceptor_Bean.zig:326)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
-        n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
-        n\\tat org.projectnessie.services.rest.TreeResource_Subclass.createReference(TreeResource_Subclass.zig:2222)\\\
-        n\\tat org.projectnessie.services.rest.TreeResource_ClientProxy.createReference(TreeResource_ClientProxy.zig:164)\\\
-        n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native\
-        \ Method)\\n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\\\
-        n\\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\\\
-        n\\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\\n\\tat\
-        \ org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:170)\\\
-        n\\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:130)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:643)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:507)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$2(ResourceMethodInvoker.java:457)\\\
-        n\\tat org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:364)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:459)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:419)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:393)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:68)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:492)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:261)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:161)\\\
-        n\\tat org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:364)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:164)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:247)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.RequestDispatcher.service(RequestDispatcher.java:73)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.dispatch(VertxRequestHandler.java:131)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.access$000(VertxRequestHandler.java:37)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler$1.run(VertxRequestHandler.java:94)\\\
-        n\\tat io.quarkus.runtime.CleanableExecutor$CleaningRunnable.run(CleanableExecutor.java:231)\\\
-        n\\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)\\\
-        n\\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)\\\
-        n\\tat org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:2046)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1578)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1452)\\\
-        n\\tat org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)\\\
-        n\\tat org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)\\\
-        n\\tat java.base/java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
-        nCaused by: org.projectnessie.versioned.ReferenceAlreadyExistsException: A\
-        \ branch or tag already exists with that name.\\n\\tat org.projectnessie.versioned.impl.TieredVersionStore.create(TieredVersionStore.java:115)\\\
-        n\\tat org.projectnessie.services.rest.TreeResource.createReference(TreeResource.java:115)\\\
-        n\\t... 57 more\\n\"\n}"
+        \  \"status\" : 409,\n  \"reason\" : \"Conflict\",\n  \"serverStackTrace\"\
+        \ : null\n}"
     headers:
       Content-Length:
-      - '6374'
+      - '134'
       Content-Type:
       - application/json
     status:
       code: 409
       message: Conflict
 - request:
-    body: '{"hash": "e0b41c30f0710277532f51242994e10acfdc46bf", "name": "test", "type":
-      "BRANCH"}'
+    body: '{"hash": "2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d",
+      "name": "test", "type": "BRANCH"}'
     headers:
       Accept:
       - '*/*'
@@ -125,7 +66,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '86'
+      - '110'
       Content-Type:
       - application/json
       User-Agent:
@@ -154,13 +95,13 @@ interactions:
     uri: http://localhost:19120/api/v1/trees
   response:
     body:
-      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" :\
-        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n}, {\n  \"type\" : \"BRANCH\"\
-        ,\n  \"name\" : \"main\",\n  \"hash\" : \"e0b41c30f0710277532f51242994e10acfdc46bf\"\
+      string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
+        \ \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n},\
+        \ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\
         \n} ]"
     headers:
       Content-Length:
-      - '200'
+      - '248'
       Content-Type:
       - application/json
     status:
@@ -182,10 +123,10 @@ interactions:
   response:
     body:
       string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"test\",\n  \"hash\" : \"\
-        e0b41c30f0710277532f51242994e10acfdc46bf\"\n}"
+        2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}"
     headers:
       Content-Length:
-      - '97'
+      - '121'
       Content-Type:
       - application/json
     status:
@@ -230,7 +171,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: DELETE
-    uri: http://localhost:19120/api/v1/trees/branch/test?expectedHash=e0b41c30f0710277532f51242994e10acfdc46bf
+    uri: http://localhost:19120/api/v1/trees/branch/test?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
       string: ''
@@ -254,10 +195,11 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n} ]"
+        \ \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}\
+        \ ]"
     headers:
       Content-Length:
-      - '101'
+      - '125'
       Content-Type:
       - application/json
     status:
