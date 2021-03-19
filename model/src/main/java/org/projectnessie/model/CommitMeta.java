@@ -122,7 +122,7 @@ public abstract class CommitMeta {
    * Used to serialize an instant to ISO-8601 format. Required because not all platforms we work with support jackson's jdk8 modules.
    */
   public static class InstantSerializer extends StdSerializer<Instant> {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.from(ZoneOffset.UTC));
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
     public InstantSerializer() {
       this(Instant.class);
