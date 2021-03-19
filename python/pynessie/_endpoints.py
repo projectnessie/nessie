@@ -2,6 +2,7 @@
 """Direct API operations on Nessie with requests."""
 from typing import Any
 from typing import cast
+from typing import Optional
 from typing import Tuple
 from typing import Union
 

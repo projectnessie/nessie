@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Nessie Data objects."""
+from datetime import datetime
 from typing import List
 from typing import Optional
 
@@ -253,14 +254,12 @@ class CommitMeta:
     """Dataclass for commit metadata."""
 
     hash_: str = desert.ib(fields.Str(data_key="hash"), default=None)
-    commitTime: int = desert.ib(fields.Int(), default=0)
-    authorTime: int = desert.ib(fields.Int(), default=0)
-    commiter: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    commitTime: datetime = desert.ib(fields.DateTime(), default=None)
+    authorTime: datetime = desert.ib(fields.DateTime(), default=None)
+    committer: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     email: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     author: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
-    authorEmail: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     signedOffBy: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
-    signedOffByEmail: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     message: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     properties: dict = desert.ib(fields.Dict(), default=None)
 
