@@ -40,10 +40,11 @@ interactions:
   response:
     body:
       string: "[ {\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" :\
-        \ \"e0b41c30f0710277532f51242994e10acfdc46bf\"\n} ]"
+        \ \"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d\"\n}\
+        \ ]"
     headers:
       Content-Length:
-      - '101'
+      - '125'
       Content-Type:
       - application/json
     status:
@@ -65,71 +66,19 @@ interactions:
   response:
     body:
       string: "{\n  \"message\" : \"Requested contents do not exist for specified\
-        \ reference.\",\n  \"status\" : \"NOT_FOUND\",\n  \"serverStackTrace\" : \"\
-        org.projectnessie.error.NessieNotFoundException: Requested contents do not\
-        \ exist for specified reference.\\n\\tat org.projectnessie.services.rest.ContentsResource.getContents(ContentsResource.java:72)\\\
-        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass.getContents$$superaccessor2(ContentsResource_Subclass.zig:766)\\\
-        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass$$function$$2.apply(ContentsResource_Subclass$$function$$2.zig:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:54)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.time(TimedInterceptor.java:54)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor.timedMethod(TimedInterceptor.java:35)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.TimedInterceptor_Bean.intercept(TimedInterceptor_Bean.zig:326)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:50)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.increment(CountedInterceptor.java:51)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor.countedMethod(CountedInterceptor.java:33)\\\
-        n\\tat io.quarkus.micrometer.runtime.binder.mpmetrics.CountedInterceptor_Bean.intercept(CountedInterceptor_Bean.zig:326)\\\
-        n\\tat io.quarkus.arc.impl.InterceptorInvocation.invoke(InterceptorInvocation.java:41)\\\
-        n\\tat io.quarkus.arc.impl.AroundInvokeInvocationContext.perform(AroundInvokeInvocationContext.java:41)\\\
-        n\\tat io.quarkus.arc.impl.InvocationContexts.performAroundInvoke(InvocationContexts.java:32)\\\
-        n\\tat org.projectnessie.services.rest.ContentsResource_Subclass.getContents(ContentsResource_Subclass.zig:712)\\\
-        n\\tat org.projectnessie.services.rest.ContentsResource_ClientProxy.getContents(ContentsResource_ClientProxy.zig:408)\\\
-        n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native\
-        \ Method)\\n\\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\\\
-        n\\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\\\
-        n\\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\\n\\tat\
-        \ org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:170)\\\
-        n\\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:130)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:643)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:507)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$2(ResourceMethodInvoker.java:457)\\\
-        n\\tat org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:364)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:459)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:419)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:393)\\\
-        n\\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:68)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:492)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:261)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:161)\\\
-        n\\tat org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:364)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:164)\\\
-        n\\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:247)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.RequestDispatcher.service(RequestDispatcher.java:73)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.dispatch(VertxRequestHandler.java:131)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.access$000(VertxRequestHandler.java:37)\\\
-        n\\tat io.quarkus.resteasy.runtime.standalone.VertxRequestHandler$1.run(VertxRequestHandler.java:94)\\\
-        n\\tat io.quarkus.runtime.CleanableExecutor$CleaningRunnable.run(CleanableExecutor.java:231)\\\
-        n\\tat java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:515)\\\
-        n\\tat java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)\\\
-        n\\tat org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:2046)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1578)\\\
-        n\\tat org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1452)\\\
-        n\\tat org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)\\\
-        n\\tat org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)\\\
-        n\\tat java.base/java.lang.Thread.run(Thread.java:834)\\n\\tat org.jboss.threads.JBossThread.run(JBossThread.java:479)\\\
-        n\"\n}"
+        \ reference.\",\n  \"status\" : 404,\n  \"reason\" : \"Not Found\",\n  \"\
+        serverStackTrace\" : null\n}"
     headers:
       Content-Length:
-      - '5358'
+      - '149'
       Content-Type:
       - application/json
     status:
       code: 404
       message: Not Found
 - request:
-    body: '{"operations": [{"contents": {"metadataLocation": "/a/b/c", "type": "ICEBERG_TABLE"},
-      "key": {"elements": ["foo", "bar"]}, "type": "PUT"}]}'
+    body: '{"operations": [{"key": {"elements": ["foo", "bar"]}, "contents": {"metadataLocation":
+      "/a/b/c", "type": "ICEBERG_TABLE"}, "type": "PUT"}]}'
     headers:
       Accept:
       - '*/*'
@@ -144,7 +93,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=e0b41c30f0710277532f51242994e10acfdc46bf&message=test_message
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d&message=test_message
   response:
     body:
       string: ''
@@ -193,12 +142,12 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
-        \ [ {\n    \"hash\" : \"d4ba5c25503c07cb7326a64566d8c0faf6013c4f\",\n    \"\
-        commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
-        ,\n    \"commitTime\" : 1604578534518\n  } ]\n}"
+        \ [ {\n    \"hash\" : \"f6ea196821943e0e5650828ad922696694344aa0e7324a30124a09250e630c53\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
+        ,\n    \"commitTime\" : 1616141147260\n  } ]\n}"
     headers:
       Content-Length:
-      - '232'
+      - '256'
       Content-Type:
       - application/json
     status:
@@ -216,16 +165,16 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/d4ba5c25503c07cb7326a64566d8c0faf6013c4f/log
+    uri: http://localhost:19120/api/v1/trees/tree/f6ea196821943e0e5650828ad922696694344aa0e7324a30124a09250e630c53/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
-        \ [ {\n    \"hash\" : \"d4ba5c25503c07cb7326a64566d8c0faf6013c4f\",\n    \"\
-        commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
-        ,\n    \"commitTime\" : 1604578534518\n  } ]\n}"
+        \ [ {\n    \"hash\" : \"f6ea196821943e0e5650828ad922696694344aa0e7324a30124a09250e630c53\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
+        ,\n    \"commitTime\" : 1616141147260\n  } ]\n}"
     headers:
       Content-Length:
-      - '232'
+      - '256'
       Content-Type:
       - application/json
     status:
@@ -298,7 +247,7 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=d4ba5c25503c07cb7326a64566d8c0faf6013c4f&message=delete_message
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=f6ea196821943e0e5650828ad922696694344aa0e7324a30124a09250e630c53&message=delete_message
   response:
     body:
       string: ''
@@ -322,14 +271,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
-        \ [ {\n    \"hash\" : \"f285a3078464a8ecbe40fdbd2ef95528cb11ef2b\",\n    \"\
-        commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"delete_message\"\
-        ,\n    \"commitTime\" : 1604578535141\n  }, {\n    \"hash\" : \"d4ba5c25503c07cb7326a64566d8c0faf6013c4f\"\
+        \ [ {\n    \"hash\" : \"4078782b8891527b2152f1dd8419bb2c199a9ba1f3c8564377a810f1be7e5bed\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"delete_message\"\
+        ,\n    \"commitTime\" : 1616141147407\n  }, {\n    \"hash\" : \"f6ea196821943e0e5650828ad922696694344aa0e7324a30124a09250e630c53\"\
         ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
-        ,\n    \"commitTime\" : 1604578534518\n  } ]\n}"
+        ,\n    \"commitTime\" : 1616141147260\n  } ]\n}"
     headers:
       Content-Length:
-      - '404'
+      - '452'
       Content-Type:
       - application/json
     status:
@@ -347,18 +296,18 @@ interactions:
       User-Agent:
       - python-requests/2.24.0
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/f285a3078464a8ecbe40fdbd2ef95528cb11ef2b/log
+    uri: http://localhost:19120/api/v1/trees/tree/4078782b8891527b2152f1dd8419bb2c199a9ba1f3c8564377a810f1be7e5bed/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :\
-        \ [ {\n    \"hash\" : \"f285a3078464a8ecbe40fdbd2ef95528cb11ef2b\",\n    \"\
-        commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"delete_message\"\
-        ,\n    \"commitTime\" : 1604578535141\n  }, {\n    \"hash\" : \"d4ba5c25503c07cb7326a64566d8c0faf6013c4f\"\
+        \ [ {\n    \"hash\" : \"4078782b8891527b2152f1dd8419bb2c199a9ba1f3c8564377a810f1be7e5bed\"\
+        ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"delete_message\"\
+        ,\n    \"commitTime\" : 1616141147407\n  }, {\n    \"hash\" : \"f6ea196821943e0e5650828ad922696694344aa0e7324a30124a09250e630c53\"\
         ,\n    \"commiter\" : \"\",\n    \"email\" : null,\n    \"message\" : \"test_message\"\
-        ,\n    \"commitTime\" : 1604578534518\n  } ]\n}"
+        ,\n    \"commitTime\" : 1616141147260\n  } ]\n}"
     headers:
       Content-Length:
-      - '404'
+      - '452'
       Content-Type:
       - application/json
     status:

@@ -186,7 +186,7 @@ def test_assign() -> None:
     runner = CliRunner()
     _run(runner, ["branch", "dev"])
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "dev"]).output, many=True)
-    empty_hash = refs[0].hash_
+    empty_hash = next(i.hash_ for i in refs if i.name == "dev")
     _run(
         runner,
         [
