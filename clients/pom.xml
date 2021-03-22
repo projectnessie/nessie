@@ -32,8 +32,6 @@
 
   <modules>
     <module>client</module>
-    <module>hmsbridge</module>
-    <module>deltalake</module>
     <module>tests</module>
   </modules>
 </project>
