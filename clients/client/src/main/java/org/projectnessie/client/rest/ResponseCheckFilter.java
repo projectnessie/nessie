@@ -15,6 +15,8 @@
  */
 package org.projectnessie.client.rest;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -75,10 +77,23 @@ public class ResponseCheckFilter {
                               "Could not parse error object in response.",
                               new RuntimeException("Could not parse error object in response."));
     } else {
+      String text = null;
       try {
-        error = reader.readValue(inputStream);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        byte[] buf = new byte[512];
+        while (true) {
+          int rd = inputStream.read(buf);
+          if (rd < 0) {
+            break;
+          }
+          os.write(buf, 0, rd);
+        }
+        byte[] bytes = os.toByteArray();
+        text = String.format("%s (HTTP/%d): %s", status.getReason(), status.getCode(), new String(bytes));
+
+        error = reader.readValue(new ByteArrayInputStream(bytes));
       } catch (IOException e) {
-        error = new NessieError(status.getCode(), status.getReason(), null, e);
+        error = new NessieError(status.getCode(), text != null ? text : status.getReason(), null, e);
       }
     }
     return error;

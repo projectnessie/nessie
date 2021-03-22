@@ -107,6 +107,13 @@ public class InMemoryVersionStore<ValueT, MetadataT> implements VersionStore<Val
     this.metadataSerializer = builder.metadataSerializer;
   }
 
+  // TODO REMOVE THIS ONE
+  public InMemoryVersionStore(Serializer<ValueT> valueSerializer,
+      Serializer<MetadataT> metadataSerializer) {
+    this.valueSerializer = valueSerializer;
+    this.metadataSerializer = metadataSerializer;
+  }
+
   /**
    * Create a new in-memory store builder.
    *

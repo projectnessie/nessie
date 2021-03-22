@@ -16,6 +16,7 @@
 package org.projectnessie.services.rest;
 
 import javax.inject.Inject;
+import javax.validation.ConstraintViolationException;
 import javax.validation.ValidationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -48,6 +49,15 @@ public class ValidationExceptionMapper
 
   @Override
   public Response toResponse(ValidationException exception) {
+    if (exception instanceof ConstraintViolationException) {
+      return buildExceptionResponse(
+          Status.BAD_REQUEST.getStatusCode(),
+          Status.BAD_REQUEST.getReasonPhrase(),
+          exception.getMessage(),
+          exception
+      );
+    }
+
     return buildExceptionResponse(
         Status.INTERNAL_SERVER_ERROR.getStatusCode(),
         Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
