@@ -15,34 +15,13 @@
  */
 package org.projectnessie.api;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.projectnessie.model.NessieConfiguration;
 
-@Path("config")
 public interface ConfigApi {
 
   /**
    * Get the server configuration.
    */
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "List all configuration settings")
-  @APIResponses({
-    @APIResponse(
-        description = "Configuration settings",
-        content = @Content(mediaType = "application/json",
-        schema = @Schema(implementation = NessieConfiguration.class))),
-    @APIResponse(responseCode = "400", description = "Unknown Error")
-  })
   NessieConfiguration getConfig();
 
 }

@@ -13,35 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.impl;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-
-import org.projectnessie.api.ConfigRestApi;
+import org.projectnessie.api.ConfigApi;
+import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.services.config.ServerConfig;
-import org.projectnessie.services.impl.ConfigApiImpl;
 
 /**
- * REST endpoint to retrieve server settings.
+ * Implementation of the {@link ConfigApi}.
  */
-@RequestScoped
-public class ConfigResource implements ConfigRestApi {
+public final class ConfigApiImpl implements ConfigApi {
 
-  /**
-   * Delegate to (do not extend) the implementation for better code-coverage.
-   */
-  private final ConfigApiImpl delegate;
+  private final ServerConfig config;
 
-  @Inject
-  public ConfigResource(ServerConfig config) {
-    delegate = new ConfigApiImpl(config);
+  public ConfigApiImpl(ServerConfig config) {
+    this.config = config;
   }
 
   @Override
   public NessieConfiguration getConfig() {
-    return delegate.getConfig();
+    return ImmutableNessieConfiguration.builder()
+                                       .defaultBranch(this.config.getDefaultBranch()).build();
   }
-
 }

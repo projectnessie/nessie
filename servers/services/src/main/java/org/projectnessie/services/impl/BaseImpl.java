@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.services.rest;
+package org.projectnessie.services.impl;
 
 import java.security.Principal;
 import java.util.List;
@@ -33,19 +33,14 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-abstract class BaseResource {
+abstract class BaseImpl {
   private final ServerConfig config;
 
   private final Principal principal;
 
   private final VersionStore<Contents, CommitMeta> store;
 
-  // Mandated by CDI 2.0
-  protected BaseResource() {
-    this(null, null, null);
-  }
-
-  protected BaseResource(ServerConfig config, Principal principal, VersionStore<Contents, CommitMeta> store) {
+  BaseImpl(ServerConfig config, Principal principal, VersionStore<Contents, CommitMeta> store) {
     this.config = config;
     this.principal = principal;
     this.store = store;
