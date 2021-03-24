@@ -18,7 +18,7 @@ package org.projectnessie.services.rest;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 
-import org.projectnessie.api.ConfigRestApi;
+import org.projectnessie.api.rest.ConfigRestApi;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.services.impl.ConfigApiImpl;

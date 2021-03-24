@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.api;
+package org.projectnessie.api.rest;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -25,6 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.projectnessie.api.ConfigApi;
 import org.projectnessie.model.NessieConfiguration;
 
 /**

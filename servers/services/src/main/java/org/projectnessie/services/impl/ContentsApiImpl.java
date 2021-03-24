@@ -44,6 +44,10 @@ import org.projectnessie.versioned.VersionStore;
  * Implementation of the {@link ContentsApi}.
  */
 public final class ContentsApiImpl extends BaseImpl implements ContentsApi {
+  /*
+  This class is 'final' to prevent Quarkus from transforming it and make it "inaccessible" or
+  "invisible" to jacoco/codecov.
+   */
 
   public ContentsApiImpl(ServerConfig config, Principal principal,
       VersionStore<Contents, CommitMeta> store) {
@@ -64,9 +68,8 @@ public final class ContentsApiImpl extends BaseImpl implements ContentsApi {
     }
   }
 
-
   @Override
-  public  MultiGetContentsResponse getMultipleContents(String refName, MultiGetContentsRequest request)
+  public MultiGetContentsResponse getMultipleContents(String refName, MultiGetContentsRequest request)
       throws NessieNotFoundException {
     try {
       Hash ref = getHashOrThrow(refName);

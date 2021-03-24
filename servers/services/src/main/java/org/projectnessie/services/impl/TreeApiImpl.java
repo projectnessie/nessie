@@ -64,6 +64,10 @@ import com.google.common.collect.ImmutableList;
  * Implementation of the {@link TreeApi}.
  */
 public final class TreeApiImpl extends BaseImpl implements TreeApi {
+  /*
+  This class is 'final' to prevent Quarkus from transforming it and make it "inaccessible" or
+  "invisible" to jacoco/codecov.
+   */
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
@@ -188,7 +192,7 @@ public final class TreeApiImpl extends BaseImpl implements TreeApi {
     try {
       getStore().merge(toHash(merge.getFromHash(), true).get(), BranchName.of(branchName), toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("At least one of the references provided does not exist."), e);
+      throw new NessieNotFoundException("At least one of the references provided does not exist.", e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(
           String.format("The branch [%s] does not have the expected hash [%s].", branchName, hash), e);

@@ -24,6 +24,10 @@ import org.projectnessie.services.config.ServerConfig;
  * Implementation of the {@link ConfigApi}.
  */
 public final class ConfigApiImpl implements ConfigApi {
+  /*
+  This class is 'final' to prevent Quarkus from transforming it and make it "inaccessible" or
+  "invisible" to jacoco/codecov.
+   */
 
   private final ServerConfig config;
 

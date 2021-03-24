@@ -28,7 +28,7 @@
             name = "Apache 2.0",
             url = "http://www.apache.org/licenses/LICENSE-2.0.html"))
 )
-package org.projectnessie.api;
+package org.projectnessie.api.rest;
 
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
 import org.eclipse.microprofile.openapi.annotations.info.Contact;
