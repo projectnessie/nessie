@@ -23,9 +23,6 @@ import org.projectnessie.api.ConfigApi;
 import org.projectnessie.model.ImmutableNessieConfiguration;
 import org.projectnessie.model.NessieConfiguration;
 import org.projectnessie.services.config.ServerConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * REST endpoint to retrieve server settings.
@@ -33,12 +30,11 @@ import org.slf4j.LoggerFactory;
 @RequestScoped
 public class ConfigResource implements ConfigApi {
 
-  private static final Logger logger = LoggerFactory.getLogger(ConfigResource.class);
-  private final ServerConfig config;
-
   @Inject
-  public ConfigResource(ServerConfig config) {
-    this.config = config;
+  ServerConfig config;
+
+  public ConfigResource() {
+    // empty
   }
 
   @Override

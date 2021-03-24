@@ -16,14 +16,12 @@
 
 package org.projectnessie.services.rest;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
 
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.error.NessieConflictException;
@@ -46,7 +44,6 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
-import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
@@ -59,7 +56,6 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
-import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
 import com.google.common.collect.ImmutableList;
@@ -72,10 +68,8 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
-  @Inject
-  public TreeResource(ServerConfig config, Principal principal,
-      VersionStore<Contents, CommitMeta> store) {
-    super(config, principal, store);
+  public TreeResource() {
+    // empty
   }
 
   @Override

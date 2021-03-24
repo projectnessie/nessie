@@ -19,6 +19,8 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
+import javax.inject.Inject;
+
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -34,21 +36,18 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
 abstract class BaseResource {
-  private final ServerConfig config;
+  @Inject
+  ServerConfig config;
 
-  private final Principal principal;
+  @Inject
+  Principal principal;
 
-  private final VersionStore<Contents, CommitMeta> store;
+  @Inject
+  VersionStore<Contents, CommitMeta> store;
 
   // Mandated by CDI 2.0
   protected BaseResource() {
-    this(null, null, null);
-  }
-
-  protected BaseResource(ServerConfig config, Principal principal, VersionStore<Contents, CommitMeta> store) {
-    this.config = config;
-    this.principal = principal;
-    this.store = store;
+    //
   }
 
   Optional<Hash> getHash(String ref) {
