@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.services.rest;
 
 import javax.enterprise.context.RequestScoped;
@@ -33,15 +32,32 @@ public class ConfigResource implements ConfigApi {
   @Inject
   ServerConfig config;
 
+  /**
+   * Public no-arg constructor for CDI/Quarkus.
+   * <p>This public no-arg constructor is required for "proper" code-coverage.</p>
+   * <p>Without a public no-arg constructor, Quarkus "injects" one and then jacoco
+   * can no longer associate the class and as a result code-coverage for this class
+   * will not be available.</p>
+   * <p>See also: <a href="https://issues.jboss.org/browse/RESTEASY-1538">RESTEASY-1538</a></p>
+   */
+  @SuppressWarnings("unused")
   public ConfigResource() {
     // empty
+  }
+
+  /**
+   * Constructor for non-CDI/Quarkus usage.
+   * @param config Nessie server-config
+   */
+  @SuppressWarnings("unused")
+  public ConfigResource(ServerConfig config) {
+    this.config = config;
   }
 
   @Override
   public NessieConfiguration getConfig() {
     return ImmutableNessieConfiguration.builder()
-                                       .defaultBranch(this.config.getDefaultBranch()).build();
+                                       .defaultBranch(config.getDefaultBranch()).build();
   }
-
 
 }

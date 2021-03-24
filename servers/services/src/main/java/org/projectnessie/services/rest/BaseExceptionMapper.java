@@ -34,11 +34,11 @@ import com.google.common.base.Throwables;
 public abstract class BaseExceptionMapper {
   private static final Logger LOGGER = LoggerFactory.getLogger(BaseExceptionMapper.class);
 
-  private final ServerConfig serverConfig;
-
-  protected BaseExceptionMapper(ServerConfig serverConfig) {
-    this.serverConfig = serverConfig;
+  protected BaseExceptionMapper() {
+    // intentioanlly empty
   }
+
+  protected abstract ServerConfig getConfig();
 
   protected Response buildExceptionResponse(
       int status,
@@ -51,7 +51,7 @@ public abstract class BaseExceptionMapper {
         reason,
         message,
         e,
-        serverConfig.sendStacktraceToClient(),
+        getConfig().sendStacktraceToClient(),
         h -> {});
   }
 
@@ -72,5 +72,17 @@ public abstract class BaseExceptionMapper {
         .type(MediaType.APPLICATION_JSON_TYPE);
     responseHandler.accept(responseBuilder);
     return responseBuilder.build();
+  }
+
+  protected void doUnwrapException(StringBuffer sb, Throwable t) {
+    if (t == null) {
+      return;
+    }
+    sb.append(t.toString());
+    if (t.getCause() != null && t != t.getCause()) {
+      sb.append('[');
+      doUnwrapException(sb, t.getCause());
+      sb.append(']');
+    }
   }
 }

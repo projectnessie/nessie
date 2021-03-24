@@ -16,12 +16,14 @@
 
 package org.projectnessie.services.rest;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.error.NessieConflictException;
@@ -44,6 +46,7 @@ import org.projectnessie.model.Operations;
 import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
+import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
@@ -56,6 +59,7 @@ import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
+import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
 import com.google.common.collect.ImmutableList;
@@ -68,8 +72,39 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
+  @Inject
+  ServerConfig config;
+
+  @Inject
+  Principal principal;
+
+  @Inject
+  VersionStore<Contents, CommitMeta> store;
+
+  /**
+   * Public no-arg constructor for CDI/Quarkus.
+   * <p>This public no-arg constructor is required for "proper" code-coverage.</p>
+   * <p>Without a public no-arg constructor, Quarkus "injects" one and then jacoco
+   * can no longer associate the class and as a result code-coverage for this class
+   * will not be available.</p>
+   * <p>See also: <a href="https://issues.jboss.org/browse/RESTEASY-1538">RESTEASY-1538</a></p>
+   */
+  @SuppressWarnings("unused")
   public TreeResource() {
     // empty
+  }
+
+  /**
+   * Constructor for non-CDI/Quarkus usage.
+   * @param config Nessie server-config
+   * @param principal Current principal
+   * @param store version-store
+   */
+  @SuppressWarnings("unused")
+  public TreeResource(ServerConfig config, Principal principal, VersionStore<Contents, CommitMeta> store) {
+    this.config = config;
+    this.principal = principal;
+    this.store = store;
   }
 
   @Override
@@ -188,7 +223,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       getStore().merge(toHash(merge.getFromHash(), true).get(), BranchName.of(branchName), toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("At least one of the references provided does not exist."), e);
+      throw new NessieNotFoundException("At least one of the references provided does not exist.", e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(
           String.format("The branch [%s] does not have the expected hash [%s].", branchName, hash), e);
@@ -301,5 +336,20 @@ public class TreeResource extends BaseResource implements TreeApi {
     } else {
       throw new IllegalStateException("Unknown operation " + o);
     }
+  }
+
+  @Override
+  protected ServerConfig getConfig() {
+    return config;
+  }
+
+  @Override
+  protected Principal getPrincipal() {
+    return principal;
+  }
+
+  @Override
+  protected VersionStore<Contents, CommitMeta> getStore() {
+    return store;
   }
 }

@@ -19,8 +19,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
-import javax.inject.Inject;
-
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -36,14 +34,6 @@ import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
 abstract class BaseResource {
-  @Inject
-  ServerConfig config;
-
-  @Inject
-  Principal principal;
-
-  @Inject
-  VersionStore<Contents, CommitMeta> store;
 
   // Mandated by CDI 2.0
   protected BaseResource() {
@@ -52,7 +42,7 @@ abstract class BaseResource {
 
   Optional<Hash> getHash(String ref) {
     try {
-      WithHash<Ref> whr = store.toRef(Optional.ofNullable(ref).orElse(config.getDefaultBranch()));
+      WithHash<Ref> whr = getStore().toRef(Optional.ofNullable(ref).orElse(getConfig().getDefaultBranch()));
       return Optional.of(whr.getHash());
     } catch (ReferenceNotFoundException e) {
       return Optional.empty();
@@ -63,21 +53,19 @@ abstract class BaseResource {
     return getHash(ref).orElseThrow(() -> new NessieNotFoundException(String.format("Ref for %s not found", ref)));
   }
 
-  protected ServerConfig getConfig() {
-    return config;
-  }
+  protected abstract ServerConfig getConfig();
 
-  protected VersionStore<Contents, CommitMeta> getStore() {
-    return store;
-  }
+  protected abstract Principal getPrincipal();
+
+  protected abstract VersionStore<Contents, CommitMeta> getStore();
 
   protected void doOps(String branch, String hash, String message, List<org.projectnessie.versioned.Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
-      store.commit(
-          BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
+      getStore().commit(
+          BranchName.of(Optional.ofNullable(branch).orElse(getConfig().getDefaultBranch())),
           Optional.ofNullable(hash).map(Hash::of),
-          meta(principal, message),
+          meta(getPrincipal(), message),
           operations
       );
     } catch (IllegalArgumentException e) {

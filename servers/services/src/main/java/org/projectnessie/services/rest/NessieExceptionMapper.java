@@ -43,15 +43,34 @@ public class NessieExceptionMapper
     implements ExceptionMapper<Exception> {
   private static final Logger LOGGER = LoggerFactory.getLogger(NessieExceptionMapper.class);
 
-  // Unused constructor
-  // Required because of https://issues.jboss.org/browse/RESTEASY-1538
+  @Inject
+  ServerConfig config;
+
+  /**
+   * Public no-arg constructor for CDI/Quarkus.
+   * <p>This public no-arg constructor is required for "proper" code-coverage.</p>
+   * <p>Without a public no-arg constructor, Quarkus "injects" one and then jacoco
+   * can no longer associate the class and as a result code-coverage for this class
+   * will not be available.</p>
+   * <p>See also: <a href="https://issues.jboss.org/browse/RESTEASY-1538">RESTEASY-1538</a></p>
+   */
+  @SuppressWarnings("unused")
   public NessieExceptionMapper() {
-    this(null);
+    // intentionally empty
   }
 
-  @Inject
+  /**
+   * Constructor for non-CDI/Quarkus usage.
+   * @param config Nessie server-config
+   */
+  @SuppressWarnings("unused")
   public NessieExceptionMapper(ServerConfig config) {
-    super(config);
+    this.config = config;
+  }
+
+  @Override
+  protected ServerConfig getConfig() {
+    return config;
   }
 
   @Override

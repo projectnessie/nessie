@@ -16,6 +16,7 @@
 package org.projectnessie.services.rest;
 
 import javax.inject.Inject;
+import javax.validation.ConstraintViolationException;
 import javax.validation.ValidationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -34,16 +35,34 @@ public class ValidationExceptionMapper
     extends BaseExceptionMapper
     implements ExceptionMapper<ValidationException> {
 
+  @Inject
+  ServerConfig config;
 
-  // Unused constructor
-  // Required because of https://issues.jboss.org/browse/RESTEASY-1538
+  /**
+   * Public no-arg constructor for CDI/Quarkus.
+   * <p>This public no-arg constructor is required for "proper" code-coverage.</p>
+   * <p>Without a public no-arg constructor, Quarkus "injects" one and then jacoco
+   * can no longer associate the class and as a result code-coverage for this class
+   * will not be available.</p>
+   * <p>See also: <a href="https://issues.jboss.org/browse/RESTEASY-1538">RESTEASY-1538</a></p>
+   */
+  @SuppressWarnings("unused")
   public ValidationExceptionMapper() {
-    this(null);
+    // empty
   }
 
-  @Inject
+  /**
+   * Constructor for non-CDI/Quarkus usage.
+   * @param config Nessie server-config
+   */
+  @SuppressWarnings("unused")
   public ValidationExceptionMapper(ServerConfig config) {
-    super(config);
+    this.config = config;
+  }
+
+  @Override
+  protected ServerConfig getConfig() {
+    return config;
   }
 
   @Override
@@ -59,17 +78,5 @@ public class ValidationExceptionMapper
     StringBuffer sb = new StringBuffer();
     doUnwrapException(sb, t);
     return sb.toString();
-  }
-
-  private void doUnwrapException(StringBuffer sb, Throwable t) {
-    if (t == null) {
-      return;
-    }
-    sb.append(t.toString());
-    if (t.getCause() != null && t != t.getCause()) {
-      sb.append('[');
-      doUnwrapException(sb, t.getCause());
-      sb.append(']');
-    }
   }
 }

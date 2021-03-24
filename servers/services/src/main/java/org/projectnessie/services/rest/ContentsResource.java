@@ -16,6 +16,7 @@
 
 package org.projectnessie.services.rest;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,30 +24,64 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.ImmutableMultiGetContentsResponse;
 import org.projectnessie.model.MultiGetContentsRequest;
 import org.projectnessie.model.MultiGetContentsResponse;
 import org.projectnessie.model.MultiGetContentsResponse.ContentsWithKey;
+import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.VersionStore;
 
 /**
  * REST endpoint for contents.
  */
 @RequestScoped
 public class ContentsResource extends BaseResource implements ContentsApi {
+  @Inject
+  ServerConfig config;
 
+  @Inject
+  Principal principal;
+
+  @Inject
+  VersionStore<Contents, CommitMeta> store;
+
+  /**
+   * Public no-arg constructor for CDI/Quarkus.
+   * <p>This public no-arg constructor is required for "proper" code-coverage.</p>
+   * <p>Without a public no-arg constructor, Quarkus "injects" one and then jacoco
+   * can no longer associate the class and as a result code-coverage for this class
+   * will not be available.</p>
+   * <p>See also: <a href="https://issues.jboss.org/browse/RESTEASY-1538">RESTEASY-1538</a></p>
+   */
+  @SuppressWarnings("unused")
   public ContentsResource() {
     // empty
+  }
+
+  /**
+   * Constructor for non-CDI/Quarkus usage.
+   * @param config Nessie server-config
+   * @param principal Current principal
+   * @param store version-store
+   */
+  @SuppressWarnings("unused")
+  public ContentsResource(ServerConfig config, Principal principal, VersionStore<Contents, CommitMeta> store) {
+    this.config = config;
+    this.principal = principal;
+    this.store = store;
   }
 
   @Override
@@ -101,4 +136,18 @@ public class ContentsResource extends BaseResource implements ContentsApi {
     return Key.of(key.getElements().toArray(new String[key.getElements().size()]));
   }
 
+  @Override
+  protected ServerConfig getConfig() {
+    return config;
+  }
+
+  @Override
+  protected Principal getPrincipal() {
+    return principal;
+  }
+
+  @Override
+  protected VersionStore<Contents, CommitMeta> getStore() {
+    return store;
+  }
 }
