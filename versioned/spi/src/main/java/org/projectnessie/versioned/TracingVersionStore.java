@@ -61,7 +61,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
    * @param tracerSupplier {@link Supplier} for the {@link Tracer} to use
    */
   @VisibleForTesting
-  public TracingVersionStore(VersionStore<VALUE, METADATA> delegate, Supplier<Tracer> tracerSupplier) {
+  TracingVersionStore(VersionStore<VALUE, METADATA> delegate, Supplier<Tracer> tracerSupplier) {
     this.tracerSupplier = tracerSupplier;
     this.delegate = delegate;
   }
