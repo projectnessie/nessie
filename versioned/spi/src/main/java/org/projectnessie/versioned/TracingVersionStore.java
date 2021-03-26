@@ -69,7 +69,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
   @Override
   @Nonnull
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
-    return delegateWithNotFound("VersionStore.toHash", b -> b
+    return delegate1Ex("VersionStore.toHash", b -> b
         .withTag("nessie.version-store.operation", "ToHash")
         .withTag("nessie.version-store.ref", safeRefName(ref)),
         () -> delegate.toHash(ref));
@@ -77,7 +77,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
 
   @Override
   public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
-    return delegateWithNotFound("VersionStore.toRef", b -> b
+    return delegate1Ex("VersionStore.toRef", b -> b
         .withTag("nessie.version-store.operation", "ToRef")
         .withTag("nessie.version-store.ref", refOfUnknownType),
         () -> delegate.toRef(refOfUnknownType));
@@ -89,7 +89,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    delegateWithNotFoundAndConflict("VersionStore.commit", b -> b
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("VersionStore.commit", b -> b
         .withTag("nessie.version-store.operation", "Commit")
         .withTag("nessie.version-store.branch", safeRefName(branch))
         .withTag("nessie.version-store.hash", safeToString(referenceHash))
@@ -102,7 +102,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    delegateWithNotFoundAndConflict("VersionStore.transplant", b -> b
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("VersionStore.transplant", b -> b
         .withTag("nessie.version-store.operation", "Transplant")
         .withTag("nessie.version-store.target-branch", safeRefName(targetBranch))
         .withTag("nessie.version-store.hash", safeToString(referenceHash))
@@ -113,7 +113,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
   @Override
   public void merge(Hash fromHash, BranchName toBranch,
       Optional<Hash> expectedHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    delegateWithNotFoundAndConflict("VersionStore.merge", b -> b
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("VersionStore.merge", b -> b
         .withTag("nessie.version-store.operation", "Merge")
         .withTag("nessie.version-store.from-hash", safeToString(fromHash))
         .withTag("nessie.version-store.to-branch", safeRefName(toBranch))
@@ -124,7 +124,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
   @Override
   public void assign(NamedRef ref, Optional<Hash> expectedHash,
       Hash targetHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    delegateWithNotFoundAndConflict("VersionStore.assign", b -> b
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("VersionStore.assign", b -> b
         .withTag("nessie.version-store.operation", "Assign")
         .withTag("nessie.version-store.ref", safeToString(ref))
         .withTag("nessie.version-store.expected-hash", safeToString(expectedHash))
@@ -135,7 +135,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
   @Override
   public void create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    delegateWithNotFoundAndAlreadyExists("VersionStore.create", b -> b
+    this.<ReferenceNotFoundException, ReferenceAlreadyExistsException>delegate2Ex("VersionStore.create", b -> b
         .withTag("nessie.version-store.operation", "Create")
         .withTag("nessie.version-store.ref", safeToString(ref))
         .withTag("nessie.version-store.target-hash", safeToString(targetHash)),
@@ -145,7 +145,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    delegateWithNotFoundAndConflict("VersionStore.delete", b -> b
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("VersionStore.delete", b -> b
         .withTag("nessie.version-store.operation", "Delete")
         .withTag("nessie.version-store.ref", safeToString(ref))
         .withTag("nessie.version-store.hash", safeToString(hash)),
@@ -154,14 +154,14 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return delegateWithStream("VersionStore.getNamedRefs", b -> b
+    return delegateStream("VersionStore.getNamedRefs", b -> b
         .withTag("nessie.version-store.operation", "GetNamedRefs"),
         delegate::getNamedRefs);
   }
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    return delegateWithNotFoundStream("VersionStore.getCommits", b -> b
+    return delegateStream1Ex("VersionStore.getCommits", b -> b
         .withTag("nessie.version-store.operation", "GetCommits")
         .withTag("nessie.version-store.ref", safeToString(ref)),
         () ->  delegate.getCommits(ref));
@@ -169,7 +169,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
 
   @Override
   public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
-    return delegateWithNotFoundStream("VersionStore.getKeys", b -> b
+    return delegateStream1Ex("VersionStore.getKeys", b -> b
         .withTag("nessie.version-store.operation", "GetKeys")
         .withTag("nessie.version-store.ref", safeToString(ref)),
         () -> delegate.getKeys(ref));
@@ -177,7 +177,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
 
   @Override
   public VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    return delegateWithNotFound("VersionStore.getValue", b -> b
+    return delegate1Ex("VersionStore.getValue", b -> b
         .withTag("nessie.version-store.operation", "GetValue")
         .withTag("nessie.version-store.ref", safeToString(ref))
         .withTag("nessie.version-store.key", safeToString(key)),
@@ -186,7 +186,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
 
   @Override
   public List<Optional<VALUE>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException {
-    return delegateWithNotFound("VersionStore.getValues", b -> b
+    return delegate1Ex("VersionStore.getValues", b -> b
         .withTag("nessie.version-store.operation", "GetValues")
         .withTag("nessie.version-store.ref", safeToString(ref))
         .withTag("nessie.version-store.keys", safeToString(keys)),
@@ -195,7 +195,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
 
   @Override
   public Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    return delegateWithNotFoundStream("VersionStore.getDiffs", b -> b
+    return delegateStream1Ex("VersionStore.getDiffs", b -> b
         .withTag("nessie.version-store.operation", "GetDiffs")
         .withTag("nessie.version-store.from", safeToString(from))
         .withTag("to", safeToString(to)),
@@ -217,31 +217,35 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
     return builder.startActive(true);
   }
 
-  private <R> Stream<R> delegateWithStream(String spanName, Consumer<SpanBuilder> spanBuilder, Delegate<Stream<R>> delegate) {
+  private <R> Stream<R> delegateStream(String spanName, Consumer<SpanBuilder> spanBuilder, Delegate<Stream<R>> delegate) {
     Scope scope = createActiveScope(spanName, spanBuilder);
+    Stream<R> result = null;
     try {
-      return delegate.handle().onClose(scope::close);
+      result = delegate.handle().onClose(scope::close);
+      return result;
     } catch (RuntimeException e) {
-      try {
-        throw traceRuntimeException(scope, e);
-      } finally {
+      throw traceRuntimeException(scope, e);
+    } finally {
+      // See below (delegateStream1Ex)
+      if (result == null) {
         scope.close();
       }
     }
   }
 
-  private <R> Stream<R> delegateWithNotFoundStream(String spanName, Consumer<SpanBuilder> spanBuilder,
-      DelegateWithNotFound<Stream<R>> delegate) throws ReferenceNotFoundException {
+  private <R, E1 extends VersionStoreException> Stream<R> delegateStream1Ex(String spanName, Consumer<SpanBuilder> spanBuilder,
+      DelegateWith1<Stream<R>, E1> delegate) throws E1 {
     Scope scope = createActiveScope(spanName, spanBuilder);
+    Stream<R> result = null;
     try {
-      return delegate.handle().onClose(scope::close);
-    } catch (ReferenceNotFoundException e) {
-      scope.close();
-      throw e;
+      result = delegate.handle().onClose(scope::close);
+      return result;
     } catch (RuntimeException e) {
-      try {
-        throw traceRuntimeException(scope, e);
-      } finally {
+      throw traceRuntimeException(scope, e);
+    } finally {
+      // We cannot `catch (E1 e)`, so assume that the delegate threw an exception, when result==null
+      // and then close the trace-scope.
+      if (result == null) {
         scope.close();
       }
     }
@@ -257,8 +261,8 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
     }
   }
 
-  private <R> R delegateWithNotFound(String spanName, Consumer<SpanBuilder> spanBuilder,
-      DelegateWithNotFound<R> delegate) throws ReferenceNotFoundException {
+  private <R, E1 extends VersionStoreException> R delegate1Ex(String spanName, Consumer<SpanBuilder> spanBuilder,
+      DelegateWith1<R, E1> delegate) throws E1 {
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
         return delegate.handle();
@@ -268,19 +272,8 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
     }
   }
 
-  private void delegateWithNotFoundAndConflict(String spanName, Consumer<SpanBuilder> spanBuilder,
-      DelegateWithNotFoundAndConflict delegate) throws ReferenceNotFoundException, ReferenceConflictException {
-    try (Scope scope = createActiveScope(spanName, spanBuilder)) {
-      try {
-        delegate.handle();
-      } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
-      }
-    }
-  }
-
-  private void delegateWithNotFoundAndAlreadyExists(String spanName, Consumer<SpanBuilder> spanBuilder,
-      DelegateWithNotFoundAndAlreadyExists delegate) throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+  private <E1 extends VersionStoreException, E2 extends VersionStoreException> void delegate2Ex(String spanName,
+      Consumer<SpanBuilder> spanBuilder, DelegateWith2<E1, E2> delegate) throws E1, E2 {
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
         delegate.handle();
@@ -296,18 +289,13 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
   }
 
   @FunctionalInterface
-  interface DelegateWithNotFound<R> {
-    R handle() throws ReferenceNotFoundException;
+  interface DelegateWith1<R, E1 extends VersionStoreException> {
+    R handle() throws E1;
   }
 
   @FunctionalInterface
-  interface DelegateWithNotFoundAndConflict {
-    void handle() throws ReferenceNotFoundException, ReferenceConflictException;
-  }
-
-  @FunctionalInterface
-  interface DelegateWithNotFoundAndAlreadyExists {
-    void handle() throws ReferenceNotFoundException, ReferenceAlreadyExistsException;
+  interface DelegateWith2<E1 extends VersionStoreException, E2 extends VersionStoreException> {
+    void handle() throws E1, E2;
   }
 
   private static String safeToString(Object o) {
