@@ -24,8 +24,6 @@ import java.util.stream.Stream;
 import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.UpdateExpression;
 import org.projectnessie.versioned.tiered.BaseValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
@@ -33,8 +31,6 @@ import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.util.GlobalTracer;
 
 public class TracingStore implements Store {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(TracingStore.class);
 
   private final Store store;
 
@@ -55,9 +51,6 @@ public class TracingStore implements Store {
   public void start() {
     try (Scope ignore = createSpan("Store.start").startActive(true)) {
       store.start();
-    } catch (RuntimeException e) {
-      LOGGER.debug("Failed to start", e);
-      throw e;
     }
   }
 
@@ -65,9 +58,6 @@ public class TracingStore implements Store {
   public void close() {
     try (Scope ignore = createSpan("Store.close").startActive(true)) {
       store.close();
-    } catch (RuntimeException e) {
-      LOGGER.debug("Failed to close", e);
-      throw e;
     }
   }
 
@@ -77,9 +67,6 @@ public class TracingStore implements Store {
         .withTag("nessie.store.operation", "LoadSingle")
         .startActive(true)) {
       store.load(loadstep);
-    } catch (RuntimeException e) {
-      LOGGER.debug("Failed to load {}", loadstep, e);
-      throw e;
     }
   }
 
@@ -92,9 +79,6 @@ public class TracingStore implements Store {
         .withTag("nessie.store.id", safeOpIdToString(saveOp))
         .startActive(true)) {
       return store.putIfAbsent(saveOp);
-    } catch (RuntimeException e) {
-      LOGGER.debug("Failed to put-if-absent {}", saveOp, e);
-      throw e;
     }
   }
 
@@ -108,9 +92,6 @@ public class TracingStore implements Store {
         .withTag("nessie.store.id", safeOpIdToString(saveOp))
         .startActive(true)) {
       store.put(saveOp, condition);
-    } catch (RuntimeException e) {
-      LOGGER.debug("Failed to put {} {}", saveOp, condition, e);
-      throw e;
     }
   }
 
@@ -124,9 +105,6 @@ public class TracingStore implements Store {
         .withTag("nessie.store.id", safeToString(id))
         .startActive(true)) {
       return store.delete(type, id, condition);
-    } catch (RuntimeException e) {
-      LOGGER.debug("Failed to delete {} {}", type, id, e);
-      throw e;
     }
   }
 
@@ -143,9 +121,6 @@ public class TracingStore implements Store {
       )));
 
       store.save(ops);
-    } catch (RuntimeException e) {
-      LOGGER.debug("Failed to save {}", ops, e);
-      throw e;
     }
   }
 
@@ -158,9 +133,6 @@ public class TracingStore implements Store {
         .withTag("nessie.store.id", safeToString(id))
         .startActive(true)) {
       store.loadSingle(type, id, consumer);
-    } catch (RuntimeException e) {
-      LOGGER.debug("Failed to load-single {} {} {}", type, id, consumer, e);
-      throw e;
     }
   }
 
@@ -177,9 +149,6 @@ public class TracingStore implements Store {
         .withTag("nessie.store.condition", safeToString(condition))
         .startActive(true)) {
       return store.update(type, id, update, condition, consumer);
-    } catch (RuntimeException e) {
-      LOGGER.debug("Failed to update {} {} {} {} {}", type, id, update, condition, consumer, e);
-      throw e;
     }
   }
 
@@ -191,9 +160,6 @@ public class TracingStore implements Store {
         .withTag("nessie.store.value-type", type.name())
         .startActive(true)) {
       return store.getValues(type);
-    } catch (RuntimeException e) {
-      LOGGER.debug("Failed to get values {}", type, e);
-      throw e;
     }
   }
 
