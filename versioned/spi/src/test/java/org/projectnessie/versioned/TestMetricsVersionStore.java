@@ -78,7 +78,7 @@ class TestMetricsVersionStore {
     }
 
     Id timerId = new Id("nessie.version-store.request",
-        Tags.of("error", exception != null ? "true" : "false",
+        Tags.of("error", exception instanceof RuntimeException ? "true" : "false",
             "request", opName,
             "test", "unit"),
         "nanoseconds",
@@ -86,7 +86,7 @@ class TestMetricsVersionStore {
         Type.TIMER);
 
     TestTimer timer = registry.timers.get(timerId);
-    assertNotNull(timer, "Timer not registered, registered: " + registry.timers.keySet());
+    assertNotNull(timer, "Timer " + timerId + " not registered, registered: " + registry.timers.keySet());
 
     assertAll(
         () -> assertEquals(1L, timer.count()),

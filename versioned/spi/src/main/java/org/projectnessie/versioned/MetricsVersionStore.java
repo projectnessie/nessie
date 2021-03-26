@@ -25,8 +25,6 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
-import com.google.common.base.Throwables;
-
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -73,12 +71,12 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
   @Override
   @Nonnull
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
-    return measureWithNotFound(() -> delegate.toHash(ref), "to-hash");
+    return delegate1Ex("to-hash", () -> delegate.toHash(ref));
   }
 
   @Override
   public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
-    return measureWithNotFound(() -> delegate.toRef(refOfUnknownType), "to-ref");
+    return delegate1Ex("to-ref", () -> delegate.toRef(refOfUnknownType));
   }
 
   @Override
@@ -87,7 +85,8 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    measureWithNotFoundAndConflict(() -> delegate.commit(branch, referenceHash, metadata, operations), "commit");
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("commit",
+        () -> delegate.commit(branch, referenceHash, metadata, operations));
   }
 
   @Override
@@ -95,106 +94,77 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    measureWithNotFoundAndConflict(() -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant), "transplant");
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("transplant",
+        () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
   }
 
   @Override
   public void merge(Hash fromHash, BranchName toBranch,
       Optional<Hash> expectedHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    measureWithNotFoundAndConflict(() -> delegate.merge(fromHash, toBranch, expectedHash), "merge");
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("merge",
+        () -> delegate.merge(fromHash, toBranch, expectedHash));
   }
 
   @Override
   public void assign(NamedRef ref, Optional<Hash> expectedHash,
       Hash targetHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    measureWithNotFoundAndConflict(() -> delegate.assign(ref, expectedHash, targetHash), "assign");
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("assign",
+        () -> delegate.assign(ref, expectedHash, targetHash));
   }
 
   @Override
   public void create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    measureWithNotFoundAndAlreadyExists(() -> delegate.create(ref, targetHash), "create");
+    this.<ReferenceNotFoundException, ReferenceAlreadyExistsException>delegate2Ex("create",
+        () -> delegate.create(ref, targetHash));
   }
 
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    measureWithNotFoundAndConflict(() -> delegate.delete(ref, hash), "delete");
+    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("delete",
+        () -> delegate.delete(ref, hash));
   }
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
-    Sample sample = Timer.start(clock);
-    try {
-      return delegate.getNamedRefs().onClose(() -> measure("get-named-refs", sample, null));
-    } catch (RuntimeException e) {
-      measure("get-named-refs", sample, e);
-      throw e;
-    }
+    return delegateStream("get-named-refs", delegate::getNamedRefs);
   }
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    Sample sample = Timer.start(clock);
-    try {
-      return delegate.getCommits(ref).onClose(() -> measure("get-commits", sample, null));
-    } catch (RuntimeException | ReferenceNotFoundException e) {
-      measure("get-commits", sample, e);
-      throw e;
-    }
+    return delegateStream1Ex("get-commits", () -> delegate.getCommits(ref));
   }
 
   @Override
   public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
-    Sample sample = Timer.start(clock);
-    try {
-      return delegate.getKeys(ref).onClose(() -> measure("get-keys", sample, null));
-    } catch (RuntimeException | ReferenceNotFoundException e) {
-      measure("get-keys", sample, e);
-      throw e;
-    }
+    return delegateStream1Ex("get-keys", () -> delegate.getKeys(ref));
   }
 
   @Override
   public VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    return measureWithNotFound(() -> delegate.getValue(ref, key), "get-value");
+    return delegate1Ex("get-value", () -> delegate.getValue(ref, key));
   }
 
   @Override
   public List<Optional<VALUE>> getValues(Ref ref,
       List<Key> keys) throws ReferenceNotFoundException {
-    return measureWithNotFound(() -> delegate.getValues(ref, keys), "get-values");
+    return delegate1Ex("get-values", () -> delegate.getValues(ref, keys));
   }
 
   @Override
   public Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    Sample sample = Timer.start(clock);
-    try {
-      return delegate.getDiffs(from, to).onClose(() -> measure("get-diffs", sample, null));
-    } catch (RuntimeException | ReferenceNotFoundException e) {
-      measure("get-diffs", sample, e);
-      throw e;
-    }
+    return delegateStream1Ex("get-diffs", () -> delegate.getDiffs(from, to));
   }
 
   @Override
   public Collector collectGarbage() {
-    return measureNoCheckedException(delegate::collectGarbage, "collect-garbage");
+    return delegate("collect-garbage", delegate::collectGarbage);
   }
 
   @Override
   public Map<String, Supplier<Number>> gauges() {
     return delegate.gauges();
-  }
-
-  @FunctionalInterface
-  interface Work<R> {
-    R work() throws Exception;
-  }
-
-  @FunctionalInterface
-  interface WorkVoid {
-    void work() throws Exception;
   }
 
   private void measure(String requestName, Sample sample, Exception failure) {
@@ -209,64 +179,83 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
     sample.stop(timer);
   }
 
-  private <R> R measureNoCheckedException(Work<R> work, String requestName) {
+  private <R> Stream<R> delegateStream(String requestName, Delegate<Stream<R>> delegate) {
     Sample sample = Timer.start(clock);
     try {
-      R r = work.work();
-      measure(requestName, sample, null);
-      return r;
-    } catch (Exception e) {
+      return delegate.handle().onClose(() -> measure(requestName, sample, null));
+    } catch (RuntimeException e) {
       measure(requestName, sample, e);
-      Throwables.throwIfUnchecked(e);
-      throw new RuntimeException(e);
+      throw e;
     }
   }
 
-  private <R> R measureWithNotFound(Work<R> work, String requestName) throws ReferenceNotFoundException {
+  private <R> Stream<R> delegateStream1Ex(String requestName,
+      DelegateWith1<Stream<R>, ReferenceNotFoundException> delegate) throws ReferenceNotFoundException {
     Sample sample = Timer.start(clock);
     try {
-      R r = work.work();
-      measure(requestName, sample, null);
-      return r;
+      return delegate.handle().onClose(() -> measure(requestName, sample, null));
     } catch (ReferenceNotFoundException e) {
+      measure(requestName, sample, null);
+      throw e;
+    } catch (RuntimeException e) {
       measure(requestName, sample, e);
       throw e;
-    } catch (Exception e) {
-      measure(requestName, sample, e);
-      Throwables.throwIfUnchecked(e);
-      throw new RuntimeException(e);
     }
   }
 
-  private void measureWithNotFoundAndConflict(WorkVoid work, String requestName)
-      throws ReferenceNotFoundException, ReferenceConflictException {
+  private <R> R delegate(String requestName, Delegate<R> delegate) {
     Sample sample = Timer.start(clock);
+    Exception failure = null;
     try {
-      work.work();
-      measure(requestName, sample, null);
-    } catch (ReferenceNotFoundException | ReferenceConflictException e) {
-      measure(requestName, sample, e);
+      return delegate.handle();
+    } catch (RuntimeException e) {
+      failure = e;
       throw e;
-    } catch (Exception e) {
-      measure(requestName, sample, e);
-      Throwables.throwIfUnchecked(e);
-      throw new RuntimeException(e);
+    } finally {
+      measure(requestName, sample, failure);
     }
   }
 
-  private void measureWithNotFoundAndAlreadyExists(WorkVoid work, String requestName)
-      throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
+  private <R, E1 extends VersionStoreException> R delegate1Ex(String requestName,
+      DelegateWith1<R, E1> delegate) throws E1 {
     Sample sample = Timer.start(clock);
+    Exception failure = null;
     try {
-      work.work();
-      measure(requestName, sample, null);
-    } catch (ReferenceNotFoundException | ReferenceAlreadyExistsException e) {
-      measure(requestName, sample, e);
+      return delegate.handle();
+    } catch (RuntimeException e) {
+      failure = e;
       throw e;
-    } catch (Exception e) {
-      measure(requestName, sample, e);
-      Throwables.throwIfUnchecked(e);
-      throw new RuntimeException(e);
+    } finally {
+      measure(requestName, sample, failure);
     }
+  }
+
+  private <E1 extends VersionStoreException, E2 extends VersionStoreException> void delegate2Ex(String requestName,
+      DelegateWith2<E1, E2> delegate) throws E1, E2 {
+    Sample sample = Timer.start(clock);
+    Exception failure = null;
+    try {
+      delegate.handle();
+    } catch (RuntimeException e) {
+      failure = e;
+      throw e;
+    } finally {
+      measure(requestName, sample, failure);
+    }
+  }
+
+  @FunctionalInterface
+  interface Delegate<R> {
+    R handle();
+  }
+
+  @FunctionalInterface
+  interface DelegateWith1<R, E1 extends VersionStoreException> {
+    R handle() throws E1;
+  }
+
+  @FunctionalInterface
+  interface DelegateWith2<E1 extends VersionStoreException, E2 extends VersionStoreException> {
+    void handle() throws E1, E2;
   }
 }
