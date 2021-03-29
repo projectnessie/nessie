@@ -71,7 +71,8 @@ public class NessieExceptionMapper
       status = e.getStatus();
       reason = e.getReason();
     } else if (exception instanceof JsonParseException
-        || exception instanceof JsonMappingException) {
+        || exception instanceof JsonMappingException
+        || exception instanceof IllegalArgumentException) {
       status = Status.BAD_REQUEST.getStatusCode();
       reason = Status.BAD_REQUEST.getReasonPhrase();
     } else {
