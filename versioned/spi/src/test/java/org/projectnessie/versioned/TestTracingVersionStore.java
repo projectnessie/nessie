@@ -18,12 +18,14 @@ package org.projectnessie.versioned;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,11 +34,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingConsumer;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.stubbing.Stubber;
+import org.projectnessie.versioned.VersionStore.Collector;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -49,29 +55,203 @@ import io.opentracing.propagation.Format;
 
 class TestTracingVersionStore {
 
-  private void verify(Exception exception, Mocker mocker, String opName,
-      ThrowingConsumer<VersionStore<String, String>> executable, Map<String, ?> tags) throws Throwable {
-    TestTracer tracer = new TestTracer();
+  // This test implementation shall exercise all functions on VersionStore and cover all exception
+  // variants, which are all declared exceptions plus IllegalArgumentException (parameter error)
+  // plus a runtime-exception (server error).
 
-    VersionStore<String, String> versionStore = mockedVersionStore(tracer, mocker);
+  // Implemented as a parameterized-tests with each set of arguments representing one version-store
+  // invocation.
 
-    if (exception == null) {
-      executable.accept(versionStore);
+  private static Stream<Arguments> versionStoreInvocations() {
+    // Exception-throws to be tested, one list per distinct throws clause
+    List<Exception> runtimeThrows = Arrays.asList(
+        new IllegalArgumentException("illegal-arg"),
+        new NullPointerException("NPE")
+    );
+    List<Exception> refNotFoundThrows = Arrays.asList(
+        new IllegalArgumentException("illegal-arg"),
+        new NullPointerException("NPE"),
+        new ReferenceNotFoundException("not-found")
+    );
+    List<Exception> refNotFoundAndRefConflictThrows = Arrays.asList(
+        new IllegalArgumentException("illegal-arg"),
+        new NullPointerException("NPE"),
+        new ReferenceNotFoundException("not-found"),
+        new ReferenceConflictException("some conflict")
+    );
+    List<Exception> refNotFoundAndRefAlreadyExistsThrows = Arrays.asList(
+        new IllegalArgumentException("illegal-arg"),
+        new NullPointerException("NPE"),
+        new ReferenceNotFoundException("not-found"),
+        new ReferenceAlreadyExistsException("already exists")
+    );
+
+    // "Declare" test-invocations for all VersionStore functions with their respective outcomes
+    // and exceptions.
+    Stream<VersionStoreInvocation<?>> versionStoreFunctions = Stream.of(
+        new VersionStoreInvocation<>("toHash",
+            ImmutableMap.of("nessie.version-store.ref", "mock-branch"),
+            vs -> vs.toHash(BranchName.of("mock-branch")),
+            () -> Hash.of("cafebabe"), refNotFoundThrows),
+        new VersionStoreInvocation<>("toRef",
+            ImmutableMap.of("nessie.version-store.ref", "mock-branch"),
+            vs -> vs.toRef("mock-branch"),
+            () -> WithHash.of(Hash.of("deadbeefcafebabe"), BranchName.of("mock-branch")),
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("commit",
+            ImmutableMap.of("nessie.version-store.branch", "mock-branch",
+                "nessie.version-store.num-ops", 0,
+                "nessie.version-store.hash", "Optional.empty"),
+            vs -> vs.commit(BranchName.of("mock-branch"), Optional.empty(), "metadata", Collections.emptyList()),
+            refNotFoundAndRefConflictThrows),
+        new VersionStoreInvocation<>("transplant",
+            ImmutableMap.of("nessie.version-store.target-branch", "mock-branch",
+                "nessie.version-store.transplants", 0,
+                "nessie.version-store.hash", "Optional.empty"),
+            vs -> vs.transplant(BranchName.of("mock-branch"), Optional.empty(), Collections.emptyList()),
+            refNotFoundAndRefConflictThrows),
+        new VersionStoreInvocation<>("merge",
+            ImmutableMap.of("nessie.version-store.to-branch", "mock-branch",
+                "nessie.version-store.from-hash", "Hash 42424242",
+                "nessie.version-store.expected-hash", "Optional.empty"),
+            vs -> vs.merge(Hash.of("42424242"), BranchName.of("mock-branch"), Optional.empty()),
+            refNotFoundAndRefConflictThrows),
+        new VersionStoreInvocation<>("assign",
+            ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}",
+                "nessie.version-store.target-hash", "Hash 12341234",
+                "nessie.version-store.expected-hash", "Optional.empty"),
+            vs -> vs.assign(BranchName.of("mock-branch"), Optional.empty(), Hash.of("12341234")),
+            refNotFoundAndRefConflictThrows),
+        new VersionStoreInvocation<>("create",
+            ImmutableMap.of("nessie.version-store.target-hash", "Optional[Hash cafebabe]",
+                "nessie.version-store.ref", "BranchName{name=mock-branch}"),
+            vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
+            refNotFoundAndRefAlreadyExistsThrows),
+        new VersionStoreInvocation<>("delete",
+            ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}",
+                "nessie.version-store.hash", "Optional[Hash cafebabe]"),
+            vs -> vs.delete(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
+            refNotFoundAndRefConflictThrows),
+        new VersionStoreInvocation<>("getCommits",
+            ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}"),
+            vs -> vs.getCommits(BranchName.of("mock-branch")),
+            () -> Stream.of(
+                WithHash.of(Hash.of("cafebabe"), "log#1"),
+                WithHash.of(Hash.of("deadbeef"), "log#2")),
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("getKeys",
+            ImmutableMap.of("nessie.version-store.ref", "Hash cafe4242"),
+            vs -> vs.getKeys(Hash.of("cafe4242")),
+            () -> Stream.of(Key.of("hello", "world")),
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("getNamedRefs",
+            ImmutableMap.of(),
+            VersionStore::getNamedRefs,
+            () -> Stream.of(
+                WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
+                WithHash.of(Hash.of("deadbeef"), BranchName.of("cow"))),
+            runtimeThrows),
+        new VersionStoreInvocation<>("getValue",
+            ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}",
+                "nessie.version-store.key", "some.key"),
+            vs -> vs.getValue(BranchName.of("mock-branch"), Key.of("some", "key")),
+            () -> "foo",
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("getValues",
+            ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}",
+                "nessie.version-store.keys", "[some.key]"),
+            vs -> vs.getValues(BranchName.of("mock-branch"), Collections.singletonList(Key.of("some", "key"))),
+            () -> Collections.singletonList(Optional.empty()),
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("getDiffs",
+            ImmutableMap.of("nessie.version-store.from", "BranchName{name=mock-branch}",
+                "nessie.version-store.to", "BranchName{name=foo-branch}"),
+            vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")),
+            Stream::empty,
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("collectGarbage",
+            ImmutableMap.of(),
+            VersionStore::collectGarbage,
+            () -> mock(Collector.class),
+            runtimeThrows)
+    );
+
+    // flatten all "normal executions" + "throws XYZ"
+    return versionStoreFunctions.flatMap(invocation -> {
+          // Construct a stream of arguments, both "normal" results and exceptional results.
+          Stream<Arguments> normalExecs = Stream.of(
+              Arguments.of(invocation.opName, null, invocation.tags, invocation.result, invocation.function)
+          );
+          Stream<Arguments> exceptionalExecs = invocation.failures.stream().map(
+              ex -> Arguments.of(invocation.opName, ex, invocation.tags, null, invocation.function)
+          );
+          return Stream.concat(normalExecs, exceptionalExecs);
+        }
+    );
+  }
+
+  @ParameterizedTest
+  @MethodSource("versionStoreInvocations")
+  void versionStoreInvocation(String opName, Exception expectedThrow, Map<String, ?> tags, Supplier<?> resultSupplier,
+      ThrowingFunction<?, VersionStore<String, String>> versionStoreFunction) throws Throwable {
+    Object result = resultSupplier != null ? resultSupplier.get() : null;
+
+    Stubber stubber;
+    if (expectedThrow != null) {
+      // The invocation expects an exception to be thrown
+      stubber = doThrow(expectedThrow);
+    } else if (result != null) {
+      // Non-void method
+      stubber = doReturn(result);
     } else {
-      assertEquals(exception.getMessage(),
-          assertThrows(exception.getClass(),
-              () -> executable.accept(versionStore)).getMessage());
+      // void method
+      stubber = doNothing();
+    }
+
+    TestTracer tracer = new TestTracer();
+    @SuppressWarnings("unchecked") VersionStore<String, String> mockedVersionStore = mock(VersionStore.class);
+    versionStoreFunction.accept(stubber.when(mockedVersionStore));
+    VersionStore<String, String> versionStore = new TracingVersionStore<>(mockedVersionStore, () -> tracer);
+
+    ThrowingConsumer<VersionStore<String, String>> versionStoreExec = vs -> {
+      Object r = versionStoreFunction.accept(vs);
+      if (result != null) {
+        // non-void methods must return something
+        assertNotNull(r);
+      } else {
+        // void methods return nothing
+        assertNull(r);
+      }
+      if (result instanceof Stream) {
+        // Stream-results shall be closed to indicate the "end" of an invocation
+        Stream<?> stream = (Stream<?>) r;
+        stream.forEach(ignore -> {});
+        stream.close();
+      }
+    };
+
+    if (expectedThrow == null) {
+      // No exception expected, just invoke the VersionStore function
+      versionStoreExec.accept(versionStore);
+    } else {
+      // Surround the VersionStore function with an 'assertThrows'
+      assertEquals(expectedThrow.getMessage(),
+          assertThrows(expectedThrow.getClass(),
+              () -> versionStoreExec.accept(versionStore)).getMessage());
     }
 
     String uppercase = Character.toUpperCase(opName.charAt(0)) + opName.substring(1);
 
+    boolean isServerError = expectedThrow != null
+        && !(expectedThrow instanceof VersionStoreException) && !(expectedThrow instanceof IllegalArgumentException);
+
     List<Map<String, String>> expectedLogs =
-        (exception instanceof RuntimeException)
-            ? Collections.singletonList(ImmutableMap.of("event", "error", "error.object", exception.toString()))
+        isServerError
+            ? Collections.singletonList(ImmutableMap.of("event", "error", "error.object", expectedThrow.toString()))
             : Collections.emptyList();
 
     ImmutableMap.Builder<Object, Object> tagsBuilder = ImmutableMap.builder().putAll(tags);
-    if (exception instanceof RuntimeException) {
+    if (isServerError) {
       tagsBuilder.put("error", true);
     }
     Map<Object, Object> expectedTags = tagsBuilder.put("nessie.version-store.operation", uppercase)
@@ -80,198 +260,45 @@ class TestTracingVersionStore {
     assertAll(
         () -> assertEquals("VersionStore." + opName, tracer.opName),
         () -> assertEquals(expectedLogs, tracer.activeSpan.logs, "expected logs don't match"),
-        () -> assertEquals(expectedTags, tracer.activeSpan.tags, "expected tags don't match"),
+        () -> assertEquals(new HashMap<>(expectedTags), tracer.activeSpan.tags, "expected tags don't match"),
         () -> assertTrue(tracer.parentSet, "Span-parent not set"),
         () -> assertTrue(tracer.closed, "Scope not closed"));
   }
 
-  @Test
-  void toHash() throws Throwable {
-    verify(null,
-        vs -> when(vs.toHash(BranchName.of("mock-branch"))).thenReturn(Hash.of("cafebabe")),
-        "toHash",
-        vs -> vs.toHash(BranchName.of("mock-branch")),
-        ImmutableMap.of(
-            "nessie.version-store.ref", "mock-branch"));
-  }
+  static class VersionStoreInvocation<R> {
+    final String opName;
+    final Map<String, ?> tags;
+    final ThrowingFunction<?, VersionStore<String, String>> function;
+    final Supplier<R> result;
+    final List<Exception> failures;
 
-  @SuppressWarnings("ConstantConditions")
-  @Test
-  void toHashNPE() throws Throwable {
-    Exception exception = new NullPointerException("mocked");
-    verify(exception,
-        vs -> when(vs.toHash(null)).thenThrow(exception),
-        "toHash",
-        vs -> vs.toHash(null),
-        ImmutableMap.of(
-            "nessie.version-store.ref", "<null>"));
-  }
+    VersionStoreInvocation(String opName, Map<String, ?> tags,
+        ThrowingFunction<?, VersionStore<String, String>> function,
+        Supplier<R> result, List<Exception> failures) {
+      this.opName = opName;
+      this.tags = tags;
+      this.function = function;
+      this.result = result;
+      this.failures = failures;
+    }
 
-  @Test
-  void toHashNPE2() throws Throwable {
-    Exception exception = new NullPointerException("mocked");
-    verify(exception,
-        vs -> when(vs.toHash(BranchName.of("mock-branch"))).thenThrow(exception),
-        "toHash",
-        vs -> vs.toHash(BranchName.of("mock-branch")),
-        ImmutableMap.of(
-            "nessie.version-store.ref", "mock-branch"));
-  }
-
-  @Test
-  void toHashRefNotFound() throws Throwable {
-    ReferenceNotFoundException refNF = new ReferenceNotFoundException("mocked");
-    verify(refNF,
-        vs -> when(vs.toHash(BranchName.of("mock-branch"))).thenThrow(refNF),
-        "toHash",
-        vs -> vs.toHash(BranchName.of("mock-branch")),
-        ImmutableMap.of(
-            "nessie.version-store.ref", "mock-branch"));
-  }
-
-  @Test
-  void toRef() {
-    // TODO
-  }
-
-  @Test
-  void commit() {
-    // TODO
-  }
-
-  @Test
-  void transplant() {
-    // TODO
-  }
-
-  @Test
-  void merge() {
-    // TODO
-  }
-
-  @Test
-  void assign() {
-    // TODO
-  }
-
-  @Test
-  void create() throws Throwable {
-    verify(null,
-        vs -> doNothing().when(vs).create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
-        "create",
-        vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
-        ImmutableMap.of("nessie.version-store.target-hash", "Optional[Hash cafebabe]",
-            "nessie.version-store.ref", "BranchName{name=mock-branch}"));
-  }
-
-  @Test
-  void createEmptyHash() throws Throwable {
-    verify(null,
-        vs -> doNothing().when(vs).create(BranchName.of("mock-branch"), Optional.empty()),
-        "create",
-        vs -> vs.create(BranchName.of("mock-branch"), Optional.empty()),
-        ImmutableMap.of("nessie.version-store.target-hash", "Optional.empty",
-            "nessie.version-store.ref", "BranchName{name=mock-branch}"));
-  }
-
-  @Test
-  void delete() {
-    // TODO
-  }
-
-  @Test
-  void getCommits() throws Throwable {
-    verify(null,
-        vs -> when(vs.getCommits(BranchName.of("mock-branch"))).thenReturn(
-            Stream.of(
-                WithHash.of(Hash.of("cafebabe"), "log#1"),
-                WithHash.of(Hash.of("deadbeef"), "log#2")
-            )
-        ),
-        "getCommits",
-        vs -> assertStream(
-            vs.getCommits(BranchName.of("mock-branch")),
-            WithHash.of(Hash.of("cafebabe"), "log#1"),
-            WithHash.of(Hash.of("deadbeef"), "log#2")),
-        ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}"));
-  }
-
-  @Test
-  void getCommitsRefNF() throws Throwable {
-    ReferenceNotFoundException refNF = new ReferenceNotFoundException("mocked");
-    verify(refNF,
-        vs -> when(vs.getCommits(BranchName.of("mock-branch"))).thenThrow(refNF),
-        "getCommits",
-        vs -> vs.getCommits(BranchName.of("mock-branch")),
-        ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}"));
-  }
-
-  @Test
-  void getKeys() {
-    // TODO
-  }
-
-  @Test
-  void getNamedRefsRE() throws Throwable {
-    Exception exception = new RuntimeException("mocked");
-    verify(exception,
-        vs -> when(vs.getNamedRefs()).thenThrow(exception),
-        "getNamedRefs",
-        VersionStore::getNamedRefs,
-        ImmutableMap.of());
-  }
-
-  @Test
-  void getNamedRefs() throws Throwable {
-    verify(null,
-        vs -> when(vs.getNamedRefs()).thenReturn(Stream.of(
-            WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
-            WithHash.of(Hash.of("deadbeef"), BranchName.of("cow"))
-        )),
-        "getNamedRefs",
-        vs -> assertStream(
-            vs.getNamedRefs(),
-            WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
-            WithHash.of(Hash.of("deadbeef"), BranchName.of("cow"))),
-        ImmutableMap.of());
-  }
-
-  @Test
-  void getValue() {
-    // TODO
-  }
-
-  @Test
-  void getValues() {
-    // TODO
-  }
-
-  @Test
-  void getDiffs() {
-    // TODO
-  }
-
-  @Test
-  void collectGarbage() {
-    // TODO
+    VersionStoreInvocation(String opName, Map<String, ?> tags,
+        ThrowingConsumer<VersionStore<String, String>> function,
+        List<Exception> failures) {
+      this.opName = opName;
+      this.tags = tags;
+      this.function = vs -> {
+        function.accept(vs);
+        return null;
+      };
+      this.result = null;
+      this.failures = failures;
+    }
   }
 
   @FunctionalInterface
-  interface Mocker {
-    void mock(VersionStore<String, String> mockedVersionStore) throws Exception;
-  }
-
-  private static <R> void assertStream(Stream<R> stream, Object... expected) {
-    List<R> result = stream.collect(Collectors.toList());
-    assertEquals(Arrays.asList(expected), result);
-    stream.close();
-  }
-
-  @SuppressWarnings("unchecked")
-  static VersionStore<String, String> mockedVersionStore(Tracer tracer, Mocker mocker) throws Exception {
-    VersionStore<String, String> versionStore = mock(VersionStore.class);
-    mocker.mock(versionStore);
-    return new TracingVersionStore<>(versionStore, () -> tracer);
+  interface ThrowingFunction<R, A> {
+    R accept(A arg) throws Throwable;
   }
 
   static class TestTracer implements Tracer {

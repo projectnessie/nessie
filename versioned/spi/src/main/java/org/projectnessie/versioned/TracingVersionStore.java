@@ -198,7 +198,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
     return delegateStream1Ex("VersionStore.getDiffs", b -> b
         .withTag("nessie.version-store.operation", "GetDiffs")
         .withTag("nessie.version-store.from", safeToString(from))
-        .withTag("to", safeToString(to)),
+        .withTag("nessie.version-store.to", safeToString(to)),
         () -> delegate.getDiffs(from, to));
   }
 
