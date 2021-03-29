@@ -20,11 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,13 +36,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingConsumer;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.stubbing.Stubber;
+import org.projectnessie.versioned.VersionStore.Collector;
 
 import io.micrometer.core.instrument.AbstractTimer;
 import io.micrometer.core.instrument.Clock;
@@ -63,214 +67,228 @@ import io.micrometer.core.instrument.distribution.pause.PauseDetector;
 
 class TestMetricsVersionStore {
 
-  private void verify(Exception exception, Mocker mocker, String opName,
-      ThrowingConsumer<VersionStore<String, String>> executable) throws Throwable {
+  // This test implementation shall exercise all functions on VersionStore and cover all exception
+  // variants, which are all declared exceptions plus IllegalArgumentException (parameter error)
+  // plus a runtime-exception (server error).
+
+  // Implemented as a parameterized-tests with each set of arguments representing one version-store
+  // invocation.
+
+  private static Stream<Arguments> versionStoreInvocations() {
+    // Exception-throws to be tested, one list per distinct throws clause
+    List<Exception> runtimeThrows = Arrays.asList(
+        new IllegalArgumentException("illegal-arg"),
+        new NullPointerException("NPE")
+    );
+    List<Exception> refNotFoundThrows = Arrays.asList(
+        new IllegalArgumentException("illegal-arg"),
+        new NullPointerException("NPE"),
+        new ReferenceNotFoundException("not-found")
+    );
+    List<Exception> refNotFoundAndRefConflictThrows = Arrays.asList(
+        new IllegalArgumentException("illegal-arg"),
+        new NullPointerException("NPE"),
+        new ReferenceNotFoundException("not-found"),
+        new ReferenceConflictException("some conflict")
+    );
+    List<Exception> refNotFoundAndRefAlreadyExistsThrows = Arrays.asList(
+        new IllegalArgumentException("illegal-arg"),
+        new NullPointerException("NPE"),
+        new ReferenceNotFoundException("not-found"),
+        new ReferenceAlreadyExistsException("already exists")
+    );
+
+    // "Declare" test-invocations for all VersionStore functions with their respective outcomes
+    // and exceptions.
+    Stream<VersionStoreInvocation<?>> versionStoreFunctions = Stream.of(
+        new VersionStoreInvocation<>("to-hash",
+            vs -> vs.toHash(BranchName.of("mock-branch")),
+            () -> Hash.of("cafebabe"), refNotFoundThrows),
+        new VersionStoreInvocation<>("to-ref",
+            vs -> vs.toRef("mock-branch"),
+            () -> WithHash.of(Hash.of("deadbeefcafebabe"), BranchName.of("mock-branch")),
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("commit",
+            vs -> vs.commit(BranchName.of("mock-branch"), Optional.empty(), "metadata", Collections.emptyList()),
+            refNotFoundAndRefConflictThrows),
+        new VersionStoreInvocation<>("transplant",
+            vs -> vs.transplant(BranchName.of("mock-branch"), Optional.empty(), Collections.emptyList()),
+            refNotFoundAndRefConflictThrows),
+        new VersionStoreInvocation<>("merge",
+            vs -> vs.merge(Hash.of("42424242"), BranchName.of("mock-branch"), Optional.empty()),
+            refNotFoundAndRefConflictThrows),
+        new VersionStoreInvocation<>("assign",
+            vs -> vs.assign(BranchName.of("mock-branch"), Optional.empty(), Hash.of("12341234")),
+            refNotFoundAndRefConflictThrows),
+        new VersionStoreInvocation<>("create",
+            vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
+            refNotFoundAndRefAlreadyExistsThrows),
+        new VersionStoreInvocation<>("delete",
+            vs -> vs.delete(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
+            refNotFoundAndRefConflictThrows),
+        new VersionStoreInvocation<>("get-commits",
+            vs -> vs.getCommits(BranchName.of("mock-branch")),
+            () -> Stream.of(
+                WithHash.of(Hash.of("cafebabe"), "log#1"),
+                WithHash.of(Hash.of("deadbeef"), "log#2")),
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("get-keys",
+            vs -> vs.getKeys(Hash.of("cafe4242")),
+            () -> Stream.of(Key.of("hello", "world")),
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("get-named-refs",
+            VersionStore::getNamedRefs,
+            () -> Stream.of(
+                WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
+                WithHash.of(Hash.of("deadbeef"), BranchName.of("cow"))),
+            runtimeThrows),
+        new VersionStoreInvocation<>("get-value",
+            vs -> vs.getValue(BranchName.of("mock-branch"), Key.of("some", "key")),
+            () -> "foo",
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("get-values",
+            vs -> vs.getValues(BranchName.of("mock-branch"), Collections.singletonList(Key.of("some", "key"))),
+            () -> Collections.singletonList(Optional.empty()),
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("get-diffs",
+            vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")),
+            Stream::empty,
+            refNotFoundThrows),
+        new VersionStoreInvocation<>("collect-garbage",
+            VersionStore::collectGarbage,
+            () -> mock(Collector.class),
+            runtimeThrows)
+    );
+
+    // flatten all "normal executions" + "throws XYZ"
+    return versionStoreFunctions.flatMap(invocation -> {
+          // Construct a stream of arguments, both "normal" results and exceptional results.
+          Stream<Arguments> normalExecs = Stream.of(
+              Arguments.of(invocation.opName, null, invocation.result, invocation.function)
+          );
+          Stream<Arguments> exceptionalExecs = invocation.failures.stream().map(
+              ex -> Arguments.of(invocation.opName, ex, null, invocation.function)
+          );
+          return Stream.concat(normalExecs, exceptionalExecs);
+        }
+    );
+  }
+
+  @ParameterizedTest
+  @MethodSource("versionStoreInvocations")
+  void versionStoreInvocation(String opName, Exception expectedThrow, Supplier<?> resultSupplier,
+      ThrowingFunction<?, VersionStore<String, String>> versionStoreFunction) throws Throwable {
     TestMeterRegistry registry = new TestMeterRegistry();
 
-    VersionStore<String, String> versionStore = mockedVersionStore(registry, mocker);
+    Object result = resultSupplier != null ? resultSupplier.get() : null;
 
-    if (exception == null) {
-      executable.accept(versionStore);
+    Stubber stubber;
+    if (expectedThrow != null) {
+      // The invocation expects an exception to be thrown
+      stubber = doThrow(expectedThrow);
+    } else if (result != null) {
+      // Non-void method
+      stubber = doReturn(result);
     } else {
-      assertEquals(exception.getMessage(),
-          assertThrows(exception.getClass(),
-              () -> executable.accept(versionStore)).getMessage());
+      // void method
+      stubber = doNothing();
     }
 
-    Id timerId = new Id("nessie.version-store.request",
-        Tags.of("error", exception instanceof RuntimeException ? "true" : "false",
-            "request", opName,
-            "test", "unit"),
-        "nanoseconds",
-        null,
-        Type.TIMER);
+    @SuppressWarnings("unchecked") VersionStore<String, String> mockedVersionStore = mock(VersionStore.class);
+    versionStoreFunction.accept(stubber.when(mockedVersionStore));
+    VersionStore<String, String> versionStore = new MetricsVersionStore<>(mockedVersionStore,
+        Collections.singletonMap("test", "unit"), registry, registry.clock);
+
+    Id timerId = timerId(opName, expectedThrow);
+
+    ThrowingConsumer<VersionStore<String, String>> versionStoreExec = vs -> {
+      Object r = versionStoreFunction.accept(vs);
+      if (result != null) {
+        // non-void methods must return something
+        assertNotNull(r);
+      } else {
+        // void methods return nothing
+        assertNull(r);
+      }
+      if (result instanceof Stream) {
+        // Stream-results shall be closed to indicate the "end" of an invocation
+        Stream<?> stream = (Stream<?>) r;
+        assertNull(registry.timers.get(timerId), "Timer " + timerId + " registered too early");
+        stream.forEach(ignore -> {});
+        stream.close();
+      }
+    };
+
+    if (expectedThrow == null) {
+      // No exception expected, just invoke the VersionStore function
+      versionStoreExec.accept(versionStore);
+    } else {
+      // Surround the VersionStore function with an 'assertThrows'
+      assertEquals(expectedThrow.getMessage(),
+          assertThrows(expectedThrow.getClass(),
+              () -> versionStoreExec.accept(versionStore)).getMessage());
+    }
 
     TestTimer timer = registry.timers.get(timerId);
+
+    // The timer must have been registered, when the VersionStore function has finished
+    // and the returned Stream has been closed.
     assertNotNull(timer, "Timer " + timerId + " not registered, registered: " + registry.timers.keySet());
 
+    // Assert some timings
     assertAll(
         () -> assertEquals(1L, timer.count()),
         () -> assertEquals(registry.clock.expectedDuration, timer.totalTime(TimeUnit.NANOSECONDS))
     );
   }
 
-  @Test
-  void toHash() throws Throwable {
-    verify(null,
-        vs -> when(vs.toHash(BranchName.of("mock-branch"))).thenReturn(Hash.of("cafebabe")),
-        "to-hash",
-        vs -> vs.toHash(BranchName.of("mock-branch")));
-  }
+  static class VersionStoreInvocation<R> {
+    final String opName;
+    final ThrowingFunction<?, VersionStore<String, String>> function;
+    final Supplier<R> result;
+    final List<Exception> failures;
 
-  @SuppressWarnings("ConstantConditions")
-  @Test
-  void toHashNPE() throws Throwable {
-    Exception exception = new NullPointerException("mocked");
-    verify(exception,
-        vs -> when(vs.toHash(null)).thenThrow(exception),
-        "to-hash",
-        vs -> vs.toHash(null));
-  }
+    VersionStoreInvocation(String opName,
+        ThrowingFunction<?, VersionStore<String, String>> function,
+        Supplier<R> result, List<Exception> failures) {
+      this.opName = opName;
+      this.function = function;
+      this.result = result;
+      this.failures = failures;
+    }
 
-  @Test
-  void toHashNPE2() throws Throwable {
-    Exception exception = new NullPointerException("mocked");
-    verify(exception,
-        vs -> when(vs.toHash(BranchName.of("mock-branch"))).thenThrow(exception),
-        "to-hash",
-        vs -> vs.toHash(BranchName.of("mock-branch")));
-  }
-
-  @Test
-  void toHashRefNotFound() throws Throwable {
-    ReferenceNotFoundException refNF = new ReferenceNotFoundException("mocked");
-    verify(refNF,
-        vs -> when(vs.toHash(BranchName.of("mock-branch"))).thenThrow(refNF),
-        "to-hash",
-        vs -> vs.toHash(BranchName.of("mock-branch")));
-  }
-
-  @Test
-  void toRef() {
-    // TODO
-  }
-
-  @Test
-  void commit() {
-    // TODO
-  }
-
-  @Test
-  void transplant() {
-    // TODO
-  }
-
-  @Test
-  void merge() {
-    // TODO
-  }
-
-  @Test
-  void assign() {
-    // TODO
-  }
-
-  @Test
-  void create() throws Throwable {
-    verify(null,
-        vs -> doNothing().when(vs).create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
-        "create",
-        vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))));
-  }
-
-  @Test
-  void createEmptyHash() throws Throwable {
-    verify(null,
-        vs -> doNothing().when(vs).create(BranchName.of("mock-branch"), Optional.empty()),
-        "create",
-        vs -> vs.create(BranchName.of("mock-branch"), Optional.empty()));
-  }
-
-  @Test
-  void delete() {
-    // TODO
-  }
-
-  @Test
-  void getCommits() throws Throwable {
-    verify(null,
-        vs -> when(vs.getCommits(BranchName.of("mock-branch"))).thenReturn(
-            Stream.of(
-                WithHash.of(Hash.of("cafebabe"), "log#1"),
-                WithHash.of(Hash.of("deadbeef"), "log#2")
-            )
-        ),
-        "get-commits",
-        vs -> assertStream(
-            vs.getCommits(BranchName.of("mock-branch")),
-            WithHash.of(Hash.of("cafebabe"), "log#1"),
-            WithHash.of(Hash.of("deadbeef"), "log#2")));
-  }
-
-  @Test
-  void getCommitsRefNF() throws Throwable {
-    ReferenceNotFoundException refNF = new ReferenceNotFoundException("mocked");
-    verify(refNF,
-        vs -> when(vs.getCommits(BranchName.of("mock-branch"))).thenThrow(refNF),
-        "get-commits",
-        vs -> vs.getCommits(BranchName.of("mock-branch")));
-  }
-
-  @Test
-  void getKeys() {
-    // TODO
-  }
-
-  @Test
-  void getNamedRefsRE() throws Throwable {
-    Exception exception = new RuntimeException("mocked");
-    verify(exception,
-        vs -> when(vs.getNamedRefs()).thenThrow(exception),
-        "get-named-refs",
-        VersionStore::getNamedRefs
-    );
-  }
-
-  @Test
-  void getNamedRefs() throws Throwable {
-    verify(null,
-        vs -> when(vs.getNamedRefs()).thenReturn(Stream.of(
-            WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
-            WithHash.of(Hash.of("deadbeef"), BranchName.of("cow"))
-        )),
-        "get-named-refs",
-        vs -> assertStream(
-            vs.getNamedRefs(),
-            WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
-            WithHash.of(Hash.of("deadbeef"), BranchName.of("cow")))
-    );
-  }
-
-  @Test
-  void getValue() {
-    // TODO
-  }
-
-  @Test
-  void getValues() {
-    // TODO
-  }
-
-  @Test
-  void getDiffs() {
-    // TODO
-  }
-
-  @Test
-  void collectGarbage() {
-    // TODO
+    VersionStoreInvocation(String opName,
+        ThrowingConsumer<VersionStore<String, String>> function,
+        List<Exception> failures) {
+      this.opName = opName;
+      this.function = vs -> {
+        function.accept(vs);
+        return null;
+      };
+      this.result = null;
+      this.failures = failures;
+    }
   }
 
   @FunctionalInterface
-  interface Mocker {
-    void mock(VersionStore<String, String> mockedVersionStore) throws Exception;
+  interface ThrowingFunction<R, A> {
+    R accept(A arg) throws Throwable;
   }
 
-  private static <R> void assertStream(Stream<R> stream, Object... expected) {
-    List<R> result = stream.collect(Collectors.toList());
-    assertEquals(Arrays.asList(expected), result);
+  private static Id timerId(String opName, Exception expectedThrow) {
+    // All exceptions except instances of VersionStoreException and IllegalArgumentExceptions
+    // are server-errors.
+    boolean isErrorException = expectedThrow != null
+        && (!(expectedThrow instanceof VersionStoreException))
+        && (!(expectedThrow instanceof IllegalArgumentException));
 
-    assertTrue(TestMeterRegistry.currentRegistry.timers.isEmpty(), "Must have no timers yet, "
-        + "because no measurement should have been recorded, because the Stream's not closed");
-
-    stream.close();
-  }
-
-  @SuppressWarnings("unchecked")
-  static VersionStore<String, String> mockedVersionStore(TestMeterRegistry registry, Mocker mocker) throws Exception {
-    VersionStore<String, String> versionStore = mock(VersionStore.class);
-    mocker.mock(versionStore);
-    return new MetricsVersionStore<>(versionStore, Collections.singletonMap("test", "unit"), registry, registry.clock);
+    return new Id("nessie.version-store.request",
+        Tags.of("error", Boolean.toString(isErrorException),
+            "request", opName,
+            "test", "unit"),
+        "nanoseconds",
+        null,
+        Type.TIMER);
   }
 
   static class TestTimer extends AbstractTimer {
