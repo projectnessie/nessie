@@ -68,6 +68,7 @@ import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
+import org.projectnessie.model.Hash;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableMerge;
 import org.projectnessie.model.ImmutableOperations;
@@ -112,6 +113,13 @@ class TestRest {
   @AfterEach
   void closeClient() {
     client.close();
+  }
+
+  @Test
+  void illegalArgumentException() {
+    assertThat(
+        assertThrows(NessieBadRequestException.class, () -> tree.createReference(Hash.of("12341234cafebeef"))).getMessage(),
+        startsWith("Bad Request (HTTP/400): Only tag and branch references can be created"));
   }
 
   @ParameterizedTest
