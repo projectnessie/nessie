@@ -71,8 +71,6 @@ public class NessieExceptionMapper
       reason = st.getReasonPhrase();
       message = exception.getMessage();
     } else if (exception instanceof BaseNessieClientServerException) {
-      // log message at debug level so we can review stack traces if enabled.
-      LOGGER.debug("Exception on server with appropriate error sent to client.", exception);
       BaseNessieClientServerException e = (BaseNessieClientServerException) exception;
       status = e.getStatus();
       reason = e.getReason();
