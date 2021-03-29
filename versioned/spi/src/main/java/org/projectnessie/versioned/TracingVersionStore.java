@@ -223,6 +223,9 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
     try {
       result = delegate.handle().onClose(scope::close);
       return result;
+    } catch (IllegalArgumentException e) {
+      // IllegalArgumentException is a special kind of exception that indicates a user-error.
+      throw e;
     } catch (RuntimeException e) {
       throw traceRuntimeException(scope, e);
     } finally {
@@ -240,6 +243,9 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
     try {
       result = delegate.handle().onClose(scope::close);
       return result;
+    } catch (IllegalArgumentException e) {
+      // IllegalArgumentException is a special kind of exception that indicates a user-error.
+      throw e;
     } catch (RuntimeException e) {
       throw traceRuntimeException(scope, e);
     } finally {
@@ -255,6 +261,9 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
         return delegate.handle();
+      } catch (IllegalArgumentException e) {
+        // IllegalArgumentException is a special kind of exception that indicates a user-error.
+        throw e;
       } catch (RuntimeException e) {
         throw traceRuntimeException(scope, e);
       }
@@ -266,6 +275,9 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
         return delegate.handle();
+      } catch (IllegalArgumentException e) {
+        // IllegalArgumentException is a special kind of exception that indicates a user-error.
+        throw e;
       } catch (RuntimeException e) {
         throw traceRuntimeException(scope, e);
       }
@@ -277,6 +289,9 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
         delegate.handle();
+      } catch (IllegalArgumentException e) {
+        // IllegalArgumentException is a special kind of exception that indicates a user-error.
+        throw e;
       } catch (RuntimeException e) {
         throw traceRuntimeException(scope, e);
       }
