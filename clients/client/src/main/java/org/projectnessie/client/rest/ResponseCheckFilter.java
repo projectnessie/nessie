@@ -60,6 +60,8 @@ public class ResponseCheckFilter {
         throw new NessieNotFoundException(error);
       case CONFLICT:
         throw new NessieConflictException(error);
+      case TOO_MANY_REQUESTS:
+        throw new NessieBackendThrottledException(error);
       case INTERNAL_SERVER_ERROR:
         throw new NessieInternalServerException(error);
       default:

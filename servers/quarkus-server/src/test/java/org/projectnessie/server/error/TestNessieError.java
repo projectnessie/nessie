@@ -20,6 +20,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.net.URI;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.rest.NessieBackendThrottledException;
 import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
 import org.projectnessie.client.rest.NessieInternalServerException;
@@ -186,8 +188,7 @@ class TestNessieError {
     assertAll(
         () -> assertEquals("not-there-message",
                            ex.getMessage()),
-        () -> assertThat(ex.getServerStackTrace(),
-                         startsWith("org.projectnessie.error.NessieNotFoundException: not-there-message\n")),
+        () -> assertNull(ex.getServerStackTrace()),
         () -> assertEquals(Response.Status.NOT_FOUND.getStatusCode(), ex.getStatus())
     );
   }
@@ -196,28 +197,49 @@ class TestNessieError {
   void nonConstraintValidationExceptions() {
     // Exceptions that trigger the "else-ish" part in ResteasyExceptionMapper.toResponse()
     assertAll(
-        () -> assertThat(
+        () -> assertEquals(
+            "Internal Server Error (HTTP/500): javax.validation.ConstraintDefinitionException: meep",
             assertThrows(NessieInternalServerException.class,
                 () -> unwrap(() ->
                     client.newRequest()
                         .path("constraintDefinitionException")
-                        .get())).getMessage(),
-            startsWith("Internal Server Error (HTTP/500): javax.validation.ConstraintDefinitionException: meep\n")),
-        () -> assertThat(
+                        .get())).getMessage()),
+        () -> assertEquals(
+            "Internal Server Error (HTTP/500): javax.validation.ConstraintDeclarationException: meep",
             assertThrows(NessieInternalServerException.class,
                 () -> unwrap(() ->
                     client.newRequest()
                         .path("constraintDeclarationException")
-                        .get())).getMessage(),
-            startsWith("Internal Server Error (HTTP/500): javax.validation.ConstraintDeclarationException: meep\n")),
-        () -> assertThat(
+                        .get())).getMessage()),
+        () -> assertEquals(
+            "Internal Server Error (HTTP/500): javax.validation.GroupDefinitionException: meep",
             assertThrows(NessieInternalServerException.class,
                 () -> unwrap(() ->
                     client.newRequest()
                         .path("groupDefinitionException")
-                        .get())).getMessage(),
-            startsWith("Internal Server Error (HTTP/500): javax.validation.GroupDefinitionException: meep\n"))
+                        .get())).getMessage())
     );
+  }
+
+  @Test
+  void unhandledRuntimeExceptionInStore() {
+    // see org.projectnessie.server.error.ErrorTestService.unhandledExceptionInTvsStore
+    assertEquals("Internal Server Error (HTTP/500): java.lang.RuntimeException: Store.getValues-throwing",
+        assertThrows(NessieInternalServerException.class,
+            () -> client.newRequest()
+                .path("unhandledExceptionInTvsStore/runtime")
+                .get()).getMessage());
+  }
+
+  @Test
+  void backendThrottledExceptionInStore() {
+    // see org.projectnessie.server.error.ErrorTestService.unhandledExceptionInTvsStore
+    assertEquals("Too Many Requests (HTTP/429): Backend store refused to process the request: "
+            + "org.projectnessie.versioned.BackendLimitExceededException: Store.getValues-throttled",
+        assertThrows(NessieBackendThrottledException.class,
+            () -> client.newRequest()
+                .path("unhandledExceptionInTvsStore/throttle")
+                .get()).getMessage());
   }
 
   void unwrap(Executable exec) throws Throwable {
