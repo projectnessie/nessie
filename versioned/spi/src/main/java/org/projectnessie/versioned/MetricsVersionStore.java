@@ -183,6 +183,10 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
     Sample sample = Timer.start(clock);
     try {
       return delegate.handle().onClose(() -> measure(requestName, sample, null));
+    } catch (IllegalArgumentException e) {
+      // IllegalArgumentException indicates a user-error, not a server error
+      measure(requestName, sample, null);
+      throw e;
     } catch (RuntimeException e) {
       measure(requestName, sample, e);
       throw e;
@@ -194,7 +198,8 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
     Sample sample = Timer.start(clock);
     try {
       return delegate.handle().onClose(() -> measure(requestName, sample, null));
-    } catch (ReferenceNotFoundException e) {
+    } catch (IllegalArgumentException | ReferenceNotFoundException e) {
+      // IllegalArgumentException indicates a user-error, not a server error
       measure(requestName, sample, null);
       throw e;
     } catch (RuntimeException e) {
@@ -208,6 +213,9 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
     Exception failure = null;
     try {
       return delegate.handle();
+    } catch (IllegalArgumentException e) {
+      // IllegalArgumentException indicates a user-error, not a server error
+      throw e;
     } catch (RuntimeException e) {
       failure = e;
       throw e;
@@ -222,6 +230,9 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
     Exception failure = null;
     try {
       return delegate.handle();
+    } catch (IllegalArgumentException e) {
+      // IllegalArgumentException indicates a user-error, not a server error
+      throw e;
     } catch (RuntimeException e) {
       failure = e;
       throw e;
@@ -236,6 +247,9 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
     Exception failure = null;
     try {
       delegate.handle();
+    } catch (IllegalArgumentException e) {
+      // IllegalArgumentException indicates a user-error, not a server error
+      throw e;
     } catch (RuntimeException e) {
       failure = e;
       throw e;
