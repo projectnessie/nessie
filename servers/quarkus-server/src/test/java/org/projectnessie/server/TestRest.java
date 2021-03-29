@@ -171,8 +171,8 @@ class TestRest {
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
     ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
-    Operations ops = ImmutableOperations.builder().addOperations(op).build();
-    tree.commitMultipleOperations(branchName, branchHash, "One dummy op", ops);
+    Operations ops = ImmutableOperations.builder().addOperations(op).commitMeta(CommitMeta.fromMessage("One dummy op")).build();
+    tree.commitMultipleOperations(branchName, branchHash, ops);
     log = tree.getCommitLog(branchName, null, null);
     String newHash = log.getOperations().get(0).getHash();
 
@@ -286,7 +286,7 @@ class TestRest {
       "abc'de@{blah" + COMMA_VALID_HASH_3
   })
   void invalidBranchNames(String invalidBranchName, String validHash) {
-    Operations ops = ImmutableOperations.builder().build();
+    Operations ops = ImmutableOperations.builder().commitMeta(CommitMeta.fromMessage("")).build();
     ContentsKey key = ContentsKey.of("x");
     Contents cts = IcebergTable.of("moo");
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
@@ -294,7 +294,7 @@ class TestRest {
     assertAll(
         () -> assertEquals("Bad Request (HTTP/400): commitMultipleOperations.branchName: " + REF_NAME_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.commitMultipleOperations(invalidBranchName, validHash, null, ops)).getMessage()),
+                () -> tree.commitMultipleOperations(invalidBranchName, validHash, ops)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): deleteBranch.branchName: " + REF_NAME_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.deleteBranch(invalidBranchName, validHash)).getMessage()),
@@ -353,7 +353,7 @@ class TestRest {
     String invalidHash = invalidHashIn != null ? invalidHashIn : "";
 
     String validBranchName = "hello";
-    Operations ops = ImmutableOperations.builder().build();
+    Operations ops = ImmutableOperations.builder().commitMeta(CommitMeta.fromMessage("")).build();
     ContentsKey key = ContentsKey.of("x");
     Contents cts = IcebergTable.of("moo");
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
@@ -361,7 +361,7 @@ class TestRest {
     assertAll(
         () -> assertEquals("Bad Request (HTTP/400): commitMultipleOperations.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.commitMultipleOperations(validBranchName, invalidHash, null, ops)).getMessage()),
+                () -> tree.commitMultipleOperations(validBranchName, invalidHash, ops)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): deleteBranch.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.deleteBranch(validBranchName, invalidHash)).getMessage()),

@@ -222,13 +222,13 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public void commitMultipleOperations(String branch, String hash, String message, Operations operations)
+  public void commitMultipleOperations(String branch, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation<Contents>> ops = operations.getOperations()
         .stream()
         .map(TreeResource::toOp)
         .collect(ImmutableList.toImmutableList());
-    doOps(branch, hash, message, ops);
+    doOps(branch, hash, operations.getCommitMeta(), ops);
   }
 
   private static Optional<Hash> toHash(String hash, boolean required) throws NessieConflictException {

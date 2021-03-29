@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.24.0
+      - python-requests/2.25.0
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
@@ -39,7 +39,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.24.0
+      - python-requests/2.25.0
     method: POST
     uri: http://localhost:19120/api/v1/trees/tree
   response:
@@ -70,7 +70,7 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - python-requests/2.24.0
+      - python-requests/2.25.0
     method: POST
     uri: http://localhost:19120/api/v1/trees/tree
   response:
@@ -90,7 +90,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.24.0
+      - python-requests/2.25.0
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:
@@ -117,7 +117,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.24.0
+      - python-requests/2.25.0
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/test
   response:
@@ -142,7 +142,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.24.0
+      - python-requests/2.25.0
     method: GET
     uri: http://localhost:19120/api/v1/trees/tree/test/entries
   response:
@@ -169,7 +169,7 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - python-requests/2.24.0
+      - python-requests/2.25.0
     method: DELETE
     uri: http://localhost:19120/api/v1/trees/branch/test?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
@@ -189,7 +189,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - python-requests/2.24.0
+      - python-requests/2.25.0
     method: GET
     uri: http://localhost:19120/api/v1/trees
   response:

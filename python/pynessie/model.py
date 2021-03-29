@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Nessie Data objects."""
+from datetime import datetime
 from typing import List
 from typing import Optional
 
@@ -157,16 +158,6 @@ class OperationsSchema(OneOfSchema):
 
 
 @attr.dataclass
-class MultiContents:
-    """Contents container for commit."""
-
-    operations: List[Operation] = desert.ib(fields.List(fields.Nested(OperationsSchema())))
-
-
-MultiContentsSchema = desert.schema_class(MultiContents)
-
-
-@attr.dataclass
 class Reference:
     """Dataclass for Nessie Reference."""
 
@@ -262,11 +253,15 @@ EntriesSchema = desert.schema_class(Entries)
 class CommitMeta:
     """Dataclass for commit metadata."""
 
-    hash_: str = desert.ib(fields.Str(data_key="hash"))
-    commitTime: int = desert.ib(fields.Int())
-    commiter: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    hash_: str = desert.ib(fields.Str(data_key="hash"), default=None)
+    commitTime: datetime = desert.ib(fields.DateTime(), default=None)
+    authorTime: datetime = desert.ib(fields.DateTime(), default=None)
+    committer: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     email: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    author: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    signedOffBy: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
     message: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
+    properties: dict = desert.ib(fields.Dict(), default=None)
 
 
 CommitMetaSchema = desert.schema_class(CommitMeta)
@@ -302,3 +297,14 @@ class Merge:
 
 
 MergeSchema = desert.schema_class(Merge)
+
+
+@attr.dataclass
+class MultiContents:
+    """Contents container for commit."""
+
+    commit_meta: CommitMeta = desert.ib(fields.Nested(CommitMetaSchema, data_key="commitMeta"))
+    operations: List[Operation] = desert.ib(fields.List(fields.Nested(OperationsSchema())))
+
+
+MultiContentsSchema = desert.schema_class(MultiContents)

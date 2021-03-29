@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from typing import Any
 from typing import Generator
 from typing import Optional
@@ -30,7 +31,7 @@ def show_log(
 
     def generator() -> Generator[CommitMeta, Any, None]:
         for i in raw_log:
-            if committer and i.commiter != committer:
+            if committer and i.committer != committer:
                 continue
             if after and _is_after(after, i.commitTime):
                 continue
@@ -43,9 +44,9 @@ def show_log(
     return generator()
 
 
-def _is_after(after: str, commit_time: int) -> bool:
-    return parse(after).timestamp() * 1000 < commit_time
+def _is_after(after: str, commit_time: datetime) -> bool:
+    return parse(after) < commit_time
 
 
-def _is_before(before: str, commit_time: int) -> bool:
-    return parse(before).timestamp() * 1000 < commit_time
+def _is_before(before: str, commit_time: datetime) -> bool:
+    return parse(before) < commit_time

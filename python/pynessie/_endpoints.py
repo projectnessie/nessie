@@ -278,7 +278,6 @@ def commit(
     branch: str,
     operations: str,
     expected_hash: str,
-    reason: Optional[str],
     ssl_verify: bool = True,
 ) -> None:
     """Commit a set of operations to a branch.
@@ -286,12 +285,9 @@ def commit(
     :param base_url: base Nessie url
     :param branch: name of branch to merge onto
     :param operations: json object of operations
-    :param reason: commit message
     :param expected_hash: expected hash of HEAD of branch
     :param ssl_verify: ignore ssl errors if False
     """
     url = "/trees/branch/{}/commit".format(branch)
     params = {"expectedHash": expected_hash}
-    if reason:
-        params["message"] = reason
     _post(base_url + url, json=operations, ssl_verify=ssl_verify, params=params)

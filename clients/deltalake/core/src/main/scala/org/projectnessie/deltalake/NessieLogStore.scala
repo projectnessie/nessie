@@ -20,10 +20,9 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 import java.util.regex.Pattern
-
 import org.projectnessie.client.{NessieClient, NessieConfigConstants}
 import org.projectnessie.error.NessieNotFoundException
-import org.projectnessie.model.{ContentsKey, DeltaLakeTable, ImmutableDeltaLakeTable, Reference}
+import org.projectnessie.model.{CommitMeta, ContentsKey, DeltaLakeTable, ImmutableDeltaLakeTable, ImmutableOperations, Operations, Reference}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
@@ -34,6 +33,7 @@ import org.apache.spark.sql.delta.util.FileNames.{checkpointFileSingular, checkp
 import org.apache.spark.sql.delta.{CheckpointMetaData, DeltaFileType, LogFileMeta}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
+import org.projectnessie.model.Operation.Put
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -150,9 +150,15 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   private def commit(path: Path, ref: String, hash: String, message: String = "delta commit", lastCheckpoint: String = null): Boolean = {
     val targetRef = if (ref == null) reference.getName else ref
     val targetHash = if (hash == null) reference.getHash else hash
-    val messageWithSparkId = s"$message ; spark.app.id=${sparkConf.get("spark.app.id")}"
     val table = updateDeltaTable(path, targetRef, lastCheckpoint)
-    client.getContentsApi.setContents(pathToKey(path.getParent), targetRef, targetHash, messageWithSparkId, table)
+    val put = Put.of(pathToKey(path.getParent), table)
+    val meta = CommitMeta.builder()
+      .message(message)
+      .putProperties("spark.app.id", sparkConf.get("spark.app.id"))
+      .putProperties("application.type", "delta")
+      .build()
+    val op = ImmutableOperations.builder().addOperations(put).commitMeta(meta).build()
+    client.getTreeApi.commitMultipleOperations(targetRef, targetHash, op)
     reference = client.getTreeApi.getReferenceByName(reference.getName)
     true
   }

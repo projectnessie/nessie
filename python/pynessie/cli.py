@@ -31,7 +31,6 @@ from .model import Delete
 from .model import Entries
 from .model import Entry
 from .model import EntrySchema
-from .model import MultiContents
 from .model import Operation
 from .model import Put
 from .nessie_client import _contents_key
@@ -212,14 +211,13 @@ def log(ctx: ContextObject, number: int, since: str, until: str, author: str, re
 
 def _format_log_result(x: CommitMeta) -> str:
     result = click.style("commit {}\n".format(x.hash_), fg="yellow")
-    result += click.style("Author: {} <{}>\n".format(x.commiter, x.email))
+    result += click.style("Author: {} <{}>\n".format(x.committer, x.email))
     result += click.style("Date: {}\n".format(_format_time(x.commitTime)))
     result += click.style("\n\t{}\n\n".format(x.message))
     return result
 
 
-def _format_time(epoch: int) -> str:
-    dt = datetime.datetime.fromtimestamp(epoch / 1000, datetime.timezone.utc)
+def _format_time(dt: datetime.datetime) -> str:
     return dt.astimezone(tzlocal()).strftime("%c %z")
 
 
@@ -421,10 +419,10 @@ def contents(ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[
         keys = ctx.nessie.list_keys(ref if ref else ctx.nessie.get_default_branch())
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
-        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, delete, *key), old_hash=condition, reason=_get_message(message))
+        ctx.nessie.commit(ref, condition, _get_message(message), *_get_contents(ctx.nessie, ref, delete, *key))
         results = ""
     elif set:
-        ctx.nessie.commit(ref, _get_contents(ctx.nessie, ref, delete, *key), old_hash=condition, reason=_get_message(message))
+        ctx.nessie.commit(ref, condition, _get_message(message), *_get_contents(ctx.nessie, ref, delete, *key))
         results = ""
     else:
 
@@ -435,7 +433,7 @@ def contents(ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[
     click.echo(results)
 
 
-def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: str) -> MultiContents:
+def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: str) -> List[Operation]:
     contents_altered: List[Operation] = list()
     for raw_key in keys:
         key = _format_key(raw_key)
@@ -468,7 +466,7 @@ def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: s
                 contents_altered.append(Put(_contents_key(raw_key), ContentsSchema().loads(message_altered)))
             else:
                 contents_altered.append(Delete(_contents_key(raw_key)))
-    return MultiContents(contents_altered)
+    return contents_altered
 
 
 def _get_commit_message(*keys: str) -> str:

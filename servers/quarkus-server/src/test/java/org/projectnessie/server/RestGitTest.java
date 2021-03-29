@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Branch;
+import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
@@ -103,6 +104,7 @@ public class RestGitTest {
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
     Operations contents = ImmutableOperations.builder()
         .addOperations(updates)
+        .commitMeta(CommitMeta.fromMessage(""))
         .build();
 
     rest().body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
