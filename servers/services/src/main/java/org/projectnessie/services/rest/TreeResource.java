@@ -219,9 +219,9 @@ public class TreeResource extends BaseResource implements TreeApi {
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
     //  whether we shall just do the whole computation for a specific hash for every page or have
     //  a more sophisticated approach, potentially with support from the (tiered-)version-store.
+    //  note currently we are filtering types at the REST level. This could in theory be pushed down to the store though
+    //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
-      // note currently we are filtering types at the REST level. This could in theory be pushed down to the store though
-      // all existing VersionStore implementations have to read all keys anyways so we don't get much
       List<EntriesResponse.Entry> entries;
       try (Stream<EntriesResponse.Entry> s = getStore().getKeys(hash).filter(x -> payloads.contains(x.getType()))
           .map(key -> EntriesResponse.Entry.builder().name(fromKey(key.getValue())).type((Type) key.getType()).build())) {

@@ -274,12 +274,10 @@ class TestRest {
         EntriesResponse.Entry.builder().name(b).type(Contents.Type.VIEW).build());
     assertThat(entries, Matchers.containsInAnyOrder(expected.toArray()));
     entries = tree.getEntries(branch, null, null, ImmutableList.of(Contents.Type.ICEBERG_TABLE.name())).getEntries();
-    assertEquals(1, entries.size());
-    assertEquals(expected.get(0),entries.get(0));
+    assertEquals(Collections.singletonList(expected.get(0)), entries);
 
     entries = tree.getEntries(branch, null, null, ImmutableList.of(Contents.Type.VIEW.name())).getEntries();
-    assertEquals(1, entries.size());
-    assertEquals(expected.get(1), entries.get(0));
+    assertEquals(Collections.singletonList(expected.get(1)), entries);
 
     entries = tree.getEntries(branch, null, null, ImmutableList.of(Contents.Type.VIEW.name(),
         Contents.Type.ICEBERG_TABLE.name())).getEntries();

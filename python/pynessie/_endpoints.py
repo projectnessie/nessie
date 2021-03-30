@@ -146,7 +146,7 @@ def list_tables(
     ref: str,
     max_result_hint: Optional[int] = None,
     page_token: Optional[str] = None,
-    entity_types: Optional[list] = None,
+    types: Optional[list] = None,
     ssl_verify: bool = True,
 ) -> list:
     """Fetch a list of all tables from a known reference.
@@ -155,14 +155,14 @@ def list_tables(
     :param ref: reference
     :param max_result_hint: hint for the server, maximum number of results to return
     :param page_token: the token retrieved from a previous page returned for the same ref
-    :param entity_types: list of types to filter keys on
+    :param types: list of types to filter keys on
     :param ssl_verify: ignore ssl errors if False
     :return: json list of Nessie table names
     """
-    if not entity_types:
-        entity_types = list()
-    entity_type_header = ",".join(entity_types)
-    params = {"types": entity_type_header}
+    params = dict()
+    if types:
+        entity_type_header = ",".join(types)
+        params["types"] = entity_type_header
     if max_result_hint:
         params["max"] = str(max_result_hint)
     if page_token:
