@@ -164,7 +164,10 @@ public interface TreeApi {
           Integer maxRecords,
       @Parameter(description = "pagination continuation token, as returned in the previous EntriesResponse.token")
       @QueryParam("pageToken")
-          String pageToken)
+          String pageToken,
+      @Parameter(description = "list of value types to return. Return all if empty")
+      @QueryParam("types")
+        List<String> types)
           throws NessieNotFoundException;
 
   /**
