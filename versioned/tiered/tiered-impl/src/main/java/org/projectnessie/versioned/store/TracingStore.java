@@ -18,6 +18,7 @@ package org.projectnessie.versioned.store;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -25,21 +26,31 @@ import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.UpdateExpression;
 import org.projectnessie.versioned.tiered.BaseValue;
 
+import com.google.common.collect.ImmutableMap;
+
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
+import io.opentracing.log.Fields;
+import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
 public class TracingStore implements Store {
 
   private final Store store;
+  private final Supplier<Tracer> tracerSupplier;
 
   public TracingStore(Store store) {
+    this(store, GlobalTracer::get);
+  }
+
+  TracingStore(Store store, Supplier<Tracer> tracerSupplier) {
     this.store = store;
+    this.tracerSupplier = tracerSupplier;
   }
 
   private Tracer getTracer() {
-    return GlobalTracer.get();
+    return tracerSupplier.get();
   }
 
   private SpanBuilder createSpan(String name) {
@@ -49,36 +60,56 @@ public class TracingStore implements Store {
 
   @Override
   public void start() {
-    try (Scope ignore = createSpan("Store.start").startActive(true)) {
-      store.start();
+    try (Scope scope = createSpan("Store.start")
+        .withTag("nessie.store.operation", "Start")
+        .startActive(true)) {
+      try {
+        store.start();
+      } catch (RuntimeException e) {
+        throw traceRuntimeException(scope, e);
+      }
     }
   }
 
   @Override
   public void close() {
-    try (Scope ignore = createSpan("Store.close").startActive(true)) {
-      store.close();
+    try (Scope scope = createSpan("Store.close")
+        .withTag("nessie.store.operation", "Close")
+        .startActive(true)) {
+      try {
+        store.close();
+      } catch (RuntimeException e) {
+        throw traceRuntimeException(scope, e);
+      }
     }
   }
 
   @Override
   public void load(LoadStep loadstep) {
-    try (Scope ignore = createSpan("Store.load")
-        .withTag("nessie.store.operation", "LoadSingle")
+    try (Scope scope = createSpan("Store.load")
+        .withTag("nessie.store.operation", "Load")
         .startActive(true)) {
-      store.load(loadstep);
+      try {
+        store.load(loadstep);
+      } catch (RuntimeException e) {
+        throw traceRuntimeException(scope, e);
+      }
     }
   }
 
   @Override
   public <C extends BaseValue<C>> boolean putIfAbsent(
       SaveOp<C> saveOp) {
-    try (Scope ignore = createSpan("Store.putIfAbsent")
-        .withTag("nessie.store.operation", "LoadSingle")
+    try (Scope scope = createSpan("Store.putIfAbsent")
+        .withTag("nessie.store.operation", "PutIfAbsent")
         .withTag("nessie.store.value-type", safeOpTypeToString(saveOp))
         .withTag("nessie.store.id", safeOpIdToString(saveOp))
         .startActive(true)) {
-      return store.putIfAbsent(saveOp);
+      try {
+        return store.putIfAbsent(saveOp);
+      } catch (RuntimeException e) {
+        throw traceRuntimeException(scope, e);
+      }
     }
   }
 
@@ -86,12 +117,16 @@ public class TracingStore implements Store {
   public <C extends BaseValue<C>> void put(
       SaveOp<C> saveOp,
       Optional<ConditionExpression> condition) {
-    try (Scope ignore = createSpan("Store.put")
+    try (Scope scope = createSpan("Store.put")
         .withTag("nessie.store.operation", "Put")
         .withTag("nessie.store.value-type", safeOpTypeToString(saveOp))
         .withTag("nessie.store.id", safeOpIdToString(saveOp))
         .startActive(true)) {
-      store.put(saveOp, condition);
+      try {
+        store.put(saveOp, condition);
+      } catch (RuntimeException e) {
+        throw traceRuntimeException(scope, e);
+      }
     }
   }
 
@@ -99,12 +134,16 @@ public class TracingStore implements Store {
   public <C extends BaseValue<C>> boolean delete(
       ValueType<C> type, Id id,
       Optional<ConditionExpression> condition) {
-    try (Scope ignore = createSpan("Store.delete")
+    try (Scope scope = createSpan("Store.delete")
         .withTag("nessie.store.operation", "Delete")
         .withTag("nessie.store.value-type", safeName(type))
         .withTag("nessie.store.id", safeToString(id))
         .startActive(true)) {
-      return store.delete(type, id, condition);
+      try {
+        return store.delete(type, id, condition);
+      } catch (RuntimeException e) {
+        throw traceRuntimeException(scope, e);
+      }
     }
   }
 
@@ -114,25 +153,32 @@ public class TracingStore implements Store {
         .withTag("nessie.store.operation", "Save")
         .withTag("nessie.store.num-ops", safeSize(ops))
         .startActive(true)) {
+      try {
+        scope.span().log(ops.stream().collect(Collectors.groupingBy(
+            op -> String.format("nessie.store.save.%s.ids", op.getType().name()),
+            Collectors.mapping(op -> op.getId().toString(), Collectors.joining(", "))
+        )));
 
-      scope.span().log(ops.stream().collect(Collectors.groupingBy(
-          op -> String.format("nessie.store.save.%s.ids", op.getType().name()),
-          Collectors.mapping(op -> op.getId().toString(), Collectors.joining(", "))
-      )));
-
-      store.save(ops);
+        store.save(ops);
+      } catch (RuntimeException e) {
+        throw traceRuntimeException(scope, e);
+      }
     }
   }
 
   @Override
   public <C extends BaseValue<C>> void loadSingle(
       ValueType<C> type, Id id, C consumer) {
-    try (Scope ignore = createSpan("Store.loadSingle")
+    try (Scope scope = createSpan("Store.loadSingle")
         .withTag("nessie.store.operation", "LoadSingle")
         .withTag("nessie.store.value-type", safeName(type))
         .withTag("nessie.store.id", safeToString(id))
         .startActive(true)) {
-      store.loadSingle(type, id, consumer);
+      try {
+        store.loadSingle(type, id, consumer);
+      } catch (RuntimeException e) {
+        throw traceRuntimeException(scope, e);
+      }
     }
   }
 
@@ -141,25 +187,34 @@ public class TracingStore implements Store {
       ValueType<C> type, Id id, UpdateExpression update,
       Optional<ConditionExpression> condition,
       Optional<BaseValue<C>> consumer) throws NotFoundException {
-    try (Scope ignore = createSpan("Store.update")
+    try (Scope scope = createSpan("Store.update")
         .withTag("nessie.store.operation", "Update")
         .withTag("nessie.store.value-type", safeName(type))
         .withTag("nessie.store.id", safeToString(id))
         .withTag("nessie.store.update", safeToString(update))
         .withTag("nessie.store.condition", safeToString(condition))
         .startActive(true)) {
-      return store.update(type, id, update, condition, consumer);
+      try {
+        return store.update(type, id, update, condition, consumer);
+      } catch (RuntimeException e) {
+        throw traceRuntimeException(scope, e);
+      }
     }
   }
 
   @Override
   public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(
       ValueType<C> type) {
-    try (Scope ignore = createSpan("Store.getValues")
+    Scope scope = createSpan("Store.getValues")
         .withTag("nessie.store.operation", "GetValues")
         .withTag("nessie.store.value-type", type.name())
-        .startActive(true)) {
-      return store.getValues(type);
+        .startActive(true);
+    try {
+      return store.getValues(type).onClose(scope::close);
+    } catch (RuntimeException e) {
+      e = traceRuntimeException(scope, e);
+      scope.close();
+      throw e;
     }
   }
 
@@ -181,5 +236,13 @@ public class TracingStore implements Store {
 
   private static <C extends BaseValue<C>> String safeOpTypeToString(SaveOp<C> saveOp) {
     return saveOp != null ? safeName(saveOp.getType()) : "<null>";
+  }
+
+  private static RuntimeException traceRuntimeException(Scope scope, RuntimeException e) {
+    if (!(e instanceof StoreException) || e instanceof StoreOperationException) {
+      Tags.ERROR.set(scope.span().log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(),
+          Fields.ERROR_OBJECT, e.toString())), true);
+    }
+    return e;
   }
 }
