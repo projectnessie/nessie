@@ -112,13 +112,22 @@ class NessieClient(object):
         """
         delete_tag(self._base_url, tag, hash_, self._ssl_verify)
 
-    def list_keys(self: "NessieClient", ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None) -> Entries:
+    def list_keys(
+        self: "NessieClient",
+        ref: str,
+        max_result_hint: Optional[int] = None,
+        page_token: Optional[str] = None,
+        entity_types: Optional[list] = None,
+    ) -> Entries:
         """Fetch a list of all tables from a known branch.
 
         :param ref: name of branch
+        :param entity_types: list of types to filter keys on
         :return: list of Nessie table names
         """
-        return EntriesSchema().load(list_tables(self._base_url, ref, max_result_hint, page_token, self._ssl_verify))
+        if not entity_types:
+            entity_types = list()
+        return EntriesSchema().load(list_tables(self._base_url, ref, max_result_hint, page_token, entity_types, self._ssl_verify))
 
     def get_values(self: "NessieClient", ref: str, *tables: str) -> Generator[Contents, Any, None]:
         """Fetch a table from a known ref.
