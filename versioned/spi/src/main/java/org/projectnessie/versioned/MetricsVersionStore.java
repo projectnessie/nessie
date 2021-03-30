@@ -39,9 +39,10 @@ import io.micrometer.core.instrument.Timer.Sample;
  * @param <VALUE> see {@link VersionStore}
  * @param <METADATA> see {@link VersionStore}
  */
-public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<VALUE, METADATA> {
+public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+    implements VersionStore<VALUE, METADATA, VALUE_TYPE> {
 
-  private final VersionStore<VALUE, METADATA> delegate;
+  private final VersionStore<VALUE, METADATA, VALUE_TYPE> delegate;
   private final MeterRegistry registry;
   private final Clock clock;
   private final Iterable<Tag> commonTags;
@@ -54,7 +55,8 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
    * @param metricsCommonTags common metrics tags
    * @param registry metrics-registry
    */
-  MetricsVersionStore(VersionStore<VALUE, METADATA> delegate, Map<String, String> metricsCommonTags, MeterRegistry registry, Clock clock) {
+  MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, Map<String, String> metricsCommonTags,
+      MeterRegistry registry, Clock clock) {
     this.delegate = delegate;
     this.registry = registry;
     this.clock = clock;
@@ -64,7 +66,7 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
     gauges().forEach((name, gauge) -> Gauge.builder("nessie.version-store." + name, gauge).tags(commonTags).register(registry));
   }
 
-  public MetricsVersionStore(VersionStore<VALUE, METADATA> delegate, Map<String, String> metricsCommonTags) {
+  public MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, Map<String, String> metricsCommonTags) {
     this(delegate, metricsCommonTags, Metrics.globalRegistry, Clock.SYSTEM);
   }
 
@@ -137,7 +139,7 @@ public final class MetricsVersionStore<VALUE, METADATA> implements VersionStore<
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
     return delegateStream1Ex("get-keys", () -> delegate.getKeys(ref));
   }
 

@@ -177,7 +177,7 @@ class TestMetricsVersionStore {
   @ParameterizedTest
   @MethodSource("versionStoreInvocations")
   void versionStoreInvocation(String opName, Exception expectedThrow, Supplier<?> resultSupplier,
-      ThrowingFunction<?, VersionStore<String, String>> versionStoreFunction) throws Throwable {
+      ThrowingFunction<?, VersionStore<String, String, DummyEnum>> versionStoreFunction) throws Throwable {
     TestMeterRegistry registry = new TestMeterRegistry();
 
     Object result = resultSupplier != null ? resultSupplier.get() : null;
@@ -194,14 +194,14 @@ class TestMetricsVersionStore {
       stubber = doNothing();
     }
 
-    @SuppressWarnings("unchecked") VersionStore<String, String> mockedVersionStore = mock(VersionStore.class);
+    @SuppressWarnings("unchecked") VersionStore<String, String, DummyEnum> mockedVersionStore = mock(VersionStore.class);
     versionStoreFunction.accept(stubber.when(mockedVersionStore));
-    VersionStore<String, String> versionStore = new MetricsVersionStore<>(mockedVersionStore,
+    VersionStore<String, String, DummyEnum> versionStore = new MetricsVersionStore<>(mockedVersionStore,
         Collections.singletonMap("test", "unit"), registry, registry.clock);
 
     Id timerId = timerId(opName, expectedThrow);
 
-    ThrowingConsumer<VersionStore<String, String>> versionStoreExec = vs -> {
+    ThrowingConsumer<VersionStore<String, String, DummyEnum>> versionStoreExec = vs -> {
       Object r = versionStoreFunction.accept(vs);
       if (result != null) {
         // non-void methods must return something
@@ -244,12 +244,12 @@ class TestMetricsVersionStore {
 
   static class VersionStoreInvocation<R> {
     final String opName;
-    final ThrowingFunction<?, VersionStore<String, String>> function;
+    final ThrowingFunction<?, VersionStore<String, String, DummyEnum>> function;
     final Supplier<R> result;
     final List<Exception> failures;
 
     VersionStoreInvocation(String opName,
-        ThrowingFunction<?, VersionStore<String, String>> function,
+        ThrowingFunction<?, VersionStore<String, String, DummyEnum>> function,
         Supplier<R> result, List<Exception> failures) {
       this.opName = opName;
       this.function = function;
@@ -258,7 +258,7 @@ class TestMetricsVersionStore {
     }
 
     VersionStoreInvocation(String opName,
-        ThrowingConsumer<VersionStore<String, String>> function,
+        ThrowingConsumer<VersionStore<String, String, DummyEnum>> function,
         List<Exception> failures) {
       this.opName = opName;
       this.function = vs -> {
@@ -273,6 +273,10 @@ class TestMetricsVersionStore {
   @FunctionalInterface
   interface ThrowingFunction<R, A> {
     R accept(A arg) throws Throwable;
+  }
+
+  enum DummyEnum {
+    DUMMY
   }
 
   private static Id timerId(String opName, Exception expectedThrow) {
