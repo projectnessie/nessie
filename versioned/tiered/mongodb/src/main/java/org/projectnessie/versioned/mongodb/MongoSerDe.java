@@ -31,7 +31,9 @@ import org.bson.Document;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
+import org.projectnessie.versioned.ImmutableKey;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.SaveOp;
 import org.projectnessie.versioned.store.ValueType;
@@ -41,6 +43,7 @@ import org.projectnessie.versioned.tiered.Fragment;
 import org.projectnessie.versioned.tiered.L1;
 import org.projectnessie.versioned.tiered.L2;
 import org.projectnessie.versioned.tiered.L3;
+import org.projectnessie.versioned.tiered.Mutation;
 import org.projectnessie.versioned.tiered.Ref;
 
 import com.google.common.collect.ImmutableMap;
@@ -48,6 +51,7 @@ import com.google.protobuf.ByteString;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 final class MongoSerDe {
+  static final char ZERO_BYTE = '\u0000';
   private static final Map<ValueType<?>, Function<BsonWriter, MongoBaseValue>> CONSUMERS =
       ImmutableMap.<ValueType<?>, Function<BsonWriter, MongoBaseValue>>builder()
           .put(ValueType.L1, MongoL1::new)
@@ -143,21 +147,27 @@ final class MongoSerDe {
     return new BsonBinary(value.toByteArray());
   }
 
-  static Stream<Key> deserializeKeys(Document document, String param) {
+  static Stream<WithPayload<Key>> deserializeKeys(Document document, String param) {
     List<Object> l = (List<Object>) document.get(param);
     return l.stream()
         .map(o -> (List<String>) o)
-        .map(MongoSerDe::deserializeKey);
+        .map(MongoSerDe::deserializeKeyWithPayload);
   }
 
-  static void serializeKey(BsonWriter bsonWriter, String prop, Key key) {
+  static WithPayload<Key> deserializeKeyWithPayload(List<String> keyList) {
+    ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
+    String value = keyList.get(0);
+    Byte payload = value.length() == 1 && value.charAt(0) == ZERO_BYTE ? null : Byte.parseByte(value);
+    keyList.subList(1, keyList.size()).forEach(keyBuilder::addElements);
+    return WithPayload.of(payload, keyBuilder.build());
+  }
+
+  static void serializeKeyWithPayload(BsonWriter bsonWriter, String prop, WithPayload<Key> key) {
+    String payload = key.getPayload() == null ? Character.toString(ZERO_BYTE) : key.getPayload().toString();
     bsonWriter.writeStartArray(prop);
-    key.getElements().forEach(bsonWriter::writeString);
+    bsonWriter.writeString(payload);
+    key.getValue().getElements().forEach(bsonWriter::writeString);
     bsonWriter.writeEndArray();
-  }
-
-  static Key deserializeKey(List<String> lst) {
-    return Key.of(lst.toArray(new String[0]));
   }
 
   static <X> void serializeArray(BsonWriter writer, String prop, Stream<X> src, BiConsumer<BsonWriter, X> inner) {
@@ -166,13 +176,24 @@ final class MongoSerDe {
     writer.writeEndArray();
   }
 
-  static void serializeKeyMutation(BsonWriter writer, Key.Mutation keyMutation) {
+  static void serializeKeyMutation(BsonWriter writer, Mutation keyMutation) {
+    WithPayload<Key> key;
+    switch (keyMutation.getType()) {
+      case ADDITION:
+        key = WithPayload.of(((Mutation.Addition) keyMutation).getPayload(), keyMutation.getKey());
+        break;
+      case REMOVAL:
+        key = WithPayload.of(null, keyMutation.getKey());
+        break;
+      default:
+        throw new IllegalArgumentException("unknown mutation type " + keyMutation.getType());
+    }
     writer.writeStartDocument();
-    serializeKey(writer, mutationName(keyMutation.getType()), keyMutation.getKey());
+    serializeKeyWithPayload(writer, mutationName(keyMutation.getType()), key);
     writer.writeEndDocument();
   }
 
-  private static String mutationName(Key.MutationType type) {
+  private static String mutationName(Mutation.MutationType type) {
     switch (type) {
       case ADDITION:
         return KEY_ADDITION;
@@ -183,20 +204,20 @@ final class MongoSerDe {
     }
   }
 
-  static Stream<Key.Mutation> deserializeKeyMutations(Document d, String param) {
+  static Stream<Mutation> deserializeKeyMutations(Document d, String param) {
     List<Document> keyMutations = (List<Document>) d.get(param);
     return keyMutations.stream().map(MongoSerDe::deserializeKeyMutation);
   }
 
-  private static Key.Mutation deserializeKeyMutation(Document d) {
+  private static Mutation deserializeKeyMutation(Document d) {
     Entry<String, Object> e = d.entrySet().stream().findFirst().get();
     String addRemove = e.getKey();
-    Key key = deserializeKey((List<String>) e.getValue());
+    WithPayload<Key> key = deserializeKeyWithPayload((List<String>) e.getValue());
     switch (addRemove) {
       case KEY_ADDITION:
-        return key.asAddition();
+        return Mutation.Addition.of(key.getValue(), key.getPayload());
       case KEY_REMOVAL:
-        return key.asRemoval();
+        return Mutation.Removal.of(key.getValue());
       default:
         throw new IllegalArgumentException(String.format("Unsupported key '%s' in key-mutation map", addRemove));
     }

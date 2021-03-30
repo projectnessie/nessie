@@ -36,7 +36,7 @@ import com.google.protobuf.ByteString;
  */
 public class IdentifyUnreferencedValues<T> {
 
-  private final StoreWorker<T, ?> storeWorker;
+  private final StoreWorker<T, ?, ?> storeWorker;
   private final Supplier<Store> store;
   private final SparkSession spark;
   private final GcOptions options;
@@ -46,7 +46,7 @@ public class IdentifyUnreferencedValues<T> {
    * Drive a job that generates a dataset of unreferenced assets from known values.
    */
   public IdentifyUnreferencedValues(
-      StoreWorker<T, ?> storeWorker,
+      StoreWorker<T, ?, ?> storeWorker,
       Supplier<Store> store,
       SparkSession spark,
       GcOptions options,
@@ -64,7 +64,7 @@ public class IdentifyUnreferencedValues<T> {
   }
 
   private static <T> Dataset<CategorizedValue> go(
-      StoreWorker<T, ?> storeWorker,
+      StoreWorker<T, ?, ?> storeWorker,
       Supplier<Store> store,
       SparkSession spark,
       GcOptions options,

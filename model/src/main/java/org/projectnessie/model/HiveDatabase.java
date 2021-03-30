@@ -25,9 +25,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(as = ImmutableHiveDatabase.class)
 @JsonDeserialize(as = ImmutableHiveDatabase.class)
 @JsonTypeName("HIVE_DATABASE")
-public interface HiveDatabase extends Contents {
+public abstract class HiveDatabase extends Contents {
 
-  byte[] getDatabaseDefinition();
-
+  public abstract byte[] getDatabaseDefinition();
 
 }

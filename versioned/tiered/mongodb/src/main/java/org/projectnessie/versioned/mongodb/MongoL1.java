@@ -23,9 +23,9 @@ import java.util.stream.Stream;
 
 import org.bson.BsonWriter;
 import org.bson.Document;
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.L1;
+import org.projectnessie.versioned.tiered.Mutation;
 
 import com.google.common.primitives.Ints;
 
@@ -82,7 +82,7 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
   }
 
   @Override
-  public L1 keyMutations(Stream<Key.Mutation> keyMutations) {
+  public L1 keyMutations(Stream<Mutation> keyMutations) {
     serializeArray(MUTATIONS, keyMutations, MongoSerDe::serializeKeyMutation);
     return this;
   }

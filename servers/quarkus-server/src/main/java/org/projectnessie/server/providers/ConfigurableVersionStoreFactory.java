@@ -82,8 +82,8 @@ public class ConfigurableVersionStoreFactory {
   @Produces
   @Singleton
   @Startup
-  public VersionStore<Contents, CommitMeta> getVersionStore() {
-    VersionStore<Contents, CommitMeta> store = newVersionStore();
+  public VersionStore<Contents, CommitMeta, Contents.Type> getVersionStore() {
+    VersionStore<Contents, CommitMeta, Contents.Type> store = newVersionStore();
     try (Stream<WithHash<NamedRef>> str = store.getNamedRefs()) {
       if (!str.findFirst().isPresent()) {
         // if this is a new database, create a branch with the default branch name.
@@ -98,7 +98,7 @@ public class ConfigurableVersionStoreFactory {
     return store;
   }
 
-  private VersionStore<Contents, CommitMeta> newVersionStore() {
+  private VersionStore<Contents, CommitMeta, Contents.Type> newVersionStore() {
     final VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
     if (System.nanoTime() - lastUnsuccessfulStart < START_RETRY_MIN_INTERVAL_NANOS) {
       LOGGER.warn("{} version store failed to start recently, try again later.",
@@ -110,7 +110,7 @@ public class ConfigurableVersionStoreFactory {
     try {
       VersionStoreFactory factory = versionStoreFactory.select(new StoreType.Literal(versionStoreType)).get();
       LOGGER.info("Using {} Version store", versionStoreType);
-      VersionStore<Contents, CommitMeta> versionStore;
+      VersionStore<Contents, CommitMeta, Contents.Type> versionStore;
       try {
         versionStore = factory.newStore(new TableCommitMetaStoreWorker());
       } catch (IOException e) {

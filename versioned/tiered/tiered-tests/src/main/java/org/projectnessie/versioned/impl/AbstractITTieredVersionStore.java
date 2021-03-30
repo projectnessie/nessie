@@ -19,6 +19,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
@@ -48,16 +50,19 @@ import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.impl.InconsistentValue.InconsistentValueException;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 public abstract class AbstractITTieredVersionStore {
 
@@ -73,7 +78,7 @@ public abstract class AbstractITTieredVersionStore {
     fixture.close();
   }
 
-  public VersionStore<String, String> versionStore() {
+  public VersionStore<String, String, StringSerializer.TestEnum> versionStore() {
     return fixture;
   }
 
@@ -82,6 +87,72 @@ public abstract class AbstractITTieredVersionStore {
   }
 
   protected abstract AbstractTieredStoreFixture<?, ?> createNewFixture();
+
+  @Test
+  void checkValueEntityType() throws Exception {
+
+    BranchName branch = BranchName.of("entity-types");
+    versionStore().create(branch, Optional.empty());
+    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"))
+    );
+
+    assertEquals("world", versionStore().getValue(branch, Key.of("hi")));
+    List<Optional<String>> values = versionStore().getValues(branch, Lists.newArrayList(Key.of("hi")));
+    assertEquals(1, values.size());
+    assertTrue(values.get(0).isPresent());
+
+    List<WithType<Key, StringSerializer.TestEnum>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertEquals(1, keys.size());
+    assertEquals(Key.of("hi"), keys.get(0).getValue());
+    assertEquals(StringSerializer.TestEnum.NO, keys.get(0).getType());
+
+  }
+
+  @Test
+  void checkValueEntityTypeWithRemoval() throws Exception {
+
+    BranchName branch = BranchName.of("entity-types-with-removal");
+    versionStore().create(branch, Optional.empty());
+    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"))
+    );
+
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(Delete.of(Key.of("hi"))));
+
+    List<WithType<Key, StringSerializer.TestEnum>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertTrue(keys.isEmpty());
+
+  }
+
+  @Test
+  void checkValueEntityTypeWithModification() throws Exception {
+
+    BranchName branch = BranchName.of("entity-types-with-removal");
+    versionStore().create(branch, Optional.empty());
+    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"))
+    );
+
+    List<WithType<Key, StringSerializer.TestEnum>> keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertEquals(1, keys.size());
+    assertEquals(Key.of("hi"), keys.get(0).getValue());
+    assertEquals(StringSerializer.TestEnum.NO, keys.get(0).getType());
+
+    Mockito.doReturn((byte) 80).when(StringSerializer.getInstance()).getPayload("world-weary");
+    versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world-weary"))
+    );
+
+    keys = versionStore().getKeys(branch).collect(Collectors.toList());
+    assertEquals(1, keys.size());
+    assertEquals(Key.of("hi"), keys.get(0).getValue());
+    assertEquals(StringSerializer.TestEnum.YES, keys.get(0).getType());
+
+  }
 
   @Test
   void checkDuplicateValueCommit() throws Exception {
@@ -155,7 +226,7 @@ public abstract class AbstractITTieredVersionStore {
         Put.of(Key.of("no"), "world"),
         Put.of(Key.of("mad mad"), "world")));
     assertEquals(0, EntityType.L2.loadSingle(store(), InternalL2.EMPTY_ID).size());
-    assertThat(versionStore().getKeys(branch).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
+    assertThat(versionStore().getKeys(branch).map(WithType::getValue).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
         Matchers.containsInAnyOrder("hi", "no", "mad mad"));
   }
 
@@ -182,7 +253,7 @@ public abstract class AbstractITTieredVersionStore {
       current = versionStore().toHash(branch);
     }
 
-    List<Key> keysFromStore = versionStore().getKeys(branch).collect(Collectors.toList());
+    List<Key> keysFromStore = versionStore().getKeys(branch).map(WithType::getValue).collect(Collectors.toList());
 
     // ensure that our total key size is greater than a single dynamo page.
     assertThat(keysFromStore.size() * longName.length, Matchers.greaterThan(400000));

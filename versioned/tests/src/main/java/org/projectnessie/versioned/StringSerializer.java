@@ -16,6 +16,7 @@
 package org.projectnessie.versioned;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.mockito.Mockito.spy;
 
 import javax.annotation.Nonnull;
 
@@ -24,8 +25,14 @@ import com.google.protobuf.ByteString;
 /**
  * ValueWorker implementation for {@code String class}. Can also be used as simple {@link Serializer}.
  */
-public final class StringSerializer implements Serializer<String> {
-  private static final Serializer<String> INSTANCE = new StringSerializer();
+public class StringSerializer implements SerializerWithPayload<String, StringSerializer.TestEnum> {
+  private static final SerializerWithPayload<String, TestEnum> INSTANCE = spy(new StringSerializer());
+
+  public enum TestEnum {
+    YES,
+    NO,
+    NULL;
+  }
 
   private StringSerializer() {
   }
@@ -35,7 +42,7 @@ public final class StringSerializer implements Serializer<String> {
    * @return the instance
    */
   @Nonnull
-  public static Serializer<String> getInstance() {
+  public static SerializerWithPayload<String, TestEnum> getInstance() {
     return INSTANCE;
   }
 
@@ -49,4 +56,16 @@ public final class StringSerializer implements Serializer<String> {
     return ByteString.copyFrom(value, UTF_8);
   }
 
+  @Override
+  public Byte getPayload(String value) {
+    return 0;
+  }
+
+  @Override
+  public TestEnum getType(Byte payload) {
+    if (payload == null) {
+      return TestEnum.NULL;
+    }
+    return payload > 60 ? TestEnum.YES : TestEnum.NO;
+  }
 }

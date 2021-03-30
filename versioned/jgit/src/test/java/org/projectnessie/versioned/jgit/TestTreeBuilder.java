@@ -33,7 +33,8 @@ import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.Put;
-import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.SerializerWithPayload;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.Unchanged;
 
 import com.google.common.collect.ImmutableList;
@@ -56,7 +57,7 @@ class TestTreeBuilder {
     } catch (IOException e) {
       throw new RuntimeException();
     }
-    Serializer<String> serializer = new Serializer<String>() {
+    SerializerWithPayload<String, StringSerializer.TestEnum> serializer = new SerializerWithPayload<String, StringSerializer.TestEnum>() {
       @Override
       public ByteString toBytes(String value) {
         return ByteString.copyFrom(value.getBytes());
@@ -66,7 +67,18 @@ class TestTreeBuilder {
       public String fromBytes(ByteString bytes) {
         return bytes.toStringUtf8();
       }
+
+      @Override
+      public Byte getPayload(String value) {
+        return null;
+      }
+
+      @Override
+      public StringSerializer.TestEnum getType(Byte payload) {
+        return StringSerializer.TestEnum.NO;
+      }
     };
+
     ObjectId oid1 = TreeBuilder.commitObjects(ImmutableList.of(Put.of(Key.of("a", "b", "c.txt"), "foobar"),
                                                                Put.of(Key.of("a", "b", "d.txt"), "foobar"),
                                                                Put.of(Key.of("a", "i", "j.txt"), "foobar"),
@@ -91,7 +103,8 @@ class TestTreeBuilder {
       if (ObjectId.zeroId().equals(tw.getObjectId(0))) {
         continue;
       }
-      String value = serializer.fromBytes(ByteString.copyFrom(repository.newObjectReader().open(tw.getObjectId(0)).getBytes()));
+      ByteString table = ByteString.copyFrom(repository.newObjectReader().open(tw.getObjectId(0)).getBytes());
+      String value = serializer.fromBytes(table);
       results.put(tw.getPathString(), value);
     }
     Assertions.assertTrue(Sets.difference(expected, results.keySet()).isEmpty());

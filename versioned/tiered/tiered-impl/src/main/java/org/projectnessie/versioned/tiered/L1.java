@@ -17,7 +17,6 @@ package org.projectnessie.versioned.tiered;
 
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Id;
 
 /**
@@ -71,7 +70,7 @@ public interface L1 extends BaseValue<L1> {
    * @param keyMutations The key that was added.
    * @return This consumer.
    */
-  default L1 keyMutations(Stream<Key.Mutation> keyMutations) {
+  default L1 keyMutations(Stream<Mutation> keyMutations) {
     keyMutations.forEach(ignored -> {});
     return this;
   }

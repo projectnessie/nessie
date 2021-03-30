@@ -52,7 +52,7 @@ public class ContentsResource extends BaseResource implements ContentsApi {
 
   @Inject
   public ContentsResource(ServerConfig config, Principal principal,
-      VersionStore<Contents, CommitMeta> store) {
+      VersionStore<Contents, CommitMeta, Contents.Type> store) {
     super(config, principal, store);
   }
 

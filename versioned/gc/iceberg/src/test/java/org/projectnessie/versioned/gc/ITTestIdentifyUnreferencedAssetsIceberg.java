@@ -105,7 +105,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
   private static SparkSession spark;
   private static SparkSession sparkDeleteBranch;
 
-  private StoreWorker<Contents, CommitMeta> helper;
+  private StoreWorker<Contents, CommitMeta, Contents.Type> helper;
 
 
   protected NessieCatalog catalog;

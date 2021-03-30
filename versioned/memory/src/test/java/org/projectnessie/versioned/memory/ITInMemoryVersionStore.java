@@ -37,14 +37,15 @@ import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
 public class ITInMemoryVersionStore extends AbstractITVersionStore {
-  private static final InMemoryVersionStore.Builder<String, String> BUILDER = InMemoryVersionStore.<String, String>builder()
-      .valueSerializer(StringSerializer.getInstance())
-      .metadataSerializer(StringSerializer.getInstance());
+  private static final InMemoryVersionStore.Builder<String, String, StringSerializer.TestEnum> BUILDER =
+      InMemoryVersionStore.<String, String, StringSerializer.TestEnum>builder()
+        .valueSerializer(StringSerializer.getInstance())
+        .metadataSerializer(StringSerializer.getInstance());
 
-  private VersionStore<String, String> store;
+  private VersionStore<String, String, StringSerializer.TestEnum> store;
 
   @Override
-  protected VersionStore<String, String> store() {
+  protected VersionStore<String, String, StringSerializer.TestEnum> store() {
     return store;
   }
 
@@ -56,7 +57,8 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
 
   @Test
   void clearUnsafe() throws Exception {
-    InMemoryVersionStore<String, String> inMemoryVersionStore = (InMemoryVersionStore<String, String>) store;
+    InMemoryVersionStore<String, String, StringSerializer.TestEnum> inMemoryVersionStore =
+        (InMemoryVersionStore<String, String, StringSerializer.TestEnum>) store;
 
     BranchName fooBranch = BranchName.of("foo");
 

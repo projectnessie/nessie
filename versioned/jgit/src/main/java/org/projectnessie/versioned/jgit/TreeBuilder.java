@@ -37,7 +37,7 @@ import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.Unchanged;
 
 public class TreeBuilder {
@@ -52,10 +52,10 @@ public class TreeBuilder {
    * @return objectId of new tree
    * @throws IOException error in speaking w/ git
    */
-  public static <TABLE> ObjectId commitObjects(List<Operation<TABLE>> ops,
-                                               Repository repository,
-                                               Serializer<TABLE> serializer,
-                                               ObjectId emptyObjectId) throws IOException {
+  public static <TABLE, TABLE_VALUE extends Enum<TABLE_VALUE>> ObjectId commitObjects(List<Operation<TABLE>> ops,
+                                                                                      Repository repository,
+                                                                                      SerializerWithPayload<TABLE, TABLE_VALUE> serializer,
+                                                                                      ObjectId emptyObjectId) throws IOException {
     ObjectInserter inserter = repository.newObjectInserter();
 
     DirCache dc = DirCache.newInCore();

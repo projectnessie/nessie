@@ -17,9 +17,9 @@ package org.projectnessie.versioned.dynamodb;
 
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.attributeValue;
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.deserializeId;
-import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.deserializeKey;
+import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.deserializeKeyWithPayload;
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.idValue;
-import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.keyElements;
+import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.keyElementsWithPayload;
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.list;
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.map;
 
@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.store.KeyDelta;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.L3;
@@ -50,7 +52,7 @@ class DynamoL3 extends DynamoBaseValue<L3> implements L3 {
 
   private static AttributeValue treeKeyId(KeyDelta kd) {
     Map<String, AttributeValue> map = new HashMap<>();
-    map.put(DynamoL3.TREE_KEY, keyElements(kd.getKey()));
+    map.put(DynamoL3.TREE_KEY, keyElementsWithPayload(kd.toKeyWithPayload()));
     map.put(DynamoL3.TREE_ID, idValue(kd.getId()));
     return map(map);
   }
@@ -71,11 +73,10 @@ class DynamoL3 extends DynamoBaseValue<L3> implements L3 {
     if (entity.containsKey(TREE)) {
       Stream<KeyDelta> keyDelta = attributeValue(entity, TREE).l().stream()
           .map(AttributeValue::m)
-          .map(m -> KeyDelta.of(
-              deserializeKey(attributeValue(m, TREE_KEY)),
-              deserializeId(m, TREE_ID)
-          ));
-
+          .map(m -> {
+            WithPayload<Key> key = deserializeKeyWithPayload(attributeValue(m, TREE_KEY));
+            return KeyDelta.of(key, deserializeId(m, TREE_ID));
+          });
       consumer.keyDelta(keyDelta);
     }
   }

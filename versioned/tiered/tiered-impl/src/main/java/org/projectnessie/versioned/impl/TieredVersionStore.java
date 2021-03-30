@@ -46,11 +46,13 @@ import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.impl.DiffFinder.KeyDiff;
 import org.projectnessie.versioned.impl.HistoryRetriever.HistoryItem;
 import org.projectnessie.versioned.impl.InternalBranch.Commit;
@@ -81,13 +83,13 @@ import com.google.common.util.concurrent.MoreExecutors;
 /**
  * A version store that uses a tree of levels to store version information.
  */
-public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, METADATA> {
+public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE>> implements VersionStore<DATA, METADATA, DATA_TYPE> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TieredVersionStore.class);
 
   private static final int MAX_MERGE_DEPTH = 200;
 
-  private final Serializer<DATA> serializer;
+  private final SerializerWithPayload<DATA, DATA_TYPE> serializer;
   private final Serializer<METADATA> metadataSerializer;
   private final Executor executor;
   private final Store store;
@@ -102,7 +104,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
    * @param store The underlying {@link Store} implementation to use.
    * @param waitOnCollapse Whether to block on collapsing the InternalBranch commit log before returning valid L1s.
    */
-  public TieredVersionStore(StoreWorker<DATA,METADATA> storeWorker, Store store, boolean waitOnCollapse) {
+  public TieredVersionStore(StoreWorker<DATA, METADATA, DATA_TYPE> storeWorker, Store store, boolean waitOnCollapse) {
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
@@ -231,8 +233,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     InternalBranch updatedBranch;
     while (true) {
 
-      final PartialTree<DATA> current = PartialTree.of(serializer, ref, keys);
-      final PartialTree<DATA> expected = expectedHash.isPresent()
+      final PartialTree<DATA, DATA_TYPE> current = PartialTree.of(serializer, ref, keys);
+      final PartialTree<DATA, DATA_TYPE> expected = expectedHash.isPresent()
           ? PartialTree.of(serializer, InternalRefId.ofHash(expectedHash.get()), keys) : current;
 
       try {
@@ -244,6 +246,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
       }
 
       List<OperationHolder> holders = ops.stream().map(o -> new OperationHolder(current, expected, o)).collect(Collectors.toList());
+
       List<InconsistentValue> mismatches = holders.stream()
           .map(OperationHolder::verify)
           .filter(Optional::isPresent)
@@ -440,7 +443,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithType<Key, DATA_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
     // naive implementation.
     InternalRefId refId = InternalRefId.of(ref);
     final InternalL1 start;
@@ -462,13 +465,13 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
         throw new UnsupportedOperationException();
     }
 
-    return start.getKeys(store).map(InternalKey::toKey);
+    return start.getKeys(store).map(InternalKeyWithPayload::toKey).map(x -> WithType.of(serializer.getType(x.getPayload()), x.getValue()));
   }
 
   @Override
   public DATA getValue(Ref ref, Key key) throws ReferenceNotFoundException {
     InternalKey ikey = new InternalKey(key);
-    PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.singletonList(ikey));
+    PartialTree<DATA, DATA_TYPE> tree = PartialTree.of(serializer, InternalRefId.of(ref), Collections.singletonList(ikey));
     store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
     return tree.getValueForKey(ikey).orElse(null);
   }
@@ -476,7 +479,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   @Override
   public List<Optional<DATA>> getValues(Ref ref, List<Key> key) throws ReferenceNotFoundException {
     List<InternalKey> keys = key.stream().map(InternalKey::new).collect(Collectors.toList());
-    PartialTree<DATA> tree = PartialTree.of(serializer, InternalRefId.of(ref), keys);
+    PartialTree<DATA, DATA_TYPE> tree = PartialTree.of(serializer, InternalRefId.of(ref), keys);
     store.load(tree.getLoadChain(this::ensureValidL1, LoadType.SELECT_VALUES));
     return keys.stream().map(tree::getValueForKey).collect(Collectors.toList());
   }
@@ -654,7 +657,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     // now that we've validated the operation, we need to build up two sets of changes. One is the composite changes
     // which will be applied to the Branch IdMap. The second is distinct operations that will be added to the the commit
     // intention log of the Branch object.
-    PartialTree<DATA> headToRebaseOn = PartialTree.of(serializer, InternalRef.Type.BRANCH, to, fromKeyChanges);
+    PartialTree<DATA, DATA_TYPE> headToRebaseOn = PartialTree.of(serializer, InternalRef.Type.BRANCH, to, fromKeyChanges);
     List<DiffManager> creators = fromDiffs.stream().map(DiffManager::new).collect(Collectors.toList());
     store.load(creators.stream().map(DiffManager::getLoad)
         .collect(LoadStep.toLoadStep())
@@ -664,7 +667,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
     // We generate the intention log here with clean PartialTrees.
     List<Commit> intentions = new ArrayList<>();
     creators.forEach(pt -> {
-      PartialTree<DATA> clean = headToRebaseOn.cleanClone();
+      PartialTree<DATA, DATA_TYPE> clean = headToRebaseOn.cleanClone();
       pt.apply(headToRebaseOn);
       pt.apply(clean);
       intentions.add(clean.getCommitOp(pt.metadataId, Collections.emptyList(), false, true).getCommitIntention());
@@ -700,7 +703,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
    * Class used to manage the tree mutations required to move between two L1s.
    */
   private class DiffManager {
-    private final PartialTree<DATA> tree;
+    private final PartialTree<DATA, DATA_TYPE> tree;
     private final Id metadataId;
     private final DiffFinder finder;
 
@@ -728,7 +731,7 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
      * Apply the diff associated with the set of ops this tree is managing.
      * @param secondTree The compound tree that will receive all diffs.
      */
-    public void apply(PartialTree<DATA> secondTree) {
+    public void apply(PartialTree<DATA, DATA_TYPE> secondTree) {
       finder.getKeyDiffs().forEach(kd -> {
         Optional<Id> valueToSet = Optional.ofNullable(kd.getTo()).filter(i -> !i.isEmpty());
         tree.setValueIdForKey(kd.getKey(), valueToSet);
@@ -741,8 +744,8 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
 
   @Override
   public Stream<Diff<DATA>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    PartialTree<DATA> fromTree = PartialTree.of(serializer, InternalRefId.of(from), Collections.emptyList());
-    PartialTree<DATA> toTree = PartialTree.of(serializer, InternalRefId.of(to), Collections.emptyList());
+    PartialTree<DATA, DATA_TYPE> fromTree = PartialTree.of(serializer, InternalRefId.of(from), Collections.emptyList());
+    PartialTree<DATA, DATA_TYPE> toTree = PartialTree.of(serializer, InternalRefId.of(to), Collections.emptyList());
     store.load(fromTree.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
         .combine(toTree.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
 
@@ -768,12 +771,12 @@ public class TieredVersionStore<DATA, METADATA> implements VersionStore<DATA, ME
   }
 
   class OperationHolder {
-    private final PartialTree<DATA> current;
-    private final PartialTree<DATA> expected;
+    private final PartialTree<DATA, DATA_TYPE> current;
+    private final PartialTree<DATA, DATA_TYPE> expected;
     private final Operation<DATA> operation;
     private final InternalKey key;
 
-    public OperationHolder(PartialTree<DATA> current, PartialTree<DATA> expected, Operation<DATA> operation) {
+    public OperationHolder(PartialTree<DATA, DATA_TYPE> current, PartialTree<DATA, DATA_TYPE> expected, Operation<DATA> operation) {
       this.current = Preconditions.checkNotNull(current);
       this.expected = Preconditions.checkNotNull(expected);
       this.operation = Preconditions.checkNotNull(operation);

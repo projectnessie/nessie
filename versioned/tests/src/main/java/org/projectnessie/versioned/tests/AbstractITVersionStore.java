@@ -39,6 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Diff;
@@ -50,20 +51,23 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.WithType;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 /**
  * Base class used for integration tests against version store implementations.
  */
 public abstract class AbstractITVersionStore {
 
-  protected abstract VersionStore<String, String> store();
+  protected abstract VersionStore<String, String, StringSerializer.TestEnum> store();
 
   /*
    * Test:
@@ -294,18 +298,18 @@ public abstract class AbstractITVersionStore {
         WithHash.of(initialCommit, "Initial Commit")
         ));
 
-    assertThat(store().getKeys(branch).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(branch).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t4")
         ));
 
-    assertThat(store().getKeys(secondCommit).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(secondCommit).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t4")
         ));
 
-    assertThat(store().getKeys(initialCommit).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(initialCommit).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t3")
@@ -389,7 +393,7 @@ public abstract class AbstractITVersionStore {
         WithHash.of(initialCommit, "Initial Commit")
         ));
 
-    assertThat(store().getKeys(branch).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(branch).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t3")
@@ -1021,11 +1025,37 @@ public abstract class AbstractITVersionStore {
     assertTrue(firstToFirst.isEmpty());
   }
 
-  protected CommitBuilder<String, String> forceCommit(String message) {
+  @Test
+  void checkValueEntityType() throws Exception {
+    BranchName branch = BranchName.of("entity-types");
+    store().create(branch, Optional.empty());
+
+    // have to do this here as tiered store stores payload at commit time
+    Mockito.doReturn(StringSerializer.TestEnum.NO).when(StringSerializer.getInstance()).getType("world");
+    store().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
+        Put.of(Key.of("hi"), "world"))
+    );
+
+    assertEquals("world", store().getValue(branch, Key.of("hi")));
+    List<Optional<String>> values = store().getValues(branch, Lists.newArrayList(Key.of("hi")));
+    assertEquals(1, values.size());
+    assertTrue(values.get(0).isPresent());
+
+    // have to do this here as non-tiered store reads payload when getKeys is called
+    Mockito.doReturn(StringSerializer.TestEnum.NO).when(StringSerializer.getInstance()).getType("world");
+    List<WithType<Key, StringSerializer.TestEnum>> keys = store().getKeys(branch).collect(Collectors.toList());
+
+    assertEquals(1, keys.size());
+    assertEquals(Key.of("hi"), keys.get(0).getValue());
+    assertEquals(StringSerializer.TestEnum.NO, keys.get(0).getType());
+  }
+
+
+  protected CommitBuilder<String, String, StringSerializer.TestEnum> forceCommit(String message) {
     return new CommitBuilder<>(store()).withMetadata(message);
   }
 
-  protected CommitBuilder<String, String> commit(String message) {
+  protected CommitBuilder<String, String, StringSerializer.TestEnum> commit(String message) {
     return new CommitBuilder<>(store()).withMetadata(message).fromLatest();
   }
 

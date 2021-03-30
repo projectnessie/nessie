@@ -25,8 +25,10 @@ import java.util.stream.Stream;
 
 import org.projectnessie.versioned.ImmutableKey;
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
+import org.projectnessie.versioned.tiered.Mutation;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -42,7 +44,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
  * Tools to convert to and from Entity/AttributeValue.
  */
 public final class AttributeValueUtil {
-
+  private static final char ZERO_BYTE = '\u0000';
   private static final String KEY_ADDITION = "a";
   private static final String KEY_REMOVAL = "d";
   private static final String DT = "dt";
@@ -104,9 +106,17 @@ public final class AttributeValueUtil {
    * Convenience method to produce a built {@link AttributeValue} for an {@link Key},
    * consist of a list of strings.
    */
-  static AttributeValue keyElements(Key key) {
-    return list(checkNotNull(key).getElements().stream().map(AttributeValueUtil::string));
+  static AttributeValue keyElementsWithPayload(WithPayload<Key> key) {
+    Stream<AttributeValue> keyValue = checkNotNull(key.getValue()).getElements().stream().map(AttributeValueUtil::string);
+    AttributeValue payload;
+    if (key.getPayload() == null) {
+      payload = AttributeValueUtil.string(Character.toString(ZERO_BYTE));
+    } else {
+      payload = AttributeValueUtil.string(key.getPayload().toString());
+    }
+    return list(Stream.concat(Stream.of(payload), keyValue));
   }
+
 
   static long getDt(Map<String, AttributeValue> map) {
     AttributeValue av = map.get(DT);
@@ -177,24 +187,37 @@ public final class AttributeValueUtil {
   /**
    * Deserializes a single key-mutation.
    */
-  static Key.Mutation deserializeKeyMutation(AttributeValue mutation) {
+  static Mutation deserializeKeyMutation(AttributeValue mutation) {
     Map<String, AttributeValue> m = mutation.m();
     AttributeValue raw = m.get(KEY_ADDITION);
     if (raw != null) {
-      return deserializeKey(raw).asAddition();
+      WithPayload<Key> key = deserializeKeyWithPayload(raw);
+      return Mutation.Addition.of(key.getValue(), key.getPayload());
     }
     raw = m.get(KEY_REMOVAL);
     if (raw != null) {
-      return deserializeKey(raw).asRemoval();
+      WithPayload<Key> key = deserializeKeyWithPayload(raw);
+      return Mutation.Removal.of(key.getValue());
     }
     throw new IllegalStateException("keys.mutations map has unsupported entries: " + m);
   }
 
-  static AttributeValue serializeKeyMutation(Key.Mutation km) {
-    return map(Collections.singletonMap(mutationName(km.getType()), keyElements(km.getKey())));
+  static AttributeValue serializeKeyMutation(Mutation km) {
+    WithPayload<Key> key;
+    switch (km.getType()) {
+      case ADDITION:
+        key = WithPayload.of(((Mutation.Addition) km).getPayload(), km.getKey());
+        break;
+      case REMOVAL:
+        key = WithPayload.of(null, km.getKey());
+        break;
+      default:
+        throw new IllegalArgumentException("unknown mutation type " + km.getType());
+    }
+    return map(Collections.singletonMap(mutationName(km.getType()), keyElementsWithPayload(key)));
   }
 
-  private static String mutationName(Key.MutationType type) {
+  private static String mutationName(Mutation.MutationType type) {
     switch (type) {
       case ADDITION:
         return KEY_ADDITION;
@@ -224,10 +247,15 @@ public final class AttributeValueUtil {
   /**
    * Deserialize a {@link Key} from the given {@code raw}.
    */
-  static Key deserializeKey(AttributeValue raw) {
+  static WithPayload<Key> deserializeKeyWithPayload(AttributeValue raw) {
     ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
-    raw.l().forEach(keyPart -> keyBuilder.addElements(keyPart.s()));
-    return keyBuilder.build();
+    String payloadString = raw.l().get(0).s();
+    Byte payload = null;
+    if (payloadString.charAt(0) != ZERO_BYTE) {
+      payload = Byte.parseByte(payloadString);
+    }
+    raw.l().stream().skip(1).forEach(keyPart -> keyBuilder.addElements(keyPart.s()));
+    return WithPayload.of(payload, keyBuilder.build());
   }
 
   /**

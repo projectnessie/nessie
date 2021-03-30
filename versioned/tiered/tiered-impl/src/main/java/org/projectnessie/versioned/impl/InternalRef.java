@@ -20,13 +20,13 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.impl.InternalBranch.Commit;
 import org.projectnessie.versioned.impl.InternalBranch.UnsavedDelta;
 import org.projectnessie.versioned.impl.condition.ExpressionFunction;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
+import org.projectnessie.versioned.tiered.Mutation;
 import org.projectnessie.versioned.tiered.Ref;
 
 /**
@@ -230,7 +230,7 @@ abstract class InternalRef extends PersistentBase<Ref> {
         private Id commit;
         private Id parent;
         private List<UnsavedDelta> unsavedDeltas = new ArrayList<>();
-        private List<KeyMutation> keyMutations = new ArrayList<>();
+        private List<InternalMutation> keyMutations = new ArrayList<>();
 
         @Override
         public BranchCommit done() {
@@ -290,8 +290,8 @@ abstract class InternalRef extends PersistentBase<Ref> {
         }
 
         @Override
-        public UnsavedCommitMutations keyMutation(Key.Mutation keyMutation) {
-          keyMutations.add(KeyMutation.fromMutation(keyMutation));
+        public UnsavedCommitMutations keyMutation(Mutation keyMutation) {
+          keyMutations.add(InternalMutation.fromMutation(keyMutation));
           return this;
         }
       }

@@ -21,21 +21,21 @@ package org.projectnessie.versioned;
  * @param <VALUE> The value type saved in the VersionStore.
  * @param <COMMIT_METADATA> The commit metadata type saved in the VersionStore.
  */
-public interface StoreWorker<VALUE, COMMIT_METADATA> {
+public interface StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> {
 
-  Serializer<VALUE> getValueSerializer();
+  SerializerWithPayload<VALUE, VALUE_TYPE> getValueSerializer();
 
   Serializer<COMMIT_METADATA> getMetadataSerializer();
 
   /**
    * Create StoreWorker for provided helpers.
    */
-  static <VALUE, COMMIT_METADATA> StoreWorker<VALUE, COMMIT_METADATA>
-      of(Serializer<VALUE> valueSerializer, Serializer<COMMIT_METADATA> commitSerializer) {
-    return new StoreWorker<VALUE, COMMIT_METADATA>() {
+  static <VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE>
+      of(SerializerWithPayload<VALUE, VALUE_TYPE> valueSerializer, Serializer<COMMIT_METADATA> commitSerializer) {
+    return new StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE>() {
 
       @Override
-      public Serializer<VALUE> getValueSerializer() {
+      public SerializerWithPayload<VALUE, VALUE_TYPE> getValueSerializer() {
         return valueSerializer;
       }
 

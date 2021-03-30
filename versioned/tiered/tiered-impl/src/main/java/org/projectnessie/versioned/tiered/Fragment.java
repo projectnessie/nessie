@@ -18,6 +18,7 @@ package org.projectnessie.versioned.tiered;
 import java.util.stream.Stream;
 
 import org.projectnessie.versioned.Key;
+import org.projectnessie.versioned.WithPayload;
 
 /**
  * Consumer for fragments.
@@ -34,7 +35,7 @@ public interface Fragment extends BaseValue<Fragment> {
    * @param keys The keys to add.
    * @return This consumer.
    */
-  default Fragment keys(Stream<Key> keys) {
+  default Fragment keys(Stream<WithPayload<Key>> keys) {
     keys.forEach(ignored -> {});
     return this;
   }

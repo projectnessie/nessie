@@ -29,10 +29,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -80,6 +82,7 @@ import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
+import org.projectnessie.versioned.WithType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,20 +92,20 @@ import com.google.protobuf.ByteString;
 /**
  * VersionStore interface for JGit backend.
  */
-public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, METADATA> {
+public class JGitVersionStore<TABLE, METADATA, TABLE_TYPE extends Enum<TABLE_TYPE>> implements VersionStore<TABLE, METADATA, TABLE_TYPE> {
 
   private static final Logger logger = LoggerFactory.getLogger(JGitVersionStore.class);
   private static final String SLASH = "/";
 
   private final Repository repository;
-  private final StoreWorker<TABLE, METADATA> storeWorker;
+  private final StoreWorker<TABLE, METADATA, TABLE_TYPE> storeWorker;
   private final ObjectId emptyObject;
 
   /**
    * Construct a JGitVersionStore.
    */
   @Inject
-  public JGitVersionStore(Repository repository, StoreWorker<TABLE, METADATA> storeWorker) {
+  public JGitVersionStore(Repository repository, StoreWorker<TABLE, METADATA, TABLE_TYPE> storeWorker) {
     this.storeWorker = storeWorker;
     this.repository = repository;
     ObjectId objectId;
@@ -490,18 +493,41 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) {
+  public Stream<WithType<Key, TABLE_TYPE>> getKeys(Ref ref) {
     try {
-      List<Key> tables = new ArrayList<>();
       try (TreeWalk treeWalk = new TreeWalk(repository)) {
         ObjectId treeId = repository.resolve(refName(ref) + "^{tree}");
         treeWalk.addTree(treeId);
         treeWalk.setRecursive(true);
-        while (treeWalk.next()) {
-          tables.add(keyFromUrlString(treeWalk.getPathString()));
-        }
+        Iterator<TreeWalk> iterator = new Iterator<TreeWalk>() {
+
+          @Override
+          public boolean hasNext() {
+            try {
+              return treeWalk.next();
+            } catch (IOException e) {
+              throw new RuntimeException("Unknown error whilst iterating", e);
+            }
+          }
+
+          @Override
+          public TreeWalk next() {
+            return treeWalk;
+          }
+        };
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false)
+            .map(tw -> {
+              try {
+                Key key = keyFromUrlString(treeWalk.getPathString());
+                ByteString table = getTable(treeWalk, repository);
+                TABLE_TYPE payload = storeWorker.getValueSerializer().getType(storeWorker.getValueSerializer().fromBytes(table));
+                return WithType.of(payload, key);
+              } catch (IOException e) {
+                throw new RuntimeException("Unknown error whilst iterating", e);
+              }
+            });
       }
-      return tables.stream();
+
     } catch (IOException e) {
       throw new RuntimeException("Unknown error", e);
     }
@@ -518,8 +544,8 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         treeWalk.setRecursive(true);
         treeWalk.setFilter(PathFilter.create(table));
         while (treeWalk.next()) {
-          byte[] bytes = getTable(treeWalk, repository);
-          return storeWorker.getValueSerializer().fromBytes(ByteString.copyFrom(bytes));
+          ByteString bytes = getTable(treeWalk, repository);
+          return storeWorker.getValueSerializer().fromBytes(bytes);
         }
       }
       return null;
@@ -540,8 +566,8 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
         treeWalk.setRecursive(true);
         while (treeWalk.next()) {
           if (keys.containsKey(treeWalk.getPathString())) {
-            byte[] bytes = getTable(treeWalk, repository);
-            tables.put(keys.get(treeWalk.getPathString()), storeWorker.getValueSerializer().fromBytes(ByteString.copyFrom(bytes)));
+            ByteString bytes = getTable(treeWalk, repository);
+            tables.put(keys.get(treeWalk.getPathString()), storeWorker.getValueSerializer().fromBytes(bytes));
           }
         }
       }
@@ -703,16 +729,17 @@ public class JGitVersionStore<TABLE, METADATA> implements VersionStore<TABLE, ME
     return hashName;
   }
 
-  private static byte[] getTable(TreeWalk treeWalk, Repository repository)
+  private static ByteString getTable(TreeWalk treeWalk, Repository repository)
       throws IOException {
     return getTable(treeWalk, repository, 0);
   }
 
-  private static byte[] getTable(TreeWalk treeWalk, Repository repository, int id)
+  private static ByteString getTable(TreeWalk treeWalk, Repository repository, int id)
       throws IOException {
     ObjectId objectId = treeWalk.getObjectId(id);
     ObjectLoader loader = repository.open(objectId);
-    return loader.getBytes();
+    byte[] object = loader.getBytes();
+    return ByteString.copyFrom(object);
   }
 
   @Override

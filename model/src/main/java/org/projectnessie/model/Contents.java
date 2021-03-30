@@ -51,9 +51,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @Type(HiveDatabase.class)
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-public interface Contents {
+public abstract class Contents {
 
-  static enum Type {
+  public static enum Type {
     UNKNOWN, ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
   }
 
@@ -63,7 +63,7 @@ public interface Contents {
    * @param clazz Class we're trying to return.
    * @return The return value
    */
-  default <T> Optional<T> unwrap(Class<T> clazz) {
+  public <T> Optional<T> unwrap(Class<T> clazz) {
     Objects.requireNonNull(clazz);
     if (clazz.isAssignableFrom(getClass())) {
       return Optional.of(clazz.cast(this));

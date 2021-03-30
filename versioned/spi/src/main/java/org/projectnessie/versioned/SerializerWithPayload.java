@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.versioned.impl;
+package org.projectnessie.versioned;
 
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
+/**
+ * Extension of Serializable that includes a single byte payload.
+ */
+public interface SerializerWithPayload<V, T extends Enum<T>> extends Serializer<V> {
 
-@ExtendWith(LocalDynamoDB.class)
-class ITDynamoTieredVersionStore extends AbstractITTieredVersionStore {
-  @Override
-  protected DynamoStoreFixture createNewFixture() {
-    return new DynamoStoreFixture();
+  Byte getPayload(V value);
+
+  default T getType(V value) {
+    return getType(getPayload(value));
   }
+
+  T getType(Byte payload);
+
 }

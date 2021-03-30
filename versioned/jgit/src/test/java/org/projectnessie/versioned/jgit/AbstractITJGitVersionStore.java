@@ -28,9 +28,9 @@ import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
 public abstract class AbstractITJGitVersionStore extends AbstractITVersionStore {
   protected Repository repository;
-  protected VersionStore<String, String> store;
+  protected VersionStore<String, String, StringSerializer.TestEnum> store;
 
-  protected static final StoreWorker<String, String> WORKER =
+  protected static final StoreWorker<String, String, StringSerializer.TestEnum> WORKER =
       StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
   abstract void setUp() throws IOException;
@@ -45,7 +45,7 @@ public abstract class AbstractITJGitVersionStore extends AbstractITVersionStore 
     repository.close();
   }
 
-  @Override protected VersionStore<String, String> store() {
+  @Override protected VersionStore<String, String, StringSerializer.TestEnum> store() {
     return store;
   }
 }
