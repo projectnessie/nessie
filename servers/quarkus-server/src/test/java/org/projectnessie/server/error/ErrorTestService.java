@@ -137,7 +137,7 @@ public class ErrorTestService {
     Store store = Mockito.mock(Store.class);
     Mockito.when(store.getValues(ValueType.REF)).thenThrow(ex);
 
-    TieredVersionStore<String, String> tvs = new TieredVersionStore<>(
+    TieredVersionStore<String, String, StringSerializer.TestEnum> tvs = new TieredVersionStore<>(
         StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance()), store,
         true);
     tvs.getNamedRefs().forEach(ref -> {});
