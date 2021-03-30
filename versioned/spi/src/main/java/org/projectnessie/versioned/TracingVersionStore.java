@@ -40,9 +40,10 @@ import io.opentracing.util.GlobalTracer;
  * @param <VALUE> see {@link VersionStore}
  * @param <METADATA> see {@link VersionStore}
  */
-public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE, METADATA> {
+public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+    implements VersionStore<VALUE, METADATA, VALUE_TYPE> {
 
-  private final VersionStore<VALUE, METADATA> delegate;
+  private final VersionStore<VALUE, METADATA, VALUE_TYPE> delegate;
   private final Supplier<Tracer> tracerSupplier;
 
   /**
@@ -50,7 +51,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
    * {@link GlobalTracer#get() GlobalTracer}.
    * @param delegate backing/delegate {@link VersionStore}
    */
-  public TracingVersionStore(VersionStore<VALUE, METADATA> delegate) {
+  public TracingVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate) {
     this(delegate, GlobalTracer::get);
   }
 
@@ -61,7 +62,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
    * @param tracerSupplier {@link Supplier} for the {@link Tracer} to use
    */
   @VisibleForTesting
-  TracingVersionStore(VersionStore<VALUE, METADATA> delegate, Supplier<Tracer> tracerSupplier) {
+  TracingVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, Supplier<Tracer> tracerSupplier) {
     this.tracerSupplier = tracerSupplier;
     this.delegate = delegate;
   }
@@ -168,7 +169,7 @@ public class TracingVersionStore<VALUE, METADATA> implements VersionStore<VALUE,
   }
 
   @Override
-  public Stream<Key> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
     return delegateStream1Ex("VersionStore.getKeys", b -> b
         .withTag("nessie.version-store.operation", "GetKeys")
         .withTag("nessie.version-store.ref", safeToString(ref)),

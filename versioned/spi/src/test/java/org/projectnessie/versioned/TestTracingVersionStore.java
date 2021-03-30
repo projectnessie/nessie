@@ -193,7 +193,7 @@ class TestTracingVersionStore {
   @ParameterizedTest
   @MethodSource("versionStoreInvocations")
   void versionStoreInvocation(String opName, Exception expectedThrow, Map<String, ?> tags, Supplier<?> resultSupplier,
-      ThrowingFunction<?, VersionStore<String, String>> versionStoreFunction) throws Throwable {
+      ThrowingFunction<?, VersionStore<String, String, DummyEnum>> versionStoreFunction) throws Throwable {
     Object result = resultSupplier != null ? resultSupplier.get() : null;
 
     Stubber stubber;
@@ -209,11 +209,11 @@ class TestTracingVersionStore {
     }
 
     TestTracer tracer = new TestTracer();
-    @SuppressWarnings("unchecked") VersionStore<String, String> mockedVersionStore = mock(VersionStore.class);
+    @SuppressWarnings("unchecked") VersionStore<String, String, DummyEnum> mockedVersionStore = mock(VersionStore.class);
     versionStoreFunction.accept(stubber.when(mockedVersionStore));
-    VersionStore<String, String> versionStore = new TracingVersionStore<>(mockedVersionStore, () -> tracer);
+    VersionStore<String, String, DummyEnum> versionStore = new TracingVersionStore<>(mockedVersionStore, () -> tracer);
 
-    ThrowingConsumer<VersionStore<String, String>> versionStoreExec = vs -> {
+    ThrowingConsumer<VersionStore<String, String, DummyEnum>> versionStoreExec = vs -> {
       Object r = versionStoreFunction.accept(vs);
       if (result != null) {
         // non-void methods must return something
@@ -268,12 +268,12 @@ class TestTracingVersionStore {
   static class VersionStoreInvocation<R> {
     final String opName;
     final Map<String, ?> tags;
-    final ThrowingFunction<?, VersionStore<String, String>> function;
+    final ThrowingFunction<?, VersionStore<String, String, DummyEnum>> function;
     final Supplier<R> result;
     final List<Exception> failures;
 
     VersionStoreInvocation(String opName, Map<String, ?> tags,
-        ThrowingFunction<?, VersionStore<String, String>> function,
+        ThrowingFunction<?, VersionStore<String, String, DummyEnum>> function,
         Supplier<R> result, List<Exception> failures) {
       this.opName = opName;
       this.tags = tags;
@@ -283,7 +283,7 @@ class TestTracingVersionStore {
     }
 
     VersionStoreInvocation(String opName, Map<String, ?> tags,
-        ThrowingConsumer<VersionStore<String, String>> function,
+        ThrowingConsumer<VersionStore<String, String, DummyEnum>> function,
         List<Exception> failures) {
       this.opName = opName;
       this.tags = tags;
@@ -299,6 +299,10 @@ class TestTracingVersionStore {
   @FunctionalInterface
   interface ThrowingFunction<R, A> {
     R accept(A arg) throws Throwable;
+  }
+
+  enum DummyEnum {
+    DUMMY
   }
 
   static class TestTracer implements Tracer {
