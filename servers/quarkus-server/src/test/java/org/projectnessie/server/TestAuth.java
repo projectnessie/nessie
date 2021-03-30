@@ -18,6 +18,7 @@ package org.projectnessie.server;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -90,7 +91,7 @@ class TestAuth {
   void testAdmin() throws NessieNotFoundException, NessieConflictException {
     getCatalog("testx");
     Branch branch = (Branch) tree.getReferenceByName("testx");
-    List<Entry> tables = tree.getEntries("testx", null, null).getEntries();
+    List<Entry> tables = tree.getEntries("testx", null, null, Collections.emptyList()).getEntries();
     Assertions.assertTrue(tables.isEmpty());
     ContentsKey key = ContentsKey.of("x","x");
     tryEndpointPass(() -> contents.setContents(key, branch.getName(), branch.getHash(), "empty message", IcebergTable.of("foo")));
