@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,6 +41,7 @@ import org.junit.jupiter.params.converter.ArgumentConversionException;
 import org.junit.jupiter.params.converter.ArgumentConverter;
 import org.junit.jupiter.params.converter.ConvertWith;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.projectnessie.RandomSource;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
 import org.projectnessie.versioned.Hash;
@@ -70,7 +70,6 @@ import com.google.common.collect.ImmutableSet;
 class TestJGitVersionStore {
   private static final Hash EMPTY_HASH = Hash.of(ObjectId.zeroId().name());
   private static File jgitDirStatic;
-  private final Random random = new Random();
 
   @TempDir
   File jgitDir;
@@ -145,7 +144,7 @@ class TestJGitVersionStore {
 
     // avoid create to invalid l1.
     byte[] randomBytes = new byte[20];
-    random.nextBytes(randomBytes);
+    RandomSource.current().nextBytes(randomBytes);
     Hash randomHash = Hash.of(ObjectId.fromRaw(randomBytes).name());
     assertThrows(ReferenceNotFoundException.class, () -> impl.create(tag, Optional.of(randomHash)));
 
@@ -201,7 +200,7 @@ class TestJGitVersionStore {
 
     // avoid create to invalid l1
     byte[] randomBytes = new byte[20];
-    random.nextBytes(randomBytes);
+    RandomSource.current().nextBytes(randomBytes);
     Hash randomHash = Hash.of(ObjectId.fromRaw(randomBytes).name());
     assertThrows(ReferenceNotFoundException.class, () -> impl.create(branch, Optional.of(randomHash)));
 
