@@ -112,8 +112,13 @@ class NessieClient(object):
         """
         delete_tag(self._base_url, tag, hash_, self._ssl_verify)
 
-    def list_keys(self: "NessieClient", ref: str, max_result_hint: Optional[int] = None,
-      page_token: Optional[str] = None, entity_types: Optional[list] = None) -> Entries:
+    def list_keys(
+        self: "NessieClient",
+        ref: str,
+        max_result_hint: Optional[int] = None,
+        page_token: Optional[str] = None,
+        entity_types: Optional[list] = None,
+    ) -> Entries:
         """Fetch a list of all tables from a known branch.
 
         :param ref: name of branch

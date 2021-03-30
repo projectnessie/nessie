@@ -425,7 +425,7 @@ def contents(
     KEY name of object to view, delete. If listing the key will limit by namespace what is included.
     """
     if list:
-        keys = ctx.nessie.list_keys(ref if ref else ctx.nessie.get_default_branch(), entity_type)
+        keys = ctx.nessie.list_keys(ref if ref else ctx.nessie.get_default_branch(), entity_types=entity_type)
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
         ctx.nessie.commit(ref, condition, _get_message(message), *_get_contents(ctx.nessie, ref, delete, *key))
