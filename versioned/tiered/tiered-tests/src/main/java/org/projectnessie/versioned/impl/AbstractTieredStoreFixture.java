@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.impl;
 
+import static org.mockito.Mockito.spy;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -41,18 +43,23 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   protected static final StoreWorker<String, String, StringSerializer.TestEnum> WORKER =
       StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
-  private final S store;
   private final C config;
-  private final VersionStore<String, String, StringSerializer.TestEnum> impl;
+
+  private final S store;
+  private final VersionStore<String, String, StringSerializer.TestEnum> versionStore;
 
   /**
    * Create a new fixture.
    */
-  public AbstractTieredStoreFixture(C config) {
+  protected AbstractTieredStoreFixture(C config) {
     this.config = config;
-    store = createStoreImpl();
-    store.start();
-    impl = new TieredVersionStore<>(WORKER, store, true);
+    S storeImpl = createStoreImpl();
+    storeImpl.start();
+
+    store = spy(storeImpl);
+
+    VersionStore<String, String, StringSerializer.TestEnum> versionStoreImpl = new TieredVersionStore<>(WORKER, store, true);
+    versionStore = spy(versionStoreImpl);
   }
 
   public C getConfig() {
@@ -65,91 +72,87 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
     return store;
   }
 
-  public VersionStore<String, String, StringSerializer.TestEnum> getWrapped() {
-    return impl;
-  }
-
   @Override
   public Hash toHash(NamedRef ref) throws ReferenceNotFoundException {
-    return impl.toHash(ref);
+    return versionStore.toHash(ref);
   }
 
   @Override
   public void commit(BranchName branch, Optional<Hash> expectedHash, String metadata,
       List<Operation<String>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    impl.commit(branch, expectedHash, metadata, operations);
+    versionStore.commit(branch, expectedHash, metadata, operations);
   }
 
   @Override
   public void transplant(BranchName targetBranch, Optional<Hash> expectedHash,
       List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    impl.transplant(targetBranch, expectedHash, sequenceToTransplant);
+    versionStore.transplant(targetBranch, expectedHash, sequenceToTransplant);
   }
 
   @Override
   public void merge(Hash fromHash, BranchName toBranch, Optional<Hash> expectedHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    impl.merge(fromHash, toBranch, expectedHash);
+    versionStore.merge(fromHash, toBranch, expectedHash);
   }
 
   @Override
   public void assign(NamedRef ref, Optional<Hash> expectedHash, Hash targetHash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    impl.assign(ref, expectedHash, targetHash);
+    versionStore.assign(ref, expectedHash, targetHash);
   }
 
   @Override
   public void create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    impl.create(ref, targetHash);
+    versionStore.create(ref, targetHash);
   }
 
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    impl.delete(ref, hash);
+    versionStore.delete(ref, hash);
   }
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return impl.getNamedRefs();
+    return versionStore.getNamedRefs();
   }
 
   @Override
   public Stream<WithHash<String>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    return impl.getCommits(ref);
+    return versionStore.getCommits(ref);
   }
 
   @Override
   public Stream<WithType<Key, StringSerializer.TestEnum>> getKeys(Ref ref) throws ReferenceNotFoundException {
-    return impl.getKeys(ref);
+    return versionStore.getKeys(ref);
   }
 
   @Override
   public String getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    return impl.getValue(ref, key);
+    return versionStore.getValue(ref, key);
   }
 
   @Override
   public List<Optional<String>> getValues(Ref ref, List<Key> key)
       throws ReferenceNotFoundException {
-    return impl.getValues(ref, key);
+    return versionStore.getValues(ref, key);
   }
 
   @Override
   public WithHash<Ref> toRef(String refOfUnknownType) throws ReferenceNotFoundException {
-    return impl.toRef(refOfUnknownType);
+    return versionStore.toRef(refOfUnknownType);
   }
 
   @Override
   public Stream<Diff<String>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    return impl.getDiffs(from, to);
+    return versionStore.getDiffs(from, to);
   }
 
   @Override
   public Collector collectGarbage() {
-    return impl.collectGarbage();
+    return versionStore.collectGarbage();
   }
 }
