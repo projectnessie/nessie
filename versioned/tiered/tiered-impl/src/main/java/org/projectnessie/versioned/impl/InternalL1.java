@@ -17,6 +17,7 @@ package org.projectnessie.versioned.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,8 +64,8 @@ class InternalL1 extends PersistentBase<L1> {
     return new InternalL1(metadataId, tree, null, keyList, parents, DT.now());
   }
 
-  InternalL1 withCheckpointAsNecessary(Store store) {
-    return keyList.createCheckpointIfNeeded(this, store)
+  InternalL1 withCheckpointAsNecessary(Store store, Map<Id, InternalL1> unsavedL1s) {
+    return keyList.createCheckpointIfNeeded(this, store, unsavedL1s)
         .map(keylist -> new InternalL1(metadataId, tree, null, keylist, parentList, DT.now())).orElse(this);
   }
 

@@ -17,6 +17,7 @@ package org.projectnessie.versioned.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,6 +46,7 @@ import org.projectnessie.versioned.tiered.Ref.UnsavedCommitMutations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -270,12 +272,17 @@ class InternalBranch extends InternalRef {
     Id lastId = null;
     final List<SaveOp<?>> toSave = new ArrayList<>();
 
+    Map<Id, InternalL1> unsavedL1s = new HashMap<>();
     for (Commit c : unsavedCommits) {
       for (UnsavedDelta delta : c.deltas) {
         tree = delta.apply(tree);
       }
+
+      unsavedL1s.put(lastL1.getId(), lastL1);
+
       lastL1 = lastL1.getChildWithTree(c.commit, tree, c.keyMutationList)
-          .withCheckpointAsNecessary(store);
+          .withCheckpointAsNecessary(store, unsavedL1s);
+
       toSave.add(EntityType.L1.createSaveOpForEntity(lastL1));
       lastId = c.id;
       if (lastUnsaved != c) {
@@ -315,6 +322,11 @@ class InternalBranch extends InternalRef {
       if (finalL1position == 0 && !deletes.isEmpty()) {
         throw new IllegalStateException("We should never have deletes if the final position is zero.");
       }
+    }
+
+    @VisibleForTesting
+    InternalL1 unsafeGetL1() {
+      return finalL1;
     }
 
     /**
@@ -602,6 +614,11 @@ class InternalBranch extends InternalRef {
           }
         })
         .backToRef();
+  }
+
+  @VisibleForTesting
+  List<Commit> getCommits() {
+    return Collections.unmodifiableList(commits);
   }
 
   private static Tracer getTracer() {

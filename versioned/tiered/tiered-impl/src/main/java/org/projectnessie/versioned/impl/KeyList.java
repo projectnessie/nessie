@@ -50,7 +50,7 @@ abstract class KeyList {
 
   abstract KeyList plus(Id parent, List<InternalMutation> mutations);
 
-  abstract Optional<KeyList> createCheckpointIfNeeded(InternalL1 startingPoint, Store store);
+  abstract Optional<KeyList> createCheckpointIfNeeded(InternalL1 startingPoint, Store store, Map<Id, InternalL1> unsavedL1s);
 
   abstract Type getType();
 
@@ -98,19 +98,19 @@ abstract class KeyList {
     }
 
     @Override
-    public Optional<KeyList> createCheckpointIfNeeded(InternalL1 startingPoint, Store store) {
+    public Optional<KeyList> createCheckpointIfNeeded(InternalL1 startingPoint, Store store, Map<Id, InternalL1> unsavedL1s) {
       if (getDistanceFromCheckpointCommits() < MAX_DELTAS) {
         return Optional.empty();
       }
 
 
-      return Optional.of(generateNewCheckpoint(startingPoint, store));
+      return Optional.of(generateNewCheckpoint(startingPoint, store, unsavedL1s));
     }
 
 
     @Override
     Stream<InternalKeyWithPayload> getKeys(InternalL1 startingPoint, Store store) {
-      IterResult keys = getKeysIter(startingPoint, store);
+      IterResult keys = getKeysIter(startingPoint, store, Collections.emptyMap());
       if (keys.isChanged()) {
         return keys.keyList;
       }
@@ -118,9 +118,9 @@ abstract class KeyList {
       return keys.list.getKeys(startingPoint, store);
     }
 
-    private CompleteList generateNewCheckpoint(InternalL1 startingPoint, Store store) {
+    private CompleteList generateNewCheckpoint(InternalL1 startingPoint, Store store, Map<Id, InternalL1> unsavedL1s) {
 
-      IterResult result = getKeysIter(startingPoint, store);
+      IterResult result = getKeysIter(startingPoint, store, unsavedL1s);
       if (!result.isChanged()) {
         return result.list;
       }
@@ -132,8 +132,8 @@ abstract class KeyList {
       return accum.getCompleteList(getMutations());
     }
 
-    private IterResult getKeysIter(InternalL1 startingPoint, Store store) {
-      HistoryRetriever retriever = new HistoryRetriever(store, startingPoint, getPreviousCheckpoint(), true, false, true);
+    private IterResult getKeysIter(InternalL1 startingPoint, Store store, Map<Id, InternalL1> unsavedL1s) {
+      HistoryRetriever retriever = new HistoryRetriever(store, startingPoint, getPreviousCheckpoint(), true, false, true, unsavedL1s);
       final CompleteList complete;
       // incrementals, from oldest to newest.
       final List<KeyList> incrementals;
@@ -259,7 +259,7 @@ abstract class KeyList {
     }
 
     @Override
-    public Optional<KeyList> createCheckpointIfNeeded(InternalL1 startingPoint, Store store) {
+    public Optional<KeyList> createCheckpointIfNeeded(InternalL1 startingPoint, Store store, Map<Id, InternalL1> unsavedL1s) {
       // checkpoint not needed, already a checkpoint.
       return Optional.empty();
     }
