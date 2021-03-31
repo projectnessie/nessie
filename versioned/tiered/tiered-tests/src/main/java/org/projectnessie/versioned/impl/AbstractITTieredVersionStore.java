@@ -50,11 +50,14 @@ import org.projectnessie.versioned.ImmutablePut;
 import org.projectnessie.versioned.ImmutableTagName;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.NamedRef;
+import org.projectnessie.versioned.Operation;
 import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.Serializer;
+import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.TagName;
 import org.projectnessie.versioned.Unchanged;
@@ -64,6 +67,7 @@ import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.impl.InconsistentValue.InconsistentValueException;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
+import org.projectnessie.versioned.store.ValueType;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -363,6 +367,96 @@ public abstract class AbstractITTieredVersionStore {
 
     // can't use tag delete on branch.
     assertThrows(ReferenceConflictException.class, () -> versionStore().delete(TagName.of("foo"), Optional.empty()));
+  }
+
+  @Test
+  void checkpointWithUnsavedL1() throws Exception {
+    // KeyList.IncrementalList.generateNewCheckpoint collects parent L1s for a branch
+    // via HistoryRetriever to "checkpoint" the keylist. However, this only works if
+    // HistoryRetriever has access to both saved AND unsaved L1s, so L1s that are persisted
+    // and those that are still in the branch's REF. This test verifies that generateNewCheckpoint
+    // does not fail in that case.
+
+    BranchName branch = BranchName.of("checkpointWithUnsavedL1");
+
+    versionStore().create(branch, Optional.empty());
+
+    InternalRefId ref = InternalRefId.of(branch);
+
+    // generate MAX_DELTAS-1 keys in the key-list - just enough to *NOT*
+    // trigger KeyList.IncrementalList.generateNewCheckpoint
+    for (int i = 1; i < KeyList.IncrementalList.MAX_DELTAS; i++) {
+      InternalBranch internalBranch = simulateCommit(ref, i);
+
+      // verify that the branch has an unsaved L1
+      assertEquals(i, internalBranch.getCommits().stream().filter(c -> !c.isSaved()).count());
+      KeyList keyList = internalBranch.getUpdateState(store()).unsafeGetL1().getKeyList();
+      assertFalse(keyList.isFull());
+      assertFalse(keyList.isEmptyIncremental());
+      KeyList.IncrementalList incrementalList = (KeyList.IncrementalList) keyList;
+      assertEquals(i, incrementalList.getDistanceFromCheckpointCommits());
+    }
+
+    InternalBranch internalBranch = simulateCommit(ref, KeyList.IncrementalList.MAX_DELTAS);
+    KeyList keyList = internalBranch.getUpdateState(store()).unsafeGetL1().getKeyList();
+    assertTrue(keyList.isFull());
+    assertFalse(keyList.isEmptyIncremental());
+
+  }
+
+  /**
+   * This is a copy of {@link TieredVersionStore#commit(BranchName, Optional, Object, List)} that
+   * allows the test {@link #checkpointWithUnsavedL1()} to produce commits to a branch with
+   * unsaved commits and without collapsing the intention log.
+   * <p>It is not particularly great to have a "stripped down" and "heavily adjusted" version
+   * of the original {@link TieredVersionStore#commit(BranchName, Optional, Object, List)} in
+   * a unit test, but the other option to prepare the pre-requisites for
+   * {@link #checkpointWithUnsavedL1()}, namely unsaved commits + uncollapsed branch, would have
+   * been to refactor the original method and add a bunch of hooks, which felt too heavy.</p>
+   *
+   * @param ref branch ID
+   * @param num number of the commit
+   * @return the updated branch
+   */
+  private InternalBranch simulateCommit(InternalRefId ref, int num) {
+    List<Operation<String>> ops = Collections.singletonList(Put.of(Key.of("key" + num), "foo" + num));
+    List<InternalKey> keys = ops.stream().map(op -> new InternalKey(op.getKey())).collect(Collectors.toList());
+
+    SerializerWithPayload<String, StringSerializer.TestEnum> serializer = AbstractTieredStoreFixture.WORKER.getValueSerializer();
+    Serializer<String> metadataSerializer = AbstractTieredStoreFixture.WORKER.getMetadataSerializer();
+
+    PartialTree<String, StringSerializer.TestEnum> current = PartialTree.of(serializer, ref, keys);
+
+    String incomingCommit = "metadata";
+    InternalCommitMetadata metadata = InternalCommitMetadata.of(metadataSerializer.toBytes(incomingCommit));
+
+    store().load(current.getLoadChain(b -> {
+      InternalBranch.UpdateState updateState = b.getUpdateState(store());
+      return updateState.unsafeGetL1();
+    }, PartialTree.LoadType.NO_VALUES));
+
+    // do updates.
+    ops.forEach(op ->
+        current.setValueForKey(new InternalKey(op.getKey()), Optional.of(((Put<String>) op).getValue())));
+
+    // save all but l1 and branch.
+    store().save(
+        Stream.concat(
+            current.getMostSaveOps(),
+            Stream.of(EntityType.COMMIT_METADATA.createSaveOpForEntity(metadata))
+        ).collect(Collectors.toList()));
+
+    PartialTree.CommitOp commitOp = current.getCommitOp(
+        metadata.getId(),
+        Collections.emptyList(),
+        true,
+        true);
+
+    InternalRef.Builder<?> builder = EntityType.REF.newEntityProducer();
+    boolean updated = store().update(ValueType.REF, ref.getId(),
+        commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(builder));
+    assertTrue(updated);
+    return builder.build().getBranch();
   }
 
   @Test

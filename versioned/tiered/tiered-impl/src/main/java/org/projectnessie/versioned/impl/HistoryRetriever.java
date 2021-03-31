@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
@@ -44,44 +45,62 @@ class HistoryRetriever {
   private final Store store;
   private final InternalL1 start;
   private final Id end;
+  private final Map<Id, InternalL1> unsavedL1s;
 
-  public HistoryRetriever(Store store, InternalL1 start, Id end, boolean retrieveL1, boolean retrieveCommit, boolean includeEndEmpty) {
-    super();
+  public HistoryRetriever(Store store, InternalL1 start, Id end, boolean retrieveL1, boolean retrieveCommit,
+      boolean includeEndEmpty) {
+    this(store, start, end, retrieveL1, retrieveCommit, includeEndEmpty, Collections.emptyMap());
+  }
+
+  public HistoryRetriever(Store store, InternalL1 start, Id end, boolean retrieveL1, boolean retrieveCommit,
+      boolean includeEndEmpty, Map<Id, InternalL1> unsavedL1s) {
     this.store = store;
     this.start = start;
     this.end = end;
     this.retrieveL1 = retrieveL1;
     this.retrieveCommit = retrieveCommit;
     this.includeEndEmpty = includeEndEmpty;
+    this.unsavedL1s = unsavedL1s;
   }
 
-  class HistoryItem {
+  static class HistoryItem {
 
-    private Id id;
+    private final Id id;
     private InternalL1 l1;
     private InternalCommitMetadata commitMetadata;
 
-    public HistoryItem(Id id) {
+    HistoryItem(Id id) {
       this.id = id;
     }
 
-    public InternalL1 getL1() {
+    InternalL1 getL1() {
       return l1;
     }
 
-    public Id getId() {
+    private void setL1(InternalL1 l1) {
+      this.l1 = l1;
+    }
+
+    private Id getL1MetadataId() {
+      return l1.getMetadataId();
+    }
+
+    Id getId() {
       return id;
     }
 
-    public InternalCommitMetadata getMetadata() {
+    InternalCommitMetadata getMetadata() {
       return commitMetadata;
+    }
+
+    private void setMetadata(InternalCommitMetadata commitMetadata) {
+      this.commitMetadata = commitMetadata;
     }
 
     @Override
     public String toString() {
       return "HistoryItem [id=" + id + ", l1=" + l1 + ", commitMetadata=" + commitMetadata + "]";
     }
-
   }
 
   Stream<HistoryItem> getStream() {
@@ -151,14 +170,19 @@ class HistoryRetriever {
         final HistoryItem item = new HistoryItem(parent);
         items.add(item);
         if (retrieveL1 || retrieveCommit || lastInList) {
-          loadOps.load(EntityType.L1, InternalL1.class, parent, l1 -> item.l1 = l1);
+          InternalL1 unsaved = unsavedL1s.get(parent);
+          if (unsaved != null) {
+            item.setL1(unsaved);
+          } else {
+            loadOps.load(EntityType.L1, InternalL1.class, parent, item::setL1);
+          }
         }
 
         if (retrieveCommit && !parent.equals(InternalL1.EMPTY_ID)) {
           secondOps.loadDeferred(EntityType.COMMIT_METADATA,
               InternalCommitMetadata.class,
-              () -> item.l1.getMetadataId(),
-              cmd -> item.commitMetadata = cmd);
+              item::getL1MetadataId,
+              item::setMetadata);
         }
 
         if (parent.equals(end)) {
