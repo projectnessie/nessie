@@ -58,7 +58,7 @@ public class HttpClient {
    * Construct an HTTP client with a universal Accept header.
    *  @param baseUri uri base eg https://example.com
    * @param accept Accept header eg "application/json"
-   * @param readTimeout
+   * @param readTimeout timeout to wait for response from server, in seconds
    */
   private HttpClient(URI baseUri, String accept, ObjectMapper mapper, SSLContext sslContext, int readTimeout) {
     this.baseUri = Objects.requireNonNull(baseUri);
