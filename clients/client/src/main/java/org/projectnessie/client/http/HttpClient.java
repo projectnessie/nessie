@@ -43,6 +43,7 @@ public class HttpClient {
   private final String accept;
   private final ObjectMapper mapper;
   private final SSLContext sslContext;
+  private final int readTimeout;
   private final List<RequestFilter> requestFilters = new ArrayList<>();
   private final List<ResponseFilter> responseFilters = new ArrayList<>();
 
@@ -55,15 +56,16 @@ public class HttpClient {
 
   /**
    * Construct an HTTP client with a universal Accept header.
-   *
-   * @param baseUri uri base eg https://example.com
+   *  @param baseUri uri base eg https://example.com
    * @param accept Accept header eg "application/json"
+   * @param readTimeout
    */
-  private HttpClient(URI baseUri, String accept, ObjectMapper mapper, SSLContext sslContext) {
+  private HttpClient(URI baseUri, String accept, ObjectMapper mapper, SSLContext sslContext, int readTimeout) {
     this.baseUri = Objects.requireNonNull(baseUri);
     this.accept = HttpUtils.checkNonNullTrim(accept);
     this.mapper = mapper;
     this.sslContext = sslContext;
+    this.readTimeout = readTimeout;
     if (!"http".equals(baseUri.getScheme()) && !"https".equals(baseUri.getScheme())) {
       throw new IllegalArgumentException(String.format("Cannot start http client. %s must be a valid http or https address", baseUri));
     }
@@ -84,7 +86,7 @@ public class HttpClient {
   }
 
   public HttpRequest newRequest() {
-    return new HttpRequest(baseUri, accept, mapper, requestFilters, responseFilters, sslContext);
+    return new HttpRequest(baseUri, accept, mapper, requestFilters, responseFilters, sslContext, readTimeout);
   }
 
   public static HttpClientBuilder builder() {
@@ -96,6 +98,7 @@ public class HttpClient {
     private String accept = "application/json";
     private ObjectMapper mapper;
     private SSLContext sslContext;
+    private int readTimeout = 10;
 
     private HttpClientBuilder() {
     }
@@ -136,6 +139,15 @@ public class HttpClient {
       return this;
     }
 
+    public int getReadTimeout() {
+      return readTimeout;
+    }
+
+    public HttpClientBuilder setReadTimeout(int readTimeout) {
+      this.readTimeout = readTimeout;
+      return this;
+    }
+
     /**
      * Construct an HttpClient from builder settings.
      */
@@ -150,7 +162,7 @@ public class HttpClient {
           throw new HttpClientException("Cannot construct Http Client. Default SSL config is invalid.", e);
         }
       }
-      return new HttpClient(baseUri, accept, mapper, sslContext);
+      return new HttpClient(baseUri, accept, mapper, sslContext, readTimeout);
     }
   }
 }

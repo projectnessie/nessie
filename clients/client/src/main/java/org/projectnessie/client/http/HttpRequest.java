@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -45,15 +46,17 @@ public class HttpRequest {
 
   private final UriBuilder uriBuilder;
   private final ObjectMapper mapper;
+  private final int readTimeout;
   private final Map<String, Set<String>> headers = new HashMap<>();
   private final List<RequestFilter> requestFilters;
   private final List<ResponseFilter> responseFilters;
   private SSLContext sslContext;
 
   HttpRequest(URI baseUri, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters,
-              List<ResponseFilter> responseFilters, SSLContext context) {
+              List<ResponseFilter> responseFilters, SSLContext context, int readTimeout) {
     this.uriBuilder = new UriBuilder(baseUri);
     this.mapper = mapper;
+    this.readTimeout = readTimeout;
     putHeader("Accept", accept, headers);
     this.requestFilters = requestFilters;
     this.responseFilters = responseFilters;
@@ -86,6 +89,7 @@ public class HttpRequest {
     try {
       URI uri = uriBuilder.build();
       HttpURLConnection con = (HttpURLConnection) uri.toURL().openConnection();
+      con.setReadTimeout(readTimeout * 1000);
       if (con instanceof HttpsURLConnection) {
         ((HttpsURLConnection) con).setSSLSocketFactory(sslContext.getSocketFactory());
       }
@@ -137,6 +141,8 @@ public class HttpRequest {
       throw new HttpClientException(String.format("Cannot serialize body of request. Unable to serialize %s", body.getClass()), e);
     } catch (MalformedURLException e) {
       throw new HttpClientException(String.format("Cannot perform request. Malformed Url for %s", uriBuilder.build()), e);
+    } catch (SocketTimeoutException e) {
+      throw new HttpClientTimeoutException("Cannot finish request. Timeout while waiting for response", e);
     } catch (IOException e) {
       throw new HttpClientException(e);
     }

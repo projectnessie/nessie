@@ -27,6 +27,7 @@ import java.util.function.Function;
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.client.http.HttpClientTimeoutException;
 
 public interface NessieClient extends AutoCloseable {
 
@@ -64,6 +65,7 @@ public interface NessieClient extends AutoCloseable {
     private String username;
     private String password;
     private boolean tracing;
+    private int readTimeout = 10;
 
     /**
      * Same semantics as {@link #fromConfig(Function)}, uses the system properties.
@@ -168,11 +170,21 @@ public interface NessieClient extends AutoCloseable {
     }
 
     /**
+     * Set the read timeout in seconds for this client. Timeout will throw {@link HttpClientTimeoutException}. If unset defaults to 10s
+     * @param readTimeout number of seconds to wait for a response from server.
+     * @return {@code this}
+     */
+    public Builder withReadTimeout(int readTimeout) {
+      this.readTimeout = readTimeout;
+      return this;
+    }
+
+    /**
      * Build a new {@link NessieClient}.
      * @return new {@link NessieClient}
      */
     public NessieClient build() {
-      return new NessieHttpClient(authType, uri, username, password, tracing);
+      return new NessieHttpClient(authType, uri, username, password, tracing, readTimeout);
     }
   }
 }

@@ -66,6 +66,18 @@ public class TestHttpClient {
   }
 
   @Test
+  void testTimeout() {
+    HttpHandler handler = h -> {
+    };
+    Assertions.assertThrows(HttpClientTimeoutException.class,  () -> {
+      try (TestServer server = new TestServer(handler)) {
+        get(server.getAddress()).get().readEntity(ExampleBean.class);
+        Assertions.fail();
+      }
+    });
+  }
+
+  @Test
   void testPut() throws Exception {
     ExampleBean inputBean = new ExampleBean("x", 1, NOW);
     HttpHandler handler = h -> {
