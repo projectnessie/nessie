@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,6 +38,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Delete;
@@ -93,7 +98,7 @@ public abstract class AbstractITTieredVersionStore {
 
     BranchName branch = BranchName.of("entity-types");
     versionStore().create(branch, Optional.empty());
-    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
+    doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"))
     );
@@ -115,7 +120,7 @@ public abstract class AbstractITTieredVersionStore {
 
     BranchName branch = BranchName.of("entity-types-with-removal");
     versionStore().create(branch, Optional.empty());
-    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
+    doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"))
     );
@@ -132,7 +137,7 @@ public abstract class AbstractITTieredVersionStore {
 
     BranchName branch = BranchName.of("entity-types-with-removal");
     versionStore().create(branch, Optional.empty());
-    Mockito.doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
+    doReturn((byte) 24).when(StringSerializer.getInstance()).getPayload("world");
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world"))
     );
@@ -142,7 +147,7 @@ public abstract class AbstractITTieredVersionStore {
     assertEquals(Key.of("hi"), keys.get(0).getValue());
     assertEquals(StringSerializer.TestEnum.NO, keys.get(0).getType());
 
-    Mockito.doReturn((byte) 80).when(StringSerializer.getInstance()).getPayload("world-weary");
+    doReturn((byte) 80).when(StringSerializer.getInstance()).getPayload("world-weary");
     versionStore().commit(branch, Optional.empty(), "metadata", ImmutableList.of(
         Put.of(Key.of("hi"), "world-weary"))
     );
@@ -394,8 +399,27 @@ public abstract class AbstractITTieredVersionStore {
   }
 
   @Test
-  void checkCommits() throws Exception {
-    BranchName branch = BranchName.of("foo");
+  void commitRetryCountExceeded() throws Exception {
+    BranchName branch = BranchName.of("commitRetryCountExceeded");
+    versionStore().create(branch, Optional.empty());
+    String c1 = "c1";
+    String c2 = "c2";
+    Key k1 = Key.of("hi");
+    String v1 = "hello world";
+    Key k2 = Key.of("my", "friend");
+    String v2 = "not here";
+
+    doReturn(false).when(store()).update(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+
+    assertEquals("Unable to complete commit due to conflicting events. Retried 5 times before failing.",
+        assertThrows(ReferenceConflictException.class,
+            () -> versionStore().commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, v1), Put.of(k2, v2)))).getMessage());
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, 2, 4})
+  void checkCommits(int numStoreUpdateFailures) throws Exception {
+    BranchName branch = BranchName.of("checkCommits" + numStoreUpdateFailures);
     versionStore().create(branch, Optional.empty());
     String c1 = "c1";
     String c2 = "c2";
@@ -404,10 +428,20 @@ public abstract class AbstractITTieredVersionStore {
     String v1p = "goodbye world";
     Key k2 = Key.of("my", "friend");
     String v2 = "not here";
+
+    AtomicInteger commitUpdateTry = new AtomicInteger();
+    doAnswer(invocationOnMock -> {
+      if (commitUpdateTry.getAndIncrement() < numStoreUpdateFailures) {
+        return false;
+      }
+      return invocationOnMock.callRealMethod();
+    }).when(store()).update(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     versionStore().commit(branch, Optional.empty(), c1, ImmutableList.of(Put.of(k1, v1), Put.of(k2, v2)));
+    commitUpdateTry.set(0);
     versionStore().commit(branch, Optional.empty(), c2, ImmutableList.of(Put.of(k1, v1p)));
+
     List<WithHash<String>> commits = versionStore().getCommits(branch).collect(Collectors.toList());
-    assertEquals(ImmutableList.of(c2, c1), commits.stream().map(wh -> wh.getValue()).collect(Collectors.toList()));
+    assertEquals(ImmutableList.of(c2, c1), commits.stream().map(WithHash::getValue).collect(Collectors.toList()));
 
     // changed across commits
     assertEquals(v1, versionStore().getValue(commits.get(1).getHash(), k1));
