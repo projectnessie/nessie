@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.tiered.gc;
 
 import java.io.Serializable;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.function.Supplier;
 
@@ -24,22 +23,22 @@ import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.store.Store;
 
-import software.amazon.awssdk.regions.Region;
-
 public class DynamoSupplier implements Supplier<Store>, Serializable {
 
   private static final long serialVersionUID = 5030232198230089450L;
 
-  static DynamoStore createStore() throws URISyntaxException {
-    return new DynamoStore(DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000"))
-      .region(Region.US_WEST_2).build());
+  static DynamoStoreConfig dynamoStoreConfig;
+
+  static DynamoStore createStore(DynamoStoreConfig config) throws URISyntaxException {
+    dynamoStoreConfig = config;
+    return new DynamoStore(config);
   }
 
   @Override
   public Store get() {
     Store store;
     try {
-      store = createStore();
+      store = createStore(dynamoStoreConfig);
       store.start();
       return store;
     } catch (URISyntaxException e) {

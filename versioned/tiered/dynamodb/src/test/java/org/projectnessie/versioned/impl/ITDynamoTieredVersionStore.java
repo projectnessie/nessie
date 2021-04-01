@@ -26,8 +26,8 @@ class ITDynamoTieredVersionStore extends AbstractITTieredVersionStore {
   private static DynamoStoreConfig dynamoStoreConfig;
 
   @BeforeAll
-  static void setup(DynamoStoreConfig dynamoStoreConfig) {
-    ITDynamoTieredVersionStore.dynamoStoreConfig = dynamoStoreConfig;
+  static void setup(DynamoStoreConfig config) {
+    dynamoStoreConfig = config;
   }
 
   @Override

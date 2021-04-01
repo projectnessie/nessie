@@ -33,8 +33,8 @@ class ITDynamoTestStore extends AbstractTestStore<DynamoStore> {
   private DynamoStoreFixture fixture;
 
   @BeforeAll
-  static void setup(DynamoStoreConfig dynamoStoreConfig) {
-    ITDynamoTestStore.dynamoStoreConfig = dynamoStoreConfig;
+  static void setup(DynamoStoreConfig config) {
+    dynamoStoreConfig = config;
   }
 
   @AfterEach
