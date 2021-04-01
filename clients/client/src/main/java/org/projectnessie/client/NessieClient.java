@@ -27,7 +27,8 @@ import java.util.function.Function;
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
-import org.projectnessie.client.http.HttpClientTimeoutException;
+import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.HttpClientReadTimeoutException;
 
 public interface NessieClient extends AutoCloseable {
 
@@ -65,7 +66,8 @@ public interface NessieClient extends AutoCloseable {
     private String username;
     private String password;
     private boolean tracing;
-    private int readTimeout = 10;
+    private int readTimeoutMillis = Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
+    private int connectionTimeoutMillis = Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "25000"));
 
     /**
      * Same semantics as {@link #fromConfig(Function)}, uses the system properties.
@@ -170,12 +172,22 @@ public interface NessieClient extends AutoCloseable {
     }
 
     /**
-     * Set the read timeout in seconds for this client. Timeout will throw {@link HttpClientTimeoutException}. If unset defaults to 10s
-     * @param readTimeout number of seconds to wait for a response from server.
+     * Set the read timeout in milliseconds for this client. Timeout will throw {@link HttpClientReadTimeoutException}.
+     * @param readTimeoutMillis number of seconds to wait for a response from server.
      * @return {@code this}
      */
-    public Builder withReadTimeout(int readTimeout) {
-      this.readTimeout = readTimeout;
+    public Builder withReadTimeout(int readTimeoutMillis) {
+      this.readTimeoutMillis = readTimeoutMillis;
+      return this;
+    }
+
+    /**
+     * Set the connection timeout in milliseconds for this client. Timeout will throw {@link HttpClientException}.
+     * @param connectionTimeoutMillis number of seconds to wait to connect to the server.
+     * @return {@code this}
+     */
+    public Builder withConnectionTimeout(int connectionTimeoutMillis) {
+      this.connectionTimeoutMillis = connectionTimeoutMillis;
       return this;
     }
 
@@ -184,7 +196,7 @@ public interface NessieClient extends AutoCloseable {
      * @return new {@link NessieClient}
      */
     public NessieClient build() {
-      return new NessieHttpClient(authType, uri, username, password, tracing, readTimeout);
+      return new NessieHttpClient(authType, uri, username, password, tracing, readTimeoutMillis, connectionTimeoutMillis);
     }
   }
 }

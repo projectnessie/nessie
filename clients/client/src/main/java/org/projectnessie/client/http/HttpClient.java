@@ -43,7 +43,8 @@ public class HttpClient {
   private final String accept;
   private final ObjectMapper mapper;
   private final SSLContext sslContext;
-  private final int readTimeout;
+  private final int readTimeoutMillis;
+  private final int connectionTimeoutMillis;
   private final List<RequestFilter> requestFilters = new ArrayList<>();
   private final List<ResponseFilter> responseFilters = new ArrayList<>();
 
@@ -56,16 +57,19 @@ public class HttpClient {
 
   /**
    * Construct an HTTP client with a universal Accept header.
-   *  @param baseUri uri base eg https://example.com
+   * @param baseUri uri base eg https://example.com
    * @param accept Accept header eg "application/json"
-   * @param readTimeout timeout to wait for response from server, in seconds
+   * @param readTimeoutMillis timeout to wait for response from server, in milliseconds
+   * @param connectionTimeoutMillis timeout to wait to connecto to server, in milliseconds
    */
-  private HttpClient(URI baseUri, String accept, ObjectMapper mapper, SSLContext sslContext, int readTimeout) {
+  private HttpClient(URI baseUri, String accept, ObjectMapper mapper, SSLContext sslContext, int readTimeoutMillis,
+                     int connectionTimeoutMillis) {
     this.baseUri = Objects.requireNonNull(baseUri);
     this.accept = HttpUtils.checkNonNullTrim(accept);
     this.mapper = mapper;
     this.sslContext = sslContext;
-    this.readTimeout = readTimeout;
+    this.readTimeoutMillis = readTimeoutMillis;
+    this.connectionTimeoutMillis = connectionTimeoutMillis;
     if (!"http".equals(baseUri.getScheme()) && !"https".equals(baseUri.getScheme())) {
       throw new IllegalArgumentException(String.format("Cannot start http client. %s must be a valid http or https address", baseUri));
     }
@@ -86,7 +90,8 @@ public class HttpClient {
   }
 
   public HttpRequest newRequest() {
-    return new HttpRequest(baseUri, accept, mapper, requestFilters, responseFilters, sslContext, readTimeout);
+    return new HttpRequest(baseUri, accept, mapper, requestFilters, responseFilters, sslContext, readTimeoutMillis,
+        connectionTimeoutMillis);
   }
 
   public static HttpClientBuilder builder() {
@@ -98,7 +103,9 @@ public class HttpClient {
     private String accept = "application/json";
     private ObjectMapper mapper;
     private SSLContext sslContext;
-    private int readTimeout = 10;
+    private int readTimeoutMillis = Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
+    private int connectionTimeoutMillis =
+        Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "25000"));
 
     private HttpClientBuilder() {
     }
@@ -139,12 +146,21 @@ public class HttpClient {
       return this;
     }
 
-    public int getReadTimeout() {
-      return readTimeout;
+    public int getReadTimeoutMillis() {
+      return readTimeoutMillis;
     }
 
-    public HttpClientBuilder setReadTimeout(int readTimeout) {
-      this.readTimeout = readTimeout;
+    public HttpClientBuilder setReadTimeoutMillis(int readTimeoutMillis) {
+      this.readTimeoutMillis = readTimeoutMillis;
+      return this;
+    }
+
+    public int getConnectionTimeoutMillis() {
+      return connectionTimeoutMillis;
+    }
+
+    public HttpClientBuilder setConnectionTimeoutMillis(int connectionTimeoutMillis) {
+      this.connectionTimeoutMillis = connectionTimeoutMillis;
       return this;
     }
 
@@ -162,7 +178,7 @@ public class HttpClient {
           throw new HttpClientException("Cannot construct Http Client. Default SSL config is invalid.", e);
         }
       }
-      return new HttpClient(baseUri, accept, mapper, sslContext, readTimeout);
+      return new HttpClient(baseUri, accept, mapper, sslContext, readTimeoutMillis, connectionTimeoutMillis);
     }
   }
 }

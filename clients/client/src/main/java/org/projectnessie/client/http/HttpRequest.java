@@ -46,17 +46,19 @@ public class HttpRequest {
 
   private final UriBuilder uriBuilder;
   private final ObjectMapper mapper;
-  private final int readTimeout;
+  private final int readTimeoutMillis;
+  private final int connectionTimeoutMillis;
   private final Map<String, Set<String>> headers = new HashMap<>();
   private final List<RequestFilter> requestFilters;
   private final List<ResponseFilter> responseFilters;
   private SSLContext sslContext;
 
   HttpRequest(URI baseUri, String accept, ObjectMapper mapper, List<RequestFilter> requestFilters,
-              List<ResponseFilter> responseFilters, SSLContext context, int readTimeout) {
+              List<ResponseFilter> responseFilters, SSLContext context, int readTimeoutMillis, int connectionTimeoutMillis) {
     this.uriBuilder = new UriBuilder(baseUri);
     this.mapper = mapper;
-    this.readTimeout = readTimeout;
+    this.readTimeoutMillis = readTimeoutMillis;
+    this.connectionTimeoutMillis = connectionTimeoutMillis;
     putHeader("Accept", accept, headers);
     this.requestFilters = requestFilters;
     this.responseFilters = responseFilters;
@@ -89,7 +91,8 @@ public class HttpRequest {
     try {
       URI uri = uriBuilder.build();
       HttpURLConnection con = (HttpURLConnection) uri.toURL().openConnection();
-      con.setReadTimeout(readTimeout * 1000);
+      con.setReadTimeout(readTimeoutMillis);
+      con.setConnectTimeout(connectionTimeoutMillis);
       if (con instanceof HttpsURLConnection) {
         ((HttpsURLConnection) con).setSSLSocketFactory(sslContext.getSocketFactory());
       }
@@ -142,7 +145,8 @@ public class HttpRequest {
     } catch (MalformedURLException e) {
       throw new HttpClientException(String.format("Cannot perform request. Malformed Url for %s", uriBuilder.build()), e);
     } catch (SocketTimeoutException e) {
-      throw new HttpClientTimeoutException("Cannot finish request. Timeout while waiting for response", e);
+      throw new HttpClientReadTimeoutException(
+          String.format("Cannot finish request. Timeout while waiting for response with a timeout of %ds", readTimeoutMillis / 1000), e);
     } catch (IOException e) {
       throw new HttpClientException(e);
     }
