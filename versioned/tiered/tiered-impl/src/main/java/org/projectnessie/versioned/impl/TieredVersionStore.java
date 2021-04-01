@@ -80,6 +80,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics;
+
 /**
  * A version store that uses a tree of levels to store version information.
  */
@@ -97,6 +102,9 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
   private final int p2commitRetry = 5;
   private final boolean waitOnCollapse;
 
+  private final Counter commitRetries;
+  private final Counter commitFailures;
+
   /**
    * Construct a TieredVersionStore.
    *
@@ -111,8 +119,19 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
     // We actually do not need an executor at all, when waitOnCollapse==true. Unit tests use
     // waitOnCollapse==true. It is not nice to instantiate an executor-service but never shut it
     // down, like unit tests did.
-    this.executor =  waitOnCollapse ? MoreExecutors.directExecutor() : Executors.newCachedThreadPool();
+    Executor executor;
+    if (waitOnCollapse) {
+      executor = MoreExecutors.directExecutor();
+    } else {
+      executor = Executors.newCachedThreadPool();
+      executor = ExecutorServiceMetrics.monitor(Metrics.globalRegistry, executor, "TieredVersionStore");
+    }
+    this.executor = executor;
     this.waitOnCollapse = waitOnCollapse;
+
+    MeterRegistry registry = Metrics.globalRegistry;
+    commitRetries = Counter.builder("nessie.versionstore.commitretries").tag("application", "Nessie").register(registry);
+    commitFailures = Counter.builder("nessie.versionstore.commitfailures").tag("application", "Nessie").register(registry);
   }
 
   @Override
@@ -242,6 +261,7 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
         store.load(current.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)
             .combine(expected.getLoadChain(this::ensureValidL1, LoadType.NO_VALUES)));
       } catch (NotFoundException ex) {
+        commitFailures.increment();
         throw new ReferenceNotFoundException("Unable to find requested ref.", ex);
       }
 
@@ -278,8 +298,10 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
           commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(builder));
       if (!updated) {
         if (loop++ < commitRetryCount) {
+          commitRetries.increment();
           continue;
         }
+        commitFailures.increment();
         throw new ReferenceConflictException(
             String.format("Unable to complete commit due to conflicting events. Retried %d times before failing.", commitRetryCount));
       }
