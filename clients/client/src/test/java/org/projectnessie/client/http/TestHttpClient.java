@@ -77,7 +77,6 @@ public class TestHttpClient {
     Assertions.assertThrows(HttpClientReadTimeoutException.class,  () -> {
       try (TestServer server = new TestServer(handler)) {
         get(server.getAddress(), 15000, 1).get().readEntity(ExampleBean.class);
-        Assertions.fail();
       }
     });
   }

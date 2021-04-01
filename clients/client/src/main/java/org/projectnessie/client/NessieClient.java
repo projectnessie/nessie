@@ -67,7 +67,7 @@ public interface NessieClient extends AutoCloseable {
     private String password;
     private boolean tracing;
     private int readTimeoutMillis = Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
-    private int connectionTimeoutMillis = Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "25000"));
+    private int connectionTimeoutMillis = Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "5000"));
 
     /**
      * Same semantics as {@link #fromConfig(Function)}, uses the system properties.

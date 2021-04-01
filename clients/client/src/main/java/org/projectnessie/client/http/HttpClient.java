@@ -105,7 +105,7 @@ public class HttpClient {
     private SSLContext sslContext;
     private int readTimeoutMillis = Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
     private int connectionTimeoutMillis =
-        Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "25000"));
+        Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "5000"));
 
     private HttpClientBuilder() {
     }
