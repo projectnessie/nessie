@@ -45,7 +45,12 @@ public class TestHttpClient {
   private static final Instant NOW = Instant.now();
 
   private static HttpRequest get(InetSocketAddress address) {
-    return HttpClient.builder().setBaseUri(URI.create("http://localhost:" + address.getPort())).setObjectMapper(MAPPER).build().newRequest();
+    return get(address, 15000, 15000);
+  }
+
+  private static HttpRequest get(InetSocketAddress address, int connectTimeout, int readTimeout) {
+    return HttpClient.builder().setBaseUri(URI.create("http://localhost:" + address.getPort())).setObjectMapper(MAPPER)
+        .setConnectionTimeoutMillis(connectTimeout).setReadTimeoutMillis(readTimeout).build().newRequest();
   }
 
   @Test
@@ -63,6 +68,17 @@ public class TestHttpClient {
       ExampleBean bean = get(server.getAddress()).get().readEntity(ExampleBean.class);
       Assertions.assertEquals(inputBean, bean);
     }
+  }
+
+  @Test
+  void testReadTimeout() {
+    HttpHandler handler = h -> {
+    };
+    Assertions.assertThrows(HttpClientReadTimeoutException.class,  () -> {
+      try (TestServer server = new TestServer(handler)) {
+        get(server.getAddress(), 15000, 1).get().readEntity(ExampleBean.class);
+      }
+    });
   }
 
   @Test
