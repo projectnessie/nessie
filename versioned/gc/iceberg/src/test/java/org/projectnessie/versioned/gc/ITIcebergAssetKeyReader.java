@@ -19,6 +19,7 @@ import static org.apache.iceberg.types.Types.NestedField.required;
 import static org.hamcrest.Matchers.hasItems;
 
 import java.io.File;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -53,11 +54,14 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.IcebergTable;
+import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.tiered.gc.DynamoSupplier;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
+
+import software.amazon.awssdk.regions.Region;
 
 public class ITIcebergAssetKeyReader {
   private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
@@ -74,7 +78,9 @@ public class ITIcebergAssetKeyReader {
   private Configuration hadoopConfig;
 
   @BeforeAll
-  static void getDynamo() {
+  static void getDynamo() throws Exception {
+    DynamoSupplier.setDynamoStoreConfig(DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000"))
+        .region(Region.US_WEST_2).build());
     new DynamoSupplier().get();
   }
 
