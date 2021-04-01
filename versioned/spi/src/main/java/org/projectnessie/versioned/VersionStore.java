@@ -15,12 +15,9 @@
  */
 package org.projectnessie.versioned;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
@@ -223,10 +220,4 @@ public interface VersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYP
   public interface CollectionProgress {
   }
 
-  /**
-   * Metrics (gauges) exposed by a {@link VersionStore} implementation.
-   */
-  default Map<String, Supplier<Number>> gauges() {
-    return Collections.emptyMap();
-  }
 }

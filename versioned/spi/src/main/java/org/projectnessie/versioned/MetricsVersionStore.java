@@ -15,21 +15,17 @@
  */
 package org.projectnessie.versioned;
 
-import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
 import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Timer.Sample;
 
@@ -55,30 +51,26 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
    * @param metricsCommonTags common metrics tags
    * @param registry metrics-registry
    */
-  MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, Map<String, String> metricsCommonTags,
-      MeterRegistry registry, Clock clock) {
+  MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, MeterRegistry registry, Clock clock) {
     this.delegate = delegate;
     this.registry = registry;
     this.clock = clock;
-    this.commonTags = metricsCommonTags.entrySet().stream()
-        .map(e -> Tag.of(e.getKey(), e.getValue())).collect(Collectors.toList());
-
-    gauges().forEach((name, gauge) -> Gauge.builder("nessie.version-store." + name, gauge).tags(commonTags).register(registry));
+    this.commonTags = Tags.of("application", "Nessie");
   }
 
-  public MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, Map<String, String> metricsCommonTags) {
-    this(delegate, metricsCommonTags, Metrics.globalRegistry, Clock.SYSTEM);
+  public MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate) {
+    this(delegate, Metrics.globalRegistry, Clock.SYSTEM);
   }
 
   @Override
   @Nonnull
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
-    return delegate1Ex("to-hash", () -> delegate.toHash(ref));
+    return delegate1Ex("tohash", () -> delegate.toHash(ref));
   }
 
   @Override
   public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
-    return delegate1Ex("to-ref", () -> delegate.toRef(refOfUnknownType));
+    return delegate1Ex("toref", () -> delegate.toRef(refOfUnknownType));
   }
 
   @Override
@@ -130,53 +122,46 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return delegateStream("get-named-refs", delegate::getNamedRefs);
+    return delegateStream("getnamedrefs", delegate::getNamedRefs);
   }
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    return delegateStream1Ex("get-commits", () -> delegate.getCommits(ref));
+    return delegateStream1Ex("getcommits", () -> delegate.getCommits(ref));
   }
 
   @Override
   public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
-    return delegateStream1Ex("get-keys", () -> delegate.getKeys(ref));
+    return delegateStream1Ex("getkeys", () -> delegate.getKeys(ref));
   }
 
   @Override
   public VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    return delegate1Ex("get-value", () -> delegate.getValue(ref, key));
+    return delegate1Ex("getvalue", () -> delegate.getValue(ref, key));
   }
 
   @Override
   public List<Optional<VALUE>> getValues(Ref ref,
       List<Key> keys) throws ReferenceNotFoundException {
-    return delegate1Ex("get-values", () -> delegate.getValues(ref, keys));
+    return delegate1Ex("getvalues", () -> delegate.getValues(ref, keys));
   }
 
   @Override
   public Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    return delegateStream1Ex("get-diffs", () -> delegate.getDiffs(from, to));
+    return delegateStream1Ex("getdiffs", () -> delegate.getDiffs(from, to));
   }
 
   @Override
   public Collector collectGarbage() {
-    return delegate("collect-garbage", delegate::collectGarbage);
-  }
-
-  @Override
-  public Map<String, Supplier<Number>> gauges() {
-    return delegate.gauges();
+    return delegate("collectgarbage", delegate::collectGarbage);
   }
 
   private void measure(String requestName, Sample sample, Exception failure) {
-    Timer timer = Timer.builder("nessie.version-store.request")
+    Timer timer = Timer.builder("nessie.versionstore.request")
         .tags(commonTags)
         .tag("request", requestName)
         .tag("error", Boolean.toString(failure != null))
         .publishPercentileHistogram()
-        .distributionStatisticBufferLength(3)
-        .distributionStatisticExpiry(Duration.ofMinutes(1))
         .register(registry);
     sample.stop(timer);
   }

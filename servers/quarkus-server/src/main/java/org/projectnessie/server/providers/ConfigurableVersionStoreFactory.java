@@ -17,7 +17,6 @@ package org.projectnessie.server.providers;
 
 import java.io.IOError;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -120,8 +119,7 @@ public class ConfigurableVersionStoreFactory {
       }
 
       if (storeConfig.isMetricsEnabled()) {
-        versionStore = new MetricsVersionStore<>(versionStore, Collections
-            .singletonMap("application", "Nessie"));
+        versionStore = new MetricsVersionStore<>(versionStore);
       }
 
       lastUnsuccessfulStart = 0L;

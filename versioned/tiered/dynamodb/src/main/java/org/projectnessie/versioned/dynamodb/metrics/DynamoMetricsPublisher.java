@@ -203,8 +203,6 @@ public class DynamoMetricsPublisher implements MetricPublisher {
     return Timer.builder(name)
                 .tags(tags)
                 .publishPercentileHistogram()
-                .distributionStatisticBufferLength(3)
-                .distributionStatisticExpiry(Duration.ofMinutes(1))
                 .register(Metrics.globalRegistry);
   }
 

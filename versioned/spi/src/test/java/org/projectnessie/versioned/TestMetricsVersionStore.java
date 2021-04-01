@@ -101,10 +101,10 @@ class TestMetricsVersionStore {
     // "Declare" test-invocations for all VersionStore functions with their respective outcomes
     // and exceptions.
     Stream<VersionStoreInvocation<?>> versionStoreFunctions = Stream.of(
-        new VersionStoreInvocation<>("to-hash",
+        new VersionStoreInvocation<>("tohash",
             vs -> vs.toHash(BranchName.of("mock-branch")),
             () -> Hash.of("cafebabe"), refNotFoundThrows),
-        new VersionStoreInvocation<>("to-ref",
+        new VersionStoreInvocation<>("toref",
             vs -> vs.toRef("mock-branch"),
             () -> WithHash.of(Hash.of("deadbeefcafebabe"), BranchName.of("mock-branch")),
             refNotFoundThrows),
@@ -126,35 +126,35 @@ class TestMetricsVersionStore {
         new VersionStoreInvocation<>("delete",
             vs -> vs.delete(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
             refNotFoundAndRefConflictThrows),
-        new VersionStoreInvocation<>("get-commits",
+        new VersionStoreInvocation<>("getcommits",
             vs -> vs.getCommits(BranchName.of("mock-branch")),
             () -> Stream.of(
                 WithHash.of(Hash.of("cafebabe"), "log#1"),
                 WithHash.of(Hash.of("deadbeef"), "log#2")),
             refNotFoundThrows),
-        new VersionStoreInvocation<>("get-keys",
+        new VersionStoreInvocation<>("getkeys",
             vs -> vs.getKeys(Hash.of("cafe4242")),
             () -> Stream.of(Key.of("hello", "world")),
             refNotFoundThrows),
-        new VersionStoreInvocation<>("get-named-refs",
+        new VersionStoreInvocation<>("getnamedrefs",
             VersionStore::getNamedRefs,
             () -> Stream.of(
                 WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
                 WithHash.of(Hash.of("deadbeef"), BranchName.of("cow"))),
             runtimeThrows),
-        new VersionStoreInvocation<>("get-value",
+        new VersionStoreInvocation<>("getvalue",
             vs -> vs.getValue(BranchName.of("mock-branch"), Key.of("some", "key")),
             () -> "foo",
             refNotFoundThrows),
-        new VersionStoreInvocation<>("get-values",
+        new VersionStoreInvocation<>("getvalues",
             vs -> vs.getValues(BranchName.of("mock-branch"), Collections.singletonList(Key.of("some", "key"))),
             () -> Collections.singletonList(Optional.empty()),
             refNotFoundThrows),
-        new VersionStoreInvocation<>("get-diffs",
+        new VersionStoreInvocation<>("getdiffs",
             vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")),
             Stream::empty,
             refNotFoundThrows),
-        new VersionStoreInvocation<>("collect-garbage",
+        new VersionStoreInvocation<>("collectgarbage",
             VersionStore::collectGarbage,
             () -> mock(Collector.class),
             runtimeThrows)
@@ -197,7 +197,7 @@ class TestMetricsVersionStore {
     @SuppressWarnings("unchecked") VersionStore<String, String, DummyEnum> mockedVersionStore = mock(VersionStore.class);
     versionStoreFunction.accept(stubber.when(mockedVersionStore));
     VersionStore<String, String, DummyEnum> versionStore = new MetricsVersionStore<>(mockedVersionStore,
-        Collections.singletonMap("test", "unit"), registry, registry.clock);
+        registry, registry.clock);
 
     Id timerId = timerId(opName, expectedThrow);
 
@@ -286,10 +286,10 @@ class TestMetricsVersionStore {
         && (!(expectedThrow instanceof VersionStoreException))
         && (!(expectedThrow instanceof IllegalArgumentException));
 
-    return new Id("nessie.version-store.request",
+    return new Id("nessie.versionstore.request",
         Tags.of("error", Boolean.toString(isErrorException),
             "request", opName,
-            "test", "unit"),
+            "application", "Nessie"),
         "nanoseconds",
         null,
         Type.TIMER);
