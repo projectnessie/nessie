@@ -16,17 +16,26 @@
 package org.projectnessie.versioned.impl;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
+import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
-import org.projectnessie.versioned.impl.AbstractTestStore;
 
 /**
  * A test class that contains DynamoDB tests.
  */
 @ExtendWith(LocalDynamoDB.class)
 class ITDynamoTestStore extends AbstractTestStore<DynamoStore> {
+
+  private static DynamoStoreConfig dynamoStoreConfig;
+
   private DynamoStoreFixture fixture;
+
+  @BeforeAll
+  static void setup(DynamoStoreConfig dynamoStoreConfig) {
+    ITDynamoTestStore.dynamoStoreConfig = dynamoStoreConfig;
+  }
 
   @AfterEach
   void deleteResources() {
@@ -39,7 +48,7 @@ class ITDynamoTestStore extends AbstractTestStore<DynamoStore> {
    */
   @Override
   protected DynamoStore createStore() {
-    fixture = new DynamoStoreFixture();
+    fixture = new DynamoStoreFixture(dynamoStoreConfig);
     return fixture.getStore();
   }
 

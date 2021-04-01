@@ -15,13 +15,23 @@
  */
 package org.projectnessie.versioned.impl;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
 
 @ExtendWith(LocalDynamoDB.class)
 class ITDynamoTieredVersionStore extends AbstractITTieredVersionStore {
+
+  private static DynamoStoreConfig dynamoStoreConfig;
+
+  @BeforeAll
+  static void setup(DynamoStoreConfig dynamoStoreConfig) {
+    ITDynamoTieredVersionStore.dynamoStoreConfig = dynamoStoreConfig;
+  }
+
   @Override
   protected DynamoStoreFixture createNewFixture() {
-    return new DynamoStoreFixture();
+    return new DynamoStoreFixture(dynamoStoreConfig);
   }
 }
