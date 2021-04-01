@@ -42,4 +42,10 @@ public interface VersionStoreConfig {
    */
   @ConfigProperty(name = "trace.enable", defaultValue = "true")
   boolean isTracingEnabled();
+
+  /**
+   * Whether metrics for the version-store are enabled (enabled by default).
+   */
+  @ConfigProperty(name = "metrics.enable", defaultValue = "true")
+  boolean isMetricsEnabled();
 }

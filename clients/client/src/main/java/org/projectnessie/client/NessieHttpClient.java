@@ -61,14 +61,17 @@ class NessieHttpClient implements NessieClient {
   /**
    * Create new HTTP {@link NessieClient}. All REST api endpoints are mapped here. This client should support
    * any jaxrs implementation
-   *
    * @param authType authentication type (AWS, NONE, BASIC)
    * @param uri URL for the nessie client (eg http://localhost:19120/api/v1)
    * @param username username (only for BASIC auth)
    * @param password password (only for BASIC auth)
+   * @param readTimeout time in milliseconds to wait for a response from the server
+   * @param connectionTimeoutMillis time in milliseconds to wait to connect to the server
    */
-  NessieHttpClient(AuthType authType, URI uri, String username, String password, boolean enableTracing) {
-    HttpClient client = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).build();
+  NessieHttpClient(AuthType authType, URI uri, String username, String password, boolean enableTracing, int readTimeout,
+                   int connectionTimeoutMillis) {
+    HttpClient client = HttpClient.builder().setBaseUri(uri).setObjectMapper(mapper).setReadTimeoutMillis(readTimeout)
+        .setConnectionTimeoutMillis(connectionTimeoutMillis).build();
     if (enableTracing) {
       addTracing(client);
     }
