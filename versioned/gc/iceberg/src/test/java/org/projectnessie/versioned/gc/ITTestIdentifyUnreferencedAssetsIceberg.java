@@ -88,6 +88,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.protobuf.ByteString;
+
 import software.amazon.awssdk.regions.Region;
 
 class ITTestIdentifyUnreferencedAssetsIceberg {
