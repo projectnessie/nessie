@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -73,6 +75,7 @@ import org.projectnessie.model.Contents;
 import org.projectnessie.server.store.TableCommitMetaStoreWorker;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.tiered.gc.DynamoSupplier;
 import org.projectnessie.versioned.tiered.gc.GcOptions;
 import org.projectnessie.versioned.tiered.gc.IdentifyUnreferencedValues;
@@ -85,6 +88,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.protobuf.ByteString;
+import software.amazon.awssdk.regions.Region;
 
 class ITTestIdentifyUnreferencedAssetsIceberg {
   private static final Logger LOGGER = LoggerFactory.getLogger(ITTestIdentifyUnreferencedAssetsIceberg.class);
@@ -142,7 +146,9 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
   }
 
   @BeforeEach
-  void beforeEach() throws NessieConflictException, NessieNotFoundException {
+  void beforeEach() throws NessieConflictException, NessieNotFoundException, URISyntaxException {
+    DynamoSupplier.setDynamoStoreConfig(DynamoStoreConfig.builder().endpoint(new URI("http://localhost:8000"))
+        .region(Region.US_WEST_2).build());
     new DynamoSupplier().get();
     this.client = NessieClient.builder().withUri(NESSIE_ENDPOINT).build();
     tree = client.getTreeApi();

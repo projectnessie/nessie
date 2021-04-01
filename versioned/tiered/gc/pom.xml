@@ -177,7 +177,6 @@
           <systemPropertyVariables>
             <aws.accessKeyId>xxx</aws.accessKeyId>
             <aws.secretAccessKey>xxx</aws.secretAccessKey>
-            <sqlite4java.library.path>${project.build.directory}/native-libraries</sqlite4java.library.path>
           </systemPropertyVariables>
         </configuration>
         <executions>

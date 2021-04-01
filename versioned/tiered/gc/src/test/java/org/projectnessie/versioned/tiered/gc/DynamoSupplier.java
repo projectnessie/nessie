@@ -29,16 +29,19 @@ public class DynamoSupplier implements Supplier<Store>, Serializable {
 
   static DynamoStoreConfig dynamoStoreConfig;
 
-  static DynamoStore createStore(DynamoStoreConfig config) throws URISyntaxException {
+  public static void setDynamoStoreConfig(DynamoStoreConfig config) {
     dynamoStoreConfig = config;
-    return new DynamoStore(config);
+  }
+
+  static DynamoStore createStore() throws URISyntaxException {
+    return new DynamoStore(dynamoStoreConfig);
   }
 
   @Override
   public Store get() {
     Store store;
     try {
-      store = createStore(dynamoStoreConfig);
+      store = createStore();
       store.start();
       return store;
     } catch (URISyntaxException e) {

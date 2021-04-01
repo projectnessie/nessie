@@ -178,7 +178,8 @@ public class ITTestIdentifyUnreferencedAssets {
   @BeforeEach
   void before(DynamoStoreConfig dynamoStoreConfig) throws Exception {
     helper = new StoreW();
-    store = new DtAdjustingStore(DynamoSupplier.createStore(dynamoStoreConfig));
+    DynamoSupplier.setDynamoStoreConfig(dynamoStoreConfig);
+    store = new DtAdjustingStore(DynamoSupplier.createStore());
     store.start();
     versionStore = new TieredVersionStore<>(helper, store, true);
     versionStore.create(BranchName.of("main"), Optional.empty());
