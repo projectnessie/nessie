@@ -50,10 +50,6 @@ import com.google.common.collect.ImmutableMap;
 
 class TestTracingVersionStore {
 
-  enum DummyEnum {
-    DUMMY
-  }
-
   // This test implementation shall exercise all functions on VersionStore and cover all exception
   // variants, which are all declared exceptions plus IllegalArgumentException (parameter error)
   // plus a runtime-exception (server error).
@@ -244,5 +240,9 @@ class TestTracingVersionStore {
         () -> assertEquals("VersionStore.fooBar", TracingVersionStore.makeSpanName("FooBar")),
         () -> assertEquals("VersionStore.fBar", TracingVersionStore.makeSpanName("FBar"))
     );
+  }
+
+  enum DummyEnum {
+    DUMMY
   }
 }
