@@ -76,6 +76,9 @@ class InternalBranch extends InternalRef {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(InternalBranch.class);
 
+  private static final String TAG_OPERATION = "nessie.operation";
+  private static final String TAG_BRANCH = "nessie.branch";
+
   private final String name;
   private final IdMap tree;
   private final Id metadata;
@@ -411,8 +414,8 @@ class InternalBranch extends InternalRef {
     private static InternalBranch collapseIntentionLog(UpdateState initialState, Store store, InternalBranch branch, int attempts)
         throws ReferenceNotFoundException, ReferenceConflictException {
       try (Scope outerScope = createSpan("InternalBranch.collapseIntentionLog")
-          .withTag("nessie.operation", "CollapseIntentionLog")
-          .withTag("nessie.branch", branch.getName())
+          .withTag(TAG_OPERATION, "CollapseIntentionLog")
+          .withTag(TAG_BRANCH, branch.getName())
           .startActive(true)) {
         try {
           UpdateState updateState = initialState;
@@ -621,12 +624,8 @@ class InternalBranch extends InternalRef {
     return Collections.unmodifiableList(commits);
   }
 
-  private static Tracer getTracer() {
-    return GlobalTracer.get();
-  }
-
   private static SpanBuilder createSpan(String name) {
-    Tracer tracer = getTracer();
+    Tracer tracer = GlobalTracer.get();
     return tracer.buildSpan(name)
         .asChildOf(tracer.activeSpan());
   }

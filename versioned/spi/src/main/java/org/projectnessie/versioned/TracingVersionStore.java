@@ -15,23 +15,22 @@
  */
 package org.projectnessie.versioned;
 
-import java.util.Collection;
+import static org.projectnessie.versioned.TracingUtil.safeSize;
+import static org.projectnessie.versioned.TracingUtil.safeToString;
+import static org.projectnessie.versioned.TracingUtil.traceError;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
-import io.opentracing.log.Fields;
-import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
 /**
@@ -43,44 +42,44 @@ import io.opentracing.util.GlobalTracer;
 public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
     implements VersionStore<VALUE, METADATA, VALUE_TYPE> {
 
+  private static final String TAG_OPERATION = "nessie.version-store.operation";
+  private static final String TAG_REF = "nessie.version-store.ref";
+  private static final String TAG_BRANCH = "nessie.version-store.branch";
+  private static final String TAG_HASH = "nessie.version-store.hash";
+  private static final String TAG_NUM_OPS = "nessie.version-store.num-ops";
+  private static final String TAG_TARGET_BRANCH = "nessie.version-store.target-branch";
+  private static final String TAG_TRANSPLANTS = "nessie.version-store.transplants";
+  private static final String TAG_FROM_HASH = "nessie.version-store.from-hash";
+  private static final String TAG_TO_BRANCH = "nessie.version-store.to-branch";
+  private static final String TAG_EXPECTED_HASH = "nessie.version-store.expected-hash";
+  private static final String TAG_TARGET_HASH = "nessie.version-store.target-hash";
+  private static final String TAG_KEY = "nessie.version-store.key";
+  private static final String TAG_KEYS = "nessie.version-store.keys";
+  private static final String TAG_FROM = "nessie.version-store.from";
+  private static final String TAG_TO = "nessie.version-store.to";
+
   private final VersionStore<VALUE, METADATA, VALUE_TYPE> delegate;
-  private final Supplier<Tracer> tracerSupplier;
 
   /**
-   * Calls {@link #TracingVersionStore(VersionStore, Supplier)} with the registered
-   * {@link GlobalTracer#get() GlobalTracer}.
+   * Takes the {@link VersionStore} instance to trace.
    * @param delegate backing/delegate {@link VersionStore}
    */
   public TracingVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate) {
-    this(delegate, GlobalTracer::get);
-  }
-
-  /**
-   * Constructor taking the backing/delegate {@link VersionStore} and a {@link Supplier} for
-   * the {@link Tracer} to use.
-   * @param delegate backing/delegate {@link VersionStore}
-   * @param tracerSupplier {@link Supplier} for the {@link Tracer} to use
-   */
-  @VisibleForTesting
-  TracingVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, Supplier<Tracer> tracerSupplier) {
-    this.tracerSupplier = tracerSupplier;
     this.delegate = delegate;
   }
 
   @Override
   @Nonnull
   public Hash toHash(@Nonnull NamedRef ref) throws ReferenceNotFoundException {
-    return delegate1Ex("VersionStore.toHash", b -> b
-        .withTag("nessie.version-store.operation", "ToHash")
-        .withTag("nessie.version-store.ref", safeRefName(ref)),
+    return callWithOneException("ToHash", b -> b
+        .withTag(TAG_REF, safeRefName(ref)),
         () -> delegate.toHash(ref));
   }
 
   @Override
   public WithHash<Ref> toRef(@Nonnull String refOfUnknownType) throws ReferenceNotFoundException {
-    return delegate1Ex("VersionStore.toRef", b -> b
-        .withTag("nessie.version-store.operation", "ToRef")
-        .withTag("nessie.version-store.ref", refOfUnknownType),
+    return callWithOneException("ToRef", b -> b
+        .withTag(TAG_REF, refOfUnknownType),
         () -> delegate.toRef(refOfUnknownType));
   }
 
@@ -90,11 +89,10 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("VersionStore.commit", b -> b
-        .withTag("nessie.version-store.operation", "Commit")
-        .withTag("nessie.version-store.branch", safeRefName(branch))
-        .withTag("nessie.version-store.hash", safeToString(referenceHash))
-        .withTag("nessie.version-store.num-ops", safeSize(operations)),
+    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Commit", b -> b
+        .withTag(TAG_BRANCH, safeRefName(branch))
+        .withTag(TAG_HASH, safeToString(referenceHash))
+        .withTag(TAG_NUM_OPS, safeSize(operations)),
         () -> delegate.commit(branch, referenceHash, metadata, operations));
   }
 
@@ -103,152 +101,147 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       Optional<Hash> referenceHash,
       List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("VersionStore.transplant", b -> b
-        .withTag("nessie.version-store.operation", "Transplant")
-        .withTag("nessie.version-store.target-branch", safeRefName(targetBranch))
-        .withTag("nessie.version-store.hash", safeToString(referenceHash))
-        .withTag("nessie.version-store.transplants", safeSize(sequenceToTransplant)),
+    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Transplant", b -> b
+        .withTag(TAG_TARGET_BRANCH, safeRefName(targetBranch))
+        .withTag(TAG_HASH, safeToString(referenceHash))
+        .withTag(TAG_TRANSPLANTS, safeSize(sequenceToTransplant)),
         () -> delegate.transplant(targetBranch, referenceHash, sequenceToTransplant));
   }
 
   @Override
   public void merge(Hash fromHash, BranchName toBranch,
       Optional<Hash> expectedHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("VersionStore.merge", b -> b
-        .withTag("nessie.version-store.operation", "Merge")
-        .withTag("nessie.version-store.from-hash", safeToString(fromHash))
-        .withTag("nessie.version-store.to-branch", safeRefName(toBranch))
-        .withTag("nessie.version-store.expected-hash", safeToString(expectedHash)),
+    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Merge", b -> b
+        .withTag(TAG_FROM_HASH, safeToString(fromHash))
+        .withTag(TAG_TO_BRANCH, safeRefName(toBranch))
+        .withTag(TAG_EXPECTED_HASH, safeToString(expectedHash)),
         () -> delegate.merge(fromHash, toBranch, expectedHash));
   }
 
   @Override
   public void assign(NamedRef ref, Optional<Hash> expectedHash,
       Hash targetHash) throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("VersionStore.assign", b -> b
-        .withTag("nessie.version-store.operation", "Assign")
-        .withTag("nessie.version-store.ref", safeToString(ref))
-        .withTag("nessie.version-store.expected-hash", safeToString(expectedHash))
-        .withTag("nessie.version-store.target-hash", safeToString(targetHash)),
+    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Assign", b -> b
+        .withTag(TAG_REF, safeToString(ref))
+        .withTag(TracingVersionStore.TAG_EXPECTED_HASH, safeToString(expectedHash))
+        .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
         () -> delegate.assign(ref, expectedHash, targetHash));
   }
 
   @Override
   public void create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    this.<ReferenceNotFoundException, ReferenceAlreadyExistsException>delegate2Ex("VersionStore.create", b -> b
-        .withTag("nessie.version-store.operation", "Create")
-        .withTag("nessie.version-store.ref", safeToString(ref))
-        .withTag("nessie.version-store.target-hash", safeToString(targetHash)),
+    this.<ReferenceNotFoundException, ReferenceAlreadyExistsException>callWithTwoExceptions("Create", b -> b
+        .withTag(TAG_REF, safeToString(ref))
+        .withTag(TAG_TARGET_HASH, safeToString(targetHash)),
         () -> delegate.create(ref, targetHash));
   }
 
   @Override
   public void delete(NamedRef ref, Optional<Hash> hash)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("VersionStore.delete", b -> b
-        .withTag("nessie.version-store.operation", "Delete")
-        .withTag("nessie.version-store.ref", safeToString(ref))
-        .withTag("nessie.version-store.hash", safeToString(hash)),
+    this.<ReferenceNotFoundException, ReferenceConflictException>callWithTwoExceptions("Delete", b -> b
+        .withTag(TAG_REF, safeToString(ref))
+        .withTag(TAG_HASH, safeToString(hash)),
         () -> delegate.delete(ref, hash));
   }
 
   @Override
   public Stream<WithHash<NamedRef>> getNamedRefs() {
-    return delegateStream("VersionStore.getNamedRefs", b -> b
-        .withTag("nessie.version-store.operation", "GetNamedRefs"),
+    return callStream("GetNamedRefs", b -> {},
         delegate::getNamedRefs);
   }
 
   @Override
   public Stream<WithHash<METADATA>> getCommits(Ref ref) throws ReferenceNotFoundException {
-    return delegateStream1Ex("VersionStore.getCommits", b -> b
-        .withTag("nessie.version-store.operation", "GetCommits")
-        .withTag("nessie.version-store.ref", safeToString(ref)),
+    return callStreamWithOneException("GetCommits", b -> b
+        .withTag(TAG_REF, safeToString(ref)),
         () ->  delegate.getCommits(ref));
   }
 
   @Override
   public Stream<WithType<Key, VALUE_TYPE>> getKeys(Ref ref) throws ReferenceNotFoundException {
-    return delegateStream1Ex("VersionStore.getKeys", b -> b
-        .withTag("nessie.version-store.operation", "GetKeys")
-        .withTag("nessie.version-store.ref", safeToString(ref)),
+    return callStreamWithOneException("GetKeys", b -> b
+        .withTag(TAG_REF, safeToString(ref)),
         () -> delegate.getKeys(ref));
   }
 
   @Override
   public VALUE getValue(Ref ref, Key key) throws ReferenceNotFoundException {
-    return delegate1Ex("VersionStore.getValue", b -> b
-        .withTag("nessie.version-store.operation", "GetValue")
-        .withTag("nessie.version-store.ref", safeToString(ref))
-        .withTag("nessie.version-store.key", safeToString(key)),
+    return callWithOneException("GetValue", b -> b
+        .withTag(TAG_REF, safeToString(ref))
+        .withTag(TAG_KEY, safeToString(key)),
         () -> delegate.getValue(ref, key));
   }
 
   @Override
   public List<Optional<VALUE>> getValues(Ref ref, List<Key> keys) throws ReferenceNotFoundException {
-    return delegate1Ex("VersionStore.getValues", b -> b
-        .withTag("nessie.version-store.operation", "GetValues")
-        .withTag("nessie.version-store.ref", safeToString(ref))
-        .withTag("nessie.version-store.keys", safeToString(keys)),
+    return callWithOneException("GetValues", b -> b
+        .withTag(TAG_REF, safeToString(ref))
+        .withTag(TAG_KEYS, safeToString(keys)),
         () -> delegate.getValues(ref, keys));
   }
 
   @Override
   public Stream<Diff<VALUE>> getDiffs(Ref from, Ref to) throws ReferenceNotFoundException {
-    return delegateStream1Ex("VersionStore.getDiffs", b -> b
-        .withTag("nessie.version-store.operation", "GetDiffs")
-        .withTag("nessie.version-store.from", safeToString(from))
-        .withTag("nessie.version-store.to", safeToString(to)),
+    return callStreamWithOneException("GetDiffs", b -> b
+        .withTag(TAG_FROM, safeToString(from))
+        .withTag(TAG_TO, safeToString(to)),
         () -> delegate.getDiffs(from, to));
   }
 
   @Override
   public Collector collectGarbage() {
-    return delegate("VersionStore.collectGarbage", b -> b
-        .withTag("nessie.version-store.operation", "CollectGarbage"),
+    return call("CollectGarbage", b -> {},
         delegate::collectGarbage);
   }
 
-  private Scope createActiveScope(String spanName, Consumer<SpanBuilder> spanBuilder) {
-    Tracer tracer = tracerSupplier.get();
+  private Scope createActiveScope(String name, Consumer<SpanBuilder> spanBuilder) {
+    Tracer tracer = GlobalTracer.get();
+    String spanName = makeSpanName(name);
     SpanBuilder builder = tracer.buildSpan(spanName)
-        .asChildOf(tracer.activeSpan());
+        .asChildOf(tracer.activeSpan())
+        .withTag(TAG_OPERATION, name);
     spanBuilder.accept(builder);
     return builder.startActive(true);
   }
 
-  private <R> Stream<R> delegateStream(String spanName, Consumer<SpanBuilder> spanBuilder, Delegate<Stream<R>> delegate) {
+  @VisibleForTesting
+  static String makeSpanName(String name) {
+    return "VersionStore." + Character.toLowerCase(name.charAt(0)) + name.substring(1);
+  }
+
+  private <R> Stream<R> callStream(String spanName, Consumer<SpanBuilder> spanBuilder, Invoker<Stream<R>> invoker) {
     Scope scope = createActiveScope(spanName, spanBuilder);
     Stream<R> result = null;
     try {
-      result = delegate.handle().onClose(scope::close);
+      result = invoker.handle().onClose(scope::close);
       return result;
     } catch (IllegalArgumentException e) {
       // IllegalArgumentException is a special kind of exception that indicates a user-error.
       throw e;
     } catch (RuntimeException e) {
-      throw traceRuntimeException(scope, e);
+      throw traceError(scope, e);
     } finally {
-      // See below (delegateStream1Ex)
+      // See below (callStreamWithOneException)
       if (result == null) {
         scope.close();
       }
     }
   }
 
-  private <R, E1 extends VersionStoreException> Stream<R> delegateStream1Ex(String spanName, Consumer<SpanBuilder> spanBuilder,
-      DelegateWith1<Stream<R>, E1> delegate) throws E1 {
+  private <R, E1 extends VersionStoreException> Stream<R> callStreamWithOneException(String spanName, Consumer<SpanBuilder> spanBuilder,
+      InvokerWithOneException<Stream<R>, E1> invoker) throws E1 {
     Scope scope = createActiveScope(spanName, spanBuilder);
     Stream<R> result = null;
     try {
-      result = delegate.handle().onClose(scope::close);
+      result = invoker.handle().onClose(scope::close);
       return result;
     } catch (IllegalArgumentException e) {
       // IllegalArgumentException is a special kind of exception that indicates a user-error.
       throw e;
     } catch (RuntimeException e) {
-      throw traceRuntimeException(scope, e);
+      throw traceError(scope, e);
     } finally {
       // We cannot `catch (E1 e)`, so assume that the delegate threw an exception, when result==null
       // and then close the trace-scope.
@@ -258,77 +251,63 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
     }
   }
 
-  private <R> R delegate(String spanName, Consumer<SpanBuilder> spanBuilder, Delegate<R> delegate) {
+  private <R> R call(String spanName, Consumer<SpanBuilder> spanBuilder, Invoker<R> invoker) {
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
-        return delegate.handle();
+        return invoker.handle();
       } catch (IllegalArgumentException e) {
         // IllegalArgumentException is a special kind of exception that indicates a user-error.
         throw e;
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceError(scope, e);
       }
     }
   }
 
-  private <R, E1 extends VersionStoreException> R delegate1Ex(String spanName, Consumer<SpanBuilder> spanBuilder,
-      DelegateWith1<R, E1> delegate) throws E1 {
+  private <R, E1 extends VersionStoreException> R callWithOneException(String spanName, Consumer<SpanBuilder> spanBuilder,
+      InvokerWithOneException<R, E1> invoker) throws E1 {
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
-        return delegate.handle();
+        return invoker.handle();
       } catch (IllegalArgumentException e) {
         // IllegalArgumentException is a special kind of exception that indicates a user-error.
         throw e;
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceError(scope, e);
       }
     }
   }
 
-  private <E1 extends VersionStoreException, E2 extends VersionStoreException> void delegate2Ex(String spanName,
-      Consumer<SpanBuilder> spanBuilder, DelegateWith2<E1, E2> delegate) throws E1, E2 {
+  private <E1 extends VersionStoreException, E2 extends VersionStoreException> void callWithTwoExceptions(String spanName,
+      Consumer<SpanBuilder> spanBuilder, InvokerWithTwoExceptions<E1, E2> invoker) throws E1, E2 {
     try (Scope scope = createActiveScope(spanName, spanBuilder)) {
       try {
-        delegate.handle();
+        invoker.handle();
       } catch (IllegalArgumentException e) {
         // IllegalArgumentException is a special kind of exception that indicates a user-error.
         throw e;
       } catch (RuntimeException e) {
-        throw traceRuntimeException(scope, e);
+        throw traceError(scope, e);
       }
     }
   }
 
   @FunctionalInterface
-  interface Delegate<R> {
+  interface Invoker<R> {
     R handle();
   }
 
   @FunctionalInterface
-  interface DelegateWith1<R, E1 extends VersionStoreException> {
+  interface InvokerWithOneException<R, E1 extends VersionStoreException> {
     R handle() throws E1;
   }
 
   @FunctionalInterface
-  interface DelegateWith2<E1 extends VersionStoreException, E2 extends VersionStoreException> {
+  interface InvokerWithTwoExceptions<E1 extends VersionStoreException, E2 extends VersionStoreException> {
     void handle() throws E1, E2;
-  }
-
-  private static String safeToString(Object o) {
-    return o != null ? o.toString() : "<null>";
   }
 
   private static String safeRefName(NamedRef ref) {
     return ref != null ? ref.getName() : "<null>";
-  }
-
-  private static int safeSize(Collection<?> collection) {
-    return collection != null ? collection.size() : -1;
-  }
-
-  private static RuntimeException traceRuntimeException(Scope scope, RuntimeException e) {
-    Tags.ERROR.set(scope.span().log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(),
-        Fields.ERROR_OBJECT, e.toString())), true);
-    return e;
   }
 }

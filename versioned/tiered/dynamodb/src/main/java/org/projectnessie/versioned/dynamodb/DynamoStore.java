@@ -599,13 +599,8 @@ public class DynamoStore implements Store {
         + "attribute with the name 'id'.", description.tableName()));
   }
 
-  private Tracer getTracer() {
-    return GlobalTracer.get();
-  }
-
   private SpanBuilder createSpan(String name) {
-    Tracer tracer = getTracer();
-    return tracer.buildSpan(name)
-        .asChildOf(tracer.activeSpan());
+    Tracer tracer = GlobalTracer.get();
+    return tracer.buildSpan(name).asChildOf(tracer.activeSpan());
   }
 }

@@ -15,10 +15,12 @@
  */
 package org.projectnessie.versioned.store;
 
-import java.util.Collection;
+import static org.projectnessie.versioned.TracingUtil.safeSize;
+import static org.projectnessie.versioned.TracingUtil.safeToString;
+import static org.projectnessie.versioned.TracingUtil.traceError;
+
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,43 +28,42 @@ import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.UpdateExpression;
 import org.projectnessie.versioned.tiered.BaseValue;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.annotations.VisibleForTesting;
 
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
-import io.opentracing.log.Fields;
-import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
 public class TracingStore implements Store {
 
+  static final String TAG_OPERATION = "nessie.store.operation";
+  static final String TAG_VALUE_TYPE = "nessie.store.value-type";
+  static final String TAG_ID = "nessie.store.id";
+  static final String TAG_NUM_OPS = "nessie.store.num-ops";
+  static final String TAG_UPDATE = "nessie.store.update";
+  static final String TAG_CONDITION = "nessie.store.condition";
+
   private final Store store;
-  private final Supplier<Tracer> tracerSupplier;
 
   public TracingStore(Store store) {
-    this(store, GlobalTracer::get);
-  }
-
-  TracingStore(Store store, Supplier<Tracer> tracerSupplier) {
     this.store = store;
-    this.tracerSupplier = tracerSupplier;
-  }
-
-  private Tracer getTracer() {
-    return tracerSupplier.get();
   }
 
   private SpanBuilder createSpan(String name) {
-    Tracer tracer = getTracer();
-    return tracer.buildSpan(name).asChildOf(tracer.activeSpan());
+    Tracer tracer = GlobalTracer.get();
+    String opName = makeSpanName(name);
+    return tracer.buildSpan(opName).withTag(TAG_OPERATION, name).asChildOf(tracer.activeSpan());
+  }
+
+  @VisibleForTesting
+  static String makeSpanName(String name) {
+    return "Store." + Character.toLowerCase(name.charAt(0)) + name.substring(1);
   }
 
   @Override
   public void start() {
-    try (Scope scope = createSpan("Store.start")
-        .withTag("nessie.store.operation", "Start")
-        .startActive(true)) {
+    try (Scope scope = createSpan("Start").startActive(true)) {
       try {
         store.start();
       } catch (RuntimeException e) {
@@ -73,9 +74,7 @@ public class TracingStore implements Store {
 
   @Override
   public void close() {
-    try (Scope scope = createSpan("Store.close")
-        .withTag("nessie.store.operation", "Close")
-        .startActive(true)) {
+    try (Scope scope = createSpan("Close").startActive(true)) {
       try {
         store.close();
       } catch (RuntimeException e) {
@@ -86,9 +85,7 @@ public class TracingStore implements Store {
 
   @Override
   public void load(LoadStep loadstep) {
-    try (Scope scope = createSpan("Store.load")
-        .withTag("nessie.store.operation", "Load")
-        .startActive(true)) {
+    try (Scope scope = createSpan("Load").startActive(true)) {
       try {
         store.load(loadstep);
       } catch (RuntimeException e) {
@@ -100,10 +97,9 @@ public class TracingStore implements Store {
   @Override
   public <C extends BaseValue<C>> boolean putIfAbsent(
       SaveOp<C> saveOp) {
-    try (Scope scope = createSpan("Store.putIfAbsent")
-        .withTag("nessie.store.operation", "PutIfAbsent")
-        .withTag("nessie.store.value-type", safeOpTypeToString(saveOp))
-        .withTag("nessie.store.id", safeOpIdToString(saveOp))
+    try (Scope scope = createSpan("PutIfAbsent")
+        .withTag(TAG_VALUE_TYPE, safeOpTypeToString(saveOp))
+        .withTag(TAG_ID, safeOpIdToString(saveOp))
         .startActive(true)) {
       try {
         return store.putIfAbsent(saveOp);
@@ -117,10 +113,9 @@ public class TracingStore implements Store {
   public <C extends BaseValue<C>> void put(
       SaveOp<C> saveOp,
       Optional<ConditionExpression> condition) {
-    try (Scope scope = createSpan("Store.put")
-        .withTag("nessie.store.operation", "Put")
-        .withTag("nessie.store.value-type", safeOpTypeToString(saveOp))
-        .withTag("nessie.store.id", safeOpIdToString(saveOp))
+    try (Scope scope = createSpan("Put")
+        .withTag(TAG_VALUE_TYPE, safeOpTypeToString(saveOp))
+        .withTag(TAG_ID, safeOpIdToString(saveOp))
         .startActive(true)) {
       try {
         store.put(saveOp, condition);
@@ -134,10 +129,9 @@ public class TracingStore implements Store {
   public <C extends BaseValue<C>> boolean delete(
       ValueType<C> type, Id id,
       Optional<ConditionExpression> condition) {
-    try (Scope scope = createSpan("Store.delete")
-        .withTag("nessie.store.operation", "Delete")
-        .withTag("nessie.store.value-type", safeName(type))
-        .withTag("nessie.store.id", safeToString(id))
+    try (Scope scope = createSpan("Delete")
+        .withTag(TAG_VALUE_TYPE, safeName(type))
+        .withTag(TAG_ID, safeToString(id))
         .startActive(true)) {
       try {
         return store.delete(type, id, condition);
@@ -149,9 +143,8 @@ public class TracingStore implements Store {
 
   @Override
   public void save(List<SaveOp<?>> ops) {
-    try (Scope scope = createSpan("Store.save")
-        .withTag("nessie.store.operation", "Save")
-        .withTag("nessie.store.num-ops", safeSize(ops))
+    try (Scope scope = createSpan("Save")
+        .withTag(TAG_NUM_OPS, safeSize(ops))
         .startActive(true)) {
       try {
         scope.span().log(ops.stream().collect(Collectors.groupingBy(
@@ -169,10 +162,9 @@ public class TracingStore implements Store {
   @Override
   public <C extends BaseValue<C>> void loadSingle(
       ValueType<C> type, Id id, C consumer) {
-    try (Scope scope = createSpan("Store.loadSingle")
-        .withTag("nessie.store.operation", "LoadSingle")
-        .withTag("nessie.store.value-type", safeName(type))
-        .withTag("nessie.store.id", safeToString(id))
+    try (Scope scope = createSpan("LoadSingle")
+        .withTag(TAG_VALUE_TYPE, safeName(type))
+        .withTag(TAG_ID, safeToString(id))
         .startActive(true)) {
       try {
         store.loadSingle(type, id, consumer);
@@ -187,12 +179,11 @@ public class TracingStore implements Store {
       ValueType<C> type, Id id, UpdateExpression update,
       Optional<ConditionExpression> condition,
       Optional<BaseValue<C>> consumer) throws NotFoundException {
-    try (Scope scope = createSpan("Store.update")
-        .withTag("nessie.store.operation", "Update")
-        .withTag("nessie.store.value-type", safeName(type))
-        .withTag("nessie.store.id", safeToString(id))
-        .withTag("nessie.store.update", safeToString(update))
-        .withTag("nessie.store.condition", safeToString(condition))
+    try (Scope scope = createSpan("Update")
+        .withTag(TAG_VALUE_TYPE, safeName(type))
+        .withTag(TAG_ID, safeToString(id))
+        .withTag(TAG_UPDATE, safeToString(update))
+        .withTag(TAG_CONDITION, safeToString(condition))
         .startActive(true)) {
       try {
         return store.update(type, id, update, condition, consumer);
@@ -205,9 +196,8 @@ public class TracingStore implements Store {
   @Override
   public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(
       ValueType<C> type) {
-    Scope scope = createSpan("Store.getValues")
-        .withTag("nessie.store.operation", "GetValues")
-        .withTag("nessie.store.value-type", type.name())
+    Scope scope = createSpan("GetValues")
+        .withTag(TAG_VALUE_TYPE, type.name())
         .startActive(true);
     try {
       return store.getValues(type).onClose(scope::close);
@@ -222,14 +212,6 @@ public class TracingStore implements Store {
     return type != null ? type.name() : null;
   }
 
-  private static String safeToString(Object o) {
-    return o != null ? o.toString() : "<null>";
-  }
-
-  private static int safeSize(Collection<?> collection) {
-    return collection != null ? collection.size() : -1;
-  }
-
   private static <C extends BaseValue<C>> String safeOpIdToString(SaveOp<C> saveOp) {
     return saveOp != null ? safeToString(saveOp.getId()) : "<null>";
   }
@@ -240,8 +222,7 @@ public class TracingStore implements Store {
 
   private static RuntimeException traceRuntimeException(Scope scope, RuntimeException e) {
     if (!(e instanceof StoreException) || e instanceof StoreOperationException) {
-      Tags.ERROR.set(scope.span().log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(),
-          Fields.ERROR_OBJECT, e.toString())), true);
+      return traceError(scope, e);
     }
     return e;
   }

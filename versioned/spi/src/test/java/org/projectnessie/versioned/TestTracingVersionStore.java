@@ -17,7 +17,6 @@ package org.projectnessie.versioned;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,26 +33,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
 import org.projectnessie.versioned.VersionStore.Collector;
+import org.projectnessie.versioned.test.tracing.TestTracer;
+import org.projectnessie.versioned.test.tracing.TestedTraceingStoreInvocation;
 
 import com.google.common.collect.ImmutableMap;
 
-import io.opentracing.Scope;
-import io.opentracing.ScopeManager;
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.propagation.Format;
-
 class TestTracingVersionStore {
+
+  enum DummyEnum {
+    DUMMY
+  }
 
   // This test implementation shall exercise all functions on VersionStore and cover all exception
   // variants, which are all declared exceptions plus IllegalArgumentException (parameter error)
@@ -88,113 +87,92 @@ class TestTracingVersionStore {
 
     // "Declare" test-invocations for all VersionStore functions with their respective outcomes
     // and exceptions.
-    Stream<VersionStoreInvocation<?>> versionStoreFunctions = Stream.of(
-        new VersionStoreInvocation<>("toHash",
-            ImmutableMap.of("nessie.version-store.ref", "mock-branch"),
-            vs -> vs.toHash(BranchName.of("mock-branch")),
-            () -> Hash.of("cafebabe"), refNotFoundThrows),
-        new VersionStoreInvocation<>("toRef",
-            ImmutableMap.of("nessie.version-store.ref", "mock-branch"),
-            vs -> vs.toRef("mock-branch"),
-            () -> WithHash.of(Hash.of("deadbeefcafebabe"), BranchName.of("mock-branch")),
-            refNotFoundThrows),
-        new VersionStoreInvocation<>("commit",
-            ImmutableMap.of("nessie.version-store.branch", "mock-branch",
-                "nessie.version-store.num-ops", 0,
-                "nessie.version-store.hash", "Optional.empty"),
-            vs -> vs.commit(BranchName.of("mock-branch"), Optional.empty(), "metadata", Collections.emptyList()),
-            refNotFoundAndRefConflictThrows),
-        new VersionStoreInvocation<>("transplant",
-            ImmutableMap.of("nessie.version-store.target-branch", "mock-branch",
-                "nessie.version-store.transplants", 0,
-                "nessie.version-store.hash", "Optional.empty"),
-            vs -> vs.transplant(BranchName.of("mock-branch"), Optional.empty(), Collections.emptyList()),
-            refNotFoundAndRefConflictThrows),
-        new VersionStoreInvocation<>("merge",
-            ImmutableMap.of("nessie.version-store.to-branch", "mock-branch",
-                "nessie.version-store.from-hash", "Hash 42424242",
-                "nessie.version-store.expected-hash", "Optional.empty"),
-            vs -> vs.merge(Hash.of("42424242"), BranchName.of("mock-branch"), Optional.empty()),
-            refNotFoundAndRefConflictThrows),
-        new VersionStoreInvocation<>("assign",
-            ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}",
-                "nessie.version-store.target-hash", "Hash 12341234",
-                "nessie.version-store.expected-hash", "Optional.empty"),
-            vs -> vs.assign(BranchName.of("mock-branch"), Optional.empty(), Hash.of("12341234")),
-            refNotFoundAndRefConflictThrows),
-        new VersionStoreInvocation<>("create",
-            ImmutableMap.of("nessie.version-store.target-hash", "Optional[Hash cafebabe]",
-                "nessie.version-store.ref", "BranchName{name=mock-branch}"),
-            vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
-            refNotFoundAndRefAlreadyExistsThrows),
-        new VersionStoreInvocation<>("delete",
-            ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}",
-                "nessie.version-store.hash", "Optional[Hash cafebabe]"),
-            vs -> vs.delete(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe"))),
-            refNotFoundAndRefConflictThrows),
-        new VersionStoreInvocation<>("getCommits",
-            ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}"),
-            vs -> vs.getCommits(BranchName.of("mock-branch")),
-            () -> Stream.of(
+    Stream<TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>> versionStoreFunctions = Stream.of(
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("ToHash", refNotFoundThrows)
+            .tag("nessie.version-store.ref", "mock-branch")
+            .function(vs -> vs.toHash(BranchName.of("mock-branch")), () -> Hash.of("cafebabe")),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("ToRef", refNotFoundThrows)
+            .tag("nessie.version-store.ref", "mock-branch")
+            .function(vs -> vs.toRef("mock-branch"), () -> WithHash.of(Hash.of("deadbeefcafebabe"), BranchName.of("mock-branch"))),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("Commit", refNotFoundAndRefConflictThrows)
+            .tag("nessie.version-store.branch", "mock-branch")
+            .tag("nessie.version-store.num-ops", 0)
+            .tag("nessie.version-store.hash", "Optional.empty")
+            .method(vs -> vs.commit(BranchName.of("mock-branch"), Optional.empty(), "metadata", Collections.emptyList())),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("Transplant", refNotFoundAndRefConflictThrows)
+            .tag("nessie.version-store.target-branch", "mock-branch")
+            .tag("nessie.version-store.transplants", 0)
+            .tag("nessie.version-store.hash", "Optional.empty")
+            .method(vs -> vs.transplant(BranchName.of("mock-branch"), Optional.empty(), Collections.emptyList())),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("Merge", refNotFoundAndRefConflictThrows)
+            .tag("nessie.version-store.to-branch", "mock-branch")
+            .tag("nessie.version-store.from-hash", "Hash 42424242")
+            .tag("nessie.version-store.expected-hash", "Optional.empty")
+            .method(vs -> vs.merge(Hash.of("42424242"), BranchName.of("mock-branch"), Optional.empty())),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("Assign", refNotFoundAndRefConflictThrows)
+            .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+            .tag("nessie.version-store.target-hash", "Hash 12341234")
+            .tag("nessie.version-store.expected-hash", "Optional.empty")
+            .method(vs -> vs.assign(BranchName.of("mock-branch"), Optional.empty(), Hash.of("12341234"))),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("Create", refNotFoundAndRefAlreadyExistsThrows)
+            .tag("nessie.version-store.target-hash", "Optional[Hash cafebabe]")
+            .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+            .method(vs -> vs.create(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe")))),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("Delete", refNotFoundAndRefConflictThrows)
+            .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+            .tag("nessie.version-store.hash", "Optional[Hash cafebabe]")
+            .method(vs -> vs.delete(BranchName.of("mock-branch"), Optional.of(Hash.of("cafebabe")))),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("GetCommits", refNotFoundThrows)
+            .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+            .function(vs -> vs.getCommits(BranchName.of("mock-branch")), () -> Stream.of(
                 WithHash.of(Hash.of("cafebabe"), "log#1"),
-                WithHash.of(Hash.of("deadbeef"), "log#2")),
-            refNotFoundThrows),
-        new VersionStoreInvocation<>("getKeys",
-            ImmutableMap.of("nessie.version-store.ref", "Hash cafe4242"),
-            vs -> vs.getKeys(Hash.of("cafe4242")),
-            () -> Stream.of(Key.of("hello", "world")),
-            refNotFoundThrows),
-        new VersionStoreInvocation<>("getNamedRefs",
-            ImmutableMap.of(),
-            VersionStore::getNamedRefs,
-            () -> Stream.of(
+                WithHash.of(Hash.of("deadbeef"), "log#2"))),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("GetKeys", refNotFoundThrows)
+            .tag("nessie.version-store.ref", "Hash cafe4242")
+            .function(vs -> vs.getKeys(Hash.of("cafe4242")), () -> Stream.of(Key.of("hello", "world"))),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("GetNamedRefs", runtimeThrows)
+            .function(VersionStore::getNamedRefs, () -> Stream.of(
                 WithHash.of(Hash.of("cafebabe"), BranchName.of("foo")),
-                WithHash.of(Hash.of("deadbeef"), BranchName.of("cow"))),
-            runtimeThrows),
-        new VersionStoreInvocation<>("getValue",
-            ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}",
-                "nessie.version-store.key", "some.key"),
-            vs -> vs.getValue(BranchName.of("mock-branch"), Key.of("some", "key")),
-            () -> "foo",
-            refNotFoundThrows),
-        new VersionStoreInvocation<>("getValues",
-            ImmutableMap.of("nessie.version-store.ref", "BranchName{name=mock-branch}",
-                "nessie.version-store.keys", "[some.key]"),
-            vs -> vs.getValues(BranchName.of("mock-branch"), Collections.singletonList(Key.of("some", "key"))),
-            () -> Collections.singletonList(Optional.empty()),
-            refNotFoundThrows),
-        new VersionStoreInvocation<>("getDiffs",
-            ImmutableMap.of("nessie.version-store.from", "BranchName{name=mock-branch}",
-                "nessie.version-store.to", "BranchName{name=foo-branch}"),
-            vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")),
-            Stream::empty,
-            refNotFoundThrows),
-        new VersionStoreInvocation<>("collectGarbage",
-            ImmutableMap.of(),
-            VersionStore::collectGarbage,
-            () -> mock(Collector.class),
-            runtimeThrows)
+                WithHash.of(Hash.of("deadbeef"), BranchName.of("cow")))),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("GetValue", refNotFoundThrows)
+            .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+            .tag("nessie.version-store.key", "some.key")
+            .function(vs -> vs.getValue(BranchName.of("mock-branch"), Key.of("some", "key")), () -> "foo"),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("GetValues", refNotFoundThrows)
+            .tag("nessie.version-store.ref", "BranchName{name=mock-branch}")
+            .tag("nessie.version-store.keys", "[some.key]")
+            .function(vs -> vs.getValues(BranchName.of("mock-branch"), Collections.singletonList(Key.of("some", "key"))),
+                () -> Collections.singletonList(Optional.empty())),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("GetDiffs", refNotFoundThrows)
+            .tag("nessie.version-store.from", "BranchName{name=mock-branch}")
+            .tag("nessie.version-store.to", "BranchName{name=foo-branch}")
+            .function(vs -> vs.getDiffs(BranchName.of("mock-branch"), BranchName.of("foo-branch")), Stream::empty),
+        new TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>>("CollectGarbage", runtimeThrows)
+            .function(VersionStore::collectGarbage, () -> mock(Collector.class))
     );
 
-    // flatten all "normal executions" + "throws XYZ"
-    return versionStoreFunctions.flatMap(invocation -> {
-          // Construct a stream of arguments, both "normal" results and exceptional results.
-          Stream<Arguments> normalExecs = Stream.of(
-              Arguments.of(invocation.opName, null, invocation.tags, invocation.result, invocation.function)
-          );
-          Stream<Arguments> exceptionalExecs = invocation.failures.stream().map(
-              ex -> Arguments.of(invocation.opName, ex, invocation.tags, null, invocation.function)
-          );
-          return Stream.concat(normalExecs, exceptionalExecs);
-        }
-    );
+    return TestedTraceingStoreInvocation.toArguments(versionStoreFunctions);
+  }
+
+  @BeforeAll
+  static void setupGlobalTracer() {
+    TestTracer.registerGlobal();
   }
 
   @ParameterizedTest
   @MethodSource("versionStoreInvocations")
-  void versionStoreInvocation(String opName, Exception expectedThrow, Map<String, ?> tags, Supplier<?> resultSupplier,
-      ThrowingFunction<?, VersionStore<String, String, DummyEnum>> versionStoreFunction) throws Throwable {
-    Object result = resultSupplier != null ? resultSupplier.get() : null;
+  void versionStoreInvocation(
+      TestedTraceingStoreInvocation<VersionStore<String, String, DummyEnum>> invocation,
+      Exception expectedThrow) throws Throwable {
+
+    boolean isServerError = expectedThrow != null
+        && !(expectedThrow instanceof VersionStoreException) && !(expectedThrow instanceof IllegalArgumentException);
+    String opNameTag = "nessie.version-store.operation";
+
+    TestTracer tracer = new TestTracer();
+    tracer.registerForCurrentTest();
+
+    Object result = invocation.getResult() != null ? invocation.getResult().get() : null;
 
     Stubber stubber;
     if (expectedThrow != null) {
@@ -208,13 +186,12 @@ class TestTracingVersionStore {
       stubber = doNothing();
     }
 
-    TestTracer tracer = new TestTracer();
-    @SuppressWarnings("unchecked") VersionStore<String, String, DummyEnum> mockedVersionStore = mock(VersionStore.class);
-    versionStoreFunction.accept(stubber.when(mockedVersionStore));
-    VersionStore<String, String, DummyEnum> versionStore = new TracingVersionStore<>(mockedVersionStore, () -> tracer);
+    @SuppressWarnings("unchecked") VersionStore<String, String, DummyEnum> mockedStore = mock(VersionStore.class);
+    invocation.getFunction().accept(stubber.when(mockedStore));
+    VersionStore<String, String, DummyEnum> store = new TracingVersionStore<>(mockedStore);
 
-    ThrowingConsumer<VersionStore<String, String, DummyEnum>> versionStoreExec = vs -> {
-      Object r = versionStoreFunction.accept(vs);
+    ThrowingConsumer<VersionStore<String, String, DummyEnum>> storeExec = s -> {
+      Object r = invocation.getFunction().accept(s);
       if (result != null) {
         // non-void methods must return something
         assertNotNull(r);
@@ -231,268 +208,41 @@ class TestTracingVersionStore {
     };
 
     if (expectedThrow == null) {
-      // No exception expected, just invoke the VersionStore function
-      versionStoreExec.accept(versionStore);
+      // No exception expected, just invoke the Store function
+      storeExec.accept(store);
     } else {
-      // Surround the VersionStore function with an 'assertThrows'
+      // Surround the Store function with an 'assertThrows'
       assertEquals(expectedThrow.getMessage(),
           assertThrows(expectedThrow.getClass(),
-              () -> versionStoreExec.accept(versionStore)).getMessage());
+              () -> storeExec.accept(store)).getMessage());
     }
 
-    String uppercase = Character.toUpperCase(opName.charAt(0)) + opName.substring(1);
+    List<Map<String, String>> expectedLogs = new ArrayList<>(invocation.getLogs());
+    if (isServerError) {
+      expectedLogs.add(ImmutableMap.of("event", "error", "error.object", expectedThrow.toString()));
+    }
 
-    boolean isServerError = expectedThrow != null
-        && !(expectedThrow instanceof VersionStoreException) && !(expectedThrow instanceof IllegalArgumentException);
-
-    List<Map<String, String>> expectedLogs =
-        isServerError
-            ? Collections.singletonList(ImmutableMap.of("event", "error", "error.object", expectedThrow.toString()))
-            : Collections.emptyList();
-
-    ImmutableMap.Builder<Object, Object> tagsBuilder = ImmutableMap.builder().putAll(tags);
+    ImmutableMap.Builder<Object, Object> tagsBuilder = ImmutableMap.builder().putAll(invocation.getTags());
     if (isServerError) {
       tagsBuilder.put("error", true);
     }
-    Map<Object, Object> expectedTags = tagsBuilder.put("nessie.version-store.operation", uppercase)
+    Map<Object, Object> expectedTags = tagsBuilder.put(opNameTag, invocation.getOpName())
         .build();
 
     assertAll(
-        () -> assertEquals("VersionStore." + opName, tracer.opName),
-        () -> assertEquals(expectedLogs, tracer.activeSpan.logs, "expected logs don't match"),
-        () -> assertEquals(new HashMap<>(expectedTags), tracer.activeSpan.tags, "expected tags don't match"),
-        () -> assertTrue(tracer.parentSet, "Span-parent not set"),
-        () -> assertTrue(tracer.closed, "Scope not closed"));
+        () -> assertEquals(TracingVersionStore.makeSpanName(invocation.getOpName()), tracer.getOpName()),
+        () -> assertEquals(expectedLogs, tracer.getActiveSpan().getLogs(), "expected logs don't match"),
+        () -> assertEquals(new HashMap<>(expectedTags), tracer.getActiveSpan().getTags(), "expected tags don't match"),
+        () -> assertTrue(tracer.isParentSet(), "Span-parent not set"),
+        () -> assertTrue(tracer.isClosed(), "Scope not closed"));
   }
 
-  static class VersionStoreInvocation<R> {
-    final String opName;
-    final Map<String, ?> tags;
-    final ThrowingFunction<?, VersionStore<String, String, DummyEnum>> function;
-    final Supplier<R> result;
-    final List<Exception> failures;
-
-    VersionStoreInvocation(String opName, Map<String, ?> tags,
-        ThrowingFunction<?, VersionStore<String, String, DummyEnum>> function,
-        Supplier<R> result, List<Exception> failures) {
-      this.opName = opName;
-      this.tags = tags;
-      this.function = function;
-      this.result = result;
-      this.failures = failures;
-    }
-
-    VersionStoreInvocation(String opName, Map<String, ?> tags,
-        ThrowingConsumer<VersionStore<String, String, DummyEnum>> function,
-        List<Exception> failures) {
-      this.opName = opName;
-      this.tags = tags;
-      this.function = vs -> {
-        function.accept(vs);
-        return null;
-      };
-      this.result = null;
-      this.failures = failures;
-    }
-  }
-
-  @FunctionalInterface
-  interface ThrowingFunction<R, A> {
-    R accept(A arg) throws Throwable;
-  }
-
-  enum DummyEnum {
-    DUMMY
-  }
-
-  static class TestTracer implements Tracer {
-
-    TestSpan activeSpan;
-    boolean closed;
-    boolean parentSet;
-    String opName;
-
-    @Override
-    public ScopeManager scopeManager() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Span activeSpan() {
-      return activeSpan;
-    }
-
-    @Override
-    public SpanBuilder buildSpan(String operationName) {
-      opName = operationName;
-      return new SpanBuilder() {
-
-        final Map<String, Object> tags = new HashMap<>();
-
-        @Override
-        public SpanBuilder withTag(String key, String value) {
-          tags.put(key, value);
-          return this;
-        }
-
-        @Override
-        public SpanBuilder withTag(String key, boolean value) {
-          tags.put(key, value);
-          return this;
-        }
-
-        @Override
-        public SpanBuilder withTag(String key, Number value) {
-          tags.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Scope startActive(boolean finishSpanOnClose) {
-          activeSpan = new TestSpan(tags);
-
-          return new Scope() {
-            @Override
-            public void close() {
-              assertFalse(closed);
-              closed = true;
-            }
-
-            @Override
-            public Span span() {
-              return activeSpan;
-            }
-          };
-        }
-
-        @Override
-        public SpanBuilder asChildOf(SpanContext parent) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public SpanBuilder asChildOf(Span parent) {
-          assertFalse(parentSet);
-          assertNull(parent);
-          parentSet = true;
-          return this;
-        }
-
-        @Override
-        public SpanBuilder addReference(String referenceType, SpanContext referencedContext) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public SpanBuilder ignoreActiveSpan() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public SpanBuilder withStartTimestamp(long microseconds) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Span startManual() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Span start() {
-          throw new UnsupportedOperationException();
-        }
-      };
-    }
-
-    @Override
-    public <C> void inject(SpanContext spanContext, Format<C> format, C carrier) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <C> SpanContext extract(Format<C> format, C carrier) {
-      throw new UnsupportedOperationException();
-    }
-
-    private class TestSpan implements Span {
-
-      Map<String, Object> tags = new HashMap<>();
-      List<Map<String, ?>> logs = new ArrayList<>();
-
-      TestSpan(Map<String, Object> tags) {
-        this.tags.putAll(tags);
-      }
-
-      @Override
-      public SpanContext context() {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public Span setTag(String key, String value) {
-        tags.put(key, value);
-        return this;
-      }
-
-      @Override
-      public Span setTag(String key, boolean value) {
-        tags.put(key, value);
-        return this;
-      }
-
-      @Override
-      public Span setTag(String key, Number value) {
-        tags.put(key, value);
-        return this;
-      }
-
-      @Override
-      public Span log(Map<String, ?> fields) {
-        logs.add(fields);
-        return this;
-      }
-
-      @Override
-      public Span log(long timestampMicroseconds, Map<String, ?> fields) {
-        return log(fields);
-      }
-
-      @Override
-      public Span log(String event) {
-        return log(Collections.singletonMap("event", event));
-      }
-
-      @Override
-      public Span log(long timestampMicroseconds, String event) {
-        return log(event);
-      }
-
-      @Override
-      public Span setBaggageItem(String key, String value) {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public String getBaggageItem(String key) {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public Span setOperationName(String operationName) {
-        opName = operationName;
-        return this;
-      }
-
-      @Override
-      public void finish() {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public void finish(long finishMicros) {
-        throw new UnsupportedOperationException();
-      }
-    }
+  @Test
+  void spanNames() {
+    assertAll(
+        () -> assertEquals("VersionStore.foo", TracingVersionStore.makeSpanName("Foo")),
+        () -> assertEquals("VersionStore.fooBar", TracingVersionStore.makeSpanName("FooBar")),
+        () -> assertEquals("VersionStore.fBar", TracingVersionStore.makeSpanName("FBar"))
+    );
   }
 }

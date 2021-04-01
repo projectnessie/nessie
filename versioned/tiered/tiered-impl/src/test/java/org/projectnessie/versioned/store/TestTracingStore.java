@@ -17,7 +17,6 @@ package org.projectnessie.versioned.store;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,22 +36,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.stubbing.Stubber;
 import org.projectnessie.versioned.impl.condition.UpdateExpression;
+import org.projectnessie.versioned.test.tracing.TestTracer;
+import org.projectnessie.versioned.test.tracing.TestedTraceingStoreInvocation;
 import org.projectnessie.versioned.tiered.L3;
 
 import com.google.common.collect.ImmutableMap;
-
-import io.opentracing.Scope;
-import io.opentracing.ScopeManager;
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
-import io.opentracing.propagation.Format;
 
 class TestTracingStore {
 
@@ -76,79 +72,62 @@ class TestTracingStore {
 
     // "Declare" test-invocations for all Store functions with their respective outcomes
     // and exceptions.
-    Stream<StoreInvocation<?>> storeFunctions = Stream.of(
-        new StoreInvocation<>("start",
-            ImmutableMap.of(),
-            Collections.emptyList(),
-            Store::start,
-            storeThrows),
-        new StoreInvocation<>("close",
-            ImmutableMap.of(),
-            Collections.emptyList(),
-            Store::close,
-            storeThrows),
-        new StoreInvocation<>("load",
-            ImmutableMap.of(),
-            Collections.emptyList(),
-            s -> s.load(someLoadStep),
-            storeThrows),
-        new StoreInvocation<>("putIfAbsent",
-            ImmutableMap.of("nessie.store.id", "0000000000000000000000000000000000000000",
-                "nessie.store.value-type", "l3"),
-            Collections.emptyList(),
-            s -> s.putIfAbsent(someSaveOp),
-            true, storeThrows),
-        new StoreInvocation<>("put",
-            ImmutableMap.of("nessie.store.id", "0000000000000000000000000000000000000000",
-                "nessie.store.value-type", "l3"),
-            Collections.emptyList(),
-            s -> s.put(someSaveOp, Optional.empty()),
-            storeThrows),
-        new StoreInvocation<>("delete",
-            ImmutableMap.of("nessie.store.id", "0000000000000000000000000000000000000000",
-                "nessie.store.value-type", "l3"),
-            Collections.emptyList(),
-            s -> s.delete(ValueType.L3, someId, Optional.empty()),
-            true, storeThrows),
-        new StoreInvocation<>("save",
-            ImmutableMap.of("nessie.store.num-ops", 1),
-            Collections.singletonList(Collections.singletonMap("nessie.store.save.l3.ids", "0000000000000000000000000000000000000000")),
-            s -> s.save(Collections.singletonList(someSaveOp)),
-            storeThrows),
-        new StoreInvocation<>("loadSingle",
-            ImmutableMap.of("nessie.store.id", "0000000000000000000000000000000000000000",
-                "nessie.store.value-type", "l3"),
-            Collections.emptyList(),
-            s -> s.loadSingle(ValueType.L3, someId, someConsumer),
-            storeThrows),
-        new StoreInvocation<>("update",
-            ImmutableMap.of("nessie.store.id", "0000000000000000000000000000000000000000",
-                "nessie.store.value-type", "l3",
-                "nessie.store.update", "UpdateExpression{clauses=[]}",
-                "nessie.store.condition", "Optional.empty"),
-            Collections.emptyList(),
-            s -> s.update(ValueType.L3, someId, UpdateExpression.initial(), Optional.empty(), Optional.empty()),
-            true, storeThrows)
+    Stream<TestedTraceingStoreInvocation<Store>> storeFunctions = Stream.of(
+        new TestedTraceingStoreInvocation<Store>("Start", storeThrows)
+            .method(Store::start),
+        new TestedTraceingStoreInvocation<Store>("Close", storeThrows)
+            .method(Store::close),
+        new TestedTraceingStoreInvocation<Store>("Load", storeThrows)
+            .method(s -> s.load(someLoadStep)),
+        new TestedTraceingStoreInvocation<Store>("PutIfAbsent", storeThrows)
+            .tag(TracingStore.TAG_ID, "0000000000000000000000000000000000000000")
+            .tag(TracingStore.TAG_VALUE_TYPE, "l3")
+            .function(s -> s.putIfAbsent(someSaveOp), () -> true),
+        new TestedTraceingStoreInvocation<Store>("Put", storeThrows)
+            .tag(TracingStore.TAG_ID, "0000000000000000000000000000000000000000")
+            .tag(TracingStore.TAG_VALUE_TYPE, "l3")
+            .method(s -> s.put(someSaveOp, Optional.empty())),
+        new TestedTraceingStoreInvocation<Store>("Delete", storeThrows)
+            .tag(TracingStore.TAG_ID, "0000000000000000000000000000000000000000")
+            .tag(TracingStore.TAG_VALUE_TYPE, "l3")
+            .function(s -> s.delete(ValueType.L3, someId, Optional.empty()), () -> true),
+        new TestedTraceingStoreInvocation<Store>("Save", storeThrows)
+            .tag(TracingStore.TAG_NUM_OPS, 1)
+            .log(Collections.singletonMap("nessie.store.save.l3.ids", "0000000000000000000000000000000000000000"))
+            .method(s -> s.save(Collections.singletonList(someSaveOp))),
+        new TestedTraceingStoreInvocation<Store>("LoadSingle", storeThrows)
+            .tag(TracingStore.TAG_ID, "0000000000000000000000000000000000000000")
+            .tag(TracingStore.TAG_VALUE_TYPE, "l3")
+            .method(s -> s.loadSingle(ValueType.L3, someId, someConsumer)),
+        new TestedTraceingStoreInvocation<Store>("Update", storeThrows)
+            .tag(TracingStore.TAG_ID, "0000000000000000000000000000000000000000")
+            .tag(TracingStore.TAG_VALUE_TYPE, "l3")
+            .tag(TracingStore.TAG_UPDATE, "UpdateExpression{clauses=[]}")
+            .tag(TracingStore.TAG_CONDITION, "Optional.empty")
+            .function(s -> s.update(ValueType.L3, someId, UpdateExpression.initial(), Optional.empty(), Optional.empty()), () -> true)
     );
 
-    // flatten all "normal executions" + "throws XYZ"
-    return storeFunctions.flatMap(invocation -> {
-          // Construct a stream of arguments, both "normal" results and exceptional results.
-          Stream<Arguments> normalExecs = Stream.of(
-              Arguments.of(invocation.opName, null, invocation.tags, invocation.logs, invocation.result, invocation.function)
-          );
-          Stream<Arguments> exceptionalExecs = invocation.failures.stream().map(
-              ex -> Arguments.of(invocation.opName, ex, invocation.tags, invocation.logs, null, invocation.function)
-          );
-          return Stream.concat(normalExecs, exceptionalExecs);
-        }
-    );
+    return TestedTraceingStoreInvocation.toArguments(storeFunctions);
+  }
+
+  @BeforeAll
+  static void setupGlobalTracer() {
+    TestTracer.registerGlobal();
   }
 
   @ParameterizedTest
   @MethodSource("storeInvocations")
-  void storeInvocation(String opName, Exception expectedThrow, Map<String, ?> tags, List<Map<String, String>> logs,
-      Object result, ThrowingFunction<?, Store> storeFunction) throws Throwable {
+  void storeInvocation(TestedTraceingStoreInvocation<Store> invocation, Exception expectedThrow) throws Throwable {
+
+    boolean isServerError = expectedThrow != null
+        && (!(expectedThrow instanceof StoreException) || expectedThrow instanceof StoreOperationException);
+    String opNameTag = "nessie.store.operation";
+
+    TestTracer tracer = new TestTracer();
+    tracer.registerForCurrentTest();
+
+    Object result = invocation.getResult() != null ? invocation.getResult().get() : null;
+
     Stubber stubber;
     if (expectedThrow != null) {
       // The invocation expects an exception to be thrown
@@ -161,13 +140,12 @@ class TestTracingStore {
       stubber = doNothing();
     }
 
-    TestTracer tracer = new TestTracer();
     Store mockedStore = mock(Store.class);
-    storeFunction.accept(stubber.when(mockedStore));
-    Store store = new TracingStore(mockedStore, () -> tracer);
+    invocation.getFunction().accept(stubber.when(mockedStore));
+    Store store = new TracingStore(mockedStore);
 
     ThrowingConsumer<Store> storeExec = s -> {
-      Object r = storeFunction.accept(s);
+      Object r = invocation.getFunction().accept(s);
       if (result != null) {
         // non-void methods must return something
         assertNotNull(r);
@@ -193,256 +171,32 @@ class TestTracingStore {
               () -> storeExec.accept(store)).getMessage());
     }
 
-    String uppercase = Character.toUpperCase(opName.charAt(0)) + opName.substring(1);
-
-    boolean isServerError = expectedThrow != null
-        && (!(expectedThrow instanceof StoreException) || expectedThrow instanceof StoreOperationException);
-
-    List<Map<String, String>> expectedLogs = new ArrayList<>(logs);
+    List<Map<String, String>> expectedLogs = new ArrayList<>(invocation.getLogs());
     if (isServerError) {
       expectedLogs.add(ImmutableMap.of("event", "error", "error.object", expectedThrow.toString()));
     }
 
-    ImmutableMap.Builder<Object, Object> tagsBuilder = ImmutableMap.builder().putAll(tags);
+    ImmutableMap.Builder<Object, Object> tagsBuilder = ImmutableMap.builder().putAll(invocation.getTags());
     if (isServerError) {
       tagsBuilder.put("error", true);
     }
-    Map<Object, Object> expectedTags = tagsBuilder.put("nessie.store.operation", uppercase)
+    Map<Object, Object> expectedTags = tagsBuilder.put(opNameTag, invocation.getOpName())
         .build();
 
     assertAll(
-        () -> assertEquals("Store." + opName, tracer.opName),
-        () -> assertEquals(expectedLogs, tracer.activeSpan.logs, "expected logs don't match"),
-        () -> assertEquals(new HashMap<>(expectedTags), tracer.activeSpan.tags, "expected tags don't match"),
-        () -> assertTrue(tracer.parentSet, "Span-parent not set"),
-        () -> assertTrue(tracer.closed, "Scope not closed"));
+        () -> assertEquals(TracingStore.makeSpanName(invocation.getOpName()), tracer.getOpName()),
+        () -> assertEquals(expectedLogs, tracer.getActiveSpan().getLogs(), "expected logs don't match"),
+        () -> assertEquals(new HashMap<>(expectedTags), tracer.getActiveSpan().getTags(), "expected tags don't match"),
+        () -> assertTrue(tracer.isParentSet(), "Span-parent not set"),
+        () -> assertTrue(tracer.isClosed(), "Scope not closed"));
   }
 
-  static class StoreInvocation<R> {
-    final String opName;
-    final Map<String, ?> tags;
-    final List<Map<String, String>> logs;
-    final ThrowingFunction<?, Store> function;
-    final R result;
-    final List<Exception> failures;
-
-    StoreInvocation(String opName, Map<String, ?> tags, List<Map<String, String>> logs,
-        ThrowingFunction<?, Store> function, R result, List<Exception> failures) {
-      this.opName = opName;
-      this.tags = tags;
-      this.logs = logs;
-      this.function = function;
-      this.result = result;
-      this.failures = failures;
-    }
-
-    StoreInvocation(String opName, Map<String, ?> tags, List<Map<String, String>> logs,
-        ThrowingConsumer<Store> function, List<Exception> failures) {
-      this.opName = opName;
-      this.tags = tags;
-      this.logs = logs;
-      this.function = store -> {
-        function.accept(store);
-        return null;
-      };
-      this.result = null;
-      this.failures = failures;
-    }
-  }
-
-  @FunctionalInterface
-  interface ThrowingFunction<R, A> {
-    R accept(A arg) throws Throwable;
-  }
-
-  static class TestTracer implements Tracer {
-
-    TestSpan activeSpan;
-    boolean closed;
-    boolean parentSet;
-    String opName;
-
-    @Override
-    public ScopeManager scopeManager() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Span activeSpan() {
-      return activeSpan;
-    }
-
-    @Override
-    public SpanBuilder buildSpan(String operationName) {
-      opName = operationName;
-      return new SpanBuilder() {
-
-        final Map<String, Object> tags = new HashMap<>();
-
-        @Override
-        public SpanBuilder withTag(String key, String value) {
-          tags.put(key, value);
-          return this;
-        }
-
-        @Override
-        public SpanBuilder withTag(String key, boolean value) {
-          tags.put(key, value);
-          return this;
-        }
-
-        @Override
-        public SpanBuilder withTag(String key, Number value) {
-          tags.put(key, value);
-          return this;
-        }
-
-        @Override
-        public Scope startActive(boolean finishSpanOnClose) {
-          activeSpan = new TestSpan(tags);
-
-          return new Scope() {
-            @Override
-            public void close() {
-              assertFalse(closed);
-              closed = true;
-            }
-
-            @Override
-            public Span span() {
-              return activeSpan;
-            }
-          };
-        }
-
-        @Override
-        public SpanBuilder asChildOf(SpanContext parent) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public SpanBuilder asChildOf(Span parent) {
-          assertFalse(parentSet);
-          assertNull(parent);
-          parentSet = true;
-          return this;
-        }
-
-        @Override
-        public SpanBuilder addReference(String referenceType, SpanContext referencedContext) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public SpanBuilder ignoreActiveSpan() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public SpanBuilder withStartTimestamp(long microseconds) {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Span startManual() {
-          throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Span start() {
-          throw new UnsupportedOperationException();
-        }
-      };
-    }
-
-    @Override
-    public <C> void inject(SpanContext spanContext, Format<C> format, C carrier) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <C> SpanContext extract(Format<C> format, C carrier) {
-      throw new UnsupportedOperationException();
-    }
-
-    private class TestSpan implements Span {
-
-      Map<String, Object> tags = new HashMap<>();
-      List<Map<String, ?>> logs = new ArrayList<>();
-
-      TestSpan(Map<String, Object> tags) {
-        this.tags.putAll(tags);
-      }
-
-      @Override
-      public SpanContext context() {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public Span setTag(String key, String value) {
-        tags.put(key, value);
-        return this;
-      }
-
-      @Override
-      public Span setTag(String key, boolean value) {
-        tags.put(key, value);
-        return this;
-      }
-
-      @Override
-      public Span setTag(String key, Number value) {
-        tags.put(key, value);
-        return this;
-      }
-
-      @Override
-      public Span log(Map<String, ?> fields) {
-        logs.add(fields);
-        return this;
-      }
-
-      @Override
-      public Span log(long timestampMicroseconds, Map<String, ?> fields) {
-        return log(fields);
-      }
-
-      @Override
-      public Span log(String event) {
-        return log(Collections.singletonMap("event", event));
-      }
-
-      @Override
-      public Span log(long timestampMicroseconds, String event) {
-        return log(event);
-      }
-
-      @Override
-      public Span setBaggageItem(String key, String value) {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public String getBaggageItem(String key) {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public Span setOperationName(String operationName) {
-        opName = operationName;
-        return this;
-      }
-
-      @Override
-      public void finish() {
-        throw new UnsupportedOperationException();
-      }
-
-      @Override
-      public void finish(long finishMicros) {
-        throw new UnsupportedOperationException();
-      }
-    }
+  @Test
+  void spanNames() {
+    assertAll(
+        () -> assertEquals("Store.foo", TracingStore.makeSpanName("Foo")),
+        () -> assertEquals("Store.fooBar", TracingStore.makeSpanName("FooBar")),
+        () -> assertEquals("Store.fBar", TracingStore.makeSpanName("FBar"))
+    );
   }
 }

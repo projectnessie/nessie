@@ -82,5 +82,12 @@
       <artifactId>logback-core</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.projectnessie</groupId>
+      <artifactId>nessie-versioned-spi</artifactId>
+      <version>${project.version}</version>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
