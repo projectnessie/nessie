@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -148,11 +149,17 @@ class NessieTransaction {
   }
 
   public void createDatabase(Database db) throws MetaException {
-    setItem(Item.wrap(db), db.getName());
+    setItem(Item.wrap(db, UUID.randomUUID().toString()), db.getName());
   }
 
   public void alterDatabase(Database db) throws MetaException {
-    setItem(Item.wrap(db), db.getName());
+    try {
+      Optional<Item> oldDb = getItemForRef(defaultHash, db.getName());
+      setItem(Item.wrap(db, oldDb.orElseThrow(() -> new MetaException("Db not found")).getUuid()), db.getName());
+    } catch (NoSuchObjectException e) {
+      //can't happen
+    }
+
   }
 
   public Stream<String> getDatabases() {
@@ -178,11 +185,11 @@ class NessieTransaction {
     List<Partition> partitions = new ArrayList<>();
     partitions.addAll(table.get().getPartitions());
     partitions.addAll(p);
-    setItem(Item.wrap(table.get().getTable(), partitions));
+    setItem(Item.wrap(table.get().getTable(), partitions, table.get().getUuid()));
   }
 
   public void createTable(Table table) throws MetaException {
-    setItem(Item.wrap(table, Collections.emptyList()), table.getDbName(), table.getTableName());
+    setItem(Item.wrap(table, Collections.emptyList(), UUID.randomUUID().toString()), table.getDbName(), table.getTableName());
   }
 
   public void alterTable(Table table) throws MetaException, NoSuchObjectException {
@@ -191,7 +198,7 @@ class NessieTransaction {
       throw new MetaException("Table doesn't exist.");
     }
 
-    setItem(Item.wrap(table, oldItem.get().getPartitions()), table.getDbName(), table.getTableName());
+    setItem(Item.wrap(table, oldItem.get().getPartitions(), oldItem.get().getUuid()), table.getDbName(), table.getTableName());
   }
 
   public Handle handle() {
@@ -206,7 +213,7 @@ class NessieTransaction {
 
     if (!tableName.contains("@")) {
       return getItemForRef(defaultHash, dbName, tableName)
-          .map(i -> new TableAndPartition(i.getTable(), i.getPartitions()));
+          .map(i -> new TableAndPartition(i.getTable(), i.getPartitions(), i.getUuid()));
     }
 
     final String ref;
@@ -221,7 +228,7 @@ class NessieTransaction {
     if (ref.equalsIgnoreCase(defaultName) || ref.equalsIgnoreCase(defaultHash)) {
       // stay in transaction rather than possibly doing a newer read.
       return getItemForRef(defaultHash, dbName, tableName)
-          .map(i -> new TableAndPartition(i.getTable(), i.getPartitions()));
+          .map(i -> new TableAndPartition(i.getTable(), i.getPartitions(), i.getUuid()));
     }
 
     return getItemForRef(ref, dbName, tName).map(i -> {
@@ -229,12 +236,12 @@ class NessieTransaction {
       t.setTableName(t.getTableName() + "@" + ref);
       List<Partition> parts = i.getPartitions();
       parts.forEach(p -> p.setTableName(p.getTableName() + "@" + ref));
-      return new TableAndPartition(t, parts);
+      return new TableAndPartition(t, parts, i.getUuid());
     });
   }
 
   public void save(TableAndPartition tandp) throws MetaException {
-    setItem(Item.wrap(tandp.table, tandp.partitions), tandp.table.getDbName(), tandp.table.getTableName());
+    setItem(Item.wrap(tandp.table, tandp.partitions, tandp.getUuid()), tandp.table.getDbName(), tandp.table.getTableName());
   }
 
   private void setItem(Item item, String...keyElements) throws MetaException {
@@ -274,7 +281,7 @@ class NessieTransaction {
       newPartitions.add(p);
     }
 
-    setItem(Item.wrap(opt.get().getTable(), newPartitions));
+    setItem(Item.wrap(opt.get().getTable(), newPartitions, opt.get().getUuid()));
 
   }
 
@@ -319,15 +326,17 @@ class NessieTransaction {
   public static class TableAndPartition {
     private final Table table;
     private final List<Partition> partitions;
+    private final String uuid;
 
     public TableAndPartition(Item i) {
-      this(i.getTable(), i.getPartitions());
+      this(i.getTable(), i.getPartitions(), i.getUuid());
     }
 
-    public TableAndPartition(Table table, List<Partition> partitions) {
+    public TableAndPartition(Table table, List<Partition> partitions, String uuid) {
       super();
       this.table = table;
       this.partitions = partitions;
+      this.uuid = uuid;
     }
 
     public Table getTable() {
@@ -336,6 +345,10 @@ class NessieTransaction {
 
     public List<Partition> getPartitions() {
       return partitions;
+    }
+
+    public String getUuid() {
+      return uuid;
     }
   }
 }

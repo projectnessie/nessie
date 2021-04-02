@@ -15,6 +15,8 @@
  */
 package org.projectnessie.model;
 
+import java.util.UUID;
+
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -30,7 +32,7 @@ public abstract class IcebergTable extends Contents {
   public abstract String getMetadataLocation();
 
   public static IcebergTable of(String metadataLocation) {
-    return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).build();
+    return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).uuid(UUID.randomUUID().toString()).build();
   }
 
 }

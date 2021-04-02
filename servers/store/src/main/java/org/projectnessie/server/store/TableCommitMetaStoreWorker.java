@@ -66,7 +66,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
       ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder();
       if (value instanceof IcebergTable) {
         builder.setIcebergTable(
-            ObjectTypes.IcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
+            ObjectTypes.IcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation())
+                .setUuid(value.getUuid()));
 
       } else if (value instanceof DeltaLakeTable) {
 
@@ -75,22 +76,23 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
             .addAllCheckpointLocationHistory(((DeltaLakeTable) value).getCheckpointLocationHistory());
         String lastCheckpoint = ((DeltaLakeTable) value).getLastCheckpoint();
         if (lastCheckpoint != null) {
-          table.setLastCheckpoint(lastCheckpoint);
+          table.setLastCheckpoint(lastCheckpoint).setUuid(value.getUuid());
         }
         builder.setDeltaLakeTable(table);
 
       } else if (value instanceof HiveTable) {
         HiveTable ht = (HiveTable) value;
-        builder.setHiveTable(ObjectTypes.HiveTable.newBuilder()
+        builder.setHiveTable(ObjectTypes.HiveTable.newBuilder().setUuid(value.getUuid())
             .setTable(UnsafeByteOperations.unsafeWrap(ht.getTableDefinition())).addAllPartition(
                 ht.getPartitions().stream().map(UnsafeByteOperations::unsafeWrap).collect(Collectors.toList())));
 
       } else if (value instanceof HiveDatabase) {
-        builder.setHiveDatabase(ObjectTypes.HiveDatabase.newBuilder()
+        builder.setHiveDatabase(ObjectTypes.HiveDatabase.newBuilder().setUuid(value.getUuid())
             .setDatabase(UnsafeByteOperations.unsafeWrap(((HiveDatabase) value).getDatabaseDefinition())));
       } else if (value instanceof SqlView) {
         SqlView view = (SqlView) value;
-        builder.setSqlView(ObjectTypes.SqlView.newBuilder().setDialect(view.getDialect().name()).setSqlText(view.getSqlText()));
+        builder.setSqlView(ObjectTypes.SqlView.newBuilder().setUuid(value.getUuid()).setDialect(view.getDialect().name())
+            .setSqlText(view.getSqlText()));
       } else {
         throw new IllegalArgumentException("Unknown type" + value);
       }
@@ -108,7 +110,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
       }
       switch (contents.getObjectTypeCase()) {
         case DELTA_LAKE_TABLE:
-          Builder builder = ImmutableDeltaLakeTable.builder()
+          Builder builder = ImmutableDeltaLakeTable.builder().uuid(contents.getDeltaLakeTable().getUuid())
               .addAllMetadataLocationHistory(contents.getDeltaLakeTable().getMetadataLocationHistoryList())
               .addAllCheckpointLocationHistory(contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
           if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
@@ -117,23 +119,23 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
           return builder.build();
 
         case HIVE_DATABASE:
-          return ImmutableHiveDatabase.builder()
+          return ImmutableHiveDatabase.builder().uuid(contents.getHiveDatabase().getUuid())
               .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build();
 
         case HIVE_TABLE:
-          return ImmutableHiveTable.builder()
+          return ImmutableHiveTable.builder().uuid(contents.getHiveTable().getUuid())
               .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray)
                   .collect(Collectors.toList()))
               .tableDefinition(contents.getHiveTable().getTable().toByteArray()).build();
 
         case ICEBERG_TABLE:
           return ImmutableIcebergTable.builder().metadataLocation(contents.getIcebergTable().getMetadataLocation())
-              .build();
+              .uuid(contents.getIcebergTable().getUuid()).build();
 
         case SQL_VIEW:
           ObjectTypes.SqlView view = contents.getSqlView();
           return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
-              .build();
+              .uuid(contents.getSqlView().getUuid()).build();
 
         case OBJECTTYPE_NOT_SET:
         default:
