@@ -30,10 +30,12 @@ class TableW extends Item {
 
   private final Table table;
   private final List<Partition> partitions;
+  private final String uuid;
 
-  public TableW(Table table, List<Partition> partitions) {
+  public TableW(Table table, List<Partition> partitions, String uuid) {
     this.table = table;
     this.partitions = ImmutableList.copyOf(partitions);
+    this.uuid = uuid;
   }
 
   @Override
@@ -59,17 +61,23 @@ class TableW extends Item {
     HiveTable ht = (HiveTable) c;
     return Item.wrap(
         fromBytes(new Table(), ht.getTableDefinition()),
-        ht.getPartitions().stream().map(p -> fromBytes(new Partition(), p)).collect(Collectors.toList())
+        ht.getPartitions().stream().map(p -> fromBytes(new Partition(), p)).collect(Collectors.toList()),
+        c.getUuid()
         );
   }
 
   @Override
   public Contents toContents() {
-    return ImmutableHiveTable.builder().tableDefinition(toBytes(table))
+    return ImmutableHiveTable.builder().uuid(uuid).tableDefinition(toBytes(table))
         .addAllPartitions(getPartitions()
             .stream()
             .map(Item::toBytes)
             .collect(Collectors.toList()))
             .build();
+  }
+
+  @Override
+  public String getUuid() {
+    return uuid;
   }
 }

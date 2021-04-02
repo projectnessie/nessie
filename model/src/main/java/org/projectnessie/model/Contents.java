@@ -19,6 +19,8 @@ package org.projectnessie.model;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.annotation.Nullable;
+
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -56,6 +58,18 @@ public abstract class Contents {
   public static enum Type {
     UNKNOWN, ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
   }
+
+  /**
+   * Unique uuid for this object.
+   *
+   * <p>This uuid is unique for the entire lifetime of this Contents object and persist across renames. Two contents with the same key
+   * will have different uuids.
+   *
+   * <p>todo this is nullable to maintain backwards compatibility with the version of nessie deployed with iceberg. Remove after 0.6.0 is
+   *     finished
+   */
+  @Nullable
+  public abstract String getUuid();
 
   /**
    * Unwrap object if possible, otherwise throw.
