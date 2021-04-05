@@ -16,6 +16,8 @@
 package org.projectnessie.versioned.tiered.gc;
 
 import java.time.Clock;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -31,6 +33,8 @@ import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 
 import com.google.protobuf.ByteString;
+
+import scala.Tuple2;
 
 /**
  * Operation which identifies the referenced state of all values in a tiered version store.
@@ -87,21 +91,24 @@ public class IdentifyUnreferencedValues<T> {
     // get a bloom filter of all values that are referenced by a valid value.
     final BinaryBloomFilter validValueIds = IdProducer
         .getNextBloomFilter(spark, l3BloomFilter, ValueType.L3, store, options.getBloomFilterCapacity(), IdCarrier.L3_CONVERTER);
+    Dataset<IdProducer.IdKeyPair> keys = IdProducer.getKeys(spark, ValueType.L3, store, IdCarrier.L3_CONVERTER);
 
     // get all values.
     final Dataset<ValueFrame> values = ValueFrame.asDataset(store, spark);
+    Dataset<Tuple2<ValueFrame, IdProducer.IdKeyPair>> valuesWithKeys =
+        values.joinWith(keys, values.col("id").equalTo(keys.col("id")), "left");
 
     // for each value, determine if it is a valid value.
-    ValueCategorizer<T> categorizer = new ValueCategorizer<T>(validValueIds, maxSlopMicros);
+    ValueCategorizer categorizer = new ValueCategorizer(validValueIds, maxSlopMicros);
     //todo can we enrich this more w/o having to interpret the object? Eg related commit/commit message
-    return values.map(categorizer, Encoders.bean(CategorizedValue.class));
+    return valuesWithKeys.map(categorizer, Encoders.bean(CategorizedValue.class));
 
   }
 
   /**
    * Spark flat map function to convert a value into an iterator of AssetKeys with their reference state.
    */
-  public static class ValueCategorizer<T> implements MapFunction<ValueFrame, CategorizedValue> {
+  public static class ValueCategorizer implements MapFunction<Tuple2<ValueFrame, IdProducer.IdKeyPair>, CategorizedValue> {
 
     private static final long serialVersionUID = -4605489080345105845L;
 
@@ -120,9 +127,11 @@ public class IdentifyUnreferencedValues<T> {
     }
 
     @Override
-    public CategorizedValue call(ValueFrame r) throws Exception {
+    public CategorizedValue call(Tuple2<ValueFrame, IdProducer.IdKeyPair> pair) throws Exception {
+      ValueFrame r = pair._1;
+      List<String> key = pair._2 == null ? Collections.emptyList() : pair._2.getKey();
       boolean referenced = r.getDt() > recentValues || bloomFilter.mightContain(r.getId().getId());
-      return new CategorizedValue(referenced, ByteString.copyFrom(r.getBytes()), r.getDt());
+      return new CategorizedValue(referenced, ByteString.copyFrom(r.getBytes()), r.getDt(), key);
     }
 
   }

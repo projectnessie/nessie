@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tiered.gc;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -37,6 +38,7 @@ public class ValueFrame {
   private byte[] bytes;
   private long dt;
   private IdFrame id;
+  private List<String> key;
 
   public byte[] getBytes() {
     return bytes;
@@ -60,6 +62,14 @@ public class ValueFrame {
 
   public void setId(IdFrame id) {
     this.id = id;
+  }
+
+  public List<String> getKey() {
+    return key;
+  }
+
+  public void setKey(List<String> key) {
+    this.key = key;
   }
 
   public ValueFrame() {

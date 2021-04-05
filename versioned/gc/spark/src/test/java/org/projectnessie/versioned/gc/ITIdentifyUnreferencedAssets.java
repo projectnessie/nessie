@@ -20,6 +20,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -98,7 +99,7 @@ class ITIdentifyUnreferencedAssets {
            boolean referenced = Boolean.parseBoolean(x.getString(1));
            DummyValue value = new DummyValue(x.getString(0));
            ByteString data = ser.toBytes(value);
-           return new CategorizedValue(referenced, data, 0L);
+           return new CategorizedValue(referenced, data, 0L, Collections.singletonList("na"));
          }, Encoders.bean(CategorizedValue.class));
   }
 
