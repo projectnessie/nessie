@@ -19,6 +19,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
 import java.io.Serializable;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -137,7 +138,7 @@ public class ITTestIdentifyUnreferencedAssets {
         .timeSlopMicros(ONE_HOUR_OLD_MICROS)
         .build();
     IdentifyUnreferencedValues<DummyValue> identifyValues = new IdentifyUnreferencedValues<>(helper, new DynamoSupplier(), spark, options,
-        new SystemClock());
+        Clock.systemUTC());
     Dataset<CategorizedValue> values = identifyValues.identify();
 
     // test to make sure values are correct and correctly referenced.
