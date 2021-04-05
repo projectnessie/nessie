@@ -16,6 +16,7 @@
 package org.projectnessie.versioned.gc;
 
 import java.io.Serializable;
+import java.util.List;
 
 import com.google.protobuf.ByteString;
 
@@ -29,6 +30,7 @@ public final class CategorizedValue implements Serializable {
   private boolean referenced;
   private byte[] data;
   private long timestamp;
+  private List<String> key;
 
   public CategorizedValue() {
 
@@ -37,11 +39,12 @@ public final class CategorizedValue implements Serializable {
   /**
    * Construct asset key.
    */
-  public CategorizedValue(boolean referenced, ByteString data, long timestamp) {
+  public CategorizedValue(boolean referenced, ByteString data, long timestamp, List<String> key) {
     super();
     this.referenced = referenced;
     this.data = data.toByteArray();
     this.timestamp = timestamp;
+    this.key = key;
   }
 
   public void setReferenced(boolean referenced) {
@@ -66,5 +69,13 @@ public final class CategorizedValue implements Serializable {
 
   public void setTimestamp(long timestamp) {
     this.timestamp = timestamp;
+  }
+
+  public List<String> getKey() {
+    return key;
+  }
+
+  public void setKey(List<String> key) {
+    this.key = key;
   }
 }

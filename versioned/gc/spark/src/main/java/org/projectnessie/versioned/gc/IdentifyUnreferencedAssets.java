@@ -17,6 +17,7 @@ package org.projectnessie.versioned.gc;
 
 import java.io.Serializable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.spark.api.java.function.FilterFunction;
@@ -27,10 +28,12 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.versioned.Serializer;
 
+import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 
 import scala.Function1;
+import scala.collection.JavaConverters;
 
 /**
  * Operation which identifies unreferenced assets.
@@ -80,7 +83,7 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
     // generate list of maybe referenced assets (note that a single asset may be referenced by both referenced and non-referenced values).
     // TODO: convert this to a group by asset, date and then figure out the latest date so we can include that
     // in the written file to avoid stale -> not stale -> stale values.
-    Dataset<Row> unreferencedAssets = assets.filter("referenced = false").select("data", "timestamp", "uniqueKey")
+    Dataset<Row> unreferencedAssets = assets.filter("referenced = false").select("data", "timestamp", "uniqueKey", "key")
         .filter(new AssetFilter(referencedAssets));
 
     // map the generic spark Row back to a concrete type.
@@ -120,6 +123,7 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
     private byte[] data;
     private byte[] uniqueKey;
     private long timestamp;
+    private List<String> key;
 
     public CategorizedAssetKey() {
     }
@@ -127,12 +131,13 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
     /**
      * Construct asset key.
      */
-    public CategorizedAssetKey(boolean referenced, ByteString data, ByteString uniqueKey, long timestamp) {
+    public CategorizedAssetKey(boolean referenced, ByteString data, ByteString uniqueKey, long timestamp, List<String> key) {
       super();
       this.referenced = referenced;
       this.data = data.toByteArray();
       this.uniqueKey = uniqueKey.toByteArray();
       this.timestamp = timestamp;
+      this.key = key;
     }
 
     public void setReferenced(boolean referenced) {
@@ -166,6 +171,14 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
     public void setTimestamp(long timestamp) {
       this.timestamp = timestamp;
     }
+
+    public List<String> getKey() {
+      return key;
+    }
+
+    public void setKey(List<String> key) {
+      this.key = key;
+    }
   }
 
   /**
@@ -188,6 +201,7 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
       ui.setName(key.toReportableName().stream().collect(Collectors.joining(".")));
       ui.setAsset(asset);
       ui.setTimestamp(r.getAs("timestamp"));
+      ui.setKey(Lists.newArrayList(JavaConverters.asJavaCollection(r.getAs("key"))));
       return ui;
     }
 
@@ -202,6 +216,7 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
     private String name;
     private byte[] asset;
     private long timestamp;
+    private List<String> key;
 
     public String getName() {
       return name;
@@ -225,6 +240,14 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
 
     public void setTimestamp(long timestamp) {
       this.timestamp = timestamp;
+    }
+
+    public List<String> getKey() {
+      return key;
+    }
+
+    public void setKey(List<String> key) {
+      this.key = key;
     }
   }
 
@@ -256,7 +279,7 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
       T contents = valueWorker.fromBytes(ByteString.copyFrom(r.getData()));
       return assetKeyConverter.apply(contents)
         .map(ak -> new CategorizedAssetKey(r.isReferenced(), assetKeySerializer.toBytes(ak), ak.toUniqueKey(),
-          r.getTimestamp())).iterator();
+          r.getTimestamp(), r.getKey())).iterator();
     }
 
   }

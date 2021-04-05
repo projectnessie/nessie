@@ -40,12 +40,7 @@
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-server-store</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.iceberg</groupId>
