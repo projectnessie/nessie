@@ -33,5 +33,6 @@
   <modules>
     <module>spark</module>
     <module>iceberg</module>
+    <module>iceberg-actions</module>
   </modules>
 </project>
