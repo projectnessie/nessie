@@ -50,7 +50,10 @@ class TestVersionEquality {
 
     };
     UpdateState us = b.getUpdateState(store);
-    us.ensureAvailable(null, null, 1, true);
+    us.ensureAvailable(null, null, ImmutableTieredVersionStoreConfig.builder()
+        .p2CommitAttempts(1)
+        .waitOnCollapse(true)
+        .build());
     assertEquals(InternalL1.EMPTY_ID, us.getL1().getId());
   }
 

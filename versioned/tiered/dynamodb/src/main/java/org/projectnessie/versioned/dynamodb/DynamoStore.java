@@ -71,7 +71,7 @@ import com.google.common.collect.Sets;
 
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
-import io.opentracing.Tracer.SpanBuilder;
+import io.opentracing.noop.NoopScopeManager.NoopScope;
 import io.opentracing.util.GlobalTracer;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
@@ -224,7 +224,7 @@ public class DynamoStore implements Store {
   public void load(LoadStep loadstep) throws NotFoundException {
     try {
       for (int stepNumber = 0; ; stepNumber++) { // for each load step in the chain.
-        try (Scope scope = createSpan("load-step-" + stepNumber).startActive(true)) {
+        try (Scope scope = createScope("load-step-" + stepNumber)) {
           List<ListMultimap<String, LoadOp<?>>> stepPages = paginateLoads(loadstep, paginationSize);
 
           for (int pageNumber = 0; pageNumber < stepPages.size(); pageNumber++) {
@@ -234,9 +234,11 @@ public class DynamoStore implements Store {
             Map<String, KeysAndAttributes> loads = stepPage.keySet().stream().collect(Collectors.toMap(Function.identity(), table -> {
               List<LoadOp<?>> loadList = stepPage.get(table);
 
-              traceLogs.put(
-                  String.format("nessie.load-step.page%03d.%s", pageNum, table),
-                  loadList.stream().map(LoadOp::getId).map(Id::toString).collect(Collectors.joining(", ")));
+              if (config.enableTracing()) {
+                traceLogs.put(
+                    String.format("nessie.load-step.page%03d.%s", pageNum, table),
+                    loadList.stream().map(LoadOp::getId).map(Id::toString).collect(Collectors.joining(", ")));
+              }
 
               List<Map<String, AttributeValue>> keys = loadList.stream().map(LoadOp::getId)
                   .map(AttributeValueUtil::idValue)
@@ -599,8 +601,12 @@ public class DynamoStore implements Store {
         + "attribute with the name 'id'.", description.tableName()));
   }
 
-  private SpanBuilder createSpan(String name) {
-    Tracer tracer = GlobalTracer.get();
-    return tracer.buildSpan(name).asChildOf(tracer.activeSpan());
+  private Scope createScope(String name) {
+    if (config.enableTracing()) {
+      Tracer tracer = GlobalTracer.get();
+      return tracer.buildSpan(name).asChildOf(tracer.activeSpan()).startActive(true);
+    } else {
+      return NoopScope.INSTANCE;
+    }
   }
 }

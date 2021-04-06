@@ -17,7 +17,6 @@ package org.projectnessie.server.providers;
 
 import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.DYNAMO;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -31,6 +30,7 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
+import org.projectnessie.versioned.impl.ImmutableTieredVersionStoreConfig;
 import org.projectnessie.versioned.impl.TieredVersionStore;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.TracingStore;
@@ -62,8 +62,9 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
 
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> VersionStore<VALUE, METADATA, VALUE_TYPE>
-      newStore(StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) throws IOException {
-    return new TieredVersionStore<>(worker, newDynamoConnection(), false);
+      newStore(StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) {
+    return new TieredVersionStore<>(worker, newDynamoConnection(), ImmutableTieredVersionStoreConfig.builder()
+        .enableTracing(config.enableTracing()).build());
   }
 
   /**

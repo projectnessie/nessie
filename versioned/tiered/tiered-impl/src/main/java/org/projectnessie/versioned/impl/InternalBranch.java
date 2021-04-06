@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.ExpressionFunction;
 import org.projectnessie.versioned.impl.condition.ExpressionPath;
@@ -58,6 +59,7 @@ import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.log.Fields;
+import io.opentracing.noop.NoopSpanBuilder;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
@@ -359,11 +361,11 @@ class InternalBranch extends InternalRef {
      *
      * @param store The store to save to.
      * @param executor The executor to do any necessary clean up of the commit log.
-     * @param attempts The number of times we'll attempt to clean up the commit log.
-     * @param waitOnCollapse Whether or not the operation should wait on the final operation of collapsing the commit log succesfully
+     * @param config Config object holdingt he number of times we'll attempt to clean up the commit log and
+     *        whether or not the operation should wait on the final operation of collapsing the commit log successfully
      *        before returning/failing. If false, the final collapse will be done in a separate thread.
      */
-    CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, int attempts, boolean waitOnCollapse) {
+    CompletableFuture<InternalBranch> ensureAvailable(Store store, Executor executor, TieredVersionStoreConfig config) {
 
       save(store);
 
@@ -373,13 +375,13 @@ class InternalBranch extends InternalRef {
 
       CompletableFuture<InternalBranch> future = CompletableFuture.supplyAsync(() -> {
         try {
-          return collapseIntentionLog(this, store, initialBranch, attempts);
+          return collapseIntentionLog(this, store, initialBranch, config);
         } catch (ReferenceNotFoundException | ReferenceConflictException e) {
           throw new CompletionException(e);
         }
       }, executor);
 
-      if (!waitOnCollapse) {
+      if (!config.waitOnCollapse()) {
         return future;
       }
 
@@ -406,63 +408,32 @@ class InternalBranch extends InternalRef {
      * </ul>
      *
      * @param branch The branch that potentially has items to collapse.
-     * @param attempts Number of attempts to make before giving up on collapsing. (This is an optimistic locking scheme.)
+     * @param config Tiered-version-store configuration, the number of attempts to make before giving up on collapsing.
+     *               (This is an optimistic locking scheme.)
      * @return The updated branch object after the intention log was collapsed.
      * @throws ReferenceNotFoundException when branch does not exist.
      * @throws ReferenceConflictException If attempts are depleted and operation cannot be applied due to heavy concurrency
      */
-    private static InternalBranch collapseIntentionLog(UpdateState initialState, Store store, InternalBranch branch, int attempts)
-        throws ReferenceNotFoundException, ReferenceConflictException {
-      try (Scope outerScope = createSpan("InternalBranch.collapseIntentionLog")
+    private static InternalBranch collapseIntentionLog(UpdateState updateState, Store store, InternalBranch branch,
+        TieredVersionStoreConfig config) throws ReferenceNotFoundException, ReferenceConflictException {
+      try (Scope outerScope = createSpan(config.enableTracing(), "InternalBranch.collapseIntentionLog")
           .withTag(TAG_OPERATION, "CollapseIntentionLog")
           .withTag(TAG_BRANCH, branch.getName())
           .startActive(true)) {
         try {
-          UpdateState updateState = initialState;
-          for (int attempt = 0; attempt < attempts; attempt++) {
-            try (Scope innerScope = createSpan("Attempt-" + attempt).startActive(true)) {
-
-              // ensure that any to-be-saved items are saved. This is a noop on attempt 0 since
-              // ensureAvailable will have already done a save.
-              updateState.save(store);
+          for (int attempt = 0; attempt < config.getP2CommitAttempts(); attempt++) {
+            try (Scope innerScope = createSpan(config.enableTracing(), "Attempt-" + attempt).startActive(true)) {
 
               innerScope.span().setTag("nessie.num-saves", updateState.saves.size())
                   .setTag("nessie.num-deletes", updateState.deletes.size());
 
-              // now we need to take the current list and turn it into a list of 1 item that is saved.
-              final ExpressionPath commits = ExpressionPath.builder("commits").build();
-              final ExpressionPath last = commits.toBuilder().position(updateState.finalL1position).build();
+              Optional<InternalBranch> updated = tryCollapseIntentionLog(store, branch, updateState, attempt);
 
-              UpdateExpression update = UpdateExpression.initial();
-              ConditionExpression condition = ConditionExpression.initial();
-
-              for (Delete d : updateState.deletes) {
-                ExpressionPath path = commits.toBuilder().position(d.position).build();
-                condition = condition.and(ExpressionFunction.equals(path.toBuilder().name(ID).build(), d.id.toEntity()));
-                update = update.and(RemoveClause.of(path));
-              }
-
-              condition = condition.and(ExpressionFunction.equals(last.toBuilder().name(ID).build(),
-                  updateState.finalL1RandomId.toEntity()));
-
-              // remove extra commits field for last commit.
-              update = update
-                  .and(RemoveClause.of(last.toBuilder().name(Commit.DELTAS).build()))
-                  .and(RemoveClause.of(last.toBuilder().name(Commit.KEY_MUTATIONS).build()))
-                  .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toEntity()))
-                  .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
-
-              InternalRef.Builder<?> producer = EntityType.REF.newEntityProducer();
-              boolean updated = store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer));
-              if (updated) {
+              if (updated.isPresent()) {
                 innerScope.span().setTag("nessie.completed", true);
-                LOGGER.debug("Completed collapse update on attempt {}, L1.id={}, L1.parentId={}, position={}.",
-                    attempt, updateState.finalL1.getId(), updateState.finalL1.getParentId(), updateState.finalL1position);
-                return producer.build().getBranch();
+                return updated.get();
               }
 
-              LOGGER.debug("Failed to collapse update on attempt {}, L1.id={}, L1.parentId={}, position={}.",
-                  attempt, updateState.finalL1.getId(), updateState.finalL1.getParentId(), updateState.finalL1position);
               // something must have changed, reload the branch.
               final InternalRef ref = EntityType.REF.loadSingle(store, branch.getId());
               if (ref.getType() != Type.BRANCH) {
@@ -473,13 +444,59 @@ class InternalBranch extends InternalRef {
             }
           }
 
+          throw new ReferenceConflictException(String.format("Unable to collapse intention log after %d attempts, giving up.",
+              config.getP2CommitAttempts()));
+
+        } catch (VersionStoreException ex) {
+          throw ex;
         } catch (Exception ex) {
           Tags.ERROR.set(outerScope.span().log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(),
               Fields.ERROR_OBJECT, ex.toString())), true);
           LOGGER.debug("Exception when trying to collapse intention log.", ex);
+          Throwables.throwIfUnchecked(ex);
+          throw new RuntimeException(ex);
         }
       }
-      throw new ReferenceConflictException(String.format("Unable to collapse intention log after %d attempts, giving up.", attempts));
+    }
+
+    private static Optional<InternalBranch> tryCollapseIntentionLog(Store store, InternalBranch branch, UpdateState updateState,
+        int attempt) {
+      // ensure that any to-be-saved items are saved. This is a noop on attempt 0 since
+      // ensureAvailable will have already done a save.
+      updateState.save(store);
+
+      // now we need to take the current list and turn it into a list of 1 item that is saved.
+      final ExpressionPath commits = ExpressionPath.builder("commits").build();
+      final ExpressionPath last = commits.toBuilder().position(updateState.finalL1position).build();
+
+      UpdateExpression update = UpdateExpression.initial();
+      ConditionExpression condition = ConditionExpression.initial();
+
+      for (Delete d : updateState.deletes) {
+        ExpressionPath path = commits.toBuilder().position(d.position).build();
+        condition = condition.and(ExpressionFunction.equals(path.toBuilder().name(ID).build(), d.id.toEntity()));
+        update = update.and(RemoveClause.of(path));
+      }
+
+      condition = condition.and(ExpressionFunction.equals(last.toBuilder().name(ID).build(),
+          updateState.finalL1RandomId.toEntity()));
+
+      // remove extra commits field for last commit.
+      update = update
+          .and(RemoveClause.of(last.toBuilder().name(Commit.DELTAS).build()))
+          .and(RemoveClause.of(last.toBuilder().name(Commit.KEY_MUTATIONS).build()))
+          .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toEntity()))
+          .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
+      InternalRef.Builder<?> producer = EntityType.REF.newEntityProducer();
+      if (store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer))) {
+        LOGGER.debug("Completed collapse update on attempt {}, L1.id={}, L1.parentId={}, position={}.",
+            attempt, updateState.finalL1.getId(), updateState.finalL1.getParentId(), updateState.finalL1position);
+        return Optional.of(producer.build().getBranch());
+      }
+
+      LOGGER.debug("Failed to collapse update on attempt {}, L1.id={}, L1.parentId={}, position={}.",
+          attempt, updateState.finalL1.getId(), updateState.finalL1.getParentId(), updateState.finalL1position);
+      return Optional.empty();
     }
 
     public InternalL1 getL1() {
@@ -624,9 +641,13 @@ class InternalBranch extends InternalRef {
     return Collections.unmodifiableList(commits);
   }
 
-  private static SpanBuilder createSpan(String name) {
-    Tracer tracer = GlobalTracer.get();
-    return tracer.buildSpan(name)
-        .asChildOf(tracer.activeSpan());
+  private static SpanBuilder createSpan(boolean enableTracing, String name) {
+    if (enableTracing) {
+      Tracer tracer = GlobalTracer.get();
+      return tracer.buildSpan(name)
+          .asChildOf(tracer.activeSpan());
+    } else {
+      return NoopSpanBuilder.INSTANCE;
+    }
   }
 }

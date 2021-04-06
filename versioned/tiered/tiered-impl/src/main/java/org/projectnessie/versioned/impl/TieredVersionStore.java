@@ -98,9 +98,7 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
   private final Serializer<METADATA> metadataSerializer;
   private final Executor executor;
   private final Store store;
-  private final int commitRetryCount = 5;
-  private final int p2commitRetry = 5;
-  private final boolean waitOnCollapse;
+  private final TieredVersionStoreConfig config;
 
   private final Counter commitRetries;
   private final Counter commitFailures;
@@ -110,9 +108,9 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
    *
    * @param storeWorker The consumption layer's serialization and related utilities.
    * @param store The underlying {@link Store} implementation to use.
-   * @param waitOnCollapse Whether to block on collapsing the InternalBranch commit log before returning valid L1s.
+   * @param config Configuration of the tiered-version-store.
    */
-  public TieredVersionStore(StoreWorker<DATA, METADATA, DATA_TYPE> storeWorker, Store store, boolean waitOnCollapse) {
+  public TieredVersionStore(StoreWorker<DATA, METADATA, DATA_TYPE> storeWorker, Store store, TieredVersionStoreConfig config) {
     this.serializer = storeWorker.getValueSerializer();
     this.metadataSerializer = storeWorker.getMetadataSerializer();
     this.store = store;
@@ -120,14 +118,14 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
     // waitOnCollapse==true. It is not nice to instantiate an executor-service but never shut it
     // down, like unit tests did.
     Executor executor;
-    if (waitOnCollapse) {
+    if (config.waitOnCollapse()) {
       executor = MoreExecutors.directExecutor();
     } else {
       executor = Executors.newCachedThreadPool();
       executor = ExecutorServiceMetrics.monitor(Metrics.globalRegistry, executor, "TieredVersionStore");
     }
     this.executor = executor;
-    this.waitOnCollapse = waitOnCollapse;
+    this.config = config;
 
     MeterRegistry registry = Metrics.globalRegistry;
     commitRetries = Counter.builder("nessie.versionstore.commitretries").tag("application", "Nessie").register(registry);
@@ -297,13 +295,14 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
       boolean updated = store.update(ValueType.REF, ref.getId(),
           commitOp.getUpdateWithCommit(), Optional.of(commitOp.getTreeCondition()), Optional.of(builder));
       if (!updated) {
-        if (loop++ < commitRetryCount) {
+        if (loop++ < config.getCommitAttempts()) {
           commitRetries.increment();
           continue;
         }
         commitFailures.increment();
         throw new ReferenceConflictException(
-            String.format("Unable to complete commit due to conflicting events. Retried %d times before failing.", commitRetryCount));
+            String.format("Unable to complete commit due to conflicting events. Retried %d times before failing.",
+                config.getCommitAttempts()));
       }
 
       updatedBranch = builder.build().getBranch();
@@ -313,7 +312,7 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
     // Now we'll try to collapse the intention log. Note that this is done post official commit so we need to return
     // successfully even if this fails.
     try {
-      updatedBranch.getUpdateState(store).ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
+      updatedBranch.getUpdateState(store).ensureAvailable(store, executor, config);
     } catch (Exception ex) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.info("Failure while collapsing intention log after commit.", ex);
@@ -375,7 +374,7 @@ public class TieredVersionStore<DATA, METADATA, DATA_TYPE extends Enum<DATA_TYPE
    */
   private InternalL1 ensureValidL1(InternalBranch branch) {
     UpdateState updateState = branch.getUpdateState(store);
-    updateState.ensureAvailable(store, executor, p2commitRetry, waitOnCollapse);
+    updateState.ensureAvailable(store, executor, config);
     return updateState.getL1();
   }
 
