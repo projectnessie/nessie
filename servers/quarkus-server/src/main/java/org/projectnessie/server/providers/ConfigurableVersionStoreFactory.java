@@ -39,6 +39,7 @@ import org.projectnessie.versioned.MetricsVersionStore;
 import org.projectnessie.versioned.NamedRef;
 import org.projectnessie.versioned.ReferenceAlreadyExistsException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
+import org.projectnessie.versioned.TracingVersionStore;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 import org.slf4j.Logger;
@@ -118,6 +119,9 @@ public class ConfigurableVersionStoreFactory {
         throw new IOError(e);
       }
 
+      if (storeConfig.isTracingEnabled()) {
+        versionStore = new TracingVersionStore<>(versionStore);
+      }
       if (storeConfig.isMetricsEnabled()) {
         versionStore = new MetricsVersionStore<>(versionStore);
       }

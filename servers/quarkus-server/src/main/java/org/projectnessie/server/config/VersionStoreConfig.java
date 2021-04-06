@@ -37,6 +37,13 @@ public interface VersionStoreConfig {
   VersionStoreType getVersionStoreType();
 
   /**
+   * Whether calls against the version-store are traced with
+   * OpenTracing/OpenTelemetry (Jaeger), enabled by default.
+   */
+  @ConfigProperty(name = "trace.enable", defaultValue = "true")
+  boolean isTracingEnabled();
+
+  /**
    * Whether metrics for the version-store are enabled (enabled by default).
    */
   @ConfigProperty(name = "metrics.enable", defaultValue = "true")

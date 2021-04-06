@@ -46,6 +46,7 @@ import org.projectnessie.versioned.gc.AssetKeyConverter;
 import org.projectnessie.versioned.gc.CategorizedValue;
 import org.projectnessie.versioned.gc.GcTestUtils;
 import org.projectnessie.versioned.gc.IdentifyUnreferencedAssets;
+import org.projectnessie.versioned.impl.ImmutableTieredVersionStoreConfig;
 import org.projectnessie.versioned.impl.TieredVersionStore;
 import org.projectnessie.versioned.store.HasId;
 import org.projectnessie.versioned.store.Id;
@@ -179,7 +180,7 @@ public class ITTestIdentifyUnreferencedAssets {
     helper = new StoreW();
     store = new DtAdjustingStore(DynamoSupplier.createStore());
     store.start();
-    versionStore = new TieredVersionStore<>(helper, store, true);
+    versionStore = new TieredVersionStore<>(helper, store, ImmutableTieredVersionStoreConfig.builder().waitOnCollapse(true).build());
     versionStore.create(BranchName.of("main"), Optional.empty());
   }
 

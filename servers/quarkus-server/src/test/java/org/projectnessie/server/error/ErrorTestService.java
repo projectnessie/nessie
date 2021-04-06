@@ -38,6 +38,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.impl.ImmutableTieredVersionStoreConfig;
 import org.projectnessie.versioned.impl.TieredVersionStore;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
@@ -139,7 +140,7 @@ public class ErrorTestService {
 
     TieredVersionStore<String, String, StringSerializer.TestEnum> tvs = new TieredVersionStore<>(
         StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance()), store,
-        true);
+        ImmutableTieredVersionStoreConfig.builder().waitOnCollapse(true).build());
     tvs.getNamedRefs().forEach(ref -> {});
     return "we should not get here";
   }

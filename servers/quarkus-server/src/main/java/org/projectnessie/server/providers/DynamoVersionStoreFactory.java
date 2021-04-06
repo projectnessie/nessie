@@ -17,7 +17,6 @@ package org.projectnessie.server.providers;
 
 import static org.projectnessie.server.config.VersionStoreConfig.VersionStoreType.DYNAMO;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -31,7 +30,10 @@ import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
+import org.projectnessie.versioned.impl.ImmutableTieredVersionStoreConfig;
 import org.projectnessie.versioned.impl.TieredVersionStore;
+import org.projectnessie.versioned.store.Store;
+import org.projectnessie.versioned.store.TracingStore;
 
 import software.amazon.awssdk.regions.Region;
 
@@ -60,15 +62,16 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
 
   @Override
   public <VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> VersionStore<VALUE, METADATA, VALUE_TYPE>
-      newStore(StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) throws IOException {
-    return new TieredVersionStore<>(worker, newDynamoConnection(), false);
+      newStore(StoreWorker<VALUE, METADATA, VALUE_TYPE> worker) {
+    return new TieredVersionStore<>(worker, newDynamoConnection(), ImmutableTieredVersionStoreConfig.builder()
+        .enableTracing(config.enableTracing()).build());
   }
 
   /**
    * create a dynamo store based on config.
    */
-  private DynamoStore newDynamoConnection() {
-    DynamoStore dynamo = new DynamoStore(
+  private Store newDynamoConnection() {
+    Store store = new DynamoStore(
         DynamoStoreConfig.builder()
           .endpoint(endpoint.map(e -> {
             try {
@@ -82,7 +85,12 @@ public class DynamoVersionStoreFactory implements VersionStoreFactory {
           .tablePrefix(config.getTablePrefix())
           .enableTracing(config.enableTracing())
           .build());
-    dynamo.start();
-    return dynamo;
+
+    if (config.enableTracing()) {
+      store = new TracingStore(store);
+    }
+
+    store.start();
+    return store;
   }
 }

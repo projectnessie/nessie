@@ -58,7 +58,11 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
 
     store = spy(storeImpl);
 
-    VersionStore<String, String, StringSerializer.TestEnum> versionStoreImpl = new TieredVersionStore<>(WORKER, store, true);
+    VersionStore<String, String, StringSerializer.TestEnum> versionStoreImpl = new TieredVersionStore<>(WORKER, store,
+        ImmutableTieredVersionStoreConfig.builder()
+            .enableTracing(true)
+            .waitOnCollapse(true)
+            .build());
     versionStore = spy(versionStoreImpl);
   }
 
