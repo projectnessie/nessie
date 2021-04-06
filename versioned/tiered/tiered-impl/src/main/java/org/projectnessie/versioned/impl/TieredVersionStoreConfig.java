@@ -21,7 +21,6 @@ import java.util.Optional;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.store.Store;
 
 /**
  * Configuration object for {@link TieredVersionStore}, none of these options is meant to be
@@ -60,7 +59,7 @@ public interface TieredVersionStoreConfig {
 
   /**
    * Whether trace-scopes/spans should be emitted for commit + collapse-intention-log,
-   * should reflect the {@link Store}'s configuration.
+   * should reflect the {@code Store}'s configuration.
    * @return whether trace-scopes/spans should be emitted
    */
   @Default
