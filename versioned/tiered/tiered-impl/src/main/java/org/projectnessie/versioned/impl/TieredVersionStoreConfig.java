@@ -21,7 +21,6 @@ import java.util.Optional;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 import org.projectnessie.versioned.BranchName;
-import org.projectnessie.versioned.impl.InternalBranch.UpdateState;
 import org.projectnessie.versioned.store.Store;
 
 /**
