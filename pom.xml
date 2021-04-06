@@ -114,7 +114,7 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
-    <awssdk.version>2.16.31</awssdk.version>
+    <awssdk.version>2.16.35</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
@@ -124,7 +124,7 @@
     <guava.version>30.1-jre</guava.version>
     <hadoop.version>3.3.0</hadoop.version>
     <hamcrest.version>2.2</hamcrest.version>
-    <iceberg.version>0.11.0</iceberg.version>
+    <iceberg.version>0.11.1</iceberg.version>
     <immutables.version>2.8.9-ea-1</immutables.version>
     <jackson.version>2.12.1</jackson.version>
     <javax.version>4.0.1</javax.version>
@@ -135,7 +135,7 @@
     <jmeter.version>5.4.1</jmeter.version>
     <junit.version>5.7.1</junit.version>
     <logback.version>1.2.3</logback.version>
-    <protobuf.version>3.15.6</protobuf.version>
+    <protobuf.version>3.15.7</protobuf.version>
     <mockito.version>3.8.0</mockito.version>
     <prometheus.version>0.9.0</prometheus.version>
     <reactor.version>2020.0.5</reactor.version>
