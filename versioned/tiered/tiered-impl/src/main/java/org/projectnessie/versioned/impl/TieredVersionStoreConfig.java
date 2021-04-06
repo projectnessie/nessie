@@ -41,7 +41,7 @@ public interface TieredVersionStoreConfig {
   }
 
   /**
-   * Number of attempts for {@link UpdateState#collapseIntentionLog(UpdateState, Store, InternalBranch, TieredVersionStoreConfig)}.
+   * Number of attempts for {@code UpdateState.collapseIntentionLog(UpdateState, Store, InternalBranch, TieredVersionStoreConfig)}.
    * @return collapse-intention-log attempts
    */
   @Default
@@ -50,7 +50,7 @@ public interface TieredVersionStoreConfig {
   }
 
   /**
-   * Whether {@link UpdateState#collapseIntentionLog(UpdateState, Store, InternalBranch, TieredVersionStoreConfig)} waits for
+   * Whether {@code UpdateState.collapseIntentionLog(UpdateState, Store, InternalBranch, TieredVersionStoreConfig)} waits for
    * the intention-log-collapse to complete.
    * @return default=production-setting={@code false}
    */
