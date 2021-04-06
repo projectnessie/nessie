@@ -68,7 +68,7 @@ public class QuarkusApp extends org.projectnessie.quarkus.maven.QuarkusApp {
 
   public static AutoCloseable newApplication(Configuration configuration, Project project, Properties props) {
 
-    Configuration deploy = project.getConfigurations().create("quarkusAppDeploy");
+    Configuration deploy = project.getConfigurations().create("nessieQuarkusDeploy");
     final AppModel appModel;
 
     appModel = convert(configuration, deploy, props);
@@ -197,9 +197,8 @@ public class QuarkusApp extends org.projectnessie.quarkus.maven.QuarkusApp {
   }
 
   private static AppArtifact toDependency(Dependency dependency) {
-    AppArtifact artifact = new AppArtifact(dependency.getGroup(), dependency.getName(), null,
+    return new AppArtifact(dependency.getGroup(), dependency.getName(), null,
       "jar", dependency.getVersion());
-    return artifact;
   }
 
   private static AppDependency toDependency(ResolvedArtifact dependency) {

@@ -18,27 +18,58 @@ package org.projectnessie.quarkus.gradle;
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.tasks.testing.Test;
 
+@SuppressWarnings("Convert2Lambda") // Gradle complains when using lambdas (build-cache won't wonk)
 public class QuarkusAppPlugin implements Plugin<Project> {
+
+  static final String START_TASK_NAME = "nessie-quarkus-start";
+  static final String STOP_TASK_NAME = "nessie-quarkus-stop";
+  static final String EXTENSION_NAME = "nessieQuarkusApp";
+  static final String CONFIG_NAME = "nessieQuarkusRunner";
 
   @Override
   public void apply(Project target) {
-    QuarkusAppExtension extension = target.getExtensions().create("quarkusAppRunnerProperties", QuarkusAppExtension.class, target);
+    QuarkusAppExtension extension = target.getExtensions().create(EXTENSION_NAME, QuarkusAppExtension.class, target);
 
-    final Configuration config = target.getConfigurations().create("quarkusAppRunnerConfig")
-      .setVisible(false)
-      .setDescription("The config for the Quarkus Runner.");
+    Configuration config = target.getConfigurations().create(CONFIG_NAME).setDescription("The config for the Nessie-Quarkus Runner.");
 
-    target.getTasks().register("quarkus-start", StartTask.class, new Action<StartTask>() {
+    // Cannot use the task name "test" here, because the "test" task might not have been registered yet.
+    // This `withType(Test.class...)` construct will configure any current and future task of type `Test`.
+    target.getTasks().withType(Test.class, new Action<Test>() {
+      @SuppressWarnings("UnstableApiUsage") // omit warning about `Property`+`MapProperty`
       @Override
-      public void execute(StartTask task) {
-        task.setConfig(config);
-        task.setProps(extension.getProps().get());
+      public void execute(Test test) {
+        test.dependsOn(START_TASK_NAME);
+        test.finalizedBy(STOP_TASK_NAME);
+
+        // Add the StartTask's properties as "inputs" to the Test task, so the Test task is
+        // executed, when those properties change.
+        test.getInputs().property("nessie.quarkus.props", extension.getPropsProperty());
+        test.getInputs().property("quarkus.native.builderImage", extension.getNativeBuilderImageProperty());
+
+        test.getInputs().files(config);
+
+        // Start the Nessie-Quarkus-App only when the Test task actually runs
+        test.doFirst(new Action<Task>() {
+          @Override
+          public void execute(Task ignore) {
+            StartTask startTask = (StartTask) target.getTasks().getByName(START_TASK_NAME);
+            startTask.quarkusStart();
+          }
+        });
       }
     });
 
-    target.getTasks().register("quarkus-stop", StopTask.class);
+    target.getTasks().register(START_TASK_NAME, StartTask.class, new Action<StartTask>() {
+      @Override
+      public void execute(StartTask task) {
+        task.setConfig(config);
+      }
+    });
 
+    target.getTasks().register(STOP_TASK_NAME, StopTask.class);
   }
 }
