@@ -29,6 +29,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -53,16 +55,18 @@ public interface ContentsApi {
   @Path("{key}")
   @Operation(summary = "Get object content associated with key")
   @APIResponses({
-      @APIResponse(responseCode = "200", description = "Information for table"),
+      @APIResponse(responseCode = "200", description = "Information for table",
+        content = @Content(examples = {@ExampleObject(ref = "iceberg")})),
+      @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
       @APIResponse(responseCode = "404", description = "Table not found on ref")
   })
   Contents getContents(
       @Valid
-      @Parameter(description = "object name to search for")
+      @Parameter(description = "object name to search for", examples = {@ExampleObject(ref = "ContentsKey")})
       @PathParam("key")
           ContentsKey key,
       @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
-      @Parameter(description = "Reference to use. Defaults to default branch if not provided.")
+      @Parameter(description = "Reference to use. Defaults to default branch if not provided.", examples = {@ExampleObject(ref = "ref")})
       @QueryParam("ref")
           String ref
       ) throws NessieNotFoundException;
@@ -72,10 +76,11 @@ public interface ContentsApi {
   @Operation(summary = "Get multiple objects' content")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Retrieved successfully."),
+      @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists")})
   public MultiGetContentsResponse getMultipleContents(
       @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
-      @Parameter(description = "Reference to use. Defaults to default branch if not provided.")
+      @Parameter(description = "Reference to use. Defaults to default branch if not provided.", examples = {@ExampleObject(ref = "ref")})
       @QueryParam("ref")
           String ref,
       @Valid
@@ -93,29 +98,30 @@ public interface ContentsApi {
   @Operation(summary = "Update object content associated with key")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Contents updated successfully."),
+      @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
-      @APIResponse(responseCode = "412", description = "Update conflict")})
+      @APIResponse(responseCode = "409", description = "Update conflict")})
   public void setContents(
       @Valid
       @NotNull
-      @Parameter(description = "object name to search for")
+      @Parameter(description = "object name to search for", examples = {@ExampleObject(ref = "ContentsKey")})
       @PathParam("key")
           ContentsKey key,
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-      @Parameter(description = "Branch to change. Defaults to default branch.")
+      @Parameter(description = "Branch to change. Defaults to default branch.", examples = {@ExampleObject(ref = "ref")})
       @QueryParam("branch")
           String branch,
       @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
       @NotNull
-      @Parameter(description = "Expected hash of branch.")
+      @Parameter(description = "Expected hash of branch.", examples = {@ExampleObject(ref = "hash")})
       @QueryParam("hash")
           String hash,
-      @Parameter(description = "Commit message")
+      @Parameter(description = "Commit message", examples = {@ExampleObject(ref = "commitMessage")})
       @QueryParam("message")
           String message,
       @Valid
       @NotNull
-      @RequestBody(description = "Contents to be upserted")
+      @RequestBody(description = "Contents to be upserted", content = @Content(examples = {@ExampleObject(ref = "iceberg")}))
           Contents contents)
       throws NessieNotFoundException, NessieConflictException;
 
@@ -127,24 +133,25 @@ public interface ContentsApi {
   @Operation(summary = "Delete object content associated with key")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Deleted successfully."),
+      @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
-      @APIResponse(responseCode = "412", description = "Delete conflict"),
+      @APIResponse(responseCode = "409", description = "Delete conflict"),
       }
   )
   public void deleteContents(
       @Valid
-      @Parameter(description = "object name to search for")
+      @Parameter(description = "object name to search for", examples = {@ExampleObject(ref = "ContentsKey")})
       @PathParam("key")
           ContentsKey key,
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
-      @Parameter(description = "Branch to delete from. Defaults to default branch.")
+      @Parameter(description = "Branch to delete from. Defaults to default branch.", examples = {@ExampleObject(ref = "ref")})
       @QueryParam("branch")
           String branch,
       @Pattern(regexp = Validation.HASH_REGEX, message = Validation.HASH_MESSAGE)
-      @Parameter(description = "Expected hash of branch.")
+      @Parameter(description = "Expected hash of branch.", examples = {@ExampleObject(ref = "hash")})
       @QueryParam("hash")
           String hash,
-      @Parameter(description = "Commit message")
+      @Parameter(description = "Commit message", examples = {@ExampleObject(ref = "commitMessage")})
       @QueryParam("message")
           String message
       ) throws NessieNotFoundException, NessieConflictException;
