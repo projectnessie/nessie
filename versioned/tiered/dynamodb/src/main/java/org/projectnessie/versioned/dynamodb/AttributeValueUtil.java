@@ -251,10 +251,15 @@ public final class AttributeValueUtil {
     ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
     String payloadString = raw.l().get(0).s();
     Byte payload = null;
-    if (payloadString.charAt(0) != ZERO_BYTE) {
-      payload = Byte.parseByte(payloadString);
+    int skip = 0;
+    try {
+      payload = (payloadString.charAt(0) == ZERO_BYTE) ? null : Byte.parseByte(payloadString);
+      skip = 1;
+    } catch (NumberFormatException e) {
+      // assume old client first element is actually first element of key
+      // todo remove once format is stable
     }
-    raw.l().stream().skip(1).forEach(keyPart -> keyBuilder.addElements(keyPart.s()));
+    raw.l().stream().skip(skip).forEach(keyPart -> keyBuilder.addElements(keyPart.s()));
     return WithPayload.of(payload, keyBuilder.build());
   }
 
