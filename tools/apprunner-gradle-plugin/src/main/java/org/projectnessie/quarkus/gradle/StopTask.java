@@ -29,7 +29,8 @@ public class StopTask extends DefaultTask {
   public void stop() {
 
     if (application == null) {
-      getLogger().warn("No application found.");
+      getLogger().debug("No application found.");
+      return;
     }
 
     try {

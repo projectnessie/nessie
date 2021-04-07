@@ -15,16 +15,12 @@
  */
 package org.projectnessie.quarkus.gradle;
 
-import java.io.File;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.gradle.api.DefaultTask;
-import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.InputFiles;
@@ -32,78 +28,73 @@ import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.testing.Test;
 
 public class StartTask extends DefaultTask {
-  private Configuration dataFiles;
-  private Map<String, Object> props;
+  private Configuration config;
 
   public StartTask() {
     // intentionally empty
   }
 
   @TaskAction
-  public void start() {
+  public void noop() {
+  }
+
+  @SuppressWarnings("UnstableApiUsage") // omit warning about `Property`+`MapProperty`
+  void quarkusStart() {
     getLogger().info("Starting Quarkus application.");
 
-    final URL[] urls = getDataFiles().getFiles().stream().map(StartTask::toURL).toArray(URL[]::new);
+    QuarkusAppExtension extension = getProject().getExtensions().getByType(QuarkusAppExtension.class);
 
-    final URLClassLoader mirrorCL = new URLClassLoader(urls, this.getClass().getClassLoader());
+    // This is not doing anything with Docker or building a native image, just a quirk of Quarkus since 1.10.
+    System.setProperty("quarkus.native.builder-image", extension.getNativeBuilderImageProperty().get());
+
+    Map<String, Object> props = extension.getPropsProperty().get();
 
     Properties properties = new Properties();
     properties.putAll(props);
 
-    final AutoCloseable quarkusApp;
-    try {
-      Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
-      Method newApplicationMethod = clazz.getMethod("newApplication", Configuration.class, Project.class, Properties.class);
-      quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, dataFiles, getProject(), properties);
-    } catch (ReflectiveOperationException e) {
-      throw new RuntimeException(e);
+    // Prepare/configure logging (log level defaults to "info", can be overridden via the
+    // environment variable NESSIE_QUARKUS_LOG_LEVEL
+    if (!System.getProperties().containsKey("java.util.logging.manager")) {
+      System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+    }
+    if (!System.getProperties().containsKey("log4j2.configurationFile")) {
+      URL log4j2config = StartTask.class.getResource("/org/projectnessie/quarkus/gradle/log4j2-quarkus.xml");
+
+      System.setProperty("log4j2.configurationFile", log4j2config.toString());
     }
 
-    for (String key: props.keySet()) {
-      String value = System.getProperty(key);
-      if (value != null) {
-        ((Test) getProject().getTasks().getByName("test")).systemProperty(key, value);
-      }
-    }
+    AutoCloseable quarkusApp = QuarkusApp.newApplication(config, getProject(), properties);
+
+    // Do not put the "dynamic" properties (quarkus.http.test-port) to the `Test` task's
+    // system-properties, because those are subject to the test-task's inputs, which is used
+    // as the build-cache key. Instead, pass the dynamic properties via a CommandLineArgumentProvider.
+    // In other words: ensure that the `Test` tasks is cacheable.
+    Test testTask = (Test) getProject().getTasks().getByName("test");
+    testTask.getJvmArgumentProviders().add(() -> props.keySet().stream()
+        .filter(k -> System.getProperty(k) != null)
+        .map(k -> String.format("-D%s=%s", k, System.getProperty(k)))
+        .collect(Collectors.toList()));
 
     getLogger().info("Quarkus application started.");
-    setApplicationHandle(() -> {
-      try {
-        quarkusApp.close();
-      } finally {
-        mirrorCL.close();
-      }
-    });
+    setApplicationHandle(quarkusApp);
   }
 
   @InputFiles
-  private FileCollection getDataFiles() {
-    return dataFiles;
+  private FileCollection getConfig() {
+    return config;
   }
 
   public void setConfig(Configuration files) {
-    this.dataFiles = files;
+    this.config = files;
   }
 
   private void setApplicationHandle(AutoCloseable application) {
     // update stop task with this task's closeable
 
-    StopTask task = (StopTask) getProject().getTasks().getByName("quarkus-stop");
+    StopTask task = (StopTask) getProject().getTasks().getByName(QuarkusAppPlugin.STOP_TASK_NAME);
     if (task.getApplication() != null) {
       getLogger().warn("StopTask application is not empty!");
     }
     task.setQuarkusApplication(application);
-  }
-
-  private static URL toURL(File artifact) {
-    try {
-      return artifact.toURI().toURL();
-    } catch (MalformedURLException e) {
-      throw new IllegalArgumentException(e);
-    }
-  }
-
-  public void setProps(Map<String, Object> props) {
-    this.props = props;
   }
 }

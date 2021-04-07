@@ -15,16 +15,41 @@
  */
 package org.projectnessie.quarkus.gradle;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.gradle.api.Project;
 import org.gradle.api.provider.MapProperty;
+import org.gradle.api.provider.Property;
 
+@SuppressWarnings("UnstableApiUsage") // omit warning about `Property`+`MapProperty`
 public class QuarkusAppExtension {
   private final MapProperty<String, Object> props;
-  public QuarkusAppExtension(Project project) {
-    props = project.getObjects().mapProperty(String.class, Object.class);
+  private final Property<String> nativeBuilderImage;
+
+  private static Map<String, Object> defaultProps() {
+    Map<String, Object> map = new HashMap<>();
+    map.put("quarkus.http.test-port", 0);
+    return map;
   }
 
-  public MapProperty<String, Object> getProps() {
+  public QuarkusAppExtension(Project project) {
+    props = project.getObjects().mapProperty(String.class, Object.class).convention(defaultProps());
+
+    // This is not doing anything with Docker or building a native image, just a quirk of Quarkus since 1.10.
+    nativeBuilderImage = project.getObjects().property(String.class).convention("quay.io/quarkus/ubi-quarkus-native-image:21.0.0-java11");
+  }
+
+  public MapProperty<String, Object> getPropsProperty() {
     return props;
+  }
+
+  public Property<String> getNativeBuilderImageProperty() {
+    return nativeBuilderImage;
+  }
+
+  @SuppressWarnings("unused") // convenience method
+  public void setNativeBuilderImage(String nativeBuilderImage) {
+    this.nativeBuilderImage.set(nativeBuilderImage);
   }
 }
