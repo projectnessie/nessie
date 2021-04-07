@@ -68,6 +68,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
+import org.projectnessie.model.DremioDialect;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.Hash;
 import org.projectnessie.model.IcebergTable;
@@ -301,8 +302,7 @@ class TestRest {
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
     IcebergTable ta = IcebergTable.of("path1");
-    SqlView tb = ImmutableSqlView.builder().sqlText("select * from table")
-        .dialect(SqlView.Dialect.DREMIO).build();
+    SqlView tb = ImmutableSqlView.builder().sqlText("select * from table").dialect(DremioDialect.of()).build();
     contents.setContents(a, branch, r.getHash(), "commit 1", ta);
     contents.setContents(b, branch, r.getHash(), "commit 2", tb);
     List<EntriesResponse.Entry> entries = tree.getEntries(branch, null, null, Collections.emptyList()).getEntries();

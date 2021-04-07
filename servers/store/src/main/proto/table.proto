@@ -44,13 +44,41 @@ message HiveDatabase {
   bytes database = 1;
 }
 
+message Dialect {
+  oneof object_type {
+    DremioDialect dremio_dialect = 1;
+    HiveDialect hive_dialect = 2;
+    SparkDialect spark_dialect = 3;
+    TrinoDialect trino_dialect = 4;
+  }
+}
+
 message SqlView {
   string sql_text = 1;
-  string dialect = 2;
+  Dialect dialect = 2;
+  string context = 3;
+  string resolved_sql_text = 4;
+  bytes schema = 5;
 }
 
 message DeltaLakeTable {
   string last_checkpoint = 1;
   repeated string checkpoint_location_history = 2;
   repeated string metadata_location_history = 3;
+}
+
+message DremioDialect {
+
+}
+
+message HiveDialect {
+
+}
+
+message SparkDialect {
+
+}
+
+message TrinoDialect {
+
 }
