@@ -19,6 +19,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -95,6 +96,9 @@ abstract class BaseResource {
     if (commitMeta.getCommitter() != null) {
       throw new NessieConflictException("Cannot set the committer on the client side. It is set by the server.");
     }
+    if (commitMeta.getChangeId() != null) {
+      throw new NessieConflictException("Cannot set the change id on the client side. It is set by the server.");
+    }
     String committer = principal == null ? "" : principal.getName();
     Instant now = Instant.now();
     return commitMeta.toBuilder()
@@ -102,6 +106,7 @@ abstract class BaseResource {
         .commitTime(now)
         .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
         .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
+        .changeId(UUID.randomUUID().toString())
         .build();
   }
 }
