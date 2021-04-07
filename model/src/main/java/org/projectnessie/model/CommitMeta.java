@@ -97,6 +97,16 @@ public abstract class CommitMeta {
   @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getAuthorTime();
 
+
+  /**
+   * Unique uuid for a change. This is distinct from a hash in that it doesn't change if rebased/merged etc.
+   *
+   * <p>Primary use is to uniquely identify objects in the Nessie Database. This uuid + the {@code Contents} uuid is a unique
+   * object in the database. This value is set by the store and will be overwritten if set at commit time by the client.
+   */
+  @Nullable
+  public abstract String getChangeId();
+
   /**
    * Set of properties to help further identify this commit.
    *
