@@ -21,18 +21,26 @@ import java.util.stream.Collectors;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.DeltaLakeTable;
+import org.projectnessie.model.DremioDialect;
 import org.projectnessie.model.HiveDatabase;
+import org.projectnessie.model.HiveDialect;
 import org.projectnessie.model.HiveTable;
 import org.projectnessie.model.IcebergTable;
 import org.projectnessie.model.ImmutableCommitMeta;
 import org.projectnessie.model.ImmutableDeltaLakeTable;
 import org.projectnessie.model.ImmutableDeltaLakeTable.Builder;
+import org.projectnessie.model.ImmutableDremioDialect;
 import org.projectnessie.model.ImmutableHiveDatabase;
+import org.projectnessie.model.ImmutableHiveDialect;
 import org.projectnessie.model.ImmutableHiveTable;
 import org.projectnessie.model.ImmutableIcebergTable;
+import org.projectnessie.model.ImmutableSparkDialect;
 import org.projectnessie.model.ImmutableSqlView;
+import org.projectnessie.model.ImmutableTrinoDialect;
+import org.projectnessie.model.SparkDialect;
 import org.projectnessie.model.SqlView;
-import org.projectnessie.model.SqlView.Dialect;
+import org.projectnessie.model.Dialect;
+import org.projectnessie.model.TrinoDialect;
 import org.projectnessie.store.ObjectTypes;
 import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.SerializerWithPayload;
@@ -90,7 +98,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
             .setDatabase(UnsafeByteOperations.unsafeWrap(((HiveDatabase) value).getDatabaseDefinition())));
       } else if (value instanceof SqlView) {
         SqlView view = (SqlView) value;
-        builder.setSqlView(ObjectTypes.SqlView.newBuilder().setDialect(view.getDialect().name()).setSqlText(view.getSqlText()));
+        builder.setSqlView(ObjectTypes.SqlView.newBuilder().setDialect(convertFromDialect(view.getDialect()).build()).setSqlText(view.getSqlText()));
       } else {
         throw new IllegalArgumentException("Unknown type" + value);
       }
@@ -132,13 +140,45 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
 
         case SQL_VIEW:
           ObjectTypes.SqlView view = contents.getSqlView();
-          return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
+          return ImmutableSqlView.builder().dialect(convertToDialect(view.getDialect())).sqlText(view.getSqlText())
               .build();
 
         case OBJECTTYPE_NOT_SET:
         default:
           throw new IllegalArgumentException("Unknown type" + contents.getObjectTypeCase());
 
+      }
+    }
+
+    private ObjectTypes.Dialect.Builder convertFromDialect(Dialect value) {
+      ObjectTypes.Dialect.Builder builder = ObjectTypes.Dialect.newBuilder();
+      if (value instanceof DremioDialect) {
+        builder.setDremioDialect(ObjectTypes.DremioDialect.newBuilder().build());
+      } else if (value instanceof HiveDialect) {
+        builder.setHiveDialect(ObjectTypes.HiveDialect.newBuilder().build());
+      } else if (value instanceof SparkDialect) {
+        builder.setSparkDialect(ObjectTypes.SparkDialect.newBuilder().build());
+      } else if (value instanceof TrinoDialect) {
+        builder.setTrinoDialect(ObjectTypes.TrinoDialect.newBuilder().build());
+      } else {
+        throw new IllegalArgumentException("Unknown type" + value);
+      }
+      return builder;
+    }
+
+    private Dialect convertToDialect(ObjectTypes.Dialect dialect) {
+      switch (dialect.getObjectTypeCase()) {
+        case DREMIO_DIALECT:
+          return ImmutableDremioDialect.builder().build();
+        case HIVE_DIALECT:
+          return ImmutableHiveDialect.builder().build();
+        case SPARK_DIALECT:
+          return ImmutableSparkDialect.builder().build();
+        case TRINO_DIALECT:
+          return ImmutableTrinoDialect.builder().build();
+        case OBJECTTYPE_NOT_SET:
+        default:
+          throw new IllegalArgumentException("Unknown type" + dialect.getObjectTypeCase());
       }
     }
 

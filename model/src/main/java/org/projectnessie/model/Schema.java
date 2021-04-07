@@ -15,30 +15,18 @@
  */
 package org.projectnessie.model;
 
-import javax.annotation.Nullable;
+import java.util.List;
 
 import org.immutables.value.Value;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableSqlView.class)
-@JsonDeserialize(as = ImmutableSqlView.class)
-@JsonTypeName("VIEW")
-public abstract class SqlView extends Contents {
+@JsonSerialize(as = ImmutableSchema.class)
+@JsonDeserialize(as = ImmutableSchema.class)
+public interface Schema {
 
-  public abstract String getSqlText();
-
-  @Nullable
-  public abstract String getResolvedSqlText();
-
-  @Nullable
-  public abstract String getSqlContext();
-
-  public abstract Dialect getDialect();
-
-  public abstract Schema getSchema();
+  List<Field> getFields();
 
 }
