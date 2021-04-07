@@ -15,6 +15,7 @@
  */
 package org.projectnessie.versioned.tiered.gc;
 
+import java.time.Clock;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -71,7 +72,7 @@ public class IdentifyUnreferencedValues<T> {
       Clock clock) throws AnalysisException {
 
     //fix all times to be at the same start point. todo push up to GcOptions and remove System call
-    long now = clock.now();
+    long now = clock.millis();
     long maxAgeMicros = TimeUnit.MILLISECONDS.toMicros(now) - options.getMaxAgeMicros();
     long maxSlopMicros = TimeUnit.MILLISECONDS.toMicros(now) - options.getTimeSlopMicros();
 

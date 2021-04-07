@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -77,7 +78,6 @@ import org.projectnessie.versioned.tiered.gc.DynamoSupplier;
 import org.projectnessie.versioned.tiered.gc.GcOptions;
 import org.projectnessie.versioned.tiered.gc.IdentifyUnreferencedValues;
 import org.projectnessie.versioned.tiered.gc.ImmutableGcOptions;
-import org.projectnessie.versioned.tiered.gc.SystemClock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -245,7 +245,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
         .maxAgeMicros((System.currentTimeMillis() - commitTime) * 1000)
         .build();
     IdentifyUnreferencedValues<Contents> app = new IdentifyUnreferencedValues<>(helper, new DynamoSupplier(), spark, options,
-        new SystemClock());
+        Clock.systemUTC());
     Dataset<CategorizedValue> values = app.identify();
 
     SerializableConfiguration hadoopConfig = new SerializableConfiguration(spark.sessionState().newHadoopConf());
