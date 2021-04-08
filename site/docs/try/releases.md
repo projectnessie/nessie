@@ -1,5 +1,14 @@
 # Releases
 
+## 0.5.0 Release (April 8, 2021)
+
+* Iceberg table GC support
+* Consistency fixes under high load
+* Breaking changes to the backend to support richer commit metadata and data types
+* Performance, metrics and tracing improvements
+
+## 0.4.0 Release (March 8, 2020)
+
 ## 0.3.0 Release (December 30, 2020)
 
 * 118 commits since 0.2.1

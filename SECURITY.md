@@ -6,8 +6,8 @@ Currently supported versions are listed below. Note these are all alpha releases
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.3.0   | :white_check_mark: |
-| < 0.3.0 | :x:                |
+| 0.5.0   | :white_check_mark: |
+| < 0.5.0 | :x:                |
 
 ## Reporting a Vulnerability
 
