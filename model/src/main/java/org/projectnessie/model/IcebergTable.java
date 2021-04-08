@@ -32,7 +32,7 @@ public abstract class IcebergTable extends Contents {
   public abstract String getMetadataLocation();
 
   public static IcebergTable of(String metadataLocation) {
-    return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).uuid(UUID.randomUUID().toString()).build();
+    return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).id(UUID.randomUUID().toString()).build();
   }
 
 }

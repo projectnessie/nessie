@@ -60,16 +60,16 @@ public abstract class Contents {
   }
 
   /**
-   * Unique uuid for this object.
+   * Unique id for this object.
    *
-   * <p>This uuid is unique for the entire lifetime of this Contents object and persist across renames. Two contents with the same key
-   * will have different uuids.
+   * <p>This id is unique for the entire lifetime of this Contents object and persists across renames. Two contents with the same key
+   * will have different id.
    *
    * <p>todo this is nullable to maintain backwards compatibility with the version of nessie deployed with iceberg. Remove after 0.6.0 is
-   *     finished
+   *     finished (#1054)
    */
   @Nullable
-  public abstract String getUuid();
+  public abstract String getId();
 
   /**
    * Unwrap object if possible, otherwise throw.

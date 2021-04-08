@@ -28,33 +28,29 @@ message Contents {
     SqlView sql_view = 4;
     DeltaLakeTable delta_lake_table = 5;
   }
+  string id = 6;
 }
 
 message IcebergTable {
   string metadata_location = 1;
-  string uuid = 2;
 }
 
 message HiveTable {
   bytes table = 1;
   repeated bytes partition = 2;
-  string uuid = 3;
 }
 
 message HiveDatabase {
   bytes database = 1;
-  string uuid = 2;
 }
 
 message SqlView {
   string sql_text = 1;
   string dialect = 2;
-  string uuid = 3;
 }
 
 message DeltaLakeTable {
   string last_checkpoint = 1;
   repeated string checkpoint_location_history = 2;
   repeated string metadata_location_history = 3;
-  string uuid = 4;
 }
