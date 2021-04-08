@@ -2,8 +2,11 @@
 History
 =======
 
-0.4.1 (2021-??-??)
+0.5.0 (2021-04-08)
 ------------------
+
+* dependency updates
+* endpoint updates for object type and new commit metadata object
 
 0.4.0 (2021-03-08)
 ------------------
