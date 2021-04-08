@@ -104,7 +104,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   private def updateDeltaTable(path: Path, targetRef: String, lastCheckpoint: String = null): DeltaLakeTable = {
     val currentTable = getTable(path.getParent, targetRef)
-    val table = currentTable.map(ImmutableDeltaLakeTable.copyOf).getOrElse(ImmutableDeltaLakeTable.builder().uuid(UUID.randomUUID().toString).build())
+    val table = currentTable.map(ImmutableDeltaLakeTable.copyOf).getOrElse(ImmutableDeltaLakeTable.builder.build)
     getFileType(path) match {
       case DeltaFileType.DELTA =>
         table.withMetadataLocationHistory((path.toString :: table.getMetadataLocationHistory.asScala.toList).asJava)
