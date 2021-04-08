@@ -6,6 +6,7 @@
 * Consistency fixes under high load
 * Breaking changes to the backend to support richer commit metadata and data types
 * Performance, metrics and tracing improvements
+* Gradle plugin improvement for incremental builds
 
 ## 0.4.0 Release (March 8, 2020)
 
