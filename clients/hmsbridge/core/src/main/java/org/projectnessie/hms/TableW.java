@@ -62,13 +62,13 @@ class TableW extends Item {
     return Item.wrap(
         fromBytes(new Table(), ht.getTableDefinition()),
         ht.getPartitions().stream().map(p -> fromBytes(new Partition(), p)).collect(Collectors.toList()),
-        c.getUuid()
+        c.getId()
         );
   }
 
   @Override
   public Contents toContents() {
-    return ImmutableHiveTable.builder().uuid(uuid).tableDefinition(toBytes(table))
+    return ImmutableHiveTable.builder().id(uuid).tableDefinition(toBytes(table))
         .addAllPartitions(getPartitions()
             .stream()
             .map(Item::toBytes)

@@ -80,9 +80,7 @@ public class RestGitTest {
     assertEquals(newReference, rest().get("trees/tree/test").then()
            .statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = ImmutableIcebergTable.builder().uuid(UUID.randomUUID().toString())
-                                .metadataLocation("/the/directory/over/there")
-                                .build();
+    IcebergTable table = IcebergTable.of("/the/directory/over/there");
 
     rest()
       .body(table)

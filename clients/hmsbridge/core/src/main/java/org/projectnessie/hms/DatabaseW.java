@@ -43,14 +43,14 @@ class DatabaseW extends Item {
 
   @Override
   public HiveDatabase toContents() {
-    return ImmutableHiveDatabase.builder().databaseDefinition(toBytes(database)).uuid(uuid).build();
+    return ImmutableHiveDatabase.builder().databaseDefinition(toBytes(database)).id(uuid).build();
   }
 
   public static DatabaseW fromContents(Contents c) {
     if (!(c instanceof HiveDatabase)) {
       throw new RuntimeException("Not a Hive datbaase.");
     }
-    return new DatabaseW(fromBytes(new Database(), ((HiveDatabase)c).getDatabaseDefinition()), c.getUuid());
+    return new DatabaseW(fromBytes(new Database(), ((HiveDatabase)c).getDatabaseDefinition()), c.getId());
   }
 
   @Override
