@@ -17,7 +17,9 @@ package org.projectnessie.quarkus.maven;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -36,6 +38,11 @@ public class MojoConfigSource implements ConfigSource {
     Map<String, String> map = new TreeMap<>();
     properties.forEach((k, v) -> map.put(k.toString(), v.toString()));
     return map;
+  }
+
+  @Override
+  public Set<String> getPropertyNames() {
+    return properties.keySet().stream().map(String.class::cast).collect(Collectors.toSet());
   }
 
   @Override

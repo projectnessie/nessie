@@ -36,6 +36,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import io.jaegertracing.internal.JaegerTracer;
 import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.util.GlobalTracer;
 
 class TestNessieHttpClient {
@@ -73,7 +74,8 @@ class TestNessieHttpClient {
       NessieClient client = NessieClient.builder().withUri(server.getUri())
           .withTracing(true)
           .build();
-      try (Scope ignore = GlobalTracer.get().buildSpan("testOpenTracing").startActive(true)) {
+      Span span = GlobalTracer.get().buildSpan("testOpenTracing").start();
+      try (Scope ignore = GlobalTracer.get().activateSpan(span)) {
         client.getConfigApi().getConfig();
       }
     }
@@ -92,7 +94,8 @@ class TestNessieHttpClient {
       NessieClient client = NessieClient.builder().withUri(server.getUri())
           .withTracing(false)
           .build();
-      try (Scope ignore = GlobalTracer.get().buildSpan("testOpenTracing").startActive(true)) {
+      Span span = GlobalTracer.get().buildSpan("testOpenTracing").start();
+      try (Scope ignore = GlobalTracer.get().activateSpan(span)) {
         client.getConfigApi().getConfig();
       }
     }

@@ -56,9 +56,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.log.Fields;
+import io.opentracing.noop.NoopScopeManager.NoopScope;
 import io.opentracing.noop.NoopSpanBuilder;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
@@ -361,7 +363,7 @@ class InternalBranch extends InternalRef {
      *
      * @param store The store to save to.
      * @param executor The executor to do any necessary clean up of the commit log.
-     * @param config Config object holdingt he number of times we'll attempt to clean up the commit log and
+     * @param config Config object holding he number of times we'll attempt to clean up the commit log and
      *        whether or not the operation should wait on the final operation of collapsing the commit log successfully
      *        before returning/failing. If false, the final collapse will be done in a separate thread.
      */
@@ -416,21 +418,23 @@ class InternalBranch extends InternalRef {
      */
     private static InternalBranch collapseIntentionLog(UpdateState updateState, Store store, InternalBranch branch,
         TieredVersionStoreConfig config) throws ReferenceNotFoundException, ReferenceConflictException {
-      try (Scope outerScope = createSpan(config.enableTracing(), "InternalBranch.collapseIntentionLog")
+      Span outerSpan = createSpan(config.enableTracing(), "InternalBranch.collapseIntentionLog")
           .withTag(TAG_OPERATION, "CollapseIntentionLog")
           .withTag(TAG_BRANCH, branch.getName())
-          .startActive(true)) {
+          .start();
+      try (Scope ignore = scope(config.enableTracing(), outerSpan)) {
         try {
           for (int attempt = 0; attempt < config.getP2CommitAttempts(); attempt++) {
-            try (Scope innerScope = createSpan(config.enableTracing(), "Attempt-" + attempt).startActive(true)) {
+            Span innerSpan = createSpan(config.enableTracing(), "Attempt-" + attempt).start();
+            try (Scope ignored = scope(config.enableTracing(), innerSpan)) {
 
-              innerScope.span().setTag("nessie.num-saves", updateState.saves.size())
+              innerSpan.setTag("nessie.num-saves", updateState.saves.size())
                   .setTag("nessie.num-deletes", updateState.deletes.size());
 
               Optional<InternalBranch> updated = tryCollapseIntentionLog(store, branch, updateState, attempt);
 
               if (updated.isPresent()) {
-                innerScope.span().setTag("nessie.completed", true);
+                innerSpan.setTag("nessie.completed", true);
                 return updated.get();
               }
 
@@ -450,7 +454,7 @@ class InternalBranch extends InternalRef {
         } catch (VersionStoreException ex) {
           throw ex;
         } catch (Exception ex) {
-          Tags.ERROR.set(outerScope.span().log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(),
+          Tags.ERROR.set(outerSpan.log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(),
               Fields.ERROR_OBJECT, ex.toString())), true);
           LOGGER.debug("Exception when trying to collapse intention log.", ex);
           Throwables.throwIfUnchecked(ex);
@@ -639,6 +643,15 @@ class InternalBranch extends InternalRef {
   @VisibleForTesting
   List<Commit> getCommits() {
     return Collections.unmodifiableList(commits);
+  }
+
+  private static Scope scope(boolean enableTracing, Span span) {
+    if (enableTracing) {
+      Tracer tracer = GlobalTracer.get();
+      return tracer.activateSpan(span);
+    } else {
+      return NoopScope.INSTANCE;
+    }
   }
 
   private static SpanBuilder createSpan(boolean enableTracing, String name) {

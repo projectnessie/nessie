@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
 import com.google.common.annotations.VisibleForTesting;
 
 import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.util.GlobalTracer;
@@ -196,14 +197,19 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
         delegate::collectGarbage);
   }
 
-  private Scope createActiveScope(String name, Consumer<SpanBuilder> spanBuilder) {
+  private Span createSpan(String name, Consumer<SpanBuilder> spanBuilder) {
     Tracer tracer = GlobalTracer.get();
     String spanName = makeSpanName(name);
     SpanBuilder builder = tracer.buildSpan(spanName)
         .asChildOf(tracer.activeSpan())
         .withTag(TAG_OPERATION, name);
     spanBuilder.accept(builder);
-    return builder.startActive(true);
+    return builder.start();
+  }
+
+  private Scope activeScope(Span span) {
+    Tracer tracer = GlobalTracer.get();
+    return tracer.activateSpan(span);
   }
 
   @VisibleForTesting
@@ -212,7 +218,8 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   private <R> Stream<R> callStream(String spanName, Consumer<SpanBuilder> spanBuilder, Invoker<Stream<R>> invoker) {
-    Scope scope = createActiveScope(spanName, spanBuilder);
+    Span span = createSpan(spanName, spanBuilder);
+    Scope scope = activeScope(span);
     Stream<R> result = null;
     try {
       result = invoker.handle().onClose(scope::close);
@@ -221,7 +228,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       // IllegalArgumentException is a special kind of exception that indicates a user-error.
       throw e;
     } catch (RuntimeException e) {
-      throw traceError(scope, e);
+      throw traceError(span, e);
     } finally {
       // See below (callStreamWithOneException)
       if (result == null) {
@@ -232,7 +239,8 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
 
   private <R, E1 extends VersionStoreException> Stream<R> callStreamWithOneException(String spanName, Consumer<SpanBuilder> spanBuilder,
       InvokerWithOneException<Stream<R>, E1> invoker) throws E1 {
-    Scope scope = createActiveScope(spanName, spanBuilder);
+    Span span = createSpan(spanName, spanBuilder);
+    Scope scope = activeScope(span);
     Stream<R> result = null;
     try {
       result = invoker.handle().onClose(scope::close);
@@ -241,7 +249,7 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
       // IllegalArgumentException is a special kind of exception that indicates a user-error.
       throw e;
     } catch (RuntimeException e) {
-      throw traceError(scope, e);
+      throw traceError(span, e);
     } finally {
       // We cannot `catch (E1 e)`, so assume that the delegate threw an exception, when result==null
       // and then close the trace-scope.
@@ -252,42 +260,45 @@ public class TracingVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<VALUE_
   }
 
   private <R> R call(String spanName, Consumer<SpanBuilder> spanBuilder, Invoker<R> invoker) {
-    try (Scope scope = createActiveScope(spanName, spanBuilder)) {
+    Span span = createSpan(spanName, spanBuilder);
+    try (Scope scope = activeScope(span)) {
       try {
         return invoker.handle();
       } catch (IllegalArgumentException e) {
         // IllegalArgumentException is a special kind of exception that indicates a user-error.
         throw e;
       } catch (RuntimeException e) {
-        throw traceError(scope, e);
+        throw traceError(span, e);
       }
     }
   }
 
   private <R, E1 extends VersionStoreException> R callWithOneException(String spanName, Consumer<SpanBuilder> spanBuilder,
       InvokerWithOneException<R, E1> invoker) throws E1 {
-    try (Scope scope = createActiveScope(spanName, spanBuilder)) {
+    Span span = createSpan(spanName, spanBuilder);
+    try (Scope scope = activeScope(span)) {
       try {
         return invoker.handle();
       } catch (IllegalArgumentException e) {
         // IllegalArgumentException is a special kind of exception that indicates a user-error.
         throw e;
       } catch (RuntimeException e) {
-        throw traceError(scope, e);
+        throw traceError(span, e);
       }
     }
   }
 
   private <E1 extends VersionStoreException, E2 extends VersionStoreException> void callWithTwoExceptions(String spanName,
       Consumer<SpanBuilder> spanBuilder, InvokerWithTwoExceptions<E1, E2> invoker) throws E1, E2 {
-    try (Scope scope = createActiveScope(spanName, spanBuilder)) {
+    Span span = createSpan(spanName, spanBuilder);
+    try (Scope scope = activeScope(span)) {
       try {
         invoker.handle();
       } catch (IllegalArgumentException e) {
         // IllegalArgumentException is a special kind of exception that indicates a user-error.
         throw e;
       } catch (RuntimeException e) {
-        throw traceError(scope, e);
+        throw traceError(span, e);
       }
     }
   }

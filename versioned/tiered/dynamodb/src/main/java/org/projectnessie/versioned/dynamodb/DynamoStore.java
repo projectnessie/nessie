@@ -70,8 +70,10 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 
 import io.opentracing.Scope;
+import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopScopeManager.NoopScope;
+import io.opentracing.noop.NoopSpan;
 import io.opentracing.util.GlobalTracer;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
@@ -224,7 +226,8 @@ public class DynamoStore implements Store {
   public void load(LoadStep loadstep) throws NotFoundException {
     try {
       for (int stepNumber = 0; ; stepNumber++) { // for each load step in the chain.
-        try (Scope scope = createScope("load-step-" + stepNumber)) {
+        Span span = createSpan("load-step-" + stepNumber);
+        try (Scope scope = scope(span)) {
           List<ListMultimap<String, LoadOp<?>>> stepPages = paginateLoads(loadstep, paginationSize);
 
           for (int pageNumber = 0; pageNumber < stepPages.size(); pageNumber++) {
@@ -246,7 +249,7 @@ public class DynamoStore implements Store {
                   .collect(Collectors.toList());
               return KeysAndAttributes.builder().keys(keys).consistentRead(true).build();
             }));
-            scope.span().log(traceLogs);
+            span.log(traceLogs);
 
             BatchGetItemResponse response = client.batchGetItem(BatchGetItemRequest.builder().requestItems(loads).build());
             Map<String, List<Map<String, AttributeValue>>> responses = response.responses();
@@ -601,10 +604,19 @@ public class DynamoStore implements Store {
         + "attribute with the name 'id'.", description.tableName()));
   }
 
-  private Scope createScope(String name) {
+  private Span createSpan(String name) {
     if (config.enableTracing()) {
       Tracer tracer = GlobalTracer.get();
-      return tracer.buildSpan(name).asChildOf(tracer.activeSpan()).startActive(true);
+      return tracer.buildSpan(name).asChildOf(tracer.activeSpan()).start();
+    } else {
+      return NoopSpan.INSTANCE;
+    }
+  }
+
+  private Scope scope(Span span) {
+    if (config.enableTracing()) {
+      Tracer tracer = GlobalTracer.get();
+      return tracer.activateSpan(span);
     } else {
       return NoopScope.INSTANCE;
     }
