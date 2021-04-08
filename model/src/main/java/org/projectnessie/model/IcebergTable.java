@@ -23,29 +23,16 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-@Value.Style(visibility = Value.Style.ImplementationVisibility.PACKAGE, overshadowImplementation = true)
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableIcebergTable.class)
 @JsonDeserialize(as = ImmutableIcebergTable.class)
 @JsonTypeName("ICEBERG_TABLE")
-public interface IcebergTable extends Contents {
+public abstract class IcebergTable extends Contents {
 
-  String getMetadataLocation();
+  public abstract String getMetadataLocation();
 
-  static IcebergTable of(String metadataLocation) {
-    return new IcebergTable.Builder().metadataLocation(metadataLocation).build();
+  public static IcebergTable of(String metadataLocation) {
+    return ImmutableIcebergTable.builder().metadataLocation(metadataLocation).id(UUID.randomUUID().toString()).build();
   }
 
-  default IcebergTable with(String metadataLocation) {
-    return new IcebergTable.Builder().from(this).metadataLocation(metadataLocation).build();
-  }
-
-  @Value.Default
-  default String getId() {
-    return UUID.randomUUID().toString();
-  }
-
-  class Builder extends ImmutableIcebergTable.Builder {
-
-  }
 }

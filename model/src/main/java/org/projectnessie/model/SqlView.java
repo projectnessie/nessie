@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(as = ImmutableSqlView.class)
 @JsonDeserialize(as = ImmutableSqlView.class)
 @JsonTypeName("VIEW")
-public interface SqlView extends Contents {
+public abstract class SqlView extends Contents {
 
   public static enum Dialect {
     HIVE,
@@ -34,9 +34,9 @@ public interface SqlView extends Contents {
     PRESTO
   }
 
-  String getSqlText();
+  public abstract String getSqlText();
 
-  Dialect getDialect();
+  public abstract Dialect getDialect();
 
   // Schema getSchema();
 
