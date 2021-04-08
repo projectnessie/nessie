@@ -266,7 +266,7 @@ class TestRest {
     ContentsKey a = ContentsKey.of("a");
     ContentsKey b = ContentsKey.of("b");
     IcebergTable ta = IcebergTable.of("path1");
-    SqlView tb = ImmutableSqlView.builder().uuid(UUID.randomUUID().toString()).sqlText("select * from table")
+    SqlView tb = ImmutableSqlView.builder().id(UUID.randomUUID().toString()).sqlText("select * from table")
         .dialect(SqlView.Dialect.DREMIO).build();
     contents.setContents(a, branch, r.getHash(), "commit 1", ta);
     contents.setContents(b, branch, r.getHash(), "commit 2", tb);

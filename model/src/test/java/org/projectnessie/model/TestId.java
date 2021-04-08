@@ -15,18 +15,19 @@
  */
 package org.projectnessie.model;
 
-import org.immutables.value.Value;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+class TestId {
 
-@Value.Immutable(prehash = true)
-@JsonSerialize(as = ImmutableHiveDatabase.class)
-@JsonDeserialize(as = ImmutableHiveDatabase.class)
-@JsonTypeName("HIVE_DATABASE")
-public interface HiveDatabase extends Contents {
+  @Test
+  void testIdCantChange() {
+    IcebergTable c = IcebergTable.of("foo");
+    String id = c.getId();
 
-  byte[] getDatabaseDefinition();
+    Assertions.assertNotEquals(id, IcebergTable.of("bar").getId());
 
+    String newId = c.with("baz").getId();
+    Assertions.assertEquals(id, newId);
+  }
 }
