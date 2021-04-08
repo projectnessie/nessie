@@ -97,7 +97,6 @@ public abstract class CommitMeta {
   @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getAuthorTime();
 
-
   /**
    * Unique uuid for a change. This is distinct from a hash in that it doesn't change if rebased/merged etc.
    *
