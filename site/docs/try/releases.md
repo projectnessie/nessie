@@ -1,5 +1,21 @@
 # Releases
 
+## 0.5.0 Release (April 8, 2021)
+
+* Iceberg table GC support
+* Consistency fixes under high load
+* Breaking changes to the backend to support richer commit metadata and data types
+* Performance, metrics and tracing improvements
+* Gradle plugin improvement for incremental builds
+
+## 0.4.0 Release (March 8, 2020)
+
+* rename base package to org.projectnessie
+* NessieClient is now an interface and some easier builders
+* initial implementation of GC algorithm
+* major refactor of tiered classes for better modularity and extensibility
+* observability improvements including better DynamoDB metrics and opentracing support for the client
+
 ## 0.3.0 Release (December 30, 2020)
 
 * 118 commits since 0.2.1
