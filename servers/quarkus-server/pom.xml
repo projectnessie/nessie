@@ -181,11 +181,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-jacoco</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.projectnessie</groupId>
       <artifactId>nessie-versioned-tests</artifactId>
       <version>${project.version}</version>
@@ -196,15 +191,49 @@
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jacoco</groupId>
+      <artifactId>org.jacoco.agent</artifactId>
+      <classifier>runtime</classifier>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>instrument-ut</id>
+            <goals>
+              <goal>instrument</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>restore-ut</id>
+            <goals>
+              <goal>restore-instrumented-classes</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report-ut</id>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.reporting.outputDirectory}/jacoco-reports</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <systemPropertyVariables>
             <maven.home>${maven.home}</maven.home>
+            <jacoco-agent.destfile>${project.build.directory}/jacoco.exec</jacoco-agent.destfile>
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
             <quarkus.log.level>${test.log.level}</quarkus.log.level>
             <quarkus.log.console.level>${test.log.level}</quarkus.log.console.level>
