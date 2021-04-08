@@ -76,7 +76,7 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
     - name: Build with Maven
-      run: mvn -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true
+      run: mvn -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true -Dtest.log.level=WARN
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
@@ -139,7 +139,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Jackson Integration Tests ${{ matrix.target-library }}
-        run: mvn verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }}
+        run: mvn verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
   python:
     name: Python
     runs-on: ubuntu-latest

@@ -70,7 +70,7 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
     - name: Build with Maven
-      run: mvn -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests
+      run: mvn -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
     - name: Capture test results
       uses: actions/upload-artifact@v2
       with:
