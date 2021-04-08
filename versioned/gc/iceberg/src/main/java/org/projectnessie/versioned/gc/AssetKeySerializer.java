@@ -30,7 +30,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
  * <p>We use a specialized object mapper to persist with classname w/o annotations. Ideally this data should
  * not be persisted and only used to move around Spark. If it is the ObjectMapper needs to be configured the same way.
  */
-public class AssetKeySerializer implements Serializer<AssetKey>, Serializable {
+class AssetKeySerializer implements Serializer<AssetKey>, Serializable {
 
   private final SerializableConfiguration configuration;
 

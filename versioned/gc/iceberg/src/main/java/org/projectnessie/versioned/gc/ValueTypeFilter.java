@@ -24,11 +24,11 @@ import org.projectnessie.versioned.Serializer;
 
 import com.google.protobuf.ByteString;
 
-public class ValueTypeFilter implements FilterFunction<CategorizedValue>, Serializable {
+class ValueTypeFilter implements FilterFunction<CategorizedValue>, Serializable {
 
   private final Serializer<Contents> valueSerializer;
 
-  public ValueTypeFilter(Serializer<Contents> valueSerializer) {
+  ValueTypeFilter(Serializer<Contents> valueSerializer) {
     this.valueSerializer = valueSerializer;
   }
 
