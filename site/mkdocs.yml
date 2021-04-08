@@ -27,7 +27,7 @@ extra:
   versions:
     java: 0.5.0
     python: v0.5.0
-    iceberg: 0.11.0
+    iceberg: 0.11.1
   social:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/projectnessie
