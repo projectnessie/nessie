@@ -18,12 +18,14 @@ package org.projectnessie.model;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.annotation.Nullable;
 
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -53,7 +55,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @Type(HiveDatabase.class)
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-public interface Contents {
+public abstract class Contents {
 
   public static enum Type {
     UNKNOWN, ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;
@@ -69,7 +71,10 @@ public interface Contents {
    *     finished (#1054)
    */
   @Nullable
-  String getId();
+  @Value.Default
+  public String getId() {
+    return UUID.randomUUID().toString();
+  }
 
   /**
    * Unwrap object if possible, otherwise throw.
@@ -77,11 +82,12 @@ public interface Contents {
    * @param clazz Class we're trying to return.
    * @return The return value
    */
-  default <T> Optional<T> unwrap(Class<T> clazz) {
+  public <T> Optional<T> unwrap(Class<T> clazz) {
     Objects.requireNonNull(clazz);
     if (clazz.isAssignableFrom(getClass())) {
       return Optional.of(clazz.cast(this));
     }
     return Optional.empty();
   }
+
 }

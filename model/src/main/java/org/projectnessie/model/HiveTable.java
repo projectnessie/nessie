@@ -27,10 +27,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(as = ImmutableHiveTable.class)
 @JsonDeserialize(as = ImmutableHiveTable.class)
 @JsonTypeName("HIVE_TABLE")
-public interface HiveTable extends Contents {
+public abstract class HiveTable extends Contents {
 
-  byte[] getTableDefinition();
+  public abstract byte[] getTableDefinition();
 
-  List<byte[]> getPartitions();
+  public abstract List<byte[]> getPartitions();
 
 }
