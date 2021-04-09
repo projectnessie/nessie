@@ -27,9 +27,9 @@ import org.projectnessie.model.Branch;
 /**
  * This is not a test for the plugin itself, this is a test that is run BY the test for the plugin.
  */
-class TestTest {
+class TestSimulatingTestUsingThePlugin {
   @Test
-  void foo() throws Exception {
+  void pingNessie() throws Exception {
     String port = System.getProperty("quarkus.http.test-port");
     assertNotNull(port);
 
