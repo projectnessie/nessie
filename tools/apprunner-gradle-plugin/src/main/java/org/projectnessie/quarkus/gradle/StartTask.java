@@ -21,14 +21,10 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.gradle.api.DefaultTask;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.file.FileCollection;
-import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.testing.Test;
 
 public class StartTask extends DefaultTask {
-  private Configuration config;
 
   public StartTask() {
     // intentionally empty
@@ -63,7 +59,7 @@ public class StartTask extends DefaultTask {
       System.setProperty("log4j2.configurationFile", log4j2config.toString());
     }
 
-    AutoCloseable quarkusApp = QuarkusApp.newApplication(config, getProject(), properties);
+    AutoCloseable quarkusApp = QuarkusApp.newApplication(getProject(), properties);
 
     // Do not put the "dynamic" properties (quarkus.http.test-port) to the `Test` task's
     // system-properties, because those are subject to the test-task's inputs, which is used
@@ -77,15 +73,6 @@ public class StartTask extends DefaultTask {
 
     getLogger().info("Quarkus application started.");
     setApplicationHandle(quarkusApp);
-  }
-
-  @InputFiles
-  private FileCollection getConfig() {
-    return config;
-  }
-
-  public void setConfig(Configuration files) {
-    this.config = files;
   }
 
   private void setApplicationHandle(AutoCloseable application) {

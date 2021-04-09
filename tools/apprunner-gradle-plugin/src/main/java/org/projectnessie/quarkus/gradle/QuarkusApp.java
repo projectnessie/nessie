@@ -16,6 +16,9 @@
 package org.projectnessie.quarkus.gradle;
 
 import static io.quarkus.bootstrap.resolver.maven.DeploymentInjectingDependencyVisitor.toArtifact;
+import static org.projectnessie.quarkus.gradle.QuarkusAppPlugin.APP_CONFIG_NAME;
+import static org.projectnessie.quarkus.gradle.QuarkusAppPlugin.LAUNCH_CONFIG_NAME;
+import static org.projectnessie.quarkus.gradle.QuarkusAppPlugin.RUNTIME_CONFIG_NAME;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -29,7 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -46,6 +49,8 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 
@@ -61,17 +66,17 @@ import io.quarkus.bootstrap.util.ZipUtils;
  * Start and Stop quarkus.
  */
 public class QuarkusApp extends org.projectnessie.quarkus.maven.QuarkusApp {
+  private static final Logger LOGGER = LoggerFactory.getLogger(QuarkusApp.class);
 
   protected QuarkusApp(RunningQuarkusApplication runningApp) {
     super(runningApp);
   }
 
-  public static AutoCloseable newApplication(Configuration configuration, Project project, Properties props) {
+  public static AutoCloseable newApplication(Project project, Properties props) {
 
-    Configuration deploy = project.getConfigurations().create("nessieQuarkusDeploy");
     final AppModel appModel;
 
-    appModel = convert(configuration, deploy, props);
+    appModel = convert(project, props);
     URL[] urls = appModel.getFullDeploymentDeps().stream().map(QuarkusApp::toUrl).toArray(URL[]::new);
     ClassLoader cl = new URLClassLoader(urls, org.projectnessie.quarkus.maven.QuarkusApp.class.getClassLoader());
     try {
@@ -90,46 +95,67 @@ public class QuarkusApp extends org.projectnessie.quarkus.maven.QuarkusApp {
     }
   }
 
-  public static AppModel convert(Configuration configuration, Configuration deploy, Properties props) {
+  public static AppModel convert(Project project, Properties props) {
+
+    Configuration deploy = project.getConfigurations().create("nessieQuarkusDeploy");
 
     AppModel.Builder appBuilder = new AppModel.Builder();
 
-    final Set<AppDependency> userDeps = new HashSet<>();
-    final Set<AppDependency> deployDeps = new HashSet<>();
-    // set of dependencies requested by the user (usually the artifact that contains the quarkus app)
-    Set<AppArtifact> baseConfigs = configuration.getDependencies()
-      .stream()
-      .map(QuarkusApp::toDependency)
-      .collect(Collectors.toSet());
-    assert baseConfigs.size() == 1; // currently we only know how to support the single quarkus app artifact
-    AppArtifact appArtifact = baseConfigs.iterator().next();
+    Configuration appConfig = project.getConfigurations().getByName(APP_CONFIG_NAME);
+    Configuration runtimeConfig = project.getConfigurations().getByName(RUNTIME_CONFIG_NAME);
+    Configuration launchConfig = project.getConfigurations().getByName(LAUNCH_CONFIG_NAME);
+
+    LOGGER.debug("Resolving dependencies of configuration '{}'", appConfig.getName());
+
+    // Maintain the order of the dependencies
+    Set<AppDependency> userDeps = new LinkedHashSet<>();
+    Set<AppDependency> deployDeps = new LinkedHashSet<>();
+
+    // The only application artifact - this is for example org.projectnessie:quarkus-server
+    AppArtifact appArtifact = getAppArtifact(appConfig);
+
+    LOGGER.info("Chose '{}' as the application artifact", appArtifact);
+    LOGGER.info("Runtime '{}' dependencies:", RUNTIME_CONFIG_NAME);
+    runtimeConfig.getDependencies()
+        .stream()
+        .map(QuarkusApp::toDependency)
+        .forEach(artifact -> LOGGER.info("  {}", artifact));
+
     // resolve all dependencies of the artifacts from above.
-    configuration.getResolvedConfiguration()
+    launchConfig.getResolvedConfiguration()
       .getResolvedArtifacts()
       .stream()
       .map(QuarkusApp::toDependency)
-      .filter(x -> !appArtifact.equals(x.getArtifact())) // remove base deps, accounted for below
+      .filter(artifact -> !appArtifact.equals(artifact.getArtifact())) // remove base deps, accounted for below
       .forEach(userDeps::add);
+
+    LOGGER.debug("Configuration '{}' resolved dependencies:", launchConfig.getName());
+    userDeps.forEach(artifact -> LOGGER.debug("{}", artifact));
+
     // for each user dependency check if it has any associated deployment deps and add those to the deploy config
     userDeps.stream()
-      .map(x -> QuarkusApp.handleMetaInf(appBuilder, x))
+      .map(artifact -> QuarkusApp.handleMetaInf(appBuilder, artifact))
       .filter(Objects::nonNull)
-      .map(x -> new DefaultExternalModuleDependency(x.getGroupId(), x.getArtifactId(), x.getVersion()))
-      .forEach(x -> deploy.getDependencies().add(x));
+      .map(artifact -> new DefaultExternalModuleDependency(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion()))
+      .forEach(artifact -> deploy.getDependencies().add(artifact));
 
     // resolve the deployment deps and their dependencies
     deploy.getResolvedConfiguration().getResolvedArtifacts().stream()
       .map(QuarkusApp::toDependency).forEach(deployDeps::add);
 
+    LOGGER.debug("Resolving application artifact {}", appArtifact);
+
     // find the path of the base app artifact. We want the direct dependency only so we do a difference between all
     // files and the the files we know from indirect dependencies. The leftovers are the files we want.
     final Set<File> userDepFiles = userDeps.stream().map(x -> x.getArtifact().getPaths().getSinglePath().toFile()).collect(Collectors.toSet());
-    final Path path = configuration.getFiles()
+    final Path path = appConfig.getFiles()
       .stream()
       .filter(((Predicate<File>) userDepFiles::contains).negate())
       .map(File::toPath)
       .findFirst()
       .orElseThrow(() -> new UnsupportedOperationException(String.format("Unknown path for app artifact %s", appArtifact)));
+
+    LOGGER.info("Resolved application artifact {} to {}", appArtifact, path);
 
     appArtifact.setPath(path);
 
@@ -142,6 +168,22 @@ public class QuarkusApp extends org.projectnessie.quarkus.maven.QuarkusApp {
       .addDeploymentDeps(new ArrayList<>(deployDeps))
       .setAppArtifact(appArtifact);
     return appBuilder.build();
+  }
+
+  private static AppArtifact getAppArtifact(Configuration appConfig) {
+    Set<AppArtifact> baseConfigs = appConfig.getDependencies()
+      .stream()
+      .map(QuarkusApp::toDependency)
+      .collect(Collectors.toSet());
+    LOGGER.debug("Configuration '{}' dependencies:", appConfig.getName());
+    baseConfigs.forEach(artifact -> LOGGER.debug("  {}", artifact));
+
+    if (baseConfigs.size() != 1) {
+      throw new GradleException(String.format("Configuration '%s' must have exactly one dependency. "
+          + "Use '%s' to add runtime dependencies.", APP_CONFIG_NAME, RUNTIME_CONFIG_NAME));
+    }
+    AppArtifact appArtifact = baseConfigs.iterator().next();
+    return appArtifact;
   }
 
   /**
