@@ -1,5 +1,10 @@
 # Releases
 
+## 0.5.1 Release (April 9, 2021)
+
+* Fix Gradle plugin (non-deterministic order of dependencies causing failures)
+* Fix Web-UI
+
 ## 0.5.0 Release (April 8, 2021)
 
 * Iceberg table GC support
