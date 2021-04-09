@@ -38,7 +38,7 @@ abstract class Item {
 
   public abstract Contents toContents();
 
-  public abstract String getUuid();
+  public abstract String getId();
 
   public Table getTable() {
     throw new IllegalArgumentException("Not a table.");
@@ -52,12 +52,12 @@ abstract class Item {
     throw new IllegalArgumentException("Not a database.");
   }
 
-  static DatabaseW wrap(Database database, String uuid) {
-    return new DatabaseW(database, uuid);
+  static DatabaseW wrap(Database database, String id) {
+    return new DatabaseW(database, id);
   }
 
-  static TableW wrap(Table table, List<Partition> partitions, String uuid) {
-    return new TableW(table, partitions, uuid);
+  static TableW wrap(Table table, List<Partition> partitions, String id) {
+    return new TableW(table, partitions, id);
   }
 
   static Item fromContents(Contents c) {

@@ -155,7 +155,7 @@ class NessieTransaction {
   public void alterDatabase(Database db) throws MetaException {
     try {
       Optional<Item> oldDb = getItemForRef(defaultHash, db.getName());
-      setItem(Item.wrap(db, oldDb.orElseThrow(() -> new MetaException("Db not found")).getUuid()), db.getName());
+      setItem(Item.wrap(db, oldDb.orElseThrow(() -> new MetaException("Db not found")).getId()), db.getName());
     } catch (NoSuchObjectException e) {
       //can't happen
     }
@@ -185,7 +185,7 @@ class NessieTransaction {
     List<Partition> partitions = new ArrayList<>();
     partitions.addAll(table.get().getPartitions());
     partitions.addAll(p);
-    setItem(Item.wrap(table.get().getTable(), partitions, table.get().getUuid()));
+    setItem(Item.wrap(table.get().getTable(), partitions, table.get().getId()));
   }
 
   public void createTable(Table table) throws MetaException {
@@ -198,7 +198,7 @@ class NessieTransaction {
       throw new MetaException("Table doesn't exist.");
     }
 
-    setItem(Item.wrap(table, oldItem.get().getPartitions(), oldItem.get().getUuid()), table.getDbName(), table.getTableName());
+    setItem(Item.wrap(table, oldItem.get().getPartitions(), oldItem.get().getId()), table.getDbName(), table.getTableName());
   }
 
   public Handle handle() {
@@ -213,7 +213,7 @@ class NessieTransaction {
 
     if (!tableName.contains("@")) {
       return getItemForRef(defaultHash, dbName, tableName)
-          .map(i -> new TableAndPartition(i.getTable(), i.getPartitions(), i.getUuid()));
+          .map(i -> new TableAndPartition(i.getTable(), i.getPartitions(), i.getId()));
     }
 
     final String ref;
@@ -228,7 +228,7 @@ class NessieTransaction {
     if (ref.equalsIgnoreCase(defaultName) || ref.equalsIgnoreCase(defaultHash)) {
       // stay in transaction rather than possibly doing a newer read.
       return getItemForRef(defaultHash, dbName, tableName)
-          .map(i -> new TableAndPartition(i.getTable(), i.getPartitions(), i.getUuid()));
+          .map(i -> new TableAndPartition(i.getTable(), i.getPartitions(), i.getId()));
     }
 
     return getItemForRef(ref, dbName, tName).map(i -> {
@@ -236,12 +236,12 @@ class NessieTransaction {
       t.setTableName(t.getTableName() + "@" + ref);
       List<Partition> parts = i.getPartitions();
       parts.forEach(p -> p.setTableName(p.getTableName() + "@" + ref));
-      return new TableAndPartition(t, parts, i.getUuid());
+      return new TableAndPartition(t, parts, i.getId());
     });
   }
 
   public void save(TableAndPartition tandp) throws MetaException {
-    setItem(Item.wrap(tandp.table, tandp.partitions, tandp.getUuid()), tandp.table.getDbName(), tandp.table.getTableName());
+    setItem(Item.wrap(tandp.table, tandp.partitions, tandp.getId()), tandp.table.getDbName(), tandp.table.getTableName());
   }
 
   private void setItem(Item item, String...keyElements) throws MetaException {
@@ -281,7 +281,7 @@ class NessieTransaction {
       newPartitions.add(p);
     }
 
-    setItem(Item.wrap(opt.get().getTable(), newPartitions, opt.get().getUuid()));
+    setItem(Item.wrap(opt.get().getTable(), newPartitions, opt.get().getId()));
 
   }
 
@@ -326,17 +326,17 @@ class NessieTransaction {
   public static class TableAndPartition {
     private final Table table;
     private final List<Partition> partitions;
-    private final String uuid;
+    private final String id;
 
     public TableAndPartition(Item i) {
-      this(i.getTable(), i.getPartitions(), i.getUuid());
+      this(i.getTable(), i.getPartitions(), i.getId());
     }
 
-    public TableAndPartition(Table table, List<Partition> partitions, String uuid) {
+    public TableAndPartition(Table table, List<Partition> partitions, String id) {
       super();
       this.table = table;
       this.partitions = partitions;
-      this.uuid = uuid;
+      this.id = id;
     }
 
     public Table getTable() {
@@ -347,8 +347,8 @@ class NessieTransaction {
       return partitions;
     }
 
-    public String getUuid() {
-      return uuid;
+    public String getId() {
+      return id;
     }
   }
 }

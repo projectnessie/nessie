@@ -23,12 +23,12 @@ import org.projectnessie.model.ImmutableHiveDatabase;
 class DatabaseW extends Item {
 
   private final Database database;
-  private final String uuid;
+  private final String id;
 
-  public DatabaseW(Database database, String uuid) {
+  public DatabaseW(Database database, String id) {
     super();
     this.database = database;
-    this.uuid = uuid;
+    this.id = id;
   }
 
   @Override
@@ -43,7 +43,7 @@ class DatabaseW extends Item {
 
   @Override
   public HiveDatabase toContents() {
-    return ImmutableHiveDatabase.builder().databaseDefinition(toBytes(database)).id(uuid).build();
+    return ImmutableHiveDatabase.builder().databaseDefinition(toBytes(database)).id(id).build();
   }
 
   public static DatabaseW fromContents(Contents c) {
@@ -54,7 +54,7 @@ class DatabaseW extends Item {
   }
 
   @Override
-  public String getUuid() {
-    return uuid;
+  public String getId() {
+    return id;
   }
 }

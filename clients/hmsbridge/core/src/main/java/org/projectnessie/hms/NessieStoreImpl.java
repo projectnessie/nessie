@@ -385,7 +385,7 @@ public class NessieStoreImpl implements NessieStore {
       List<Partition> partitions = new ArrayList<>();
       partitions.addAll(table.get().getPartitions());
       partitions.addAll(parts);
-      tx().save(new TableAndPartition(table.get().getTable(), partitions, table.get().getUuid()));
+      tx().save(new TableAndPartition(table.get().getTable(), partitions, table.get().getId()));
       return true;
     }
   }
@@ -461,7 +461,7 @@ public class NessieStoreImpl implements NessieStore {
         throw new InvalidObjectException();
       }
 
-      tx().save(new TableAndPartition(tandp.get().getTable(), newPartitions, tandp.get().getUuid()));
+      tx().save(new TableAndPartition(tandp.get().getTable(), newPartitions, tandp.get().getId()));
     }
 
     return true;
@@ -481,7 +481,7 @@ public class NessieStoreImpl implements NessieStore {
         }
       }
 
-      tx().save(new TableAndPartition(tandp.getTable(), newPartitions, tandp.getUuid()));
+      tx().save(new TableAndPartition(tandp.getTable(), newPartitions, tandp.getId()));
     }
   }
 
