@@ -41,12 +41,12 @@ function CommitHeader(props: {currentRef: string}) {
   }
   return (<Card.Header>
     <span className={"float-left"}>
-      <span className="font-weight-bold">{currentLog.commiter}</span>
+      <span className="font-weight-bold">{currentLog.committer}</span>
       <span>{currentLog.message}</span>
     </span>
     <span className={"float-right"}>
       <span className="font-italic">{currentLog.hash?.slice(0,8)}</span>
-      <span className={"pl-3"}>{prettyMilliseconds(new Date().getTime() - (currentLog.commitTime ?? 0), {compact: true})}</span>
+      <span className={"pl-3"}>{prettyMilliseconds(new Date().getTime() - (currentLog.commitTime ?? new Date(0)).getTime(), {compact: true})}</span>
     </span>
   </Card.Header>)
 }
