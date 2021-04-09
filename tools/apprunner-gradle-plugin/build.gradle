@@ -15,6 +15,8 @@ def readVersion(expr) {
 }
 
 def quarkusVersion = readVersion('quarkus.version')
+def junitVersion = readVersion('junit.version')
+def jacksonVersion = readVersion('jackson.version')
 version = readVersion('project.version')
 
 allprojects {
@@ -49,12 +51,25 @@ compileJava {
   targetCompatibility = '1.8'
 }
 
+test {
+  systemProperties([
+          'quarkus-version': quarkusVersion,
+          'nessie-version': version,
+          'junit-version': junitVersion,
+          'jackson-version': jacksonVersion
+  ])
+}
+
 dependencies {
   implementation platform("io.quarkus:quarkus-bom:${quarkusVersion}")
 
   compile "io.quarkus:quarkus-bootstrap-core"
   compile "org.projectnessie:nessie-apprunner-maven-plugin:$version"
   compile "org.eclipse.microprofile.config:microprofile-config-api"
+
+  testCompile gradleTestKit()
+  testCompile("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
+  testCompile("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
 }
 
 pluginBundle {
