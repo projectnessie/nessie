@@ -81,6 +81,7 @@ jobs:
         MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        SPARK_LOCAL_IP: localhost
     - name: Push Docker images
       run: |
           echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
