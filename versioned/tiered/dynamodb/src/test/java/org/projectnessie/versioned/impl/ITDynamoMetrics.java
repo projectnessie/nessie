@@ -26,8 +26,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.dynamodb.DynamoStore;
+import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
-import org.projectnessie.versioned.impl.SampleEntities;
 import org.projectnessie.versioned.store.ValueType;
 
 import io.micrometer.core.instrument.DistributionSummary;
@@ -54,8 +54,8 @@ public class ITDynamoMetrics {
   }
 
   @BeforeEach
-  void buildStore() {
-    store = new DynamoStoreFixture().createStoreImpl();
+  void buildStore(DynamoStoreConfig dynamoStoreConfig) {
+    store = new DynamoStoreFixture(dynamoStoreConfig).createStoreImpl();
     store.start();
     random = new Random(156648623438324922L);
   }

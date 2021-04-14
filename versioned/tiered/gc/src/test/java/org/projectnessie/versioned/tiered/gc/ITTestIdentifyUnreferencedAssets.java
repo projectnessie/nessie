@@ -42,6 +42,7 @@ import org.projectnessie.versioned.Serializer;
 import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.StoreWorker;
 import org.projectnessie.versioned.StringSerializer;
+import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
 import org.projectnessie.versioned.gc.AssetKeyConverter;
 import org.projectnessie.versioned.gc.CategorizedValue;
@@ -177,8 +178,9 @@ public class ITTestIdentifyUnreferencedAssets {
   }
 
   @BeforeEach
-  void before() throws Exception {
+  void before(DynamoStoreConfig dynamoStoreConfig) throws Exception {
     helper = new StoreW();
+    DynamoSupplier.setDynamoStoreConfig(dynamoStoreConfig);
     store = new DtAdjustingStore(DynamoSupplier.createStore());
     store.start();
     versionStore = new TieredVersionStore<>(helper, store, ImmutableTieredVersionStoreConfig.builder().waitOnCollapse(true).build());

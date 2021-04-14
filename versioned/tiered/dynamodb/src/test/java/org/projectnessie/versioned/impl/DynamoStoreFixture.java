@@ -15,14 +15,8 @@
  */
 package org.projectnessie.versioned.impl;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
-import org.projectnessie.versioned.impl.AbstractTieredStoreFixture;
-
-import software.amazon.awssdk.regions.Region;
 
 /**
  * DynamoDB Store fixture.
@@ -30,19 +24,8 @@ import software.amazon.awssdk.regions.Region;
  * <p>Combine a local dynamodb server with a {@code VersionStore} instance to be used for tests.
  */
 public class DynamoStoreFixture extends AbstractTieredStoreFixture<DynamoStore, DynamoStoreConfig> {
-  public DynamoStoreFixture() {
-    super(makeConfig());
-  }
-
-  private static DynamoStoreConfig makeConfig() {
-    try {
-      return DynamoStoreConfig.builder()
-          .endpoint(new URI("http://localhost:8000"))
-          .region(Region.US_WEST_2)
-          .build();
-    } catch (URISyntaxException e) {
-      throw new AssertionError(e);
-    }
+  public DynamoStoreFixture(DynamoStoreConfig dynamoStoreConfig) {
+    super(dynamoStoreConfig);
   }
 
   @Override

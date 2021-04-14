@@ -27,6 +27,7 @@ import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.StringSerializer;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.VersionStoreException;
+import org.projectnessie.versioned.dynamodb.DynamoStoreConfig;
 import org.projectnessie.versioned.dynamodb.LocalDynamoDB;
 import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
@@ -36,8 +37,8 @@ public class ITDynamoVersionStore extends AbstractITVersionStore {
   private DynamoStoreFixture fixture;
 
   @BeforeEach
-  void setup() {
-    fixture = new DynamoStoreFixture();
+  void setup(DynamoStoreConfig dynamoStoreConfig) {
+    fixture = new DynamoStoreFixture(dynamoStoreConfig);
   }
 
   @AfterEach
