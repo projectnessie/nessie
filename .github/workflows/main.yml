@@ -25,6 +25,8 @@ jobs:
       with:
         version: '8'
         targets: 'JDK8_HOME'
+    - name: Update /etc/hosts
+      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Set up Maven toolchains.xml
       run: |
           cat << 'EOT' > ${HOME}/.m2/toolchains.xml
