@@ -63,7 +63,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
   private static class TableValueSerializer implements SerializerWithPayload<Contents, Contents.Type> {
     @Override
     public ByteString toBytes(Contents value) {
-      ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder().setId(value.getId());
+      ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder().setId(value.getId()).setPermanentId(value.getPermanentId());
       if (value instanceof IcebergTable) {
         builder.setIcebergTable(
             ObjectTypes.IcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
@@ -109,7 +109,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
       }
       switch (contents.getObjectTypeCase()) {
         case DELTA_LAKE_TABLE:
-          Builder builder = ImmutableDeltaLakeTable.builder().id(contents.getId())
+          Builder builder = ImmutableDeltaLakeTable.builder().id(contents.getId()).permanentId(contents.getPermanentId())
               .addAllMetadataLocationHistory(contents.getDeltaLakeTable().getMetadataLocationHistoryList())
               .addAllCheckpointLocationHistory(contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
           if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
@@ -118,23 +118,23 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
           return builder.build();
 
         case HIVE_DATABASE:
-          return ImmutableHiveDatabase.builder().id(contents.getId())
+          return ImmutableHiveDatabase.builder().id(contents.getId()).permanentId(contents.getPermanentId())
               .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build();
 
         case HIVE_TABLE:
-          return ImmutableHiveTable.builder().id(contents.getId())
+          return ImmutableHiveTable.builder().id(contents.getId()).permanentId(contents.getPermanentId())
               .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray)
                   .collect(Collectors.toList()))
               .tableDefinition(contents.getHiveTable().getTable().toByteArray()).build();
 
         case ICEBERG_TABLE:
           return ImmutableIcebergTable.builder().metadataLocation(contents.getIcebergTable().getMetadataLocation())
-              .id(contents.getId()).build();
+              .id(contents.getId()).permanentId(contents.getPermanentId()).build();
 
         case SQL_VIEW:
           ObjectTypes.SqlView view = contents.getSqlView();
           return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
-              .id(contents.getId()).build();
+              .id(contents.getId()).permanentId(contents.getPermanentId()).build();
 
         case OBJECTTYPE_NOT_SET:
         default:

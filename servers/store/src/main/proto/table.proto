@@ -29,6 +29,7 @@ message Contents {
     DeltaLakeTable delta_lake_table = 5;
   }
   string id = 6;
+  string permanent_id = 7;
 }
 
 message IcebergTable {

@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -29,6 +30,7 @@ import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.Operation;
+import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.Ref;
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
@@ -76,12 +78,13 @@ abstract class BaseResource {
 
   protected Hash doOps(String branch, String hash, CommitMeta commitMeta, List<Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
+    String permanentId = UUID.randomUUID().toString();
     try {
       return store.commit(
           BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
           Optional.ofNullable(hash).map(Hash::of),
-          meta(principal, commitMeta),
-          operations
+          meta(principal, commitMeta, permanentId),
+          operations.stream().map(op -> addPermanentId(op, permanentId)).collect(Collectors.toList())
       );
     } catch (IllegalArgumentException e) {
       throw new NessieNotFoundException("Invalid hash provided. " + e.getMessage(), e);
@@ -92,11 +95,22 @@ abstract class BaseResource {
     }
   }
 
-  private static CommitMeta meta(Principal principal, CommitMeta commitMeta) throws NessieConflictException {
+  private Operation<Contents> addPermanentId(Operation<Contents> operation, String permanentId) {
+    if (operation instanceof Put) {
+      return Put.of(operation.getKey(), addPermanentId(((Put<Contents>) operation).getValue(), permanentId));
+    }
+    return operation;
+  }
+
+  private Contents addPermanentId(Contents contents, String permanentId) {
+    return contents.withPermanentId(permanentId);
+  }
+
+  private static CommitMeta meta(Principal principal, CommitMeta commitMeta, String permanentId) throws NessieConflictException {
     if (commitMeta.getCommitter() != null) {
       throw new NessieConflictException("Cannot set the committer on the client side. It is set by the server.");
     }
-    if (commitMeta.getChangeId() != null) {
+    if (commitMeta.getPermanentId() != null) {
       throw new NessieConflictException("Cannot set the change id on the client side. It is set by the server.");
     }
     String committer = principal == null ? "" : principal.getName();
@@ -106,7 +120,7 @@ abstract class BaseResource {
         .commitTime(now)
         .author(commitMeta.getAuthor() == null ? committer : commitMeta.getAuthor())
         .authorTime(commitMeta.getAuthorTime() == null ? now : commitMeta.getAuthorTime())
-        .changeId(UUID.randomUUID().toString())
+        .permanentId(permanentId)
         .build();
   }
 }

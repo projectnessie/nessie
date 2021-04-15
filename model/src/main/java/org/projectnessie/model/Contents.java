@@ -77,6 +77,17 @@ public abstract class Contents {
   }
 
   /**
+   * Unique change id for this object.
+   *
+   * <p>This id is uniquely refers to a specific commit. It is an id generated at commit time and is unique across all objects in that
+   * commit. It has nothing to do with the actual commit hash and is only used to find a unique object in the Nessie history.
+   */
+  @Nullable
+  public abstract String getPermanentId();
+
+  public abstract Contents withPermanentId(String permanentId);
+
+  /**
    * Unwrap object if possible, otherwise throw.
    * @param <T> Type to wrap to.
    * @param clazz Class we're trying to return.
