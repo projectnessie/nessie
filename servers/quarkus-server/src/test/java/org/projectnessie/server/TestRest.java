@@ -287,10 +287,14 @@ class TestRest {
     IcebergTable tb = IcebergTable.of("path2");
     contents.setContents(a, branch, r.getHash(), "commit 1", ta);
     contents.setContents(b, branch, r.getHash(), "commit 2", tb);
-    List<ContentsWithKey> keys =
-        contents.getMultipleContents("foo", MultiGetContentsRequest.of(a, b, ContentsKey.of("noexist"))).getContents();
-    List<ContentsWithKey> expected = Arrays.asList(ContentsWithKey.of(a, ta), ContentsWithKey.of(b,  tb));
-    assertThat(keys, Matchers.containsInAnyOrder(expected.toArray()));
+    Map<ContentsKey, Contents> keys =
+        contents.getMultipleContents("foo", MultiGetContentsRequest.of(a, b, ContentsKey.of("noexist"))).getContents()
+          .stream().collect(Collectors.toMap(ContentsWithKey::getKey, ContentsWithKey::getContents));
+    List<ContentsKey> expected = Arrays.asList(a, b);
+    assertThat(keys.keySet(), Matchers.containsInAnyOrder(expected.toArray()));
+    RestGitTest.assertEquals(ta, keys.get(a));
+    RestGitTest.assertEquals(tb, keys.get(b));
+
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }
 
@@ -331,8 +335,9 @@ class TestRest {
     ContentsKey k = ContentsKey.of("a.b","c.d");
     IcebergTable ta = IcebergTable.of("path1");
     contents.setContents(k, branch, r.getHash(), "commit 1", ta);
-    assertEquals(ContentsWithKey.of(k, ta), contents.getMultipleContents(branch, MultiGetContentsRequest.of(k)).getContents().get(0));
-    assertEquals(ta, contents.getContents(k, branch));
+    assertEqualsContentsKey(ContentsWithKey.of(k, ta),
+        contents.getMultipleContents(branch, MultiGetContentsRequest.of(k)).getContents().get(0));
+    RestGitTest.assertEquals(ta, contents.getContents(k, branch));
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }
 
@@ -545,5 +550,10 @@ class TestRest {
 
       throw targetException;
     }
+  }
+
+  private static void assertEqualsContentsKey(ContentsWithKey expected, ContentsWithKey actual) {
+    assertEquals(expected.getKey(), actual.getKey());
+    RestGitTest.assertEquals(expected.getContents(), actual.getContents());
   }
 }

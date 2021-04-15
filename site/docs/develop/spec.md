@@ -26,6 +26,19 @@ There are several expectations on this field:
 There is no API to look up an object by `id` and the intention of an `id` is not to serve in that capacity. An example usage
 of the `id` field might be storing auxiliary data on an object in a local cache and using `id` to look up that auxiliary data.
 
+All contents object must have a `permanentId` field. This field is unique to the object, however this field is updated on every commit.
+By convention it is a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) though this is not enforced by
+the Specification. There are several expectations on this field:
+
+1. `permanentId`  will always be updated at commit time.
+1. The `permanentId` will not be updated during any transplant or merge operations.
+1. All objects in the same original commit will have the same `permanentId`
+1. This has **nothing** to do with the commit hash.
+
+There is no API to look up an object by `permanentId` and the intention of an `permanentId` is not to serve in that capacity.
+An example usage of the `permanentId` field might be storing auxiliary data on an object in a local cache and using
+`permanentId` to look up that auxiliary data.
+
 ### Iceberg Table
 
 An Iceberg table object is exceedingly simple. The Iceberg table object only stores the path to the metadata JSON document that

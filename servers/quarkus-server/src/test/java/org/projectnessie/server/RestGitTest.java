@@ -18,7 +18,6 @@ package org.projectnessie.server;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,14 +67,14 @@ public class RestGitTest {
                  .statusCode(200)
                  .extract()
                  .as(Reference.class);
-    assertEquals("mainx", reference.getName());
+    Assertions.assertEquals("mainx", reference.getName());
 
     Branch newReference = ImmutableBranch.builder()
         .hash(reference.getHash())
         .name("test")
         .build();
     rest().queryParam("expectedHash", reference.getHash()).body(Branch.of("test", null)).post("trees/tree").then().statusCode(200);
-    assertEquals(newReference, rest().get("trees/tree/test").then()
+    Assertions.assertEquals(newReference, rest().get("trees/tree/test").then()
            .statusCode(200).extract().as(Branch.class));
 
     IcebergTable table = IcebergTable.of("/the/directory/over/there");
@@ -111,7 +110,7 @@ public class RestGitTest {
     Assertions.assertNotEquals(branch.getHash(), commitResponse.getHash());
 
     Response res = rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
-    Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
+    assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
     table = ImmutableIcebergTable.builder().from(table)
         .metadataLocation("/the/directory/over/there/has/been/moved/again")
@@ -124,7 +123,7 @@ public class RestGitTest {
     Contents returned = rest()
         .queryParam("ref", "test")
         .get("contents/xxx.test").then().statusCode(200).extract().as(Contents.class);
-    Assertions.assertEquals(table, returned);
+    assertEquals(table, returned);
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
     rest().body(Tag.of("tagtest", b3.getHash())).post("trees/tree").then().statusCode(200);
@@ -192,4 +191,14 @@ public class RestGitTest {
     Assertions.assertNotEquals(b3.getHash(), newHash);
   }
 
+  static void assertEquals(Contents expected, Contents actual) {
+    if (expected instanceof IcebergTable && actual instanceof IcebergTable) {
+      Assertions.assertEquals(expected.getId(), actual.getId());
+      Assertions.assertEquals(((IcebergTable) expected).getMetadataLocation(), ((IcebergTable) actual).getMetadataLocation());
+      Assertions.assertNotEquals(expected.getPermanentId(), actual.getPermanentId());
+    } else {
+      throw new AssertionError(String.format("This equality check only work if both expected and actual are IcebergTables"
+        + ". In this case we got %s and %s", expected, actual));
+    }
+  }
 }
