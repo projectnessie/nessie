@@ -281,6 +281,14 @@
       </build>
     </profile>
     <profile>
+      <!-- Use the "docker" profile to just build the Docker container image when the native image's been built -->
+      <id>docker</id>
+      <properties>
+        <quarkus.container-image.build>true</quarkus.container-image.build>
+      </properties>
+    </profile>
+    <profile>
+      <!-- Profile "release" is rather exclusively used by CI -->
       <id>release</id>
       <properties>
         <quarkus.container-image.build>true</quarkus.container-image.build>
