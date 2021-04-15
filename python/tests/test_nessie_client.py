@@ -20,12 +20,13 @@ def test_client_interface_e2e() -> None:
     main_commit = references[0].hash_
     with pytest.raises(NessieConflictException):
         client.create_branch("main")
-    client.create_branch("test", main_commit)
+    created_reference = client.create_branch("test", main_commit)
     references = client.list_references()
     assert len(references) == 2
     assert next(i for i in references if i.name == "main") == Branch("main", main_commit)
     assert next(i for i in references if i.name == "test") == Branch("test", main_commit)
     reference = client.get_reference("test")
+    assert created_reference == reference
     tables = client.list_keys(reference.name)
     assert isinstance(tables, Entries)
     assert len(tables.entries) == 0
