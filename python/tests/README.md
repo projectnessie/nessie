@@ -7,8 +7,8 @@ If you add more tests, change tests or the Nessie server, especially the REST AP
 can be run against a live Nessie engine by running `pytest --record-mode=rewrite tests/` and adding
 the newly generated test data to git.
 
-To run the Nessie server to record new cassettes, it is sufficient to run `./mvnw clean install` locally
-and then run start Nessie via `java -jar servers/quarkus-server/target/quarkus-app/quarkus-run.jar`.
+To run the Nessie server to record new cassettes, it is sufficient to run
+`./mvnw quarkus:dev -am -pl :nessie-quarkus` locally.
 
 Run the quarkus server with `-Dnessie.server.send-stacktrace-to-client=false` (this is the default) to reduce
 the size of the vcr cassettes and create less noise in updates related to REST api changes.
