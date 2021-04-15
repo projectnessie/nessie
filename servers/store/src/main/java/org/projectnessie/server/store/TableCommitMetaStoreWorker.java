@@ -63,7 +63,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
   private static class TableValueSerializer implements SerializerWithPayload<Contents, Contents.Type> {
     @Override
     public ByteString toBytes(Contents value) {
-      ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder();
+      ObjectTypes.Contents.Builder builder = ObjectTypes.Contents.newBuilder().setId(value.getId());
       if (value instanceof IcebergTable) {
         builder.setIcebergTable(
             ObjectTypes.IcebergTable.newBuilder().setMetadataLocation(((IcebergTable) value).getMetadataLocation()));
@@ -90,7 +90,8 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
             .setDatabase(UnsafeByteOperations.unsafeWrap(((HiveDatabase) value).getDatabaseDefinition())));
       } else if (value instanceof SqlView) {
         SqlView view = (SqlView) value;
-        builder.setSqlView(ObjectTypes.SqlView.newBuilder().setDialect(view.getDialect().name()).setSqlText(view.getSqlText()));
+        builder.setSqlView(ObjectTypes.SqlView.newBuilder().setDialect(view.getDialect().name())
+            .setSqlText(view.getSqlText()));
       } else {
         throw new IllegalArgumentException("Unknown type" + value);
       }
@@ -108,7 +109,7 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
       }
       switch (contents.getObjectTypeCase()) {
         case DELTA_LAKE_TABLE:
-          Builder builder = ImmutableDeltaLakeTable.builder()
+          Builder builder = ImmutableDeltaLakeTable.builder().id(contents.getId())
               .addAllMetadataLocationHistory(contents.getDeltaLakeTable().getMetadataLocationHistoryList())
               .addAllCheckpointLocationHistory(contents.getDeltaLakeTable().getCheckpointLocationHistoryList());
           if (contents.getDeltaLakeTable().getLastCheckpoint() != null) {
@@ -117,23 +118,23 @@ public class TableCommitMetaStoreWorker implements StoreWorker<Contents, CommitM
           return builder.build();
 
         case HIVE_DATABASE:
-          return ImmutableHiveDatabase.builder()
+          return ImmutableHiveDatabase.builder().id(contents.getId())
               .databaseDefinition(contents.getHiveDatabase().getDatabase().toByteArray()).build();
 
         case HIVE_TABLE:
-          return ImmutableHiveTable.builder()
+          return ImmutableHiveTable.builder().id(contents.getId())
               .addAllPartitions(contents.getHiveTable().getPartitionList().stream().map(ByteString::toByteArray)
                   .collect(Collectors.toList()))
               .tableDefinition(contents.getHiveTable().getTable().toByteArray()).build();
 
         case ICEBERG_TABLE:
           return ImmutableIcebergTable.builder().metadataLocation(contents.getIcebergTable().getMetadataLocation())
-              .build();
+              .id(contents.getId()).build();
 
         case SQL_VIEW:
           ObjectTypes.SqlView view = contents.getSqlView();
           return ImmutableSqlView.builder().dialect(Dialect.valueOf(view.getDialect())).sqlText(view.getSqlText())
-              .build();
+              .id(contents.getId()).build();
 
         case OBJECTTYPE_NOT_SET:
         default:

@@ -111,12 +111,12 @@ def test_log() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
     )
     result = _run(runner, ["--json", "contents", "foo.bar"])
     tables = ContentsSchema().loads(result.output, many=True)
     assert len(tables) == 1
-    assert tables[0] == IcebergTable("/a/b/c")
+    assert tables[0] == IcebergTable("uuid", "/a/b/c")
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 1
@@ -200,7 +200,7 @@ def test_assign() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
     )
     _run(runner, ["branch", "main", "dev", "--force"])
     result = _run(runner, ["--json", "branch"])
@@ -244,7 +244,7 @@ def test_merge() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
     )
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l", "main"]).output, many=True)
     main_hash = next(i.hash_ for i in refs if i.name == "main")
@@ -281,7 +281,7 @@ def test_transplant() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
     )
     _run(
         runner,
@@ -296,7 +296,7 @@ def test_transplant() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
     )
     _run(
         runner,
@@ -311,7 +311,7 @@ def test_transplant() -> None:
             "-c",
             empty_hash,
         ],
-        input=ContentsSchema().dumps(IcebergTable("/a/b/c")),
+        input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
     )
     refs = ReferenceSchema().loads(_run(runner, ["--json", "branch", "-l"]).output, many=True)
     main_hash = next(i.hash_ for i in refs if i.name == "main")

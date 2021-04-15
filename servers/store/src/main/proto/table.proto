@@ -28,6 +28,7 @@ message Contents {
     SqlView sql_view = 4;
     DeltaLakeTable delta_lake_table = 5;
   }
+  string id = 6;
 }
 
 message IcebergTable {

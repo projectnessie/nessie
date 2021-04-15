@@ -14,6 +14,8 @@ from marshmallow_oneofschema import OneOfSchema
 class Contents:
     """Dataclass for Nessie Contents."""
 
+    id: str = desert.ib(fields.Str())
+
     def pretty_print(self: "Contents") -> str:
         """Print out for cli."""
         pass

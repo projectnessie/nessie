@@ -78,9 +78,7 @@ public class RestGitTest {
     assertEquals(newReference, rest().get("trees/tree/test").then()
            .statusCode(200).extract().as(Branch.class));
 
-    IcebergTable table = ImmutableIcebergTable.builder()
-                                .metadataLocation("/the/directory/over/there")
-                                .build();
+    IcebergTable table = IcebergTable.of("/the/directory/over/there");
 
     rest()
       .body(table)
@@ -92,14 +90,13 @@ public class RestGitTest {
     for (int i = 0; i < 10; i++) {
       updates[i] =
           ImmutablePut.builder().key(ContentsKey.of("item", Integer.toString(i)))
-          .contents(ImmutableIcebergTable.builder()
+          .contents(ImmutableIcebergTable.builder().from(table)
                                  .metadataLocation("/the/directory/over/there/" + i)
                                  .build())
           .build();
     }
     updates[10] = ImmutablePut.builder().key(ContentsKey.of("xxx","test"))
-        .contents(ImmutableIcebergTable.builder().metadataLocation("/the/directory/over/there/has/been/moved").build())
-        .build();
+        .contents(ImmutableIcebergTable.builder().from(table).metadataLocation("/the/directory/over/there/has/been/moved").build()).build();
 
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
     Operations contents = ImmutableOperations.builder()
@@ -113,7 +110,7 @@ public class RestGitTest {
     Response res = rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
 
-    table = ImmutableIcebergTable.builder()
+    table = ImmutableIcebergTable.builder().from(table)
         .metadataLocation("/the/directory/over/there/has/been/moved/again")
         .build();
 
