@@ -79,7 +79,7 @@ class NessieClient(object):
         ref = ReferenceSchema().load(ref_obj)
         return ref
 
-    def create_branch(self: "NessieClient", branch: str, ref: str = None) -> Reference:
+    def create_branch(self: "NessieClient", branch: str, ref: str = None) -> Branch:
         """Create a branch.
 
         :param branch: name of new branch
@@ -88,8 +88,7 @@ class NessieClient(object):
         """
         ref_json = ReferenceSchema().dump(Branch(branch, ref))
         ref_obj = create_reference(self._base_url, ref_json, self._ssl_verify)
-        ref = ReferenceSchema().load(ref_obj)
-        return ref
+        return cast(Branch, ReferenceSchema().load(ref_obj))
 
     def delete_branch(self: "NessieClient", branch: str, hash_: str) -> None:
         """Delete a branch.
@@ -99,7 +98,7 @@ class NessieClient(object):
         """
         delete_branch(self._base_url, branch, hash_, self._ssl_verify)
 
-    def create_tag(self: "NessieClient", tag: str, ref: str = None) -> Reference:
+    def create_tag(self: "NessieClient", tag: str, ref: str = None) -> Tag:
         """Create a tag.
 
         :param tag: name of new tag
@@ -107,8 +106,7 @@ class NessieClient(object):
         """
         ref_json = ReferenceSchema().dump(Tag(tag, ref))
         ref_obj = create_reference(self._base_url, ref_json, self._ssl_verify)
-        ref = ReferenceSchema().load(ref_obj)
-        return ref
+        return cast(Tag, ReferenceSchema().load(ref_obj))
 
     def delete_tag(self: "NessieClient", tag: str, hash_: str) -> None:
         """Delete a tag.
