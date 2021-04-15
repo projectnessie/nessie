@@ -84,7 +84,7 @@ class NessieClient(object):
 
         :param branch: name of new branch
         :param ref: ref to fork from
-        :return: Nessie reference
+        :return: Nessie branch object
         """
         ref_json = ReferenceSchema().dump(Branch(branch, ref))
         ref_obj = create_reference(self._base_url, ref_json, self._ssl_verify)
@@ -103,6 +103,7 @@ class NessieClient(object):
 
         :param tag: name of new tag
         :param ref: ref to fork from
+        :return: Nessie tag object
         """
         ref_json = ReferenceSchema().dump(Tag(tag, ref))
         ref_obj = create_reference(self._base_url, ref_json, self._ssl_verify)
@@ -146,8 +147,7 @@ class NessieClient(object):
         """Modify a set of Nessie tables."""
         meta = CommitMeta(message=reason if reason else "")
         ref_obj = commit(self._base_url, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
-        ref = CommitMultipleOperationsResponseSchema().load(ref_obj)
-        return ref
+        return CommitMultipleOperationsResponseSchema().load(ref_obj)
 
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a branch."""
