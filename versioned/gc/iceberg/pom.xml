@@ -30,6 +30,10 @@
 
   <name>Nessie - Versioned - GC for Spark - Iceberg</name>
 
+  <properties>
+    <iceberg.nessie.version>0.4.0</iceberg.nessie.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
@@ -242,10 +246,10 @@
       <plugin>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-apprunner-maven-plugin</artifactId>
-        <version>${project.version}</version>
+        <version>${iceberg.nessie.version}</version>
         <configuration>
           <skip>${skipTests}</skip>
-          <appArtifactId>org.projectnessie:nessie-quarkus:${project.version}</appArtifactId>
+          <appArtifactId>org.projectnessie:nessie-quarkus:${iceberg.nessie.version}</appArtifactId>
           <applicationProperties>
             <quarkus.http.test-port>0</quarkus.http.test-port>
             <nessie.version.store.dynamo.initialize>true</nessie.version.store.dynamo.initialize>
@@ -265,7 +269,7 @@
           <dependency>
             <groupId>org.projectnessie</groupId>
             <artifactId>nessie-quarkus</artifactId>
-            <version>${project.version}</version>
+            <version>${iceberg.nessie.version}</version>
           </dependency>
         </dependencies>
         <executions>
