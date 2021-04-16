@@ -20,7 +20,7 @@
 @OpenAPIDefinition(
     info = @Info(
         title = "Nessie API",
-        version = "0.5.1",
+        version = "0.6.0",
         contact = @Contact(
             name = "Project Nessie",
             url = "https://projectnessie.org"),
