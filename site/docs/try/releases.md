@@ -1,5 +1,9 @@
 # Releases
 
+## 0.6.0 Release (xxx xx, 2021)
+
+* TreeApi.createReference() + commitMultipleOperations() return commit information
+
 ## 0.5.1 Release (April 9, 2021)
 
 * Fix Gradle plugin (non-deterministic order of dependencies causing failures)

@@ -2,6 +2,12 @@
 History
 =======
 
+0.6.0 (xxxx-xx-xx)
+------------------
+
+* create-reference and commit operations return the new commit-hash
+* dependency updates
+
 0.5.1 (2021-04-09)
 ------------------
 
