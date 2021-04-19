@@ -310,4 +310,3 @@ class MultiContents:
 
 
 MultiContentsSchema = desert.schema_class(MultiContents)
-
