@@ -1,0 +1,139 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+name: Main Publish
+
+on:
+  workflow_run:
+    workflows: ["Main CI"]
+    branches: [ main ]
+    types:
+      - completed
+
+jobs:
+  build:
+    name: Publish main
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'projectnessie/nessie' }}
+
+    # Runs in the `snapshot` environment, which has the necessary secrets.
+    # See https://docs.github.com/en/actions/reference/environments
+    environment: snapshot
+
+    steps:
+
+    ### BEGIN common runner setup
+    # Unfortunately there is no way to have one action call other actions so we could put all
+    # these steps into a single action.
+    - name: Update /etc/hosts
+      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up JDK 11
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+    - name: Set up JDK 8
+      uses: AdoptOpenJDK/install-jdk@v1
+      with:
+        version: '8'
+        targets: 'JDK8_HOME'
+    # Using Python 3.8
+    # Might be worth to bump the version and/or make it configurable in the future
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Set up Maven toolchains.xml
+      run: |
+          cat << 'EOT' > ${HOME}/.m2/toolchains.xml
+          <?xml version="1.0" encoding="UTF8"?>
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides>
+                <version>11</version>
+                <vendor>zulu</vendor>
+              </provides>
+              <configuration>
+                <jdkHome>${env.JAVA_HOME}</jdkHome>
+              </configuration>
+            </toolchain>
+            <toolchain>
+              <type>jdk</type>
+              <provides>
+                <version>1.8</version>
+                <vendor>adoptopenjdk</vendor>
+              </provides>
+              <configuration>
+                <jdkHome>${env.JDK8_HOME}</jdkHome>
+              </configuration>
+            </toolchain>
+          </toolchains>
+          EOT
+    - name: Cache local pip repository
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Cache local Maven repository
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.m2/repository
+          !~/.m2/repository/org/projectnessie
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+    - name: Cache local NPM repository
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - name: Cache local Gradle cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: ${{ runner.os }}-gradle
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r python/requirements_lint.txt
+        pip install tox-gh-actions bumpversion twine
+    ### END of common runner setup
+
+    - name: Deploy with Maven
+      run: mvn -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true -DskipTests
+      env:
+        MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
+        MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+        MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        SPARK_LOCAL_IP: localhost
+
+    - name: Push Docker images
+      run: |
+          echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
+          docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
+          while read IMAGE_ID IMAGE_TAG; do
+            docker tag "$IMAGE_ID" "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
+            docker push "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
+          done
