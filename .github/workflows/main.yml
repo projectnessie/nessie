@@ -1,3 +1,17 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 name: Main CI
 
 on:
@@ -8,25 +22,24 @@ jobs:
   java:
     name: Java/Maven
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'projectnessie/nessie' }}
 
     steps:
-    - uses: actions/checkout@v2
+
+    ### BEGIN common runner setup
+    - name: Update /etc/hosts
+      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: Set up JDK 11
       uses: actions/setup-java@v1
       with:
         java-version: 11
-        server-id: ossrh
-        server-username: MAVEN_USERNAME
-        server-password: MAVEN_OSSRH_TOKEN
-        gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-        gpg-passphrase: MAVEN_GPG_PASSPHRASE
     - name: Set up JDK 8
       uses: AdoptOpenJDK/install-jdk@v1
       with:
         version: '8'
         targets: 'JDK8_HOME'
-    - name: Update /etc/hosts
-      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Set up Maven toolchains.xml
       run: |
           cat << 'EOT' > ${HOME}/.m2/toolchains.xml
@@ -54,7 +67,6 @@ jobs:
             </toolchain>
           </toolchains>
           EOT
-
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
@@ -71,7 +83,7 @@ jobs:
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
-    - name: Cache Gradle packages
+    - name: Cache local Gradle cache
       uses: actions/cache@v2
       with:
         path: |
@@ -79,21 +91,13 @@ jobs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
+    ### END of common runner setup
+
     - name: Build with Maven
-      run: mvn -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true -Dtest.log.level=WARN
+      run: mvn -B install --file pom.xml -Pcode-coverage,jdk8-tests,native,docker -Dtest.log.level=WARN
       env:
-        MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
-        MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
-        MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         SPARK_LOCAL_IP: localhost
-    - name: Push Docker images
-      run: |
-          echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
-          docker images --filter 'reference=projectnessie/nessie' --format '{{.ID}}\t{{.Tag}}' |
-          while read IMAGE_ID IMAGE_TAG; do
-            docker tag "$IMAGE_ID" "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
-            docker push "projectnessie/nessie-unstable:${IMAGE_TAG%-snapshot}"
-          done
+
     - name: Capture test results
       uses: actions/upload-artifact@v2
       with:
@@ -101,12 +105,15 @@ jobs:
         path: |
           **/target/surefire-reports/*
           **/target/failsafe-reports/*
+
     - uses: codecov/codecov-action@v1
       with:
         flags: java
+
     - name: Build with Gradle
       run: ./gradlew build
       working-directory: ./tools/apprunner-gradle-plugin
+
   jackson-tests:
     name: Jackson Integration Tests
     needs: java
@@ -130,10 +137,12 @@ jobs:
             java-version: 11
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java-version }}
+
       - name: Cache local Maven repository
         uses: actions/cache@v2
         with:
@@ -143,11 +152,14 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
+
       - name: Jackson Integration Tests ${{ matrix.target-library }}
         run: mvn verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
+
   python:
     name: Python
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'projectnessie/nessie' }}
     env:
       working-directory: ./python
     strategy:
@@ -156,25 +168,36 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
-    - uses: actions/checkout@v2
+
+    ### BEGIN common runner setup
+    - name: Update /etc/hosts
+      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
+    - name: Checkout
+      uses: actions/checkout@v2
+    # Using Python 3.8
+    # Might be worth to bump the version and/or make it configurable in the future
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - uses: actions/cache@v2
+    - name: Cache local pip repository
+      uses: actions/cache@v2
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-    - name: Install dependencies
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
+        python -m pip install --upgrade pip
         pip install tox tox-gh-actions
-      working-directory: ${{env.working-directory}}
+    ### END of common runner setup
+
     - name: Test with tox
       run: tox
       working-directory: ${{env.working-directory}}
+
     - uses: codecov/codecov-action@v1
       with:
         flags: python

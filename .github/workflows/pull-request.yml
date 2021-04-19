@@ -1,3 +1,17 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 name: PR Build Check
 
 on:
@@ -9,7 +23,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+
+    ### BEGIN common runner setup
+    - name: Update /etc/hosts
+      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: Set up JDK 11
       uses: actions/setup-java@v1
       with:
@@ -19,8 +38,6 @@ jobs:
       with:
         version: '8'
         targets: 'JDK8_HOME'
-    - name: Update /etc/hosts
-      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Set up Maven toolchains.xml
       run: |
           cat << 'EOT' > ${HOME}/.m2/toolchains.xml
@@ -48,7 +65,6 @@ jobs:
             </toolchain>
           </toolchains>
           EOT
-
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
@@ -65,7 +81,7 @@ jobs:
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
-    - name: Cache Gradle packages
+    - name: Cache local Gradle cache
       uses: actions/cache@v2
       with:
         path: |
@@ -73,10 +89,13 @@ jobs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
+    ### END of common runner setup
+
     - name: Build with Maven
       run: mvn -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
       env:
         SPARK_LOCAL_IP: localhost
+
     - name: Capture test results
       uses: actions/upload-artifact@v2
       with:
@@ -84,12 +103,15 @@ jobs:
         path: |
           **/target/surefire-reports/*
           **/target/failsafe-reports/*
+
     - uses: codecov/codecov-action@v1
       with:
         flags: java
+
     - name: Build with Gradle
       run: ./gradlew build
       working-directory: ./tools/apprunner-gradle-plugin
+
   python:
     name: Python
     runs-on: ubuntu-latest
@@ -101,25 +123,35 @@ jobs:
         python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
-    - uses: actions/checkout@v2
+
+
+    ### BEGIN common runner setup
+    - name: Update /etc/hosts
+      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - uses: actions/cache@v2
+    - name: Cache local pip repository
+      uses: actions/cache@v2
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-    - name: Install dependencies
+    - name: Install Python dependencies
+      working-directory: ${{env.working-directory}}
       run: |
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
-      working-directory: ${{env.working-directory}}
+    ### END of common runner setup
+
     - name: Test with tox
       run: tox
       working-directory: ${{env.working-directory}}
+
     - uses: codecov/codecov-action@v1
       with:
         flags: python
@@ -128,27 +160,34 @@ jobs:
     name: Build Website
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-      - name: Upgrade pip
-        run: |
-          # install pip=>20.1 to use "pip cache dir"
-          python3 -m pip install --upgrade pip
-      - name: Get pip cache dir
-        id: pip-cache
-        run: echo "::set-output name=dir::$(pip cache dir)"
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.pip-cache.outputs.dir }}
-          key: ${{ runner.os }}-pip-${{ hashFiles('site/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: Install dependencies
-        run: python3 -m pip install -r ./site/requirements.txt
-      - name: Generate Static Site
-        run: mkdocs build
-        working-directory: ./site
+
+    ### BEGIN runner setup
+    - name: Update /etc/hosts
+      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    - name: Upgrade pip
+      run: |
+        # install pip=>20.1 to use "pip cache dir"
+        python3 -m pip install --upgrade pip
+    - name: Get pip cache dir
+      id: pip-cache
+      run: echo "::set-output name=dir::$(pip cache dir)"
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.pip-cache.outputs.dir }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('site/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Install dependencies
+      run: python3 -m pip install -r ./site/requirements.txt
+    ### END of runner setup
+
+    - name: Generate Static Site
+      run: mkdocs build
+      working-directory: ./site
