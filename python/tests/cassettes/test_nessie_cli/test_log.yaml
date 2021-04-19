@@ -76,10 +76,10 @@ interactions:
       code: 404
       message: Not Found
 - request:
-    body: '{"commitMeta": {"author": null, "email": null, "signedOffBy": null, "authorTime":
-      null, "properties": null, "message": "test_message", "committer": null, "commitTime":
-      null, "hash": null}, "operations": [{"key": {"elements": ["foo", "bar"]}, "contents":
-      {"metadataLocation": "/a/b/c", "id": "uuid", "type": "ICEBERG_TABLE"}, "type":
+    body: '{"commitMeta": {"author": null, "properties": null, "message": "test_message",
+      "authorTime": null, "signedOffBy": null, "committer": null, "hash": null, "commitTime":
+      null, "email": null}, "operations": [{"contents": {"id": "uuid", "metadataLocation":
+      "/a/b/c", "type": "ICEBERG_TABLE"}, "key": {"elements": ["foo", "bar"]}, "type":
       "PUT"}]}'
     headers:
       Accept:
@@ -98,12 +98,10 @@ interactions:
     uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d
   response:
     body:
-      string: "{\n  \"reference\" : {\n    \"type\" : \"BRANCH\",\n    \"name\" :
-        \"main\",\n    \"hash\" : \"65c339f8efcd2790c6d51f308b86edf39118dd8811856c39911c83e2ba75e2f2\"\n
-        \ }\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"94a705c003358b117f8df0ab02281a58420b8ec74e5444e5a339d1afdca56b59\"\n}"
     headers:
       Content-Length:
-      - '149'
+      - '121'
       Content-Type:
       - application/json
     status:
@@ -150,10 +148,10 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"65c339f8efcd2790c6d51f308b86edf39118dd8811856c39911c83e2ba75e2f2\",\n
+        [ {\n    \"hash\" : \"94a705c003358b117f8df0ab02281a58420b8ec74e5444e5a339d1afdca56b59\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-04-16T11:07:11.441591Z\",\n
-        \   \"authorTime\" : \"2021-04-16T11:07:11.441591Z\",\n    \"properties\"
+        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-04-19T08:51:48.489307Z\",\n
+        \   \"authorTime\" : \"2021-04-19T08:51:48.489307Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -175,14 +173,14 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/65c339f8efcd2790c6d51f308b86edf39118dd8811856c39911c83e2ba75e2f2/log
+    uri: http://localhost:19120/api/v1/trees/tree/94a705c003358b117f8df0ab02281a58420b8ec74e5444e5a339d1afdca56b59/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"65c339f8efcd2790c6d51f308b86edf39118dd8811856c39911c83e2ba75e2f2\",\n
+        [ {\n    \"hash\" : \"94a705c003358b117f8df0ab02281a58420b8ec74e5444e5a339d1afdca56b59\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-04-16T11:07:11.441591Z\",\n
-        \   \"authorTime\" : \"2021-04-16T11:07:11.441591Z\",\n    \"properties\"
+        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-04-19T08:51:48.489307Z\",\n
+        \   \"authorTime\" : \"2021-04-19T08:51:48.489307Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -244,9 +242,9 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"commitMeta": {"author": null, "email": null, "signedOffBy": null, "authorTime":
-      null, "properties": null, "message": "delete_message", "committer": null, "commitTime":
-      null, "hash": null}, "operations": [{"key": {"elements": ["foo", "bar"]}, "type":
+    body: '{"commitMeta": {"author": null, "properties": null, "message": "delete_message",
+      "authorTime": null, "signedOffBy": null, "committer": null, "hash": null, "commitTime":
+      null, "email": null}, "operations": [{"key": {"elements": ["foo", "bar"]}, "type":
       "DELETE"}]}'
     headers:
       Accept:
@@ -262,15 +260,13 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: POST
-    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=65c339f8efcd2790c6d51f308b86edf39118dd8811856c39911c83e2ba75e2f2
+    uri: http://localhost:19120/api/v1/trees/branch/main/commit?expectedHash=94a705c003358b117f8df0ab02281a58420b8ec74e5444e5a339d1afdca56b59
   response:
     body:
-      string: "{\n  \"reference\" : {\n    \"type\" : \"BRANCH\",\n    \"name\" :
-        \"main\",\n    \"hash\" : \"5a203b0d5dd1d908805dbbb692d92ffcfbb61a4f3c23475237230d182ba4fe17\"\n
-        \ }\n}"
+      string: "{\n  \"type\" : \"BRANCH\",\n  \"name\" : \"main\",\n  \"hash\" : \"680e230bfbbea2b5bd33d7557e2a3a22a3b8eec341229ef828412630bf59cf27\"\n}"
     headers:
       Content-Length:
-      - '149'
+      - '121'
       Content-Type:
       - application/json
     status:
@@ -292,14 +288,14 @@ interactions:
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"5a203b0d5dd1d908805dbbb692d92ffcfbb61a4f3c23475237230d182ba4fe17\",\n
+        [ {\n    \"hash\" : \"680e230bfbbea2b5bd33d7557e2a3a22a3b8eec341229ef828412630bf59cf27\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-04-16T11:07:11.607021Z\",\n
-        \   \"authorTime\" : \"2021-04-16T11:07:11.607021Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"65c339f8efcd2790c6d51f308b86edf39118dd8811856c39911c83e2ba75e2f2\",\n
+        \   \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-04-19T08:51:48.643429Z\",\n
+        \   \"authorTime\" : \"2021-04-19T08:51:48.643429Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"94a705c003358b117f8df0ab02281a58420b8ec74e5444e5a339d1afdca56b59\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-04-16T11:07:11.441591Z\",\n
-        \   \"authorTime\" : \"2021-04-16T11:07:11.441591Z\",\n    \"properties\"
+        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-04-19T08:51:48.489307Z\",\n
+        \   \"authorTime\" : \"2021-04-19T08:51:48.489307Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:
@@ -321,18 +317,18 @@ interactions:
       User-Agent:
       - python-requests/2.25.1
     method: GET
-    uri: http://localhost:19120/api/v1/trees/tree/5a203b0d5dd1d908805dbbb692d92ffcfbb61a4f3c23475237230d182ba4fe17/log
+    uri: http://localhost:19120/api/v1/trees/tree/680e230bfbbea2b5bd33d7557e2a3a22a3b8eec341229ef828412630bf59cf27/log
   response:
     body:
       string: "{\n  \"hasMore\" : false,\n  \"token\" : null,\n  \"operations\" :
-        [ {\n    \"hash\" : \"5a203b0d5dd1d908805dbbb692d92ffcfbb61a4f3c23475237230d182ba4fe17\",\n
+        [ {\n    \"hash\" : \"680e230bfbbea2b5bd33d7557e2a3a22a3b8eec341229ef828412630bf59cf27\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-04-16T11:07:11.607021Z\",\n
-        \   \"authorTime\" : \"2021-04-16T11:07:11.607021Z\",\n    \"properties\"
-        : { }\n  }, {\n    \"hash\" : \"65c339f8efcd2790c6d51f308b86edf39118dd8811856c39911c83e2ba75e2f2\",\n
+        \   \"message\" : \"delete_message\",\n    \"commitTime\" : \"2021-04-19T08:51:48.643429Z\",\n
+        \   \"authorTime\" : \"2021-04-19T08:51:48.643429Z\",\n    \"properties\"
+        : { }\n  }, {\n    \"hash\" : \"94a705c003358b117f8df0ab02281a58420b8ec74e5444e5a339d1afdca56b59\",\n
         \   \"committer\" : \"\",\n    \"author\" : \"\",\n    \"signedOffBy\" : null,\n
-        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-04-16T11:07:11.441591Z\",\n
-        \   \"authorTime\" : \"2021-04-16T11:07:11.441591Z\",\n    \"properties\"
+        \   \"message\" : \"test_message\",\n    \"commitTime\" : \"2021-04-19T08:51:48.489307Z\",\n
+        \   \"authorTime\" : \"2021-04-19T08:51:48.489307Z\",\n    \"properties\"
         : { }\n  } ]\n}"
     headers:
       Content-Length:

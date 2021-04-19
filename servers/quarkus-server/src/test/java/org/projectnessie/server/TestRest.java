@@ -241,7 +241,7 @@ class TestRest {
           ImmutableOperations.builder()
               .commitMeta(CommitMeta.fromMessage(msg))
               .addOperations(Put.of(ContentsKey.of("table"), IcebergTable.of("some-file-" + i)))
-              .build()).getReference().getHash();
+              .build()).getHash();
       assertNotEquals(currentHash, nextHash);
       currentHash = nextHash;
     }

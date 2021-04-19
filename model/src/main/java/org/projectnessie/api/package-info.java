@@ -150,13 +150,6 @@
         + "      \"signedOffBy\": \"signedOffByName <signedOffBy@example.com>\"\n"
         + "    }\n"
         + "  ]\n"
-        + "}"),
-      @ExampleObject(name = "commitMultipleOperationsResponse", value = "{\n"
-        + "  \"branch\": {\n"
-        + "    \"type\": \"BRANCH\""
-        + "    \"hash\": \"abcDEF4242424242424242424242BEEF00DEAD42112233445566778899001122\",\n"
-        + "    \"name\": \"main\"\n"
-        + "  }\n"
         + "}")})
 )
 package org.projectnessie.api;

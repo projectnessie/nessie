@@ -32,7 +32,6 @@ import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.CommitMultipleOperationsResponse;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
@@ -238,14 +237,14 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public CommitMultipleOperationsResponse commitMultipleOperations(String branch, String hash, Operations operations)
+  public Branch commitMultipleOperations(String branch, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation<Contents>> ops = operations.getOperations()
         .stream()
         .map(TreeResource::toOp)
         .collect(ImmutableList.toImmutableList());
     String newHash = doOps(branch, hash, operations.getCommitMeta(), ops).asString();
-    return CommitMultipleOperationsResponse.of(Branch.of(branch, newHash));
+    return Branch.of(branch, newHash);
   }
 
   private static Optional<Hash> toHash(String hash, boolean required) throws NessieConflictException {

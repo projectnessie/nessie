@@ -41,7 +41,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitMultipleOperationsResponse;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.LogResponse;
 import org.projectnessie.model.Merge;
@@ -414,12 +413,12 @@ public interface TreeApi {
       + "commit that contains the operations of the invocation.")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Updated successfully.",
-        content = {@Content(examples = {@ExampleObject(ref = "commitMultipleOperationsResponse")})}),
+        content = {@Content(examples = {@ExampleObject(ref = "refObj")})}),
       @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "409", description = "Update conflict")
   })
-  CommitMultipleOperationsResponse commitMultipleOperations(
+  Branch commitMultipleOperations(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
       @Parameter(description = "Branch to change, defaults to default branch.", examples = {@ExampleObject(ref = "ref")})

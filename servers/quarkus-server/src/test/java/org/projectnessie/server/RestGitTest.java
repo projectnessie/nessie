@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.CommitMultipleOperationsResponse;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
@@ -105,11 +104,11 @@ public class RestGitTest {
         .commitMeta(CommitMeta.fromMessage(""))
         .build();
 
-    CommitMultipleOperationsResponse commitResponse = rest()
+    Branch commitResponse = rest()
         .body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
         .then().statusCode(200)
-        .extract().as(CommitMultipleOperationsResponse.class);
-    Assertions.assertNotEquals(branch.getHash(), commitResponse.getReference().getHash());
+        .extract().as(Branch.class);
+    Assertions.assertNotEquals(branch.getHash(), commitResponse.getHash());
 
     Response res = rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
@@ -153,7 +152,7 @@ public class RestGitTest {
     return given().when().basePath("/api/v1/").contentType(ContentType.JSON);
   }
 
-  private CommitMultipleOperationsResponse commit(Branch branch, String contentsKey, String metadataUrl) {
+  private Branch commit(Branch branch, String contentsKey, String metadataUrl) {
     Operations contents = ImmutableOperations.builder()
         .addOperations(Put.of(ContentsKey.of(contentsKey), IcebergTable.of(metadataUrl)))
         .commitMeta(CommitMeta.fromMessage(""))
@@ -161,7 +160,7 @@ public class RestGitTest {
     return rest()
         .body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
         .then().statusCode(200)
-        .extract().as(CommitMultipleOperationsResponse.class);
+        .extract().as(Branch.class);
   }
 
   private Branch getBranch(String name) {
@@ -181,15 +180,15 @@ public class RestGitTest {
   public void testOptimisticLocking() {
     makeBranch("test3");
     Branch b1 = getBranch("test3");
-    String newHash = commit(b1, "xxx.test", "/the/directory/over/there").getReference().getHash();
+    String newHash = commit(b1, "xxx.test", "/the/directory/over/there").getHash();
     Assertions.assertNotEquals(b1.getHash(), newHash);
 
     Branch b2 = getBranch("test3");
-    newHash = commit(b2, "xxx.test", "/the/directory/over/there/has/been/moved").getReference().getHash();
+    newHash = commit(b2, "xxx.test", "/the/directory/over/there/has/been/moved").getHash();
     Assertions.assertNotEquals(b2.getHash(), newHash);
 
     Branch b3 = getBranch("test3");
-    newHash = commit(b3, "xxx.test", "/the/directory/over/there/has/been/moved/again").getReference().getHash();
+    newHash = commit(b3, "xxx.test", "/the/directory/over/there/has/been/moved/again").getHash();
     Assertions.assertNotEquals(b3.getHash(), newHash);
   }
 

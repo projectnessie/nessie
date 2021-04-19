@@ -25,8 +25,6 @@ from ._endpoints import list_tables
 from ._endpoints import merge
 from .model import Branch
 from .model import CommitMeta
-from .model import CommitMultipleOperationsResponse
-from .model import CommitMultipleOperationsResponseSchema
 from .model import Contents
 from .model import ContentsKey
 from .model import ContentsSchema
@@ -146,11 +144,11 @@ class NessieClient(object):
 
     def commit(
         self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, *ops: Operation
-    ) -> CommitMultipleOperationsResponse:
+    ) -> Branch:
         """Modify a set of Nessie tables."""
         meta = CommitMeta(message=reason if reason else "")
         ref_obj = commit(self._base_url, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
-        return CommitMultipleOperationsResponseSchema().load(ref_obj)
+        return cast(Branch, ReferenceSchema().load(ref_obj))
 
     def assign_branch(self: "NessieClient", branch: str, to_ref: str, old_hash: Optional[str] = None) -> None:
         """Assign a hash to a branch."""
