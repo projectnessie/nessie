@@ -41,32 +41,7 @@ jobs:
         version: '8'
         targets: 'JDK8_HOME'
     - name: Set up Maven toolchains.xml
-      run: |
-          cat << 'EOT' > ${HOME}/.m2/toolchains.xml
-          <?xml version="1.0" encoding="UTF8"?>
-          <toolchains>
-            <toolchain>
-              <type>jdk</type>
-              <provides>
-                <version>11</version>
-                <vendor>zulu</vendor>
-              </provides>
-              <configuration>
-                <jdkHome>${env.JAVA_HOME}</jdkHome>
-              </configuration>
-            </toolchain>
-            <toolchain>
-              <type>jdk</type>
-              <provides>
-                <version>1.8</version>
-                <vendor>adoptopenjdk</vendor>
-              </provides>
-              <configuration>
-                <jdkHome>${env.JDK8_HOME}</jdkHome>
-              </configuration>
-            </toolchain>
-          </toolchains>
-          EOT
+      run: cp .github/maven/toolchains.xml ${HOME}/.m2/toolchains.xml
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
