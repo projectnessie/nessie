@@ -18,7 +18,7 @@
 
 # Publishes the Maven, Python, Docker and Gradle-plugin artifacts.
 
-name: Release publish
+name: Publish release
 
 on:
   push:
@@ -36,9 +36,7 @@ jobs:
 
     steps:
 
-    ### BEGIN common runner setup
-    # Unfortunately there is no way to have one action call other actions so we could put all
-    # these steps into a single action.
+    ### BEGIN runner setup
     - name: Update /etc/hosts
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
@@ -121,7 +119,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r python/requirements_lint.txt
         pip install tox-gh-actions bumpversion twine
-    ### END of common runner setup
+    ### END runner setup
 
     # GH doesn't provide just the tag name, so this step strips `/refs/tags/` from `GITHUB_REF`
     # and provides the output `VERSION`

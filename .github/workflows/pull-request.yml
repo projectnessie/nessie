@@ -24,7 +24,7 @@ jobs:
 
     steps:
 
-    ### BEGIN common runner setup
+    ### BEGIN runner setup
     - name: Update /etc/hosts
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
@@ -89,7 +89,7 @@ jobs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
-    ### END of common runner setup
+    ### END runner setup
 
     - name: Build with Maven
       run: mvn -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
@@ -125,7 +125,7 @@ jobs:
     steps:
 
 
-    ### BEGIN common runner setup
+    ### BEGIN runner setup
     - name: Update /etc/hosts
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
@@ -146,7 +146,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
-    ### END of common runner setup
+    ### END runner setup
 
     - name: Test with tox
       run: tox
@@ -186,7 +186,7 @@ jobs:
           ${{ runner.os }}-pip-
     - name: Install dependencies
       run: python3 -m pip install -r ./site/requirements.txt
-    ### END of runner setup
+    ### END runner setup
 
     - name: Generate Static Site
       run: mkdocs build

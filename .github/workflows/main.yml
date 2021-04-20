@@ -26,7 +26,7 @@ jobs:
 
     steps:
 
-    ### BEGIN common runner setup
+    ### BEGIN runner setup
     - name: Update /etc/hosts
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
@@ -91,7 +91,7 @@ jobs:
           ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
-    ### END of common runner setup
+    ### END runner setup
 
     - name: Build with Maven
       run: mvn -B install --file pom.xml -Pcode-coverage,jdk8-tests,native,docker -Dtest.log.level=WARN
@@ -136,13 +136,13 @@ jobs:
             target-library: Spark 3.0.1
             java-version: 11
     steps:
-      - uses: actions/checkout@v2
 
+      ### BEGIN runner setup
+      - uses: actions/checkout@v2
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java-version }}
-
       - name: Cache local Maven repository
         uses: actions/cache@v2
         with:
@@ -152,6 +152,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
+      ### END runner setup
 
       - name: Jackson Integration Tests ${{ matrix.target-library }}
         run: mvn verify -pl :nessie-client -am -Pjackson-tests -Djackson.test.version=${{ matrix.jackson-version }} -Dtest.log.level=WARN
@@ -169,7 +170,7 @@ jobs:
 
     steps:
 
-    ### BEGIN common runner setup
+    ### BEGIN runner setup
     - name: Update /etc/hosts
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
@@ -192,7 +193,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
-    ### END of common runner setup
+    ### END runner setup
 
     - name: Test with tox
       run: tox
