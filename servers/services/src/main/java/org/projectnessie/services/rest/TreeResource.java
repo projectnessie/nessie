@@ -97,22 +97,25 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public void createReference(Reference reference)
+  public Reference createReference(Reference reference)
       throws NessieNotFoundException, NessieConflictException {
     final NamedRef namedReference;
     if (reference instanceof Branch) {
       namedReference = BranchName.of(reference.getName());
+      Hash hash = createReference(namedReference, reference.getHash());
+      return Branch.of(reference.getName(), hash.asString());
     } else if (reference instanceof Tag) {
       namedReference = TagName.of(reference.getName());
+      Hash hash = createReference(namedReference, reference.getHash());
+      return Tag.of(reference.getName(), hash.asString());
     } else {
       throw new IllegalArgumentException("Only tag and branch references can be created");
     }
-    createReference(namedReference, reference.getHash());
   }
 
-  private void createReference(NamedRef reference, String hash) throws NessieNotFoundException, NessieConflictException {
+  private Hash createReference(NamedRef reference, String hash) throws NessieNotFoundException, NessieConflictException {
     try {
-      getStore().create(reference, toHash(hash, false));
+      return getStore().create(reference, toHash(hash, false));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException("Failure while searching for provided targeted hash.", e);
     } catch (ReferenceAlreadyExistsException e) {
@@ -234,13 +237,14 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public void commitMultipleOperations(String branch, String hash, Operations operations)
+  public Branch commitMultipleOperations(String branch, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
     List<org.projectnessie.versioned.Operation<Contents>> ops = operations.getOperations()
         .stream()
         .map(TreeResource::toOp)
         .collect(ImmutableList.toImmutableList());
-    doOps(branch, hash, operations.getCommitMeta(), ops);
+    String newHash = doOps(branch, hash, operations.getCommitMeta(), ops).asString();
+    return Branch.of(branch, newHash);
   }
 
   private static Optional<Hash> toHash(String hash, boolean required) throws NessieConflictException {

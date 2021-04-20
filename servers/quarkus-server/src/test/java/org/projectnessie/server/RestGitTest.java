@@ -59,7 +59,7 @@ public class RestGitTest {
     int preSize = rest().get("trees").then().statusCode(200).extract().as(Reference[].class).length;
 
     rest().get("trees/tree/mainx").then().statusCode(404);
-    rest().body(Branch.of("mainx", null)).post("trees/tree").then().statusCode(204);
+    rest().body(Branch.of("mainx", null)).post("trees/tree").then().statusCode(200);
 
     Reference[] references = rest().get("trees").then().statusCode(200).extract().as(Reference[].class);
     Assertions.assertEquals(preSize + 1, references.length);
@@ -74,7 +74,7 @@ public class RestGitTest {
         .hash(reference.getHash())
         .name("test")
         .build();
-    rest().queryParam("expectedHash", reference.getHash()).body(Branch.of("test", null)).post("trees/tree").then().statusCode(204);
+    rest().queryParam("expectedHash", reference.getHash()).body(Branch.of("test", null)).post("trees/tree").then().statusCode(200);
     assertEquals(newReference, rest().get("trees/tree/test").then()
            .statusCode(200).extract().as(Branch.class));
 
@@ -104,8 +104,11 @@ public class RestGitTest {
         .commitMeta(CommitMeta.fromMessage(""))
         .build();
 
-    rest().body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
-      .then().statusCode(204);
+    Branch commitResponse = rest()
+        .body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
+        .then().statusCode(200)
+        .extract().as(Branch.class);
+    Assertions.assertNotEquals(branch.getHash(), commitResponse.getHash());
 
     Response res = rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
     Assertions.assertEquals(updates[10].getContents(), res.body().as(Contents.class));
@@ -124,7 +127,7 @@ public class RestGitTest {
     Assertions.assertEquals(table, returned);
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
-    rest().body(Tag.of("tagtest", b3.getHash())).post("trees/tree").then().statusCode(204);
+    rest().body(Tag.of("tagtest", b3.getHash())).post("trees/tree").then().statusCode(200);
 
     rest().get("trees/tree/tagtest").then().statusCode(200).body("hash", equalTo(b3.getHash()));
 
@@ -149,12 +152,15 @@ public class RestGitTest {
     return given().when().basePath("/api/v1/").contentType(ContentType.JSON);
   }
 
-  private void commit(Branch b, String path, String metadataUrl) {
-    rest()
-      .body(IcebergTable.of(metadataUrl))
-      .queryParam("branch", b.getName()).queryParam("hash", b.getHash())
-      .post("contents/xxx.test")
-      .then().statusCode(204);
+  private Branch commit(Branch branch, String contentsKey, String metadataUrl) {
+    Operations contents = ImmutableOperations.builder()
+        .addOperations(Put.of(ContentsKey.of(contentsKey), IcebergTable.of(metadataUrl)))
+        .commitMeta(CommitMeta.fromMessage(""))
+        .build();
+    return rest()
+        .body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
+        .then().statusCode(200)
+        .extract().as(Branch.class);
   }
 
   private Branch getBranch(String name) {
@@ -165,7 +171,7 @@ public class RestGitTest {
     Branch test = ImmutableBranch.builder()
         .name(name)
         .build();
-    rest().body(test).post("trees/tree").then().statusCode(204);
+    rest().body(test).post("trees/tree").then().statusCode(200);
     return test;
   }
 
@@ -174,13 +180,16 @@ public class RestGitTest {
   public void testOptimisticLocking() {
     makeBranch("test3");
     Branch b1 = getBranch("test3");
-    commit(b1, "xxx.test", "/the/directory/over/there");
+    String newHash = commit(b1, "xxx.test", "/the/directory/over/there").getHash();
+    Assertions.assertNotEquals(b1.getHash(), newHash);
 
     Branch b2 = getBranch("test3");
-    commit(b2, "xxx.test", "/the/directory/over/there/has/been/moved");
+    newHash = commit(b2, "xxx.test", "/the/directory/over/there/has/been/moved").getHash();
+    Assertions.assertNotEquals(b2.getHash(), newHash);
 
     Branch b3 = getBranch("test3");
-    commit(b3, "xxx.test", "/the/directory/over/there/has/been/moved/again");
+    newHash = commit(b3, "xxx.test", "/the/directory/over/there/has/been/moved/again").getHash();
+    Assertions.assertNotEquals(b3.getHash(), newHash);
   }
 
 }

@@ -54,9 +54,9 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public void createReference(@NotNull Reference reference)
+  public Reference createReference(@NotNull Reference reference)
       throws NessieNotFoundException, NessieConflictException {
-    client.newRequest().path("trees/tree").post(reference);
+    return client.newRequest().path("trees/tree").post(reference).readEntity(Reference.class);
   }
 
   @Override
@@ -151,13 +151,14 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public void commitMultipleOperations(
+  public Branch commitMultipleOperations(
       String branch,
       @NotNull String expectedHash,
       @NotNull Operations operations) throws NessieNotFoundException, NessieConflictException {
-    client.newRequest().path("trees/branch/{branchName}/commit")
+    return client.newRequest().path("trees/branch/{branchName}/commit")
           .resolveTemplate("branchName", branch)
           .queryParam("expectedHash", expectedHash)
-          .post(operations);
+          .post(operations)
+          .readEntity(Branch.class);
   }
 }

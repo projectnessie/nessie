@@ -44,11 +44,9 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   private final Iterable<Tag> commonTags;
 
   /**
-   * Constructor taking the delegate version-store, the common tags for the emitted metrics and
-   * the metrics-registry.
+   * Constructor taking the delegate version-store and the metrics-registry.
    *
    * @param delegate delegate version-store
-   * @param metricsCommonTags common metrics tags
    * @param registry metrics-registry
    */
   MetricsVersionStore(VersionStore<VALUE, METADATA, VALUE_TYPE> delegate, MeterRegistry registry, Clock clock) {
@@ -74,12 +72,12 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public void commit(@Nonnull BranchName branch,
+  public Hash commit(@Nonnull BranchName branch,
       @Nonnull Optional<Hash> referenceHash,
       @Nonnull METADATA metadata,
       @Nonnull List<Operation<VALUE>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
-    this.<ReferenceNotFoundException, ReferenceConflictException>delegate2Ex("commit",
+    return this.<Hash, ReferenceNotFoundException, ReferenceConflictException>delegate2ExR("commit",
         () -> delegate.commit(branch, referenceHash, metadata, operations));
   }
 
@@ -107,9 +105,9 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   }
 
   @Override
-  public void create(NamedRef ref, Optional<Hash> targetHash)
+  public Hash create(NamedRef ref, Optional<Hash> targetHash)
       throws ReferenceNotFoundException, ReferenceAlreadyExistsException {
-    this.<ReferenceNotFoundException, ReferenceAlreadyExistsException>delegate2Ex("create",
+    return this.<Hash, ReferenceNotFoundException, ReferenceAlreadyExistsException>delegate2ExR("create",
         () -> delegate.create(ref, targetHash));
   }
 
@@ -245,6 +243,23 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
     }
   }
 
+  private <R, E1 extends VersionStoreException, E2 extends VersionStoreException> R delegate2ExR(String requestName,
+      DelegateWith2R<R, E1, E2> delegate) throws E1, E2 {
+    Sample sample = Timer.start(clock);
+    Exception failure = null;
+    try {
+      return delegate.handle();
+    } catch (IllegalArgumentException e) {
+      // IllegalArgumentException indicates a user-error, not a server error
+      throw e;
+    } catch (RuntimeException e) {
+      failure = e;
+      throw e;
+    } finally {
+      measure(requestName, sample, failure);
+    }
+  }
+
   @FunctionalInterface
   interface Delegate<R> {
     R handle();
@@ -258,5 +273,10 @@ public final class MetricsVersionStore<VALUE, METADATA, VALUE_TYPE extends Enum<
   @FunctionalInterface
   interface DelegateWith2<E1 extends VersionStoreException, E2 extends VersionStoreException> {
     void handle() throws E1, E2;
+  }
+
+  @FunctionalInterface
+  interface DelegateWith2R<R, E1 extends VersionStoreException, E2 extends VersionStoreException> {
+    R handle() throws E1, E2;
   }
 }

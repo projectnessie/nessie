@@ -70,7 +70,7 @@ public interface TreeApi {
   @Path("tree")
   @Operation(summary = "Get default branch for commits and reads")
   @APIResponses({
-      @APIResponse(responseCode = "200", description = "Found and default bracnh."),
+      @APIResponse(responseCode = "200", description = "Returns name and latest hash of the default branch."),
       @APIResponse(responseCode = "404", description = "Default branch not found.")
   })
   Branch getDefaultBranch() throws NessieNotFoundException;
@@ -82,10 +82,11 @@ public interface TreeApi {
   @Path("tree")
   @Operation(summary = "Create a new reference")
   @APIResponses({
-      @APIResponse(responseCode = "204", description = "Created successfully."),
+      @APIResponse(responseCode = "200", description = "Created successfully.",
+          content = {@Content(examples = {@ExampleObject(ref = "refObj")})}),
       @APIResponse(responseCode = "409", description = "Reference already exists")
   })
-  void createReference(
+  Reference createReference(
       @Valid
       @NotNull
       @RequestBody(description = "Reference to create.", content = {@Content(examples = {@ExampleObject(ref = "refObj")})})
@@ -407,14 +408,17 @@ public interface TreeApi {
   @POST
   @Path("branch/{branchName}/commit")
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "commit multiple on default branch")
+  @Operation(summary = "Commit multiple operations against the given branch expecting that branch to have "
+      + "the given hash as its latest commit. The hash in the successful response contains the hash of the "
+      + "commit that contains the operations of the invocation.")
   @APIResponses({
-      @APIResponse(responseCode = "204", description = "Updated successfully."),
+      @APIResponse(responseCode = "200", description = "Updated successfully.",
+        content = {@Content(examples = {@ExampleObject(ref = "refObj")})}),
       @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "409", description = "Update conflict")
   })
-  public void commitMultipleOperations(
+  Branch commitMultipleOperations(
       @NotNull
       @Pattern(regexp = Validation.REF_NAME_REGEX, message = Validation.REF_NAME_MESSAGE)
       @Parameter(description = "Branch to change, defaults to default branch.", examples = {@ExampleObject(ref = "ref")})

@@ -36,8 +36,19 @@ public class HttpResponse {
   }
 
   private <V> V readEntity(ObjectReader reader) {
-    try (InputStream is = responseContext.getInputStream()) {
-      return reader.readValue(is);
+    try {
+      if (responseContext.getResponseCode().getCode() == Status.NO_CONTENT.getCode()) {
+        // In case the Nessie server returns no content (because it's on an older version)
+        // but the client expects a response, just return null here and cross fingers that
+        // the code doesn't expect a non-null value.
+        // This situation happened when `TreeApi.createReference()` started to return a value
+        // but the tests in :nessie-versioned-gc-iceberg were running Nessie 0.4 server, which
+        // doesn't return a value, so `org.projectnessie.versioned.gc.TestUtils#resetData` failed.
+        return null;
+      }
+      try (InputStream is = responseContext.getInputStream()) {
+        return reader.readValue(is);
+      }
     } catch (IOException e) {
       throw new HttpClientException("Cannot parse request.", e);
     }

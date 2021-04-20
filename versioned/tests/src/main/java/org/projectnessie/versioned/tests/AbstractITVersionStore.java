@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,6 +70,68 @@ public abstract class AbstractITVersionStore {
 
   protected abstract VersionStore<String, String, StringSerializer.TestEnum> store();
 
+  /**
+   * Use case simulation: single branch, multiple users, each user updating a separate table.
+   */
+  @Test
+  void singleBranchManyUsersDistinctTables() throws Exception {
+    singleBranchTest("singleBranchManyUsersDistinctTables", user -> String.format("user-table-%d", user), false);
+  }
+
+  /**
+   * Use case simulation: single branch, multiple users, all users updating a single table.
+   */
+  @Test
+  void singleBranchManyUsersSingleTable() throws Exception {
+    singleBranchTest("singleBranchManyUsersSingleTable", user -> "single-table", true);
+  }
+
+  private void singleBranchTest(String branchName, IntFunction<String> tableNameGen,
+      boolean allowInconsistentValueException) throws Exception {
+    BranchName branch = BranchName.of(branchName);
+
+    int numUsers = 5;
+    int numCommits = 50;
+
+    Hash[] hashesKnownByUser = new Hash[numUsers];
+    Hash createHash = store().create(branch, Optional.empty());
+    Arrays.fill(hashesKnownByUser, createHash);
+
+    List<String> expectedValues = new ArrayList<>();
+    for (int commitNum = 0; commitNum < numCommits; commitNum++) {
+      for (int user = 0; user < numUsers; user++) {
+        Hash hashKnownByUser = hashesKnownByUser[user];
+
+        String msg = String.format("user %03d/commit %03d", user, commitNum);
+        expectedValues.add(msg);
+        String value = String.format("data_file_%03d_%03d", user, commitNum);
+        Put<String> put = Put.of(Key.of(tableNameGen.apply(user)), value);
+
+        Hash commitHash;
+        try {
+          commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg, ImmutableList.of(put));
+        } catch (ReferenceConflictException inconsistentValueException) {
+          if (allowInconsistentValueException) {
+            hashKnownByUser = store().toHash(branch);
+            commitHash = store().commit(branch, Optional.of(hashKnownByUser), msg, ImmutableList.of(put));
+          } else {
+            throw inconsistentValueException;
+          }
+        }
+
+        assertNotEquals(hashKnownByUser, commitHash);
+
+        hashesKnownByUser[user] = commitHash;
+      }
+    }
+
+    // Verify that all commits are there and that the order of the commits is correct
+    List<String> committedValues = store().getCommits(branch)
+        .map(WithHash::getValue).collect(Collectors.toList());
+    Collections.reverse(expectedValues);
+    assertEquals(expectedValues, committedValues);
+  }
+
   /*
    * Test:
    * - Create a branch with no hash assigned to it
@@ -86,11 +149,13 @@ public abstract class AbstractITVersionStore {
     assertThat(hash, is(notNullValue()));
 
     final BranchName anotherBranch = BranchName.of("bar");
-    store().create(anotherBranch, Optional.of(hash));
+    final Hash createHash = store().create(anotherBranch, Optional.of(hash));
     final Hash commitHash = commit("Some Commit").toBranch(anotherBranch);
+    assertNotEquals(createHash, commitHash);
 
     final BranchName anotherAnotherBranch = BranchName.of("baz");
-    store().create(anotherAnotherBranch, Optional.of(commitHash));
+    final Hash otherCreateHash = store().create(anotherAnotherBranch, Optional.of(commitHash));
+    assertEquals(commitHash, otherCreateHash);
 
     List<WithHash<NamedRef>> namedRefs;
     try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
@@ -122,14 +187,15 @@ public abstract class AbstractITVersionStore {
   @Test
   public void commitLogPaging() throws Exception {
     BranchName branch = BranchName.of("commitLogPaging");
-    store().create(branch, Optional.empty());
+    Hash createHash = store().create(branch, Optional.empty());
 
     int commits = 95; // this should be enough
+    Hash[] commitHashes = new Hash[commits];
     List<String> messages = new ArrayList<>(commits);
     for (int i = 0; i < commits; i++) {
       String msg = String.format("commit#%05d", i);
       messages.add(msg);
-      store().commit(branch, Optional.empty(),
+      commitHashes[i] = store().commit(branch, Optional.of(i == 0 ? createHash : commitHashes[i - 1]),
           msg, ImmutableList.of(Put.of(Key.of("table"), String.format("value#%05d", i))));
     }
     Collections.reverse(messages);
@@ -235,11 +301,13 @@ public abstract class AbstractITVersionStore {
   public void commitToBranch() throws Exception {
     final BranchName branch = BranchName.of("foo");
 
-    store().create(branch, Optional.empty());
+    final Hash createHash = store().create(branch, Optional.empty());
     final Hash initialHash = store().toHash(branch);
+    assertEquals(createHash, initialHash);
 
-    store().commit(branch, Optional.of(initialHash), "Some commit", Collections.emptyList());
+    final Hash commitHash0 = store().commit(branch, Optional.of(initialHash), "Some commit", Collections.emptyList());
     final Hash commitHash = store().toHash(branch);
+    assertEquals(commitHash, commitHash0);
 
     assertThat(commitHash, is(Matchers.not(initialHash)));
     store().commit(branch, Optional.of(initialHash), "Another commit", Collections.emptyList());

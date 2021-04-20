@@ -95,13 +95,15 @@ public interface ContentsApi {
   @POST
   @Path("{key}")
   @Consumes(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Update object content associated with key")
+  @Operation(summary = "Update object content associated with key. "
+      + "This operation is deprecated, use TreeApi.commitMultipleOperations instead,")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Contents updated successfully."),
       @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
       @APIResponse(responseCode = "404", description = "Provided ref doesn't exists"),
       @APIResponse(responseCode = "409", description = "Update conflict")})
-  public void setContents(
+  @Deprecated
+  void setContents(
       @Valid
       @NotNull
       @Parameter(description = "object name to search for", examples = {@ExampleObject(ref = "ContentsKey")})
@@ -130,7 +132,8 @@ public interface ContentsApi {
    */
   @DELETE
   @Path("{key}")
-  @Operation(summary = "Delete object content associated with key")
+  @Operation(summary = "Delete object content associated with key. "
+      + "This operation is deprecated, use TreeApi.commitMultipleOperations instead.")
   @APIResponses({
       @APIResponse(responseCode = "204", description = "Deleted successfully."),
       @APIResponse(responseCode = "400", description = "Invalid input, ref/hash name not valid"),
@@ -138,7 +141,8 @@ public interface ContentsApi {
       @APIResponse(responseCode = "409", description = "Delete conflict"),
       }
   )
-  public void deleteContents(
+  @Deprecated
+  void deleteContents(
       @Valid
       @Parameter(description = "object name to search for", examples = {@ExampleObject(ref = "ContentsKey")})
       @PathParam("key")
