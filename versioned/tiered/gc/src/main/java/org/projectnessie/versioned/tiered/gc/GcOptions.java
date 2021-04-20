@@ -39,4 +39,8 @@ public interface GcOptions {
    */
   long getTimeSlopMicros();
 
+  public static ImmutableGcOptions.Builder builder() {
+    return ImmutableGcOptions.builder();
+  }
+
 }

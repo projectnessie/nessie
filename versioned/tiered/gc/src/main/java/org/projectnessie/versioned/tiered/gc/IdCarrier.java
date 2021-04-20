@@ -17,6 +17,7 @@ package org.projectnessie.versioned.tiered.gc;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -35,6 +36,9 @@ import org.projectnessie.versioned.tiered.BaseValue;
 import org.projectnessie.versioned.tiered.L2;
 import org.projectnessie.versioned.tiered.L3;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 /**
  * Utility object used to encapsulate an id object that references additional ids.
  *
@@ -46,6 +50,7 @@ public class IdCarrier implements Serializable {
 
   private IdFrame id;
   private List<IdFrame> children;
+  private Map<IdFrame, List<String>> childKeys;
 
   public List<IdFrame> getChildren() {
     return children;
@@ -61,6 +66,14 @@ public class IdCarrier implements Serializable {
 
   public void setChildren(List<IdFrame> children) {
     this.children = children;
+  }
+
+  public Map<IdFrame, List<String>> getChildKeys() {
+    return childKeys;
+  }
+
+  public void setChildKeys(Map<IdFrame, List<String>> childKeys) {
+    this.childKeys = childKeys;
   }
 
   public static <T extends BaseValue<T>> Dataset<IdCarrier> asDataset(
@@ -114,7 +127,15 @@ public class IdCarrier implements Serializable {
 
       @Override
       public L3 keyDelta(Stream<KeyDelta> keyDelta) {
-        c.children = keyDelta.map(KeyDelta::getId).map(IdFrame::of).collect(Collectors.toList());
+        List<IdFrame> children = Lists.newArrayList();
+        Map<IdFrame, List<String>> childKeys = Maps.newHashMap();
+        keyDelta.forEach(kd -> {
+          IdFrame id = IdFrame.of(kd.getId());
+          children.add(id);
+          childKeys.put(id, kd.getKey().getElements());
+        });
+        c.childKeys = childKeys;
+        c.children = children;
         return this;
       }
     });
