@@ -28,7 +28,54 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 public interface Field {
 
   enum FieldType {
+    NULL,
+    BOOLEAN,
+    INT8,
+    UINT8,
+    INT16,
+    UINT16,
+    INT32,
+    UINT32,
+    INT64,
+    UINT64,
+    FLOAT16,
+    FLOAT32,
+    FLOAT64,
+    BINARY,
+    FIXED_BINARY,
+    LARGE_BINARY,
+    UTF8,
+    LARGE_UTF8,
+    DATE,
+    TIME,
+    TIMESTAMP,
+    DURATION,
+    INTERVAL,
+    DECIMAL,
+    LIST,
+    LARGE_LIST,
+    FIXED_LIST,
+    MAP,
+    STRUCT,
+    DENSE_UNION,
+    SPARSE_UNION
+  }
 
+  enum TimeUnit {
+    SECOND,
+    MILLISECOND,
+    MICROSECOND,
+    NANOSECOND
+  }
+
+  enum DateUnit {
+    DAY,
+    MILLISECOND
+  }
+
+  enum IntervalUnit {
+    YEAR_MONTH,
+    DAY_TIME
   }
 
   FieldType getType();

@@ -85,6 +85,7 @@
     <module>perftest</module>
     <module>servers</module>
     <module>tools</module>
+    <module>schema-converters</module>
   </modules>
 
   <scm>

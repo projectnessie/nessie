@@ -37,6 +37,27 @@ Therefore, the Iceberg table spec should be considered subject to change in the 
 
 ### View
 
+The View definition provides the minimum viable set of features that a SQL view requires. The SQL View object is defined as follows:
+1. Dialect: This is the specific SQL Dialect that this View stores (eg Dremio, Trino, Hive etc). The Dialect object can also have
+   engine specific settings stored in the object. As of today these containers are empty. The dialect is a marker only to identify
+   the store this View _should_ be used for.
+1. SQL Text: This is clearly the important part of the view. This contains the SQL expression that describes the view in the given
+   dialect. **Note** Nessie does not do any verification or checks to ensure that a SQL statement is valid for a given dialect.
+   The SQL text should not contain DDL, eg the statement should be a `SELECT` and can omit the `CREATE VIEW` portion.
+1. SQL Context: the base from which tables should be resolved. eg which database the view belongs to
+1. Schema: Optional field. This is the expected schema of the SQL view, but is not validated. It is expected that the engine will
+   be able to derive the schema on its own as this field may be missing or not up to date. The format of this field is detailed below.
+
+#### Schema object
+The schema object is a limited version of the Arrow schema definition. See eg
+[Arrow Data Types and Schemas](https://arrow.apache.org/docs/python/api/datatypes.html). It supports the same fields and types
+as the Arrow schema and is a 1:1 translation of the Arrow objects. The reason we have created our own schema definition is to avoid
+couplign arrow or another format to our client libraries. The internal Schema definition has been created such that it isn't easily
+accessible outside of Nessie's `org.projectnessie` namespace in Java. This highlights that these objects are not created or modified
+by users directly. Nessie provides several converter modules (see [Schema Converters](https://github.com/projectnessie/nessie/tree/main/schema-converters)).
+Here translation to and from known Schemas are provided and engines should only import the appropriate module.
+
+Note that the default on disk format for the schema object is the arrow flatbuffer format.
 ### Delta Lake Table
 
 ### Hive Table & Database

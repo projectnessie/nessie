@@ -32,13 +32,11 @@ public abstract class SqlView extends Contents {
   public abstract String getSqlText();
 
   @Nullable
-  public abstract String getResolvedSqlText();
-
-  @Nullable
   public abstract String getSqlContext();
 
   public abstract Dialect getDialect();
 
+  @Nullable
   public abstract Schema getSchema();
 
 }
