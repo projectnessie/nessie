@@ -34,9 +34,7 @@ jobs:
 
     steps:
 
-    ### BEGIN common runner setup
-    # Unfortunately there is no way to have one action call other actions so we could put all
-    # these steps into a single action.
+    ### BEGIN runner setup
     - name: Update /etc/hosts
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
@@ -119,7 +117,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r python/requirements_lint.txt
         pip install tox-gh-actions bumpversion twine
-    ### END of common runner setup
 
     - name: Deploy with Maven
       run: mvn -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true -DskipTests
@@ -128,6 +125,7 @@ jobs:
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         SPARK_LOCAL_IP: localhost
+    ### END runner setup
 
     - name: Push Docker images
       run: |
