@@ -16,13 +16,19 @@
 package org.projectnessie.versioned.gc.actions;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItems;
 
 import java.io.File;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogUtil;
@@ -32,6 +38,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.actions.GcTableCleanAction;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.nessie.NessieCatalog;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
@@ -44,7 +51,10 @@ import org.apache.spark.sql.internal.SQLConf;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.util.SerializableConfiguration;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,15 +65,16 @@ import org.projectnessie.client.NessieClient;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
-import org.projectnessie.model.CommitMeta;
-import org.projectnessie.model.Contents;
 import org.projectnessie.model.Reference;
-import org.projectnessie.server.store.TableCommitMetaStoreWorker;
-import org.projectnessie.versioned.StoreWorker;
+import org.projectnessie.versioned.gc.AssetKeySerializer;
 import org.projectnessie.versioned.tiered.gc.DynamoSupplier;
 import org.projectnessie.versioned.tiered.gc.GcOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 
 class ITTestIdentifyUnreferencedAssetsActions {
   private static final Logger LOGGER = LoggerFactory.getLogger(ITTestIdentifyUnreferencedAssetsActions.class);
@@ -84,8 +95,6 @@ class ITTestIdentifyUnreferencedAssetsActions {
   private static SparkSession sparkMain;
   private static SparkSession sparkDeleteBranch;
 
-  private StoreWorker<Contents, CommitMeta, Contents.Type> helper;
-
 
   protected NessieCatalog catalog;
   protected NessieClient client;
@@ -93,6 +102,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
   protected ContentsApi contents;
   private NessieCatalog catalogDeleteBranch;
   private NessieCatalog catalogMainBranch;
+  private AssetKeySerializer assetKeySerializer;
 
   @BeforeAll
   static void create() throws Exception {
@@ -147,6 +157,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
     props.put("warehouse", LOCAL_DIR.toURI().toString());
     Configuration hadoopConfig = spark.sessionState().newHadoopConf();
     catalog = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
+    assetKeySerializer = new AssetKeySerializer(new SerializableConfiguration(hadoopConfig));
 
     //second catalog for deleted branch
     props.put("ref", DELETE_BRANCH);
@@ -157,8 +168,6 @@ class ITTestIdentifyUnreferencedAssetsActions {
     props.put("ref", "main");
     hadoopConfig = sparkMain.sessionState().newHadoopConf();
     catalogMainBranch = (NessieCatalog) CatalogUtil.loadCatalog(NessieCatalog.class.getName(), "nessie", props, hadoopConfig);
-
-    helper = new TableCommitMetaStoreWorker();
   }
 
 
@@ -177,7 +186,6 @@ class ITTestIdentifyUnreferencedAssetsActions {
   void after() throws NessieNotFoundException, NessieConflictException {
     resetData(tree);
     DynamoSupplier.deleteAllTables();
-    helper = null;
   }
 
 
@@ -224,21 +232,71 @@ class ITTestIdentifyUnreferencedAssetsActions {
     addFile(sparkDeleteBranch, TABLE_IDENTIFIER2);
     client.getTreeApi().deleteBranch(DELETE_BRANCH, client.getTreeApi().getReferenceByName(DELETE_BRANCH).getHash());
 
-    // hack: sleep for 10 seconds so GC will see above data as old
-    // Thread.sleep(10 * 1000);
-
     // now confirm that the unreferenced assets are marked for deletion. These are found based
     // on the no-longer referenced commit as well as the old commits.
     GcActions actions = new GcActions.Builder(sparkMain).setActionsConfig(actionsConfig()).setGcConfig(gcOptions(Clock.systemUTC()))
         .setTable(GcActions.DEFAULT_TABLE_IDENTIFIER).build();
-    actions.updateUnreferencedAssetTable(actions.identifyUnreferencedAssets());
+    Dataset<Row> unreferencedAssets = actions.identifyUnreferencedAssets();
+    actions.updateUnreferencedAssetTable(unreferencedAssets);
 
+    //Test asset count
+    //collect into a multimap for assertions
+    Multimap<String, String> unreferencedItems = unreferencedAssets.collectAsList()
+      .stream()
+      .collect(Multimaps.toMultimap(x -> x.getString(4),
+        x -> x.getString(5), HashMultimap::create));
+    Map<String, Integer> count = unreferencedItems.keySet().stream()
+        .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems.get(x).size()));
+    Set<String> paths = new HashSet<>(unreferencedItems.values());
+
+    //1 table should be deleted from deleted branch
+    //2 metadata: 1 from add and one from create
+    //1 manifest lists: 1 from add
+    //1 manifest: 1 manifest file from add
+    //2 data files: 2 data files from table
+    ImmutableMap<String, Integer> expected = ImmutableMap.of("TABLE", 1,
+      "ICEBERG_MANIFEST", 1,
+      "ICEBERG_MANIFEST_LIST", 1,
+      "ICEBERG_METADATA", 2,
+      "DATA_FILE", 2);
+    assertThat(count.entrySet(), (Matcher)hasItems(expected.entrySet().toArray()));
+
+
+    //delete second second branch and re-run asset identification
     client.getTreeApi().deleteBranch(BRANCH, client.getTreeApi().getReferenceByName(BRANCH).getHash());
-    actions.updateUnreferencedAssetTable(actions.identifyUnreferencedAssets());
+    Dataset<Row> unreferencedAssets2 = actions.identifyUnreferencedAssets();
+    actions.updateUnreferencedAssetTable(unreferencedAssets2);
 
+    //Test asset count again to ensure we got both tables
+    //collect into a multimap for assertions
+    Multimap<String, String> unreferencedItems2 = unreferencedAssets2.collectAsList()
+      .stream()
+      .collect(Multimaps.toMultimap(x -> x.getString(4),
+        x -> x.getString(5), HashMultimap::create));
+    Map<String, Integer> count2 = unreferencedItems2.keySet().stream()
+      .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems2.get(x).size()));
+    paths.addAll(unreferencedItems2.values());
+
+    //4 table should be deleted from deleted branch  x2 tables
+    //4 metadata: 1 from add and one from create x2 tables
+    //2 manifest lists: 1 from add x2 tables
+    //2 manifest: 1 manifest file from add x2 tables
+    //4 data files: 2 data files from table x2 tables
+    ImmutableMap<String, Integer> expected2 = ImmutableMap.of("TABLE", 2,
+      "ICEBERG_MANIFEST", 2,
+      "ICEBERG_MANIFEST_LIST", 2,
+      "ICEBERG_METADATA", 4,
+      "DATA_FILE", 4);
+    assertThat(count2.entrySet(), (Matcher)hasItems(expected2.entrySet().toArray()));
+
+    // now collect and remove both tables.
     Table table = catalogMainBranch.loadTable(GcActions.DEFAULT_TABLE_IDENTIFIER);
-    new GcTableCleanAction(table, sparkMain).purgeGcTable(true).deleteCountThreshold(2).deleteOnPurge(true).execute();
-
+    GcTableCleanAction.GcTableCleanResult result =
+        new GcTableCleanAction(table, sparkMain).dropGcTable(true).deleteCountThreshold(1).deleteOnPurge(false).execute();
+    Assertions.assertEquals(result.getDeletedAssetCount(), 14);
+    Assertions.assertEquals(result.getFailedDeletes(), 0);
+    Assertions.assertEquals(result.getDeletedAssetCount(), paths.size());
+    paths.forEach(p -> Assertions.assertFalse(new File(p).exists()));
   }
 
   private static GcActionsConfig actionsConfig() {

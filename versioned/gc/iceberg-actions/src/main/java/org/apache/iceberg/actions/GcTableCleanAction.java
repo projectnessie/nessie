@@ -26,6 +26,7 @@ import org.apache.spark.util.SerializableConfiguration;
 import org.projectnessie.versioned.gc.AssetKey;
 import org.projectnessie.versioned.gc.AssetKeySerializer;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 
 import scala.Tuple2;
@@ -41,7 +42,7 @@ public class GcTableCleanAction extends BaseSparkAction<GcTableCleanAction.GcTab
   private final AssetKeySerializer assetKeySerializer;
   private long seenCount = 10;
   private boolean deleteOnPurge = true;
-  private boolean purgeGcTable = false;
+  private boolean dropGcTable = true;
 
   /** Construct an action to clean the GC table.
    */
@@ -58,8 +59,8 @@ public class GcTableCleanAction extends BaseSparkAction<GcTableCleanAction.GcTab
     return this;
   }
 
-  public GcTableCleanAction purgeGcTable(boolean purgeGcTable) {
-    this.purgeGcTable = purgeGcTable;
+  public GcTableCleanAction dropGcTable(boolean dropGcTable) {
+    this.dropGcTable = dropGcTable;
     return this;
   }
 
@@ -78,9 +79,12 @@ public class GcTableCleanAction extends BaseSparkAction<GcTableCleanAction.GcTab
   public GcTableCleanResult execute() {
     Dataset<Row> purgeResult = purgeUnreferencedAssetTable();
     if (deleteOnPurge) {
-      cleanUnreferencedAssetTable(purgeResult, purgeGcTable);
+      cleanUnreferencedAssetTable(purgeResult, dropGcTable);
     }
-    return null;
+    Row count = purgeResult.withColumn("deleted", purgeResult.col("_2").cast("int"))
+        .agg(ImmutableMap.of("deleted", "sum", "_2", "count")).first();
+
+    return new GcTableCleanResult(count.getLong(1), count.getLong(1)-count.getLong(0));
   }
 
   private String tableName() {
@@ -88,7 +92,8 @@ public class GcTableCleanAction extends BaseSparkAction<GcTableCleanAction.GcTab
   }
 
   private Dataset<Row> purgeUnreferencedAssetTable() {
-    long currentCount = spark.read().format("iceberg").load(table.name()).count();
+    Row maxRunId = spark.read().format("iceberg").load(table.name()).groupBy().max("runid").first();
+    long currentCount = maxRunId.isNullAt(0) ? 0 : maxRunId.getLong(0);
     Dataset<Row> deletable = spark.sql(
         String.format("SELECT count(*) as counted, name, last(timestamp) as timestamp, last(asset) as asset, max(runid) as runid FROM %s "
           + "GROUP BY name HAVING counted >= %d AND runid = %d", tableName(), seenCount, currentCount)
@@ -105,12 +110,26 @@ public class GcTableCleanAction extends BaseSparkAction<GcTableCleanAction.GcTab
       spark.sql(String.format("DROP TABLE %s", tableName()));
     } else {
       //todo
-      throw new UnsupportedOperationException("NYI");
+      throw new UnsupportedOperationException("Not Yet Implemented");
     }
   }
 
   public static class GcTableCleanResult {
+    private final long deletedAssetCount;
+    private final long failedDeletes;
 
+    public GcTableCleanResult(long deletedAssetCount, long failedDeletes) {
+      this.deletedAssetCount = deletedAssetCount;
+      this.failedDeletes = failedDeletes;
+    }
+
+    public long getDeletedAssetCount() {
+      return deletedAssetCount;
+    }
+
+    public long getFailedDeletes() {
+      return failedDeletes;
+    }
   }
 
   private static class DeleteFunction implements MapFunction<Row, Tuple2<String, Boolean>> {

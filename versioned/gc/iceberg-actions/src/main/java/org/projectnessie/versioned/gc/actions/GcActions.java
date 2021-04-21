@@ -123,7 +123,8 @@ public class GcActions {
     IdentifyUnreferencedAssets<Contents, IcebergAssetKey> assets = new IdentifyUnreferencedAssets<>(worker.getValueSerializer(),
         assetKeySerializer, assetKeyConverter, new ValueTypeFilter(worker.getValueSerializer()), spark());
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> unreferencedAssets = assets.identify(unreferencedValues);
-    long currentCount = spark().read().format("iceberg").load(table.toString()).count();
+    Row maxRunId = spark().read().format("iceberg").load(table.toString()).groupBy().max("runid").first();
+    long currentCount = maxRunId.isNullAt(0) ? 0 : maxRunId.getLong(0) + 1;
     return unreferencedAssets.map(new ConvertToTableFunction(assetKeySerializer), RowEncoder.apply(SCHEMA))
             .withColumn("runid", functions.lit(currentCount));
   }
