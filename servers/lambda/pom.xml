@@ -29,6 +29,11 @@
 
   <name>Nessie - Lambda Function</name>
 
+  <properties>
+    <quarkus.jacoco.data-file>jacoco.exec</quarkus.jacoco.data-file>
+    <test.log.level>INFO</test.log.level>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.projectnessie</groupId>
@@ -80,6 +85,24 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-code</goal>
+              <goal>generate-code-tests</goal>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
   <profiles>
     <profile>
       <id>native</id>
@@ -89,17 +112,11 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>generate-code</goal>
-                  <goal>generate-code-tests</goal>
-                  <goal>build</goal>
-                </goals>
-              </execution>
-            </executions>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
