@@ -5,33 +5,106 @@ service can be scheduled and Nessie reports the outcome of each scheduled operat
 Scheduled operations require that Nessie have access to a Spark cluster to complete
 those operations and many of them are distributed compute operations.
 
-!!! info
-    Table management services are currently in progress and are not yet included in a released version of Nessie.
-
 ## Garbage Collection
 
-Since Nessie is maintaining many different versions of metadata and data-pointers simultaneously,
+Since Nessie is maintaining many versions of metadata and data-pointers simultaneously,
 you must rely on Nessie to clean up old data. Nessie calls this garbage collection.
 
-Garbage collection policies are configurable and can be either destructive or instructive.
-To configure garbage collection, you must set the following settings:
+There are at least two steps to a garbage collection action. The first steps are instructive, and the last step is destructive.
 
-### Collection Types
+!!! info
+    currently the GC algorithm only works for  
 
-|Collection|Modes|Notes|
-|-|-|-|
-|Unreferenced Data|Instructive or Destructive|Deletes any objects that haven't been **directly** referenced by a tag or branch for 30 days.|
-|Unreferenced Commit|Deletes internal Nessie objects that are no longer referenced|Destructive|
-|Unreferenced Metadata|Deletes metadata objects that are no longer referenced[^1]|
-|Referenced Commit & Metadata|Deletes historical commit information that is in a valid commit tree but older than a certain date|
+### Identify Unreferenced Assets
 
-!!! danger
-    Because of the nature of data sizes, Nessie treats any historical commit as "unreferenced"
-    if it is not **directly** referenced by a tag or branch. **This is very different than traditional Git**.
-    If you want to also maintain historical versions of data beyond your garbage collection time,
-    you should leverage Time-based AutoTagging (below).
+This is a spark job which should be run periodically to identify no longer referenced assets. Assets are defined as the set of
+files, records, entries etc that make up a table, view or other Nessie object. For example, iceberg assets are:
+ * manifest files
+ * manifest lists
+ * data files
+ * metadata files
+ * the entire table directory on disk (if it is empty)
+
+To be marked as unreferenced an asset must either:
+ 1. No longer referenced by any branch or tag. For example, an entire branch was deleted, and a table on that branch is no longer accessible.
+ 2. Assets created in a commit which has passed the (configurable) commit age. *If they are not referenced by newer commits*
+
+Identifying unreferenced assets is a non-destructive action. The result of the spark job is a Spark DataFrame of all the
+unreferenced assets. This dataframe is stored in an iceberg table managed by nessie at a configurable key. This table is
+referencable in Nessie so can be examined via Spark or any other Nessie/Iceberg compatible engine. An example of the table output
+is shown below.
+
+![Screenshot](../img/gc-table.png)
+
+This action is designed to run concurrently to other workloads and can/should be run regularly. This table is used as input
+into the destructive GC operation described below.
+
+#### Configuration and running
+GcActionsConfig actionsConfig, GcOptions gcConfig, TableIdentifier table
+The relevant configuration items are:
+| parameter | default value | description |
+|---|---|---|
+| table | `null` | The Iceberg `TableIdentifier` to which the unreferenced assets should be written |
+| GcOptions.getBloomFilterCapacity | 10000000 | Size of bloom filter for identification of referenced values |
+| GcOptions.getMaxAgeMicros | 7 days | age at which a commit starts to expire |
+| GcOptions.getTimeSlopMicros | 1 day | minimum age a values can be before it will be considered expired |
+| GcActionsConfig.getDynamoRegion | provider default | AWS Region of the Nessie DynamoDB |
+| GcActionsConfig.getDynamoEndpoint | provider default | Custom AWS endpoint of the Nessie DynamoDB |
+| GcActionsConfig.getStoreType | DYNAMO | only backend which supports GC |
+
+Running the action can be done simply by:
+```java
+    GcActions actions = new GcActions.Builder(spark)
+                                     .setActionsConfig(actionsConfig)
+                                     .setGcConfig(gcOptions)
+                                     .setTable(TABLE_IDENTIFIER).build(); // (1)
+    Dataset<Row> unreferencedAssets = actions.identifyUnreferencedAssets(); // (2)
+    actions.updateUnreferencedAssetTable(unreferencedAssets); // (3)
+```
+The first step above builds the action with known configs. Step 2 generates a DataFrame of unreferenced assets and
+Step 3 writes it as an iceberg table.
+
+### Delete Unreferenced Assets
+
+The destructive garbage collection step is also a Spark job and takes as input the table that has been built above. This job
+is modelled as an Iceberg Action and has a similar API to the other Iceberg Actions. In the future it will be registered with
+Iceberg's Action APIs and callable via Iceberg's custom [SQL statements](http://iceberg.apache.org/spark-procedures/).
+
+This Iceberg Action looks at the generated table from the 'Identify' step and counts the number of times a distinct asset has been
+seen. Effectively it performs a group-by and count on this table. If the count of an asset is over a specified threshold **AND** it
+was seen in the last run of the 'Identify' stage it is collectable. This asset is then deleted permanently. A report table of
+deleted object is returned to the user and either the records are removed from the 'identify' table or the whole table is purged.
+
+#### Configuration and running
+
+The relevant configuration items are:
+| parameter | default value | description |
+|---|---|---|
+| seenCount | 10 | How many times an asset has been seen as unreferenced in order to be considered for deletion |
+| deleteOnPurge | true | Delete records from the underlying iceberg table of unreferenced assets |
+| dropGcTable | true | Drop the underlying iceberg table or attempt to clean only the missing rows |
+| table | `null` | The iceberg `Table` which stores the list of unreferenced assets |
+
+Running the action can be done simply by:
+
+```java
+    Table table = catalog.loadTable(TABLE_IDENTIFIER);
+    new GcTableCleanAction(table, spark).dropGcTable(true).deleteCountThreshold(2).deleteOnPurge(true).execute();
+```
+The above snippet assumes a `TABLE_IDENTIFIER` which points to the unreferenced assets table. It also requires an active
+spark session and a nessie owned `Catalog`. See the [demo directory](https://github.com/projectnessie/nessie/tree/main/python/demo)
+for a complete example.
+
+### Internal Garbage collection
+
+Currently the only garbage collection algorithm available is on the values and assets in a Nessie database only. The
+internal records of the Nessie Database are currently not cleaned up. Unreferenced objects stored in Nessie's internal
+database will be persisted forever currently. A future release will also clean up internal Nessie records if they are unreferenced.
 
 ## Time-based AutoTagging
+
+!!! info
+  This service is currently in progress and is not yet included in a released version of Nessie.
 
 Nessie works against data based on a commit timeline. In many situations, it is useful
 to capture historical versions of data for analysis or comparison purposes. As such,
@@ -59,6 +132,9 @@ AutoTagging is currently done based on the UTC roll-over of each item.
 
 ## Manifest Reorganization
 
+!!! info
+This service is currently in progress and is not yet included in a released version of Nessie.
+
 Rewrites the manifests associated with a table so that manifest files are organized
 around partitions. This extends on the ideas in the Iceberg [`RewriteManifestsAction`](http://iceberg.apache.org/javadoc/0.11.0/org/apache/iceberg/actions/RewriteManifestsAction.html).
 
@@ -74,6 +150,9 @@ Key configuration parameters:
 |partition priority|medium|How important achieving partition-oriented manifests.|
 
 ## Compaction
+
+!!! info
+This service is currently in progress and is not yet included in a released version of Nessie.
 
 Because operations against table formats are done at the file level, a table can start
 to generate many small files. These small files will slow consumption. As such, Nessie
