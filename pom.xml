@@ -1093,6 +1093,7 @@ limitations under the License.
                 <configuration>
                   <dataFileIncludes>
                     <dataFileInclude>**/jacoco.exec</dataFileInclude>
+                    <dataFileInclude>**/jacoco-quarkus.exec</dataFileInclude>
                   </dataFileIncludes>
                   <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate</outputDirectory>
                 </configuration>
