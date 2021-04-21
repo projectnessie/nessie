@@ -30,6 +30,7 @@
   <name>Nessie - Quarkus</name>
 
   <properties>
+    <quarkus.jacoco.data-file>jacoco.exec</quarkus.jacoco.data-file>
     <quarkus.smallrye-openapi.store-schema-directory>${project.build.directory}/openapi</quarkus.smallrye-openapi.store-schema-directory>
     <test.log.level>INFO</test.log.level>
   </properties>
