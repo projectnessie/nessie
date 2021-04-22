@@ -24,7 +24,6 @@ import org.immutables.value.Value;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.errorprone.annotations.Var;
 
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableHiveTable.class)
@@ -39,15 +38,15 @@ public abstract class HiveTable extends Contents {
   /**
    * Because of the List of byte arrays Immutables doesn't generate a correct hashcode.
    *
-   * <p> We hand compute the List elements to ensure the byte arrays hash codes are consistent.
+   * <p>We hand compute the List elements to ensure the byte arrays hash codes are consistent.
    */
   @Override
   public int hashCode() {
-    int h = 5381;
-    h += (h << 5) + Objects.hashCode(getId());
-    h += (h << 5) + Arrays.hashCode(getTableDefinition());
+    int h = 1;
+    h += (31 * h) + Objects.hashCode(getId());
+    h += (31 * h) + Arrays.hashCode(getTableDefinition());
     for (byte[] p: getPartitions()) {
-      h += (h << 5) + Arrays.hashCode(p);
+      h += (31 * h) + Arrays.hashCode(p);
     }
     return h;
   }
@@ -55,17 +54,21 @@ public abstract class HiveTable extends Contents {
   /**
    * Because of the List of byte arrays Immutables doesn't generate a correct equals.
    *
-   * <p> We hand compare the List elements to ensure the byte arrays are equal.
+   * <p>,We hand compare the List elements to ensure the byte arrays are equal.
    */
   @Override
   public boolean equals(Object another) {
-    if (this == another) return true;
+    if (this == another) {
+      return true;
+    }
     return another instanceof ImmutableHiveTable
       && equalTo((ImmutableHiveTable) another);
   }
 
   private boolean equalTo(ImmutableHiveTable another) {
-    if (hashCode() != another.hashCode()) return false;
+    if (hashCode() != another.hashCode()) {
+      return false;
+    }
     return Objects.equals(getId(), another.getId())
       && Arrays.equals(getTableDefinition(), another.getTableDefinition())
       && partitionsEqual(getPartitions(), another.getPartitions());
@@ -75,7 +78,7 @@ public abstract class HiveTable extends Contents {
     if (partitions.size() != partitions1.size()) {
       return false;
     }
-    for (int i=0;i<partitions.size();i++) {
+    for (int i = 0;i < partitions.size();i++) {
       if (!Arrays.equals(partitions.get(i), partitions1.get(i))) {
         return false;
       }

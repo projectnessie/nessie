@@ -73,9 +73,9 @@ class TestStoreWorker {
   @Test
   void testCommitSerde() throws JsonProcessingException {
     CommitMeta expectedCommit = ImmutableCommitMeta.builder().commitTime(Instant.now())
-        .author("bill")
         .authorTime(Instant.now())
-        .author("ted")
+        .author("bill")
+        .committer("ted")
         .hash("xyz")
         .message("commit msg")
         .build();
@@ -113,7 +113,7 @@ class TestStoreWorker {
     byte[] database = new byte[]{0, 1, 2, 3, 4, 5};
     Contents contents = ImmutableHiveDatabase.builder().databaseDefinition(database).id(ID).build();
     ByteString bytes = ObjectTypes.Contents.newBuilder().setId(ID)
-      .setHiveDatabase(ObjectTypes.HiveDatabase.newBuilder().setDatabase(ByteString.copyFrom(database))).build().toByteString();
+        .setHiveDatabase(ObjectTypes.HiveDatabase.newBuilder().setDatabase(ByteString.copyFrom(database))).build().toByteString();
     return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);
   }
 
@@ -123,16 +123,23 @@ class TestStoreWorker {
     List<ByteString> partitionsBytes = Arrays.stream(partitions).map(ByteString::copyFrom).collect(Collectors.toList());
     Contents contents = ImmutableHiveTable.builder().tableDefinition(table).addPartitions(partitions).id(ID).build();
     ByteString bytes = ObjectTypes.Contents.newBuilder().setId(ID)
-      .setHiveTable(ObjectTypes.HiveTable.newBuilder().setTable(ByteString.copyFrom(table))
-        .addAllPartition(partitionsBytes)).build().toByteString();
+        .setHiveTable(ObjectTypes.HiveTable.newBuilder().setTable(ByteString.copyFrom(table))
+          .addAllPartition(partitionsBytes)).build().toByteString();
     return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);
   }
 
   private static Map.Entry<ByteString, Contents> getDelta() {
     String path = "foo/bar";
-    Contents contents = ImmutableDeltaLakeTable.builder().lastCheckpoint(path).id(ID).build();
+    String cl1 = "xyz";
+    String cl2 = "abc";
+    String ml1 = "efg";
+    String ml2 = "hij";
+    Contents contents = ImmutableDeltaLakeTable.builder()
+        .lastCheckpoint(path).addCheckpointLocationHistory(cl1).addCheckpointLocationHistory(cl2)
+        .addMetadataLocationHistory(ml1).addMetadataLocationHistory(ml2).id(ID).build();
     ByteString bytes = ObjectTypes.Contents.newBuilder().setId(ID)
-      .setDeltaLakeTable(ObjectTypes.DeltaLakeTable.newBuilder().setLastCheckpoint(path)).build().toByteString();
+        .setDeltaLakeTable(ObjectTypes.DeltaLakeTable.newBuilder().setLastCheckpoint(path).addCheckpointLocationHistory(cl1)
+          .addCheckpointLocationHistory(cl2).addMetadataLocationHistory(ml1).addMetadataLocationHistory(ml2)).build().toByteString();
     return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);
   }
 
@@ -140,7 +147,7 @@ class TestStoreWorker {
     String path = "SELECT * FROM foo.bar,";
     Contents contents = ImmutableSqlView.builder().dialect(SqlView.Dialect.DREMIO).sqlText(path).id(ID).build();
     ByteString bytes = ObjectTypes.Contents.newBuilder().setId(ID)
-      .setSqlView(ObjectTypes.SqlView.newBuilder().setSqlText(path).setDialect("DREMIO")).build().toByteString();
+        .setSqlView(ObjectTypes.SqlView.newBuilder().setSqlText(path).setDialect("DREMIO")).build().toByteString();
     return new AbstractMap.SimpleImmutableEntry<>(bytes, contents);
   }
 }
