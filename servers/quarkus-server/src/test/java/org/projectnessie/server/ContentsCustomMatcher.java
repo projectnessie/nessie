@@ -23,7 +23,7 @@ import org.hamcrest.TypeSafeMatcher;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.IcebergTable;
 
-public class ContentsCustomMatcher  extends TypeSafeMatcher<Contents> {
+public class ContentsCustomMatcher extends TypeSafeMatcher<Contents> {
   private final Contents expected;
 
   private ContentsCustomMatcher(Contents expected) {
