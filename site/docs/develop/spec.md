@@ -41,7 +41,7 @@ this is not enforced by the Specification. There are several expectations on thi
 1. `permanentId` is *not* related or derived from the commit-hash.
 
 There is no API to look up an object by `permanentId` and the intention of an `permanentId` is not to serve in that capacity.
-An example usage of the `permanentId` field might be storing auxiliary data on an object in a local cache and using
+An example usage of the `permanentId` field is storing auxiliary data on an object in a local cache and using
 `permanentId` to look up that auxiliary data.
 
 !!! note
