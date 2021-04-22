@@ -123,10 +123,9 @@ public class GcActions {
     IdentifyUnreferencedAssets<Contents, IcebergAssetKey> assets = new IdentifyUnreferencedAssets<>(worker.getValueSerializer(),
         assetKeySerializer, assetKeyConverter, new ValueTypeFilter(worker.getValueSerializer()), spark());
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> unreferencedAssets = assets.identify(unreferencedValues);
-    Row maxRunId = spark().read().format("iceberg").load(table.toString()).groupBy().max("runid").first();
-    long currentCount = maxRunId.isNullAt(0) ? 0 : maxRunId.getLong(0) + 1;
+    long currentRunId = GcActionUtils.getMaxRunId(spark, table.toString()) + 1;
     return unreferencedAssets.map(new ConvertToTableFunction(assetKeySerializer), RowEncoder.apply(SCHEMA))
-            .withColumn("runid", functions.lit(currentCount));
+            .withColumn("runid", functions.lit(currentRunId));
   }
 
   /**
@@ -206,7 +205,7 @@ public class GcActions {
   public static class Builder {
     private final SparkSession spark;
     private GcActionsConfig actionsConfig;
-    private GcOptions gcConfig;
+    private GcOptions gcOptions;
     private TableIdentifier table;
 
     public Builder(SparkSession spark) {
@@ -218,8 +217,8 @@ public class GcActions {
       return this;
     }
 
-    public Builder setGcConfig(GcOptions gcConfig) {
-      this.gcConfig = gcConfig;
+    public Builder setGcOptions(GcOptions gcOptions) {
+      this.gcOptions = gcOptions;
       return this;
     }
 
@@ -229,7 +228,7 @@ public class GcActions {
     }
 
     public GcActions build() {
-      return new GcActions(spark, actionsConfig, gcConfig, table);
+      return new GcActions(spark, actionsConfig, gcOptions, table);
     }
   }
 }

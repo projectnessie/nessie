@@ -234,7 +234,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
 
     // now confirm that the unreferenced assets are marked for deletion. These are found based
     // on the no-longer referenced commit as well as the old commits.
-    GcActions actions = new GcActions.Builder(sparkMain).setActionsConfig(actionsConfig()).setGcConfig(gcOptions(Clock.systemUTC()))
+    GcActions actions = new GcActions.Builder(sparkMain).setActionsConfig(actionsConfig()).setGcOptions(gcOptions(Clock.systemUTC()))
         .setTable(GcActions.DEFAULT_TABLE_IDENTIFIER).build();
     Dataset<Row> unreferencedAssets = actions.identifyUnreferencedAssets();
     actions.updateUnreferencedAssetTable(unreferencedAssets);
@@ -242,9 +242,9 @@ class ITTestIdentifyUnreferencedAssetsActions {
     //Test asset count
     //collect into a multimap for assertions
     Multimap<String, String> unreferencedItems = unreferencedAssets.collectAsList()
-      .stream()
-      .collect(Multimaps.toMultimap(x -> x.getString(4),
-        x -> x.getString(5), HashMultimap::create));
+        .stream()
+        .collect(Multimaps.toMultimap(x -> x.getString(4),
+          x -> x.getString(5), HashMultimap::create));
     Map<String, Integer> count = unreferencedItems.keySet().stream()
         .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems.get(x).size()));
     Set<String> paths = new HashSet<>(unreferencedItems.values());
@@ -255,10 +255,10 @@ class ITTestIdentifyUnreferencedAssetsActions {
     //1 manifest: 1 manifest file from add
     //2 data files: 2 data files from table
     ImmutableMap<String, Integer> expected = ImmutableMap.of("TABLE", 1,
-      "ICEBERG_MANIFEST", 1,
-      "ICEBERG_MANIFEST_LIST", 1,
-      "ICEBERG_METADATA", 2,
-      "DATA_FILE", 2);
+        "ICEBERG_MANIFEST", 1,
+        "ICEBERG_MANIFEST_LIST", 1,
+        "ICEBERG_METADATA", 2,
+        "DATA_FILE", 2);
     assertThat(count.entrySet(), (Matcher)hasItems(expected.entrySet().toArray()));
 
 
@@ -270,11 +270,11 @@ class ITTestIdentifyUnreferencedAssetsActions {
     //Test asset count again to ensure we got both tables
     //collect into a multimap for assertions
     Multimap<String, String> unreferencedItems2 = unreferencedAssets2.collectAsList()
-      .stream()
-      .collect(Multimaps.toMultimap(x -> x.getString(4),
-        x -> x.getString(5), HashMultimap::create));
+        .stream()
+        .collect(Multimaps.toMultimap(x -> x.getString(4),
+          x -> x.getString(5), HashMultimap::create));
     Map<String, Integer> count2 = unreferencedItems2.keySet().stream()
-      .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems2.get(x).size()));
+        .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems2.get(x).size()));
     paths.addAll(unreferencedItems2.values());
 
     //4 table should be deleted from deleted branch  x2 tables
@@ -283,10 +283,10 @@ class ITTestIdentifyUnreferencedAssetsActions {
     //2 manifest: 1 manifest file from add x2 tables
     //4 data files: 2 data files from table x2 tables
     ImmutableMap<String, Integer> expected2 = ImmutableMap.of("TABLE", 2,
-      "ICEBERG_MANIFEST", 2,
-      "ICEBERG_MANIFEST_LIST", 2,
-      "ICEBERG_METADATA", 4,
-      "DATA_FILE", 4);
+        "ICEBERG_MANIFEST", 2,
+        "ICEBERG_MANIFEST_LIST", 2,
+        "ICEBERG_METADATA", 4,
+        "DATA_FILE", 4);
     assertThat(count2.entrySet(), (Matcher)hasItems(expected2.entrySet().toArray()));
 
     // now collect and remove both tables.

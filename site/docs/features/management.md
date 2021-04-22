@@ -13,7 +13,7 @@ you must rely on Nessie to clean up old data. Nessie calls this garbage collecti
 There are at least two steps to a garbage collection action. The first steps are instructive, and the last step is destructive.
 
 !!! info
-    currently the GC algorithm only works for  
+    currently the GC algorithm only works for Iceberg tables and Dynamo as a backend
 
 ### Identify Unreferenced Assets
 
@@ -25,7 +25,7 @@ files, records, entries etc that make up a table, view or other Nessie object. F
  * metadata files
  * the entire table directory on disk (if it is empty)
 
-To be marked as unreferenced an asset must either:
+To be marked as unreferenced an asset must either be:
  1. No longer referenced by any branch or tag. For example, an entire branch was deleted, and a table on that branch is no longer accessible.
  2. Assets created in a commit which has passed the (configurable) commit age. *If they are not referenced by newer commits*
 
@@ -36,7 +36,7 @@ is shown below.
 
 ![Screenshot](../img/gc-table.png)
 
-This action is designed to run concurrently to other workloads and can/should be run regularly. This table is used as input
+This action is designed to run concurrently to normal operational workloads and can/should be run regularly. This table is used as input
 into the destructive GC operation described below.
 
 #### Configuration and running
@@ -45,7 +45,7 @@ The relevant configuration items are:
 | parameter | default value | description |
 |---|---|---|
 | table | `null` | The Iceberg `TableIdentifier` to which the unreferenced assets should be written |
-| GcOptions.getBloomFilterCapacity | 10000000 | Size of bloom filter for identification of referenced values |
+| GcOptions.getBloomFilterCapacity | 10000000 | Size (number of items) of bloom filter for identification of referenced values |
 | GcOptions.getMaxAgeMicros | 7 days | age at which a commit starts to expire |
 | GcOptions.getTimeSlopMicros | 1 day | minimum age a values can be before it will be considered expired |
 | GcActionsConfig.getDynamoRegion | provider default | AWS Region of the Nessie DynamoDB |
@@ -54,9 +54,11 @@ The relevant configuration items are:
 
 Running the action can be done simply by:
 ```java
+    GcActionsConfig actionsConfig = GcActionsConfig.builder().build(); //use all defaults
+    GcOptions gcOptions = GcOptions.builder().build(); //use all defaults
     GcActions actions = new GcActions.Builder(spark)
                                      .setActionsConfig(actionsConfig)
-                                     .setGcConfig(gcOptions)
+                                     .setGcOptions(gcOptions)
                                      .setTable(TABLE_IDENTIFIER).build(); // (1)
     Dataset<Row> unreferencedAssets = actions.identifyUnreferencedAssets(); // (2)
     actions.updateUnreferencedAssetTable(unreferencedAssets); // (3)
@@ -70,9 +72,9 @@ The destructive garbage collection step is also a Spark job and takes as input t
 is modelled as an Iceberg Action and has a similar API to the other Iceberg Actions. In the future it will be registered with
 Iceberg's Action APIs and callable via Iceberg's custom [SQL statements](http://iceberg.apache.org/spark-procedures/).
 
-This Iceberg Action looks at the generated table from the 'Identify' step and counts the number of times a distinct asset has been
+This Iceberg Action looks at the generated table from the [Identify](#identify-unreferenced-assets) step and counts the number of times a distinct asset has been
 seen. Effectively it performs a group-by and count on this table. If the count of an asset is over a specified threshold **AND** it
-was seen in the last run of the 'Identify' stage it is collectable. This asset is then deleted permanently. A report table of
+was seen in the last run of the [Identify](#identify-unreferenced-assets) stage it is collectable. This asset is then deleted permanently. A report table of
 deleted object is returned to the user and either the records are removed from the 'identify' table or the whole table is purged.
 
 #### Configuration and running
@@ -89,11 +91,11 @@ Running the action can be done simply by:
 
 ```java
     Table table = catalog.loadTable(TABLE_IDENTIFIER);
-    new GcTableCleanAction(table, spark).dropGcTable(true).deleteCountThreshold(2).deleteOnPurge(true).execute();
+    GcTableCleanAction.GcTableCleanResult result = new GcTableCleanAction(table, spark).dropGcTable(true).deleteCountThreshold(2).deleteOnPurge(true).execute();
 ```
 The above snippet assumes a `TABLE_IDENTIFIER` which points to the unreferenced assets table. It also requires an active
 spark session and a nessie owned `Catalog`. See the [demo directory](https://github.com/projectnessie/nessie/tree/main/python/demo)
-for a complete example.
+for a complete example. The `result` object above returns the number of files the action tried to delete and the number that failed.
 
 ### Internal Garbage collection
 
@@ -167,6 +169,3 @@ can automatically run jobs to compact tables to ensure a consistent level of per
 
 !!! note
     Compaction will show up as a commit, like any other table operation.
-
-[^1]: This operation is similar to the [Remove Orphan Files](http://iceberg.apache.org/javadoc/0.8.0-incubating/org/apache/iceberg/actions/RemoveOrphanFilesAction.html)
-iceberg operation.

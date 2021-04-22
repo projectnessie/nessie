@@ -25,6 +25,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.util.SerializableConfiguration;
 import org.projectnessie.versioned.gc.AssetKey;
 import org.projectnessie.versioned.gc.AssetKeySerializer;
+import org.projectnessie.versioned.gc.actions.GcActionUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
@@ -84,7 +85,7 @@ public class GcTableCleanAction extends BaseSparkAction<GcTableCleanAction.GcTab
     Row count = purgeResult.withColumn("deleted", purgeResult.col("_2").cast("int"))
         .agg(ImmutableMap.of("deleted", "sum", "_2", "count")).first();
 
-    return new GcTableCleanResult(count.getLong(1), count.getLong(1)-count.getLong(0));
+    return new GcTableCleanResult(count.getLong(1), count.getLong(1) - count.getLong(0));
   }
 
   private String tableName() {
@@ -92,11 +93,10 @@ public class GcTableCleanAction extends BaseSparkAction<GcTableCleanAction.GcTab
   }
 
   private Dataset<Row> purgeUnreferencedAssetTable() {
-    Row maxRunId = spark.read().format("iceberg").load(table.name()).groupBy().max("runid").first();
-    long currentCount = maxRunId.isNullAt(0) ? 0 : maxRunId.getLong(0);
+    long currentRunId = GcActionUtils.getMaxRunId(spark, table.name());
     Dataset<Row> deletable = spark.sql(
         String.format("SELECT count(*) as counted, name, last(timestamp) as timestamp, last(asset) as asset, max(runid) as runid FROM %s "
-          + "GROUP BY name HAVING counted >= %d AND runid = %d", tableName(), seenCount, currentCount)
+          + "GROUP BY name HAVING counted >= %d AND runid = %d", tableName(), seenCount, currentRunId)
     );
 
     Dataset<Tuple2<String, Boolean>> deletes = deletable.map(new DeleteFunction(assetKeySerializer),
