@@ -38,7 +38,7 @@ this is not enforced by the Specification. There are several expectations on thi
 1. `permanentId`  will always be updated at commit time.
 1. `permanentId` will not be updated during any transplant or merge operations.
 1. All objects in the same original commit will have the same `permanentId`
-1. This has **nothing** to do with the commit hash.
+1. `permanentId` is *not* related or derived from the commit-hash.
 
 There is no API to look up an object by `permanentId` and the intention of an `permanentId` is not to serve in that capacity.
 An example usage of the `permanentId` field might be storing auxiliary data on an object in a local cache and using
