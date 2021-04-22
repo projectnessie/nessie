@@ -37,8 +37,6 @@ jobs:
     steps:
 
     ### BEGIN runner setup
-    - name: Update /etc/hosts
-      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up JDK 11
@@ -50,8 +48,6 @@ jobs:
       with:
         version: '8'
         targets: 'JDK8_HOME'
-    # Using Python 3.8
-    # Might be worth to bump the version and/or make it configurable in the future
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
@@ -150,6 +146,7 @@ jobs:
 
     # Create Nessie release on GitHub
     # TODO need some templating to create a release-notes markdown with highlights, changelog and download locations.
+    # TODO make sure "git changelog" is available (it's in git-extras !)
     - name: Create Nessie release ${{ steps.get_version.outputs.VERSION }} in GitHub
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}

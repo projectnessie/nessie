@@ -61,8 +61,6 @@ jobs:
     steps:
 
     ### BEGIN runner setup
-    - name: Update /etc/hosts
-      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
       uses: actions/checkout@v2
       with:
@@ -71,8 +69,6 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 11
-    # Using Python 3.8
-    # Might be worth to bump the version and/or make it configurable in the future
     - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:

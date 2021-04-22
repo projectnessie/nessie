@@ -35,8 +35,6 @@ jobs:
     steps:
 
     ### BEGIN runner setup
-    - name: Update /etc/hosts
-      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up JDK 11
@@ -48,21 +46,8 @@ jobs:
       with:
         version: '8'
         targets: 'JDK8_HOME'
-    # Using Python 3.8
-    # Might be worth to bump the version and/or make it configurable in the future
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
     - name: Set up Maven toolchains.xml
       run: cp .github/maven/toolchains.xml ${HOME}/.m2/toolchains.xml
-    - name: Cache local pip repository
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
@@ -79,19 +64,7 @@ jobs:
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
-    - name: Cache local Gradle cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-        restore-keys: ${{ runner.os }}-gradle
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r python/requirements_lint.txt
-        pip install tox-gh-actions bumpversion twine
+    ### END runner setup
 
     - name: Deploy with Maven
       run: mvn -B deploy --file pom.xml -Pcode-coverage,jdk8-tests,native,release -DdeployAtEnd=true -DskipTests
@@ -100,7 +73,6 @@ jobs:
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         SPARK_LOCAL_IP: localhost
-    ### END runner setup
 
     - name: Push Docker images
       run: |

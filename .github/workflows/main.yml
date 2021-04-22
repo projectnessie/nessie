@@ -27,6 +27,7 @@ jobs:
     steps:
 
     ### BEGIN runner setup
+    # workaround to fix the reverse-DNS issue on GitHub Ubuntu runners, see https://lists.apache.org/thread.html/r40b2da182952f21a3b94696e6f1bf8594e7ff16e1c5979fe8b2d51c8%40%3Cbuilds.apache.org%3E
     - name: Update /etc/hosts
       run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
@@ -146,8 +147,6 @@ jobs:
     steps:
 
     ### BEGIN runner setup
-    - name: Update /etc/hosts
-      run: echo -e "$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)\t$(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
     - name: Checkout
       uses: actions/checkout@v2
     # Using Python 3.8
@@ -165,7 +164,6 @@ jobs:
           ${{ runner.os }}-pip-
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade pip
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
     ### END runner setup
