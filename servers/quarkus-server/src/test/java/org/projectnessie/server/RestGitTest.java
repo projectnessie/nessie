@@ -110,7 +110,7 @@ public class RestGitTest {
     Assertions.assertNotEquals(branch.getHash(), commitResponse.getHash());
 
     Response res = rest().queryParam("ref", "test").get("contents/xxx.test").then().extract().response();
-    assertEquals(updates[10].getContents(), res.body().as(Contents.class));
+    assertContentEquals(updates[10].getContents(), res.body().as(Contents.class));
 
     table = ImmutableIcebergTable.builder().from(table)
         .metadataLocation("/the/directory/over/there/has/been/moved/again")
@@ -123,7 +123,7 @@ public class RestGitTest {
     Contents returned = rest()
         .queryParam("ref", "test")
         .get("contents/xxx.test").then().statusCode(200).extract().as(Contents.class);
-    assertEquals(table, returned);
+    assertContentEquals(table, returned);
 
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
     rest().body(Tag.of("tagtest", b3.getHash())).post("trees/tree").then().statusCode(200);
@@ -191,7 +191,7 @@ public class RestGitTest {
     Assertions.assertNotEquals(b3.getHash(), newHash);
   }
 
-  static void assertEquals(Contents expected, Contents actual) {
+  static void assertContentEquals(Contents expected, Contents actual) {
     if (expected instanceof IcebergTable && actual instanceof IcebergTable) {
       Assertions.assertEquals(expected.getId(), actual.getId());
       Assertions.assertEquals(((IcebergTable) expected).getMetadataLocation(), ((IcebergTable) actual).getMetadataLocation());

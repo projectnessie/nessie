@@ -292,8 +292,8 @@ class TestRest {
           .stream().collect(Collectors.toMap(ContentsWithKey::getKey, ContentsWithKey::getContents));
     List<ContentsKey> expected = Arrays.asList(a, b);
     assertThat(keys.keySet(), Matchers.containsInAnyOrder(expected.toArray()));
-    RestGitTest.assertEquals(ta, keys.get(a));
-    RestGitTest.assertEquals(tb, keys.get(b));
+    RestGitTest.assertContentEquals(ta, keys.get(a));
+    RestGitTest.assertContentEquals(tb, keys.get(b));
 
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }
@@ -335,9 +335,9 @@ class TestRest {
     ContentsKey k = ContentsKey.of("a.b","c.d");
     IcebergTable ta = IcebergTable.of("path1");
     contents.setContents(k, branch, r.getHash(), "commit 1", ta);
-    assertEqualsContentsKey(ContentsWithKey.of(k, ta),
+    assertContentWithKeyEquals(ContentsWithKey.of(k, ta),
         contents.getMultipleContents(branch, MultiGetContentsRequest.of(k)).getContents().get(0));
-    RestGitTest.assertEquals(ta, contents.getContents(k, branch));
+    RestGitTest.assertContentEquals(ta, contents.getContents(k, branch));
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }
 
@@ -552,8 +552,8 @@ class TestRest {
     }
   }
 
-  private static void assertEqualsContentsKey(ContentsWithKey expected, ContentsWithKey actual) {
+  private static void assertContentWithKeyEquals(ContentsWithKey expected, ContentsWithKey actual) {
     assertEquals(expected.getKey(), actual.getKey());
-    RestGitTest.assertEquals(expected.getContents(), actual.getContents());
+    RestGitTest.assertContentEquals(expected.getContents(), actual.getContents());
   }
 }

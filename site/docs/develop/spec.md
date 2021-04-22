@@ -47,8 +47,8 @@ An example usage of the `permanentId` field is storing auxiliary data on an obje
 !!! note
     A note about caching. The `Contents` objects are likely to be cached locally by services using Nessie. There is also likely
     to be auxiliary data (eg schema, partitions etc) stored by services which refer to a specific `Contents` at a specific
-    commit or time. The tuple `(id, permanentId)` uniquely reference an object in the Nessie history and is a suitable key
-    to identify an object at a particular point in its history.
+    commit or time. The tuple `(id, permanentId)` (where id is the [Contents Id](#contents-id) above) uniquely reference an
+    object in the Nessie history and is a suitable key to identify an object at a particular point in its history.
 
     The commit hash makes a poor cache key as the commit hash could be garbage collected or the object could be merged/transplanted
     to a different branch resulting in a different commit hash. **Do not** use the commit hash for any other purpose than as
