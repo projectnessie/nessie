@@ -6,11 +6,6 @@ Google Groups as a mailing list.
 
 ## Get In Touch
 
-[GitHub Issues](https://github.com/projectnessie/nessie/issues)
-: Nessie is developed via GitHub issues and pull requests. If you see a problem 
-  or want to enhance the product, we suggest you file a GitHub issue for developers to 
-  review.
-
 [Slack Channel](mailto:slack-subscribe@projectnessie.org)
 : The developers on Nessie frequent the nessie-public Slack channel. You can get an 
   invite to the channel by emailing [slack-subscribe@projectnessie.org](mailto:slack-subscribe@projectnessie.org). 
@@ -21,6 +16,11 @@ Google Groups as a mailing list.
 [Google Group](https://groups.google.com/g/projectnessie)
 : If long form is more your thing, we also have created a mailing list on Google groups 
   that you can subscribe to.
+
+[GitHub Issues](https://github.com/projectnessie/nessie/issues)
+: Nessie is developed via GitHub issues and pull requests. If you see a problem
+or want to enhance the product, we suggest you file a GitHub issue for developers to
+review.
 
 [Twitter](https://twitter.com/projectnessie)
 : The [@projectnessie](https://twitter.com/projectnessie) account on Twitter is our official account. Follow-up to keep 
