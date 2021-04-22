@@ -50,7 +50,7 @@ An example usage of the `permanentId` field is storing auxiliary data on an obje
     commit or time. The tuple `(id, permanentId)` uniquely reference an object in the Nessie history and is a suitable key
     to identify an object at a particular point in its history.
 
-    The commit has makes a poor cache key as the commit hash could be garbage collected or the object could be merged/transplanted
+    The commit hash makes a poor cache key as the commit hash could be garbage collected or the object could be merged/transplanted
     to a different branch resulting in a different commit hash. **DO NOT** use the commit hash for any other purpose than as
      a consistency check in the API.
 
