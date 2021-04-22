@@ -36,7 +36,7 @@ that commit permanently. By convention it is a [UUID](https://en.wikipedia.org/w
 this is not enforced by the Specification. There are several expectations on this field:
 
 1. `permanentId`  will always be updated at commit time.
-1. The `permanentId` will not be updated during any transplant or merge operations.
+1. `permanentId` will not be updated during any transplant or merge operations.
 1. All objects in the same original commit will have the same `permanentId`
 1. This has **nothing** to do with the commit hash.
 
