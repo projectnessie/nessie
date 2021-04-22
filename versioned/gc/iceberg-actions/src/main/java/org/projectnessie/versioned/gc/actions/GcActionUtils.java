@@ -24,7 +24,13 @@ public final class GcActionUtils {
 
   }
 
+  /**
+   * Fetch the most recent or largest runid for a gc table.
+   *
+   * <p>this assumes tableName is a table which has an integer runid.
+   */
   public static long getMaxRunId(SparkSession spark, String tableName) {
+    //equivalent to SELECT MAX(runid) from tableName
     Row maxRunId = spark.read().format("iceberg").load(tableName).groupBy().max("runid").first();
     return maxRunId.isNullAt(0) ? 0 : maxRunId.getLong(0);
   }
