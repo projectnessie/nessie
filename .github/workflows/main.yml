@@ -22,7 +22,6 @@ jobs:
   java:
     name: Java/Maven
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'projectnessie/nessie' }}
 
     steps:
 
