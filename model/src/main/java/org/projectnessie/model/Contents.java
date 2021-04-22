@@ -80,7 +80,7 @@ public abstract class Contents {
    * Unique change id for this object.
    *
    * <p>This id is uniquely refers to a specific commit. It is an id generated at commit time and is unique across all objects in that
-   * commit. It has nothing to do with the actual commit hash and is only used to find a unique object in the Nessie history.
+   * commit. It has nothing to do with the actual commit hash and is only used to find a unique object in the Nessie history.</p>
    */
   @Nullable
   public abstract String getPermanentId();

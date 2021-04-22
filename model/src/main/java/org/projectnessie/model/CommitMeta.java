@@ -100,8 +100,9 @@ public abstract class CommitMeta {
   /**
    * Unique id for a change. This is distinct from a hash in that it doesn't change if rebased/merged etc.
    *
-   * <p>Primary use is to uniquely identify objects in the Nessie Database. This id + the {@code Contents} id is a unique
-   * object in the database. This value is set by the store and will be overwritten if set at commit time by the client.
+   * <p>Primary use is to uniquely identify objects in the Nessie Database. This id + the {@code Contents} id is a unique tuple value.
+   * This value is set by the store and will be overwritten if set at commit time by the client.
+   * Although the {@code Contents.id} + this permanent-id is unique, there is intentionally no way to lookup this tuple, see Nessie project documentation for details.</p>
    */
   @Nullable
   public abstract String getPermanentId();

@@ -54,7 +54,7 @@ An example usage of the `permanentId` field is storing auxiliary data on an obje
     to a different branch resulting in a different commit hash. **Do not** use the commit hash for any other purpose than as
      a consistency check in the API.
 
-    The `id` alone is a good cache key for data that isn't tied to a particular commit such as ACLs. This will always match
+    The object `id` alone is a good cache key for data that isn't tied to a particular commit such as ACLs. This will always match
     the same contents regardless of what `Key` it is stored at or what branch it is on.
 
 ### Iceberg Table
