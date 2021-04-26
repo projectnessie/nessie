@@ -2,6 +2,16 @@
 
 **THE CONTENTS IN THIS DIRECTORY ARE PURELY TO TEST GITHUB WORKFLOWS LOCALLY!**
 
+**TEST EXTREMELY CAREFULLY**
+
+## Disadvantages of nektos/act
+
+* "Reference that triggered event" - the `ref` attribute in an event JSON is rather meaningless.
+  "act" always uses the HEAD of the current git repo ([see here](https://github.com/nektos/act/blob/master/pkg/runner/run_context.go#L502-L514)).
+  So you need to run "act" on a different clone and specify the `--workflows` directory.
+* The latest version of "act" does not work correctly with recent git versions, i.e. it falls back
+  to the branch name, when the `.git/refs/tags` directory is empty ([see here]()https://github.com/nektos/act/pull/633)
+
 ## Prepare/setup
 
 ### Build a Docker image w/ `gh`
@@ -77,11 +87,3 @@ Then run the "Release Publish" workflow as described above.
 
 Be careful when just running `act` - it will start the matching workflows, for example the whole
 "Main CI" spiel.
-
-## Disadvantages of nektos/act
-
-* "Reference that triggered event" - the `ref` attribute in an event JSON is rather meaningless.
-  "act" always uses the HEAD of the current git repo ([see here](https://github.com/nektos/act/blob/master/pkg/runner/run_context.go#L502-L514)).
-  So you need to run "act" on a different clone and specify the `--workflows` directory.
-* The latest version of "act" does not work correctly with recent git versions, i.e. it falls back
-  to the branch name, when the `.git/refs/tags` directory is empty ([see here]()https://github.com/nektos/act/pull/633)
