@@ -22,7 +22,7 @@ class Pointer<T extends HasId> {
   private T value;
   private boolean dirty = false;
 
-  public Pointer(){
+  public Pointer() {
   }
 
   public Pointer(T value) {
