@@ -28,7 +28,7 @@ works fine, because data files[^1] are immutable.
   [recorded in Nessie](#working-with-data-in-nessie) as *commits* without copying
   the actual data.
 * Add [meaning to the changes](#commit-messages-and-more) to your data lake.
-* [Always-consistent](#branches) view to all the data. 
+* [Always-consistent](#branches) view to all the data.
 * Sets of changes, like the whole [work of a distributed Spark job](#working-branches-for-analytics-jobs).
   or [experiments of data engineers](#working-branches-for-humans) are
   isolated in Nessie via *branches*. Failed jobs do not add additional harm to the data.
@@ -72,7 +72,7 @@ Nessie without any production code changes, it's a simple configuration change.
 
 ## Git 101
 
-> *"Git is a free and open source distributed version control system designed to 
+> *"Git is a free and open source distributed version control system designed to
 handle everything from small to very large projects with speed and efficiency"*
 (cite from [git-scm.com](https://git-scm.com/))
 
@@ -128,7 +128,7 @@ The other two data files 1+2 have been added by *previous commit*.
   | #1   |  | #2   |          | #1   | | #2   | | #3   |
   |     _|  |     _|          |     _| |     _| |     _|
   |  __/    |  __/            |  __/   |  __/   |  __/  
-  |_/       |_/               |_/      |_/      |_/     
+  |_/       |_/               |_/      |_/      |_/  
 ```
 In "relational SQL" you can think of the following sequence of SQL statements:
 ```SQL
@@ -145,7 +145,7 @@ BEGIN TRANSACTION;
   -- data files are immutable.
   INSERT INTO table_one (...) VALUES (...);
 -- Creates our "current commit"
-COMMIT TRANSACTION; 
+COMMIT TRANSACTION;
 ```
 
 Each commit is identified by a sequence of hexadecimal characters like
@@ -165,14 +165,14 @@ and so on.
 
 Relational database systems (RDBMS) for example usually provide certain levels of
 isolation (think: others cannot see uncommitted changes) and also ensure that either
-a change within a transaction succeeds, the request times out or fails straight 
+a change within a transaction succeeds, the request times out or fails straight
 away. Relational databases have a single and central transaction-coordinator[^4]
 and are designed to always provide a consistent data set.
 
 The smallest atomic change in Nessie is a single commit. It is fair to say, that
 a commit is the smallest possible transaction in Nessie.
 
-A single Nessie commit in Nessie: 
+A single Nessie commit in Nessie:
 
 * ... can be "just" the set of changes of a single worker out of many distributed
   workers.
@@ -235,7 +235,7 @@ do not make a lot of sense on their own, but a single commit (for example
 
 To get around that issue, jobs can create a new "work"-branch when they start.
 The results from all tasks of a job are recorded as individual commits into that
-"work"-branch. Once the job has finished, all changes are then merged into the 
+"work"-branch. Once the job has finished, all changes are then merged into the
 "main" branch at once.
 ```
     "work"
@@ -243,9 +243,9 @@ The results from all tasks of a job are recorded as individual commits into that
       |
       |
       v
-+-----------+ 
-| commit #1 | 
-+-----------+ 
++-----------+
+| commit #1 |
++-----------+
       ^
       |
       |
@@ -265,9 +265,9 @@ visible on our "work"-branch:
          |
          v
          |
-+-----------+ 
-| commit #1 | 
-+-----------+ 
++-----------+
+| commit #1 |
++-----------+
       ^
       |
       |
@@ -284,7 +284,7 @@ into the "main"-branch.
       +-----------+       +-----------+
       | commit #2 | --<-- | commit #3 |
       +-----------+       +-----------+
-         |                          |        
+         |                          |  
          v                          ^
          |                          |
 +-----------+                     +-----------+
@@ -309,7 +309,7 @@ It is recommended to give a commit a [meaningful commit message](./best-practice
 and to let someone [review the changes](./best-practices/#reviews).
 
 As described above in [Transactions in Nessie](#transaction-in-nessie), the merge
-operation in the above example can be considered a *Nessie distributed transaction*. 
+operation in the above example can be considered a *Nessie distributed transaction*.
 
 ### Working branches for "humans"
 
@@ -364,7 +364,7 @@ the cost of ownership of a data lake. Keeping all data forever is probably going
 to be just too expensive, practically not useful and can also collide with data
 privacy regulations (for example GDPR or CCPA).
 
-Nessie keeps track of unused data files and collects the garbage for you.
+Nessie keeps track of unused data files and collects the garbage for you. See [Table Management](./management/#garbage-collection)
 
 ## Footnotes
 

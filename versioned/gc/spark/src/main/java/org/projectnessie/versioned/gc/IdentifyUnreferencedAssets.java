@@ -84,7 +84,7 @@ public class IdentifyUnreferencedAssets<T, R extends AssetKey> {
     // TODO: convert this to a group by asset, date and then figure out the latest date so we can include that
     // in the written file to avoid stale -> not stale -> stale values.
     Dataset<Row> unreferencedAssets = assets.filter("referenced = false").select("data", "timestamp", "uniqueKey", "key")
-        .filter(new AssetFilter(referencedAssets));
+        .filter(new AssetFilter(referencedAssets)).dropDuplicates("uniqueKey");
 
     // map the generic spark Row back to a concrete type.
     return unreferencedAssets.map(
