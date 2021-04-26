@@ -27,7 +27,7 @@ import org.apache.iceberg.io.FileIO;
  */
 public final class DataFileCollector {
 
-  private DataFileCollector(){
+  private DataFileCollector() {
 
   }
 
