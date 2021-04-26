@@ -15,7 +15,9 @@
  */
 package org.projectnessie.model;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import org.immutables.value.Value;
 
@@ -33,4 +35,54 @@ public abstract class HiveTable extends Contents {
 
   public abstract List<byte[]> getPartitions();
 
+  /**
+   * Because of the List of byte arrays Immutables doesn't generate a correct hashcode.
+   *
+   * <p>We hand compute the List elements to ensure the byte arrays hash codes are consistent.
+   */
+  @Override
+  public int hashCode() {
+    int h = 1;
+    h += (31 * h) + Objects.hashCode(getId());
+    h += (31 * h) + Arrays.hashCode(getTableDefinition());
+    for (byte[] p: getPartitions()) {
+      h += (31 * h) + Arrays.hashCode(p);
+    }
+    return h;
+  }
+
+  /**
+   * Because of the List of byte arrays Immutables doesn't generate a correct equals.
+   *
+   * <p>,We hand compare the List elements to ensure the byte arrays are equal.
+   */
+  @Override
+  public boolean equals(Object another) {
+    if (this == another) {
+      return true;
+    }
+    return another instanceof ImmutableHiveTable
+      && equalTo((ImmutableHiveTable) another);
+  }
+
+  private boolean equalTo(ImmutableHiveTable another) {
+    if (hashCode() != another.hashCode()) {
+      return false;
+    }
+    return Objects.equals(getId(), another.getId())
+      && Arrays.equals(getTableDefinition(), another.getTableDefinition())
+      && partitionsEqual(getPartitions(), another.getPartitions());
+  }
+
+  private boolean partitionsEqual(List<byte[]> partitions, List<byte[]> partitions1) {
+    if (partitions.size() != partitions1.size()) {
+      return false;
+    }
+    for (int i = 0;i < partitions.size();i++) {
+      if (!Arrays.equals(partitions.get(i), partitions1.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
