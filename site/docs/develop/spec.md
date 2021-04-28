@@ -54,9 +54,9 @@ There are several expections of a version store. Some are listed below
     still missing some conditions
     
 ### Conflict Resolution
-The API passes an ‘expectedHash’ parameter when it modifies a key. This is the commit that the client thinks is the most up to date (its HEAD). A backend will check to see if the key has been modified since that ‘expectedHash' and if it has will reject the requested modification with FAILED_PRECONDITION. This is basically an optimistic lock that accounts for the fact that the commit hash is global and nessie branch could have moved on from ‘expectedHash’ without modifying the key in question.
+The API passes an ‘expectedHash’ parameter when it modifies a key. This is the commit that the client thinks is the most up to date (its HEAD). A backend will check to see if the key has been modified since that ‘expectedHash' and if, it will reject the requested modification with FAILED_PRECONDITION. This is basically an optimistic lock that accounts for the fact that the commit hash is global and nessie branch could have moved on from ‘expectedHash’ without modifying the key in question.
 
-The reason for this condition is to behave like a ‘real’ database. You shouldn’t have to update your reference before transacting on tableA because I just happened to update tableB whilst you were preparing your transaction.
+The reason for this condition is to behave like a ‘real’ database. You shouldn’t have to update your reference before transacting on tableA because it just happened to update tableB whilst you were preparing your transaction.
 
 ## Tiered Version Store
 
