@@ -186,7 +186,7 @@ jobs:
           PROFILES="-Pnative -Pdocker -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false"
         fi
 
-        mvn -B ${GOALS} --file pom.xml ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
+        ./mvnw -B ${GOALS} --file pom.xml ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
 
         echo ::set-output name=QUARKUS_NATIVE_BINARY::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner
 
