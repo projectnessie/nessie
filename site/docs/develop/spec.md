@@ -15,6 +15,8 @@ This page documents the complete nessie specification. This includes:
 
 ### General Contract
 
+#### Content Id
+
 All contents object must have an `id` field. This field is unique to the object and immutable once created. By convention,
 it is a [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) though this is not enforced by the Specification.
 There are several expectations on this field:
@@ -25,6 +27,22 @@ There are several expectations on this field:
 
 There is no API to look up an object by `id` and the intention of an `id` is not to serve in that capacity. An example usage
 of the `id` field might be storing auxiliary data on an object in a local cache and using `id` to look up that auxiliary data.
+
+!!! note
+    A note about caching. The `Contents` objects are likely to be cached locally by services using Nessie. There is also likely
+    to be auxiliary data (eg schema, partitions etc) stored by services which refer to a specific `Contents` at a specific
+    commit or time. The hash of the contents (eg `sha1sum contents` ) uniquely reference an
+    object in the Nessie history and is a suitable key to identify an object at a particular point in its history. Note that
+    we are not speaking of the java `hashCode` nor any of the hash terminology used in Nessie.  Since the Contents object is
+    immutable the hash is stable and since it is disconnected from Nessies version store properties it exists across commits/branches
+    and survives GC and other table maintenance operations.
+
+    The commit hash on the other hand makes a poor cache key as the commit hash could be garbage collected or the object could be
+    merged/transplanted to a different branch resulting in a different commit hash. **Do not** use the commit hash for any other
+    purpose than as a consistency check in the API.
+
+    The object `id` alone is a good cache key for data that isn't tied to a particular commit such as ACLs. This will always match
+    the same contents regardless of what `Key` it is stored at or what branch it is on.
 
 ### Iceberg Table
 
