@@ -221,6 +221,13 @@
 
   </dependencies>
 
+  <repositories>
+    <repository>
+      <id>conjars.org</id>
+      <url>https://conjars.wensel.net/repo/</url>
+    </repository>
+  </repositories>
+
   <build>
     <plugins>
       <plugin>
