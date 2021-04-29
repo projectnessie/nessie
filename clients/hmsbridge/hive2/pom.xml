@@ -203,6 +203,10 @@
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.pentaho</groupId>
+          <artifactId>pentaho-aggdesigner-algorithm</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 
@@ -220,13 +224,6 @@
     </dependency>
 
   </dependencies>
-
-  <repositories>
-    <repository>
-      <id>conjars.org</id>
-      <url>https://conjars.wensel.net/repo/</url>
-    </repository>
-  </repositories>
 
   <build>
     <plugins>
