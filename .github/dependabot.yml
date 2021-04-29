@@ -1,0 +1,89 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: com.fasterxml.jackson.module:jackson-module-scala_2.12
+    versions:
+    - "> 2.8.8"
+  - dependency-name: org.apache.hadoop:hadoop-mapreduce-client-core
+    versions:
+    - "> 2.7.2"
+  - dependency-name: org.apache.hive:hive-exec
+    versions:
+    - "> 2.3.7"
+  - dependency-name: org.eclipse.microprofile.openapi:microprofile-openapi-api
+    versions:
+    - ">= 2.0.a, < 2.1"
+  - dependency-name: org.eclipse.microprofile.openapi:microprofile-openapi-api
+    versions:
+    - ">= 2.0-MR1.a, < 2.1"
+  - dependency-name: org.glassfish.jersey.core:jersey-client
+    versions:
+    - "> 2.22.2"
+  - dependency-name: org.glassfish.jersey.media:jersey-media-json-jackson
+    versions:
+    - "> 2.22.2"
+  - dependency-name: org.scala-lang:scala-library
+    versions:
+    - ">= 2.13.a, < 2.14"
+  - dependency-name: software.amazon.awssdk:dynamodb-enhanced
+    versions:
+    - 2.16.49
+  - dependency-name: software.amazon.awssdk:bom
+    versions:
+    - 2.16.49
+  - dependency-name: com.fasterxml.jackson:jackson-bom
+    versions:
+    - 2.12.2
+  - dependency-name: org.apache.spark:spark-sql_2.12
+    versions:
+    - 3.1.1
+  - dependency-name: org.apache.spark:spark-core_2.12
+    versions:
+    - 3.1.1
+  - dependency-name: org.mongodb:bson
+    versions:
+    - 4.2.1
+  - dependency-name: org.mongodb:mongodb-driver-reactivestreams
+    versions:
+    - 4.2.1
+  - dependency-name: io.quarkus:quarkus-maven-plugin
+    versions:
+    - 1.11.2.Final
+  - dependency-name: io.quarkus:quarkus-bom
+    versions:
+    - 1.11.2.Final
+- package-ecosystem: pip
+  directory: "/python"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: pyspark
+    versions:
+    - ">= 3.1.a, < 3.2"
+  - dependency-name: black
+    versions:
+    - 21.4b1
+  - dependency-name: botocore
+    versions:
+    - 1.20.59
+  - dependency-name: pytest-mock
+    versions:
+    - 3.6.0
+  - dependency-name: jupyterlab
+    versions:
+    - 3.0.13
+- package-ecosystem: pip
+  directory: "/site"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: mkdocs-redirects
+    versions:
+    - 1.0.2
