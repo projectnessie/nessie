@@ -283,4 +283,5 @@ jobs:
         GIT_TAG: nessie-${{ steps.get_version.outputs.VERSION }}
       run: |
         QUARKUS_NATIVE_BINARY="${{ steps.build_maven.outputs.QUARKUS_NATIVE_BINARY }}"
+        echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
         gh release create ${GIT_TAG} --notes-file ${{ steps.prep_release.outputs.NOTES_FILE }} --title "Nessie ${RELEASE_VERSION}" "${QUARKUS_NATIVE_BINARY}"
