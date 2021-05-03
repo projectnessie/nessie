@@ -26,7 +26,7 @@ and ask there. It helps build a richer discussion and more people can be involve
 ### Large changes or improvements
 
 We are excited to accept new contributors and larger changes. Please join the mailing list and post a proposal 
-before submitting a large change. This helps avoid double work and allows the community to arrive at a consensue
+before submitting a large change. This helps avoid double work and allows the community to arrive at a consensus
 on the new feature or improvement.
 
 ## Code changes
@@ -36,14 +36,14 @@ on the new feature or improvement.
 The development process doesn't contain many surprises. As most projects on github anyone can contribute by
 forking the repo and posting a pull request. See 
 [GitHub's documentation](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork) 
-for more information. Small changes don't require an issue however it is good practice to open up an issue for
+for more information. Small changes don't require an issue. However, it is good practice to open up an issue for
 larger changes. If you are unsure of where to start ask on the slack channel or look at [existing issues](https://github.com/projectnessie/nessie/issues).
-The 'good first issue' label marks issues that are particularly good for people new to the codebase.
+The [good first issue](https://github.com/projectnessie/nessie/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) label marks issues that are particularly good for people new to the codebase.
 
 ### Style guide
 
 Changes must adhere to the style guide and this will be verified by the continuous integration build. Java code style is approximately 
-google style and can be checked with checkstyle. Python adheres to the pep8 standard.
+[Google style](https://google.github.io/styleguide/javaguide.html) and can be checked with Checkstyle. Python adheres to the pep8 standard.
 
 ### Submitting a pull request
 
