@@ -4,7 +4,7 @@ codecov==2.1.11
 coverage==5.5
 flake8==3.9.1
 pip==21.1.1
-pytest==6.2.3
+pytest==6.2.4
 pytest-cov==2.11.1
 pytest-mock==3.6.0
 pytest-mypy==0.8.1
