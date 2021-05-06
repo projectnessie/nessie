@@ -1,0 +1,93 @@
+Season,Age,Team,ORB,DRB,TRB,AST,STL,BLK,TOV,PTS,Player,RSorPO
+2003-04,19,CLE,99,333,432,465,130,58,273,1654,Lebron James,Regular Season
+2004-05,20,CLE,111,477,588,577,177,52,262,2175,Lebron James,Regular Season
+2005-06,21,CLE,75,481,556,521,123,66,260,2478,Lebron James,Regular Season
+2006-07,22,CLE,83,443,526,470,125,55,250,2132,Lebron James,Regular Season
+2007-08,23,CLE,133,459,592,539,138,81,255,2250,Lebron James,Regular Season
+2008-09,24,CLE,106,507,613,587,137,93,241,2304,Lebron James,Regular Season
+2009-10,25,CLE,71,483,554,651,125,77,261,2258,Lebron James,Regular Season
+2010-11,26,MIA,80,510,590,554,124,50,284,2111,Lebron James,Regular Season
+2011-12,27,MIA,94,398,492,387,115,50,213,1683,Lebron James,Regular Season
+2012-13,28,MIA,97,513,610,551,129,67,226,2036,Lebron James,Regular Season
+2013-14,29,MIA,81,452,533,488,121,26,270,2089,Lebron James,Regular Season
+2014-15,30,CLE,51,365,416,511,109,49,272,1743,Lebron James,Regular Season
+2015-16,31,CLE,111,454,565,514,104,49,249,1920,Lebron James,Regular Season
+2016-17,32,CLE,97,542,639,646,92,44,303,1954,Lebron James,Regular Season
+2017-18,33,CLE,97,612,709,747,116,71,347,2251,Lebron James,Regular Season
+2018-19,34,LAL,57,408,465,454,72,33,197,1505,Lebron James,Regular Season
+2005-06,21,CLE,22,83,105,76,18,9,65,400,Lebron James,Playoffs
+2006-07,22,CLE,26,135,161,159,34,10,66,501,Lebron James,Playoffs
+2007-08,23,CLE,16,86,102,99,23,17,54,366,Lebron James,Playoffs
+2008-09,24,CLE,19,109,128,102,23,12,38,494,Lebron James,Playoffs
+2009-10,25,CLE,15,87,102,84,19,20,42,320,Lebron James,Playoffs
+2010-11,26,MIA,34,142,176,123,35,25,66,497,Lebron James,Playoffs
+2011-12,27,MIA,54,170,224,129,43,16,81,697,Lebron James,Playoffs
+2012-13,28,MIA,37,156,193,152,41,18,70,596,Lebron James,Playoffs
+2013-14,29,MIA,14,127,141,95,36,11,61,548,Lebron James,Playoffs
+2014-15,30,CLE,37,189,226,169,33,21,82,601,Lebron James,Playoffs
+2015-16,31,CLE,42,158,200,160,49,27,75,552,Lebron James,Playoffs
+2016-17,32,CLE,19,145,164,141,35,23,72,591,Lebron James,Playoffs
+2017-18,33,CLE,31,169,200,198,30,23,94,748,Lebron James,Playoffs
+1984-85,21,CHI,167,367,534,481,196,69,291,2313,Michael Jordan,Regular Season
+1985-86,22,CHI,23,41,64,53,37,21,45,408,Michael Jordan,Regular Season
+1986-87,23,CHI,166,264,430,377,236,125,272,3041,Michael Jordan,Regular Season
+1987-88,24,CHI,139,310,449,485,259,131,252,2868,Michael Jordan,Regular Season
+1988-89,25,CHI,149,503,652,650,234,65,290,2633,Michael Jordan,Regular Season
+1989-90,26,CHI,143,422,565,519,227,54,247,2753,Michael Jordan,Regular Season
+1990-91,27,CHI,118,374,492,453,223,83,202,2580,Michael Jordan,Regular Season
+1991-92,28,CHI,91,420,511,489,182,75,200,2404,Michael Jordan,Regular Season
+1992-93,29,CHI,135,387,522,428,221,61,207,2541,Michael Jordan,Regular Season
+1994-95,31,CHI,25,92,117,90,30,13,35,457,Michael Jordan,Regular Season
+1995-96,32,CHI,148,395,543,352,180,42,197,2491,Michael Jordan,Regular Season
+1996-97,33,CHI,113,369,482,352,140,44,166,2431,Michael Jordan,Regular Season
+1997-98,34,CHI,130,345,475,283,141,45,185,2357,Michael Jordan,Regular Season
+2001-02,38,WAS,50,289,339,310,85,26,162,1375,Michael Jordan,Regular Season
+2002-03,39,WAS,71,426,497,311,123,39,173,1640,Michael Jordan,Regular Season
+1984-85,21,CHI,7,16,23,34,11,4,15,117,Michael Jordan,Playoffs
+1985-86,22,CHI,5,14,19,17,7,4,14,131,Michael Jordan,Playoffs
+1986-87,23,CHI,7,14,21,18,6,7,8,107,Michael Jordan,Playoffs
+1987-88,24,CHI,23,48,71,47,24,11,39,363,Michael Jordan,Playoffs
+1988-89,25,CHI,26,93,119,130,42,13,68,591,Michael Jordan,Playoffs
+1989-90,26,CHI,24,91,115,109,45,14,56,587,Michael Jordan,Playoffs
+1990-91,27,CHI,18,90,108,142,40,23,43,529,Michael Jordan,Playoffs
+1991-92,28,CHI,37,100,137,127,44,16,81,759,Michael Jordan,Playoffs
+1992-93,29,CHI,32,96,128,114,39,17,45,666,Michael Jordan,Playoffs
+1994-95,31,CHI,20,45,65,45,23,14,41,315,Michael Jordan,Playoffs
+1995-96,32,CHI,31,58,89,74,33,6,42,552,Michael Jordan,Playoffs
+1996-97,33,CHI,42,108,150,91,30,17,49,590,Michael Jordan,Playoffs
+1997-98,34,CHI,33,74,107,74,32,12,45,680,Michael Jordan,Playoffs
+1996-97,18,LAL,47,85,132,91,49,23,112,539,Kobe Bryant,Regular Season
+1997-98,19,LAL,79,163,242,199,74,40,157,1220,Kobe Bryant,Regular Season
+1998-99,20,LAL,53,211,264,190,72,50,157,996,Kobe Bryant,Regular Season
+1999-00,21,LAL,108,308,416,323,106,62,182,1485,Kobe Bryant,Regular Season
+2000-01,22,LAL,104,295,399,338,114,43,220,1938,Kobe Bryant,Regular Season
+2001-02,23,LAL,112,329,441,438,118,35,223,2019,Kobe Bryant,Regular Season
+2002-03,24,LAL,106,458,564,481,181,67,288,2461,Kobe Bryant,Regular Season
+2003-04,25,LAL,103,256,359,330,112,28,171,1557,Kobe Bryant,Regular Season
+2004-05,26,LAL,95,297,392,398,86,53,270,1819,Kobe Bryant,Regular Season
+2005-06,27,LAL,71,354,425,360,147,30,250,2832,Kobe Bryant,Regular Season
+2006-07,28,LAL,75,364,439,413,111,36,255,2430,Kobe Bryant,Regular Season
+2007-08,29,LAL,94,423,517,441,151,40,257,2323,Kobe Bryant,Regular Season
+2008-09,30,LAL,90,339,429,399,120,37,210,2201,Kobe Bryant,Regular Season
+2009-10,31,LAL,78,313,391,365,113,20,233,1970,Kobe Bryant,Regular Season
+2010-11,32,LAL,83,336,419,388,99,12,243,2078,Kobe Bryant,Regular Season
+2011-12,33,LAL,66,247,313,264,69,18,204,1616,Kobe Bryant,Regular Season
+2012-13,34,LAL,66,367,433,469,106,25,287,2133,Kobe Bryant,Regular Season
+2013-14,35,LAL,2,24,26,38,7,1,34,83,Kobe Bryant,Regular Season
+2014-15,36,LAL,26,173,199,197,47,7,128,782,Kobe Bryant,Regular Season
+2015-16,37,LAL,41,206,247,184,62,13,129,1161,Kobe Bryant,Regular Season
+1996-97,18,LAL,1,10,11,11,3,2,14,74,Kobe Bryant,Playoffs
+1997-98,19,LAL,7,14,21,16,3,8,11,96,Kobe Bryant,Playoffs
+1998-99,20,LAL,13,42,55,37,15,10,31,158,Kobe Bryant,Playoffs
+1999-00,21,LAL,26,72,98,97,32,32,55,465,Kobe Bryant,Playoffs
+2000-01,22,LAL,29,87,116,97,25,12,51,471,Kobe Bryant,Playoffs
+2001-02,23,LAL,28,83,111,87,27,17,54,506,Kobe Bryant,Playoffs
+2002-03,24,LAL,16,45,61,62,14,1,42,385,Kobe Bryant,Playoffs
+2003-04,25,LAL,18,86,104,121,42,7,61,539,Kobe Bryant,Playoffs
+2005-06,27,LAL,4,40,44,36,8,3,33,195,Kobe Bryant,Playoffs
+2006-07,28,LAL,1,25,26,22,5,2,22,164,Kobe Bryant,Playoffs
+2007-08,29,LAL,18,101,119,117,35,8,70,633,Kobe Bryant,Playoffs
+2008-09,30,LAL,19,104,123,126,38,21,59,695,Kobe Bryant,Playoffs
+2009-10,31,LAL,26,112,138,126,31,16,79,671,Kobe Bryant,Playoffs
+2010-11,32,LAL,8,26,34,33,16,3,31,228,Kobe Bryant,Playoffs
+2011-12,33,LAL,16,42,58,52,16,2,34,360,Kobe Bryant,Playoffs
