@@ -182,8 +182,8 @@ jobs:
 
         if [[ -n ${ACT} ]] ; then
           # don't deploy and don't sign when running locally with nektos/act
-          GOALS="install"
-          PROFILES="-Pnative -Pdocker -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false"
+          BUILD_ARGS="${BUILD_ARGS} -Dmaven.deploy.skip -Dgpg.skip"
+          BUILD_ARGS="${BUILD_ARGS} -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false"
         fi
 
         ./mvnw -B ${GOALS} --file pom.xml ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
