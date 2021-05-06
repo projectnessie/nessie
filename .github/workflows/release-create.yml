@@ -40,9 +40,6 @@ on:
       releaseVersion:
         description: 'The version to release - e.g. `0.5.0`'
         required: true
-      nextVersion:
-        description: 'The nest development version - e.g. `0.6.0` - without the SNAPSHOT suffix'
-        required: true
 
 jobs:
   create-release:
@@ -51,7 +48,6 @@ jobs:
     env:
       GIT_TAG: nessie-${{ github.event.inputs.releaseVersion }}
       RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
-      NEXT_VERSION: ${{ github.event.inputs.nextVersion }}
 
     steps:
 
@@ -59,9 +55,7 @@ jobs:
     - name: Check parameters
       run: |
         # check if tag matches patterns like nessie-0.5, nessie-0.10.4.3-alpha1, etc
-        if [[ ${RELEASE_VERSION} =~ ^[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$
-            && ${NEXT_VERSION} =~ ^[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$
-            && ${RELEASE_VERSION} != ${NEXT_VERSION} ]]; then
+        if [[ ${RELEASE_VERSION} =~ ^[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$ ]]; then
           echo "Parameter check OK"
         else
           echo "Tag must start with nessie- followed by a valid version (got tag ${V}, ref is ${GITHUB_REF} )"
@@ -143,17 +137,17 @@ jobs:
     - name: Set Python to next development version version ${{ github.event.inputs.nextVersion }}
       working-directory: ./python
       run: |
-        bump2version --no-commit --no-tag --new-version ${NEXT_VERSION} minor
+        bump2version --no-commit --no-tag patch
         # Call into pynessie to ensure bump2version didn't mess up anything. See https://github.com/c4urself/bump2version/issues/214
         echo "pynessie at next development iteration $(python -c 'import pynessie; print(pynessie.__version__)')"
 
     # Update versions to next development iteration
     - name: Bump Maven next development version version ${{ github.event.inputs.nextVersion }}
-      run: ./mvnw versions:set -DgenerateBackupPoms=false -DnewVersion=${NEXT_VERSION}-SNAPSHOT
+      run: ./mvnw versions:set -DgenerateBackupPoms=false -DnextSnapshot=true
 
     # Record the next development iteration in git
     - name: Record ${{ github.event.inputs.nextVersion }} release in git
-      run: git commit -a -m "[release] next development iteration ${NEXT_VERSION}-SNAPSHOT"
+      run: git commit -a -m "[release] next development iteration"
 
     # Push the 2 git commits and git tag. If this one fails, some other commit was pushed to the
     # 'main' branch and break the linear history for the Nessie git repo.
