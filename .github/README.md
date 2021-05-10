@@ -6,12 +6,24 @@ Creating a Nessie release does not need much manual interaction. To perform a re
 "fully green" commit in the `main` branch is needed, so the statuses recorded for the git
 commit that shall become a release must all have the "success" result (the green checkmark).
 
+### Preparing a Nessie Release
+
+1. Know the next Nessie version number ;)
+1. Check + update the files
+    * `python/pynessie/__init__.py`
+    * `python/HISTORY.rst`
+    * `site/docs/try/releases.md`
+    * `site/mkdocs.yml` (`extra.versions.*`)
+1. Prepare a PR with the updates of the above files and get it merged.
+
+Note: don't bump the version in `python/setup.py` and `python/setup.cfg`. The release workflow
+will take care of bumping the version.
+
+### Initiate the Nessie Release
+
 To initiate the release process, manually start the "Create Release" (`release-create.yml`)
-GitHub workflow, which requires two input parameters:
-* the next release version (e.g. `0.6.0`)
-* the next development iteration version (e.g. `0.6.1`) *without* any suffix like SNAPSHOT
-* the git reference to create the release from (e.g. a Git SHA) is optional, it defaults
-  to HEAD of the `main` branch
+GitHub workflow, which requires the version string for the release (e.g. `0.6.0`). The next
+development iteration version (e.g. `0.6.1`) will be automatically generated.
 
 The "Create Release" workflow effectively just bumps the Nessie version to the release version
 in a new git commit with a new git tag plus another git commit to bump to the Nessie version
