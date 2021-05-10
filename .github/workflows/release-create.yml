@@ -1,0 +1,166 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Projectnessie GitHub Release workflow
+
+# Manually triggered workflow, takes the "release-version" and "next-version" arguments.
+
+# This workflow creates the git commits + git tag for a Nessie release.
+# It requires a fully successful CI status of the commit going to be released, i.e. we rely on
+# the "Main CI" workflow here.
+
+# When this workflow pushes the release tag (e.g. `nessie-0.5.1`), the `release-publish.yml`
+# workflow publishes the release artifacts
+
+# Projectnessie really prefers a linear git history - aka no merges. PRs must not be merged
+# while the release workflow runs. In case the git history would not be linear, this workflow will
+# fail without having uploaded/pushed any release artifacts.
+
+# No secrets (except the last step uses the GITHUB_TOKEN to push release-commits+tag to the branch)
+# are needed for this workflow.
+
+name: Create Release
+
+on:
+  # Manually triggered
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: 'The version to release - e.g. `0.5.0`'
+        required: true
+
+jobs:
+  create-release:
+    name: Create release
+    runs-on: ubuntu-latest
+    env:
+      GIT_TAG: nessie-${{ github.event.inputs.releaseVersion }}
+      RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
+
+    steps:
+
+    # Check the given version parameter strings for valid version patterns and inequality.
+    - name: Check parameters
+      run: |
+        # check if tag matches patterns like nessie-0.5, nessie-0.10.4.3-alpha1, etc
+        if [[ ${RELEASE_VERSION} =~ ^[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$ ]]; then
+          echo "Parameter check OK"
+        else
+          echo "Tag must start with nessie- followed by a valid version (got tag ${V}, ref is ${GITHUB_REF} )"
+          exit 1
+        fi
+
+    # Check that the commit that is becoming a release has passed CI.
+    # Note: intentionally hard-coded projectnessie/nessie, so this check even works when *testing*
+    # the workflow on a PR-branch.
+    - name: Check commit status
+      run: |
+        echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+        gh api repos/projectnessie/nessie/commits/${GITHUB_SHA}/check-runs --jq 'if ([.check_runs[].conclusion] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
+
+    ### BEGIN runner setup
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Set up JDK 11
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'zulu'
+        java-version: 11
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Cache local pip repository
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Cache local Maven repository
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.m2/repository
+          !~/.m2/repository/org/projectnessie
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bump2version
+        # Remove the following, once https://github.com/c4urself/bump2version/issues/214 is fixed
+        # and the two workarounds below are removed.
+        pip install -r python/requirements.txt
+    ### END runner setup
+
+    - name: Bump Python release version ${{ github.event.inputs.releaseVersion }}
+      working-directory: ./python
+      run: |
+        # bump2version 1.0.1 has a bug: https://github.com/c4urself/bump2version/issues/214
+        if [[ "$(cd python/ ; python -c 'import pynessie; print(pynessie.__version__)')" != ${RELEASE_VERSION} ]] ; then
+          bump2version --no-commit --no-tag --new-version ${RELEASE_VERSION} minor
+          # Call into pynessie to ensure bump2version didn't mess up anything
+          echo "pynessie at release-version $(python -c 'import pynessie; print(pynessie.__version__)')"
+        else
+          echo "pynessie already at release-version ${RELEASE_VERSION}"
+        fi
+
+    - name: Bump Maven release version ${{ github.event.inputs.releaseVersion }}
+      run: ./mvnw versions:set -DgenerateBackupPoms=false -DnewVersion=${RELEASE_VERSION}
+
+    - name: Configure release-bot-user in git config
+      run: |
+        git config --global user.email "nessie-release-workflow-noreply@projectnessie.org"
+        git config --global user.name "Nessie Release Workflow [bot]"
+
+    # Record the release-version in git and add the git tag for the release.
+    - name: Record ${{ github.event.inputs.releaseVersion }} release in git
+      run: |
+        git commit -a -m "[release] release nessie-${RELEASE_VERSION}"
+        git tag -f ${GIT_TAG}
+
+    # Update versions to next development iteration
+    - name: Set Python to next development version version ${{ github.event.inputs.nextVersion }}
+      working-directory: ./python
+      run: |
+        bump2version --no-commit --no-tag patch
+        # Call into pynessie to ensure bump2version didn't mess up anything. See https://github.com/c4urself/bump2version/issues/214
+        echo "pynessie at next development iteration $(python -c 'import pynessie; print(pynessie.__version__)')"
+
+    # Update versions to next development iteration
+    - name: Bump Maven next development version version ${{ github.event.inputs.nextVersion }}
+      run: ./mvnw versions:set -DgenerateBackupPoms=false -DnextSnapshot=true
+
+    # Record the next development iteration in git
+    - name: Record ${{ github.event.inputs.nextVersion }} release in git
+      run: git commit -a -m "[release] next development iteration"
+
+    # Push the 2 git commits and git tag. If this one fails, some other commit was pushed to the
+    # 'main' branch and break the linear history for the Nessie git repo.
+    # The `release-publish.yml` job will run when the release tag `nessie-x.y.z` has been pushed.
+    - name: Push tag + branch
+      if: ${{ !env.ACT }}
+      run: |
+        UPSTREAM="$(git remote)"
+        REPO_OWNER="$(echo ${GITHUB_REPOSITORY} | cut -d/ -f2)"
+
+        # Update the remote repo URL to include the secret so this job can push to the repo
+        git remote set-url ${UPSTREAM} https://${REPO_OWNER}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+
+        git push ${UPSTREAM}
+        git push ${UPSTREAM} :refs/tags/${GIT_TAG}
+        git push ${UPSTREAM} ${GIT_TAG}

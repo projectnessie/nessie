@@ -1,0 +1,287 @@
+# Copyright (C) 2020 Dremio
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Publish Nessie release artifacts
+
+# Triggered when a `nessie-*` tag is being pushed.
+
+# Publishes the Maven, Python, Docker and Gradle-plugin artifacts.
+
+# GitHub environment name:
+#   release
+# Required secrets:
+#   OSSRH_ACCESS_ID
+#   OSSRH_TOKEN
+#   MAVEN_GPG_PASSPHRASE
+#   PYPI_API_TOKEN
+#   DOCKER_USERNAME
+#   DOCKER_TOKEN
+#   GRADLE_PUBLISH_KEY
+#   GRADLE_PUBLISH_SECRET
+
+name: Publish release
+
+on:
+  push:
+    tags:
+      - nessie-*
+
+  workflow_dispatch:
+    releaseTag:
+      description: 'Release tag name to re-release'
+      required: true
+
+jobs:
+  publish-release:
+    name: Publish release
+    runs-on: ubuntu-latest
+
+    # Runs in the `release` environment, which has the necessary secrets and defines the reviewers.
+    # See https://docs.github.com/en/actions/reference/environments
+    environment: release
+
+    steps:
+
+    # GH doesn't provide just the tag name, so this step strips `/refs/tags/nessie-` from `GITHUB_REF`
+    # and provides the output `VERSION` or, in case of a manual run, uses the input `releaseTag` as
+    # the input tag name.
+    - name: Get release version
+      id: get_version
+      run: |
+        if [[ "${{ github.event_name }}" == "push" ]] ; then
+          V="${GITHUB_REF/refs\/tags\/}"
+        else
+          V="${{ github.event.inputs.releaseTag }}"
+        fi
+        # check if tag matches patterns like nessie-0.5, nessie-0.10.4.3-alpha1, etc
+        if [[ ${V} =~ ^nessie-[0-9]+[.][0-9.]*[0-9](-[a-zA-Z0-9]+)?$ ]]; then
+          echo ::set-output name=VERSION::${V/nessie-}
+        else
+          echo "Tag must start with nessie- followed by a valid version (got tag ${V}, ref is ${GITHUB_REF} )"
+          exit 1
+        fi
+
+    ### BEGIN runner setup
+    - name: Checkout
+      uses: actions/checkout@v2
+      if: ${{ github.event_name == "push" }}
+    - name: Checkout
+      uses: actions/checkout@v2
+      if: ${{ github.event_name == "workflow_dispatch" }}
+      with:
+        ref: refs/tags/${{ github.event.inputs.releaseTag }}
+    - name: Set up JDK 11
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'zulu'
+        java-version: 11
+        server-id: ossrh
+        server-username: MAVEN_USERNAME
+        server-password: MAVEN_OSSRH_TOKEN
+        gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+        gpg-passphrase: MAVEN_GPG_PASSPHRASE
+    - name: Set up JDK 8
+      uses: AdoptOpenJDK/install-jdk@v1
+      with:
+        version: '8'
+        targets: 'JDK8_HOME'
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Set up Maven toolchains.xml
+      run: |
+          cat << 'EOT' > ${HOME}/.m2/toolchains.xml
+          <?xml version="1.0" encoding="UTF8"?>
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides>
+                <version>11</version>
+                <vendor>zulu</vendor>
+              </provides>
+              <configuration>
+                <jdkHome>${env.JAVA_HOME}</jdkHome>
+              </configuration>
+            </toolchain>
+            <toolchain>
+              <type>jdk</type>
+              <provides>
+                <version>1.8</version>
+                <vendor>adoptopenjdk</vendor>
+              </provides>
+              <configuration>
+                <jdkHome>${env.JDK8_HOME}</jdkHome>
+              </configuration>
+            </toolchain>
+          </toolchains>
+          EOT
+    - name: Cache local pip repository
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Cache local Maven repository
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.m2/repository
+          !~/.m2/repository/org/projectnessie
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+    - name: Cache local NPM repository
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - name: Cache local Gradle cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: ${{ runner.os }}-gradle
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r python/requirements_dev.txt
+    ### END runner setup
+
+    # Deploys Maven artifacts. Build and test steps were already ran in previous steps.
+    # Not running tests, because the environment contains secrets.
+    # TODO switch autoReleaseAfterClose to true - see https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin
+    - name: Publish Maven artifacts for release ${{ steps.get_version.outputs.VERSION }}
+      id: build_maven
+      env:
+        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
+        MAVEN_USERNAME: ${{ secrets.OSSRH_ACCESS_ID }}
+        MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+        MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+      run: |
+        NEXUS_ARGS="-DnexusUrl=https://oss.sonatype.org -DserverId=ossrh -DautoReleaseAfterClose=false"
+        PROFILES="-Pnative -Prelease"
+        GOALS="install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy"
+        BUILD_ARGS="-DskipTests"
+
+        if [[ -n ${ACT} ]] ; then
+          # don't deploy and don't sign when running locally with nektos/act
+          BUILD_ARGS="${BUILD_ARGS} -Dmaven.deploy.skip -Dgpg.skip"
+          BUILD_ARGS="${BUILD_ARGS} -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false"
+        fi
+
+        ./mvnw -B ${GOALS} --file pom.xml ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
+
+        echo ::set-output name=QUARKUS_NATIVE_BINARY::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner
+
+    # Deploys Gradle plugin. Build and test steps were already ran in previous steps
+    - name: Publish Gradle Plugin for release ${{ steps.get_version.outputs.VERSION }}
+      working-directory: ./tools/apprunner-gradle-plugin/
+      if: ${{ !env.ACT }}
+      run: |
+        ./gradlew publishPlugins -Pgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }} -Pgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }}
+
+    # Deploys pynessie. Build and test steps were already ran in previous steps
+    - name: Build pynessie for release ${{ steps.get_version.outputs.VERSION }}
+      working-directory: ./python
+      run: python setup.py sdist bdist_wheel
+
+    - name: Publish pynessie package
+      uses: pypa/gh-action-pypi-publish@release/v1
+      if: ${{ !env.ACT }}
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        packages_dir: ./python/dist/
+
+    # Deploys Docker images. Build and test steps were already ran in previous workflows
+    - name: Tag Docker image for release ${{ steps.get_version.outputs.VERSION }}
+      env:
+        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
+      run: |
+        docker tag projectnessie/nessie:${RELEASE_VERSION} projectnessie/nessie:latest
+
+    # Deploys Docker images. Build and test steps were already ran in previous workflows
+    - name: Publish Docker image for release ${{ steps.get_version.outputs.VERSION }}
+      if: ${{ !env.ACT }}
+      env:
+        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
+      run: |
+        echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
+        docker push projectnessie/nessie:${RELEASE_VERSION} && docker push projectnessie/nessie:latest
+
+    # Prepare Nessie release notes for GitHub
+    #
+    # The markdown file for the release is generated using some mostly simple shell script.
+    #
+    # `LAST_TAG` is evaluated using `git describe`, which is the name of the git tag before the release tag
+    # `NUM_COMMITS` is the total number of commits "between" LAST_TAG and GIT_TAG
+    #
+    # Release highlights are extracted from `site/docs/try/releases.md`, highlights for the current
+    # release is the text between the first two lines starting with `## ` in `releases.md`.
+    #
+    # "Full Changelog" is the output of a `git log` considering the commits "between" LAST_TAG and
+    # GIT_TAG, removing the commits by `dependabot-preview` and `nessie-release-workflow`.
+    # Also removes commits that start with `[release] `.
+    #
+    # The final markdown is just a `cat` of the above information including some basic markdown formatting.
+    #
+    - name: Prepare Nessie release ${{ steps.get_version.outputs.VERSION }} in GitHub
+      id: prep_release
+      env:
+        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
+        GIT_TAG: nessie-${{ steps.get_version.outputs.VERSION }}
+      run: |
+        DIR=$(mktemp -d)
+        NOTES_FILE=${DIR}/release-notes.md
+        LAST_TAG=$(git describe --tags --abbrev=0 ${GIT_TAG}^1)
+        NUM_COMMITS=$(git log --format='format:%h' ${LAST_TAG}..${GIT_TAG} | wc -l)
+
+        csplit site/docs/try/releases.md '%##%' {0} '/##/' {0} '%##%' {*} -f ${DIR}/release-highlights -b '-%d.txt' > /dev/null
+
+        git log --perl-regexp --author '^(?!.*dependabot-preview|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ${DIR}/release-log
+
+        cat <<EOF > ${DIR}/release-notes.md
+        # Highlights
+
+        * ${NUM_COMMITS} commits since ${LAST_TAG#nessie-}
+        $(cat ${DIR}/release-highlights* | grep -v '^[#][#] .*$' | grep -v '^$' | sed 's/^(.*)$/* $1/')
+        * Maven Central: https://search.maven.org/search?q=g:org.projectnessie
+        * Docker Hub: https://hub.docker.com/r/projectnessie/nessie
+        * PyPI: https://pypi.org/project/pynessie/
+
+        ## Full Changelog (minus dependabot commits):
+
+        $(cat ${DIR}/release-log)
+        EOF
+
+        echo ::set-output name=NOTES_FILE::${NOTES_FILE}
+
+    - name: Dump release notes
+      run: cat ${{ steps.prep_release.outputs.NOTES_FILE }}
+
+    - name: Create Nessie release ${{ steps.get_version.outputs.VERSION }} in GitHub
+      if: ${{ !env.ACT }}
+      env:
+        RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
+        GIT_TAG: nessie-${{ steps.get_version.outputs.VERSION }}
+      run: |
+        QUARKUS_NATIVE_BINARY="${{ steps.build_maven.outputs.QUARKUS_NATIVE_BINARY }}"
+        echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+        gh release create ${GIT_TAG} --notes-file ${{ steps.prep_release.outputs.NOTES_FILE }} --title "Nessie ${RELEASE_VERSION}" "${QUARKUS_NATIVE_BINARY}"
