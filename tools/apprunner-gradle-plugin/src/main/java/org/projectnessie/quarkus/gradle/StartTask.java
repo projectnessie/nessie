@@ -35,7 +35,7 @@ public class StartTask extends DefaultTask {
   }
 
   @SuppressWarnings("UnstableApiUsage") // omit warning about `Property`+`MapProperty`
-  void quarkusStart() {
+  void quarkusStart(Test testTask) {
     getLogger().info("Starting Quarkus application.");
 
     QuarkusAppExtension extension = getProject().getExtensions().getByType(QuarkusAppExtension.class);
@@ -65,7 +65,6 @@ public class StartTask extends DefaultTask {
     // system-properties, because those are subject to the test-task's inputs, which is used
     // as the build-cache key. Instead, pass the dynamic properties via a CommandLineArgumentProvider.
     // In other words: ensure that the `Test` tasks is cacheable.
-    Test testTask = (Test) getProject().getTasks().getByName("test");
     testTask.getJvmArgumentProviders().add(() -> props.keySet().stream()
         .filter(k -> System.getProperty(k) != null)
         .map(k -> String.format("-D%s=%s", k, System.getProperty(k)))

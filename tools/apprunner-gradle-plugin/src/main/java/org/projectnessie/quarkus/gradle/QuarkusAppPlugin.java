@@ -76,7 +76,7 @@ public class QuarkusAppPlugin implements Plugin<Project> {
           @Override
           public void execute(Task ignore) {
             StartTask startTask = (StartTask) target.getTasks().getByName(START_TASK_NAME);
-            startTask.quarkusStart();
+            startTask.quarkusStart(test);
           }
         });
       }
