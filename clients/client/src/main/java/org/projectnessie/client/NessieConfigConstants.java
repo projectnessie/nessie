@@ -24,6 +24,12 @@ public final class NessieConfigConstants {
    */
   public static final String CONF_NESSIE_URI = "nessie.uri";
   /**
+   * Deprecated, old configuration key for {@link #CONF_NESSIE_URI}, do not use.
+   * <p>Only present for backwards-compatibility. Will be removed in a future version.</p>
+   */
+  @Deprecated
+  public static final String CONF_NESSIE_URL = "nessie.url";
+  /**
    * Config property name ({@value #CONF_NESSIE_USERNAME}) for the user name used for (basic) authentication.
    */
   public static final String CONF_NESSIE_USERNAME = "nessie.username";

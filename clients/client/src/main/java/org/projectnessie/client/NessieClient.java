@@ -19,6 +19,7 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_AUTH_TY
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_PASSWORD;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_TRACING;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URI;
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_URL;
 import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_USERNAME;
 
 import java.net.URI;
@@ -89,6 +90,9 @@ public interface NessieClient extends AutoCloseable {
      */
     public Builder fromConfig(Function<String, String> configuration) {
       String uri = configuration.apply(CONF_NESSIE_URI);
+      if (uri == null) {
+        uri = configuration.apply(CONF_NESSIE_URL);
+      }
       if (uri != null) {
         this.uri = URI.create(uri);
       }
