@@ -35,6 +35,7 @@
       <artifactId>nessie-deltalake-core</artifactId>
       <version>${project.version}</version>
       <classifier>sources</classifier>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.projectnessie</groupId>
