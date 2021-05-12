@@ -75,10 +75,10 @@ jobs:
     ### BEGIN runner setup
     - name: Checkout
       uses: actions/checkout@v2
-      if: ${{ github.event_name == "push" }}
+      if: ${{ github.event_name == 'push' }}
     - name: Checkout
       uses: actions/checkout@v2
-      if: ${{ github.event_name == "workflow_dispatch" }}
+      if: ${{ github.event_name == 'workflow_dispatch' }}
       with:
         ref: refs/tags/${{ github.event.inputs.releaseTag }}
     - name: Set up JDK 11
