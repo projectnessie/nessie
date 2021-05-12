@@ -255,7 +255,7 @@ jobs:
 
         csplit site/docs/try/releases.md '%##%' {0} '/##/' {0} '%##%' {*} -f ${DIR}/release-highlights -b '-%d.txt' > /dev/null
 
-        git log --perl-regexp --author '^(?!.*dependabot-preview|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ${DIR}/release-log
+        git log --perl-regexp --author '^(?!.*dependabot(-preview)?|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ${DIR}/release-log
 
         cat <<EOF > ${DIR}/release-notes.md
         # Highlights
