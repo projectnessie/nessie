@@ -176,7 +176,7 @@ jobs:
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
       run: |
-        NEXUS_ARGS="-DnexusUrl=https://oss.sonatype.org -DserverId=ossrh -DautoReleaseAfterClose=false"
+        NEXUS_ARGS="-DnexusUrl=https://oss.sonatype.org -DserverId=ossrh -DautoReleaseAfterClose=true"
         PROFILES="-Pnative -Prelease"
         GOALS="install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy"
         BUILD_ARGS="-DskipTests"
