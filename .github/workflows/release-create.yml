@@ -28,8 +28,9 @@
 # while the release workflow runs. In case the git history would not be linear, this workflow will
 # fail without having uploaded/pushed any release artifacts.
 
-# No secrets (except the last step uses the GITHUB_TOKEN to push release-commits+tag to the branch)
-# are needed for this workflow.
+# Secrets:
+#   NESSIE_BUILDER  to push the release-commits+tag to the branch, bypassing the required
+#                   commit-hooks + review.
 
 name: Create Release
 
@@ -159,7 +160,7 @@ jobs:
         REPO_OWNER="$(echo ${GITHUB_REPOSITORY} | cut -d/ -f2)"
 
         # Update the remote repo URL to include the secret so this job can push to the repo
-        git remote set-url ${UPSTREAM} https://${REPO_OWNER}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}
+        git remote set-url ${UPSTREAM} https://${REPO_OWNER}:${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}
 
         git push ${UPSTREAM}
         git push ${UPSTREAM} :refs/tags/${GIT_TAG}
