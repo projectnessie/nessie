@@ -59,6 +59,11 @@
       <name>Robert Stupp</name>
       <url>https://github.com/snazy</url>
     </developer>
+    <developer>
+      <id>nastra</id>
+      <name>Eduard Tudenhoefner</name>
+      <url>https://github.com/nastra</url>
+    </developer>
   </developers>
   <contributors>
     <contributor>
