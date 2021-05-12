@@ -38,9 +38,10 @@ on:
       - nessie-*
 
   workflow_dispatch:
-    releaseTag:
-      description: 'Release tag name to re-release'
-      required: true
+    inputs:
+      releaseTag:
+        description: 'Release tag name to re-release'
+        required: true
 
 jobs:
   publish-release:
