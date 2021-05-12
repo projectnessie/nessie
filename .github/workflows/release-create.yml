@@ -135,7 +135,7 @@ jobs:
         git tag -f ${GIT_TAG}
 
     # Update versions to next development iteration
-    - name: Set Python to next development version version ${{ github.event.inputs.nextVersion }}
+    - name: Set Python to next development version version
       working-directory: ./python
       run: |
         bump2version --no-commit --no-tag patch
@@ -143,11 +143,11 @@ jobs:
         echo "pynessie at next development iteration $(python -c 'import pynessie; print(pynessie.__version__)')"
 
     # Update versions to next development iteration
-    - name: Bump Maven next development version version ${{ github.event.inputs.nextVersion }}
+    - name: Bump Maven next development version version
       run: ./mvnw versions:set -DgenerateBackupPoms=false -DnextSnapshot=true
 
     # Record the next development iteration in git
-    - name: Record ${{ github.event.inputs.nextVersion }} release in git
+    - name: Record next development version in git
       run: git commit -a -m "[release] next development iteration"
 
     # Push the 2 git commits and git tag. If this one fails, some other commit was pushed to the
@@ -159,6 +159,10 @@ jobs:
         # Push directly using the remote repo URL, which includes the secret so this job can push to the repo
         UPSTREAM="https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}.git"
 
-        git push --no-verify "${UPSTREAM}" HEAD:${GITHUB_REF}
-        git push --no-verify "${UPSTREAM}" :refs/tags/${GIT_TAG}
-        git push --no-verify "${UPSTREAM}" ${GIT_TAG}
+        # Move the default auth settings in ~/.gitconfig out of the way, so the git-push can use the token
+        git config --rename-section http.https://github.com/ http.https://save.github.com/
+
+        git push --no-verify "${UPSTREAM}" HEAD:${GITHUB_REF} ${GIT_TAG}
+
+        # Move the default auth settings in ~/.gitconfig back
+        git config --rename-section http.https://save.github.com/ http.https://github.com/
