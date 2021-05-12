@@ -156,10 +156,8 @@ jobs:
     - name: Push tag + branch
       if: ${{ !env.ACT }}
       run: |
-        UPSTREAM="$(git remote)"
-
-        # Update the remote repo URL to include the secret so this job can push to the repo
-        git remote set-url ${UPSTREAM} https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}
+        # Push directly using the remote repo URL, which includes the secret so this job can push to the repo
+        UPSTREAM="https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}"
 
         git push --no-verify ${UPSTREAM}
         git push --no-verify ${UPSTREAM} :refs/tags/${GIT_TAG}
