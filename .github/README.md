@@ -14,6 +14,7 @@ commit that shall become a release must all have the "success" result (the green
     * `python/HISTORY.rst`
     * `site/docs/try/releases.md`
     * `site/mkdocs.yml` (`extra.versions.*`)
+    * `model/src/main/java/org/projectnessie/api/package-info.java`
 1. Prepare a PR with the updates of the above files and get it merged.
 
 Note: don't bump the version in `python/setup.py` and `python/setup.cfg`. The release workflow
