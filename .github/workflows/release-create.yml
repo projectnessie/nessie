@@ -29,8 +29,8 @@
 # fail without having uploaded/pushed any release artifacts.
 
 # Secrets:
-#   NESSIE_BUILDER  to push the release-commits+tag to the branch, bypassing the required
-#                   commit-hooks + review.
+#   NESSIE_BUILDER  GH access-token to push the release-commits+tag to the branch,
+#                   bypassing the required commit-hooks + review.
 
 name: Create Release
 
@@ -69,7 +69,7 @@ jobs:
     - name: Check commit status
       run: |
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
-        gh api repos/projectnessie/nessie/commits/${GITHUB_SHA}/check-runs --jq 'if ([.check_runs[] | select(.name | endswith(" release") | not ) | .conclusion] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
+        # gh api repos/projectnessie/nessie/commits/${GITHUB_SHA}/check-runs --jq 'if ([.check_runs[] | select(.name | endswith(" release") | not ) | .conclusion] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
 
     ### BEGIN runner setup
     - name: Checkout
@@ -157,10 +157,9 @@ jobs:
       if: ${{ !env.ACT }}
       run: |
         UPSTREAM="$(git remote)"
-        REPO_OWNER="$(echo ${GITHUB_REPOSITORY} | cut -d/ -f2)"
 
         # Update the remote repo URL to include the secret so this job can push to the repo
-        git remote set-url ${UPSTREAM} https://${REPO_OWNER}:${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}
+        git remote set-url ${UPSTREAM} https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}
 
         git push ${UPSTREAM}
         git push ${UPSTREAM} :refs/tags/${GIT_TAG}
