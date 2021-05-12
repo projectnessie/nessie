@@ -168,7 +168,7 @@ jobs:
     # Deploys Maven artifacts. Build and test steps were already ran in previous steps.
     # Not running tests, because the environment contains secrets.
     # TODO switch autoReleaseAfterClose to true - see https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin
-    - name: Publish Maven artifacts for release ${{ steps.get_version.outputs.VERSION }}
+    - name: Publish Maven artifacts for release
       id: build_maven
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
@@ -192,14 +192,14 @@ jobs:
         echo ::set-output name=QUARKUS_NATIVE_BINARY::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner
 
     # Deploys Gradle plugin. Build and test steps were already ran in previous steps
-    - name: Publish Gradle Plugin for release ${{ steps.get_version.outputs.VERSION }}
+    - name: Publish Gradle Plugin for release
       working-directory: ./tools/apprunner-gradle-plugin/
       if: ${{ !env.ACT }}
       run: |
         ./gradlew publishPlugins -Pgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }} -Pgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }}
 
     # Deploys pynessie. Build and test steps were already ran in previous steps
-    - name: Build pynessie for release ${{ steps.get_version.outputs.VERSION }}
+    - name: Build pynessie for release
       working-directory: ./python
       run: python setup.py sdist bdist_wheel
 
@@ -212,14 +212,14 @@ jobs:
         packages_dir: ./python/dist/
 
     # Deploys Docker images. Build and test steps were already ran in previous workflows
-    - name: Tag Docker image for release ${{ steps.get_version.outputs.VERSION }}
+    - name: Tag Docker image for release
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
       run: |
         docker tag projectnessie/nessie:${RELEASE_VERSION} projectnessie/nessie:latest
 
     # Deploys Docker images. Build and test steps were already ran in previous workflows
-    - name: Publish Docker image for release ${{ steps.get_version.outputs.VERSION }}
+    - name: Publish Docker image for release
       if: ${{ !env.ACT }}
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
@@ -243,7 +243,7 @@ jobs:
     #
     # The final markdown is just a `cat` of the above information including some basic markdown formatting.
     #
-    - name: Prepare Nessie release ${{ steps.get_version.outputs.VERSION }} in GitHub
+    - name: Prepare Nessie release in GitHub
       id: prep_release
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
@@ -277,7 +277,7 @@ jobs:
     - name: Dump release notes
       run: cat ${{ steps.prep_release.outputs.NOTES_FILE }}
 
-    - name: Create Nessie release ${{ steps.get_version.outputs.VERSION }} in GitHub
+    - name: Create Nessie release in GitHub
       if: ${{ !env.ACT }}
       env:
         RELEASE_VERSION: ${{ steps.get_version.outputs.VERSION }}
