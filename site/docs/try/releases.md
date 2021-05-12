@@ -3,6 +3,7 @@
 ## 0.6.0 Release (xxx xx, 2021)
 
 * TreeApi.createReference() + commitMultipleOperations() return commit information
+* Iceberg GC actions and a process to execute GC algorithm
 
 ## 0.5.1 Release (April 9, 2021)
 

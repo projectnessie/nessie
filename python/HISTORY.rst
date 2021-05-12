@@ -2,7 +2,7 @@
 History
 =======
 
-0.6.0 (xxxx-xx-xx)
+0.6.0 (2021-05-12)
 ------------------
 
 * create-reference and commit operations return the new commit-hash
