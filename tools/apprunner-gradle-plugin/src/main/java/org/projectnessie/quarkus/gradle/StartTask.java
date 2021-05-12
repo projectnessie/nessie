@@ -36,30 +36,37 @@ public class StartTask extends DefaultTask {
 
   @SuppressWarnings("UnstableApiUsage") // omit warning about `Property`+`MapProperty`
   void quarkusStart(Test testTask) {
-    getLogger().info("Starting Quarkus application.");
+    StopTask stopTask = (StopTask) getProject().getTasks().getByName(QuarkusAppPlugin.STOP_TASK_NAME);
 
     QuarkusAppExtension extension = getProject().getExtensions().getByType(QuarkusAppExtension.class);
 
-    // This is not doing anything with Docker or building a native image, just a quirk of Quarkus since 1.10.
-    System.setProperty("quarkus.native.builder-image", extension.getNativeBuilderImageProperty().get());
-
     Map<String, Object> props = extension.getPropsProperty().get();
 
-    Properties properties = new Properties();
-    properties.putAll(props);
+    if (stopTask.getApplication() == null) {
+      getLogger().info("Starting Quarkus application.");
 
-    // Prepare/configure logging (log level defaults to "info", can be overridden via the
-    // environment variable NESSIE_QUARKUS_LOG_LEVEL
-    if (!System.getProperties().containsKey("java.util.logging.manager")) {
-      System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+      // This is not doing anything with Docker or building a native image, just a quirk of Quarkus since 1.10.
+      System.setProperty("quarkus.native.builder-image", extension.getNativeBuilderImageProperty().get());
+
+      Properties properties = new Properties();
+      properties.putAll(props);
+
+      // Prepare/configure logging (log level defaults to "info", can be overridden via the
+      // environment variable NESSIE_QUARKUS_LOG_LEVEL
+      if (!System.getProperties().containsKey("java.util.logging.manager")) {
+        System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+      }
+      if (!System.getProperties().containsKey("log4j2.configurationFile")) {
+        URL log4j2config = StartTask.class.getResource("/org/projectnessie/quarkus/gradle/log4j2-quarkus.xml");
+
+        System.setProperty("log4j2.configurationFile", log4j2config.toString());
+      }
+
+      AutoCloseable quarkusApp = QuarkusApp.newApplication(getProject(), properties);
+      stopTask.setQuarkusApplication(quarkusApp);
+
+      getLogger().info("Quarkus application started.");
     }
-    if (!System.getProperties().containsKey("log4j2.configurationFile")) {
-      URL log4j2config = StartTask.class.getResource("/org/projectnessie/quarkus/gradle/log4j2-quarkus.xml");
-
-      System.setProperty("log4j2.configurationFile", log4j2config.toString());
-    }
-
-    AutoCloseable quarkusApp = QuarkusApp.newApplication(getProject(), properties);
 
     // Do not put the "dynamic" properties (quarkus.http.test-port) to the `Test` task's
     // system-properties, because those are subject to the test-task's inputs, which is used
@@ -69,18 +76,5 @@ public class StartTask extends DefaultTask {
         .filter(k -> System.getProperty(k) != null)
         .map(k -> String.format("-D%s=%s", k, System.getProperty(k)))
         .collect(Collectors.toList()));
-
-    getLogger().info("Quarkus application started.");
-    setApplicationHandle(quarkusApp);
-  }
-
-  private void setApplicationHandle(AutoCloseable application) {
-    // update stop task with this task's closeable
-
-    StopTask task = (StopTask) getProject().getTasks().getByName(QuarkusAppPlugin.STOP_TASK_NAME);
-    if (task.getApplication() != null) {
-      getLogger().warn("StopTask application is not empty!");
-    }
-    task.setQuarkusApplication(application);
   }
 }
