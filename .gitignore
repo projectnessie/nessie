@@ -58,3 +58,6 @@ version.txt
 
 # Python venv
 venv/
+
+# Maven flatten plugin
+.flattened-pom.xml

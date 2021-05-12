@@ -261,20 +261,20 @@
             <goals>
               <goal>exec</goal>
             </goals>
+            <configuration>
+              <executable>java</executable>
+              <classpathScope>test</classpathScope>
+              <arguments>
+                <argument>-classpath</argument>
+                <classpath />
+                <argument>org.projectnessie.hms.CodeGenerator</argument>
+                <argument>-m=HIVE2</argument>
+                <argument>-o=${project.build.directory}/generated-sources/generator</argument>
+              </arguments>
+              <sourceRoot>${project.build.directory}/generated-sources/generator</sourceRoot>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <executable>java</executable>
-          <classpathScope>test</classpathScope>
-          <arguments>
-            <argument>-classpath</argument>
-            <classpath />
-            <argument>org.projectnessie.hms.CodeGenerator</argument>
-            <argument>-m=HIVE2</argument>
-            <argument>-o=${project.build.directory}/generated-sources/generator</argument>
-          </arguments>
-          <sourceRoot>${project.build.directory}/generated-sources/generator</sourceRoot>
-        </configuration>
       </plugin>
     </plugins>
   </build>
