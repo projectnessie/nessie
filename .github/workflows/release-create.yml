@@ -161,6 +161,6 @@ jobs:
         # Update the remote repo URL to include the secret so this job can push to the repo
         git remote set-url ${UPSTREAM} https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}
 
-        git push ${UPSTREAM}
-        git push ${UPSTREAM} :refs/tags/${GIT_TAG}
-        git push ${UPSTREAM} ${GIT_TAG}
+        git push --no-verify ${UPSTREAM}
+        git push --no-verify ${UPSTREAM} :refs/tags/${GIT_TAG}
+        git push --no-verify ${UPSTREAM} ${GIT_TAG}
