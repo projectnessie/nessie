@@ -157,8 +157,8 @@ jobs:
       if: ${{ !env.ACT }}
       run: |
         # Push directly using the remote repo URL, which includes the secret so this job can push to the repo
-        UPSTREAM="https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}"
+        UPSTREAM="https://${{ secrets.NESSIE_BUILDER }}@github.com/${GITHUB_REPOSITORY}.git"
 
-        git push --no-verify ${UPSTREAM}
-        git push --no-verify ${UPSTREAM} :refs/tags/${GIT_TAG}
-        git push --no-verify ${UPSTREAM} ${GIT_TAG}
+        git push --no-verify "${UPSTREAM}" HEAD:${GITHUB_REF}
+        git push --no-verify "${UPSTREAM}" :refs/tags/${GIT_TAG}
+        git push --no-verify "${UPSTREAM}" ${GIT_TAG}
