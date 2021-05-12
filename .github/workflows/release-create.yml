@@ -68,7 +68,7 @@ jobs:
     - name: Check commit status
       run: |
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
-        gh api repos/projectnessie/nessie/commits/${GITHUB_SHA}/check-runs --jq 'if ([.check_runs[].conclusion] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
+        gh api repos/projectnessie/nessie/commits/${GITHUB_SHA}/check-runs --jq 'if ([.check_runs[] | select(.name | endswith(" release") | not ) | .conclusion] | unique == ["success"]) then "OK" else error("Commit checks are not OK") end'
 
     ### BEGIN runner setup
     - name: Checkout
