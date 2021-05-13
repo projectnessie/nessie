@@ -15,7 +15,6 @@
  */
 package org.projectnessie.quarkus.gradle;
 
-import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -45,22 +44,19 @@ public class StartTask extends DefaultTask {
     if (stopTask.getApplication() == null) {
       getLogger().info("Starting Quarkus application.");
 
+      extension.getSystemProperties().get().forEach((k, v) -> this.setSystemProperty(stopTask, k, v));
+
       // This is not doing anything with Docker or building a native image, just a quirk of Quarkus since 1.10.
-      System.setProperty("quarkus.native.builder-image", extension.getNativeBuilderImageProperty().get());
+      setSystemPropertyIfNotPresent(stopTask, "quarkus.native.builder-image", extension.getNativeBuilderImageProperty().get());
 
       Properties properties = new Properties();
       properties.putAll(props);
 
       // Prepare/configure logging (log level defaults to "info", can be overridden via the
       // environment variable NESSIE_QUARKUS_LOG_LEVEL
-      if (!System.getProperties().containsKey("java.util.logging.manager")) {
-        System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
-      }
-      if (!System.getProperties().containsKey("log4j2.configurationFile")) {
-        URL log4j2config = StartTask.class.getResource("/org/projectnessie/quarkus/gradle/log4j2-quarkus.xml");
-
-        System.setProperty("log4j2.configurationFile", log4j2config.toString());
-      }
+      setSystemPropertyIfNotPresent(stopTask, "java.util.logging.manager", "org.jboss.logmanager.LogManager");
+      setSystemPropertyIfNotPresent(stopTask, "log4j2.configurationFile",
+          StartTask.class.getResource("/org/projectnessie/quarkus/gradle/log4j2-quarkus.xml").toString());
 
       AutoCloseable quarkusApp = QuarkusApp.newApplication(getProject(), properties);
       stopTask.setQuarkusApplication(quarkusApp);
@@ -76,5 +72,17 @@ public class StartTask extends DefaultTask {
         .filter(k -> System.getProperty(k) != null)
         .map(k -> String.format("-D%s=%s", k, System.getProperty(k)))
         .collect(Collectors.toList()));
+  }
+
+  private void setSystemPropertyIfNotPresent(StopTask stopTask, String key, String value) {
+    if (!System.getProperties().containsKey(key)) {
+      setSystemProperty(stopTask, key, value);
+    }
+  }
+
+  private void setSystemProperty(StopTask stopTask, String key, String value) {
+    String oldValue = System.getProperty(key);
+    System.setProperty(key, value);
+    stopTask.restoreSystemProps.put(key, oldValue);
   }
 }

@@ -25,6 +25,7 @@ import org.gradle.api.provider.Property;
 @SuppressWarnings("UnstableApiUsage") // omit warning about `Property`+`MapProperty`
 public class QuarkusAppExtension {
   private final MapProperty<String, Object> props;
+  private final MapProperty<String, String> systemProperties;
   private final Property<String> nativeBuilderImage;
 
   private static Map<String, Object> defaultProps() {
@@ -34,7 +35,10 @@ public class QuarkusAppExtension {
   }
 
   public QuarkusAppExtension(Project project) {
-    props = project.getObjects().mapProperty(String.class, Object.class).convention(defaultProps());
+    props = project.getObjects().mapProperty(String.class, Object.class);
+    props.set(defaultProps());
+
+    systemProperties = project.getObjects().mapProperty(String.class, String.class);
 
     // This is not doing anything with Docker or building a native image, just a quirk of Quarkus since 1.10.
     nativeBuilderImage = project.getObjects().property(String.class).convention("quay.io/quarkus/ubi-quarkus-native-image:21.0.0-java11");
@@ -42,6 +46,10 @@ public class QuarkusAppExtension {
 
   public MapProperty<String, Object> getPropsProperty() {
     return props;
+  }
+
+  public MapProperty<String, String> getSystemProperties() {
+    return systemProperties;
   }
 
   public Property<String> getNativeBuilderImageProperty() {
