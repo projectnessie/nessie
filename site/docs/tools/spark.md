@@ -1,6 +1,6 @@
 # Spark
 
-Nessie can be used with Spark in several different ways. These include:
+Nessie can be used with Spark in different ways. These include:
 
 ## Iceberg client
 
@@ -10,8 +10,9 @@ client. This includes Spark structured streaming, Presto and Flink. See the [ice
 for more info.
 
 !!! note
-  You can follow along interactively in a Jupyter notebook by following the instructions
-  [here](https://github.com/projectnessie/nessie/tree/main/python/demo).
+    You can follow along an interactive demo in a [Jupyter Notebook via Google Colab](https://colab.research.google.com/github/projectnessie/nessie-demos/blob/main/colab/nessie-iceberg-demo-nba.ipynb)
+    or in a [Jupyter Notebook via Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=colab%2Fnessie-iceberg-demo-nba.ipynb).
+
 
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
 the [Spark 2](https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-spark/{{ versions.iceberg }}/iceberg-spark-{{ versions.iceberg }}.jar)
