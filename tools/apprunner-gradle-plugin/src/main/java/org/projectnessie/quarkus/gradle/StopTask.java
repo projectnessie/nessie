@@ -15,11 +15,15 @@
  */
 package org.projectnessie.quarkus.gradle;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
 
 public class StopTask extends DefaultTask {
   private AutoCloseable application;
+
+  final Map<String, String> restoreSystemProps = new HashMap<>();
 
   public StopTask() {
     // intentionally empty
@@ -40,6 +44,15 @@ public class StopTask extends DefaultTask {
       throw new RuntimeException(e);
     } finally {
       application = null;
+
+      // Restore System properties
+      restoreSystemProps.forEach((k, v) -> {
+        if (v != null) {
+          System.setProperty(k, v);
+        } else {
+          System.getProperties().remove(k);
+        }
+      });
     }
   }
 
