@@ -247,7 +247,7 @@
             <goals>
               <goal>flatten</goal>
             </goals>
-			<configuration>
+            <configuration>
               <flattenMode>bom</flattenMode>
             </configuration>
           </execution>
