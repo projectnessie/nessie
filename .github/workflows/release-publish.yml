@@ -167,7 +167,6 @@ jobs:
 
     # Deploys Maven artifacts. Build and test steps were already ran in previous steps.
     # Not running tests, because the environment contains secrets.
-    # TODO switch autoReleaseAfterClose to true - see https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin
     - name: Publish Maven artifacts for release
       id: build_maven
       env:
@@ -177,19 +176,27 @@ jobs:
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
       run: |
         NEXUS_ARGS="-DnexusUrl=https://oss.sonatype.org -DserverId=ossrh -DautoReleaseAfterClose=true"
-        PROFILES="-Pnative -Prelease"
+        PROFILES="-Puber-jar -Prelease"
         GOALS="install org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy"
         BUILD_ARGS="-DskipTests"
 
         if [[ -n ${ACT} ]] ; then
           # don't deploy and don't sign when running locally with nektos/act
           BUILD_ARGS="${BUILD_ARGS} -Dmaven.deploy.skip -Dgpg.skip"
-          BUILD_ARGS="${BUILD_ARGS} -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false"
         fi
 
         ./mvnw -B ${GOALS} --file pom.xml ${PROFILES} ${NEXUS_ARGS} ${BUILD_ARGS}
 
+        # Build the native-image, it's not released to Maven Central anyway
+        PROFILES="-Pnative"
+        BUILD_ARGS="-DskipTests"
+        if [[ -n ${ACT} ]] ; then
+          BUILD_ARGS="${BUILD_ARGS} -Dquarkus.native.remote-container-build=true -Dquarkus.native.container-build=false"
+        fi
+        ./mvnw -B install --file pom.xml ${PROFILES} ${BUILD_ARGS} -pl servers/quarkus-server
+
         echo ::set-output name=QUARKUS_NATIVE_BINARY::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner
+        echo ::set-output name=QUARKUS_UBER_JAR::servers/quarkus-server/target/nessie-quarkus-${RELEASE_VERSION}-runner.jar
 
     # Deploys Gradle plugin. Build and test steps were already ran in previous steps
     - name: Publish Gradle Plugin for release
@@ -267,6 +274,14 @@ jobs:
         * Docker Hub: https://hub.docker.com/r/projectnessie/nessie
         * PyPI: https://pypi.org/project/pynessie/
 
+        _Note:_ the attached file
+        [`nessie-quarkus-${RELEASE_VERSION}-runner`](https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner)
+        is a native binary image built on $(lsb_release -sd) $(uname -p) and only works on
+        compatible Linux environments. The attached jar
+        [`nessie-quarkus-${RELEASE_VERSION}-runner.jar`](https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar)
+        is a standalone uber-jar file that runs on Java 11 or newer and it is also available via
+        [Maven Central](https://search.maven.org/search?q=g:org.projectnessie+AND+a:nessie-quarkus+AND+v:${RELEASE_VERSION}).
+
         ## Full Changelog (minus dependabot commits):
 
         $(cat ${DIR}/release-log)
@@ -284,5 +299,6 @@ jobs:
         GIT_TAG: nessie-${{ steps.get_version.outputs.VERSION }}
       run: |
         QUARKUS_NATIVE_BINARY="${{ steps.build_maven.outputs.QUARKUS_NATIVE_BINARY }}"
+        QUARKUS_UBER_JAR="${{ steps.build_maven.outputs.QUARKUS_UBER_JAR }}"
         echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
-        gh release create ${GIT_TAG} --notes-file ${{ steps.prep_release.outputs.NOTES_FILE }} --title "Nessie ${RELEASE_VERSION}" "${QUARKUS_NATIVE_BINARY}"
+        gh release create ${GIT_TAG} --notes-file ${{ steps.prep_release.outputs.NOTES_FILE }} --title "Nessie ${RELEASE_VERSION}" "${QUARKUS_NATIVE_BINARY}" "${QUARKUS_UBER_JAR}"
