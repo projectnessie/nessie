@@ -83,6 +83,7 @@
   </mailingLists>
 
   <modules>
+    <module>bom</module>
     <module>model</module>
     <module>clients</module>
     <module>ui</module>
