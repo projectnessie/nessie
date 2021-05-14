@@ -30,6 +30,7 @@
   <name>Nessie - Lambda Function</name>
 
   <properties>
+    <maven.compiler.release>11</maven.compiler.release>
     <quarkus.jacoco.data-file>jacoco.exec</quarkus.jacoco.data-file>
     <test.log.level>INFO</test.log.level>
   </properties>
