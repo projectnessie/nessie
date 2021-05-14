@@ -30,6 +30,7 @@
   <name>Nessie - Quarkus</name>
 
   <properties>
+    <maven.compiler.release>11</maven.compiler.release>
     <quarkus.jacoco.data-file>jacoco.exec</quarkus.jacoco.data-file>
     <quarkus.smallrye-openapi.store-schema-directory>${project.build.directory}/openapi</quarkus.smallrye-openapi.store-schema-directory>
     <test.log.level>INFO</test.log.level>
