@@ -1,8 +1,8 @@
-# Setting Up Nessie 
+# Setting Up Nessie
 
 <iframe width="780" height="500" src="https://www.youtube.com/embed/QUmOU8ea_i4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-As part of each release, Nessie is made available as a fast-start docker 
+As part of each release, Nessie is made available as a fast-start docker
 image. This is the easiest and fastest way to try out nessie locally and test all its capabilities.
 The image is relatively small and builds on top of standard base images. To get started:
 
@@ -39,7 +39,7 @@ Once the docker image is up and running, you can install the [Nessie cli](../too
 $ pip install pynessie
 ```
 
-You're now ready to start using Nessie. To create a new branch, you can do 
+You're now ready to start using Nessie. To create a new branch, you can do
 the following:
 
 ```bash
@@ -55,4 +55,4 @@ From there, you can use one of the three main Nessie integrations of:
 * NessieCatalog for Iceberg [within Spark](../tools/spark.md)
 * Nessie Log Handle for Delta Lake [within Spark](../tools/spark.md)
 * Hive or HMS compatible tool use with the [Nessie HMS Bridge](../tools/hive.md)
-  
+

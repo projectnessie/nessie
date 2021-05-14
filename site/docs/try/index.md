@@ -1,4 +1,4 @@
-# Getting Started 
+# Getting Started
 
 For a quick overview of nessie capabilities, several demos which do not require
 any special setup except for a web browser have been made available:
