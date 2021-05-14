@@ -15,6 +15,8 @@
  */
 package org.projectnessie.deltalake;
 
+import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_REF;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,8 +34,12 @@ import org.apache.spark.util.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.projectnessie.client.tests.AbstractSparkTest;
+import org.projectnessie.model.Branch;
+import org.projectnessie.model.ImmutableMerge;
+import org.projectnessie.model.Reference;
 
 import io.delta.tables.DeltaTable;
 import scala.Tuple2;
@@ -49,6 +55,91 @@ class ITDeltaLog extends AbstractSparkTest {
         .set("spark.delta.logFileHandler.class", NessieLogFileMetaParser.class.getCanonicalName())
         .set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog");
+  }
+
+  @Test
+  // Delta < 0.8 w/ Spark 2.x doesn't support multiple branches well (warnings when changing the configuration)
+  @DisabledIfSystemProperty(named = "skip-multi-branch-tests", matches = "true")
+  void testMultipleBranches() throws Exception {
+    String csvSalaries1 = ITDeltaLog.class.getResource("/salaries1.csv").getPath();
+    String csvSalaries2 = ITDeltaLog.class.getResource("/salaries2.csv").getPath();
+    String csvSalaries3 = ITDeltaLog.class.getResource("/salaries3.csv").getPath();
+    String pathSalaries = new File(tempPath, "salaries").getAbsolutePath();
+
+    spark.sql(String.format("CREATE TABLE IF NOT EXISTS test_multiple_branches (Season STRING, Team STRING, Salary STRING, "
+        + "Player STRING) USING delta LOCATION '%s'", pathSalaries));
+    Dataset<Row> salariesDf1 = spark.read().option("header", true).csv(csvSalaries1);
+    salariesDf1.write().format("delta").mode("overwrite").save(pathSalaries);
+
+    Dataset<Row> count1 = spark.sql("SELECT COUNT(*) FROM test_multiple_branches");
+    Assertions.assertEquals(15L, count1.collectAsList().get(0).getLong(0));
+
+    Reference mainBranch = nessieClient.getTreeApi().getReferenceByName("main");
+
+    Reference devBranch = nessieClient.getTreeApi().createReference(Branch.of("testMultipleBranches", mainBranch.getHash()));
+
+    spark.sparkContext().getConf().set("spark.hadoop." + CONF_NESSIE_REF, devBranch.getName());
+    spark.sparkContext().hadoopConfiguration().set(CONF_NESSIE_REF, devBranch.getName());
+
+    Dataset<Row> salariesDf2 = spark.read().option("header", true).csv(csvSalaries2);
+    salariesDf2.write().format("delta").mode("append").save(pathSalaries);
+
+    Dataset<Row> count2 = spark.sql("SELECT COUNT(*) FROM test_multiple_branches");
+    Assertions.assertEquals(30L, count2.collectAsList().get(0).getLong(0));
+
+    spark.sparkContext().getConf().set("spark.hadoop.nessie.ref", "main");
+    spark.sparkContext().hadoopConfiguration().set("nessie.ref", "main");
+
+    Dataset<Row> salariesDf3 = spark.read().option("header", true).csv(csvSalaries3);
+    salariesDf3.write().format("delta").mode("append").save(pathSalaries);
+
+    Dataset<Row> count3 = spark.sql("SELECT COUNT(*) FROM test_multiple_branches");
+    Assertions.assertEquals(35L, count3.collectAsList().get(0).getLong(0));
+  }
+
+  @Test
+  // Delta < 0.8 w/ Spark 2.x doesn't support multiple branches well (warnings when changing the configuration)
+  @DisabledIfSystemProperty(named = "skip-multi-branch-tests", matches = "true")
+  void testCommitRetry() throws Exception {
+    String csvSalaries1 = ITDeltaLog.class.getResource("/salaries1.csv").getPath();
+    String csvSalaries2 = ITDeltaLog.class.getResource("/salaries2.csv").getPath();
+    String csvSalaries3 = ITDeltaLog.class.getResource("/salaries3.csv").getPath();
+    String pathSalaries = new File(tempPath, "salaries").getAbsolutePath();
+
+    spark.sql(String.format("CREATE TABLE IF NOT EXISTS test_commit_retry (Season STRING, Team STRING, Salary STRING, "
+        + "Player STRING) USING delta LOCATION '%s'", pathSalaries));
+    Dataset<Row> salariesDf1 = spark.read().option("header", true).csv(csvSalaries1);
+    salariesDf1.write().format("delta").mode("overwrite").save(pathSalaries);
+
+    Dataset<Row> count1 = spark.sql("SELECT COUNT(*) FROM test_commit_retry");
+    Assertions.assertEquals(15L, count1.collectAsList().get(0).getLong(0));
+
+    Reference mainBranch = nessieClient.getTreeApi().getReferenceByName("main");
+
+    Reference devBranch = nessieClient.getTreeApi().createReference(Branch.of("testCommitRetry", mainBranch.getHash()));
+
+    spark.sparkContext().getConf().set("spark.hadoop." + CONF_NESSIE_REF, devBranch.getName());
+    spark.sparkContext().hadoopConfiguration().set(CONF_NESSIE_REF, devBranch.getName());
+
+    Dataset<Row> salariesDf2 = spark.read().option("header", true).csv(csvSalaries2);
+    salariesDf2.write().format("delta").mode("append").save(pathSalaries);
+
+    Dataset<Row> count2 = spark.sql("SELECT COUNT(*) FROM test_commit_retry");
+    Assertions.assertEquals(30L, count2.collectAsList().get(0).getLong(0));
+
+    String toHash = nessieClient.getTreeApi().getReferenceByName("main").getHash();
+    String fromHash = nessieClient.getTreeApi().getReferenceByName("testCommitRetry").getHash();
+
+    nessieClient.getTreeApi().mergeRefIntoBranch("main", toHash, ImmutableMerge.builder().fromHash(fromHash).build());
+
+    spark.sparkContext().getConf().set("spark.hadoop.nessie.ref", "main");
+    spark.sparkContext().hadoopConfiguration().set("nessie.ref", "main");
+
+    Dataset<Row> salariesDf3 = spark.read().option("header", true).csv(csvSalaries3);
+    salariesDf3.write().format("delta").mode("append").save(pathSalaries);
+
+    Dataset<Row> count3 = spark.sql("SELECT COUNT(*) FROM test_commit_retry");
+    Assertions.assertEquals(50L, count3.collectAsList().get(0).getLong(0));
   }
 
   @Test

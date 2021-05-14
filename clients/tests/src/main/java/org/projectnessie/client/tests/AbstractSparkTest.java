@@ -33,6 +33,7 @@ import org.apache.spark.sql.internal.SQLConf;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.projectnessie.client.NessieClient;
 
 public abstract class AbstractSparkTest {
   private static final Object ANY = new Object();
@@ -42,6 +43,8 @@ public abstract class AbstractSparkTest {
   protected static SparkSession spark;
   protected static Configuration hadoopConfig = new Configuration();
   protected static String url = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
+
+  protected static NessieClient nessieClient;
 
   @BeforeEach
   protected void create() throws IOException {
@@ -61,6 +64,8 @@ public abstract class AbstractSparkTest {
                         .config(conf)
                         .getOrCreate();
     spark.sparkContext().setLogLevel("WARN");
+
+    nessieClient = NessieClient.builder().withUri(url).build();
   }
 
   @AfterAll
