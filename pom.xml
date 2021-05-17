@@ -1225,5 +1225,31 @@ limitations under the License.
         </plugins>
       </build>
     </profile>
+      <profile>
+        <id>owasp-dependency-check</id>
+        <build>
+          <plugins>
+            <plugin>
+              <groupId>org.owasp</groupId>
+              <artifactId>dependency-check-maven</artifactId>
+              <version>6.1.6</version>
+              <configuration>
+                <format>HTML</format>
+                <skipProvidedScope>true</skipProvidedScope>
+                <skipRuntimeScope>true</skipRuntimeScope>
+                <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                <msbuildAnalyzerEnabled>false</msbuildAnalyzerEnabled>
+              </configuration>
+              <executions>
+                <execution>
+                  <goals>
+                    <goal>aggregate</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </build>
+      </profile>
   </profiles>
 </project>

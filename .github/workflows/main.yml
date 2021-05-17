@@ -86,6 +86,9 @@ jobs:
         MAVEN_OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
         SPARK_LOCAL_IP: localhost
+    - name: Run OWASP Check
+      run: |
+        mvn dependency-check:aggregate -DskipTests -Powasp-dependency-check
     - name: Push Docker images
       run: |
           echo '${{ secrets.DOCKER_TOKEN }}' | docker login -u '${{ secrets.DOCKER_USERNAME }}' --password-stdin
@@ -99,6 +102,7 @@ jobs:
       with:
         name: test-results
         path: |
+          target/dependency-check-report.html
           **/target/surefire-reports/*
           **/target/failsafe-reports/*
     - uses: codecov/codecov-action@v1
