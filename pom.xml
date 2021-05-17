@@ -129,6 +129,7 @@
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
+    <dependency-check-maven.version>6.1.6</dependency-check-maven.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
     <flapdoodle.version>3.0.0</flapdoodle.version>
@@ -1220,5 +1221,31 @@ limitations under the License.
         </plugins>
       </build>
     </profile>
+      <profile>
+        <id>owasp-dependency-check</id>
+        <build>
+          <plugins>
+            <plugin>
+              <groupId>org.owasp</groupId>
+              <artifactId>dependency-check-maven</artifactId>
+              <version>${dependency-check-maven.version}</version>
+              <configuration>
+                <failBuildOnCVSS>7</failBuildOnCVSS>
+                <excludes>
+                  <!-- comes with io.quarkus:quarkus-jaeger:jar:1.13.4.Final -->
+                  <exclude>libthrift-0.13.0.jar</exclude>
+                </excludes>
+              </configuration>
+              <executions>
+                <execution>
+                  <goals>
+                    <goal>check</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </build>
+      </profile>
   </profiles>
 </project>
