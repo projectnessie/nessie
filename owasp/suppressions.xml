@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions
+  xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+  <suppress>
+    <!-- comes with io.quarkus:quarkus-jaeger:jar:1.13.4.Final -->
+    <notes><![CDATA[
+      file name: libthrift-0.13.0.jar
+      ]]></notes>
+    <cve>CVE-2020-13949</cve>
+  </suppress>
+</suppressions>

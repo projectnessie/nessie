@@ -89,6 +89,15 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew --rerun-tasks --no-daemon --info build
       working-directory: ./tools/apprunner-gradle-plugin
+    - name: Run OWASP Check
+      run: |
+        mvn dependency-check:aggregate -DskipTests -Powasp-dependency-check
+    - name: Upload OWASP Report
+      uses: actions/upload-artifact@v2
+      with:
+        name: owasp-report
+        path: |
+          target/dependency-check-report.html
     - name: Capture test results
       uses: actions/upload-artifact@v2
       if: failure()
