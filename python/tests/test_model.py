@@ -360,6 +360,7 @@ class TestIgnoreProperties(object):
         MultiContentsSchema().load(json)
 
     def test_entries_response(self: "TestIgnoreProperties") -> None:
+        """Test EntriesResponse deserialization."""
         str = u"""
         {
           "someUnknownField_1" : "foo bar",
@@ -406,6 +407,7 @@ class TestIgnoreProperties(object):
         EntriesSchema().load(json)
 
     def test_log_response(self: "TestIgnoreProperties") -> None:
+        """Test LogResponse deserialization."""
         str = u"""
         {
           "someUnknownField_1" : "foo bar",
