@@ -34,7 +34,7 @@ import org.immutables.value.Value;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableCommitMeta.class)
 @JsonDeserialize(as = ImmutableCommitMeta.class)
-public abstract class CommitMeta {
+public abstract class CommitMeta implements Base {
 
   /**
    * Hash of this commit.

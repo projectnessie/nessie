@@ -42,7 +42,7 @@ import org.immutables.value.Value;
   @Type(Operation.Unchanged.class)
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-public interface Operation {
+public interface Operation extends Base {
 
   ContentsKey getKey();
 

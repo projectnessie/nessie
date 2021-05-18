@@ -34,7 +34,7 @@ public interface EntriesResponse extends PaginatedResponse {
   @Value.Immutable(prehash = true)
   @JsonSerialize(as = ImmutableEntry.class)
   @JsonDeserialize(as = ImmutableEntry.class)
-  interface Entry {
+  interface Entry extends Base {
 
     static ImmutableEntry.Builder builder() {
       return ImmutableEntry.builder();

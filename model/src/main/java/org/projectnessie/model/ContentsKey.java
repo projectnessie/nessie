@@ -34,8 +34,7 @@ import org.immutables.value.Value;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableContentsKey.class)
 @JsonDeserialize(as = ImmutableContentsKey.class)
-public abstract class ContentsKey {
-
+public abstract class ContentsKey implements Base {
   private static final char ZERO_BYTE = '\u0000';
   private static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
 

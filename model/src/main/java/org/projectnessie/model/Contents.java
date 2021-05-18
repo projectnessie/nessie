@@ -53,7 +53,7 @@ import org.immutables.value.Value;
   @Type(HiveDatabase.class)
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-public abstract class Contents {
+public abstract class Contents implements Base {
 
   public static enum Type {
     UNKNOWN,
