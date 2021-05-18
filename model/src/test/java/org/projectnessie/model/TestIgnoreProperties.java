@@ -40,6 +40,13 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+/**
+ * Tests that unknown fields in a JSON do not break deserialization.
+ * 
+ * <p>The implementation approach is to construct some valid objects, serialize those to
+ * JSON, inject additional (=unknown) fields during serialization and deserializing the
+ * "enriched" JSON.</p>
+ */
 class TestIgnoreProperties {
 
   static ObjectMapper mapper;
