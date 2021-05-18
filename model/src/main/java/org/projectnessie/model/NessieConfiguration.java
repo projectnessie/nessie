@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable
 @JsonSerialize(as = ImmutableNessieConfiguration.class)
 @JsonDeserialize(as = ImmutableNessieConfiguration.class)
-public abstract class NessieConfiguration {
+public abstract class NessieConfiguration implements Base {
 
   @JsonIgnore
   private static final String CURRENT_VERSION = "1.0";

@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before passing in a url string.
  */
-public class ContentsKey {
+public class ContentsKey implements Base {
   private static final char ZERO_BYTE = '\u0000';
   private static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
 

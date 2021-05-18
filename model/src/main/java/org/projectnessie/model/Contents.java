@@ -55,7 +55,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @Type(HiveDatabase.class)
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-public abstract class Contents {
+public abstract class Contents implements Base {
 
   public static enum Type {
     UNKNOWN, ICEBERG_TABLE, DELTA_LAKE_TABLE, HIVE_TABLE, HIVE_DATABASE, VIEW;

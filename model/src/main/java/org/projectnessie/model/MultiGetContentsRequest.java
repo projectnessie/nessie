@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableMultiGetContentsRequest.class)
 @JsonDeserialize(as = ImmutableMultiGetContentsRequest.class)
-public interface MultiGetContentsRequest {
+public interface MultiGetContentsRequest extends Base {
 
   List<ContentsKey> getRequestedKeys();
 

@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 
 import org.immutables.value.Value.Default;
 
-public interface PaginatedResponse {
+public interface PaginatedResponse extends Base {
 
   /**
    * Whether there are more result-items than returned by this response object.

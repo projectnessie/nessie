@@ -7,6 +7,7 @@ from typing import Optional
 import attr
 import desert
 from marshmallow import fields
+from marshmallow.utils import EXCLUDE
 from marshmallow_oneofschema import OneOfSchema
 
 
@@ -32,16 +33,16 @@ class IcebergTable(Contents):
         return "Iceberg table:\n\t{}".format(self.metadata_location)
 
 
-IcebergTableSchema = desert.schema_class(IcebergTable)
+IcebergTableSchema = desert.schema_class(IcebergTable, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
 class DeltaLakeTable(Contents):
     """Dataclass for Nessie Contents."""
 
-    last_checkpoint: str = desert.ib(fields.Str(data_key="metadataLocation"))
-    checkpoint_location_history: List[str] = desert.ib(fields.List(fields.Str))
-    metadata_location_history: List[str] = desert.ib(fields.List(fields.Str))
+    last_checkpoint: str = desert.ib(fields.Str(data_key="lastCheckpoint"))
+    checkpoint_location_history: List[str] = desert.ib(fields.List(fields.Str, data_key="checkpointLocationHistory"))
+    metadata_location_history: List[str] = desert.ib(fields.List(fields.Str, data_key="metadataLocationHistory"))
 
     def pretty_print(self: "DeltaLakeTable") -> str:
         """Print out for cli."""
@@ -52,7 +53,22 @@ class DeltaLakeTable(Contents):
         )
 
 
-DeltaLakeTableSchema = desert.schema_class(DeltaLakeTable)
+DeltaLakeTableSchema = desert.schema_class(DeltaLakeTable, {"unknown": EXCLUDE})
+
+
+@attr.dataclass
+class HiveTable(Contents):
+    """Dataclass for Nessie Contents."""
+
+    table_definition: str = desert.ib(fields.Str(data_key="tableDefinition"))
+    partitions: List[str] = desert.ib(fields.List(fields.Str))
+
+    def pretty_print(self: "HiveTable") -> str:
+        """Print out for cli."""
+        return "Hive table:\n\tTable definition: {}\n\tPartitions: {}".format(self.table_definition, "\n\t\t".join(self.partitions))
+
+
+HiveTableSchema = desert.schema_class(HiveTable, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
@@ -67,7 +83,7 @@ class SqlView(Contents):
         return "Iceberg table:\n\tDialect: {}\n\tSql: {}".format(self.dialect, self.sql_test)  # todo use a sql parser to pretty print this
 
 
-SqlViewSchema = desert.schema_class(SqlView)
+SqlViewSchema = desert.schema_class(SqlView, {"unknown": EXCLUDE})
 
 
 class ContentsSchema(OneOfSchema):
@@ -76,6 +92,7 @@ class ContentsSchema(OneOfSchema):
     type_schemas = {
         "ICEBERG_TABLE": IcebergTableSchema,
         "DELTA_LAKE_TABLE": DeltaLakeTableSchema,
+        "HIVE_TABLE": HiveTableSchema,
         "VIEW": SqlViewSchema,
     }
 
@@ -98,24 +115,24 @@ class ContentsKey:
     elements: List[str] = desert.ib(fields.List(fields.Str))
 
 
-ContentsKeySchema = desert.schema_class(ContentsKey)
+ContentsKeySchema = desert.schema_class(ContentsKey, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
 class Operation:
     """Single Commit Operation."""
 
-    key: ContentsKey = desert.ib(fields.Nested(ContentsKeySchema))
+    key: ContentsKey = desert.ib(fields.Nested(ContentsKeySchema, unknown=EXCLUDE))
 
 
 @attr.dataclass
 class Put(Operation):
     """Single Commit Operation."""
 
-    contents: Contents = desert.ib(fields.Nested(ContentsSchema))
+    contents: Contents = desert.ib(fields.Nested(ContentsSchema, unknown=EXCLUDE))
 
 
-PutOperationSchema = desert.schema_class(Put)
+PutOperationSchema = desert.schema_class(Put, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
@@ -125,7 +142,7 @@ class Delete(Operation):
     pass
 
 
-DeleteOperationSchema = desert.schema_class(Delete)
+DeleteOperationSchema = desert.schema_class(Delete, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
@@ -135,7 +152,7 @@ class Unchanged(Operation):
     pass
 
 
-UnchangedOperationSchema = desert.schema_class(Unchanged)
+UnchangedOperationSchema = desert.schema_class(Unchanged, {"unknown": EXCLUDE})
 
 
 class OperationsSchema(OneOfSchema):
@@ -174,7 +191,7 @@ class Branch(Reference):
     pass
 
 
-BranchSchema = desert.schema_class(Branch)
+BranchSchema = desert.schema_class(Branch, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
@@ -184,7 +201,7 @@ class Tag(Reference):
     pass
 
 
-TagSchema = desert.schema_class(Tag)
+TagSchema = desert.schema_class(Tag, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
@@ -194,7 +211,7 @@ class Hash(Reference):
     pass
 
 
-HashSchema = desert.schema_class(Hash)
+HashSchema = desert.schema_class(Hash, {"unknown": EXCLUDE})
 
 
 class ReferenceSchema(OneOfSchema):
@@ -225,7 +242,7 @@ class EntryName:
     elements: List[str] = desert.ib(fields.List(fields.Str()))
 
 
-EntryNameSchema = desert.schema_class(EntryName)
+EntryNameSchema = desert.schema_class(EntryName, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
@@ -233,22 +250,22 @@ class Entry:
     """Dataclass for Nessie Entry."""
 
     kind: str = desert.ib(fields.Str(data_key="type"))
-    name: EntryName = desert.ib(fields.Nested(EntryNameSchema))
+    name: EntryName = desert.ib(fields.Nested(EntryNameSchema, unknown=EXCLUDE))
 
 
-EntrySchema = desert.schema_class(Entry)
+EntrySchema = desert.schema_class(Entry, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
 class Entries:
     """Dataclass for Content Entries."""
 
-    entries: List[Entry] = desert.ib(fields.List(fields.Nested(EntrySchema())))
+    entries: List[Entry] = desert.ib(fields.List(fields.Nested(EntrySchema(), unknown=EXCLUDE)))
     has_more: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(allow_none=True, data_key="hasMore")))
     token: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
 
 
-EntriesSchema = desert.schema_class(Entries)
+EntriesSchema = desert.schema_class(Entries, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
@@ -266,19 +283,19 @@ class CommitMeta:
     properties: dict = desert.ib(fields.Dict(), default=None)
 
 
-CommitMetaSchema = desert.schema_class(CommitMeta)
+CommitMetaSchema = desert.schema_class(CommitMeta, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
 class LogResponse:
     """Dataclass for Log Response."""
 
-    operations: List[CommitMeta] = desert.ib(fields.List(fields.Nested(CommitMetaSchema())))
+    operations: List[CommitMeta] = desert.ib(fields.List(fields.Nested(CommitMetaSchema(), unknown=EXCLUDE)))
     has_more: bool = attr.ib(default=False, metadata=desert.metadata(fields.Bool(allow_none=True, data_key="hasMore")))
     token: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(allow_none=True)))
 
 
-LogResponseSchema = desert.schema_class(LogResponse)
+LogResponseSchema = desert.schema_class(LogResponse, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
@@ -288,7 +305,7 @@ class Transplant:
     hashes_to_transplant: List[str] = attr.ib(metadata=desert.metadata(fields.List(fields.Str(), data_key="hashesToTransplant")))
 
 
-TransplantSchema = desert.schema_class(Transplant)
+TransplantSchema = desert.schema_class(Transplant, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
@@ -298,15 +315,15 @@ class Merge:
     from_hash: str = attr.ib(default=None, metadata=desert.metadata(fields.Str(data_key="fromHash")))
 
 
-MergeSchema = desert.schema_class(Merge)
+MergeSchema = desert.schema_class(Merge, {"unknown": EXCLUDE})
 
 
 @attr.dataclass
 class MultiContents:
     """Contents container for commit."""
 
-    commit_meta: CommitMeta = desert.ib(fields.Nested(CommitMetaSchema, data_key="commitMeta"))
-    operations: List[Operation] = desert.ib(fields.List(fields.Nested(OperationsSchema())))
+    commit_meta: CommitMeta = desert.ib(fields.Nested(CommitMetaSchema, data_key="commitMeta", unknown=EXCLUDE))
+    operations: List[Operation] = desert.ib(fields.List(fields.Nested(OperationsSchema(), unknown=EXCLUDE)))
 
 
-MultiContentsSchema = desert.schema_class(MultiContents)
+MultiContentsSchema = desert.schema_class(MultiContents, {"unknown": EXCLUDE})
