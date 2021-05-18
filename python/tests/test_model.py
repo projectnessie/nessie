@@ -4,7 +4,7 @@
 
 from json import loads
 
-from pynessie.model import BranchSchema, MultiContentsSchema
+from pynessie.model import BranchSchema, EntriesSchema, LogResponseSchema, MultiContentsSchema
 
 
 class TestIgnoreProperties(object):
@@ -358,3 +358,124 @@ class TestIgnoreProperties(object):
         """
         json = loads(str)
         MultiContentsSchema().load(json)
+
+    def test_entries_response(self: "TestIgnoreProperties") -> None:
+        str = u"""
+        {
+          "someUnknownField_1" : "foo bar",
+          "someUnknownField_2" : [ "meep", "meep", "meep" ],
+          "someUnknownField_3" : {
+            "someUnknownField_4" : "foo bar"
+          },
+          "hasMore" : false,
+          "someUnknownField_5" : "foo bar",
+          "someUnknownField_6" : [ "meep", "meep", "meep" ],
+          "someUnknownField_7" : {
+            "someUnknownField_8" : "foo bar"
+          },
+          "token" : null,
+          "someUnknownField_9" : "foo bar",
+          "someUnknownField_10" : [ "meep", "meep", "meep" ],
+          "someUnknownField_11" : {
+            "someUnknownField_12" : "foo bar"
+          },
+          "entries" : [ {
+            "someUnknownField_13" : "foo bar",
+            "someUnknownField_14" : [ "meep", "meep", "meep" ],
+            "someUnknownField_15" : {
+              "someUnknownField_16" : "foo bar"
+            },
+            "type" : "ICEBERG_TABLE",
+            "someUnknownField_17" : "foo bar",
+            "someUnknownField_18" : [ "meep", "meep", "meep" ],
+            "someUnknownField_19" : {
+              "someUnknownField_20" : "foo bar"
+            },
+            "name" : {
+              "someUnknownField_21" : "foo bar",
+              "someUnknownField_22" : [ "meep", "meep", "meep" ],
+              "someUnknownField_23" : {
+                "someUnknownField_24" : "foo bar"
+              },
+              "elements" : [ "entry-name" ]
+            }
+          } ]
+        }
+        """
+        json = loads(str)
+        EntriesSchema().load(json)
+
+    def test_log_response(self: "TestIgnoreProperties") -> None:
+        str = u"""
+        {
+          "someUnknownField_1" : "foo bar",
+          "someUnknownField_2" : [ "meep", "meep", "meep" ],
+          "someUnknownField_3" : {
+            "someUnknownField_4" : "foo bar"
+          },
+          "hasMore" : true,
+          "someUnknownField_5" : "foo bar",
+          "someUnknownField_6" : [ "meep", "meep", "meep" ],
+          "someUnknownField_7" : {
+            "someUnknownField_8" : "foo bar"
+          },
+          "token" : "token",
+          "someUnknownField_9" : "foo bar",
+          "someUnknownField_10" : [ "meep", "meep", "meep" ],
+          "someUnknownField_11" : {
+            "someUnknownField_12" : "foo bar"
+          },
+          "operations" : [ {
+            "someUnknownField_13" : "foo bar",
+            "someUnknownField_14" : [ "meep", "meep", "meep" ],
+            "someUnknownField_15" : {
+              "someUnknownField_16" : "foo bar"
+            },
+            "hash" : "1234123412341234123412341234123412341234",
+            "someUnknownField_17" : "foo bar",
+            "someUnknownField_18" : [ "meep", "meep", "meep" ],
+            "someUnknownField_19" : {
+              "someUnknownField_20" : "foo bar"
+            },
+            "committer" : "committer",
+            "someUnknownField_21" : "foo bar",
+            "someUnknownField_22" : [ "meep", "meep", "meep" ],
+            "someUnknownField_23" : {
+              "someUnknownField_24" : "foo bar"
+            },
+            "author" : "author",
+            "someUnknownField_25" : "foo bar",
+            "someUnknownField_26" : [ "meep", "meep", "meep" ],
+            "someUnknownField_27" : {
+              "someUnknownField_28" : "foo bar"
+            },
+            "signedOffBy" : "signed-by-human",
+            "someUnknownField_29" : "foo bar",
+            "someUnknownField_30" : [ "meep", "meep", "meep" ],
+            "someUnknownField_31" : {
+              "someUnknownField_32" : "foo bar"
+            },
+            "message" : "something important",
+            "someUnknownField_33" : "foo bar",
+            "someUnknownField_34" : [ "meep", "meep", "meep" ],
+            "someUnknownField_35" : {
+              "someUnknownField_36" : "foo bar"
+            },
+            "commitTime" : "2021-05-18T13:16:07.863038Z",
+            "someUnknownField_37" : "foo bar",
+            "someUnknownField_38" : [ "meep", "meep", "meep" ],
+            "someUnknownField_39" : {
+              "someUnknownField_40" : "foo bar"
+            },
+            "authorTime" : "2021-05-18T13:16:07.863044Z",
+            "someUnknownField_41" : "foo bar",
+            "someUnknownField_42" : [ "meep", "meep", "meep" ],
+            "someUnknownField_43" : {
+              "someUnknownField_44" : "foo bar"
+            },
+            "properties" : { }
+          } ]
+        }
+        """
+        json = loads(str)
+        LogResponseSchema().load(json)
