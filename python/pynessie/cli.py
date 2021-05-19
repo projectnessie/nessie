@@ -6,6 +6,7 @@ from collections import defaultdict
 from typing import Any
 from typing import Dict
 from typing import Generator
+from typing import Mapping
 from typing import List
 from typing import Tuple
 
@@ -65,7 +66,7 @@ class MutuallyExclusiveOption(Option):
         self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
         super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)  # type: ignore
 
-    def handle_parse_result(self: "MutuallyExclusiveOption", ctx: click.Context, opts: Dict, args: List) -> Tuple[Any, List[str]]:
+    def handle_parse_result(self: "MutuallyExclusiveOption", ctx: click.Context, opts: Mapping, args: List) -> Tuple[Any, List[str]]:
         """Ensure mutually exclusive options are not used together."""
         if self.mutually_exclusive.intersection(opts) and self.name in opts:
             raise UsageError(
@@ -465,7 +466,8 @@ def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: s
                 + " Removing the content results in a delete"
             )
             try:
-                message = click.edit(edit_message)
+                m = click.edit(edit_message)
+                message = m if m is not None else ""
             except click.ClickException:
                 message = edit_message
 
@@ -483,6 +485,7 @@ def _get_commit_message(*keys: str) -> str:
     message = click.edit("\n\n" + MARKER + "\n".join(keys))
     if message is not None:
         return message.split(MARKER, 1)[0].rstrip("\n")
+    return ""
 
 
 def _get_message(message: str, *keys: str) -> str:
