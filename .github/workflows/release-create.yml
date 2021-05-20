@@ -120,6 +120,14 @@ jobs:
           echo "pynessie already at release-version ${RELEASE_VERSION}"
         fi
 
+    - name: Bump UI release version ${{ github.event.inputs.releaseVersion }}
+      working-directory: ./ui
+      run: |
+        cp package.json /tmp/nessie-ui-package.json
+        cp package-lock.json /tmp/nessie-ui-package-lock.json
+        cat /tmp/nessie-ui-package.json | jq ".version = \"${RELEASE_VERSION}\"" > package.json
+        cat /tmp/nessie-ui-package-lock.json | jq ".version = \"${RELEASE_VERSION}\"" > package-lock.json
+
     - name: Bump Maven release version ${{ github.event.inputs.releaseVersion }}
       run: ./mvnw versions:set -DgenerateBackupPoms=false -DnewVersion=${RELEASE_VERSION}
 
