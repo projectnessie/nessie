@@ -15,7 +15,7 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
-- package-ecosytem: npm
+- package-ecosystem: npm
   directory: /ui
   schedule:
     interval: daily
