@@ -94,8 +94,15 @@ Running the action can be done simply by:
     GcTableCleanAction.GcTableCleanResult result = new GcTableCleanAction(table, spark).dropGcTable(true).deleteCountThreshold(2).deleteOnPurge(true).execute();
 ```
 The above snippet assumes a `TABLE_IDENTIFIER` which points to the unreferenced assets table. It also requires an active
-spark session and a nessie owned `Catalog`. See the [demo directory](https://github.com/projectnessie/nessie/tree/main/python/demo)
-for a complete example. The `result` object above returns the number of files the action tried to delete and the number that failed.
+spark session and a nessie owned `Catalog`. The `result` object above returns the number of files the action tried to delete and the number that failed.
+
+!!! note
+    You can follow along an interactive demo in a [Jupyter Notebook via Google Colab](https://colab.research.google.com/github/projectnessie/nessie-demos/blob/main/colab/nessie-iceberg-demo-nba.ipynb)
+    or in a [Jupyter Notebook via Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=colab%2Fnessie-iceberg-demo-nba.ipynb).
+    
+    Detailed steps on how to set up Pyspark + Iceberg + Nessie with Python is available on
+    [Colab](https://colab.research.google.com/github/projectnessie/nessie-demos/blob/main/colab/nessie-iceberg-spark-setup.ipynb)
+    and [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=colab%2Fnessie-iceberg-spark-setup.ipynb)
 
 ### Internal Garbage collection
 
