@@ -13,7 +13,7 @@ The site is built using mkdocs. To install mkdocs and the theme, run:
 ```
 # Activate the virtual environment (if installed)
 cd site/
-. bin/activate
+. venv/bin/activate
 # Install or update the dependencies
 pip install -r ./requirements.txt
 ```

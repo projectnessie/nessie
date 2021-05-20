@@ -1,1 +1,7 @@
 title: Try Now
+arrange:
+  - index.md
+  - docker.md
+  - configuration.md
+  - releases.md
+  
