@@ -45,6 +45,14 @@ The [good first issue](https://github.com/projectnessie/nessie/issues?q=is%3Aiss
 Changes must adhere to the style guide and this will be verified by the continuous integration build. Java code style is approximately 
 Google style and can be checked with Checkstyle. Python adheres to the pep8 standard.
 
+#### Configuring the Code Formatter for Intellij IDEA
+It's possible to configure the Code Formatter used for the project based on the Checkstyle rules that are located in `checkstyle/checkstyle-config.xml`.
+First you need to make sure that you have the [Checkstyle-IDEA](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea) plugin installed.
+Under **Tools > Checkstyle** you can then add and activate the `checkstyle/checkstyle-config.xml` file.
+
+Once this is done, you can import the Checkstyle Formatting rules via **Editor > Codestyle > Java**.
+In that screen there is an option under **Show Scheme Actions > Import Scheme > Checkstyle Configuration** where you can select the `checkstyle/checkstyle-config.xml` and import it.
+
 ### Submitting a pull request
 
 Upon submission of a pull request you will be asked to sign our contributor license agreement. We use [Reviewable.io](https://reviewable.io/) for reviews.
