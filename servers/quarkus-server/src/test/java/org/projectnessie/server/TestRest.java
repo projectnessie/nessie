@@ -178,6 +178,10 @@ class TestRest {
             createdTag.getName(), createdTag,
             createdBranch1.getName(), createdBranch1,
             createdBranch2.getName(), createdBranch2));
+    assertThat(references.get(main.getName())).isInstanceOf(Branch.class);
+    assertThat(references.get(createdTag.getName())).isInstanceOf(Tag.class);
+    assertThat(references.get(createdBranch1.getName())).isInstanceOf(Branch.class);
+    assertThat(references.get(createdBranch2.getName())).isInstanceOf(Branch.class);
 
     Reference tagRef = references.get(tagName);
     Reference branchRef = references.get(branchName);
@@ -434,8 +438,7 @@ class TestRest {
             .isInstanceOf(NessieBadRequestException.class)
             .hasMessageContaining("Bad Request (HTTP/400): ")
             .hasMessageContaining("mergeRefIntoBranch.merge: must not be null")
-            .hasMessageContaining("mergeRefIntoBranch.hash: " + HASH_MESSAGE)
-        ,
+            .hasMessageContaining("mergeRefIntoBranch.hash: " + HASH_MESSAGE),
         () -> assertEquals("Bad Request (HTTP/400): deleteTag.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.deleteTag(validBranchName, invalidHash)).getMessage()),
