@@ -178,6 +178,10 @@ class TestRest {
             createdTag.getName(), createdTag,
             createdBranch1.getName(), createdBranch1,
             createdBranch2.getName(), createdBranch2));
+    assertThat(references.get(main.getName())).isInstanceOf(Branch.class);
+    assertThat(references.get(createdTag.getName())).isInstanceOf(Tag.class);
+    assertThat(references.get(createdBranch1.getName())).isInstanceOf(Branch.class);
+    assertThat(references.get(createdBranch2.getName())).isInstanceOf(Branch.class);
 
     Reference tagRef = references.get(tagName);
     Reference branchRef = references.get(branchName);
