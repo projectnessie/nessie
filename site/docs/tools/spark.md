@@ -27,12 +27,20 @@ In pyspark this would look like
 
 ``` python
 SparkSession.builder
-            .config('spark.jars', 'path/to/iceberg-spark3-{{ versions.iceberg}}.jar')
-            ... rest of spark config
-            .getOrCreate()
+    .config('spark.jars.packages',
+            'org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}')
+    ... rest of spark config
+    .getOrCreate()
 ```
 
-The docs for the [Java api](https://iceberg.apache.org/java-api-quickstart) in Iceberg explain how to use a `Catalog`.
+!!! note
+    The Spark config parameter `spark.jars.packages` uses Maven coordinates to pull the given
+    dependencies and all transitively required dependencies as well. Dependencies are resolved
+    via the local Ivy cache, the local Maven repo and then against Maven Central.
+    The config parameter `spark.jars` only takes a list of jar files and does not resolve
+    transitive dependencies.
+
+The docs for the [Java API](https://iceberg.apache.org/java-api-quickstart) in Iceberg explain how to use a `Catalog`.
 The only change is that a Nessie catalog should be instantiated
 
 === "Java"
@@ -251,13 +259,13 @@ follows:
 
 === "Java"
     ``` java
-    regionDf = spark.read().load('data/region.parquet')
+    regionDf = spark.read().load('data/region.parquet');
     //create
-    regionDf.writeTo("nessie.testing.region").create()
+    regionDf.writeTo("nessie.testing.region").create();
     //append
-    regionDf.writeTo("nessie.testing.region").append()
+    regionDf.writeTo("nessie.testing.region").append();
     //overwrite partition
-    regionDf.writeTo("nessie.testing.region").overwritePartitions()
+    regionDf.writeTo("nessie.testing.region").overwritePartitions();
     ```
 === "Python"
     ``` python
@@ -288,10 +296,10 @@ read a Nessie table in iceberg simply:
     ``` java
     // Spark2:
     regionDf = spark.read().format("iceberg")
-        .load("nessie.testing.region")
+        .load("nessie.testing.region");
 
     // Spark3:
-    regionDf = spark.table("nessie.testing.region")
+    regionDf = spark.table("nessie.testing.region");
     ```
 === "Python"
     ``` python
@@ -352,15 +360,16 @@ or [Spark 3](https://repo.maven.apache.org/maven2/org/projectnessie/nessie-delta
 jar. These jars contain all Nessie **and** Delta Lake libraries required for operation.
 
 !!! note
-    the `spark3` jar is for Delta versions >7.0 on Spark3 and the `spark2` jar is for Delta versions 6.x on Spark2.4
+    the `spark3` jar is for Delta versions >0.7.0 on Spark3 and the `spark2` jar is for Delta versions 0.6.x on Spark2.4
 
 In pyspark this would look like
 
 ``` python
 SparkSession.builder
-            .config('spark.jars', 'path/to/nessie-deltalake-spark2-{{ versions.java}}.jar')
-            ... rest of spark config
-            .getOrCreate()
+    .config('spark.jars.packages',
+            'org.projectnessie:nessie-deltalake-spark3:{{ versions.java}}')
+    ... rest of spark config
+    .getOrCreate()
 ```
 
 The Nessie LogStore needs the following parameters set in the Spark/Hadoop config.
@@ -380,7 +389,7 @@ These are set as follows in code (or through other methods as described [here](h
     ``` java
     //for a local spark instance
     conf.set("spark.jars.packages",
-            "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}")
+            "org.projectnessie:nessie-deltalake-spark3:{{ versions.java}}")
         .set("spark.hadoop.nessie.url", url)
         .set("spark.hadoop.nessie.ref", branch)
         .set("spark.hadoop.nessie.auth_type", authType)
@@ -452,7 +461,7 @@ or `append` mode in a standard `spark.write`.
     region_df.write.format("delta").mode("overwrite") \
         .save("/location/to/delta/testing/region")
     ```
- === "SQL"
+=== "SQL"
     ``` sql
     CREATE TABLE nessie.testing.city (
         C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING
