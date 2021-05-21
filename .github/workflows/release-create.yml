@@ -120,6 +120,12 @@ jobs:
           echo "pynessie already at release-version ${RELEASE_VERSION}"
         fi
 
+    - name: Bump versions in site/ to ${{ github.event.inputs.releaseVersion }}
+      working-directory: ./site
+      run: |
+        cp mkdocs.yml /tmp/nessie-mkdocs.yml
+        cat /tmp/nessie-mkdocs.yml | sed "s/^    java: [0-9.]*$/    java: ${RELEASE_VERSION}/" | sed "s/^    python: v[0-9.]*$/    python: v${RELEASE_VERSION}/"> mkdocs.yml
+
     - name: Bump UI release version ${{ github.event.inputs.releaseVersion }}
       working-directory: ./ui
       run: |
@@ -142,17 +148,33 @@ jobs:
         git commit -a -m "[release] release nessie-${RELEASE_VERSION}"
         git tag -f ${GIT_TAG}
 
-    # Update versions to next development iteration
+    # Update versions to next development iteration, use bump2version as the "source of truth" here
     - name: Set Python to next development version version
+      id: next_version
       working-directory: ./python
       run: |
         bump2version --no-commit --no-tag patch
         # Call into pynessie to ensure bump2version didn't mess up anything. See https://github.com/c4urself/bump2version/issues/214
-        echo "pynessie at next development iteration $(python -c 'import pynessie; print(pynessie.__version__)')"
+        NEXT_VERSION="$(python -c 'import pynessie; print(pynessie.__version__)')"
+        echo "pynessie at next development iteration ${NEXT_VERSION}"
+        echo ::set-output name=NEXT_VERSION::${NEXT_VERSION}
 
-    # Update versions to next development iteration
+    # Update ui-version to next development iteration
+    - name: Bump UI to next development version
+      working-directory: ./ui
+      env:
+        NEXT_UI_VERSION: ${{ steps.next_version.outputs.NEXT_VERSION }}-snapshot
+      run: |
+        cp package.json /tmp/nessie-ui-package.json
+        cp package-lock.json /tmp/nessie-ui-package-lock.json
+        cat /tmp/nessie-ui-package.json | jq ".version = \"${NEXT_UI_VERSION}\"" > package.json
+        cat /tmp/nessie-ui-package-lock.json | jq ".version = \"${NEXT_UI_VERSION}\"" > package-lock.json
+
+    # Update versions in pom's to next development iteration
     - name: Bump Maven next development version version
-      run: ./mvnw versions:set -DgenerateBackupPoms=false -DnextSnapshot=true
+      env:
+        NEXT_VERSION: ${{ steps.next_version.outputs.NEXT_VERSION }}
+      run: ./mvnw versions:set -DgenerateBackupPoms=false -DnewVersion=${NEXT_VERSION}-SNAPSHOT
 
     # Record the next development iteration in git
     - name: Record next development version in git
