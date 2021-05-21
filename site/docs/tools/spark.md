@@ -12,6 +12,10 @@ for more info.
 !!! note
     You can follow along an interactive demo in a [Jupyter Notebook via Google Colab](https://colab.research.google.com/github/projectnessie/nessie-demos/blob/main/colab/nessie-iceberg-demo-nba.ipynb)
     or in a [Jupyter Notebook via Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=colab%2Fnessie-iceberg-demo-nba.ipynb).
+    
+    Detailed steps on how to set up Pyspark + Iceberg + Nessie with Python is available on
+    [Colab](https://colab.research.google.com/github/projectnessie/nessie-demos/blob/main/colab/nessie-iceberg-spark-setup.ipynb)
+    and [Binder](https://mybinder.org/v2/gh/projectnessie/nessie-demos/main?filepath=colab%2Fnessie-iceberg-spark-setup.ipynb)
 
 
 To access Nessie from a spark cluster make sure the `spark.jars` spark option is set to include
@@ -42,27 +46,34 @@ The only change is that a Nessie catalog should be instantiated
 
 !!! note
     Iceberg's python libraries are still under active development. Actions against catalogs in pyspark
-    still have to go through the jvm objects. See the [demo](https://github.com/projectnessie/nessie/tree/main/python/demo)
+    still have to go through the jvm objects. See the [demo](https://colab.research.google.com/github/projectnessie/nessie-demos/blob/main/colab/nessie-iceberg-spark-setup.ipynb)
     directory for details.
 
 The Nessie Catalog needs the following parameters set in the Spark/Hadoop config.
-
-```
-url = full url to nessie
-warehouse = where to store nessie tables
-ref = the ref or context that nessie will operate on (if different from default branch)
-auth_type = authentication type (BASIC, NONE or AWS)
-```
 
 These are set as follows in code (or through other methods as described [here](https://spark.apache.org/docs/latest/configuration.html))
 
 === "Java"
     ``` java
+    // Full url of the Nessie API endpoint to nessie
+    String url = "http://localhost:19120/api/v1";
+    // Where to store nessie tables
+    String fullPathToWarehouse = ...;
+    // The ref or context that nessie will operate on
+    // (if different from default branch).
+    // Can be the name of a Nessie branch or tag or a Nessie commit SHA. 
+    String ref = "main";
+    // Nessie authentication type (BASIC, NONE or AWS)
+    String authType = "NONE";
+
     //for a local spark instance
-    conf.set("spark.sql.catalog.nessie.url", url)
-        .set("spark.sql.catalog.nessie.ref", branch)
+    conf.set("spark.jars.packages",
+            "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}")
+        .set("spark.sql.catalog.nessie.url", url)
+        .set("spark.sql.catalog.nessie.ref", ref)
         .set("spark.sql.nessie.nessie.auth_type", authType)
-        .set("spark.sql.nessie.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
+        .set("spark.sql.nessie.nessie.catalog-impl",
+            "org.apache.iceberg.nessie.NessieCatalog")
         .set("spark.sql.nessie.nessie.warehouse", fullPathToWarehouse)
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
     spark = SparkSession.builder()
@@ -72,15 +83,28 @@ These are set as follows in code (or through other methods as described [here](h
     ```
 === "Python"
     ``` python
+    # Full url of the Nessie API endpoint to nessie
+    url = "http://localhost:19120/api/v1"
+    # Where to store nessie tables
+    full_path_to_warehouse = ...
+    # The ref or context that nessie will operate on (if different from default branch).
+    # Can be the name of a Nessie branch or tag or a Nessie commit SHA.
+    ref = "main"
+    # Nessie authentication type (BASIC, NONE or AWS)
+    auth_type = "NONE"
+
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
-            .config("spark.jars", "/path/to/downloaded/iceberg-spark3-{{ versions.iceberg}}.jar") \
-            .config("spark.sql.catalog.nessie.url", "http://localhost:19120/api/v1")
-            .config("spark.sql.catalog.nessie.ref", "main")
-            .config("spark.sql.nessie.nessie.auth_type", "NONE")
-            .config("spark.sql.nessie.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
-            .config("spark.sql.nessie.nessie.warehouse", fullPathToWarehouse)
-            .config("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog");
+            .config("spark.jars.packages",
+                "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}") \
+            .config("spark.sql.catalog.nessie.url", url) \
+            .config("spark.sql.catalog.nessie.ref", ref) \
+            .config("spark.sql.nessie.nessie.auth_type", auth_type) \
+            .config("spark.sql.nessie.nessie.catalog-impl", 
+                "org.apache.iceberg.nessie.NessieCatalog") \
+            .config("spark.sql.nessie.nessie.warehouse", full_path_to_warehouse) \
+            .config("spark.sql.catalog.nessie",
+                "org.apache.iceberg.spark.SparkCatalog") \
             .getOrCreate()
     ```
 Note above we specified the option `spark.sql.catalog.nessie.ref`. This value sets the default branch that the iceberg
@@ -106,7 +130,10 @@ addressing jvm objects directly in Python (until the python library for iceberg 
     // first instantiate the catalog
     NessieCatalog catalog = new NessieCatalog();
     catalog.setConf(sc.hadoopConfiguration());
-    catalog.initialize("nessie", ImmutableMap.of("ref", ref, "url", url, "warehouse", pathToWarehouse));
+    catalog.initialize("nessie", ImmutableMap.of(
+        "ref", ref,
+        "url", url,
+        "warehouse", pathToWarehouse));
 
     // Creating table by first creating a table name with namespace
     TableIdentifier region_name = TableIdentifier.parse("testing.region");
@@ -140,16 +167,24 @@ addressing jvm objects directly in Python (until the python library for iceberg 
     # first instantiate the catalog
     catalog = jvm.NessieCatalog()
     catalog.setConf(sc._jsc.hadoopConfiguration())
-    catalog.initialize("nessie", {"ref": ref, "url": url, "warehouse": pathToWarehouse})
+    catalog.initialize("nessie", {"ref": ref,
+        "url": url,
+        "warehouse": pathToWarehouse})
 
     # Creating table by first creating a table name with namespace
     region_name = jvm.TableIdentifier.parse("testing.region")
 
     # next create the schema
     region_schema = jvm.Schema([
-      jvm.Types.NestedField.optional(1, "R_REGIONKEY", jvm.Types.LongType.get()),
-      jvm.Types.NestedField.optional(2, "R_NAME", jvm.Types.StringType.get()),
-      jvm.Types.NestedField.optional(3, "R_COMMENT", jvm.Types.StringType.get()),
+      jvm.Types.NestedField.optional(
+        1, "R_REGIONKEY", jvm.Types.LongType.get()
+      ),
+      jvm.Types.NestedField.optional(
+        2, "R_NAME", jvm.Types.StringType.get()
+      ),
+      jvm.Types.NestedField.optional(
+        3, "R_COMMENT", jvm.Types.StringType.get()
+      ),
     ])
 
     # and the partition
@@ -169,12 +204,14 @@ Now that we have created an Iceberg table in nessie we can write to it. The iceb
 === "Java"
     ``` java
     regionDf = spark.read().load("data/region.parquet");
-    regionDf.write().format("iceberg").mode("overwrite").save("nessie.testing.region");
+    regionDf.write().format("iceberg").mode("overwrite")
+        .save("nessie.testing.region");
     ```
 === "Python"
     ``` python
     region_df = spark.read.load("data/region.parquet")
-    region_df.write.format("iceberg").mode("overwrite").save("nessie.testing.region")
+    region_df.write.format("iceberg").mode("overwrite") \
+        .save("nessie.testing.region")
     ```
 
 Here we simply read a file from the default filesystem and write it to an existing nessie iceberg table. This will
@@ -188,17 +225,19 @@ to write to a specific branch you would have to create a new Spark Conf.
 
 === "Java"
     ``` java
-    spark_dev = spark.newSession();
-    spark_dev.conf.set("spark.sql.catalog.nessie.ref", "dev");
-    regionDf = spark_dev.read().load("data/region.parquet");
-    regionDf.write().format("iceberg").mode("overwrite").save("nessie.testing.region");
+    sparkDev = spark.newSession();
+    sparkDev.conf.set("spark.sql.catalog.nessie.ref", "dev");
+    regionDf = sparkDev.read().load("data/region.parquet");
+    regionDf.write().format("iceberg").mode("overwrite")
+        .save("nessie.testing.region");
     ```
 === "Python"
     ``` python
     spark_dev = spark.newSession()
     spark_dev.conf.set("spark.sql.catalog.nessie.ref", "dev")
     region_df = spark_dev.read.load("data/region.parquet")
-    region_df.write.format("iceberg").mode("overwrite").save("nessie.testing.region")
+    region_df.write.format("iceberg").mode("overwrite") \
+        .save("nessie.testing.region")
     ```
 
 Note the extra `option` clause in the write command. This will ensure the commit happens on the `dev` branch rather than
@@ -224,12 +263,16 @@ follows:
     ``` python
     # same code as the spark2 section above to create the testing.region table
     region_df = spark.read.load("data/region.parquet")
-    region_df.write.format("iceberg").mode("overwrite").save("nessie.testing.region")
+    region_df.write.format("iceberg").mode("overwrite") \
+        .save("nessie.testing.region")
     ```
 === "SQL"
     ``` sql
-    CREATE TABLE nessie.testing.city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (N_NATIONKEY)
+    CREATE TABLE nessie.testing.city (
+        C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING
+    ) USING iceberg PARTITIONED BY (N_NATIONKEY)
     -- AS SELECT .. can be added to the sql statement to perform a CTAS
+
     INSERT INTO nessie.testing.city VALUES (1, 'a', 1, 'comment')
     ```
 
@@ -243,8 +286,12 @@ read a Nessie table in iceberg simply:
 
 === "Java"
     ``` java
-    regionDf = spark.read().format("iceberg").load("nessie.testing.region") // Spark2
-    regionDf = spark.table("nessie.testing.region") // Spark3
+    // Spark2:
+    regionDf = spark.read().format("iceberg")
+        .load("nessie.testing.region")
+
+    // Spark3:
+    regionDf = spark.table("nessie.testing.region")
     ```
 === "Python"
     ``` python
@@ -253,7 +300,12 @@ read a Nessie table in iceberg simply:
     ```
 === "SQL"
     ``` sql
-    SELECT * FROM nessie.testing.city -- Spark3 only
+    -- Spark3 only
+    SELECT * FROM nessie.testing.city
+    ```
+    ``` sql
+    -- Spark3 only, read from the `etl` branch
+    SELECT * FROM nessie.testing.`city@etl`
     ```
 
 The examples above all use the default branch defined on initialisation. There are several ways to reference specific
@@ -264,8 +316,11 @@ Branch or hash references in the table name will override passed `option`s and t
 Spark/Hadoop configs.
 
 ``` python linenums="1"
-spark.read().format("iceberg").load("testing.region@dev") # read from branch dev
-spark.read().format("iceberg").load("testing.region@<hash>") # read specifically from hash
+# read from branch dev
+spark.read().format("iceberg").load("testing.region@dev")
+# read specifically from hash
+spark.read().format("iceberg").load("testing.region@<hash>")
+
 spark.sql("SELECT * FROM nessie.testing.`region@dev`")
 spark.sql("SELECT * FROM nessie.testing.`region@<hash>`")
 ```
@@ -321,16 +376,22 @@ spark.delta.logStore.class=org.projectnessie.deltalake.NessieLogStore
 
 These are set as follows in code (or through other methods as described [here](https://spark.apache.org/docs/latest/configuration.html))
 
-=== "Java"``
+=== "Java"
     ``` java
     //for a local spark instance
-    conf.set("spark.hadoop.nessie.url", url)
+    conf.set("spark.jars.packages",
+            "org.apache.iceberg:iceberg-spark3-runtime:{{ versions.iceberg}}")
+        .set("spark.hadoop.nessie.url", url)
         .set("spark.hadoop.nessie.ref", branch)
         .set("spark.hadoop.nessie.auth_type", authType)
-        .set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
-        .set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
-        .set("spark.delta.logStore.class", "org.projectnessie.deltalake.NessieLogStore")
-        .set("spark.delta.logFileHandler.class", "org.projectnessie.deltalake.NessieLogFileMetaParser")
+        .set("spark.sql.catalog.spark_catalog",
+            "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+        .set("spark.sql.extensions",
+            "io.delta.sql.DeltaSparkSessionExtension")
+        .set("spark.delta.logStore.class",
+            "org.projectnessie.deltalake.NessieLogStore")
+        .set("spark.delta.logFileHandler.class",
+            "org.projectnessie.deltalake.NessieLogFileMetaParser");
     spark = SparkSession.builder()
                         .master("local[2]")
                         .config(conf)
@@ -340,13 +401,19 @@ These are set as follows in code (or through other methods as described [here](h
     ``` python
     # here we are assuming NONE authorisation
     spark = SparkSession.builder \
-            .config("spark.jars", "../../clients/deltalake-spark3/target/nessie-deltalake-spark3-{{ versions.java}}.jar") \
-            .config("spark.hadoop.nessie.url", "http://localhost:19120/api/v1") \
+            .config("spark.jars.packages",
+                "org.projectnessie:nessie-deltalake-spark3:{{ versions.java}}") \
+            .config("spark.hadoop.nessie.url",
+                "http://localhost:19120/api/v1") \
             .config("spark.hadoop.nessie.ref", "main") \
-            .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
-            .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
-            .config("spark.delta.logFileHandler.class", "org.projectnessie.deltalake.NessieLogFileMetaParser") \
-            .config("spark.delta.logStore.class", "org.projectnessie.deltalake.NessieLogStore") \
+            .config("spark.sql.catalog.spark_catalog",
+                "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+            .config("spark.sql.extensions",
+                "io.delta.sql.DeltaSparkSessionExtension") \
+            .config("spark.delta.logFileHandler.class",
+                "org.projectnessie.deltalake.NessieLogFileMetaParser") \
+            .config("spark.delta.logStore.class",
+                "org.projectnessie.deltalake.NessieLogStore") \
             .getOrCreate()
     ```
 Note above we specified the option `spark.hadoop.nessie.ref`. This value sets the default branch that the delta
@@ -375,18 +442,23 @@ or `append` mode in a standard `spark.write`.
 
 === "Java"
     ``` java
-    regionDf = spark.read().load("data/region.parquet")
-    regionDf.write().format("delta").mode("overwrite").save("/location/to/delta/testing/region")
+    regionDf = spark.read().load("data/region.parquet");
+    regionDf.write().format("delta").mode("overwrite")
+        .save("/location/to/delta/testing/region");
     ```
 === "Python"
     ``` python
     region_df = spark.read.load("data/region.parquet")
-    region_df.write.format("delta").mode("overwrite").save("/location/to/delta/testing/region")
+    region_df.write.format("delta").mode("overwrite") \
+        .save("/location/to/delta/testing/region")
     ```
  === "SQL"
     ``` sql
-    CREATE TABLE nessie.testing.city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING delta PARTITIONED BY (N_NATIONKEY) LOCATION 'path/to/delta/testing/city'
+    CREATE TABLE nessie.testing.city (
+        C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING
+    ) USING delta PARTITIONED BY (N_NATIONKEY) LOCATION 'path/to/delta/testing/city'
     -- SELECT .. can be added to the sql statement to perform a CTAS
+
     INSERT [OVERWRITE] INTO nessie.testing.city VALUES (1, 'a', 1, 'comment')
     ```
 
@@ -401,21 +473,26 @@ to write to a specific branch without changing context the following should be u
 
 === "Java"
     ``` java
-    spark.sparkContext().hadoopConfiguration().set("nessie.ref", "dev")
-    regionDf = spark.read().load("data/region.parquet")
-    regionDf.write().format("delta").mode("overwrite").save("/location/to/delta/testing/region")
+    spark.sparkContext().hadoopConfiguration().set("nessie.ref", "dev");
+    regionDf = spark.read().load("data/region.parquet");
+    regionDf.write().format("delta").mode("overwrite")
+        .save("/location/to/delta/testing/region");
     ```
 === "Python"
     ``` python
     spark.sparkContext._jsc.hadoopConfiguration().set("nessie.ref", "dev")
     region_df = spark.read.load("data/region.parquet")
-    region_df.write.format("delta").mode("overwrite").save("/location/to/delta/testing/region")
+    region_df.write.format("delta").mode("overwrite") \
+        .save("/location/to/delta/testing/region")
     ```
 === "SQL"
     ``` sql
     -- change hadoop configuration externally using the Java or Python syntax
-    CREATE TABLE nessie.testing.city (C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING) USING iceberg PARTITIONED BY (N_NATIONKEY)
+    CREATE TABLE nessie.testing.city (
+        C_CITYKEY BIGINT, C_NAME STRING, N_NATIONKEY BIGINT, C_COMMENT STRING
+    ) USING iceberg PARTITIONED BY (N_NATIONKEY)
     -- AS SELECT .. can be added to the sql statement to perform a CTAS
+    
     INSERT INTO nessie.testing.city VALUES (1, 'a', 1, 'comment')
     ```
 
@@ -436,11 +513,13 @@ read a Nessie table in Delta Lake simply:
 
 === "Java"
     ``` java
-    regionDf = spark.read().format("delta").load("/path/to/delta/testing/region")
+    regionDf = spark.read().format("delta")
+        .load("/path/to/delta/testing/region");
     ```
 === "Python"
     ``` python
-    region_df = spark.read.format("delta").load("/path/to/delta/testing/region")
+    region_df = spark.read.format("delta") \
+        .load("/path/to/delta/testing/region")
     ```
 === "SQL"
     ``` sql
