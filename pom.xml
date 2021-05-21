@@ -641,7 +641,7 @@
           <version>1.12.0</version>
           <configuration>
             <installDirectory>${project.build.directory}</installDirectory>
-            <nodeVersion>v12.16.2</nodeVersion>
+            <nodeVersion>v16.2.0</nodeVersion>
           </configuration>
         </plugin>
         <plugin>
