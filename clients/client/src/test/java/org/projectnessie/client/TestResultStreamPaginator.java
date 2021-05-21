@@ -15,9 +15,10 @@
  */
 package org.projectnessie.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,9 +40,9 @@ class TestResultStreamPaginator {
         new ResultStreamPaginator<>(MockPaginatedResponse::getElements, (ref, pageSize, token) -> {
           throw new NessieNotFoundException("Ref not found");
         });
-    assertEquals("Ref not found",
-        assertThrows(NessieNotFoundException.class,
-            () -> paginator.generateStream("ref", OptionalInt.empty())).getMessage());
+    assertThatThrownBy(() -> paginator.generateStream("ref", OptionalInt.empty()))
+        .isInstanceOf(NessieNotFoundException.class)
+        .hasMessage("Ref not found");
   }
 
   @Test
@@ -53,8 +54,8 @@ class TestResultStreamPaginator {
               assertNull(token);
               return new MockPaginatedResponse(false, null, Arrays.asList("1", "2", "3"));
             });
-    assertEquals(Arrays.asList("1", "2", "3"),
-        paginator.generateStream("ref", OptionalInt.empty()).collect(Collectors.toList()));
+    assertThat(paginator.generateStream("ref", OptionalInt.empty()))
+        .containsExactly("1", "2", "3");
   }
 
   @Test
@@ -72,8 +73,8 @@ class TestResultStreamPaginator {
               assertEquals(expectedTokens.next(), token);
               return responses.next();
             });
-    assertEquals(Arrays.asList("1", "2", "3", "4", "5", "6"),
-        paginator.generateStream("ref", OptionalInt.empty()).collect(Collectors.toList()));
+    assertThat(paginator.generateStream("ref", OptionalInt.empty()))
+        .containsExactly("1", "2", "3", "4", "5", "6");
   }
 
   @Test
@@ -85,8 +86,9 @@ class TestResultStreamPaginator {
               assertNull(token);
               return new MockPaginatedResponse(false, null, Arrays.asList("1", "2", "3"));
             });
-    assertEquals(Arrays.asList("1", "2", "3"),
-        paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()));
+    assertThat(paginator.generateStream("ref", OptionalInt.of(5)))
+        .containsExactly("1", "2", "3");
+
   }
 
   @Test
@@ -104,8 +106,8 @@ class TestResultStreamPaginator {
               assertEquals(expectedTokens.next(), token);
               return responses.next();
             });
-    assertEquals(Arrays.asList("1", "2", "3", "4", "5", "6"),
-        paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()));
+    assertThat(paginator.generateStream("ref", OptionalInt.of(5)))
+        .containsExactly("1", "2", "3", "4", "5", "6");
   }
 
   @Test
@@ -113,8 +115,7 @@ class TestResultStreamPaginator {
     ResultStreamPaginator<MockPaginatedResponse, String> paginator =
         new ResultStreamPaginator<>(MockPaginatedResponse::getElements,
             (ref, pageSize, token) -> new MockPaginatedResponse(false, null, Collections.emptyList()));
-    assertEquals(Collections.emptyList(),
-        paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()));
+    assertThat(paginator.generateStream("ref", OptionalInt.of(5))).isEmpty();
   }
 
   @Test
@@ -132,8 +133,8 @@ class TestResultStreamPaginator {
               assertEquals(expectedTokens.next(), token);
               return responses.next();
             });
-    assertEquals(Arrays.asList("1", "2", "3"),
-        paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()));
+    assertThat(paginator.generateStream("ref", OptionalInt.of(5)))
+        .containsExactly("1", "2", "3");
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -152,8 +153,9 @@ class TestResultStreamPaginator {
               assertEquals(expectedTokens.next(), token);
               return responses.next();
             });
-    assertThrows(IllegalStateException.class,
-        () -> paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()));
+    assertThatThrownBy(() -> paginator.generateStream("ref", OptionalInt.of(5)).collect(Collectors.toList()))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Backend returned empty page, but indicates there are more results");
   }
 
   private static class MockPaginatedResponse implements PaginatedResponse {

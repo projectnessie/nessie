@@ -15,8 +15,7 @@
  */
 package org.projectnessie.versioned.impl;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -43,6 +42,7 @@ import org.projectnessie.versioned.tiered.gc.L1Frame;
 import org.projectnessie.versioned.tiered.gc.RefFrame;
 
 public class TestValueRetriever {
+
   private static final Byte DEFAULT_PAYLOAD = (byte) 0;
   private final Store store = new MockStore();
 
@@ -146,7 +146,7 @@ public class TestValueRetriever {
         .asDataset(ValueType.L2, () -> store, IdCarrier.L2_CONVERTER,
             Optional.of(i -> i.getId().equalsId(l2.getId())), spark()));
     Set<String> children = carrier1.getChildren().stream().map(IdFrame::toString).collect(Collectors.toSet());
-    assertThat(children, containsInAnyOrder(l31.toString(), l32.toString(), InternalL3.EMPTY_ID.toString()));
+    assertThat(children).containsExactlyInAnyOrder(l31.toString(), l32.toString(), InternalL3.EMPTY_ID.toString());
   }
 
   public static boolean equals(IdFrame id1, Id id2) {
@@ -165,7 +165,7 @@ public class TestValueRetriever {
         .asDataset(ValueType.L3, () -> store, IdCarrier.L3_CONVERTER,
             Optional.of(i -> i.getId().equalsId(l3.getId())), spark()));
     Set<String> children = carrier1.getChildren().stream().map(IdFrame::toString).collect(Collectors.toSet());
-    assertThat(children, containsInAnyOrder(val1.toString(), val2.toString()));
+    assertThat(children).containsExactlyInAnyOrder(val1.toString(), val2.toString());
   }
 
   private static <T> T single(Dataset<T> dataset) {
@@ -173,6 +173,4 @@ public class TestValueRetriever {
     assertEquals(1, items.size());
     return items.get(0);
   }
-
-
 }

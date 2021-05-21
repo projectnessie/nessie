@@ -17,7 +17,7 @@
 package org.projectnessie.server;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Assertions;
@@ -129,7 +129,7 @@ public class RestGitTest {
     Branch b3 = rest().get("trees/tree/test").as(Branch.class);
     rest().body(Tag.of("tagtest", b3.getHash())).post("trees/tree").then().statusCode(200);
 
-    rest().get("trees/tree/tagtest").then().statusCode(200).body("hash", equalTo(b3.getHash()));
+    assertThat(rest().get("trees/tree/tagtest").then().statusCode(200).extract().body().as(Tag.class).getHash()).isEqualTo(b3.getHash());
 
     rest().queryParam(
         "expectedHash",

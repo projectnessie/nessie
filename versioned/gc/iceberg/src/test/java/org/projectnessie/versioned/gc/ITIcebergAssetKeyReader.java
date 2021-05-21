@@ -16,7 +16,7 @@
 package org.projectnessie.versioned.gc;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
-import static org.hamcrest.Matchers.hasItems;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.util.HashMap;
@@ -40,8 +40,6 @@ import org.apache.iceberg.nessie.NessieCatalog;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.util.SerializableConfiguration;
-import org.hamcrest.Matcher;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,9 +58,11 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
 public class ITIcebergAssetKeyReader {
+
   private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19121);
   private static final String NESSIE_ENDPOINT = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
-  private static final Consumer<String> NOOP = x -> {};
+  private static final Consumer<String> NOOP = x -> {
+  };
 
   @TempDir
   static File ALLEY_LOCAL_DIR;
@@ -95,13 +95,10 @@ public class ITIcebergAssetKeyReader {
 
   @Test
   void testAssetKeyReader() {
-
-
     Table table = catalog.createTable(TableIdentifier.of("test", "table"), SCHEMA);
 
     table.newAppend().appendFile(DataFiles.builder(PartitionSpec.unpartitioned()).withPath("file:/x/y/z")
-      .withFormat(FileFormat.PARQUET).withFileSizeInBytes(12L).withRecordCount(12).build()).commit();
-
+        .withFormat(FileFormat.PARQUET).withFileSizeInBytes(12L).withRecordCount(12).build()).commit();
 
     IcebergAssetKeyConverter akr = new IcebergAssetKeyConverter(new SerializableConfiguration(hadoopConfig));
 
@@ -114,7 +111,7 @@ public class ITIcebergAssetKeyReader {
     check(akr, table, expected);
 
     table.newAppend().appendFile(DataFiles.builder(PartitionSpec.unpartitioned()).withPath("file:/x/y/zz")
-      .withFormat(FileFormat.PARQUET).withFileSizeInBytes(12L).withRecordCount(12).build()).commit();
+        .withFormat(FileFormat.PARQUET).withFileSizeInBytes(12L).withRecordCount(12).build()).commit();
 
     expected = ImmutableMap.of("TABLE", 1L, //still 1 table
         "ICEBERG_MANIFEST", 2L, // 1 manifest from first commit, 1 from second
@@ -144,7 +141,7 @@ public class ITIcebergAssetKeyReader {
     Map<String, Long> count = unreferencedItems.keySet().stream()
         .map(x -> x.split("\\.")[0]).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-    MatcherAssert.assertThat(count.entrySet(), (Matcher) hasItems(expected.entrySet().toArray()));
+    assertThat(count.entrySet()).containsAll(expected.entrySet());
   }
 
   @AfterEach
@@ -153,5 +150,4 @@ public class ITIcebergAssetKeyReader {
     DynamoSupplier.deleteAllTables();
     client.close();
   }
-
 }

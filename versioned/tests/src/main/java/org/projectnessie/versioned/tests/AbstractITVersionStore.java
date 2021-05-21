@@ -15,12 +15,7 @@
  */
 package org.projectnessie.versioned.tests;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,7 +30,6 @@ import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -146,7 +140,7 @@ public abstract class AbstractITVersionStore {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
     final Hash hash = store().toHash(branch);
-    assertThat(hash, is(notNullValue()));
+    assertThat(hash).isNotNull();
 
     final BranchName anotherBranch = BranchName.of("bar");
     final Hash createHash = store().create(anotherBranch, Optional.of(hash));
@@ -161,17 +155,17 @@ public abstract class AbstractITVersionStore {
     try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
       namedRefs = str.collect(Collectors.toList());
     }
-    assertThat(namedRefs, containsInAnyOrder(
+    assertThat(namedRefs).containsExactlyInAnyOrder(
         WithHash.of(hash, branch),
         WithHash.of(commitHash, anotherBranch),
         WithHash.of(commitHash, anotherAnotherBranch)
-    ));
+    );
 
-    assertThat(store().getCommits(branch).count(), is(0L));
-    assertThat(store().getCommits(anotherBranch).count(), is(1L));
-    assertThat(store().getCommits(anotherAnotherBranch).count(), is(1L));
-    assertThat(store().getCommits(hash).count(), is(0L)); // empty commit should not be listed
-    assertThat(store().getCommits(commitHash).count(), is(1L)); // empty commit should not be listed
+    assertThat(store().getCommits(branch)).isEmpty();
+    assertThat(store().getCommits(anotherBranch)).hasSize(1);
+    assertThat(store().getCommits(anotherAnotherBranch)).hasSize(1);
+    assertThat(store().getCommits(hash)).isEmpty(); // empty commit should not be listed
+    assertThat(store().getCommits(commitHash)).hasSize(1); // empty commit should not be listed
 
     assertThrows(ReferenceAlreadyExistsException.class, () -> store().create(branch, Optional.empty()));
     assertThrows(ReferenceAlreadyExistsException.class, () -> store().create(branch, Optional.of(hash)));
@@ -179,7 +173,7 @@ public abstract class AbstractITVersionStore {
     store().delete(branch, Optional.of(hash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(branch));
     try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
-      assertThat(str.count(), is(2L)); // bar + baz
+      assertThat(str).hasSize(2); // bar + baz
     }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(hash)));
   }
@@ -261,30 +255,30 @@ public abstract class AbstractITVersionStore {
     store().create(anotherTag, Optional.of(commitHash));
 
     assertThrows(ReferenceAlreadyExistsException.class, () -> store().create(tag, Optional.of(initialHash)));
-    assertThrows(IllegalArgumentException.class, () -> store().create(tag,  Optional.empty()));
+    assertThrows(IllegalArgumentException.class, () -> store().create(tag, Optional.empty()));
 
-    assertThat(store().toHash(tag), is(initialHash));
-    assertThat(store().toHash(anotherTag), is(commitHash));
+    assertThat(store().toHash(tag)).isEqualTo(initialHash);
+    assertThat(store().toHash(anotherTag)).isEqualTo(commitHash);
 
     List<WithHash<NamedRef>> namedRefs;
     try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
       namedRefs = str.collect(Collectors.toList());
     }
-    assertThat(namedRefs, containsInAnyOrder(
+    assertThat(namedRefs).containsExactlyInAnyOrder(
         WithHash.of(commitHash, branch),
         WithHash.of(initialHash, tag),
-        WithHash.of(commitHash, anotherTag)));
+        WithHash.of(commitHash, anotherTag));
 
-    assertThat(store().getCommits(tag).count(), is(0L));
-    assertThat(store().getCommits(initialHash).count(), is(0L)); // empty commit should not be listed
+    assertThat(store().getCommits(tag)).isEmpty();
+    assertThat(store().getCommits(initialHash)).isEmpty(); // empty commit should not be listed
 
-    assertThat(store().getCommits(anotherTag).count(), is(1L));
-    assertThat(store().getCommits(commitHash).count(), is(1L)); // empty commit should not be listed
+    assertThat(store().getCommits(anotherTag)).hasSize(1);
+    assertThat(store().getCommits(commitHash)).hasSize(1); // empty commit should not be listed
 
     store().delete(tag, Optional.of(initialHash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(tag));
     try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
-      assertThat(str.count(), is(2L)); // foo + another-tag
+      assertThat(str).hasSize(2); // foo + another-tag
     }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(tag, Optional.of(initialHash)));
   }
@@ -309,21 +303,21 @@ public abstract class AbstractITVersionStore {
     final Hash commitHash = store().toHash(branch);
     assertEquals(commitHash, commitHash0);
 
-    assertThat(commitHash, is(Matchers.not(initialHash)));
+    assertThat(commitHash).isNotEqualTo(initialHash);
     store().commit(branch, Optional.of(initialHash), "Another commit", Collections.emptyList());
     final Hash anotherCommitHash = store().toHash(branch);
 
-    assertThat(store().getCommits(branch).collect(Collectors.toList()), contains(
+    assertThat(store().getCommits(branch)).contains(
         WithHash.of(anotherCommitHash, "Another commit"),
         WithHash.of(commitHash, "Some commit")
-    ));
-    assertThat(store().getCommits(commitHash).collect(Collectors.toList()), contains(WithHash.of(commitHash, "Some commit")));
+    );
+    assertThat(store().getCommits(commitHash)).contains(WithHash.of(commitHash, "Some commit"));
 
     assertThrows(ReferenceConflictException.class, () -> store().delete(branch, Optional.of(initialHash)));
     store().delete(branch, Optional.of(anotherCommitHash));
     assertThrows(ReferenceNotFoundException.class, () -> store().toHash(branch));
     try (Stream<WithHash<NamedRef>> str = store().getNamedRefs()) {
-      assertThat(str.count(), is(0L));
+      assertThat(str).isEmpty();
     }
     assertThrows(ReferenceNotFoundException.class, () -> store().delete(branch, Optional.of(commitHash)));
   }
@@ -360,67 +354,67 @@ public abstract class AbstractITVersionStore {
         .unchanged("t4")
         .toBranch(branch);
 
-    assertThat(store().getCommits(branch).collect(Collectors.toList()), contains(
+    assertThat(store().getCommits(branch)).contains(
         WithHash.of(thirdCommit, "Third Commit"),
         WithHash.of(secondCommit, "Second Commit"),
         WithHash.of(initialCommit, "Initial Commit")
-        ));
+    );
 
-    assertThat(store().getKeys(branch).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(branch).map(WithType::getValue)).containsExactlyInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t4")
-        ));
+    );
 
-    assertThat(store().getKeys(secondCommit).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(secondCommit).map(WithType::getValue)).containsExactlyInAnyOrder(
         Key.of("t1"),
         Key.of("t4")
-        ));
+    );
 
-    assertThat(store().getKeys(initialCommit).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(initialCommit).map(WithType::getValue)).containsExactlyInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t3")
-        ));
+    );
 
-    assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))),
-        contains(
+    assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+        .contains(
             Optional.of("v1_2"),
             Optional.of("v2_2"),
             Optional.empty(),
             Optional.of("v4_1")
-        ));
+        );
 
-    assertThat(store().getValues(secondCommit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))),
-        contains(
+    assertThat(store().getValues(secondCommit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+        .contains(
             Optional.of("v1_2"),
             Optional.empty(),
             Optional.empty(),
             Optional.of("v4_1")
-        ));
+        );
 
-    assertThat(store().getValues(initialCommit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))),
-        contains(
+    assertThat(store().getValues(initialCommit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+        .contains(
             Optional.of("v1_1"),
             Optional.of("v2_1"),
             Optional.of("v3_1"),
             Optional.empty()
-        ));
+        );
 
-    assertThat(store().getValue(branch, Key.of("t1")), is("v1_2"));
-    assertThat(store().getValue(branch, Key.of("t2")), is("v2_2"));
-    assertThat(store().getValue(branch, Key.of("t3")), is(nullValue()));
-    assertThat(store().getValue(branch, Key.of("t4")), is("v4_1"));
+    assertThat(store().getValue(branch, Key.of("t1"))).isEqualTo("v1_2");
+    assertThat(store().getValue(branch, Key.of("t2"))).isEqualTo("v2_2");
+    assertThat(store().getValue(branch, Key.of("t3"))).isNull();
+    assertThat(store().getValue(branch, Key.of("t4"))).isEqualTo("v4_1");
 
-    assertThat(store().getValue(secondCommit, Key.of("t1")), is("v1_2"));
-    assertThat(store().getValue(secondCommit, Key.of("t2")), is(nullValue()));
-    assertThat(store().getValue(secondCommit, Key.of("t3")), is(nullValue()));
-    assertThat(store().getValue(secondCommit, Key.of("t4")), is("v4_1"));
+    assertThat(store().getValue(secondCommit, Key.of("t1"))).isEqualTo("v1_2");
+    assertThat(store().getValue(secondCommit, Key.of("t2"))).isNull();
+    assertThat(store().getValue(secondCommit, Key.of("t3"))).isNull();
+    assertThat(store().getValue(secondCommit, Key.of("t4"))).isEqualTo("v4_1");
 
-    assertThat(store().getValue(initialCommit, Key.of("t1")), is("v1_1"));
-    assertThat(store().getValue(initialCommit, Key.of("t2")), is("v2_1"));
-    assertThat(store().getValue(initialCommit, Key.of("t3")), is("v3_1"));
-    assertThat(store().getValue(initialCommit, Key.of("t4")), is(nullValue()));
+    assertThat(store().getValue(initialCommit, Key.of("t1"))).isEqualTo("v1_1");
+    assertThat(store().getValue(initialCommit, Key.of("t2"))).isEqualTo("v2_1");
+    assertThat(store().getValue(initialCommit, Key.of("t3"))).isEqualTo("v3_1");
+    assertThat(store().getValue(initialCommit, Key.of("t4"))).isNull();
   }
 
   /*
@@ -452,62 +446,62 @@ public abstract class AbstractITVersionStore {
     final Hash extraCommit = commit("Extra Commit").fromReference(t1Commit).put("t1", "v1_3").put("t3", "v3_2").toBranch(branch);
     final Hash newT2Commit = commit("New T2 Commit").fromReference(t2Commit).put("t2", "new_v2_1").toBranch(branch);
 
-    assertThat(store().getCommits(branch).collect(Collectors.toList()), contains(
+    assertThat(store().getCommits(branch)).contains(
         WithHash.of(newT2Commit, "New T2 Commit"),
         WithHash.of(extraCommit, "Extra Commit"),
         WithHash.of(t3Commit, "T3 Commit"),
         WithHash.of(t2Commit, "T2 Commit"),
         WithHash.of(t1Commit, "T1 Commit"),
         WithHash.of(initialCommit, "Initial Commit")
-        ));
+    );
 
-    assertThat(store().getKeys(branch).map(WithType::getValue).collect(Collectors.toList()), containsInAnyOrder(
+    assertThat(store().getKeys(branch).map(WithType::getValue)).containsExactlyInAnyOrder(
         Key.of("t1"),
         Key.of("t2"),
         Key.of("t3")
-        ));
+    );
 
-    assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
-        contains(
+    assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
+        .contains(
             Optional.of("v1_3"),
             Optional.of("new_v2_1"),
             Optional.of("v3_2")
-        ));
+        );
 
-    assertThat(store().getValues(newT2Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
-        contains(
+    assertThat(store().getValues(newT2Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
+        .contains(
             Optional.of("v1_3"),
             Optional.of("new_v2_1"),
             Optional.of("v3_2")
-        ));
+        );
 
-    assertThat(store().getValues(extraCommit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
-        contains(
+    assertThat(store().getValues(extraCommit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
+        .contains(
             Optional.of("v1_3"),
             Optional.empty(),
             Optional.of("v3_2")
-        ));
+        );
 
-    assertThat(store().getValues(t3Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
-        contains(
+    assertThat(store().getValues(t3Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
+        .contains(
             Optional.of("v1_2"),
             Optional.empty(),
             Optional.of("v3_1")
-        ));
+        );
 
-    assertThat(store().getValues(t2Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
-        contains(
+    assertThat(store().getValues(t2Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
+        .contains(
             Optional.of("v1_2"),
             Optional.empty(),
             Optional.of("v3_1")
-        ));
+        );
 
-    assertThat(store().getValues(t1Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
-        contains(
+    assertThat(store().getValues(t1Commit, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
+        .contains(
             Optional.of("v1_2"),
             Optional.of("v2_1"),
             Optional.of("v3_1")
-        ));
+        );
   }
 
   /*
@@ -552,7 +546,7 @@ public abstract class AbstractITVersionStore {
         () -> commit("Conflicting Commit").fromReference(initialCommit).delete("t3").toBranch(branch));
 
     // Checking the state hasn't changed
-    assertThat(store().toHash(branch), is(secondCommit));
+    assertThat(store().toHash(branch)).isEqualTo(secondCommit);
   }
 
   /*
@@ -589,39 +583,39 @@ public abstract class AbstractITVersionStore {
         .put("t3", "v3_2")
         .toBranch(branch);
 
-    assertThat(store().toHash(branch), is(putCommit));
-    assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
-        contains(
+    assertThat(store().toHash(branch)).isEqualTo(putCommit);
+    assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
+        .contains(
             Optional.of("v1_3"),
             Optional.of("v2_2"),
             Optional.of("v3_2")
-        ));
+        );
 
     final Hash unchangedCommit = commit("Conflicting Commit")
         .unchanged("t1")
         .unchanged("t2")
         .unchanged("t3")
         .toBranch(branch);
-    assertThat(store().toHash(branch), is(unchangedCommit));
-    assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
-        contains(
+    assertThat(store().toHash(branch)).isEqualTo(unchangedCommit);
+    assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
+        .contains(
             Optional.of("v1_3"),
             Optional.of("v2_2"),
             Optional.of("v3_2")
-        ));
+        );
 
     final Hash deleteCommit = commit("Conflicting Commit")
         .delete("t1")
         .delete("t2")
         .delete("t3")
         .toBranch(branch);
-    assertThat(store().toHash(branch), is(deleteCommit));
-    assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))),
-        contains(
+    assertThat(store().toHash(branch)).isEqualTo(deleteCommit);
+    assertThat(store().getValues(branch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"))))
+        .contains(
             Optional.empty(),
             Optional.empty(),
             Optional.empty()
-        ));
+        );
   }
 
   /*
@@ -637,8 +631,8 @@ public abstract class AbstractITVersionStore {
         put("keyB", "foo"))
     );
 
-    assertThat(store().getValue(branch, Key.of("keyA")), is("foo"));
-    assertThat(store().getValue(branch, Key.of("keyB")), is("foo"));
+    assertThat(store().getValue(branch, Key.of("keyA"))).isEqualTo("foo");
+    assertThat(store().getValue(branch, Key.of("keyB"))).isEqualTo("foo");
   }
 
   /*
@@ -675,7 +669,6 @@ public abstract class AbstractITVersionStore {
     final BranchName branch = BranchName.of("foo");
     store().create(branch, Optional.empty());
 
-
     final Hash initialHash = store().toHash(branch);
     store().commit(branch, Optional.of(initialHash), "Some commit", Collections.emptyList());
 
@@ -694,7 +687,7 @@ public abstract class AbstractITVersionStore {
     store().create(branch, Optional.empty());
     final Hash hash = store().toHash(branch);
 
-    assertThat(store().getValue(hash, Key.of("arbitrary")), is(nullValue()));
+    assertThat(store().getValue(hash, Key.of("arbitrary"))).isNull();
   }
 
   @Test
@@ -705,9 +698,9 @@ public abstract class AbstractITVersionStore {
 
     final Hash commit = commit("Some commit").toBranch(branch);
     store().create(BranchName.of("bar"), Optional.of(commit));
-    store().create(TagName.of("tag1"),  Optional.of(commit));
-    store().create(TagName.of("tag2"),  Optional.of(commit));
-    store().create(TagName.of("tag3"),  Optional.of(commit));
+    store().create(TagName.of("tag1"), Optional.of(commit));
+    store().create(TagName.of("tag2"), Optional.of(commit));
+    store().create(TagName.of("tag3"), Optional.of(commit));
 
     final Hash anotherCommit = commit("Another commit").toBranch(branch);
     store().assign(TagName.of("tag2"), Optional.of(commit), anotherCommit);
@@ -725,28 +718,29 @@ public abstract class AbstractITVersionStore {
     assertThrows(ReferenceNotFoundException.class,
         () -> store().assign(TagName.of("tag1"), Optional.of(commit), Hash.of("1234567890abcdef")));
 
-    assertThat(store().getCommits(branch).collect(Collectors.toList()), contains(
+    assertThat(store().getCommits(branch)).contains(
         WithHash.of(anotherCommit, "Another commit"),
         WithHash.of(commit, "Some commit")
-    ));
+    );
 
-    assertThat(store().getCommits(BranchName.of("bar")).collect(Collectors.toList()), contains(
+    assertThat(store().getCommits(BranchName.of("bar"))).contains(
         WithHash.of(commit, "Some commit")
-    ));
+    );
 
-    assertThat(store().getCommits(TagName.of("tag1")).collect(Collectors.toList()), contains(
+    assertThat(store().getCommits(TagName.of("tag1"))).contains(
         WithHash.of(commit, "Some commit")
-    ));
+    );
 
-    assertThat(store().getCommits(TagName.of("tag2")).collect(Collectors.toList()), contains(
+    assertThat(store().getCommits(TagName.of("tag2"))).contains(
         WithHash.of(anotherCommit, "Another commit"),
         WithHash.of(commit, "Some commit")
-    ));
+    );
   }
 
   @Nested
   @DisplayName("when transplanting")
   protected class WhenTransplanting {
+
     private Hash initialHash;
     private Hash firstCommit;
     private Hash secondCommit;
@@ -784,13 +778,13 @@ public abstract class AbstractITVersionStore {
       store().create(newBranch, Optional.empty());
 
       store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit, thirdCommit));
-      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))),
-          contains(
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+          .contains(
               Optional.of("v1_2"),
               Optional.of("v2_2"),
               Optional.empty(),
               Optional.of("v4_1")
-      ));
+          );
     }
 
     @Test
@@ -800,14 +794,14 @@ public abstract class AbstractITVersionStore {
       commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
       store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit, thirdCommit));
-      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))),
-          contains(
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
+          .contains(
               Optional.of("v1_2"),
               Optional.of("v2_2"),
               Optional.empty(),
               Optional.of("v4_1"),
               Optional.of("v5_1")
-      ));
+          );
     }
 
     @Test
@@ -828,13 +822,13 @@ public abstract class AbstractITVersionStore {
       commit("Another commit").delete("t1").toBranch(newBranch);
 
       store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit, thirdCommit));
-      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))),
-          contains(
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+          .contains(
               Optional.of("v1_2"),
               Optional.of("v2_2"),
               Optional.empty(),
               Optional.of("v4_1")
-      ));
+          );
     }
 
     @Test
@@ -860,14 +854,14 @@ public abstract class AbstractITVersionStore {
       commit("Another commit").put("t1", "v1_4").toBranch(newBranch);
 
       store().transplant(newBranch, Optional.empty(), Arrays.asList(firstCommit, secondCommit, thirdCommit));
-      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))),
-          contains(
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
+          .contains(
               Optional.of("v1_2"),
               Optional.of("v2_2"),
               Optional.empty(),
               Optional.of("v4_1"),
               Optional.of("v5_1")
-      ));
+          );
     }
 
     @Test
@@ -903,18 +897,18 @@ public abstract class AbstractITVersionStore {
       commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
       store().transplant(newBranch, Optional.of(initialHash), Arrays.asList(firstCommit, secondCommit));
-      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))),
-                 contains(
-                   Optional.of("v1_2"),
-                   Optional.of("v4_1"),
-                   Optional.of("v5_1")
-                 ));
-
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t4"), Key.of("t5"))))
+          .contains(
+              Optional.of("v1_2"),
+              Optional.of("v4_1"),
+              Optional.of("v5_1")
+          );
     }
   }
 
   @Nested
   protected class WhenMerging {
+
     private Hash initialHash;
     private Hash firstCommit;
     private Hash secondCommit;
@@ -938,15 +932,15 @@ public abstract class AbstractITVersionStore {
       store().create(newBranch, Optional.empty());
 
       store().merge(thirdCommit, newBranch, Optional.of(initialHash));
-      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))),
-                 contains(
-                   Optional.of("v1_2"),
-                   Optional.of("v2_2"),
-                   Optional.empty(),
-                   Optional.of("v4_1")
-                 ));
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"))))
+          .contains(
+              Optional.of("v1_2"),
+              Optional.of("v2_2"),
+              Optional.empty(),
+              Optional.of("v4_1")
+          );
 
-      assertThat(store().toHash(newBranch), is(thirdCommit));
+      assertThat(store().toHash(newBranch)).isEqualTo(thirdCommit);
     }
 
     @Test
@@ -956,21 +950,21 @@ public abstract class AbstractITVersionStore {
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
       store().merge(thirdCommit, newBranch, Optional.empty());
-      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))),
-                 contains(
-                   Optional.of("v1_2"),
-                   Optional.of("v2_2"),
-                   Optional.empty(),
-                   Optional.of("v4_1"),
-                   Optional.of("v5_1")
-                 ));
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
+          .contains(
+              Optional.of("v1_2"),
+              Optional.of("v2_2"),
+              Optional.empty(),
+              Optional.of("v4_1"),
+              Optional.of("v5_1")
+          );
 
       final List<WithHash<String>> commits = store().getCommits(newBranch).collect(Collectors.toList());
-      assertThat(commits.size(), is(4));
-      assertThat(commits.get(3).getHash(), is(newCommit));
-      assertThat(commits.get(2).getValue(), is("First Commit"));
-      assertThat(commits.get(1).getValue(), is("Second Commit"));
-      assertThat(commits.get(0).getValue(), is("Third Commit"));
+      assertThat(commits).hasSize(4);
+      assertThat(commits.get(3).getHash()).isEqualTo(newCommit);
+      assertThat(commits.get(2).getValue()).isEqualTo("First Commit");
+      assertThat(commits.get(1).getValue()).isEqualTo("Second Commit");
+      assertThat(commits.get(0).getValue()).isEqualTo("Third Commit");
     }
 
     @Test
@@ -995,21 +989,21 @@ public abstract class AbstractITVersionStore {
       final Hash newCommit = commit("Unrelated commit").put("t5", "v5_1").toBranch(newBranch);
 
       store().merge(thirdCommit, newBranch, Optional.empty());
-      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))),
-                 contains(
-                   Optional.of("v1_2"),
-                   Optional.of("v2_2"),
-                   Optional.empty(),
-                   Optional.of("v4_1"),
-                   Optional.of("v5_1")
-                 ));
+      assertThat(store().getValues(newBranch, Arrays.asList(Key.of("t1"), Key.of("t2"), Key.of("t3"), Key.of("t4"), Key.of("t5"))))
+          .contains(
+              Optional.of("v1_2"),
+              Optional.of("v2_2"),
+              Optional.empty(),
+              Optional.of("v4_1"),
+              Optional.of("v5_1")
+          );
 
       final List<WithHash<String>> commits = store().getCommits(newBranch).collect(Collectors.toList());
-      assertThat(commits.size(), is(4));
-      assertThat(commits.get(3).getHash(), is(firstCommit));
-      assertThat(commits.get(2).getHash(), is(newCommit));
-      assertThat(commits.get(1).getValue(), is("Second Commit"));
-      assertThat(commits.get(0).getValue(), is("Third Commit"));
+      assertThat(commits).hasSize(4);
+      assertThat(commits.get(3).getHash()).isEqualTo(firstCommit);
+      assertThat(commits.get(2).getHash()).isEqualTo(newCommit);
+      assertThat(commits.get(1).getValue()).isEqualTo("Second Commit");
+      assertThat(commits.get(0).getValue()).isEqualTo("Third Commit");
     }
 
     @Test
@@ -1051,9 +1045,9 @@ public abstract class AbstractITVersionStore {
     store().create(BranchName.of(thirdCommit.asString()), Optional.of(firstCommit));
     store().create(TagName.of(secondCommit.asString()), Optional.of(firstCommit));
 
-    assertThat(store().toRef(firstCommit.asString()), is(WithHash.of(firstCommit, firstCommit)));
-    assertThat(store().toRef(secondCommit.asString()), is(WithHash.of(firstCommit, TagName.of(secondCommit.asString()))));
-    assertThat(store().toRef(thirdCommit.asString()), is(WithHash.of(firstCommit, BranchName.of(thirdCommit.asString()))));
+    assertThat(store().toRef(firstCommit.asString())).isEqualTo(WithHash.of(firstCommit, firstCommit));
+    assertThat(store().toRef(secondCommit.asString())).isEqualTo(WithHash.of(firstCommit, TagName.of(secondCommit.asString())));
+    assertThat(store().toRef(thirdCommit.asString())).isEqualTo(WithHash.of(firstCommit, BranchName.of(thirdCommit.asString())));
     // Is it correct to allow a reference with the sentinel reference?
     //assertThat(store().toRef(initialCommit.asString()), is(WithHash.of(initialCommit, initialCommit)));
     assertThrows(ReferenceNotFoundException.class, () -> store().toRef("unknown-ref"));
@@ -1070,24 +1064,24 @@ public abstract class AbstractITVersionStore {
     final Hash secondCommit = commit("Second Commit").put("k2", "v2a").put("k3", "v3").toBranch(branch);
 
     List<Diff<String>> startToSecond = store().getDiffs(initial, secondCommit).collect(Collectors.toList());
-    assertThat(startToSecond, containsInAnyOrder(
+    assertThat(startToSecond).containsExactlyInAnyOrder(
         Diff.of(Key.of("k1"), Optional.empty(), Optional.of("v1")),
         Diff.of(Key.of("k2"), Optional.empty(), Optional.of("v2a")),
         Diff.of(Key.of("k3"), Optional.empty(), Optional.of("v3"))
-    ));
+    );
 
     List<Diff<String>> secondToStart = store().getDiffs(secondCommit, initial).collect(Collectors.toList());
-    assertThat(secondToStart, containsInAnyOrder(
+    assertThat(secondToStart).containsExactlyInAnyOrder(
         Diff.of(Key.of("k1"), Optional.of("v1"), Optional.empty()),
         Diff.of(Key.of("k2"), Optional.of("v2a"), Optional.empty()),
         Diff.of(Key.of("k3"), Optional.of("v3"), Optional.empty())
-    ));
+    );
 
     List<Diff<String>> firstToSecond = store().getDiffs(firstCommit, secondCommit).collect(Collectors.toList());
-    assertThat(firstToSecond, containsInAnyOrder(
+    assertThat(firstToSecond).containsExactlyInAnyOrder(
         Diff.of(Key.of("k2"), Optional.of("v2"), Optional.of("v2a")),
         Diff.of(Key.of("k3"), Optional.empty(), Optional.of("v3"))
-    ));
+    );
 
     List<Diff<String>> firstToFirst = store().getDiffs(firstCommit, firstCommit).collect(Collectors.toList());
     assertTrue(firstToFirst.isEmpty());

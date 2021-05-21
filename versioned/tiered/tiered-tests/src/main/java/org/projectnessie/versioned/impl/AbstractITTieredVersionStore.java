@@ -15,7 +15,7 @@
  */
 package org.projectnessie.versioned.impl;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -36,7 +36,6 @@ import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -231,7 +230,7 @@ public abstract class AbstractITTieredVersionStore {
 
     ReferenceConflictException ex = assertThrows(ReferenceConflictException.class, () ->
         versionStore().merge(versionStore().toHash(branch2), branch1, Optional.of(versionStore().toHash(branch1))));
-    assertThat(ex.getMessage(), Matchers.containsString("conflictKey"));
+    assertThat(ex.getMessage()).contains("conflictKey");
   }
 
   @Test
@@ -244,8 +243,7 @@ public abstract class AbstractITTieredVersionStore {
         Put.of(Key.of("no"), "world"),
         Put.of(Key.of("mad mad"), "world")));
     assertEquals(0, EntityType.L2.loadSingle(store(), InternalL2.EMPTY_ID).size());
-    assertThat(versionStore().getKeys(branch).map(WithType::getValue).map(Key::toString).collect(ImmutableSet.toImmutableSet()),
-        Matchers.containsInAnyOrder("hi", "no", "mad mad"));
+    assertThat(versionStore().getKeys(branch).map(WithType::getValue).map(Key::toString)).containsExactlyInAnyOrder("hi", "no", "mad mad");
   }
 
   @Test
@@ -280,10 +278,10 @@ public abstract class AbstractITTieredVersionStore {
     List<Key> keysFromStore = versionStore().getKeys(branch).map(WithType::getValue).collect(Collectors.toList());
 
     // ensure that our total key size is greater than a single dynamo page.
-    assertThat(keysFromStore.size() * longName.length, Matchers.greaterThan(400000));
+    assertThat(keysFromStore.size() * longName.length).isGreaterThan(400000);
 
     // ensure that keys stored match those expected.
-    assertThat(keysFromStore, Matchers.containsInAnyOrder(names.toArray(new Key[0])));
+    assertThat(keysFromStore).containsExactlyInAnyOrder(names.toArray(new Key[0]));
   }
 
   @Test

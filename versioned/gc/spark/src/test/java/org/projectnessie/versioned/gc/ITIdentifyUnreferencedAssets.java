@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.gc;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -73,7 +73,7 @@ class ITIdentifyUnreferencedAssets {
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = ident.identify(generate(spark));
     Set<String> unreferencedItems = items.collectAsList().stream().map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
         .collect(Collectors.toSet());
-    assertThat(unreferencedItems, containsInAnyOrder("2"));
+    assertThat(unreferencedItems).containsExactlyInAnyOrder("2");
   }
 
   private Dataset<CategorizedValue> generate(SparkSession spark) {

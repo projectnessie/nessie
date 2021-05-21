@@ -15,8 +15,8 @@
  */
 package org.projectnessie.versioned.tiered.gc;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.Serializable;
 import java.time.Clock;
@@ -148,15 +148,15 @@ public class ITTestIdentifyUnreferencedAssets {
         .map(x -> helper.getValueSerializer().fromBytes(ByteString.copyFrom(x))).collect(Collectors.toSet());
     Set<DummyValue> actualValues = valuesList.stream().map(CategorizedValue::getData)
         .map(x -> helper.getValueSerializer().fromBytes(ByteString.copyFrom(x))).collect(Collectors.toSet());
-    assertThat(actualReferencedValues, containsInAnyOrder(expectedReferencedValues.toArray(new DummyValue[0])));
-    assertThat(actualValues, containsInAnyOrder(expectedValues.toArray(new DummyValue[0])));
+    assertThat(actualReferencedValues).containsExactlyInAnyOrder(expectedReferencedValues.toArray(new DummyValue[0]));
+    assertThat(actualValues).containsExactlyInAnyOrder(expectedValues.toArray(new DummyValue[0]));
 
     IdentifyUnreferencedAssets<DummyValue, GcTestUtils.DummyAsset> identifyAssets = new IdentifyUnreferencedAssets<>(
         helper.getValueSerializer(), new GcTestUtils.DummyAssetKeySerializer(), new DummyAssetConverter(), v -> true, spark);
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = identifyAssets.identify(values);
     Set<String> unreferencedItems = items.collectAsList().stream().map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
         .collect(Collectors.toSet());
-    assertThat(unreferencedItems, containsInAnyOrder("-1", "-2", "-3", "-60", "-61"));
+    assertThat(unreferencedItems).containsExactlyInAnyOrder("-1", "-2", "-3", "-60", "-61");
   }
 
   private void save(long microsDt, DummyValue value) {

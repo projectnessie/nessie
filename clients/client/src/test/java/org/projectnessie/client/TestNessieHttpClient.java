@@ -17,10 +17,10 @@
 package org.projectnessie.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.OutputStream;
 import java.net.URI;
@@ -46,7 +46,9 @@ class TestNessieHttpClient {
 
   @Test
   void testNullUri() {
-    assertThrows(IllegalArgumentException.class, () -> NessieClient.builder().withUri((URI) null).build());
+    assertThatThrownBy(() -> NessieClient.builder().withUri((URI) null).build())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Cannot construct Http client. Must have a non-null uri");
   }
 
   @Test
@@ -60,9 +62,10 @@ class TestNessieHttpClient {
       client.getConfigApi().getConfig();
     }
 
-    assertEquals("Basic " + new String(
-        Base64.getUrlEncoder().encode("my_username:very_secret".getBytes(UTF_8)), UTF_8),
-        authHeader.get());
+    assertThat(authHeader.get())
+        .isNotNull()
+        .isEqualTo("Basic " + new String(
+            Base64.getUrlEncoder().encode("my_username:very_secret".getBytes(UTF_8)), UTF_8));
   }
 
   @Test
