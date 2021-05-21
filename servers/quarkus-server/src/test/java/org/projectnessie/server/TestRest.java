@@ -16,13 +16,8 @@
 
 package org.projectnessie.server;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.startsWith;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.projectnessie.model.Validation.HASH_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_OR_HASH_MESSAGE;
-import static org.projectnessie.server.ReferenceMatchers.referenceWithNameAndType;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -46,7 +40,6 @@ import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -130,10 +123,10 @@ class TestRest {
     String branchName2 = "createReferences_branch2";
     assertAll(
         // Tag without hash
-        () -> assertThat(
-            assertThrows(NessieBadRequestException.class,
-                () -> tree.createReference(Tag.of(tagName1, null))).getMessage(),
-            startsWith("Bad Request (HTTP/400): Cannot create an unassigned tag reference")),
+        () ->
+            assertThatThrownBy(() -> tree.createReference(Tag.of(tagName1, null)))
+                .isInstanceOf(NessieBadRequestException.class)
+                .hasMessageStartingWith("Bad Request (HTTP/400): Cannot create an unassigned tag reference"),
         // legit Tag with name + hash
         () -> {
           Reference refTag1 = tree.createReference(Tag.of(tagName2, mainHash));
@@ -150,10 +143,9 @@ class TestRest {
           assertEquals(Branch.of(branchName2, mainHash), refBranch2);
         },
         // Hash
-        () -> assertThat(
-            assertThrows(NessieBadRequestException.class,
-                () -> tree.createReference(Hash.of("cafebabedeafbeef"))).getMessage(),
-            startsWith("Bad Request (HTTP/400): Only tag and branch references can be created")));
+        () -> assertThatThrownBy(() -> tree.createReference(Hash.of("cafebabedeafbeef")))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageStartingWith("Bad Request (HTTP/400): Only tag and branch references can be created"));
   }
 
   @ParameterizedTest
@@ -167,23 +159,25 @@ class TestRest {
     String branchName = "branch" + refNamePart;
     String branchName2 = "branch2" + refNamePart;
 
-    String someHash = tree.getReferenceByName("main").getHash();
+    Reference main = tree.getReferenceByName("main");
+    String someHash = main.getHash();
 
     Reference createdTag = tree.createReference(Tag.of(tagName, someHash));
     assertEquals(Tag.of(tagName, someHash), createdTag);
-    Reference creadedBranch1 = tree.createReference(Branch.of(branchName, someHash));
-    assertEquals(Branch.of(branchName, someHash), creadedBranch1);
-    Reference creadedBranch2 = tree.createReference(Branch.of(branchName2, someHash));
-    assertEquals(Branch.of(branchName2, someHash), creadedBranch2);
+    Reference createdBranch1 = tree.createReference(Branch.of(branchName, someHash));
+    assertEquals(Branch.of(branchName, someHash), createdBranch1);
+    Reference createdBranch2 = tree.createReference(Branch.of(branchName2, someHash));
+    assertEquals(Branch.of(branchName2, someHash), createdBranch2);
 
     Map<String, Reference> references = tree.getAllReferences().stream()
         .filter(r -> "main".equals(r.getName()) || r.getName().endsWith(refNamePart))
         .collect(Collectors.toMap(Reference::getName, Function.identity()));
-    assertThat(references.values(), containsInAnyOrder(
-        referenceWithNameAndType("main", Branch.class),
-        referenceWithNameAndType(tagName, Tag.class),
-        referenceWithNameAndType(branchName, Branch.class),
-        referenceWithNameAndType(branchName2, Branch.class)));
+
+    assertThat(references).containsAllEntriesOf(
+        Map.of(main.getName(), main,
+            createdTag.getName(), createdTag,
+            createdBranch1.getName(), createdBranch1,
+            createdBranch2.getName(), createdBranch2));
 
     Reference tagRef = references.get(tagName);
     Reference branchRef = references.get(branchName);
@@ -193,18 +187,18 @@ class TestRest {
     String branchHash = branchRef.getHash();
     String branchHash2 = branchRef2.getHash();
 
-    assertThat(tree.getReferenceByName(tagName), equalTo(tagRef));
-    assertThat(tree.getReferenceByName(branchName), equalTo(branchRef));
+    assertThat(tree.getReferenceByName(tagName)).isEqualTo(tagRef);
+    assertThat(tree.getReferenceByName(branchName)).isEqualTo(branchRef);
 
     EntriesResponse entries = tree.getEntries(tagName, null, null, Collections.emptyList());
-    assertThat(entries, notNullValue());
+    assertThat(entries).isNotNull();
     entries = tree.getEntries(branchName, null, null, Collections.emptyList());
-    assertThat(entries, notNullValue());
+    assertThat(entries).isNotNull();
 
     LogResponse log = tree.getCommitLog(tagName, null, null);
-    assertThat(log, notNullValue());
+    assertThat(log).isNotNull();
     log = tree.getCommitLog(branchName, null, null);
-    assertThat(log, notNullValue());
+    assertThat(log).isNotNull();
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
     ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
@@ -289,8 +283,8 @@ class TestRest {
     contents.setContents(b, branch, r.getHash(), "commit 2", tb);
     List<ContentsWithKey> keys =
         contents.getMultipleContents("foo", MultiGetContentsRequest.of(a, b, ContentsKey.of("noexist"))).getContents();
-    List<ContentsWithKey> expected = Arrays.asList(ContentsWithKey.of(a, ta), ContentsWithKey.of(b,  tb));
-    assertThat(keys, Matchers.containsInAnyOrder(expected.toArray()));
+    List<ContentsWithKey> expected = Arrays.asList(ContentsWithKey.of(a, ta), ContentsWithKey.of(b, tb));
+    assertThat(keys).containsExactlyInAnyOrderElementsOf(expected);
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }
 
@@ -309,7 +303,7 @@ class TestRest {
     List<EntriesResponse.Entry> expected = Arrays.asList(
         EntriesResponse.Entry.builder().name(a).type(Contents.Type.ICEBERG_TABLE).build(),
         EntriesResponse.Entry.builder().name(b).type(Contents.Type.VIEW).build());
-    assertThat(entries, Matchers.containsInAnyOrder(expected.toArray()));
+    assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
     entries = tree.getEntries(branch, null, null, ImmutableList.of(Contents.Type.ICEBERG_TABLE.name())).getEntries();
     assertEquals(Collections.singletonList(expected.get(0)), entries);
 
@@ -318,7 +312,7 @@ class TestRest {
 
     entries = tree.getEntries(branch, null, null, ImmutableList.of(Contents.Type.VIEW.name(),
         Contents.Type.ICEBERG_TABLE.name())).getEntries();
-    assertThat(entries, Matchers.containsInAnyOrder(expected.toArray()));
+    assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
 
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }
@@ -328,7 +322,7 @@ class TestRest {
     final String branch = "specialchar";
     Reference r = tree.createReference(Branch.of(branch, null));
     //ContentsKey k = ContentsKey.of("/%国","国.国");
-    ContentsKey k = ContentsKey.of("a.b","c.d");
+    ContentsKey k = ContentsKey.of("a.b", "c.d");
     IcebergTable ta = IcebergTable.of("path1");
     contents.setContents(k, branch, r.getHash(), "commit 1", ta);
     assertEquals(ContentsWithKey.of(k, ta), contents.getMultipleContents(branch, MultiGetContentsRequest.of(k)).getContents().get(0));
@@ -340,8 +334,9 @@ class TestRest {
   void checkServerErrorPropagation() throws NessieNotFoundException, NessieConflictException {
     final String branch = "bar";
     tree.createReference(Branch.of(branch, null));
-    NessieConflictException e = assertThrows(NessieConflictException.class, () -> tree.createReference(Branch.of(branch, null)));
-    assertThat(e.getMessage(), Matchers.containsString("already exists"));
+    assertThatThrownBy(() -> tree.createReference(Branch.of(branch, null)))
+        .isInstanceOf(NessieConflictException.class)
+        .hasMessageContaining("already exists");
   }
 
   @ParameterizedTest
@@ -359,6 +354,7 @@ class TestRest {
     Contents cts = IcebergTable.of("moo");
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
     Tag tag = Tag.of("valid", validHash);
+
     assertAll(
         () -> assertEquals("Bad Request (HTTP/400): commitMultipleOperations.branchName: " + REF_NAME_MESSAGE,
             assertThrows(NessieBadRequestException.class,
@@ -378,14 +374,11 @@ class TestRest {
         () -> assertEquals("Bad Request (HTTP/400): assignTag.tagName: " + REF_NAME_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.assignTag(invalidBranchName, validHash, tag)).getMessage()),
-        () -> assertThat(
-            assertThrows(NessieBadRequestException.class,
-                () -> tree.mergeRefIntoBranch(invalidBranchName, validHash, null)).getMessage(),
-            allOf(
-                containsString("Bad Request (HTTP/400): "),
-                containsString("mergeRefIntoBranch.branchName: " + REF_NAME_MESSAGE),
-                containsString("mergeRefIntoBranch.merge: must not be null")
-            )),
+        () -> assertThatThrownBy(() -> tree.mergeRefIntoBranch(invalidBranchName, validHash, null))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageContaining("Bad Request (HTTP/400): ")
+            .hasMessageContaining("mergeRefIntoBranch.branchName: " + REF_NAME_MESSAGE)
+            .hasMessageContaining("mergeRefIntoBranch.merge: must not be null"),
         () -> assertEquals("Bad Request (HTTP/400): deleteTag.tagName: " + REF_NAME_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.deleteTag(invalidBranchName, validHash)).getMessage()),
@@ -426,6 +419,7 @@ class TestRest {
     Contents cts = IcebergTable.of("moo");
     MultiGetContentsRequest mgReq = MultiGetContentsRequest.of(key);
     Tag tag = Tag.of("valid", validHash);
+
     assertAll(
         () -> assertEquals("Bad Request (HTTP/400): commitMultipleOperations.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
@@ -436,14 +430,12 @@ class TestRest {
         () -> assertEquals("Bad Request (HTTP/400): assignTag.oldHash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.assignTag(validBranchName, invalidHash, tag)).getMessage()),
-        () -> assertThat(
-            assertThrows(NessieBadRequestException.class,
-                () -> tree.mergeRefIntoBranch(validBranchName, invalidHash, null)).getMessage(),
-            allOf(
-                containsString("Bad Request (HTTP/400): "),
-                containsString("mergeRefIntoBranch.merge: must not be null"),
-                containsString("mergeRefIntoBranch.hash: " + HASH_MESSAGE)
-            )),
+        () -> assertThatThrownBy(() -> tree.mergeRefIntoBranch(validBranchName, invalidHash, null))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageContaining("Bad Request (HTTP/400): ")
+            .hasMessageContaining("mergeRefIntoBranch.merge: must not be null")
+            .hasMessageContaining("mergeRefIntoBranch.hash: " + HASH_MESSAGE)
+        ,
         () -> assertEquals("Bad Request (HTTP/400): deleteTag.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.deleteTag(validBranchName, invalidHash)).getMessage()),
@@ -456,14 +448,11 @@ class TestRest {
         () -> assertEquals("Bad Request (HTTP/400): deleteContents.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> contents.deleteContents(key, validBranchName, invalidHash, null)).getMessage()),
-        () -> assertThat(
-            assertThrows(NessieBadRequestException.class,
-                () -> contents.getMultipleContents(invalidHash, null)).getMessage(),
-            allOf(
-                containsString("Bad Request (HTTP/400): "),
-                containsString("getMultipleContents.request: must not be null"),
-                containsString("getMultipleContents.ref: " + REF_NAME_OR_HASH_MESSAGE)
-            ))
+        () -> assertThatThrownBy(() -> contents.getMultipleContents(invalidHash, null))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageContaining("Bad Request (HTTP/400): ")
+            .hasMessageContaining("getMultipleContents.request: must not be null")
+            .hasMessageContaining("getMultipleContents.ref: " + REF_NAME_OR_HASH_MESSAGE)
     );
   }
 
@@ -489,46 +478,39 @@ class TestRest {
     String branch = "{\"type\": \"BRANCH\", \"name\": \"" + invalidTagName + "\", \"hash\": \"" + validHash + "\"}";
     String different = "{\"type\": \"FOOBAR\", \"name\": \"" + invalidTagName + "\", \"hash\": \"" + validHash + "\"}";
     assertAll(
-        () -> assertEquals("Bad Request (HTTP/400): assignTag.tag: must not be null",
-            assertThrows(NessieBadRequestException.class,
-                () -> unwrap(() ->
-                    httpClient.newRequest().path("trees/tag/{tagName}")
-                        .resolveTemplate("tagName", validBranchName)
-                        .queryParam("expectedHash", validHash)
-                        .put(null))
-            ).getMessage()),
-        () -> assertThat(
-            assertThrows(NessieBadRequestException.class,
-                () -> unwrap(() ->
-                    httpClient.newRequest().path("trees/tag/{tagName}")
-                        .resolveTemplate("tagName", validBranchName)
-                        .queryParam("expectedHash", validHash)
-                        .put(tag))
-            ).getMessage(),
-            startsWith("Bad Request (HTTP/400): Cannot construct instance of "
+        () -> assertThatThrownBy(() -> unwrap(() ->
+            httpClient.newRequest().path("trees/tag/{tagName}")
+                .resolveTemplate("tagName", validBranchName)
+                .queryParam("expectedHash", validHash)
+                .put(null)))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessage("Bad Request (HTTP/400): assignTag.tag: must not be null"),
+        () -> assertThatThrownBy(() -> unwrap(() ->
+            httpClient.newRequest().path("trees/tag/{tagName}")
+                .resolveTemplate("tagName", validBranchName)
+                .queryParam("expectedHash", validHash)
+                .put(tag)))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageStartingWith("Bad Request (HTTP/400): Cannot construct instance of "
                 + "`org.projectnessie.model.ImmutableTag`, problem: "
-                + REF_NAME_MESSAGE + " - but was: " + invalidTagName + "\n")),
-        () -> assertThat(
-            assertThrows(NessieBadRequestException.class,
-                () -> unwrap(() ->
-                    httpClient.newRequest().path("trees/tag/{tagName}")
-                        .resolveTemplate("tagName", validBranchName)
-                        .queryParam("expectedHash", validHash)
-                        .put(branch))
-            ).getMessage(),
-            startsWith("Bad Request (HTTP/400): Could not resolve type id 'BRANCH' as a subtype of "
+                + REF_NAME_MESSAGE + " - but was: " + invalidTagName + "\n"),
+        () -> assertThatThrownBy(() -> unwrap(() ->
+            httpClient.newRequest().path("trees/tag/{tagName}")
+                .resolveTemplate("tagName", validBranchName)
+                .queryParam("expectedHash", validHash)
+                .put(branch)))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageStartingWith("Bad Request (HTTP/400): Could not resolve type id 'BRANCH' as a subtype of "
                 + "`org.projectnessie.model.Tag`: Class `org.projectnessie.model.Branch` "
-                + "not subtype of `org.projectnessie.model.Tag`\n")),
-        () -> assertThat(
-            assertThrows(NessieBadRequestException.class,
-                () -> unwrap(() ->
-                    httpClient.newRequest().path("trees/tag/{tagName}")
-                        .resolveTemplate("tagName", validBranchName)
-                        .queryParam("expectedHash", validHash)
-                        .put(different))
-            ).getMessage(),
-            startsWith("Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
-                + "`org.projectnessie.model.Tag`: known type ids = []\n"))
+                + "not subtype of `org.projectnessie.model.Tag`\n"),
+        () -> assertThatThrownBy(() -> unwrap(() ->
+            httpClient.newRequest().path("trees/tag/{tagName}")
+                .resolveTemplate("tagName", validBranchName)
+                .queryParam("expectedHash", validHash)
+                .put(different)))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageStartingWith("Bad Request (HTTP/400): Could not resolve type id 'FOOBAR' as a subtype of "
+                + "`org.projectnessie.model.Tag`: known type ids = []\n")
     );
   }
 

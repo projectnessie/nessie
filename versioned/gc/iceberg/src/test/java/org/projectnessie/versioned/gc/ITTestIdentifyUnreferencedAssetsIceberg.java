@@ -16,8 +16,7 @@
 package org.projectnessie.versioned.gc;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -57,7 +56,6 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.util.SerializableConfiguration;
-import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -274,7 +272,7 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
         "ICEBERG_MANIFEST_LIST", 3L,
         "ICEBERG_METADATA", 6L,
         "DATA_FILE", 2L);
-    assertThat(count.entrySet(), (Matcher)hasItems(expected.entrySet().toArray()));
+    assertThat(count.entrySet()).containsAll(expected.entrySet());
 
     //delete all the unused data
     unreferencedItems.values().forEach(AssetKey::delete);
@@ -304,14 +302,14 @@ class ITTestIdentifyUnreferencedAssetsIceberg {
     //all 4 data files still exist (2x adds) 4 crc files
     //1 metadata, 1 manifest list and 2 manifests (1 for each partition) + 4 crc files
     ImmutableMap<String, Long> expectedPathCount = ImmutableMap.of("metadata", 8L, "data", 8L);
-    assertThat(existingPathCount.entrySet(), (Matcher)hasItems(expectedPathCount.entrySet().toArray()));
+    assertThat(existingPathCount.entrySet()).containsAll(expectedPathCount.entrySet());
 
     // 4 parquet for 4 data as above
     // 8 crc as above
     // 3 avro for 2 manifests and 1 manifest list
     // 1 json metadata
     ImmutableMap<String, Long> expectedExtensionCount = ImmutableMap.of("crc", 8L, "json", 1L, "avro", 3L, "parquet", 4L);
-    assertThat(extensionCount.entrySet(), (Matcher)hasItems(expectedExtensionCount.entrySet().toArray()));
+    assertThat(extensionCount.entrySet()).containsAll(expectedExtensionCount.entrySet());
 
     // 4 metadata + 4 data + 8 crc
     assertEquals(16, paths.size());

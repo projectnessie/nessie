@@ -15,9 +15,7 @@
  */
 package org.projectnessie.server.error;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -45,8 +43,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import io.quarkus.test.junit.QuarkusTest;
 
 /**
- * Test reported exceptions both for cases when {@code javax.validation} fails (when the Nessie infra
- * code isn't even run) and exceptions reported <em>by</em> Nessie.
+ * Test reported exceptions both for cases when {@code javax.validation} fails (when the Nessie infra code isn't even run) and exceptions
+ * reported <em>by</em> Nessie.
  */
 @QuarkusTest
 class TestNessieError {
@@ -68,114 +66,96 @@ class TestNessieError {
 
   @Test
   void nullParameterQueryGet() {
-    assertEquals("Bad Request (HTTP/400): nullParameterQueryGet.hash: must not be null",
-                 assertThrows(NessieBadRequestException.class,
-                   () ->
-                       client.newRequest()
-                             .path("nullParameterQueryGet")
-                             .get()).getMessage());
+    assertThatThrownBy(() -> client.newRequest().path("nullParameterQueryGet").get())
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessage("Bad Request (HTTP/400): nullParameterQueryGet.hash: must not be null");
   }
 
   @Test
   void nullParameterQueryPost() {
-    assertEquals("Bad Request (HTTP/400): nullParameterQueryPost.hash: must not be null",
-                 assertThrows(NessieBadRequestException.class,
-                   () ->
-                       client.newRequest()
-                             .path("nullParameterQueryPost")
-                             .post("")).getMessage());
+    assertThatThrownBy(() -> client.newRequest().path("nullParameterQueryPost").post(""))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessage("Bad Request (HTTP/400): nullParameterQueryPost.hash: must not be null");
   }
 
   @Test
   void emptyParameterQueryGet() {
     assertAll(
-        () -> assertEquals("Bad Request (HTTP/400): emptyParameterQueryGet.hash: must not be empty",
-                 assertThrows(NessieBadRequestException.class,
-                   () ->
-                       client.newRequest()
-                             .path("emptyParameterQueryGet")
-                             .get()).getMessage()),
-        () -> assertEquals("Bad Request (HTTP/400): emptyParameterQueryGet.hash: must not be empty",
-                 assertThrows(NessieBadRequestException.class,
-                   () ->
-                       client.newRequest()
-                             .path("emptyParameterQueryGet")
-                             .queryParam("hash", "")
-                             .get()).getMessage())
+        () -> assertThatThrownBy(() -> client.newRequest().path("emptyParameterQueryGet").get())
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessage("Bad Request (HTTP/400): emptyParameterQueryGet.hash: must not be empty"),
+        () -> assertThatThrownBy(() -> client.newRequest().path("emptyParameterQueryGet").queryParam("hash", "").get())
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessage("Bad Request (HTTP/400): emptyParameterQueryGet.hash: must not be empty")
     );
   }
 
   @Test
   void blankParameterQueryGet() {
     assertAll(
-        () -> assertEquals("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank",
-                 assertThrows(NessieBadRequestException.class,
-                   () ->
-                       client.newRequest()
-                             .path("blankParameterQueryGet")
-                             .get()).getMessage()),
-        () -> assertEquals("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank",
-                 assertThrows(NessieBadRequestException.class,
-                   () ->
-                       client.newRequest()
-                             .path("blankParameterQueryGet")
-                             .queryParam("hash", "")
-                             .get()).getMessage()),
-        () -> assertEquals("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank",
-                 assertThrows(NessieBadRequestException.class,
-                   () ->
-                       client.newRequest()
-                             .path("blankParameterQueryGet")
-                             .queryParam("hash", "   ")
-                             .get()).getMessage())
+        () -> assertThatThrownBy(() ->
+            client.newRequest()
+                .path("blankParameterQueryGet")
+                .get())
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessage("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank"),
+        () -> assertThatThrownBy(() ->
+            client.newRequest()
+                .path("blankParameterQueryGet")
+                .queryParam("hash", "")
+                .get())
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessage("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank"),
+        () -> assertThatThrownBy(() ->
+            client.newRequest()
+                .path("blankParameterQueryGet")
+                .queryParam("hash", "   ")
+                .get())
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessage("Bad Request (HTTP/400): blankParameterQueryGet.hash: must not be blank")
     );
   }
 
   @Test
   void entityValueViolation() {
     assertAll(
-        () -> assertThat(assertThrows(NessieBadRequestException.class,
-          () ->
-              client.newRequest()
-                    .path("basicEntity")
-                    .put("not really valid json")
-         ).getMessage(),
-         startsWith("Bad Request (HTTP/400): Unrecognized token 'not': was expecting (JSON String, Number, "
-                    + "Array, Object or token 'null', 'true' or 'false')\n")),
-        () -> assertThat(assertThrows(NessieBadRequestException.class,
-          () ->
-              client.newRequest()
-                    .path("basicEntity")
-                    .put("{}")
-         ).getMessage(),
-         startsWith("Bad Request (HTTP/400): Missing required creator property 'value' (index 0)\n")),
-        () -> assertThat(assertThrows(NessieBadRequestException.class,
-          () ->
-              client.newRequest()
-                    .path("basicEntity")
-                    .put("{\"value\":null}")
-         ).getMessage(),
-         equalTo("Bad Request (HTTP/400): basicEntity.entity.value: must not be null")),
-        () -> assertThat(assertThrows(NessieBadRequestException.class,
-          () ->
-              client.newRequest()
-                    .path("basicEntity")
-                    .put("{\"value\":1.234}")
-         ).getMessage(),
-         equalTo("Bad Request (HTTP/400): basicEntity.entity.value: must be greater than or equal to 3"))
+        () -> assertThatThrownBy(() ->
+            client.newRequest()
+                .path("basicEntity")
+                .put("not really valid json"))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageStartingWith("Bad Request (HTTP/400): Unrecognized token 'not': was expecting (JSON String, Number, "
+                + "Array, Object or token 'null', 'true' or 'false')\n"),
+        () -> assertThatThrownBy(() ->
+            client.newRequest()
+                .path("basicEntity")
+                .put("{}"))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageStartingWith("Bad Request (HTTP/400): Missing required creator property 'value' (index 0)\n"),
+        () -> assertThatThrownBy(() ->
+            client.newRequest()
+                .path("basicEntity")
+                .put("{\"value\":null}"))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageStartingWith("Bad Request (HTTP/400): basicEntity.entity.value: must not be null"),
+        () -> assertThatThrownBy(() ->
+            client.newRequest()
+                .path("basicEntity")
+                .put("{\"value\":1.234}"))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessage("Bad Request (HTTP/400): basicEntity.entity.value: must be greater than or equal to 3")
     );
   }
 
   @Test
   void brokenEntitySerialization() {
     // send something that cannot be deserialized
-    assertThat(assertThrows(NessieBadRequestException.class,
-        () ->
-            unwrap(() -> client.newRequest()
-                  .path("basicEntity")
-                  .put(new OtherEntity("bar")))
-       ).getMessage(),
-        startsWith("Bad Request (HTTP/400): Missing required creator property 'value' (index 0)\n"));
+    assertThatThrownBy(() ->
+        unwrap(() -> client.newRequest()
+            .path("basicEntity")
+            .put(new OtherEntity("bar"))))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessageStartingWith("Bad Request (HTTP/400): Missing required creator property 'value' (index 0)\n");
   }
 
   @Test
@@ -183,11 +163,11 @@ class TestNessieError {
     NessieNotFoundException ex = assertThrows(NessieNotFoundException.class,
         () -> unwrap(() ->
             client.newRequest()
-                  .path("nessieNotFound")
-                  .get()));
+                .path("nessieNotFound")
+                .get()));
     assertAll(
         () -> assertEquals("not-there-message",
-                           ex.getMessage()),
+            ex.getMessage()),
         () -> assertNull(ex.getServerStackTrace()),
         () -> assertEquals(Response.Status.NOT_FOUND.getStatusCode(), ex.getStatus())
     );
@@ -196,50 +176,36 @@ class TestNessieError {
   @Test
   void nonConstraintValidationExceptions() {
     // Exceptions that trigger the "else-ish" part in ResteasyExceptionMapper.toResponse()
+
     assertAll(
-        () -> assertEquals(
-            "Internal Server Error (HTTP/500): javax.validation.ConstraintDefinitionException: meep",
-            assertThrows(NessieInternalServerException.class,
-                () -> unwrap(() ->
-                    client.newRequest()
-                        .path("constraintDefinitionException")
-                        .get())).getMessage()),
-        () -> assertEquals(
-            "Internal Server Error (HTTP/500): javax.validation.ConstraintDeclarationException: meep",
-            assertThrows(NessieInternalServerException.class,
-                () -> unwrap(() ->
-                    client.newRequest()
-                        .path("constraintDeclarationException")
-                        .get())).getMessage()),
-        () -> assertEquals(
-            "Internal Server Error (HTTP/500): javax.validation.GroupDefinitionException: meep",
-            assertThrows(NessieInternalServerException.class,
-                () -> unwrap(() ->
-                    client.newRequest()
-                        .path("groupDefinitionException")
-                        .get())).getMessage())
+        () -> assertThatThrownBy(() -> unwrap(() -> client.newRequest().path("constraintDefinitionException").get()))
+            .isInstanceOf(NessieInternalServerException.class)
+            .hasMessage("Internal Server Error (HTTP/500): javax.validation.ConstraintDefinitionException: meep"),
+        () -> assertThatThrownBy(() -> unwrap(() -> client.newRequest().path("constraintDeclarationException").get()))
+            .isInstanceOf(NessieInternalServerException.class)
+            .hasMessage("Internal Server Error (HTTP/500): javax.validation.ConstraintDeclarationException: meep"),
+        () -> assertThatThrownBy(() -> unwrap(() -> client.newRequest().path("groupDefinitionException").get()))
+            .isInstanceOf(NessieInternalServerException.class)
+            .hasMessage("Internal Server Error (HTTP/500): javax.validation.GroupDefinitionException: meep")
     );
   }
 
   @Test
   void unhandledRuntimeExceptionInStore() {
     // see org.projectnessie.server.error.ErrorTestService.unhandledExceptionInTvsStore
-    assertEquals("Internal Server Error (HTTP/500): java.lang.RuntimeException: Store.getValues-throwing",
-        assertThrows(NessieInternalServerException.class,
-            () -> client.newRequest()
-                .path("unhandledExceptionInTvsStore/runtime")
-                .get()).getMessage());
+    assertThatThrownBy(() -> client.newRequest().path("unhandledExceptionInTvsStore/runtime").get())
+        .isInstanceOf(NessieInternalServerException.class)
+        .hasMessage("Internal Server Error (HTTP/500): java.lang.RuntimeException: Store.getValues-throwing");
+
   }
 
   @Test
   void backendThrottledExceptionInStore() {
     // see org.projectnessie.server.error.ErrorTestService.unhandledExceptionInTvsStore
-    assertEquals("Too Many Requests (HTTP/429): Backend store refused to process the request: "
-            + "org.projectnessie.versioned.BackendLimitExceededException: Store.getValues-throttled",
-        assertThrows(NessieBackendThrottledException.class,
-            () -> client.newRequest()
-                .path("unhandledExceptionInTvsStore/throttle")
-                .get()).getMessage());
+    assertThatThrownBy(() -> client.newRequest().path("unhandledExceptionInTvsStore/throttle").get())
+        .isInstanceOf(NessieBackendThrottledException.class)
+        .hasMessage("Too Many Requests (HTTP/429): Backend store refused to process the request: "
+            + "org.projectnessie.versioned.BackendLimitExceededException: Store.getValues-throttled");
   }
 
   void unwrap(Executable exec) throws Throwable {

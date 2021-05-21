@@ -15,8 +15,7 @@
  */
 package org.projectnessie.versioned.memory;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
@@ -27,8 +26,6 @@ import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.WithHash;
-import org.projectnessie.versioned.memory.Commit;
-import org.projectnessie.versioned.memory.CommitsIterator;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -62,45 +59,45 @@ public class TestCommitsIterator {
   @Test
   public void testIterator() {
     final Iterator<WithHash<Commit<String, String>>> iterator = new CommitsIterator<>(COMMITS::get, HASH_OF_4);
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_4, FOURTH_COMMIT)));
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_3, THIRD_COMMIT)));
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_2, SECOND_COMMIT)));
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_1, FIRST_COMMIT)));
-    assertThat(iterator.hasNext(), is(false));
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_4, FOURTH_COMMIT));
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_3, THIRD_COMMIT));
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_2, SECOND_COMMIT));
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_1, FIRST_COMMIT));
+    assertThat(iterator.hasNext()).isFalse();
     assertThrows(NoSuchElementException.class, iterator::next);
   }
 
   @Test
   public void testNoHasNextCheck() {
     final Iterator<WithHash<Commit<String, String>>> iterator = new CommitsIterator<>(COMMITS::get, HASH_OF_4);
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_4, FOURTH_COMMIT)));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_3, THIRD_COMMIT)));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_2, SECOND_COMMIT)));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_1, FIRST_COMMIT)));
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_4, FOURTH_COMMIT));
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_3, THIRD_COMMIT));
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_2, SECOND_COMMIT));
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_1, FIRST_COMMIT));
     assertThrows(NoSuchElementException.class, iterator::next);
   }
 
   @Test
   public void testMultipleHasNextChecks() {
     final Iterator<WithHash<Commit<String, String>>> iterator = new CommitsIterator<>(COMMITS::get, HASH_OF_4);
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_4, FOURTH_COMMIT)));
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_3, THIRD_COMMIT)));
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_2, SECOND_COMMIT)));
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_1, FIRST_COMMIT)));
-    assertThat(iterator.hasNext(), is(false));
-    assertThat(iterator.hasNext(), is(false));
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_4, FOURTH_COMMIT));
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_3, THIRD_COMMIT));
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_2, SECOND_COMMIT));
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_1, FIRST_COMMIT));
+    assertThat(iterator.hasNext()).isFalse();
+    assertThat(iterator.hasNext()).isFalse();
     assertThrows(NoSuchElementException.class, iterator::next);
   }
 
@@ -108,8 +105,8 @@ public class TestCommitsIterator {
   public void testInvalidState() {
     final Map<Hash, Commit<String, String>> commits = ImmutableMap.of(HASH_OF_4, FOURTH_COMMIT);
     final Iterator<WithHash<Commit<String, String>>> iterator = new CommitsIterator<>(commits::get, HASH_OF_4);
-    assertThat(iterator.hasNext(), is(true));
-    assertThat(iterator.next(), is(WithHash.of(HASH_OF_4, FOURTH_COMMIT)));
+    assertThat(iterator.hasNext()).isTrue();
+    assertThat(iterator.next()).isEqualTo(WithHash.of(HASH_OF_4, FOURTH_COMMIT));
     assertThrows(IllegalStateException.class, iterator::hasNext);
     assertThrows(IllegalStateException.class, iterator::next);
   }
@@ -125,7 +122,7 @@ public class TestCommitsIterator {
   @Test
   public void testEmpty() {
     final Iterator<WithHash<Commit<String, String>>> iterator = new CommitsIterator<>(COMMITS::get, Commit.NO_ANCESTOR);
-    assertThat(iterator.hasNext(), is(false));
+    assertThat(iterator.hasNext()).isFalse();
     assertThrows(NoSuchElementException.class, iterator::next);
   }
 }

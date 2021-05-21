@@ -16,8 +16,7 @@
 package org.projectnessie.versioned.gc.actions;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.time.Clock;
@@ -52,7 +51,6 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.util.SerializableConfiguration;
-import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -77,6 +75,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
 class ITTestIdentifyUnreferencedAssetsActions {
+
   private static final Logger LOGGER = LoggerFactory.getLogger(ITTestIdentifyUnreferencedAssetsActions.class);
 
   private static final String BRANCH = ITTestIdentifyUnreferencedAssetsActions.class.getName();
@@ -84,7 +83,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
   private static final TableIdentifier TABLE_IDENTIFIER = TableIdentifier.of("test", "table");
   private static final TableIdentifier TABLE_IDENTIFIER2 = TableIdentifier.of("test", "table2");
   private static final Schema SCHEMA = new Schema(Types.StructType.of(required(1, "foe1", Types.StringType.get()),
-                                                                      required(2, "foe2", Types.StringType.get())).fields());
+      required(2, "foe2", Types.StringType.get())).fields());
 
   private static final int NESSIE_PORT = Integer.getInteger("quarkus.http.test-port", 19120);
   private static final String NESSIE_ENDPOINT = String.format("http://localhost:%d/api/v1", NESSIE_PORT);
@@ -125,11 +124,11 @@ class ITTestIdentifyUnreferencedAssetsActions {
         .set("spark.sql.extensions", "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions")
         .set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
     spark = SparkSession
-      .builder()
-      .appName("test-nessie-gc-iceberg")
-      .config(conf)
-      .master("local[2]")
-      .getOrCreate();
+        .builder()
+        .appName("test-nessie-gc-iceberg")
+        .config(conf)
+        .master("local[2]")
+        .getOrCreate();
 
     //create new spark session for 2nd branch committer
     sparkDeleteBranch = spark.newSession();
@@ -210,8 +209,8 @@ class ITTestIdentifyUnreferencedAssetsActions {
     // Create schema
     StructType schema = DataTypes
         .createStructType(new StructField[] {
-          DataTypes.createStructField("foe1", DataTypes.StringType, false),
-          DataTypes.createStructField("foe2", DataTypes.StringType, false)
+            DataTypes.createStructField("foe1", DataTypes.StringType, false),
+            DataTypes.createStructField("foe2", DataTypes.StringType, false)
         });
 
     Dataset<Row> dataDF = spark.sqlContext().createDataFrame(rowRDD, schema);
@@ -244,7 +243,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
     Multimap<String, String> unreferencedItems = unreferencedAssets.collectAsList()
         .stream()
         .collect(Multimaps.toMultimap(x -> x.getString(4),
-          x -> x.getString(5), HashMultimap::create));
+            x -> x.getString(5), HashMultimap::create));
     Map<String, Integer> count = unreferencedItems.keySet().stream()
         .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems.get(x).size()));
     Set<String> paths = new HashSet<>(unreferencedItems.values());
@@ -259,8 +258,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
         "ICEBERG_MANIFEST_LIST", 1,
         "ICEBERG_METADATA", 2,
         "DATA_FILE", 2);
-    assertThat(count.entrySet(), (Matcher)hasItems(expected.entrySet().toArray()));
-
+    assertThat(count.entrySet()).containsAll(expected.entrySet());
 
     //delete second second branch and re-run asset identification
     client.getTreeApi().deleteBranch(BRANCH, client.getTreeApi().getReferenceByName(BRANCH).getHash());
@@ -272,7 +270,7 @@ class ITTestIdentifyUnreferencedAssetsActions {
     Multimap<String, String> unreferencedItems2 = unreferencedAssets2.collectAsList()
         .stream()
         .collect(Multimaps.toMultimap(x -> x.getString(4),
-          x -> x.getString(5), HashMultimap::create));
+            x -> x.getString(5), HashMultimap::create));
     Map<String, Integer> count2 = unreferencedItems2.keySet().stream()
         .collect(Collectors.toMap(Function.identity(), x -> unreferencedItems2.get(x).size()));
     paths.addAll(unreferencedItems2.values());
@@ -287,28 +285,28 @@ class ITTestIdentifyUnreferencedAssetsActions {
         "ICEBERG_MANIFEST_LIST", 2,
         "ICEBERG_METADATA", 4,
         "DATA_FILE", 4);
-    assertThat(count2.entrySet(), (Matcher)hasItems(expected2.entrySet().toArray()));
+    assertThat(count2.entrySet()).containsAll(expected2.entrySet());
 
     // now collect and remove both tables.
     Table table = catalogMainBranch.loadTable(GcActions.DEFAULT_TABLE_IDENTIFIER);
     GcTableCleanAction.GcTableCleanResult result =
         new GcTableCleanAction(table, sparkMain).dropGcTable(true).deleteCountThreshold(1).deleteOnPurge(false).execute();
-    Assertions.assertEquals(result.getDeletedAssetCount(), 14);
-    Assertions.assertEquals(result.getFailedDeletes(), 0);
-    Assertions.assertEquals(result.getDeletedAssetCount(), paths.size());
+    assertThat(result.getDeletedAssetCount()).isEqualTo(14);
+    assertThat(result.getFailedDeletes()).isEqualTo(0);
+    assertThat(result.getDeletedAssetCount()).isEqualTo(paths.size());
     paths.forEach(p -> Assertions.assertFalse(new File(p).exists()));
   }
 
   private static GcActionsConfig actionsConfig() {
     return GcActionsConfig.builder().dynamoRegion("us-west-2").dynamoEndpoint("http://localhost:8000")
-      .storeType(GcActionsConfig.StoreType.DYNAMO).build();
+        .storeType(GcActionsConfig.StoreType.DYNAMO).build();
   }
 
   private static GcOptions gcOptions(Clock clock) {
     return GcOptions.builder()
-      .bloomFilterCapacity(10_000_000)
-      .timeSlopMicros(1)
-      .maxAgeMicros(clock.millis() * 1000)
-      .build();
+        .bloomFilterCapacity(10_000_000)
+        .timeSlopMicros(1)
+        .maxAgeMicros(clock.millis() * 1000)
+        .build();
   }
 }

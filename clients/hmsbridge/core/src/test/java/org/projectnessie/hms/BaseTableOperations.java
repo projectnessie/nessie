@@ -15,14 +15,12 @@
  */
 package org.projectnessie.hms;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
 
-import org.hamcrest.Matchers;
-import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,11 +48,11 @@ public abstract class BaseTableOperations extends BaseHiveOps {
         + "union all select 3,3,3 "
         + "union all select 4,4,4 ");
     List<String> partitions = shell.executeQuery("show partitions t1");
-    assertThat(partitions, Matchers.containsInAnyOrder(new String[] {"c=1","c=2","c=3","c=4"}));
+    assertThat(partitions).containsExactlyInAnyOrder("c=1","c=2","c=3","c=4");
 
     shell.execute("alter table t1 drop partition (c=1)");
     List<String> partitions2 = shell.executeQuery("show partitions t1");
-    assertThat(partitions2, Matchers.containsInAnyOrder(new String[] {"c=2","c=3","c=4"}));
+    assertThat(partitions2).containsExactlyInAnyOrder("c=2","c=3","c=4");
 
     // TODO, fix infinite loop in drop partitions. Need to expose correct transactional property for table.
     shell.execute("drop table t1");
@@ -102,9 +100,9 @@ public abstract class BaseTableOperations extends BaseHiveOps {
     shell.execute("alter database `$nessie` set dbproperties (\"ref\"=\"dev\")");
     shell.execute("drop table t1");
 
-    Object[] items = shell.executeQuery("show tables in `$nessie`").toArray();
+    List<String> items = shell.executeQuery("show tables in `$nessie`");
 
-    assertThat(Arrays.asList("main", "dev"), Matchers.containsInAnyOrder(items));
+    assertThat(Arrays.asList("main", "dev")).containsExactlyInAnyOrderElementsOf(items);
   }
 
   @Test
@@ -116,8 +114,7 @@ public abstract class BaseTableOperations extends BaseHiveOps {
 
   private static <T extends Throwable> T assertThrows(String expectedMessageFragment, Class<T> clazz, Executable e) {
     T ex = Assertions.assertThrows(clazz, e);
-    assertThat(ex.getMessage(), StringContains.containsString(expectedMessageFragment));
+    assertThat(ex.getMessage()).contains(expectedMessageFragment);
     return ex;
   }
-
 }
