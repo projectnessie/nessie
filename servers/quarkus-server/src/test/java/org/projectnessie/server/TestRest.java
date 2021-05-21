@@ -434,8 +434,7 @@ class TestRest {
             .isInstanceOf(NessieBadRequestException.class)
             .hasMessageContaining("Bad Request (HTTP/400): ")
             .hasMessageContaining("mergeRefIntoBranch.merge: must not be null")
-            .hasMessageContaining("mergeRefIntoBranch.hash: " + HASH_MESSAGE)
-        ,
+            .hasMessageContaining("mergeRefIntoBranch.hash: " + HASH_MESSAGE),
         () -> assertEquals("Bad Request (HTTP/400): deleteTag.hash: " + HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.deleteTag(validBranchName, invalidHash)).getMessage()),
