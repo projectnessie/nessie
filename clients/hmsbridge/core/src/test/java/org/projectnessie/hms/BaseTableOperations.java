@@ -16,15 +16,14 @@
 package org.projectnessie.hms;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.function.Executable;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 
@@ -35,8 +34,12 @@ public abstract class BaseTableOperations extends BaseHiveOps {
 
   @Test
   public void invalidTypes() {
-    assertThrows("immutable=true", Exception.class, () -> shell.execute("create external table t2 (a int, b int) PARTITIONED BY (c int);"));
-    assertThrows("External Tables", Exception.class, () -> shell.execute("create table t2 (a int, b int) PARTITIONED BY (c int);"));
+    assertThatThrownBy(() -> shell.execute("create external table t2 (a int, b int) PARTITIONED BY (c int);"))
+        .isInstanceOf(Exception.class)
+        .hasMessageContaining("immutable=true");
+    assertThatThrownBy(() -> shell.execute("create table t2 (a int, b int) PARTITIONED BY (c int);"))
+        .isInstanceOf(Exception.class)
+        .hasMessageContaining("External Tables");
   }
 
   @Test
@@ -48,11 +51,11 @@ public abstract class BaseTableOperations extends BaseHiveOps {
         + "union all select 3,3,3 "
         + "union all select 4,4,4 ");
     List<String> partitions = shell.executeQuery("show partitions t1");
-    assertThat(partitions).containsExactlyInAnyOrder("c=1","c=2","c=3","c=4");
+    assertThat(partitions).containsExactlyInAnyOrder("c=1", "c=2", "c=3", "c=4");
 
     shell.execute("alter table t1 drop partition (c=1)");
     List<String> partitions2 = shell.executeQuery("show partitions t1");
-    assertThat(partitions2).containsExactlyInAnyOrder("c=2","c=3","c=4");
+    assertThat(partitions2).containsExactlyInAnyOrder("c=2", "c=3", "c=4");
 
     // TODO, fix infinite loop in drop partitions. Need to expose correct transactional property for table.
     shell.execute("drop table t1");
@@ -110,11 +113,5 @@ public abstract class BaseTableOperations extends BaseHiveOps {
     shell.execute("create external table t1 (a int, b int) PARTITIONED BY (c int) TBLPROPERTIES (\"immutable\"=\"true\");");
     List<Object[]> records = shell.executeStatement("describe t1");
     shell.execute("DROP TABLE t1");
-  }
-
-  private static <T extends Throwable> T assertThrows(String expectedMessageFragment, Class<T> clazz, Executable e) {
-    T ex = Assertions.assertThrows(clazz, e);
-    assertThat(ex.getMessage()).contains(expectedMessageFragment);
-    return ex;
   }
 }

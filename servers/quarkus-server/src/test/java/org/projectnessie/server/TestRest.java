@@ -123,10 +123,9 @@ class TestRest {
     String branchName2 = "createReferences_branch2";
     assertAll(
         // Tag without hash
-        () ->
-            assertThatThrownBy(() -> tree.createReference(Tag.of(tagName1, null)))
-                .isInstanceOf(NessieBadRequestException.class)
-                .hasMessageStartingWith("Bad Request (HTTP/400): Cannot create an unassigned tag reference"),
+        () -> assertThatThrownBy(() -> tree.createReference(Tag.of(tagName1, null)))
+            .isInstanceOf(NessieBadRequestException.class)
+            .hasMessageStartingWith("Bad Request (HTTP/400): Cannot create an unassigned tag reference"),
         // legit Tag with name + hash
         () -> {
           Reference refTag1 = tree.createReference(Tag.of(tagName2, mainHash));
