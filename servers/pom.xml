@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.projectnessie</groupId>
     <artifactId>nessie</artifactId>
-    <version>0.6.1-SNAPSHOT</version>
+    <version>0.6.1</version>
   </parent>
 
   <artifactId>nessie-server-parent</artifactId>
