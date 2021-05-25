@@ -6,8 +6,9 @@ from collections import defaultdict
 from typing import Any
 from typing import Dict
 from typing import Generator
-from typing import Mapping
 from typing import List
+from typing import Mapping
+from typing import Optional
 from typing import Tuple
 
 import attr
@@ -454,6 +455,7 @@ def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: s
             content_json = click.get_text_stream("stdin").read()
 
         MARKER = "# Everything below is ignored\n"
+        message: Optional[str] = None
         if delete:
             message = "\n\n" + MARKER
         else:
@@ -466,8 +468,7 @@ def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: s
                 + " Removing the content results in a delete"
             )
             try:
-                m = click.edit(edit_message)
-                message = m if m is not None else ""
+                message = click.edit(edit_message)
             except click.ClickException:
                 message = edit_message
 
@@ -480,15 +481,13 @@ def _get_contents(nessie: NessieClient, ref: str, delete: bool = False, *keys: s
     return contents_altered
 
 
-def _get_commit_message(*keys: str) -> str:
+def _get_commit_message(*keys: str) -> Optional[str]:
     MARKER = "# Everything below is ignored\n"
     message = click.edit("\n\n" + MARKER + "\n".join(keys))
-    if message is not None:
-        return message.split(MARKER, 1)[0].rstrip("\n")
-    return ""
+    return message.split(MARKER, 1)[0].rstrip("\n") if message is not None else None
 
 
-def _get_message(message: str, *keys: str) -> str:
+def _get_message(message: str, *keys: str) -> Optional[str]:
     if message:
         return message
     return _get_commit_message(*keys)
