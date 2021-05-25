@@ -716,6 +716,11 @@
           <artifactId>build-helper-maven-plugin</artifactId>
           <version>3.2.0</version>
         </plugin>
+        <plugin>
+          <groupId>org.owasp</groupId>
+          <artifactId>dependency-check-maven</artifactId>
+          <version>6.1.6</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -1232,7 +1237,6 @@ limitations under the License.
             <plugin>
               <groupId>org.owasp</groupId>
               <artifactId>dependency-check-maven</artifactId>
-              <version>6.1.6</version>
               <configuration>
                 <format>HTML</format>
                 <skipProvidedScope>true</skipProvidedScope>
