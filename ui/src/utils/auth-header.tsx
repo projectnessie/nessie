@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 import {authenticationService} from '../services';
+import {nessieVersion} from "./versions";
 
-export function authHeader() : Record<string, string> {
+export function nessieRequestHeaders() : Record<string, string> {
   // return authorization header with jwt token
   const currentUser = authenticationService.currentUserValue;
+  // TODO how can we get the current Nessie version here??
   if (currentUser && currentUser.token) {
-    return {Authorization: `Bearer ${currentUser.token}`};
+    return {Authorization: `Bearer ${currentUser.token}`, "Nessie-Version": nessieVersion};
   } else {
-    return {};
+    return {"Nessie-Version": nessieVersion};
   }
 }

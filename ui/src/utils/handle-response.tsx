@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 import {authenticationService} from '../services';
+import {verifyServerVersion} from "./versions";
 
 export function handleResponse(response: Response) {
+  let rejected = verifyServerVersion(response.headers)
+  if (rejected != null) {
+    return rejected;
+  }
+
   return response.text().then(text => {
     const data = text && JSON.parse(text);
     if (!response.ok) {

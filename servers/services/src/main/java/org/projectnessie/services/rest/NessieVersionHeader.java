@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.projectnessie.client.http;
+package org.projectnessie.services.rest;
 
 import java.io.IOException;
-import java.io.InputStream;
+import javax.ws.rs.ext.Provider;
+import javax.ws.rs.ext.WriterInterceptor;
+import javax.ws.rs.ext.WriterInterceptorContext;
+import org.projectnessie.common.NessieVersion;
 
-/** Interface for the important parts of a response. This is created after executing the request. */
-public interface ResponseContext {
+@Provider
+public class NessieVersionHeader implements WriterInterceptor {
 
-  Status getResponseCode() throws IOException;
-
-  InputStream getInputStream() throws IOException;
-
-  InputStream getErrorStream() throws IOException;
-
-  String getHeader(String header);
+  @Override
+  public void aroundWriteTo(WriterInterceptorContext context) throws IOException {
+    context.getHeaders().add("Nessie-Version", NessieVersion.NESSIE_VERSION.toString());
+    context.proceed();
+  }
 }

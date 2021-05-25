@@ -14,11 +14,23 @@
  * limitations under the License.
  */
 
-import {DefaultApi} from "./api/apis";
-import {Configuration} from "./api";
+import {Configuration, DefaultApi, ResponseContext} from "./api";
+import {nessieVersion, verifyServerVersion} from "./versions";
 
 function api() {
-  return new DefaultApi(new Configuration({"basePath": ""}));
+  return new DefaultApi(new Configuration({
+    "basePath": "",
+    "headers": { "Nessie-Version": nessieVersion },
+    "middleware": [ { "post": function(context: ResponseContext): Promise<Response> {
+          let rejected = verifyServerVersion(context.response.headers)
+          if (rejected != null) {
+            return rejected;
+          }
+          return Promise.resolve(context.response)
+        }
+      }
+    ]
+  }));
 }
 
 export {api};

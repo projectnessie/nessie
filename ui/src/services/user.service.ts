@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 import {config} from '../config';
-import {authHeader, handleResponse} from '../utils';
+import {handleResponse, nessieRequestHeaders} from '../utils';
 
 export const userService = {
   getAll
 };
 
 function getAll() {
-  const requestOptions = {method: 'GET', headers: authHeader()};
+  const requestOptions = {method: 'GET', headers: nessieRequestHeaders()};
   return fetch(`${config.apiUrl}/users`, requestOptions).then(handleResponse);
 }

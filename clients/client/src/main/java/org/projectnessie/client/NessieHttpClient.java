@@ -34,6 +34,7 @@ import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import javax.ws.rs.WebApplicationException;
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
@@ -41,8 +42,11 @@ import org.projectnessie.client.auth.AwsAuth;
 import org.projectnessie.client.auth.BasicAuthFilter;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpClientException;
+import org.projectnessie.client.http.RequestContext;
 import org.projectnessie.client.http.RequestFilter;
+import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.rest.NessieHttpResponseFilter;
+import org.projectnessie.common.NessieVersion;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 
@@ -87,6 +91,7 @@ class NessieHttpClient implements NessieClient {
       addTracing(client);
     }
     authFilter(client, authType, username, password);
+    addNessieVersionFilter(client);
     client.register(new NessieHttpResponseFilter(mapper));
     contents = wrap(ContentsApi.class, new ClientContentsApi(client));
     tree = wrap(TreeApi.class, new ClientTreeApi(client));
@@ -139,6 +144,31 @@ class NessieHttpClient implements NessieClient {
                 }
               });
     }
+  }
+
+  private void addNessieVersionFilter(HttpClient client) {
+    client.register(
+        (RequestContext c) -> {
+          c.putHeader("Nessie-Version", NessieVersion.NESSIE_VERSION.toString());
+        });
+    client.register(
+        (ResponseContext r) -> {
+          String remoteNessieVersion = r.getHeader("Nessie-Version");
+          if (remoteNessieVersion == null) {
+            throw new WebApplicationException(
+                "Response from Nessie-Server misses the Nessie-Version header, "
+                    + "considering server as incompatible");
+          }
+          if (!NessieVersion.isApiCompatible(remoteNessieVersion)) {
+            throw new WebApplicationException(
+                String.format(
+                    "Response Nessie-Server version %s is incompatible "
+                        + "with local client version %s, requires server version %s",
+                    remoteNessieVersion,
+                    NessieVersion.NESSIE_VERSION,
+                    NessieVersion.NESSIE_MIN_API_VERSION));
+          }
+        });
   }
 
   private void authFilter(HttpClient client, AuthType authType, String username, String password) {
