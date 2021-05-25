@@ -128,8 +128,8 @@
     <assertj.version>3.19.0</assertj.version>
     <awssdk.version>2.16.68</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
-    <deltalake2.version>0.6.2-nessie</deltalake2.version>
-    <deltalake3.version>0.8.0-nessie</deltalake3.version>
+    <deltalake2.version>1.0.0</deltalake2.version>
+    <deltalake3.version>1.0.0</deltalake3.version>
     <dynamodb.version>1.12.0</dynamodb.version>
     <errorprone.javac.version>9+181-r4173-1</errorprone.javac.version>
     <flapdoodle.version>3.0.0</flapdoodle.version>
