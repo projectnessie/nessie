@@ -230,6 +230,9 @@
               <goal>generate-code-tests</goal>
               <goal>build</goal>
             </goals>
+            <configuration>
+              <skipOriginalJarRename>true</skipOriginalJarRename>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -282,6 +285,39 @@
                   <systemPropertyVariables>
                     <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                   </systemPropertyVariables>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <!-- Profile "release" is rather exclusively used by CI -->
+      <id>uber-jar</id>
+      <properties>
+        <quarkus.package.type>uber-jar</quarkus.package.type>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-artifacts</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>attach-artifact</goal>
+                </goals>
+                <configuration>
+                  <artifacts>
+                    <artifact>
+                      <file>${project.build.directory}/${project.build.finalName}-runner.jar</file>
+                      <type>jar</type>
+                      <classifier>runner</classifier>
+                    </artifact>
+                  </artifacts>
                 </configuration>
               </execution>
             </executions>
