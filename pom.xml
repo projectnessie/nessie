@@ -997,11 +997,14 @@ limitations under the License.
               <excludes>
                 <exclude>.idea/**</exclude>
                 <exclude>spotless/**</exclude>
+                <exclude>python/**</exclude>
+                <exclude>site/**</exclude>
                 <exclude>**/pom.xml</exclude>
                 <exclude>**/.flattened-pom.xml</exclude>
                 <exclude>**/target/**</exclude>
                 <exclude>**/build/**</exclude>
                 <exclude>**/node_modules/**</exclude>
+                <exclude>**/venv/**</exclude>
               </excludes>
               <trimTrailingWhitespace/>
               <endWithNewline/>
