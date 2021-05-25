@@ -20,8 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-import javax.annotation.Nullable;
-
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -66,11 +64,7 @@ public abstract class Contents {
    *
    * <p>This id is unique for the entire lifetime of this Contents object and persists across renames. Two contents with the same key
    * will have different id.
-   *
-   * <p>todo this is nullable to maintain backwards compatibility with the version of nessie deployed with iceberg. Remove after 0.6.0 is
-   *     finished (#1054)
    */
-  @Nullable
   @Value.Default
   public String getId() {
     return UUID.randomUUID().toString();
