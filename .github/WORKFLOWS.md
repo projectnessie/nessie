@@ -10,10 +10,8 @@ commit that shall become a release must all have the "success" result (the green
 
 1. Know the next Nessie version number ;)
 1. Check + update the files
-    * `python/pynessie/__init__.py`
     * `python/HISTORY.rst`
     * `site/docs/try/releases.md`
-    * `site/mkdocs.yml` (`extra.versions.*`)
     * `model/src/main/java/org/projectnessie/api/package-info.java`
 1. Prepare a PR with the updates of the above files and get it merged.
 
