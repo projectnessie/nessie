@@ -21,8 +21,8 @@ import java.nio.file.FileAlreadyExistsException
 import java.util.UUID
 import java.util.regex.Pattern
 import org.projectnessie.client.{NessieClient, NessieConfigConstants}
-import org.projectnessie.error.NessieNotFoundException
-import org.projectnessie.model.{CommitMeta, ContentsKey, DeltaLakeTable, ImmutableDeltaLakeTable, ImmutableOperations, Operations, Reference}
+import org.projectnessie.error.{NessieConflictException, NessieNotFoundException}
+import org.projectnessie.model.{CommitMeta, ContentsKey, DeltaLakeTable, ImmutableDeltaLakeTable, ImmutableOperations, Reference}
 import org.apache.commons.io.IOUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
@@ -35,6 +35,7 @@ import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.projectnessie.model.Operation.Put
 
+import java.util
 import scala.collection.JavaConverters._
 import scala.util.Try
 
@@ -51,11 +52,17 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     NessieClient.builder().fromConfig(c => hadoopConf.get(c)).build()
   }
 
-  private def getOrCreate(): Reference = {
+  /**
+   * Keeps a mapping of reference name to current hash.
+   */
+  private val referenceMap: util.Map[String, Reference] = {
     val requestedRef = hadoopConf.get(NessieConfigConstants.CONF_NESSIE_REF)
 
     try {
-      Option(requestedRef).map(client.getTreeApi.getReferenceByName(_)).getOrElse(client.getTreeApi.getDefaultBranch)
+      val ref = Option(requestedRef).map(client.getTreeApi.getReferenceByName(_)).getOrElse(client.getTreeApi.getDefaultBranch)
+      val map: util.Map[String, Reference] = new util.HashMap[String, Reference]
+      map.put(requestedRef, ref)
+      map
     } catch {
       case ex: NessieNotFoundException =>
         if (requestedRef != null) throw new IllegalArgumentException(s"Nessie ref $requestedRef provided " +
@@ -65,7 +72,25 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     }
   }
 
-  private var reference: Reference = getOrCreate()
+  private def configuredRef(): Reference = {
+    val refName = hadoopConf.get(NessieConfigConstants.CONF_NESSIE_REF)
+    referenceByName(refName)
+  }
+
+  private def referenceByName(refName: String): Reference = {
+    var ref = referenceMap.get(refName)
+    if (ref == null) {
+      ref = client.getTreeApi.getReferenceByName(refName)
+      referenceMap.put(refName, ref)
+    }
+    ref
+  }
+
+  private def updateReference(ref: Reference): Unit = {
+    referenceMap.put(ref.getName, ref)
+  }
+
+  private def refreshReference(refName: String): Unit = referenceMap.remove(refName)
 
   override def listFrom(path: Path): Iterator[FileStatus] = {
     throw new UnsupportedOperationException("listFrom from Nessie does not work.")
@@ -89,7 +114,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   override def write(path: Path, actions: Iterator[String], overwrite: Boolean = false): Unit = {
     if (path.getName.equals("_last_checkpoint")) {
-      commit(path, reference.getName, reference.getHash, lastCheckpoint = actions.mkString)
+      commit(path, configuredRef().getName, configuredRef().getHash, lastCheckpoint = actions.mkString)
       return
     }
     val parent = path.getParent
@@ -148,18 +173,32 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
   }
 
   private def commit(path: Path, ref: String, hash: String, message: String = "delta commit", lastCheckpoint: String = null): Boolean = {
-    val targetRef = if (ref == null) reference.getName else ref
-    val targetHash = if (hash == null) reference.getHash else hash
-    val table = updateDeltaTable(path, targetRef, lastCheckpoint)
-    val put = Put.of(pathToKey(path.getParent), table)
-    val meta = CommitMeta.builder()
-      .message(message)
-      .putProperties("spark.app.id", sparkConf.get("spark.app.id"))
-      .putProperties("application.type", "delta")
-      .build()
-    val op = ImmutableOperations.builder().addOperations(put).commitMeta(meta).build()
-    client.getTreeApi.commitMultipleOperations(targetRef, targetHash, op)
-    reference = client.getTreeApi.getReferenceByName(reference.getName)
+    // if no expected-hash is given and the commit runs into a conflict, let the operation retry once
+    var retries = if (hash == null) 1 else 0
+    while (true) {
+      val targetRef = if (ref == null) configuredRef().getName else ref
+      val targetHash = if (hash == null) referenceByName(targetRef).getHash else hash
+      val table = updateDeltaTable(path, targetRef, lastCheckpoint)
+      val put = Put.of(pathToKey(path.getParent), table)
+      val meta = CommitMeta.builder()
+        .message(message)
+        .putProperties("spark.app.id", sparkConf.get("spark.app.id"))
+        .putProperties("application.type", "delta")
+        .build()
+      val op = ImmutableOperations.builder().addOperations(put).commitMeta(meta).build()
+      try {
+        val updated : Reference = client.getTreeApi.commitMultipleOperations(targetRef, targetHash, op)
+        updateReference(if (updated != null) updated else client.getTreeApi.getReferenceByName(targetRef))
+        return true
+      } catch {
+        case ex: NessieConflictException =>
+          refreshReference(targetRef)
+          if (retries <= 0) {
+            throw ex
+          }
+          retries = retries - 1
+      }
+    }
     true
   }
 
@@ -252,7 +291,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
     } else if (ref != null) {
       name = ref
     } else {
-      name = reference.getName
+      name = configuredRef().getName
     }
 
     val currentTable = getTable(new Path(tableName).getParent, name)
@@ -270,7 +309,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
       .sortBy(_.version)
     val maxExpected: Option[Long] = if (currentPath.nonEmpty) Some(currentPath.map(extractVersion).max) else None
     val maxFound: Option[Long] = if (filteredFiles.nonEmpty) Some(filteredFiles.map(_.version).max) else None
-    require(maxFound.getOrElse(0L) == maxExpected.getOrElse(0L))
+    require(maxFound.getOrElse(0L) == maxExpected.getOrElse(0L), s"maxFound(${maxFound.getOrElse(0L)}) != maxExpected(${maxExpected.getOrElse(0L)})")
     if (filteredFiles.map(_.fileType).count(_ == DeltaFileType.CHECKPOINT) == filteredFiles.length) {
       (filteredFiles ++ Seq(emptyCheckpoint(requestedVersion, filteredFiles.head))).iterator
     } else filteredFiles.iterator
@@ -294,7 +333,7 @@ class NessieLogStore(sparkConf: SparkConf, hadoopConf: Configuration)
 
   override def read(path: Path): Seq[String] = {
     if (path.getName.equals("_last_checkpoint")) {
-      val table = getTable(path.getParent, reference.getName)
+      val table = getTable(path.getParent, configuredRef().getName)
       val data = table.map(_.getLastCheckpoint).getOrElse(throw new FileNotFoundException())
       if (data == null) throw new FileNotFoundException()
       Seq(data)

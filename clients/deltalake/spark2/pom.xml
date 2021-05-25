@@ -281,7 +281,11 @@
         <configuration>
           <systemPropertyVariables>
             <quarkus.http.test-port>${quarkus.http.test-port}</quarkus.http.test-port>
+            <skip-multi-branch-tests>true</skip-multi-branch-tests>
           </systemPropertyVariables>
+          <additionalClasspathElements>
+            ${project.build.directory}/test-sources
+          </additionalClasspathElements>
           <failIfNoTests>true</failIfNoTests>
         </configuration>
         <executions>

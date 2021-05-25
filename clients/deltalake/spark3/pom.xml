@@ -272,6 +272,9 @@
           <systemPropertyVariables>
             <quarkus.http.test-port>${quarkus.http.test-port}</quarkus.http.test-port>
           </systemPropertyVariables>
+          <additionalClasspathElements>
+            ${project.build.directory}/test-sources
+          </additionalClasspathElements>
           <failIfNoTests>true</failIfNoTests>
         </configuration>
         <executions>
