@@ -1,6 +1,10 @@
 # Releases
 
-## 0.6.0 Release (xxx xx, 2021)
+## 0.6.1 Release (May 25, 2021)
+
+* Gradle plugin improvements 
+
+## 0.6.0 Release (May 12, 2021)
 
 * TreeApi.createReference() + commitMultipleOperations() return commit information
 * Iceberg GC actions and a process to execute GC algorithm
