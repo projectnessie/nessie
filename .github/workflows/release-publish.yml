@@ -258,12 +258,16 @@ jobs:
       run: |
         DIR=$(mktemp -d)
         NOTES_FILE=${DIR}/release-notes.md
-        LAST_TAG=$(git describe --tags --abbrev=0 ${GIT_TAG}^1)
-        NUM_COMMITS=$(git log --format='format:%h' ${LAST_TAG}..${GIT_TAG} | wc -l)
+        LAST_TAG=$(git describe --tags --abbrev=0 HEAD^1)
+        NUM_COMMITS=$(git log --format='format:%h' ${LAST_TAG}..HEAD | wc -l)
 
         csplit site/docs/try/releases.md '%##%' {0} '/##/' {0} '%##%' {*} -f ${DIR}/release-highlights -b '-%d.txt' > /dev/null
 
         git log --perl-regexp --author '^(?!.*dependabot(-preview)?|.*nessie-release-workflow).*$' --format='format:* %s' ${LAST_TAG}..${GIT_TAG} | grep -v '^\* \[release\] .*$' > ${DIR}/release-log
+
+        Q_NATIVE_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner"
+        Q_UBER_URL="https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar"
+        Q_MC_URL="https://search.maven.org/search?q=g:org.projectnessie+AND+a:nessie-quarkus+AND+v:${RELEASE_VERSION}"
 
         cat <<EOF > ${DIR}/release-notes.md
         # Highlights
@@ -276,20 +280,13 @@ jobs:
 
         ## Try it
 
-        The attached executable file
-        [`nessie-quarkus-${RELEASE_VERSION}-runner`](https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner)
-        is a native binary image built on $(lsb_release -sd) $(uname -p) and only works on
-        compatible Linux environments.
+        The attached executable file [\`nessie-quarkus-${RELEASE_VERSION}-runner\`](${Q_NATIVE_URL}) is a x86-64 native binary image and only works on compatible Linux environments.
 
-        The attached uber-jar
-        [`nessie-quarkus-${RELEASE_VERSION}-runner.jar`](https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar)
-        is a standalone uber-jar file that runs on Java 11 or newer and it is also available via
-        [Maven Central](https://search.maven.org/search?q=g:org.projectnessie+AND+a:nessie-quarkus+AND+v:${RELEASE_VERSION}).
-        Download and run it (requires Java 11):
-        ```
+        The attached [\`nessie-quarkus-${RELEASE_VERSION}-runner.jar\`](${Q_UBER_URL}) is a standalone uber-jar file that runs on Java 11 or newer and it is also available via [Maven Central](${Q_MC_URL}). Download and run it (requires Java 11):
+        \`\`\`
         wget https://github.com/projectnessie/nessie/releases/download/nessie-${RELEASE_VERSION}/nessie-quarkus-${RELEASE_VERSION}-runner.jar
         java -jar nessie-quarkus-${RELEASE_VERSION}-runner.jar
-        ```
+        \`\`\`
 
         ## Full Changelog (minus dependabot commits):
 
