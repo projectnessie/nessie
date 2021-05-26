@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
 import java.util.Optional;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -37,10 +36,11 @@ import org.projectnessie.versioned.VersionStoreException;
 import org.projectnessie.versioned.tests.AbstractITVersionStore;
 
 public class ITInMemoryVersionStore extends AbstractITVersionStore {
-  private static final InMemoryVersionStore.Builder<String, String, StringSerializer.TestEnum> BUILDER =
-      InMemoryVersionStore.<String, String, StringSerializer.TestEnum>builder()
-        .valueSerializer(StringSerializer.getInstance())
-        .metadataSerializer(StringSerializer.getInstance());
+  private static final InMemoryVersionStore.Builder<String, String, StringSerializer.TestEnum>
+      BUILDER =
+          InMemoryVersionStore.<String, String, StringSerializer.TestEnum>builder()
+              .valueSerializer(StringSerializer.getInstance())
+              .metadataSerializer(StringSerializer.getInstance());
 
   private VersionStore<String, String, StringSerializer.TestEnum> store;
 
@@ -64,13 +64,20 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
 
     inMemoryVersionStore.create(fooBranch, Optional.empty());
     assertNotNull(inMemoryVersionStore.toRef("foo"));
-    inMemoryVersionStore.commit(fooBranch, Optional.empty(), "foo",
-                                Collections.singletonList(ImmutablePut.<String>builder().key(Key.of("bar")).value("baz").build()));
+    inMemoryVersionStore.commit(
+        fooBranch,
+        Optional.empty(),
+        "foo",
+        Collections.singletonList(
+            ImmutablePut.<String>builder().key(Key.of("bar")).value("baz").build()));
     assertEquals(1L, inMemoryVersionStore.getCommits(fooBranch).count());
 
     inMemoryVersionStore.clearUnsafe();
-    assertThrows(ReferenceNotFoundException.class, () -> assertNull(inMemoryVersionStore.toRef("foo")));
-    assertThrows(ReferenceNotFoundException.class, () -> assertNull(inMemoryVersionStore.getCommits(fooBranch)));
+    assertThrows(
+        ReferenceNotFoundException.class, () -> assertNull(inMemoryVersionStore.toRef("foo")));
+    assertThrows(
+        ReferenceNotFoundException.class,
+        () -> assertNull(inMemoryVersionStore.getCommits(fooBranch)));
   }
 
   @BeforeEach
@@ -82,5 +89,4 @@ public class ITInMemoryVersionStore extends AbstractITVersionStore {
   protected void afterEach() {
     this.store = null;
   }
-
 }

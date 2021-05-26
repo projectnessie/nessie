@@ -15,20 +15,18 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.ImmutableKey;
 import org.projectnessie.versioned.impl.DiffFinder.KeyDiff;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.KeyDelta;
 import org.projectnessie.versioned.tiered.L3;
-
-import com.google.common.base.Objects;
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
 
 class InternalL3 extends PersistentBase<L3> {
 
@@ -59,6 +57,7 @@ class InternalL3 extends PersistentBase<L3> {
 
   /**
    * Get the key if it exists.
+   *
    * @param key The id of the key to retrieve
    * @return If the key exists, provide. Else, provide Optional.empty()
    */
@@ -72,13 +71,19 @@ class InternalL3 extends PersistentBase<L3> {
 
   @SuppressWarnings("unchecked")
   InternalL3 set(InternalKey key, Id valueId, Byte payload) {
-    TreeMap<InternalKey, PositionDeltaWithPayload> newMap = (TreeMap<InternalKey, PositionDeltaWithPayload>) map.clone();
+    TreeMap<InternalKey, PositionDeltaWithPayload> newMap =
+        (TreeMap<InternalKey, PositionDeltaWithPayload>) map.clone();
     PositionDeltaWithPayload newDelta = newMap.get(key);
     if (newDelta == null) {
       newDelta = PositionDeltaWithPayload.SINGLE_ZERO;
     }
 
-    newDelta = PositionDeltaWithPayload.builderWithPayload().from(newDelta).newId(valueId).newPayload(payload).build();
+    newDelta =
+        PositionDeltaWithPayload.builderWithPayload()
+            .from(newDelta)
+            .newId(valueId)
+            .newPayload(payload)
+            .build();
     if (!newDelta.isDirty()) {
       // this turned into a no-op delta, remove it entirely from the map.
       newMap.remove(key);
@@ -88,49 +93,51 @@ class InternalL3 extends PersistentBase<L3> {
     return new InternalL3(newMap);
   }
 
-  /**
-   * An Id constructed of the key + id in sorted order.
-   */
+  /** An Id constructed of the key + id in sorted order. */
   @Override
   Id generateId() {
-    return Id.build(hasher -> {
-      hasher.putLong(HASH_SEED);
-      map.forEach((key, delta) -> {
-        if (delta.getNewId().isEmpty()) {
-          return;
-        }
+    return Id.build(
+        hasher -> {
+          hasher.putLong(HASH_SEED);
+          map.forEach(
+              (key, delta) -> {
+                if (delta.getNewId().isEmpty()) {
+                  return;
+                }
 
-        InternalKey.addToHasher(key, hasher);
-        hasher.putBytes(delta.getNewId().getValue().asReadOnlyByteBuffer());
-      });
-    });
+                InternalKey.addToHasher(key, hasher);
+                hasher.putBytes(delta.getNewId().getValue().asReadOnlyByteBuffer());
+              });
+        });
   }
 
   Stream<InternalMutation> getMutations() {
-    return map.entrySet().stream().filter(e -> e.getValue().isDirty())
-        .flatMap(e -> {
-          PositionDeltaWithPayload d = e.getValue();
-          if (d.wasAdded()) {
-            return Stream.of(InternalMutation.InternalAddition.of(e.getKey(), d.getNewPayload()));
-          } else if (d.wasRemoved()) {
-            return Stream.of(InternalMutation.InternalRemoval.of(e.getKey()));
-          } else if (e.getValue().isPayloadDirty()) {
-            // existing key that has changed type
-            return Stream.of(InternalMutation.InternalRemoval.of(e.getKey()),
-                InternalMutation.InternalAddition.of(e.getKey(), d.getNewPayload()));
-          } else {
-            return Stream.of();
-          }
-        });
+    return map.entrySet().stream()
+        .filter(e -> e.getValue().isDirty())
+        .flatMap(
+            e -> {
+              PositionDeltaWithPayload d = e.getValue();
+              if (d.wasAdded()) {
+                return Stream.of(
+                    InternalMutation.InternalAddition.of(e.getKey(), d.getNewPayload()));
+              } else if (d.wasRemoved()) {
+                return Stream.of(InternalMutation.InternalRemoval.of(e.getKey()));
+              } else if (e.getValue().isPayloadDirty()) {
+                // existing key that has changed type
+                return Stream.of(
+                    InternalMutation.InternalRemoval.of(e.getKey()),
+                    InternalMutation.InternalAddition.of(e.getKey(), d.getNewPayload()));
+              } else {
+                return Stream.of();
+              }
+            });
   }
 
   Stream<InternalKey> getKeys() {
     return map.keySet().stream();
   }
 
-  /**
-   * return the number of keys defined.
-   */
+  /** return the number of keys defined. */
   int size() {
     return map.size();
   }
@@ -156,18 +163,21 @@ class InternalL3 extends PersistentBase<L3> {
   L3 applyToConsumer(L3 consumer) {
     super.applyToConsumer(consumer);
 
-    Stream<KeyDelta> keyDelta = this.map.entrySet().stream()
-        .filter(e -> !e.getValue().getNewId().isEmpty())
-        .map(e -> KeyDelta.of(e.getKey().toKey(), e.getValue().getNewId(), e.getValue().getNewPayload()));
+    Stream<KeyDelta> keyDelta =
+        this.map.entrySet().stream()
+            .filter(e -> !e.getValue().getNewId().isEmpty())
+            .map(
+                e ->
+                    KeyDelta.of(
+                        e.getKey().toKey(), e.getValue().getNewId(), e.getValue().getNewPayload()));
     consumer.keyDelta(keyDelta);
 
     return consumer;
   }
 
-  /**
-   * Implements {@link L3} to build an {@link InternalL3} object.
-   */
-  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  /** Implements {@link L3} to build an {@link InternalL3} object. */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with
+  // j.l.IllegalAccessError
   static final class Builder extends EntityBuilder<InternalL3, L3> implements L3 {
 
     private Stream<KeyDelta> keyDelta;
@@ -192,15 +202,15 @@ class InternalL3 extends PersistentBase<L3> {
           id,
           keyDelta.collect(
               Collectors.toMap(
-                  kd -> new InternalKey(ImmutableKey.builder().addAllElements(kd.getKey().getElements()).build()),
+                  kd ->
+                      new InternalKey(
+                          ImmutableKey.builder().addAllElements(kd.getKey().getElements()).build()),
                   kd -> PositionDeltaWithPayload.of(0, kd.getId(), kd.getPayload()),
                   (a, b) -> {
-                    throw new IllegalArgumentException(String.format("Got Id %s and %s for same key",
-                        a.getNewId(), b.getNewId()));
+                    throw new IllegalArgumentException(
+                        String.format("Got Id %s and %s for same key", a.getNewId(), b.getNewId()));
                   },
-                  TreeMap::new
-              )
-          ),
+                  TreeMap::new)),
           dt);
     }
   }
@@ -208,17 +218,18 @@ class InternalL3 extends PersistentBase<L3> {
   /**
    * Get a list of all the key to valueId differences between two L3s.
    *
-   * <p>This returns the difference between the updated (not original) state of the two L3s (if the L3s have been mutated).
+   * <p>This returns the difference between the updated (not original) state of the two L3s (if the
+   * L3s have been mutated).
    *
    * @param from The initial tree state.
    * @param to The final tree state.
    * @return The differences when going from initial to final state.
    */
   public static Stream<KeyDiff> compare(InternalL3 from, InternalL3 to) {
-    MapDifference<InternalKey, Id> difference =  Maps.difference(
-        Maps.transformValues(from.map, p -> p.getNewId()),
-        Maps.transformValues(to.map, p -> p.getNewId())
-        );
+    MapDifference<InternalKey, Id> difference =
+        Maps.difference(
+            Maps.transformValues(from.map, p -> p.getNewId()),
+            Maps.transformValues(to.map, p -> p.getNewId()));
     return Stream.concat(
         difference.entriesDiffering().entrySet().stream().map(KeyDiff::new),
         Stream.concat(

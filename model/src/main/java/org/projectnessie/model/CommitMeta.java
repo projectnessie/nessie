@@ -13,17 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.model;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.util.Map;
-
-import javax.annotation.Nullable;
-
-import org.immutables.value.Value;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -34,6 +24,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableCommitMeta.class)
@@ -51,25 +47,25 @@ public abstract class CommitMeta {
   /**
    * The entity performing this commit/transaction.
    *
-   * <p>This is the logged in user/account who performs this action. Populated on the server.
-   * Nessie will return an error if this is populated by the client side.
+   * <p>This is the logged in user/account who performs this action. Populated on the server. Nessie
+   * will return an error if this is populated by the client side.
    *
-   * <p>The committer should follow the git spec for names eg Committer Name &lt;committer.name@example.com&gt; but this is not enforced.
-   * See https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---authorltauthorgt
+   * <p>The committer should follow the git spec for names eg Committer Name
+   * &lt;committer.name@example.com&gt; but this is not enforced. See
+   * https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---authorltauthorgt
    */
   @Nullable
   public abstract String getCommitter();
 
-  /**
-   * The author of a commit. This is the original committer.
-   */
+  /** The author of a commit. This is the original committer. */
   @Nullable
   public abstract String getAuthor();
 
   /**
    * Authorizer of this action.
    *
-   * <p>For example if the user who did the transaction is a service account this could be populated by the person who started the job.
+   * <p>For example if the user who did the transaction is a service account this could be populated
+   * by the person who started the job.
    */
   @Nullable
   public abstract String getSignedOffBy();
@@ -81,17 +77,13 @@ public abstract class CommitMeta {
    */
   public abstract String getMessage();
 
-  /**
-   * Commit time in UTC. Set by the server.
-   */
+  /** Commit time in UTC. Set by the server. */
   @Nullable
   @JsonSerialize(using = InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
   public abstract Instant getCommitTime();
 
-  /**
-   * Original commit time in UTC. Set by the server.
-   */
+  /** Original commit time in UTC. Set by the server. */
   @Nullable
   @JsonSerialize(using = InstantSerializer.class)
   @JsonDeserialize(using = InstantDeserializer.class)
@@ -100,7 +92,8 @@ public abstract class CommitMeta {
   /**
    * Set of properties to help further identify this commit.
    *
-   * <p>examples are spark id, the client type (eg iceberg, delta etc), application or job names, hostnames etc
+   * <p>examples are spark id, the client type (eg iceberg, delta etc), application or job names,
+   * hostnames etc
    */
   public abstract Map<String, String> getProperties();
 
@@ -117,7 +110,8 @@ public abstract class CommitMeta {
   }
 
   /**
-   * Used to serialize an instant to ISO-8601 format. Required because not all platforms we work with support jackson's jdk8 modules.
+   * Used to serialize an instant to ISO-8601 format. Required because not all platforms we work
+   * with support jackson's jdk8 modules.
    */
   public static class InstantSerializer extends StdSerializer<Instant> {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_INSTANT;
@@ -131,13 +125,15 @@ public abstract class CommitMeta {
     }
 
     @Override
-    public void serialize(Instant value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+    public void serialize(Instant value, JsonGenerator gen, SerializerProvider provider)
+        throws IOException {
       gen.writeString(FORMATTER.format(value));
     }
   }
 
   /**
-   * Used to deserialize an instant to ISO-8601 format. Required because not all platforms we work with support jackson's jdk8 modules.
+   * Used to deserialize an instant to ISO-8601 format. Required because not all platforms we work
+   * with support jackson's jdk8 modules.
    */
   public static class InstantDeserializer extends StdDeserializer<Instant> {
     public InstantDeserializer() {
@@ -149,7 +145,8 @@ public abstract class CommitMeta {
     }
 
     @Override
-    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+    public Instant deserialize(JsonParser p, DeserializationContext ctxt)
+        throws IOException, JsonProcessingException {
       return Instant.parse(p.getText());
     }
   }

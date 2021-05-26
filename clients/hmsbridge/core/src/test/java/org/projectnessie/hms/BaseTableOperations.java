@@ -19,37 +19,39 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.klarna.hiverunner.HiveRunnerExtension;
 import java.util.Arrays;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
-
-import com.klarna.hiverunner.HiveRunnerExtension;
 
 @ExtendWith(HiveRunnerExtension.class)
 public abstract class BaseTableOperations extends BaseHiveOps {
 
   @Test
   public void invalidTypes() {
-    assertThatThrownBy(() -> shell.execute("create external table t2 (a int, b int) PARTITIONED BY (c int);"))
+    assertThatThrownBy(
+            () -> shell.execute("create external table t2 (a int, b int) PARTITIONED BY (c int);"))
         .isInstanceOf(Exception.class)
         .hasMessageContaining("immutable=true");
-    assertThatThrownBy(() -> shell.execute("create table t2 (a int, b int) PARTITIONED BY (c int);"))
+    assertThatThrownBy(
+            () -> shell.execute("create table t2 (a int, b int) PARTITIONED BY (c int);"))
         .isInstanceOf(Exception.class)
         .hasMessageContaining("External Tables");
   }
 
   @Test
   public void insertOnImmutable() {
-    shell.execute("create external table t1 (a int, b int) PARTITIONED BY (c int) TBLPROPERTIES (\"immutable\"=\"true\");");
-    shell.execute("insert into t1 PARTITION(c)"
-        + "select 1 as a,1 as b,1 as c "
-        + "union all select 2,2,2 "
-        + "union all select 3,3,3 "
-        + "union all select 4,4,4 ");
+    shell.execute(
+        "create external table t1 (a int, b int) PARTITIONED BY (c int) TBLPROPERTIES (\"immutable\"=\"true\");");
+    shell.execute(
+        "insert into t1 PARTITION(c)"
+            + "select 1 as a,1 as b,1 as c "
+            + "union all select 2,2,2 "
+            + "union all select 3,3,3 "
+            + "union all select 4,4,4 ");
     List<String> partitions = shell.executeQuery("show partitions t1");
     assertThat(partitions).containsExactlyInAnyOrder("c=1", "c=2", "c=3", "c=4");
 
@@ -57,7 +59,8 @@ public abstract class BaseTableOperations extends BaseHiveOps {
     List<String> partitions2 = shell.executeQuery("show partitions t1");
     assertThat(partitions2).containsExactlyInAnyOrder("c=2", "c=3", "c=4");
 
-    // TODO, fix infinite loop in drop partitions. Need to expose correct transactional property for table.
+    // TODO, fix infinite loop in drop partitions. Need to expose correct transactional property for
+    // table.
     shell.execute("drop table t1");
   }
 
@@ -67,21 +70,27 @@ public abstract class BaseTableOperations extends BaseHiveOps {
     String mainOriginalHash = client.getTreeApi().getDefaultBranch().getHash();
 
     // create a table on main and populate it with data.
-    shell.execute("create external table t1 (a int, b int) PARTITIONED BY (c int) TBLPROPERTIES (\"immutable\"=\"true\");");
-    shell.execute("insert into t1 PARTITION(c) "
-        + "select 1 as a,1 as b,1 as c "
-        + "union all select 2,2,2 "
-        + "union all select 3,3,3 "
-        + "union all select 4,4,4 ");
+    shell.execute(
+        "create external table t1 (a int, b int) PARTITIONED BY (c int) TBLPROPERTIES (\"immutable\"=\"true\");");
+    shell.execute(
+        "insert into t1 PARTITION(c) "
+            + "select 1 as a,1 as b,1 as c "
+            + "union all select 2,2,2 "
+            + "union all select 3,3,3 "
+            + "union all select 4,4,4 ");
 
     // create a new branch.
-    shell.execute(String.format("CREATE VIEW `$nessie`.dev TBLPROPERTIES(\"ref\"=\"%s\") AS SELECT * FROM T1", mainOriginalHash));
+    shell.execute(
+        String.format(
+            "CREATE VIEW `$nessie`.dev TBLPROPERTIES(\"ref\"=\"%s\") AS SELECT * FROM T1",
+            mainOriginalHash));
 
     // change to dev context using pseudo database
     shell.execute("alter database `$nessie` set dbproperties (\"ref\"=\"dev\")");
 
     // create a different version of same table on dev branch
-    shell.execute("create external table t1 (a int, b int) PARTITIONED BY (c int) TBLPROPERTIES (\"immutable\"=\"true\");");
+    shell.execute(
+        "create external table t1 (a int, b int) PARTITIONED BY (c int) TBLPROPERTIES (\"immutable\"=\"true\");");
 
     // check that the dev version of the table is empty.
     assertEquals(0, shell.executeQuery("select * from `t1`").size());
@@ -110,7 +119,8 @@ public abstract class BaseTableOperations extends BaseHiveOps {
 
   @Test
   public void tableCreateDrop() {
-    shell.execute("create external table t1 (a int, b int) PARTITIONED BY (c int) TBLPROPERTIES (\"immutable\"=\"true\");");
+    shell.execute(
+        "create external table t1 (a int, b int) PARTITIONED BY (c int) TBLPROPERTIES (\"immutable\"=\"true\");");
     List<Object[]> records = shell.executeStatement("describe t1");
     shell.execute("DROP TABLE t1");
   }

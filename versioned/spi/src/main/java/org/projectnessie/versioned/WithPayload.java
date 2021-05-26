@@ -16,7 +16,6 @@
 package org.projectnessie.versioned;
 
 import javax.annotation.Nullable;
-
 import org.immutables.value.Value;
 
 /**
@@ -27,19 +26,16 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface WithPayload<T> {
 
-  /**
-   * Get the value of the payload associated with this value.
-   */
+  /** Get the value of the payload associated with this value. */
   @Nullable
   Byte getPayload();
 
-  /**
-   * Get the value this object wraps.
-   */
+  /** Get the value this object wraps. */
   T getValue();
 
   /**
    * Build a WithPayload object of type T.
+   *
    * @param <T> The value type to hold
    * @param payload The payload this value is connected to.
    * @param value The value held.

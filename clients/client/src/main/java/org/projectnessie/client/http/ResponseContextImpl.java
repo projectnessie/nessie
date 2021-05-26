@@ -38,5 +38,4 @@ class ResponseContextImpl implements ResponseContext {
   public InputStream getErrorStream() {
     return connection.getErrorStream();
   }
-
 }

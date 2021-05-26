@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.versioned.impl.condition;
 
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.store.Entity;
 
 /**
- * Test basic functionality and show usage of the ValueVisitor as pertains to ConditionExpression and the Value
- * hierarchy (ValueOfEntity, ExpressionFunction, ExpressionPath).
+ * Test basic functionality and show usage of the ValueVisitor as pertains to ConditionExpression
+ * and the Value hierarchy (ValueOfEntity, ExpressionFunction, ExpressionPath).
  */
 class TestValueVisitor {
-  /**
-   * A test visitor which builds up a string representation of the passed in Values.
-   */
+  /** A test visitor which builds up a string representation of the passed in Values. */
   static class Visitor implements ValueVisitor<String> {
     @Override
     public String visit(Entity entity) {
@@ -39,7 +35,9 @@ class TestValueVisitor {
     @Override
     public String visit(ExpressionFunction value) {
       return value.getName()
-        + "[" + value.getArguments().stream().map(a -> a.accept(this)).collect(Collectors.joining(", ")) + "]";
+          + "["
+          + value.getArguments().stream().map(a -> a.accept(this)).collect(Collectors.joining(", "))
+          + "]";
     }
 
     @Override
@@ -77,7 +75,9 @@ class TestValueVisitor {
   @Test
   void testExpressionFunctionValue() {
     final ExpressionPath.PathSegment.Builder pathBuilder = ExpressionPath.builder("arrayPath");
-    final Value value = ExpressionFunction.equals(ExpressionFunction.size(pathBuilder.build()), Entity.ofNumber(10));
+    final Value value =
+        ExpressionFunction.equals(
+            ExpressionFunction.size(pathBuilder.build()), Entity.ofNumber(10));
     Assertions.assertEquals("EQUALS[SIZE[arrayPath], n10]", value.accept(VISITOR));
   }
 }

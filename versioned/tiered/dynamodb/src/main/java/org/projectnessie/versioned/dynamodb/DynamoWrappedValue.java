@@ -19,17 +19,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.attributeValue;
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.bytes;
 
+import com.google.protobuf.ByteString;
 import java.util.Map;
-
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseWrappedValue;
-
-import com.google.protobuf.ByteString;
-
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-class DynamoWrappedValue<C extends BaseWrappedValue<C>> extends DynamoBaseValue<C> implements BaseWrappedValue<C> {
+class DynamoWrappedValue<C extends BaseWrappedValue<C>> extends DynamoBaseValue<C>
+    implements BaseWrappedValue<C> {
 
   static final String VALUE = "value";
 
@@ -49,12 +47,10 @@ class DynamoWrappedValue<C extends BaseWrappedValue<C>> extends DynamoBaseValue<
     return super.build();
   }
 
-  /**
-   * Deserialize a DynamoDB entity into the given consumer.
-   */
-  static <C extends BaseWrappedValue<C>> void produceToConsumer(Map<String, AttributeValue> entity, C consumer) {
+  /** Deserialize a DynamoDB entity into the given consumer. */
+  static <C extends BaseWrappedValue<C>> void produceToConsumer(
+      Map<String, AttributeValue> entity, C consumer) {
     SdkBytes b = checkNotNull(attributeValue(entity, VALUE).b(), "mandatory binary value is null");
-    baseToConsumer(entity, consumer)
-        .value(ByteString.copyFrom(b.asByteArrayUnsafe()));
+    baseToConsumer(entity, consumer).value(ByteString.copyFrom(b.asByteArrayUnsafe()));
   }
 }

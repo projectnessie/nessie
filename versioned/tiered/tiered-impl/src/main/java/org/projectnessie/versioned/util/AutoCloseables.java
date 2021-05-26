@@ -13,23 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* Original license header from Apache Arrow project:
- *
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.projectnessie.versioned.util;
 // package org.apache.arrow.util;
 
@@ -42,17 +25,15 @@ import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-/**
- * Utilities for AutoCloseable classes.
- */
+/** Utilities for AutoCloseable classes. */
 public final class AutoCloseables {
   // Utility class. Should not be instantiated
-  private AutoCloseables() {
-  }
+  private AutoCloseables() {}
 
   /**
-   * Returns a new {@link AutoCloseable} that calls {@link #close(Iterable)} on <code>autoCloseables</code>
-   * when close is called.
+   * Returns a new {@link AutoCloseable} that calls {@link #close(Iterable)} on <code>autoCloseables
+   * </code> when close is called.
+   *
    * @param autoCloseables collection of {@link AutoCloseable} to wrap
    * @return wrapping {@link AutoCloseable}
    */
@@ -67,6 +48,7 @@ public final class AutoCloseables {
 
   /**
    * Closes all autoCloseables if not null and suppresses exceptions by adding them to t.
+   *
    * @param t the throwable to add suppressed exception to
    * @param autoCloseables the closeables to close
    */
@@ -76,6 +58,7 @@ public final class AutoCloseables {
 
   /**
    * Closes all autoCloseables if not null and suppresses exceptions by adding them to t.
+   *
    * @param t the throwable to add suppressed exception to
    * @param autoCloseables the closeables to close
    */
@@ -89,6 +72,7 @@ public final class AutoCloseables {
 
   /**
    * Closes all autoCloseables if not null and suppresses subsequent exceptions if more than one.
+   *
    * @param autoCloseables the closeables to close
    * @throws Exception see {@link #close(Iterable)}
    */
@@ -98,6 +82,7 @@ public final class AutoCloseables {
 
   /**
    * Closes all autoCloseables if not null and suppresses subsequent exceptions if more than one.
+   *
    * @param ac the closeables to close
    * @throws Exception see {@link AutoCloseable#close()}
    */
@@ -132,18 +117,24 @@ public final class AutoCloseables {
 
   /**
    * Calls {@link #close(Iterable)} on the flattened list of closeables.
+   *
    * @param closeables the closeables to close
    * @throws Exception see {@link #close(Iterable)}
    */
   @SafeVarargs
-  public static void close(Iterable<? extends AutoCloseable>...closeables) throws Exception {
-    close(Arrays.stream(closeables)
-        .flatMap((Iterable<? extends AutoCloseable> t) -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(t.iterator(), 0), false))
-        .collect(Collectors.toList()));
+  public static void close(Iterable<? extends AutoCloseable>... closeables) throws Exception {
+    close(
+        Arrays.stream(closeables)
+            .flatMap(
+                (Iterable<? extends AutoCloseable> t) ->
+                    StreamSupport.stream(
+                        Spliterators.spliteratorUnknownSize(t.iterator(), 0), false))
+            .collect(Collectors.toList()));
   }
 
   /**
    * Converts <code>ac</code> to a {@link Iterable} filtering out any null values.
+   *
    * @param ac the closeables
    * @return iterable over {@code ac} without {@code null} values
    */
@@ -161,9 +152,7 @@ public final class AutoCloseables {
     }
   }
 
-  /**
-   * A closeable wrapper that will close the underlying closeables if a commit does not occur.
-   */
+  /** A closeable wrapper that will close the underlying closeables if a commit does not occur. */
   public static class RollbackCloseable implements AutoCloseable {
 
     private boolean commit = false;
@@ -180,6 +169,7 @@ public final class AutoCloseables {
 
     /**
      * Add all of <code>list</code> to the rollback list.
+     *
      * @param list autocloseables to add
      */
     public void addAll(AutoCloseable... list) {
@@ -188,6 +178,7 @@ public final class AutoCloseables {
 
     /**
      * Add all of <code>list</code> to the rollback list.
+     *
      * @param list autocloseables to add
      */
     public void addAll(Iterable<? extends AutoCloseable> list) {
@@ -206,11 +197,11 @@ public final class AutoCloseables {
         AutoCloseables.close(closeables);
       }
     }
-
   }
 
   /**
    * Creates an {@link RollbackCloseable} from the given closeables.
+   *
    * @param closeables autocloseables
    * @return constructed rollback-closeable
    */
@@ -219,15 +210,14 @@ public final class AutoCloseables {
   }
 
   /**
-   * close() an {@link java.lang.AutoCloseable} without throwing a (checked)
-   * {@link java.lang.Exception}. This wraps the close() call with a
-   * try-catch that will rethrow an Exception wrapped with a
-   * {@link java.lang.RuntimeException}, providing a way to call close()
+   * close() an {@link java.lang.AutoCloseable} without throwing a (checked) {@link
+   * java.lang.Exception}. This wraps the close() call with a try-catch that will rethrow an
+   * Exception wrapped with a {@link java.lang.RuntimeException}, providing a way to call close()
    * without having to do the try-catch everywhere or propagate the Exception.
    *
    * @param autoCloseable the AutoCloseable to close; may be null
-   * @throws RuntimeException if an Exception occurs; the Exception is
-   *         wrapped by the RuntimeException
+   * @throws RuntimeException if an Exception occurs; the Exception is wrapped by the
+   *     RuntimeException
    */
   public static void closeNoChecked(final AutoCloseable autoCloseable) {
     if (autoCloseable != null) {
@@ -239,11 +229,11 @@ public final class AutoCloseables {
     }
   }
 
-  private static final AutoCloseable noOpAutocloseable = new AutoCloseable() {
-    @Override
-    public void close() {
-    }
-  };
+  private static final AutoCloseable noOpAutocloseable =
+      new AutoCloseable() {
+        @Override
+        public void close() {}
+      };
 
   /**
    * Get an AutoCloseable that does nothing.
@@ -254,4 +244,3 @@ public final class AutoCloseables {
     return noOpAutocloseable;
   }
 }
-

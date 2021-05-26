@@ -16,7 +16,6 @@
 package org.projectnessie.versioned;
 
 import java.util.Optional;
-
 import org.immutables.value.Value.Immutable;
 
 @Immutable
@@ -31,5 +30,4 @@ public interface Diff<VALUE> {
   public static <VALUE> Diff<VALUE> of(Key key, Optional<VALUE> from, Optional<VALUE> to) {
     return ImmutableDiff.<VALUE>builder().key(key).fromValue(from).toValue(to).build();
   }
-
 }

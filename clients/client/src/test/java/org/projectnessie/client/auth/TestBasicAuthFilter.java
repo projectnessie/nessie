@@ -22,9 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
 import org.junit.jupiter.api.Test;
-import org.projectnessie.client.auth.BasicAuthFilter;
 import org.projectnessie.client.http.RequestContext;
 
 class TestBasicAuthFilter {
@@ -33,8 +31,7 @@ class TestBasicAuthFilter {
     assertAll(
         () -> assertThrows(NullPointerException.class, () -> new BasicAuthFilter(null, "pass")),
         () -> assertThrows(NullPointerException.class, () -> new BasicAuthFilter("user", null)),
-        () -> assertThrows(NullPointerException.class, () -> new BasicAuthFilter(null, null))
-    );
+        () -> assertThrows(NullPointerException.class, () -> new BasicAuthFilter(null, null)));
   }
 
   @Test

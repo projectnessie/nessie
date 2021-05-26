@@ -15,17 +15,15 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.Fragment;
-
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
 
 class InternalFragment extends PersistentBase<Fragment> {
 
@@ -69,14 +67,12 @@ class InternalFragment extends PersistentBase<Fragment> {
 
   @Override
   Fragment applyToConsumer(Fragment consumer) {
-    return super.applyToConsumer(consumer)
-        .keys(keys.stream().map(InternalKeyWithPayload::toKey));
+    return super.applyToConsumer(consumer).keys(keys.stream().map(InternalKeyWithPayload::toKey));
   }
 
-  /**
-   * Implements {@link Fragment} to build a {@link InternalFragment} object.
-   */
-  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
+  /** Implements {@link Fragment} to build a {@link InternalFragment} object. */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with
+  // j.l.IllegalAccessError
   static class Builder extends EntityBuilder<InternalFragment, Fragment> implements Fragment {
 
     private List<InternalKeyWithPayload> keys;
@@ -84,7 +80,9 @@ class InternalFragment extends PersistentBase<Fragment> {
     @Override
     public Builder keys(Stream<WithPayload<Key>> keys) {
       checkCalled(this.keys, "keys");
-      this.keys = keys.map(k -> InternalKeyWithPayload.of(k.getPayload(), k.getValue())).collect(Collectors.toList());
+      this.keys =
+          keys.map(k -> InternalKeyWithPayload.of(k.getPayload(), k.getValue()))
+              .collect(Collectors.toList());
       return this;
     }
 

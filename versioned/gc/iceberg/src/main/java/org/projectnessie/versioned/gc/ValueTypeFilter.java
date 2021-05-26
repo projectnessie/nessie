@@ -15,14 +15,12 @@
  */
 package org.projectnessie.versioned.gc;
 
+import com.google.protobuf.ByteString;
 import java.io.Serializable;
-
 import org.apache.spark.api.java.function.FilterFunction;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.ImmutableIcebergTable;
 import org.projectnessie.versioned.Serializer;
-
-import com.google.protobuf.ByteString;
 
 public class ValueTypeFilter implements FilterFunction<CategorizedValue>, Serializable {
 
@@ -34,6 +32,9 @@ public class ValueTypeFilter implements FilterFunction<CategorizedValue>, Serial
 
   @Override
   public boolean call(CategorizedValue value) throws Exception {
-    return valueSerializer.fromBytes(ByteString.copyFrom(value.getData())).getClass().equals(ImmutableIcebergTable.class);
+    return valueSerializer
+        .fromBytes(ByteString.copyFrom(value.getData()))
+        .getClass()
+        .equals(ImmutableIcebergTable.class);
   }
 }

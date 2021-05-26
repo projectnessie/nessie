@@ -15,6 +15,10 @@
  */
 package org.projectnessie.versioned.gc;
 
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnel;
+import com.google.common.hash.PrimitiveSink;
+import com.google.protobuf.ByteString;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
@@ -22,7 +26,6 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.nio.ByteBuffer;
-
 import org.apache.spark.api.java.function.FilterFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoder;
@@ -30,20 +33,16 @@ import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.functions;
 
-import com.google.common.hash.BloomFilter;
-import com.google.common.hash.Funnel;
-import com.google.common.hash.PrimitiveSink;
-import com.google.protobuf.ByteString;
-
 /**
  * A utility class wrapping binary bloom filter functionality for spark.
  *
  * <p>Has two different serialization formats:
- * <ol>
- * <li>format used when exposing a result to a row (direct use of Guava's {@code BloomFilter.readfrom} operations)
- * <li>internal format used when doing aggregation (based on {@link Externalizable})
- * </ol>
  *
+ * <ol>
+ *   <li>format used when exposing a result to a row (direct use of Guava's {@code
+ *       BloomFilter.readfrom} operations)
+ *   <li>internal format used when doing aggregation (based on {@link Externalizable})
+ * </ol>
  */
 public class BinaryBloomFilter implements Externalizable {
 
@@ -69,8 +68,8 @@ public class BinaryBloomFilter implements Externalizable {
     return filter.mightContain(bytes);
   }
 
-  private static class BloomFilterAggregator extends
-      org.apache.spark.sql.expressions.Aggregator<byte[], BinaryBloomFilter, byte[]> {
+  private static class BloomFilterAggregator
+      extends org.apache.spark.sql.expressions.Aggregator<byte[], BinaryBloomFilter, byte[]> {
     private static final long serialVersionUID = -537765519777214377L;
 
     @Override
@@ -111,7 +110,6 @@ public class BinaryBloomFilter implements Externalizable {
     public BinaryBloomFilter zero() {
       return new BinaryBloomFilter();
     }
-
   }
 
   private static BinaryBloomFilter fromBinary(byte[] bytes) {
@@ -127,11 +125,18 @@ public class BinaryBloomFilter implements Externalizable {
 
   /**
    * Run aggregation on dataset to add all rows to the bloom filter.
+   *
    * @param data a Spark Dataset to add to binary bloom filter
    * @param column the column to aggregate on
    */
   public static BinaryBloomFilter aggregate(Dataset<Row> data, String column) {
-    Row[] aggregated = (Row[]) data.agg(functions.udaf(new BloomFilterAggregator(), Encoders.BINARY()).apply(data.col(column))).collect();
+    Row[] aggregated =
+        (Row[])
+            data.agg(
+                    functions
+                        .udaf(new BloomFilterAggregator(), Encoders.BINARY())
+                        .apply(data.col(column)))
+                .collect();
     byte[] bytes = aggregated[0].getAs(0);
     return fromBinary(bytes);
   }
@@ -187,6 +192,5 @@ public class BinaryBloomFilter implements Externalizable {
 
       return true;
     }
-
   }
 }

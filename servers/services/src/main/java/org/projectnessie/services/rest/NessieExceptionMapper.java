@@ -15,35 +15,30 @@
  */
 package org.projectnessie.services.rest;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.common.base.Throwables;
 import java.util.stream.Collectors;
-
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-
 import org.projectnessie.error.BaseNessieClientServerException;
 import org.projectnessie.services.config.ServerConfig;
 import org.projectnessie.versioned.BackendLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.google.common.base.Throwables;
-
 /**
- * "Default" exception mapper implementations, mostly used to serialize the
- * {@link BaseNessieClientServerException Nessie-exceptions}  as JSON consumable by Nessie
- * client implementations. Does also map other, non-{@link BaseNessieClientServerException}s
- * as HTTP/503 (internal server errors) with a JSON-serialized
- * {@link org.projectnessie.error.NessieError}.
+ * "Default" exception mapper implementations, mostly used to serialize the {@link
+ * BaseNessieClientServerException Nessie-exceptions} as JSON consumable by Nessie client
+ * implementations. Does also map other, non-{@link BaseNessieClientServerException}s as HTTP/503
+ * (internal server errors) with a JSON-serialized {@link org.projectnessie.error.NessieError}.
  */
 @Provider
-public class NessieExceptionMapper
-    extends BaseExceptionMapper
+public class NessieExceptionMapper extends BaseExceptionMapper
     implements ExceptionMapper<Exception> {
   private static final Logger LOGGER = LoggerFactory.getLogger(NessieExceptionMapper.class);
 
@@ -90,7 +85,10 @@ public class NessieExceptionMapper
       LOGGER.warn("Unhandled exception returned as HTTP/500 to client", exception);
       status = Status.INTERNAL_SERVER_ERROR.getStatusCode();
       reason = Status.INTERNAL_SERVER_ERROR.getReasonPhrase();
-      message = Throwables.getCausalChain(exception).stream().map(Throwable::toString).collect(Collectors.joining(", caused by"));
+      message =
+          Throwables.getCausalChain(exception).stream()
+              .map(Throwable::toString)
+              .collect(Collectors.joining(", caused by"));
     }
 
     return buildExceptionResponse(status, reason, message, exception);

@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.impl.InternalBranch.Commit;
 import org.projectnessie.versioned.impl.InternalBranch.UnsavedDelta;
 import org.projectnessie.versioned.impl.condition.ExpressionFunction;
@@ -29,9 +28,7 @@ import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.Mutation;
 import org.projectnessie.versioned.tiered.Ref;
 
-/**
- * Generic class for reading a reference.
- */
+/** Generic class for reading a reference. */
 abstract class InternalRef extends PersistentBase<Ref> {
 
   static final String TYPE = "type";
@@ -58,18 +55,21 @@ abstract class InternalRef extends PersistentBase<Ref> {
 
     /**
      * Convert the type to it's entity type tag.
+     *
      * @return A Entity holding the type tag.
      */
     public Entity toEntity() {
       if (this == HASH) {
-        throw new IllegalStateException("You should not try to retrieve the identifier for a hash "
-            + "type since they are not saveable as searchable refs.");
+        throw new IllegalStateException(
+            "You should not try to retrieve the identifier for a hash "
+                + "type since they are not saveable as searchable refs.");
       }
       return value;
     }
 
     /**
      * Get the type associated with this type tag.
+     *
      * @param identifier The type tag to classify.
      * @return The type classified.
      */
@@ -79,7 +79,8 @@ abstract class InternalRef extends PersistentBase<Ref> {
       } else if (identifier.equals("t")) {
         return TAG;
       } else {
-        throw new IllegalArgumentException(String.format("Unknown identifier name [%s].", identifier));
+        throw new IllegalArgumentException(
+            String.format("Unknown identifier name [%s].", identifier));
       }
     }
   }
@@ -87,18 +88,20 @@ abstract class InternalRef extends PersistentBase<Ref> {
   abstract Type getType();
 
   InternalBranch getBranch() {
-    throw new IllegalArgumentException(String.format("%s cannot be treated as a branch.", this.getClass().getName()));
+    throw new IllegalArgumentException(
+        String.format("%s cannot be treated as a branch.", this.getClass().getName()));
   }
 
   InternalTag getTag() {
-    throw new IllegalArgumentException(String.format("%s cannot be treated as a tag.", this.getClass().getName()));
+    throw new IllegalArgumentException(
+        String.format("%s cannot be treated as a tag.", this.getClass().getName()));
   }
 
-  /**
-   * Implement {@link Ref} to build an {@link InternalRef} object.
-   */
-  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static class Builder<REF extends InternalRef> extends EntityBuilder<InternalRef, Ref> implements Ref {
+  /** Implement {@link Ref} to build an {@link InternalRef} object. */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with
+  // j.l.IllegalAccessError
+  static class Builder<REF extends InternalRef> extends EntityBuilder<InternalRef, Ref>
+      implements Ref {
 
     private Id id;
     private String name;
@@ -142,7 +145,6 @@ abstract class InternalRef extends PersistentBase<Ref> {
     }
 
     @Override
-
     REF build() {
       if (typed == null) {
         throw new IllegalStateException("Must call tag() or branch() before build().");
@@ -215,16 +217,11 @@ abstract class InternalRef extends PersistentBase<Ref> {
         checkSet(children, "children");
         checkSet(commits, "commits");
         return new InternalBranch(
-            id,
-            name,
-            IdMap.of(children, InternalL1.SIZE),
-            metadata,
-            commits,
-            dt);
+            id, name, IdMap.of(children, InternalL1.SIZE), metadata, commits, dt);
       }
 
-      private class InternalBranchCommit implements BranchCommit, SavedCommit,
-          UnsavedCommitDelta, UnsavedCommitMutations {
+      private class InternalBranchCommit
+          implements BranchCommit, SavedCommit, UnsavedCommitDelta, UnsavedCommitMutations {
 
         private Id id;
         private Id commit;
@@ -237,8 +234,8 @@ abstract class InternalRef extends PersistentBase<Ref> {
           if (parent != null) {
             BranchBuilder.this.commits.add(new Commit(id, commit, parent));
           } else {
-            BranchBuilder.this.commits
-                .add(new Commit(id, commit, unsavedDeltas, KeyMutationList.of(keyMutations)));
+            BranchBuilder.this.commits.add(
+                new Commit(id, commit, unsavedDeltas, KeyMutationList.of(keyMutations)));
           }
 
           id = null;

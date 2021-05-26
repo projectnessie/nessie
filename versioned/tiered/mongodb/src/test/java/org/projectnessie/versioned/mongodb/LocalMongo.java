@@ -15,23 +15,21 @@
  */
 package org.projectnessie.versioned.mongodb;
 
-import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
-import org.junit.jupiter.api.extension.support.TypeBasedParameterResolver;
-
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodStarter;
 import de.flapdoodle.embed.mongo.config.MongodConfig;
 import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.support.TypeBasedParameterResolver;
 
-/**
- * Creates and configures a non-sharded flapdoodle MongoDB instance.
- */
-class LocalMongo extends TypeBasedParameterResolver<String> implements AfterAllCallback, BeforeAllCallback {
+/** Creates and configures a non-sharded flapdoodle MongoDB instance. */
+class LocalMongo extends TypeBasedParameterResolver<String>
+    implements AfterAllCallback, BeforeAllCallback {
   private static final String MONGODB_INFO = "mongodb-local-info";
 
   private static class Holder {
@@ -40,10 +38,11 @@ class LocalMongo extends TypeBasedParameterResolver<String> implements AfterAllC
 
     public Holder() throws Exception {
       final int port = Network.getFreeServerPort();
-      final MongodConfig config = MongodConfig.builder()
-          .version(Version.Main.PRODUCTION)
-          .net(new Net(port, Network.localhostIsIPv6()))
-          .build();
+      final MongodConfig config =
+          MongodConfig.builder()
+              .version(Version.Main.PRODUCTION)
+              .net(new Net(port, Network.localhostIsIPv6()))
+              .build();
 
       mongoExec = MongodStarter.getDefaultInstance().prepare(config);
       mongoExec.start();
@@ -54,7 +53,6 @@ class LocalMongo extends TypeBasedParameterResolver<String> implements AfterAllC
       mongoExec.stop();
     }
   }
-
 
   @Override
   public void afterAll(ExtensionContext extensionContext) {
@@ -74,12 +72,13 @@ class LocalMongo extends TypeBasedParameterResolver<String> implements AfterAllC
   }
 
   @Override
-  public String resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
+  public String resolveParameter(
+      ParameterContext parameterContext, ExtensionContext extensionContext) {
     return getHolder(extensionContext, true).connectionString;
   }
 
   private Holder getHolder(ExtensionContext context, boolean recursive) {
-    for (ExtensionContext c = context; c != null; c  = c.getParent().orElse(null)) {
+    for (ExtensionContext c = context; c != null; c = c.getParent().orElse(null)) {
       final Holder holder = (Holder) getStore(c).get(MONGODB_INFO);
       if (holder != null) {
         return holder;

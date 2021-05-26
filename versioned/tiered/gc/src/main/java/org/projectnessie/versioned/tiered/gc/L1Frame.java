@@ -25,7 +25,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.versioned.impl.Ids;
@@ -35,9 +34,7 @@ import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.L1;
 import org.projectnessie.versioned.tiered.Mutation;
 
-/**
- * Class used for L1 records within Spark.
- */
+/** Class used for L1 records within Spark. */
 public class L1Frame implements Serializable {
 
   private static final long serialVersionUID = 2021838527611235712L;
@@ -79,12 +76,9 @@ public class L1Frame implements Serializable {
     this.children = children;
   }
 
-  public L1Frame() {
-  }
+  public L1Frame() {}
 
-  /**
-   * Construct L1Frame.
-   */
+  /** Construct L1Frame. */
   public L1Frame(Id id, long dt, Stream<Id> unfilteredParents, List<Id> children) {
     this.id = IdFrame.of(id);
     this.dt = dt;
@@ -108,9 +102,7 @@ public class L1Frame implements Serializable {
     private IdFrame id;
     private boolean recurse;
 
-    /**
-     * Construct L1Parent.
-     */
+    /** Construct L1Parent. */
     public static L1Parent of(Id id, boolean last) {
       L1Parent child = new L1Parent();
       child.id = IdFrame.of(id);
@@ -138,7 +130,6 @@ public class L1Frame implements Serializable {
     public String toString() {
       return "L1Child [id=" + id + ", recurse=" + recurse + "]";
     }
-
   }
 
   private L1 capture() {
@@ -192,23 +183,32 @@ public class L1Frame implements Serializable {
 
   @Override
   public String toString() {
-    return "L1Frame [id=" + id + ", dt=" + dt + ", children=" + children + ", parents=" + parents + "]";
+    return "L1Frame [id="
+        + id
+        + ", dt="
+        + dt
+        + ", children="
+        + children
+        + ", parents="
+        + parents
+        + "]";
   }
 
-  public static Function<Store.Acceptor<L1>, L1Frame> BUILDER = (a) -> {
-    L1Frame f = new L1Frame();
-    a.applyValue(f.capture());
-    return f;
-  };
+  public static Function<Store.Acceptor<L1>, L1Frame> BUILDER =
+      (a) -> {
+        L1Frame f = new L1Frame();
+        a.applyValue(f.capture());
+        return f;
+      };
 
   private static final byte[] EMPTY_L1_BYTES = Ids.getEmptyL1().toBytes();
 
-  /**
-   * A filter that excludes the "empty" L1.
-   */
-  private static final Predicate<L1Frame> EXCLUDE_EMPTY_L1 = l -> !Arrays.equals(EMPTY_L1_BYTES, l.getId().getId());
+  /** A filter that excludes the "empty" L1. */
+  private static final Predicate<L1Frame> EXCLUDE_EMPTY_L1 =
+      l -> !Arrays.equals(EMPTY_L1_BYTES, l.getId().getId());
 
   public static Dataset<L1Frame> asDataset(Supplier<Store> store, SparkSession spark) {
-    return ValueRetriever.dataset(store, ValueType.L1, L1Frame.class, Optional.of(EXCLUDE_EMPTY_L1), spark, BUILDER);
+    return ValueRetriever.dataset(
+        store, ValueType.L1, L1Frame.class, Optional.of(EXCLUDE_EMPTY_L1), spark, BUILDER);
   }
 }

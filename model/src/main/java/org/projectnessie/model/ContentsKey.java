@@ -15,6 +15,8 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,13 +24,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * Key for the contents of an object.
  *
- * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before passing in a url string.
+ * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before
+ * passing in a url string.
  */
 public class ContentsKey {
   private static final char ZERO_BYTE = '\u0000';
@@ -65,21 +65,26 @@ public class ContentsKey {
 
   /**
    * Convert from path encoded string to normal string.
+   *
    * @param encoded Path encoded string
    * @return Actual key.
    */
   public static ContentsKey fromPathString(String encoded) {
-    List<String> elements = Arrays.stream(encoded.split("\\."))
-        .map(x -> x.replace('\u0000', '.')).collect(Collectors.toList());
+    List<String> elements =
+        Arrays.stream(encoded.split("\\."))
+            .map(x -> x.replace('\u0000', '.'))
+            .collect(Collectors.toList());
     return new ContentsKey(elements);
   }
 
   /**
    * Convert this key to a url encoded path string.
+   *
    * @return String encoded for path use.
    */
   public String toPathString() {
-    String pathString = getElements().stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
+    String pathString =
+        getElements().stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
     return pathString;
   }
 

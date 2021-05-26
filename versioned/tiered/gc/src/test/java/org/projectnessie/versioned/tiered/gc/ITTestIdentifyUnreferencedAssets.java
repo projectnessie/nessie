@@ -15,9 +15,14 @@
  */
 package org.projectnessie.versioned.tiered.gc;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.ByteString;
 import java.io.Serializable;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -29,7 +34,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 import org.junit.jupiter.api.AfterEach;
@@ -56,26 +60,19 @@ import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tests.CommitBuilder;
 import org.projectnessie.versioned.tiered.Value;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.protobuf.ByteString;
-
 @ExtendWith(LocalDynamoDB.class)
 public class ITTestIdentifyUnreferencedAssets {
-  private static final long FIVE_DAYS_IN_PAST_MICROS = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis())
-      - TimeUnit.DAYS.toMicros(5);
-  private static final long TWO_HOURS_IN_PAST_MICROS = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis())
-      - TimeUnit.HOURS.toMicros(2);
+  private static final long FIVE_DAYS_IN_PAST_MICROS =
+      TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) - TimeUnit.DAYS.toMicros(5);
+  private static final long TWO_HOURS_IN_PAST_MICROS =
+      TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) - TimeUnit.HOURS.toMicros(2);
 
   private static final long ONE_DAY_OLD_MICROS = TimeUnit.DAYS.toMicros(1);
   private static final long ONE_HOUR_OLD_MICROS = TimeUnit.HOURS.toMicros(1);
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
-  private StoreWorker<DummyValue,String, StringSerializer.TestEnum> helper;
+  private StoreWorker<DummyValue, String, StringSerializer.TestEnum> helper;
   private DtAdjustingStore store;
   private TieredVersionStore<DummyValue, String, StringSerializer.TestEnum> versionStore;
 
@@ -87,7 +84,7 @@ public class ITTestIdentifyUnreferencedAssets {
     BranchName main = BranchName.of("main");
 
     // create an old commit referencing both unique and non-unique assets.
-    //The unique asset should be identified by the gc policy below since they are older than 1 day.
+    // The unique asset should be identified by the gc policy below since they are older than 1 day.
     store.setOverride(FIVE_DAYS_IN_PAST_MICROS);
     DummyValue dv = new DummyValue().add(-3).add(0).add(100);
     expectedValues.add(dv);
@@ -95,7 +92,8 @@ public class ITTestIdentifyUnreferencedAssets {
 
     // work beyond slop but within gc allowed age.
     store.setOverride(TWO_HOURS_IN_PAST_MICROS);
-    // create commits that have time-valid assets. Create more commits than ParentList.MAX_PARENT_LIST to confirm recursion.
+    // create commits that have time-valid assets. Create more commits than
+    // ParentList.MAX_PARENT_LIST to confirm recursion.
     for (int i = 0; i < 55; i++) {
       dv = new DummyValue().add(i).add(i + 100);
       expectedValues.add(dv);
@@ -113,7 +111,8 @@ public class ITTestIdentifyUnreferencedAssets {
 
     store.clearOverride();
     {
-      // Create a dangling value to ensure that the slop factor avoids deletion of the assets of this otherwise dangling value.
+      // Create a dangling value to ensure that the slop factor avoids deletion of the assets of
+      // this otherwise dangling value.
       dv = new DummyValue().add(-50).add(-51);
       expectedValues.add(dv);
       expectedReferencedValues.add(dv);
@@ -122,57 +121,77 @@ public class ITTestIdentifyUnreferencedAssets {
       // create a dangling value that should be cleaned up.
       dv = new DummyValue().add(-60).add(-61);
       expectedValues.add(dv);
-      save(TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) - TimeUnit.DAYS.toMicros(2), dv);
+      save(
+          TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()) - TimeUnit.DAYS.toMicros(2),
+          dv);
     }
 
-    SparkSession spark = SparkSession
-        .builder()
-        .appName("test-nessie-gc-collection")
-        .master("local[2]")
-        .getOrCreate();
+    SparkSession spark =
+        SparkSession.builder()
+            .appName("test-nessie-gc-collection")
+            .master("local[2]")
+            .getOrCreate();
 
     // now confirm that the unreferenced assets are marked for deletion. These are found based
     // on the no-longer referenced commit as well as the old commit.
-    GcOptions options = ImmutableGcOptions.builder()
-        .bloomFilterCapacity(10_000_000)
-        .maxAgeMicros(ONE_DAY_OLD_MICROS)
-        .timeSlopMicros(ONE_HOUR_OLD_MICROS)
-        .build();
-    IdentifyUnreferencedValues<DummyValue> identifyValues = new IdentifyUnreferencedValues<>(helper, new DynamoSupplier(), spark, options,
-        Clock.systemUTC());
+    GcOptions options =
+        ImmutableGcOptions.builder()
+            .bloomFilterCapacity(10_000_000)
+            .maxAgeMicros(ONE_DAY_OLD_MICROS)
+            .timeSlopMicros(ONE_HOUR_OLD_MICROS)
+            .build();
+    IdentifyUnreferencedValues<DummyValue> identifyValues =
+        new IdentifyUnreferencedValues<>(
+            helper, new DynamoSupplier(), spark, options, Clock.systemUTC());
     Dataset<CategorizedValue> values = identifyValues.identify();
 
     // test to make sure values are correct and correctly referenced.
     List<CategorizedValue> valuesList = values.collectAsList();
-    Set<DummyValue> actualReferencedValues = valuesList.stream().filter(CategorizedValue::isReferenced).map(CategorizedValue::getData)
-        .map(x -> helper.getValueSerializer().fromBytes(ByteString.copyFrom(x))).collect(Collectors.toSet());
-    Set<DummyValue> actualValues = valuesList.stream().map(CategorizedValue::getData)
-        .map(x -> helper.getValueSerializer().fromBytes(ByteString.copyFrom(x))).collect(Collectors.toSet());
-    assertThat(actualReferencedValues).containsExactlyInAnyOrder(expectedReferencedValues.toArray(new DummyValue[0]));
+    Set<DummyValue> actualReferencedValues =
+        valuesList.stream()
+            .filter(CategorizedValue::isReferenced)
+            .map(CategorizedValue::getData)
+            .map(x -> helper.getValueSerializer().fromBytes(ByteString.copyFrom(x)))
+            .collect(Collectors.toSet());
+    Set<DummyValue> actualValues =
+        valuesList.stream()
+            .map(CategorizedValue::getData)
+            .map(x -> helper.getValueSerializer().fromBytes(ByteString.copyFrom(x)))
+            .collect(Collectors.toSet());
+    assertThat(actualReferencedValues)
+        .containsExactlyInAnyOrder(expectedReferencedValues.toArray(new DummyValue[0]));
     assertThat(actualValues).containsExactlyInAnyOrder(expectedValues.toArray(new DummyValue[0]));
 
-    IdentifyUnreferencedAssets<DummyValue, GcTestUtils.DummyAsset> identifyAssets = new IdentifyUnreferencedAssets<>(
-        helper.getValueSerializer(), new GcTestUtils.DummyAssetKeySerializer(), new DummyAssetConverter(), v -> true, spark);
+    IdentifyUnreferencedAssets<DummyValue, GcTestUtils.DummyAsset> identifyAssets =
+        new IdentifyUnreferencedAssets<>(
+            helper.getValueSerializer(),
+            new GcTestUtils.DummyAssetKeySerializer(),
+            new DummyAssetConverter(),
+            v -> true,
+            spark);
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = identifyAssets.identify(values);
-    Set<String> unreferencedItems = items.collectAsList().stream().map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
-        .collect(Collectors.toSet());
+    Set<String> unreferencedItems =
+        items.collectAsList().stream()
+            .map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
+            .collect(Collectors.toSet());
     assertThat(unreferencedItems).containsExactlyInAnyOrder("-1", "-2", "-3", "-60", "-61");
   }
 
   private void save(long microsDt, DummyValue value) {
-    SaveOp<Value> saveOp = new SaveOp<Value>(ValueType.VALUE, Id.generateRandom()) {
-      @Override
-      public void serialize(Value consumer) {
-        try {
-          consumer.dt(microsDt)
-              .id(Id.generateRandom())
-              .value(ByteString.copyFrom(MAPPER.writeValueAsBytes(value)));
-        } catch (JsonProcessingException e) {
-          throw new RuntimeException(e);
-        }
-
-      }
-    };
+    SaveOp<Value> saveOp =
+        new SaveOp<Value>(ValueType.VALUE, Id.generateRandom()) {
+          @Override
+          public void serialize(Value consumer) {
+            try {
+              consumer
+                  .dt(microsDt)
+                  .id(Id.generateRandom())
+                  .value(ByteString.copyFrom(MAPPER.writeValueAsBytes(value)));
+            } catch (JsonProcessingException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        };
     store.put(saveOp, Optional.empty());
   }
 
@@ -181,7 +200,11 @@ public class ITTestIdentifyUnreferencedAssets {
     helper = new StoreW();
     store = new DtAdjustingStore(DynamoSupplier.createStore());
     store.start();
-    versionStore = new TieredVersionStore<>(helper, store, ImmutableTieredVersionStoreConfig.builder().waitOnCollapse(true).build());
+    versionStore =
+        new TieredVersionStore<>(
+            helper,
+            store,
+            ImmutableTieredVersionStoreConfig.builder().waitOnCollapse(true).build());
     versionStore.create(BranchName.of("main"), Optional.empty());
   }
 
@@ -193,12 +216,12 @@ public class ITTestIdentifyUnreferencedAssets {
     versionStore = null;
   }
 
-
   private CommitBuilder<DummyValue, String, StringSerializer.TestEnum> commit() {
     return new CommitBuilder<DummyValue, String, StringSerializer.TestEnum>(versionStore);
   }
 
-  private static class StoreW implements StoreWorker<DummyValue, String, StringSerializer.TestEnum> {
+  private static class StoreW
+      implements StoreWorker<DummyValue, String, StringSerializer.TestEnum> {
     @Override
     public SerializerWithPayload<DummyValue, StringSerializer.TestEnum> getValueSerializer() {
       return new DummyValueSerializer();
@@ -210,8 +233,8 @@ public class ITTestIdentifyUnreferencedAssets {
     }
   }
 
-  private static class DummyValueSerializer extends GcTestUtils.JsonSerializer<DummyValue> implements Serializable,
-      SerializerWithPayload<DummyValue, StringSerializer.TestEnum> {
+  private static class DummyValueSerializer extends GcTestUtils.JsonSerializer<DummyValue>
+      implements Serializable, SerializerWithPayload<DummyValue, StringSerializer.TestEnum> {
 
     public DummyValueSerializer() {
       super(DummyValue.class);
@@ -228,7 +251,8 @@ public class ITTestIdentifyUnreferencedAssets {
     }
   }
 
-  private static class DummyAssetConverter implements AssetKeyConverter<DummyValue, GcTestUtils.DummyAsset>, Serializable {
+  private static class DummyAssetConverter
+      implements AssetKeyConverter<DummyValue, GcTestUtils.DummyAsset>, Serializable {
 
     @Override
     public Stream<GcTestUtils.DummyAsset> apply(DummyValue value) {
@@ -242,7 +266,9 @@ public class ITTestIdentifyUnreferencedAssets {
     private final List<GcTestUtils.DummyAsset> assets;
 
     @JsonCreator
-    public DummyValue(@JsonProperty("id") byte[] id, @JsonProperty("assets") List<GcTestUtils.DummyAsset> assets) {
+    public DummyValue(
+        @JsonProperty("id") byte[] id,
+        @JsonProperty("assets") List<GcTestUtils.DummyAsset> assets) {
       super();
       this.id = Id.of(id);
       this.assets = assets;
@@ -290,6 +316,4 @@ public class ITTestIdentifyUnreferencedAssets {
       return Objects.hash(id, assets);
     }
   }
-
-
 }

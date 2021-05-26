@@ -15,32 +15,30 @@
  */
 package org.projectnessie.server;
 
+import io.smallrye.jwt.build.Jwt;
 import java.util.Arrays;
 import java.util.HashSet;
-
 import org.eclipse.microprofile.jwt.Claims;
-
-import io.smallrye.jwt.build.Jwt;
 
 public class GenerateToken {
 
-  /**
-   * Generate JWT token.
-   */
+  /** Generate JWT token. */
   public static void main(String[] args) {
-    String token = Jwt.issuer("http://nessie.dremio.com")
-                      .upn("admin_user")
-                      .groups(new HashSet<>(Arrays.asList("user", "admin")))
-                      .claim(Claims.birthdate.name(), "2001-07-13")
-                      .expiresAt(Long.MAX_VALUE)
-                      .sign();
+    String token =
+        Jwt.issuer("http://nessie.dremio.com")
+            .upn("admin_user")
+            .groups(new HashSet<>(Arrays.asList("user", "admin")))
+            .claim(Claims.birthdate.name(), "2001-07-13")
+            .expiresAt(Long.MAX_VALUE)
+            .sign();
     System.out.println(token);
-    token = Jwt.issuer("https://quarkus.io/using-jwt-rbac")
-               .upn("test_user")
-               .groups(new HashSet<>(Arrays.asList("user")))
-               .claim(Claims.birthdate.name(), "2001-07-13")
-               .expiresAt(Long.MAX_VALUE)
-               .sign();
+    token =
+        Jwt.issuer("https://quarkus.io/using-jwt-rbac")
+            .upn("test_user")
+            .groups(new HashSet<>(Arrays.asList("user")))
+            .claim(Claims.birthdate.name(), "2001-07-13")
+            .expiresAt(Long.MAX_VALUE)
+            .sign();
     System.out.println(token);
   }
 }

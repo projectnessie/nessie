@@ -18,8 +18,8 @@ package org.projectnessie.client.rest;
 import org.projectnessie.error.NessieError;
 
 /**
- * If a backend store refuses to process a request, the condition is signalled to clients
- * via this exception.
+ * If a backend store refuses to process a request, the condition is signalled to clients via this
+ * exception.
  */
 public class NessieBackendThrottledException extends NessieServiceException {
 

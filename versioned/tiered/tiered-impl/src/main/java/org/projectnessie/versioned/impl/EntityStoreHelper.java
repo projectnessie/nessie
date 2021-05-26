@@ -16,13 +16,10 @@
 package org.projectnessie.versioned.impl;
 
 import java.util.function.Consumer;
-
 import org.projectnessie.versioned.store.SaveOp;
 import org.projectnessie.versioned.store.ValueType;
 
-/**
- * Ugly bridge class to hide the private entities needed to initialize a store.
- */
+/** Ugly bridge class to hide the private entities needed to initialize a store. */
 public final class EntityStoreHelper {
 
   /**
@@ -35,5 +32,4 @@ public final class EntityStoreHelper {
     consumer.accept(new EntitySaveOp<>(ValueType.L2, InternalL2.EMPTY));
     consumer.accept(new EntitySaveOp<>(ValueType.L3, InternalL3.EMPTY));
   }
-
 }

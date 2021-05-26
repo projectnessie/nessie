@@ -18,7 +18,6 @@ package org.projectnessie.versioned.store;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.UpdateExpression;
 import org.projectnessie.versioned.tiered.BaseValue;
@@ -30,21 +29,20 @@ public interface Store extends AutoCloseable {
 
   /**
    * Start the store.
+   *
    * @throws StoreOperationException Thrown if Store fails to initialize.
    */
   void start();
 
-  /**
-   * Close the store and any underlying resources or connections.
-   */
+  /** Close the store and any underlying resources or connections. */
   @Override
   void close();
 
   /**
    * Load the collection of {@link LoadStep}s in order.
    *
-   * <p>This Will fail if any load within any step. Consumers are informed as the
-   * records are loaded so this load may leave inputs in a partial state.
+   * <p>This Will fail if any load within any step. Consumers are informed as the records are loaded
+   * so this load may leave inputs in a partial state.
    *
    * @param loadstep The first step of the chain to load.
    * @throws NotFoundException If one or more items are not found.
@@ -65,13 +63,14 @@ public interface Store extends AutoCloseable {
   /**
    * Put a value in the store.
    *
-   * <p>This could be an insert or an update. A condition can be optionally provided that will be validated
-   * before completing the put operation.
+   * <p>This could be an insert or an update. A condition can be optionally provided that will be
+   * validated before completing the put operation.
    *
    * @param <C> the consumer type
    * @param saveOp The {@link SaveOp} that describes the value to put.
    * @param condition The optional condition to check before doing the put operation.
-   * @throws ConditionFailedException If the condition provided didn't match the current state of the value.
+   * @throws ConditionFailedException If the condition provided didn't match the current state of
+   *     the value.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
   <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition);
@@ -86,7 +85,8 @@ public interface Store extends AutoCloseable {
    * @throws NotFoundException If no value was found for the specified Id.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition);
+  <C extends BaseValue<C>> boolean delete(
+      ValueType<C> type, Id id, Optional<ConditionExpression> condition);
 
   /**
    * Batch put/save operation.
@@ -113,7 +113,8 @@ public interface Store extends AutoCloseable {
   <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer);
 
   /**
-   * Do a conditional update. If the condition succeeds, optionally return the values via a consumer.
+   * Do a conditional update. If the condition succeeds, optionally return the values via a
+   * consumer.
    *
    * @param type The type of value the store is applied to.
    * @param id The id the update operation applies to
@@ -125,8 +126,13 @@ public interface Store extends AutoCloseable {
    * @throws NotFoundException Thrown if no value is found with the provided id.
    * @throws StoreOperationException Thrown if some kind of underlying storage operation fails.
    */
-  <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
-      Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer) throws NotFoundException;
+  <C extends BaseValue<C>> boolean update(
+      ValueType<C> type,
+      Id id,
+      UpdateExpression update,
+      Optional<ConditionExpression> condition,
+      Optional<BaseValue<C>> consumer)
+      throws NotFoundException;
 
   interface Acceptor<C extends BaseValue<C>> {
     void applyValue(C consumer);
@@ -137,7 +143,8 @@ public interface Store extends AutoCloseable {
    *
    * @param <C> the consumer type
    * @param type The {@link ValueType} to load.
-   * @return stream with {@link Acceptor} instances that accept {@link BaseValue} instances to produce values
+   * @return stream with {@link Acceptor} instances that accept {@link BaseValue} instances to
+   *     produce values
    */
   <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type);
 }

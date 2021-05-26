@@ -26,13 +26,11 @@ import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.map;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.store.KeyDelta;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.L3;
-
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class DynamoL3 extends DynamoBaseValue<L3> implements L3 {
@@ -64,19 +62,19 @@ class DynamoL3 extends DynamoBaseValue<L3> implements L3 {
     return super.build();
   }
 
-  /**
-   * Deserialize a DynamoDB entity into the given consumer.
-   */
+  /** Deserialize a DynamoDB entity into the given consumer. */
   static void toConsumer(Map<String, AttributeValue> entity, L3 consumer) {
     baseToConsumer(entity, consumer);
 
     if (entity.containsKey(TREE)) {
-      Stream<KeyDelta> keyDelta = attributeValue(entity, TREE).l().stream()
-          .map(AttributeValue::m)
-          .map(m -> {
-            WithPayload<Key> key = deserializeKeyWithPayload(attributeValue(m, TREE_KEY));
-            return KeyDelta.of(key, deserializeId(m, TREE_ID));
-          });
+      Stream<KeyDelta> keyDelta =
+          attributeValue(entity, TREE).l().stream()
+              .map(AttributeValue::m)
+              .map(
+                  m -> {
+                    WithPayload<Key> key = deserializeKeyWithPayload(attributeValue(m, TREE_KEY));
+                    return KeyDelta.of(key, deserializeId(m, TREE_ID));
+                  });
       consumer.keyDelta(keyDelta);
     }
   }

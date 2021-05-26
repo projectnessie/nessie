@@ -22,12 +22,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-
 import org.projectnessie.client.http.HttpClient.Method;
 
-/**
- * Context containing all important info about a request.
- */
+/** Context containing all important info about a request. */
 public class RequestContext {
 
   private final Map<String, Set<String>> headers;
@@ -72,14 +69,14 @@ public class RequestContext {
   }
 
   /**
-   * Adds a callback to be called when the request has finished. The {@code responseCallback}
-   * {@link BiConsumer consumer} is called with a non-{@code null} {@link ResponseContext}, if the
-   * HTTP request technically succeeded. The The {@code responseCallback}
-   * {@link BiConsumer consumer} is called with a non-{@code null} {@link Exception} object, if the
-   * HTTP request technically failed.
+   * Adds a callback to be called when the request has finished. The {@code responseCallback} {@link
+   * BiConsumer consumer} is called with a non-{@code null} {@link ResponseContext}, if the HTTP
+   * request technically succeeded. The The {@code responseCallback} {@link BiConsumer consumer} is
+   * called with a non-{@code null} {@link Exception} object, if the HTTP request technically
+   * failed.
    *
-   * @param responseCallback callback that receives either a non-{@code null} {@link ResponseContext}
-   *                         or a non-{@code null} {@link Exception}.
+   * @param responseCallback callback that receives either a non-{@code null} {@link
+   *     ResponseContext} or a non-{@code null} {@link Exception}.
    */
   public void addResponseCallback(BiConsumer<ResponseContext, Exception> responseCallback) {
     if (responseCallbacks == null) {

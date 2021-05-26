@@ -17,11 +17,8 @@ package org.projectnessie.client.http;
 
 import java.util.Arrays;
 
-/**
- * HTTP request status enum. Map return code to concrete status type with message.
- */
+/** HTTP request status enum. Map return code to concrete status type with message. */
 public enum Status {
-
   OK(200, "OK"),
   CREATED(201, "Created"),
   ACCEPTED(202, "Accepted"),
@@ -66,7 +63,6 @@ public enum Status {
   private final int code;
   private final String reason;
 
-
   Status(final int statusCode, final String reason) {
     this.code = statusCode;
     this.reason = reason;
@@ -74,15 +70,17 @@ public enum Status {
 
   /**
    * get Status enum from http return code.
+   *
    * @param code return code
    * @return Status for return code
    * @throws UnsupportedOperationException if unknown status code
    */
   public static Status fromCode(int code) {
     return Arrays.stream(Status.values())
-                 .filter(x -> x.code == code)
-                 .findFirst()
-                 .orElseThrow(() -> new UnsupportedOperationException(String.format("Unknown status code %d", code)));
+        .filter(x -> x.code == code)
+        .findFirst()
+        .orElseThrow(
+            () -> new UnsupportedOperationException(String.format("Unknown status code %d", code)));
   }
 
   public int getCode() {

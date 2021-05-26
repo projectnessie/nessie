@@ -15,9 +15,7 @@
  */
 package org.projectnessie.versioned.store;
 
-/**
- * Thrown when a conditional operation fails.
- */
+/** Thrown when a conditional operation fails. */
 @SuppressWarnings("serial")
 public class ConditionFailedException extends StoreException {
 
@@ -28,5 +26,4 @@ public class ConditionFailedException extends StoreException {
   public ConditionFailedException(String message) {
     super(message);
   }
-
 }

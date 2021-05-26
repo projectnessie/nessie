@@ -24,7 +24,6 @@ import static org.projectnessie.client.NessieConfigConstants.CONF_NESSIE_USERNAM
 
 import java.net.URI;
 import java.util.function.Function;
-
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
@@ -49,17 +48,16 @@ public interface NessieClient extends AutoCloseable {
   ConfigApi getConfigApi();
 
   /**
-   * Create a new {@link Builder} to configure a new {@link NessieClient}.
-   * Currently, the {@link Builder} is only capable of building a {@link NessieClient} for HTTP,
-   * but that may change.
+   * Create a new {@link Builder} to configure a new {@link NessieClient}. Currently, the {@link
+   * Builder} is only capable of building a {@link NessieClient} for HTTP, but that may change.
    */
   static Builder builder() {
     return new Builder();
   }
 
   /**
-   * Builder to configure a new {@link NessieClient}. Currently, the {@link Builder} is only
-   * capable of building a {@link NessieClient} for HTTP, but that may change.
+   * Builder to configure a new {@link NessieClient}. Currently, the {@link Builder} is only capable
+   * of building a {@link NessieClient} for HTTP, but that may change.
    */
   class Builder {
     private AuthType authType = AuthType.NONE;
@@ -67,11 +65,14 @@ public interface NessieClient extends AutoCloseable {
     private String username;
     private String password;
     private boolean tracing;
-    private int readTimeoutMillis = Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
-    private int connectionTimeoutMillis = Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "5000"));
+    private int readTimeoutMillis =
+        Integer.parseInt(System.getProperty("sun.net.client.defaultReadTimeout", "25000"));
+    private int connectionTimeoutMillis =
+        Integer.parseInt(System.getProperty("sun.net.client.defaultConnectionTimeout", "5000"));
 
     /**
      * Same semantics as {@link #fromConfig(Function)}, uses the system properties.
+     *
      * @return {@code this}
      * @see #fromConfig(Function)
      */
@@ -84,6 +85,7 @@ public interface NessieClient extends AutoCloseable {
      * configuration keys defined by the constants defined in {@link NessieConfigConstants}.
      * Non-{@code null} values returned by the {@code configuration}-function will override
      * previously configured values.
+     *
      * @param configuration The function that returns a configuration value for a configuration key.
      * @return {@code this}
      * @see #fromSystemProperties()
@@ -117,6 +119,7 @@ public interface NessieClient extends AutoCloseable {
 
     /**
      * Set the authentication type. Default is {@link AuthType#NONE}.
+     *
      * @param authType new auth-type
      * @return {@code this}
      */
@@ -127,6 +130,7 @@ public interface NessieClient extends AutoCloseable {
 
     /**
      * Set the Nessie server URI. A server URI must be configured.
+     *
      * @param uri server URI
      * @return {@code this}
      */
@@ -137,6 +141,7 @@ public interface NessieClient extends AutoCloseable {
 
     /**
      * Convenience method for {@link #withUri(URI)} taking a string.
+     *
      * @param uri server URI
      * @return {@code this}
      */
@@ -146,6 +151,7 @@ public interface NessieClient extends AutoCloseable {
 
     /**
      * Set the username for {@link AuthType#BASIC} authentication.
+     *
      * @param username username
      * @return {@code this}
      */
@@ -156,6 +162,7 @@ public interface NessieClient extends AutoCloseable {
 
     /**
      * Set the password for {@link AuthType#BASIC} authentication.
+     *
      * @param password password
      * @return {@code this}
      */
@@ -165,8 +172,9 @@ public interface NessieClient extends AutoCloseable {
     }
 
     /**
-     * Whether to enable adding the HTTP headers of an active OpenTracing span to all
-     * Nessie requests. If enabled, the OpenTracing dependencies must be present at runtime.
+     * Whether to enable adding the HTTP headers of an active OpenTracing span to all Nessie
+     * requests. If enabled, the OpenTracing dependencies must be present at runtime.
+     *
      * @param tracing {@code true} to enable passing HTTP headers for active tracing spans.
      * @return {@code this}
      */
@@ -176,7 +184,9 @@ public interface NessieClient extends AutoCloseable {
     }
 
     /**
-     * Set the read timeout in milliseconds for this client. Timeout will throw {@link HttpClientReadTimeoutException}.
+     * Set the read timeout in milliseconds for this client. Timeout will throw {@link
+     * HttpClientReadTimeoutException}.
+     *
      * @param readTimeoutMillis number of seconds to wait for a response from server.
      * @return {@code this}
      */
@@ -186,7 +196,9 @@ public interface NessieClient extends AutoCloseable {
     }
 
     /**
-     * Set the connection timeout in milliseconds for this client. Timeout will throw {@link HttpClientException}.
+     * Set the connection timeout in milliseconds for this client. Timeout will throw {@link
+     * HttpClientException}.
+     *
      * @param connectionTimeoutMillis number of seconds to wait to connect to the server.
      * @return {@code this}
      */
@@ -197,10 +209,12 @@ public interface NessieClient extends AutoCloseable {
 
     /**
      * Build a new {@link NessieClient}.
+     *
      * @return new {@link NessieClient}
      */
     public NessieClient build() {
-      return new NessieHttpClient(authType, uri, username, password, tracing, readTimeoutMillis, connectionTimeoutMillis);
+      return new NessieHttpClient(
+          authType, uri, username, password, tracing, readTimeoutMillis, connectionTimeoutMillis);
     }
   }
 }

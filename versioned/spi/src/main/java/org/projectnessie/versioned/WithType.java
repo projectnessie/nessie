@@ -26,18 +26,15 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface WithType<T, E extends Enum<E>> {
 
-  /**
-   * Get the type of this entity as an enum.
-   */
+  /** Get the type of this entity as an enum. */
   Enum<E> getType();
 
-  /**
-   * Get the value this object wraps.
-   */
+  /** Get the value this object wraps. */
   T getValue();
 
   /**
    * Build a WithPayload object of type T.
+   *
    * @param <T> The value type to hold
    * @param type The type this value is connected to
    * @param value The value held.

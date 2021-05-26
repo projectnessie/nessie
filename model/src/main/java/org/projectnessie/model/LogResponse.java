@@ -15,12 +15,10 @@
  */
 package org.projectnessie.model;
 
-import java.util.List;
-
-import org.immutables.value.Value;
-
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.List;
+import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableLogResponse.class)
@@ -28,5 +26,4 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 public interface LogResponse extends PaginatedResponse {
 
   List<CommitMeta> getOperations();
-
 }

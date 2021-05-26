@@ -15,22 +15,18 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.MapDifference.ValueDifference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.LoadStep;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.MapDifference.ValueDifference;
-
-/**
- * Given two L1s, determine the value differences between them.
- */
+/** Given two L1s, determine the value differences between them. */
 class DiffFinder {
 
   private final List<L3Diff> l3Diffs = new ArrayList<>();
@@ -82,7 +78,6 @@ class DiffFinder {
 
       return loadOps.build(() -> L2Diff.loadStep(l2Diffs, l3DiffsOutput));
     }
-
   }
 
   private static class L2Diff {
@@ -97,7 +92,8 @@ class DiffFinder {
       this.to = to;
     }
 
-    public static Optional<LoadStep> loadStep(Collection<L2Diff> diffs, List<L3Diff> l3DiffsOutput) {
+    public static Optional<LoadStep> loadStep(
+        Collection<L2Diff> diffs, List<L3Diff> l3DiffsOutput) {
       EntityLoadOps loadOps = new EntityLoadOps();
       for (L2Diff diff : diffs) {
         InternalL2 from = diff.from;
@@ -132,12 +128,9 @@ class DiffFinder {
     Stream<KeyDiff> getKeyDiffs() {
       return InternalL3.compare(from, to);
     }
-
   }
 
-  /**
-   * Describes the state of mutated key between two versions.
-   */
+  /** Describes the state of mutated key between two versions. */
   static class KeyDiff {
 
     private final InternalKey key;
@@ -168,6 +161,7 @@ class DiffFinder {
 
     /**
      * The key that this diff applies to.
+     *
      * @return The key
      */
     public InternalKey getKey() {
@@ -176,6 +170,7 @@ class DiffFinder {
 
     /**
      * The initial value of this Key.
+     *
      * @return The Id. Will be Id.EMPTY if the key was added as part of this diff.
      */
     public Id getFrom() {
@@ -184,12 +179,12 @@ class DiffFinder {
 
     /**
      * The final value of this Key.
+     *
      * @return The Id. Will be Id.EMPTY if the key was removed as part of this diff.
      */
     public Id getTo() {
       return to;
     }
-
   }
 
   static List<DiffFinder> getFinders(List<InternalL1> l1Ascending) {

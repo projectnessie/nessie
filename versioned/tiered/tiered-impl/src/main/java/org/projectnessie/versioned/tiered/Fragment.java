@@ -16,21 +16,20 @@
 package org.projectnessie.versioned.tiered;
 
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.WithPayload;
 
 /**
  * Consumer for fragments.
- * <p>
- * Implementations must return a shared state ({@code this}) from its method.
- * </p>
+ *
+ * <p>Implementations must return a shared state ({@code this}) from its method.
  */
 public interface Fragment extends BaseValue<Fragment> {
 
   /**
    * The commit metadata id for this l1.
-   * <p>Must be called exactly once.</p>
+   *
+   * <p>Must be called exactly once.
    *
    * @param keys The keys to add.
    * @return This consumer.

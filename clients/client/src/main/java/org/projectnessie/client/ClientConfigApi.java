@@ -15,7 +15,6 @@
  */
 package org.projectnessie.client;
 
-
 import org.projectnessie.api.ConfigApi;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.model.NessieConfiguration;

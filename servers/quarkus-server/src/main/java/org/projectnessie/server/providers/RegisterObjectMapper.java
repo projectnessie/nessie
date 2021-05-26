@@ -15,12 +15,10 @@
  */
 package org.projectnessie.server.providers;
 
-import javax.inject.Singleton;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-
 import io.quarkus.jackson.ObjectMapperCustomizer;
+import javax.inject.Singleton;
 
 @Singleton
 public class RegisterObjectMapper implements ObjectMapperCustomizer {

@@ -17,7 +17,6 @@ package org.projectnessie.hms.apis;
 
 import java.util.List;
 import java.util.Map;
-
 import org.apache.hadoop.hive.metastore.api.AggrStats;
 import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.ColumnStatistics;
@@ -56,11 +55,16 @@ import org.projectnessie.hms.annotation.NoopQuiet.QuietMode;
 import org.projectnessie.hms.annotation.NoopThrow;
 import org.projectnessie.hms.annotation.Route;
 
-
 /**
- * Defines the vast majority of Hive metastore apis that exist, prescribing the handling of each via annotations.
+ * Defines the vast majority of Hive metastore apis that exist, prescribing the handling of each via
+ * annotations.
  */
-@SuppressWarnings({"checkstyle:*", "checkstyle:LineLength", "checkstyle:OverloadMethodsDeclarationOrder", "checkstyle:ParameterName"})
+@SuppressWarnings({
+  "checkstyle:*",
+  "checkstyle:LineLength",
+  "checkstyle:OverloadMethodsDeclarationOrder",
+  "checkstyle:ParameterName"
+})
 public interface BaseRawStoreUnion extends NessieStore {
 
   @NoopThrow
@@ -70,7 +74,8 @@ public interface BaseRawStoreUnion extends NessieStore {
   List<String> listRoleNames();
 
   @NoopQuiet
-  boolean addRole(String rowName, String ownerName) throws InvalidObjectException, MetaException, NoSuchObjectException;
+  boolean addRole(String rowName, String ownerName)
+      throws InvalidObjectException, MetaException, NoSuchObjectException;
 
   @NoopThrow
   Role getRole(String roleName) throws NoSuchObjectException;
@@ -79,28 +84,47 @@ public interface BaseRawStoreUnion extends NessieStore {
   String[] getMasterKeys();
 
   @NoopThrow
-  void getFileMetadataByExpr(List<Long> fileIds, FileMetadataExprType type, byte[] expr, java.nio.ByteBuffer[] metadatas, java.nio.ByteBuffer[] exprResults, boolean[] eliminated) throws MetaException;
+  void getFileMetadataByExpr(
+      List<Long> fileIds,
+      FileMetadataExprType type,
+      byte[] expr,
+      java.nio.ByteBuffer[] metadatas,
+      java.nio.ByteBuffer[] exprResults,
+      boolean[] eliminated)
+      throws MetaException;
 
   @NoopThrow
-  List<HiveObjectPrivilege> listPrincipalDBGrantsAll(String principalName, PrincipalType principalType);
+  List<HiveObjectPrivilege> listPrincipalDBGrantsAll(
+      String principalName, PrincipalType principalType);
 
   @NoopThrow
-  boolean grantRole(Role role, String userName, PrincipalType principalType, String grantor, PrincipalType grantorType, boolean grantOption) throws MetaException, NoSuchObjectException, InvalidObjectException;
+  boolean grantRole(
+      Role role,
+      String userName,
+      PrincipalType principalType,
+      String grantor,
+      PrincipalType grantorType,
+      boolean grantOption)
+      throws MetaException, NoSuchObjectException, InvalidObjectException;
 
   @NoopThrow
-  List<HiveObjectPrivilege> listPrincipalPartitionGrantsAll(String principalName, PrincipalType principalType);
+  List<HiveObjectPrivilege> listPrincipalPartitionGrantsAll(
+      String principalName, PrincipalType principalType);
 
   @NoopThrow
-  List<HiveObjectPrivilege> listPrincipalTableColumnGrantsAll(String principalName, PrincipalType principalType);
+  List<HiveObjectPrivilege> listPrincipalTableColumnGrantsAll(
+      String principalName, PrincipalType principalType);
 
   @NoopThrow
-  List<HiveObjectPrivilege> listPrincipalPartitionColumnGrantsAll(String principalName, PrincipalType principalType);
+  List<HiveObjectPrivilege> listPrincipalPartitionColumnGrantsAll(
+      String principalName, PrincipalType principalType);
 
   @NoopQuiet
   void verifySchema() throws MetaException;
 
   @NoopThrow
-  List<HiveObjectPrivilege> listPrincipalGlobalGrants(String principalName, PrincipalType principalType);
+  List<HiveObjectPrivilege> listPrincipalGlobalGrants(
+      String principalName, PrincipalType principalType);
 
   @NoopThrow
   List<Role> listRoles(String principalName, PrincipalType principalType);
@@ -118,7 +142,8 @@ public interface BaseRawStoreUnion extends NessieStore {
   void flushCache();
 
   @NoopQuiet
-  boolean updateTableColumnStatistics(ColumnStatistics colStats) throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException;
+  boolean updateTableColumnStatistics(ColumnStatistics colStats)
+      throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException;
 
   @NoopQuiet
   boolean isFileMetadataSupported();
@@ -130,13 +155,15 @@ public interface BaseRawStoreUnion extends NessieStore {
   NotificationEventResponse getNextNotification(NotificationEventRequest rqst);
 
   @NoopQuiet
-  PrincipalPrivilegeSet getUserPrivilegeSet(String userName, List<String> groupNames) throws InvalidObjectException, MetaException;
+  PrincipalPrivilegeSet getUserPrivilegeSet(String userName, List<String> groupNames)
+      throws InvalidObjectException, MetaException;
 
   @NoopThrow
   void createFunction(Function func) throws InvalidObjectException, MetaException;
 
   @NoopQuiet
-  boolean revokePrivileges(PrivilegeBag privileges, boolean grantOption) throws InvalidObjectException, MetaException, NoSuchObjectException;
+  boolean revokePrivileges(PrivilegeBag privileges, boolean grantOption)
+      throws InvalidObjectException, MetaException, NoSuchObjectException;
 
   @NoopThrow
   boolean addToken(String tokenIdentifier, String delegationToken);
@@ -157,7 +184,8 @@ public interface BaseRawStoreUnion extends NessieStore {
   void updateMasterKey(Integer seqNo, String key) throws NoSuchObjectException, MetaException;
 
   @NoopThrow
-  boolean revokeRole(Role role, String userName, PrincipalType principalType, boolean grantOption) throws MetaException, NoSuchObjectException;
+  boolean revokeRole(Role role, String userName, PrincipalType principalType, boolean grantOption)
+      throws MetaException, NoSuchObjectException;
 
   @NoopThrow
   boolean createType(Type type);
@@ -175,16 +203,20 @@ public interface BaseRawStoreUnion extends NessieStore {
   java.nio.ByteBuffer[] getFileMetadata(List<Long> fileIds) throws MetaException;
 
   @NoopThrow
-  boolean updatePartitionColumnStatistics(@Route(true) ColumnStatistics statsObj, List<String> partVals) throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException;
+  boolean updatePartitionColumnStatistics(
+      @Route(true) ColumnStatistics statsObj, List<String> partVals)
+      throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException;
 
   @NoopQuiet
-  List<HiveObjectPrivilege> listPrincipalTableGrantsAll(String principalName, PrincipalType principalType);
+  List<HiveObjectPrivilege> listPrincipalTableGrantsAll(
+      String principalName, PrincipalType principalType);
 
   @NoopQuiet
   List<RolePrincipalGrant> listRolesWithGrants(String principalName, PrincipalType principalType);
 
   @NoopQuiet
-  boolean grantPrivileges(PrivilegeBag privileges) throws InvalidObjectException, MetaException, NoSuchObjectException;
+  boolean grantPrivileges(PrivilegeBag privileges)
+      throws InvalidObjectException, MetaException, NoSuchObjectException;
 
   @NoopThrow
   boolean removeToken(String tokenIdentifier);
@@ -201,11 +233,15 @@ public interface BaseRawStoreUnion extends NessieStore {
 
   @CatalogExtend
   @NoopQuiet
-  ColumnStatistics getTableColumnStatistics(@Route String dbName, String tableName, List<String> colName) throws MetaException, NoSuchObjectException;
+  ColumnStatistics getTableColumnStatistics(
+      @Route String dbName, String tableName, List<String> colName)
+      throws MetaException, NoSuchObjectException;
 
   @CatalogExtend
   @NoopQuiet
-  PrincipalPrivilegeSet getDBPrivilegeSet(@Route String dbName, String userName, List<String> groupNames) throws InvalidObjectException, MetaException;
+  PrincipalPrivilegeSet getDBPrivilegeSet(
+      @Route String dbName, String userName, List<String> groupNames)
+      throws InvalidObjectException, MetaException;
 
   @CatalogExtend
   @NoopQuiet
@@ -217,15 +253,26 @@ public interface BaseRawStoreUnion extends NessieStore {
 
   @CatalogExtend
   @NoopQuiet
-  PrincipalPrivilegeSet getTablePrivilegeSet(@Route String dbName, String tableName, String userName, List<String> groupNames) throws InvalidObjectException, MetaException;
+  PrincipalPrivilegeSet getTablePrivilegeSet(
+      @Route String dbName, String tableName, String userName, List<String> groupNames)
+      throws InvalidObjectException, MetaException;
 
   @CatalogExtend
   @NoopQuiet
-  List<String> listPartitionNamesPs(@Route String db_name, String tbl_name, List<String> part_vals, short max_parts) throws MetaException, NoSuchObjectException;
+  List<String> listPartitionNamesPs(
+      @Route String db_name, String tbl_name, List<String> part_vals, short max_parts)
+      throws MetaException, NoSuchObjectException;
 
   @CatalogExtend
   @NoopQuiet
-  PrincipalPrivilegeSet getColumnPrivilegeSet(@Route String dbName, String tableName, String partitionName, String columnName, String userName, List<String> groupNames) throws InvalidObjectException, MetaException;
+  PrincipalPrivilegeSet getColumnPrivilegeSet(
+      @Route String dbName,
+      String tableName,
+      String partitionName,
+      String columnName,
+      String userName,
+      List<String> groupNames)
+      throws InvalidObjectException, MetaException;
 
   @CatalogExtend
   @NoopQuiet(QuietMode.NULL)
@@ -233,19 +280,24 @@ public interface BaseRawStoreUnion extends NessieStore {
 
   @CatalogExtend
   @NoopQuiet
-  List<HiveObjectPrivilege> listTableColumnGrantsAll(@Route String dbName, String tableName, String columnName);
+  List<HiveObjectPrivilege> listTableColumnGrantsAll(
+      @Route String dbName, String tableName, String columnName);
 
   @NoopQuiet
   @CatalogExtend
-  List<ColumnStatistics> getPartitionColumnStatistics(@Route String dbName, String tblName, List<String> partNames, List<String> colNames) throws MetaException, NoSuchObjectException;
+  List<ColumnStatistics> getPartitionColumnStatistics(
+      @Route String dbName, String tblName, List<String> partNames, List<String> colNames)
+      throws MetaException, NoSuchObjectException;
 
   @NoopThrow
   @CatalogExtend
-  void dropFunction(@Route String dbName, String funcName) throws MetaException, NoSuchObjectException, InvalidObjectException, InvalidInputException;
+  void dropFunction(@Route String dbName, String funcName)
+      throws MetaException, NoSuchObjectException, InvalidObjectException, InvalidInputException;
 
   @NoopQuiet
   @CatalogExtend
-  List<HiveObjectPrivilege> listPartitionColumnGrantsAll(@Route String dbName, String tableName, String partitionName, String columnName);
+  List<HiveObjectPrivilege> listPartitionColumnGrantsAll(
+      @Route String dbName, String tableName, String partitionName, String columnName);
 
   @CatalogExtend
   @NoopQuiet(QuietMode.NULL)
@@ -253,21 +305,32 @@ public interface BaseRawStoreUnion extends NessieStore {
 
   @NoopThrow
   @CatalogExtend
-  void alterFunction(@Route String dbName, String funcName, Function newFunction) throws InvalidObjectException, MetaException;
+  void alterFunction(@Route String dbName, String funcName, Function newFunction)
+      throws InvalidObjectException, MetaException;
 
   @NoopThrow
   @CatalogExtend
-  AggrStats get_aggr_stats_for(@Route String dbName, String tblName, List<String> partNames, List<String> colNames) throws MetaException, NoSuchObjectException;
+  AggrStats get_aggr_stats_for(
+      @Route String dbName, String tblName, List<String> partNames, List<String> colNames)
+      throws MetaException, NoSuchObjectException;
 
   @NoopThrow
-  org.apache.hadoop.hive.metastore.FileMetadataHandler getFileMetadataHandler(FileMetadataExprType type);
+  org.apache.hadoop.hive.metastore.FileMetadataHandler getFileMetadataHandler(
+      FileMetadataExprType type);
 
   @NoopThrow
-  void putFileMetadata(List<Long> fileIds, List<java.nio.ByteBuffer> metadata, FileMetadataExprType type) throws MetaException;
+  void putFileMetadata(
+      List<Long> fileIds, List<java.nio.ByteBuffer> metadata, FileMetadataExprType type)
+      throws MetaException;
 
   @CatalogExtend
   @NoopQuiet
-  List<SQLForeignKey> getForeignKeys(@Route String parent_db_name, String parent_tbl_name, String foreign_db_name, String foreign_tbl_name) throws MetaException;
+  List<SQLForeignKey> getForeignKeys(
+      @Route String parent_db_name,
+      String parent_tbl_name,
+      String foreign_db_name,
+      String foreign_tbl_name)
+      throws MetaException;
 
   @NoopQuiet
   @CatalogExtend
@@ -275,22 +338,33 @@ public interface BaseRawStoreUnion extends NessieStore {
 
   @NoopQuiet
   @CatalogExtend
-  void dropConstraint(@Route String dbName, String tableName, String constraintName) throws NoSuchObjectException;
+  void dropConstraint(@Route String dbName, String tableName, String constraintName)
+      throws NoSuchObjectException;
 
   @NoopThrow
-  void alterIndex(@Route String dbname, String baseTblName, String name, Index newIndex) throws InvalidObjectException, MetaException;
+  void alterIndex(@Route String dbname, String baseTblName, String name, Index newIndex)
+      throws InvalidObjectException, MetaException;
 
   @NoopQuiet
-  List<HiveObjectPrivilege> listPrincipalDBGrants(String principalName, PrincipalType principalType, String dbName);
+  List<HiveObjectPrivilege> listPrincipalDBGrants(
+      String principalName, PrincipalType principalType, String dbName);
 
   @NoopQuiet
-  List<HiveObjectPrivilege> listPrincipalPartitionGrants(String principalName, PrincipalType principalType, String dbName, String tableName, List<String> partValues, String partName);
+  List<HiveObjectPrivilege> listPrincipalPartitionGrants(
+      String principalName,
+      PrincipalType principalType,
+      String dbName,
+      String tableName,
+      List<String> partValues,
+      String partName);
 
   @NoopQuiet
-  List<HiveObjectPrivilege> listAllTableGrants(String principalName, PrincipalType principalType, String dbName, String tableName);
+  List<HiveObjectPrivilege> listAllTableGrants(
+      String principalName, PrincipalType principalType, String dbName, String tableName);
 
   @NoopThrow
-  boolean dropIndex(@Route String dbName, String origTableName, String indexName) throws MetaException;
+  boolean dropIndex(@Route String dbName, String origTableName, String indexName)
+      throws MetaException;
 
   @NoopQuiet
   List<Index> getIndexes(@Route String dbName, String origTableName, int max) throws MetaException;
@@ -302,17 +376,31 @@ public interface BaseRawStoreUnion extends NessieStore {
   boolean addIndex(@Route Index index) throws InvalidObjectException, MetaException;
 
   @NoopQuiet
-  List<HiveObjectPrivilege> listPrincipalPartitionColumnGrants(String principalName, PrincipalType principalType, String dbName, String tableName, List<String> partValues, String partName, String columnName);
+  List<HiveObjectPrivilege> listPrincipalPartitionColumnGrants(
+      String principalName,
+      PrincipalType principalType,
+      String dbName,
+      String tableName,
+      List<String> partValues,
+      String partName,
+      String columnName);
 
   @NoopQuiet
-  List<String> listIndexNames(@Route String dbName, String origTableName, short max) throws MetaException;
+  List<String> listIndexNames(@Route String dbName, String origTableName, short max)
+      throws MetaException;
 
   @NoopQuiet
-  List<HiveObjectPrivilege> listPrincipalTableColumnGrants(String principalName, PrincipalType principalType, String dbName, String tableName, String columnName);
+  List<HiveObjectPrivilege> listPrincipalTableColumnGrants(
+      String principalName,
+      PrincipalType principalType,
+      String dbName,
+      String tableName,
+      String columnName);
 
   @CatalogExtend
   @NoopQuiet
-  void dropConstraint(String dbName, String tableName, String constraintName, boolean missingOk) throws NoSuchObjectException;
+  void dropConstraint(String dbName, String tableName, String constraintName, boolean missingOk)
+      throws NoSuchObjectException;
 
   @NoopThrow
   void addSerde(SerDeInfo serde) throws AlreadyExistsException, MetaException;
@@ -320,78 +408,131 @@ public interface BaseRawStoreUnion extends NessieStore {
   @NoopThrow
   SerDeInfo getSerDeInfo(String serDeName) throws NoSuchObjectException, MetaException;
 
-
   @NoopThrow
-  void dropWMTrigger(String resourcePlanName, String triggerName) throws NoSuchObjectException, InvalidOperationException, MetaException;
+  void dropWMTrigger(String resourcePlanName, String triggerName)
+      throws NoSuchObjectException, InvalidOperationException, MetaException;
 
   List<String> getCatalogs() throws MetaException;
 
   String getMetastoreDbUuid() throws MetaException;
 
-
   @NoopQuiet
   int deleteRuntimeStats(int maxRetainSecs) throws MetaException;
 
+  @NoopQuiet
+  List<HiveObjectPrivilege> listPrincipalDBGrants(
+      String principalName, PrincipalType principalType, String catName, String dbName);
 
   @NoopQuiet
-  List<HiveObjectPrivilege> listPrincipalDBGrants(String principalName, PrincipalType principalType, String catName, String dbName);
-
-
-
-  @NoopQuiet
-  List<HiveObjectPrivilege> listPrincipalTableColumnGrants(String principalName, PrincipalType principalType, String catName, String dbName, String tableName, String columnName);
+  List<HiveObjectPrivilege> listPrincipalTableColumnGrants(
+      String principalName,
+      PrincipalType principalType,
+      String catName,
+      String dbName,
+      String tableName,
+      String columnName);
 
   @NoopThrow
   void dropResourcePlan(String name) throws NoSuchObjectException, MetaException;
 
   @NoopQuiet
-  List<HiveObjectPrivilege> listPrincipalPartitionColumnGrants(String principalName, PrincipalType principalType, String catName, String dbName, String tableName, List<String> partValues, String partName, String columnName);
-
+  List<HiveObjectPrivilege> listPrincipalPartitionColumnGrants(
+      String principalName,
+      PrincipalType principalType,
+      String catName,
+      String dbName,
+      String tableName,
+      List<String> partValues,
+      String partName,
+      String columnName);
 
   @NoopQuiet
-  List<HiveObjectPrivilege> listAllTableGrants(String principalName, PrincipalType principalType, String catName, @Route String dbName, String tableName);
+  List<HiveObjectPrivilege> listAllTableGrants(
+      String principalName,
+      PrincipalType principalType,
+      String catName,
+      @Route String dbName,
+      String tableName);
 
   @NoopThrow
-  void createWMTriggerToPoolMapping(String resourcePlanName, String triggerName, String poolPath) throws AlreadyExistsException, NoSuchObjectException, InvalidOperationException, MetaException;
+  void createWMTriggerToPoolMapping(String resourcePlanName, String triggerName, String poolPath)
+      throws AlreadyExistsException, NoSuchObjectException, InvalidOperationException,
+          MetaException;
 
   @NoopQuiet
-  List<HiveObjectPrivilege> listPrincipalPartitionGrants(String principalName, PrincipalType principalType, String catName, @Route String dbName, String tableName, List<String> partValues, String partName);
+  List<HiveObjectPrivilege> listPrincipalPartitionGrants(
+      String principalName,
+      PrincipalType principalType,
+      String catName,
+      @Route String dbName,
+      String tableName,
+      List<String> partValues,
+      String partName);
 
   @NoopThrow
   void putFileMetadata(List<Long> fileIds, List<java.nio.ByteBuffer> metadata) throws MetaException;
 
   @NoopThrow
-  void createTableWithConstraints(@Route Table tbl, List<SQLPrimaryKey> primaryKeys, List<SQLForeignKey> foreignKeys) throws InvalidObjectException, MetaException;
+  void createTableWithConstraints(
+      @Route Table tbl, List<SQLPrimaryKey> primaryKeys, List<SQLForeignKey> foreignKeys)
+      throws InvalidObjectException, MetaException;
 
   @NoopQuiet
-  boolean refreshPrivileges(HiveObjectRef objToRefresh, PrivilegeBag grantPrivileges) throws InvalidObjectException, MetaException, NoSuchObjectException;
+  boolean refreshPrivileges(HiveObjectRef objToRefresh, PrivilegeBag grantPrivileges)
+      throws InvalidObjectException, MetaException, NoSuchObjectException;
 
   @NoopQuiet
-  boolean refreshPrivileges(HiveObjectRef objToRefresh, String authorizer, PrivilegeBag grantPrivileges) throws InvalidObjectException, MetaException, NoSuchObjectException;
-
-  @NoopQuiet
-  @CatalogExtend
-  boolean deletePartitionColumnStatistics(@Route String dbName, String tableName, String partName, List<String> partVals, String colName) throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException;
-
-  @NoopQuiet
-  @CatalogExtend
-  boolean isPartitionMarkedForEvent(@Route String dbName, String tblName, Map<String, String> partName, PartitionEventType evtType) throws MetaException, UnknownTableException, InvalidPartitionException, UnknownPartitionException;
+  boolean refreshPrivileges(
+      HiveObjectRef objToRefresh, String authorizer, PrivilegeBag grantPrivileges)
+      throws InvalidObjectException, MetaException, NoSuchObjectException;
 
   @NoopQuiet
   @CatalogExtend
-  boolean deleteTableColumnStatistics(@Route String dbName, String tableName, String colName) throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException;
+  boolean deletePartitionColumnStatistics(
+      @Route String dbName,
+      String tableName,
+      String partName,
+      List<String> partVals,
+      String colName)
+      throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException;
 
   @NoopQuiet
   @CatalogExtend
-  List<HiveObjectPrivilege> listPartitionGrantsAll(@Route String dbName, String tableName, String partitionName);
+  boolean isPartitionMarkedForEvent(
+      @Route String dbName,
+      String tblName,
+      Map<String, String> partName,
+      PartitionEventType evtType)
+      throws MetaException, UnknownTableException, InvalidPartitionException,
+          UnknownPartitionException;
 
   @NoopQuiet
   @CatalogExtend
-  PrincipalPrivilegeSet getPartitionPrivilegeSet(@Route String dbName, String tableName, String partition, String userName, List<String> groupNames) throws InvalidObjectException, MetaException;
+  boolean deleteTableColumnStatistics(@Route String dbName, String tableName, String colName)
+      throws NoSuchObjectException, MetaException, InvalidObjectException, InvalidInputException;
+
+  @NoopQuiet
+  @CatalogExtend
+  List<HiveObjectPrivilege> listPartitionGrantsAll(
+      @Route String dbName, String tableName, String partitionName);
+
+  @NoopQuiet
+  @CatalogExtend
+  PrincipalPrivilegeSet getPartitionPrivilegeSet(
+      @Route String dbName,
+      String tableName,
+      String partition,
+      String userName,
+      List<String> groupNames)
+      throws InvalidObjectException, MetaException;
 
   @NoopThrow
   @CatalogExtend
-  Table markPartitionForEvent(@Route String dbName, String tblName, Map<String, String> partVals, PartitionEventType evtType) throws MetaException, UnknownTableException, InvalidPartitionException, UnknownPartitionException;
-
-
+  Table markPartitionForEvent(
+      @Route String dbName,
+      String tblName,
+      Map<String, String> partVals,
+      PartitionEventType evtType)
+      throws MetaException, UnknownTableException, InvalidPartitionException,
+          UnknownPartitionException;
 }

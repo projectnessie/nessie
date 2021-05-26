@@ -15,17 +15,13 @@
  */
 package org.projectnessie.versioned;
 
-import java.util.Collection;
-
 import com.google.common.collect.ImmutableMap;
-
 import io.opentracing.Scope;
 import io.opentracing.log.Fields;
 import io.opentracing.tag.Tags;
+import java.util.Collection;
 
-/**
- * Utility methods for tracing.
- */
+/** Utility methods for tracing. */
 public final class TracingUtil {
 
   private TracingUtil() {
@@ -48,8 +44,13 @@ public final class TracingUtil {
    * @return returns {@code e}
    */
   public static RuntimeException traceError(Scope scope, RuntimeException e) {
-    Tags.ERROR.set(scope.span().log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(),
-        Fields.ERROR_OBJECT, e.toString())), true);
+    Tags.ERROR.set(
+        scope
+            .span()
+            .log(
+                ImmutableMap.of(
+                    Fields.EVENT, Tags.ERROR.getKey(), Fields.ERROR_OBJECT, e.toString())),
+        true);
     return e;
   }
 }

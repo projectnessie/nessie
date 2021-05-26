@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.projectnessie.versioned.impl.InternalBranch.UpdateState;
 import org.projectnessie.versioned.impl.condition.ConditionExpression;
@@ -36,24 +35,25 @@ import org.projectnessie.versioned.tiered.L1;
 
 class TestVersionEquality {
 
-  /**
-   * Make sure that a new branch has the L1.EMPTY_ID identifier.
-   */
+  /** Make sure that a new branch has the L1.EMPTY_ID identifier. */
   @Test
   void internalBranchL1IdEqualsEmpty() {
     InternalBranch b = new InternalBranch("n/a");
-    Store store = new MockStore() {
-      @Override
-      public <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
-        InternalL1.EMPTY.applyToConsumer((L1) consumer);
-      }
-
-    };
+    Store store =
+        new MockStore() {
+          @Override
+          public <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
+            InternalL1.EMPTY.applyToConsumer((L1) consumer);
+          }
+        };
     UpdateState us = b.getUpdateState(store);
-    us.ensureAvailable(null, null, ImmutableTieredVersionStoreConfig.builder()
-        .p2CommitAttempts(1)
-        .waitOnCollapse(true)
-        .build());
+    us.ensureAvailable(
+        null,
+        null,
+        ImmutableTieredVersionStoreConfig.builder()
+            .p2CommitAttempts(1)
+            .waitOnCollapse(true)
+            .build());
     assertEquals(InternalL1.EMPTY_ID, us.getL1().getId());
   }
 
@@ -66,16 +66,13 @@ class TestVersionEquality {
 
   private static class MockStore implements Store {
     @Override
-    public void start() {
-    }
+    public void start() {}
 
     @Override
-    public void close() {
-    }
+    public void close() {}
 
     @Override
-    public void load(LoadStep loadstep) {
-    }
+    public void load(LoadStep loadstep) {}
 
     @Override
     public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
@@ -83,27 +80,29 @@ class TestVersionEquality {
     }
 
     @Override
-    public <C extends BaseValue<C>> void put(SaveOp<C> saveOp,
-        Optional<ConditionExpression> condition) {
-    }
+    public <C extends BaseValue<C>> void put(
+        SaveOp<C> saveOp, Optional<ConditionExpression> condition) {}
 
     @Override
-    public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
+    public <C extends BaseValue<C>> boolean delete(
+        ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
       return false;
     }
 
     @Override
-    public void save(List<SaveOp<?>> ops) {
-    }
+    public void save(List<SaveOp<?>> ops) {}
 
     @Override
-    public <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
-    }
+    public <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {}
 
     @Override
-    public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id,
-        UpdateExpression update, Optional<ConditionExpression> condition,
-        Optional<BaseValue<C>> consumer) throws NotFoundException {
+    public <C extends BaseValue<C>> boolean update(
+        ValueType<C> type,
+        Id id,
+        UpdateExpression update,
+        Optional<ConditionExpression> condition,
+        Optional<BaseValue<C>> consumer)
+        throws NotFoundException {
       return false;
     }
 

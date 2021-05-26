@@ -24,28 +24,20 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-
 import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
-
 import org.projectnessie.server.config.VersionStoreConfig.VersionStoreType;
 
-/**
- * Store type qualifier for {@code VersionStoreFactory} classes.
- */
-@Target({ TYPE, METHOD, PARAMETER, FIELD })
+/** Store type qualifier for {@code VersionStoreFactory} classes. */
+@Target({TYPE, METHOD, PARAMETER, FIELD})
 @Retention(RUNTIME)
 @Documented
 @Qualifier
 public @interface StoreType {
-  /**
-   * Gets the store type.
-   */
+  /** Gets the store type. */
   VersionStoreType value();
 
-  /**
-   * Supports inline instantiation of the {@link StoreType} qualifier.
-   */
+  /** Supports inline instantiation of the {@link StoreType} qualifier. */
   public static final class Literal extends AnnotationLiteral<StoreType> implements StoreType {
 
     private static final long serialVersionUID = 1L;

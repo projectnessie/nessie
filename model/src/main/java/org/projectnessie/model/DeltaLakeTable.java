@@ -15,15 +15,12 @@
  */
 package org.projectnessie.model;
 
-import java.util.List;
-
-import javax.annotation.Nullable;
-
-import org.immutables.value.Value;
-
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.List;
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableDeltaLakeTable.class)
@@ -37,5 +34,4 @@ public abstract class DeltaLakeTable extends Contents {
 
   @Nullable
   public abstract String getLastCheckpoint();
-
 }

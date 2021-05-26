@@ -16,13 +16,10 @@
 package org.projectnessie.versioned.impl.condition;
 
 import java.util.List;
-
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
-/**
- * A toy implementation of a class to be used for dynamo testing.
- */
+/** A toy implementation of a class to be used for dynamo testing. */
 @DynamoDbBean
 public class Toy {
 
@@ -32,8 +29,7 @@ public class Toy {
   private byte[] data;
   private List<Bauble> baubles;
 
-  public Toy() {
-  }
+  public Toy() {}
 
   @DynamoDbPartitionKey
   public String getId() {
@@ -83,8 +79,7 @@ public class Toy {
     private String id;
     private Integer num;
 
-    public Bauble() {
-    }
+    public Bauble() {}
 
     public void setName(String name) {
       this.name = name;
@@ -109,6 +104,5 @@ public class Toy {
     public Integer getNum() {
       return num;
     }
-
   }
 }

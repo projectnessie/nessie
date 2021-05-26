@@ -15,18 +15,15 @@
  */
 package org.projectnessie.client.util;
 
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.function.Consumer;
 
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsServer;
-
-/**
- * A HTTP test server.
- */
+/** A HTTP test server. */
 public class TestServer implements AutoCloseable {
 
   private final HttpServer server;
@@ -37,20 +34,23 @@ public class TestServer implements AutoCloseable {
 
   /**
    * Constructor.
+   *
    * @param context server context
    * @param handler http request handler
    * @param init init method (optional)
    * @throws IOException maybe
    */
-  public TestServer(String context, HttpHandler handler, Consumer<HttpsServer> init) throws IOException {
-    HttpHandler safeHandler = exchange -> {
-      try {
-        handler.handle(exchange);
-      } catch (RuntimeException | Error e) {
-        exchange.sendResponseHeaders(503, 0);
-        throw e;
-      }
-    };
+  public TestServer(String context, HttpHandler handler, Consumer<HttpsServer> init)
+      throws IOException {
+    HttpHandler safeHandler =
+        exchange -> {
+          try {
+            handler.handle(exchange);
+          } catch (RuntimeException | Error e) {
+            exchange.sendResponseHeaders(503, 0);
+            throw e;
+          }
+        };
     if (init == null) {
       server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
     } else {
@@ -72,7 +72,12 @@ public class TestServer implements AutoCloseable {
   }
 
   public URI getUri() {
-    return URI.create("http://" + getAddress().getAddress().getHostAddress() + ":" + getAddress().getPort() + "/");
+    return URI.create(
+        "http://"
+            + getAddress().getAddress().getHostAddress()
+            + ":"
+            + getAddress().getPort()
+            + "/");
   }
 
   @Override

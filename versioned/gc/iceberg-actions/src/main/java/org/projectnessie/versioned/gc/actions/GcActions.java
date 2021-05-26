@@ -17,6 +17,8 @@ package org.projectnessie.versioned.gc.actions;
 
 import static org.apache.iceberg.types.Types.NestedField.required;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
@@ -26,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -65,27 +66,25 @@ import org.projectnessie.versioned.gc.ValueTypeFilter;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.tiered.gc.GcOptions;
 import org.projectnessie.versioned.tiered.gc.IdentifyUnreferencedValues;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.ByteString;
-
 import software.amazon.awssdk.regions.Region;
 
-/**
- * Identify unreferenced assets and update the gc table.
- */
+/** Identify unreferenced assets and update the gc table. */
 public class GcActions {
-  public static final TableIdentifier DEFAULT_TABLE_IDENTIFIER = TableIdentifier.parse("gc.identified_tables");
-  private static final StructType SCHEMA = SparkSchemaUtil.convert(new Schema(Types.StructType.of(
-      required(1, "tableName", Types.StringType.get()),
-      required(2, "timestamp", Types.TimestampType.withZone()),
-      required(3, "asset", Types.BinaryType.get()),
-      required(4, "snapshotId", Types.StringType.get()),
-      required(5, "assetType", Types.StringType.get()),
-      required(6, "path", Types.StringType.get()),
-      required(7, "name", Types.StringType.get()),
-      required(8, "runid", Types.LongType.get())
-  ).fields()));
+  public static final TableIdentifier DEFAULT_TABLE_IDENTIFIER =
+      TableIdentifier.parse("gc.identified_tables");
+  private static final StructType SCHEMA =
+      SparkSchemaUtil.convert(
+          new Schema(
+              Types.StructType.of(
+                      required(1, "tableName", Types.StringType.get()),
+                      required(2, "timestamp", Types.TimestampType.withZone()),
+                      required(3, "asset", Types.BinaryType.get()),
+                      required(4, "snapshotId", Types.StringType.get()),
+                      required(5, "assetType", Types.StringType.get()),
+                      required(6, "path", Types.StringType.get()),
+                      required(7, "name", Types.StringType.get()),
+                      required(8, "runid", Types.LongType.get()))
+                  .fields()));
 
   private final TableCommitMetaStoreWorker worker = new TableCommitMetaStoreWorker();
   private final Clock clock = Clock.systemUTC();
@@ -96,7 +95,11 @@ public class GcActions {
   private final GcOptions gcConfig;
   private final TableIdentifier table;
 
-  private GcActions(SparkSession spark, GcActionsConfig actionsConfig, GcOptions gcConfig, TableIdentifier table) {
+  private GcActions(
+      SparkSession spark,
+      GcActionsConfig actionsConfig,
+      GcOptions gcConfig,
+      TableIdentifier table) {
     this.spark = spark;
     this.actionsConfig = actionsConfig;
     this.gcConfig = gcConfig;
@@ -114,30 +117,40 @@ public class GcActions {
     return spark;
   }
 
-  /**
-   * Build Spark dataset of unreferenced assets. This is in the schema of the gc table.
-   */
+  /** Build Spark dataset of unreferenced assets. This is in the schema of the gc table. */
   public Dataset<Row> identifyUnreferencedAssets() throws AnalysisException {
-    IdentifyUnreferencedValues<Contents> values = new IdentifyUnreferencedValues<>(worker, store(actionsConfig), spark(), gcConfig, clock);
+    IdentifyUnreferencedValues<Contents> values =
+        new IdentifyUnreferencedValues<>(worker, store(actionsConfig), spark(), gcConfig, clock);
     Dataset<CategorizedValue> unreferencedValues = values.identify();
-    IdentifyUnreferencedAssets<Contents, IcebergAssetKey> assets = new IdentifyUnreferencedAssets<>(worker.getValueSerializer(),
-        assetKeySerializer, assetKeyConverter, new ValueTypeFilter(worker.getValueSerializer()), spark());
-    Dataset<IdentifyUnreferencedAssets.UnreferencedItem> unreferencedAssets = assets.identify(unreferencedValues);
+    IdentifyUnreferencedAssets<Contents, IcebergAssetKey> assets =
+        new IdentifyUnreferencedAssets<>(
+            worker.getValueSerializer(),
+            assetKeySerializer,
+            assetKeyConverter,
+            new ValueTypeFilter(worker.getValueSerializer()),
+            spark());
+    Dataset<IdentifyUnreferencedAssets.UnreferencedItem> unreferencedAssets =
+        assets.identify(unreferencedValues);
     long currentRunId = GcActionUtils.getMaxRunId(spark, table.toString()) + 1;
-    return unreferencedAssets.map(new ConvertToTableFunction(assetKeySerializer), RowEncoder.apply(SCHEMA))
-            .withColumn("runid", functions.lit(currentRunId));
+    return unreferencedAssets
+        .map(new ConvertToTableFunction(assetKeySerializer), RowEncoder.apply(SCHEMA))
+        .withColumn("runid", functions.lit(currentRunId));
   }
 
-  /**
-   * Append dataset to the gc table. Dataset is already in the correct schema.
-   */
+  /** Append dataset to the gc table. Dataset is already in the correct schema. */
   public void updateUnreferencedAssetTable(Dataset<Row> unreferencedAssets) {
     // sort because of https://issues.apache.org/jira/browse/SPARK-23889
-    unreferencedAssets.repartition(unreferencedAssets.col("tableName")).sortWithinPartitions().write().format("iceberg")
-        .mode("append").save(table.toString());
+    unreferencedAssets
+        .repartition(unreferencedAssets.col("tableName"))
+        .sortWithinPartitions()
+        .write()
+        .format("iceberg")
+        .mode("append")
+        .save(table.toString());
   }
 
-  private static class ConvertToTableFunction implements MapFunction<IdentifyUnreferencedAssets.UnreferencedItem, Row> {
+  private static class ConvertToTableFunction
+      implements MapFunction<IdentifyUnreferencedAssets.UnreferencedItem, Row> {
     private final AssetKeySerializer assetKeySerializer;
 
     private ConvertToTableFunction(AssetKeySerializer assetKeySerializer) {
@@ -146,27 +159,41 @@ public class GcActions {
 
     @Override
     public Row call(IdentifyUnreferencedAssets.UnreferencedItem value) throws Exception {
-      IcebergAssetKey assetKey = (IcebergAssetKey) assetKeySerializer.fromBytes(ByteString.copyFrom((byte[]) value.getAsset()));
+      IcebergAssetKey assetKey =
+          (IcebergAssetKey)
+              assetKeySerializer.fromBytes(ByteString.copyFrom((byte[]) value.getAsset()));
       List<String> key = value.getKey();
       long microTimestamp = value.getTimestamp();
       long secondTimestamp = TimeUnit.MICROSECONDS.toSeconds(microTimestamp);
       long nanos = microTimestamp * 1_000 - secondTimestamp * 1_000_000_000;
       Timestamp timestamp = Timestamp.from(Instant.ofEpochSecond(secondTimestamp, nanos));
 
-      return RowFactory.create(String.join(".", key), timestamp, value.getAsset(), assetKey.getSnapshotId(),
-          assetKey.getType().toString(), assetKey.getPath(), String.join(".", assetKey.toReportableName()));
+      return RowFactory.create(
+          String.join(".", key),
+          timestamp,
+          value.getAsset(),
+          assetKey.getSnapshotId(),
+          assetKey.getType().toString(),
+          assetKey.getPath(),
+          String.join(".", assetKey.toReportableName()));
     }
   }
 
   static DynamoStore createStore(GcActionsConfig config) {
-    return new DynamoStore(DynamoStoreConfig.builder().endpoint(Optional.ofNullable(config.getDynamoEndpoint()).map(e -> {
-      try {
-        return new URI(e);
-      } catch (URISyntaxException ex) {
-        throw new RuntimeException(ex);
-      }
-    }))
-      .region(Region.of(config.getDynamoRegion())).build());
+    return new DynamoStore(
+        DynamoStoreConfig.builder()
+            .endpoint(
+                Optional.ofNullable(config.getDynamoEndpoint())
+                    .map(
+                        e -> {
+                          try {
+                            return new URI(e);
+                          } catch (URISyntaxException ex) {
+                            throw new RuntimeException(ex);
+                          }
+                        }))
+            .region(Region.of(config.getDynamoRegion()))
+            .build());
   }
 
   private Supplier<Store> store(GcActionsConfig config) {
@@ -181,25 +208,34 @@ public class GcActions {
   private void createTable(TableIdentifier tableIdentifier) {
     CatalogPlugin catalog = spark.sessionState().catalogManager().currentCatalog();
     Identifier ident = Identifier.of(tableIdentifier.namespace().levels(), tableIdentifier.name());
-    Transform[] partitions = Spark3Util.toTransforms(
-        PartitionSpec.builderFor(SparkSchemaUtil.convert(SCHEMA)).identity("tableName").build());
+    Transform[] partitions =
+        Spark3Util.toTransforms(
+            PartitionSpec.builderFor(SparkSchemaUtil.convert(SCHEMA))
+                .identity("tableName")
+                .build());
     try {
       ((TableCatalog) catalog).createTable(ident, SCHEMA, partitions, ImmutableMap.of());
     } catch (TableAlreadyExistsException e) {
-      //table already exists. Does it have the same catalog?
+      // table already exists. Does it have the same catalog?
       try {
         if (!((TableCatalog) catalog).loadTable(ident).schema().equals(SCHEMA)) {
-          throw new RuntimeException(String.format("Cannot create table %s. Table with different schema already exists", ident), e);
+          throw new RuntimeException(
+              String.format(
+                  "Cannot create table %s. Table with different schema already exists", ident),
+              e);
         }
       } catch (NoSuchTableException noSuchTableException) {
         // can't happen
       }
     } catch (NoSuchNamespaceException e) {
-      //this can't happen when using a Nessie Catalog as namespaces are implicit. If this happens you are likely not using a Nessie catalog
+      // this can't happen when using a Nessie Catalog as namespaces are implicit. If this happens
+      // you are likely not using a Nessie catalog
       throw new RuntimeException(
-          String.format("Cannot create table. Are you using a Nessie Catalog. Catalog is %s", catalog.getClass().getName()), e);
+          String.format(
+              "Cannot create table. Are you using a Nessie Catalog. Catalog is %s",
+              catalog.getClass().getName()),
+          e);
     }
-
   }
 
   public static class Builder {

@@ -18,9 +18,9 @@ package org.projectnessie.versioned.store;
 import org.projectnessie.versioned.tiered.BaseValue;
 
 /**
- * Load operations in stores push the properties of the loaded values to the consumer
- * returned by {@link #getReceiver()} and call {@link #done()} when the load represented by
- * this load-operation is finished.
+ * Load operations in stores push the properties of the loaded values to the consumer returned by
+ * {@link #getReceiver()} and call {@link #done()} when the load represented by this load-operation
+ * is finished.
  *
  * @param <C> {@link BaseValue consumer} used to handle the load-operation
  */
@@ -30,6 +30,7 @@ public abstract class LoadOp<C extends BaseValue<C>> {
 
   /**
    * Create a load op.
+   *
    * @param type The value type that will be loaded.
    * @param id The id of the value.
    */
@@ -39,16 +40,16 @@ public abstract class LoadOp<C extends BaseValue<C>> {
   }
 
   /**
-   * Users of a {@link LoadOp} (the store implementations) can deserialize their representation
-   * into the {@link BaseValue} returned by this method and call {@link #done()} afterwards.
+   * Users of a {@link LoadOp} (the store implementations) can deserialize their representation into
+   * the {@link BaseValue} returned by this method and call {@link #done()} afterwards.
    *
    * @return receiver of the "properties"
    */
   public abstract C getReceiver();
 
   /**
-   * Users of a {@link LoadOp} (the store implementations) can deserialize their representation
-   * into the {@link BaseValue} returned by {@link #getReceiver()} and call this method afterwards.
+   * Users of a {@link LoadOp} (the store implementations) can deserialize their representation into
+   * the {@link BaseValue} returned by {@link #getReceiver()} and call this method afterwards.
    */
   public abstract void done();
 

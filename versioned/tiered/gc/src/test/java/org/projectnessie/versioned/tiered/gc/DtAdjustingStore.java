@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.dynamodb.DynamoStore;
 import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.UpdateExpression;
@@ -33,9 +32,7 @@ import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
 
-/**
- * A store that allows us to override the dt values on save.
- */
+/** A store that allows us to override the dt values on save. */
 class DtAdjustingStore implements Store {
 
   private Long override;
@@ -93,7 +90,6 @@ class DtAdjustingStore implements Store {
       }
       return ret;
     }
-
   }
 
   @Override
@@ -109,10 +105,12 @@ class DtAdjustingStore implements Store {
       @Override
       public void serialize(C consumer) {
         DtOverwrite handler = new DtOverwrite(consumer);
-        C newProxy = (C) Proxy.newProxyInstance(
-            Thread.currentThread().getContextClassLoader(),
-            new Class<?>[] {iface},
-            handler);
+        C newProxy =
+            (C)
+                Proxy.newProxyInstance(
+                    Thread.currentThread().getContextClassLoader(),
+                    new Class<?>[] {iface},
+                    handler);
         handler.proxy = newProxy;
         op.serialize(newProxy);
       }
@@ -120,12 +118,14 @@ class DtAdjustingStore implements Store {
   }
 
   @Override
-  public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
+  public <C extends BaseValue<C>> void put(
+      SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
     delegate.put(wrap(saveOp), condition);
   }
 
   @Override
-  public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
+  public <C extends BaseValue<C>> boolean delete(
+      ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     return delegate.delete(type, id, condition);
   }
 
@@ -140,8 +140,13 @@ class DtAdjustingStore implements Store {
   }
 
   @Override
-  public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
-      Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer) throws NotFoundException {
+  public <C extends BaseValue<C>> boolean update(
+      ValueType<C> type,
+      Id id,
+      UpdateExpression update,
+      Optional<ConditionExpression> condition,
+      Optional<BaseValue<C>> consumer)
+      throws NotFoundException {
     return delegate.update(type, id, update, condition, consumer);
   }
 
@@ -153,5 +158,4 @@ class DtAdjustingStore implements Store {
   public void deleteTables() {
     delegate.deleteTables();
   }
-
 }

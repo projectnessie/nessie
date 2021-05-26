@@ -19,30 +19,25 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.builder;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
+import com.google.common.primitives.Ints;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.UnsafeByteOperations;
 import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.ImmutableKey;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.WithPayload;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.Mutation;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
-import com.google.common.primitives.Ints;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.UnsafeByteOperations;
-
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue.Builder;
 
-/**
- * Tools to convert to and from Entity/AttributeValue.
- */
+/** Tools to convert to and from Entity/AttributeValue. */
 public final class AttributeValueUtil {
   private static final char ZERO_BYTE = '\u0000';
   private static final String KEY_ADDITION = "a";
@@ -55,13 +50,17 @@ public final class AttributeValueUtil {
 
   /**
    * Convert an attribute value to an entity.
+   *
    * @param av Attribute value to convert
    * @return Entity version of value
    */
   @Deprecated
   public static Entity toEntity(AttributeValue av) {
     if (av.hasL()) {
-      return Entity.ofList(av.l().stream().map(AttributeValueUtil::toEntity).collect(ImmutableList.toImmutableList()));
+      return Entity.ofList(
+          av.l().stream()
+              .map(AttributeValueUtil::toEntity)
+              .collect(ImmutableList.toImmutableList()));
     } else if (av.hasM()) {
       return Entity.ofMap(Maps.transformValues(av.m(), AttributeValueUtil::toEntity));
     } else if (av.s() != null) {
@@ -79,6 +78,7 @@ public final class AttributeValueUtil {
 
   /**
    * Convert from entity to AttributeValue.
+   *
    * @param e Entity to convert
    * @return AttributeValue to return
    */
@@ -103,11 +103,12 @@ public final class AttributeValueUtil {
   }
 
   /**
-   * Convenience method to produce a built {@link AttributeValue} for an {@link Key},
-   * consist of a list of strings.
+   * Convenience method to produce a built {@link AttributeValue} for an {@link Key}, consist of a
+   * list of strings.
    */
   static AttributeValue keyElementsWithPayload(WithPayload<Key> key) {
-    Stream<AttributeValue> keyValue = checkNotNull(key.getValue()).getElements().stream().map(AttributeValueUtil::string);
+    Stream<AttributeValue> keyValue =
+        checkNotNull(key.getValue()).getElements().stream().map(AttributeValueUtil::string);
     AttributeValue payload;
     if (key.getPayload() == null) {
       payload = AttributeValueUtil.string(Character.toString(ZERO_BYTE));
@@ -116,7 +117,6 @@ public final class AttributeValueUtil {
     }
     return list(Stream.concat(Stream.of(payload), keyValue));
   }
-
 
   static long getDt(Map<String, AttributeValue> map) {
     AttributeValue av = map.get(DT);
@@ -128,65 +128,49 @@ public final class AttributeValueUtil {
   }
 
   /**
-   * Convenience method to produce a built list of {@link Builder#b(SdkBytes)} from a
-   * stream of {@link Id}s.
+   * Convenience method to produce a built list of {@link Builder#b(SdkBytes)} from a stream of
+   * {@link Id}s.
    */
   static AttributeValue idsList(Stream<Id> ids) {
     return list(checkNotNull(ids).map(AttributeValueUtil::idValue));
   }
 
-  /**
-   * Convenience method to produce a built {@link Builder#b(SdkBytes)} for an {@link Id}.
-   */
+  /** Convenience method to produce a built {@link Builder#b(SdkBytes)} for an {@link Id}. */
   static AttributeValue idValue(Id id) {
     return bytes(checkNotNull(id).getValue());
   }
 
-  /**
-   * Convenience method to produce a built {@link Builder#b(SdkBytes)}.
-   */
+  /** Convenience method to produce a built {@link Builder#b(SdkBytes)}. */
   static AttributeValue bytes(ByteString bytes) {
     return builder().b(SdkBytes.fromByteBuffer(checkNotNull(bytes).asReadOnlyByteBuffer())).build();
   }
 
-  /**
-   * Convenience method to produce a built {@link Builder#bool(Boolean)}.
-   */
+  /** Convenience method to produce a built {@link Builder#bool(Boolean)}. */
   static AttributeValue bool(boolean bool) {
     return builder().bool(bool).build();
   }
 
-  /**
-   * Convenience method to produce a built {@link Builder#n(String)}.
-   */
+  /** Convenience method to produce a built {@link Builder#n(String)}. */
   static AttributeValue number(long number) {
     return builder().n(Long.toString(number)).build();
   }
 
-  /**
-   * Convenience method to produce a built {@link Builder#s(String)}.
-   */
+  /** Convenience method to produce a built {@link Builder#s(String)}. */
   static AttributeValue string(String string) {
     return builder().s(checkNotNull(string)).build();
   }
 
-  /**
-   * Convenience method to produce a built {@link Builder#l()}.
-   */
+  /** Convenience method to produce a built {@link Builder#l()}. */
   static AttributeValue list(Stream<AttributeValue> list) {
     return builder().l(checkNotNull(list).collect(toList())).build();
   }
 
-  /**
-   * Convenience method to produce a built {@link AttributeValue.Builder#m(Map)}.
-   */
+  /** Convenience method to produce a built {@link AttributeValue.Builder#m(Map)}. */
   static AttributeValue map(Map<String, AttributeValue> map) {
     return builder().m(checkNotNull(map)).build();
   }
 
-  /**
-   * Deserializes a single key-mutation.
-   */
+  /** Deserializes a single key-mutation. */
   static Mutation deserializeKeyMutation(AttributeValue mutation) {
     Map<String, AttributeValue> m = mutation.m();
     AttributeValue raw = m.get(KEY_ADDITION);
@@ -244,9 +228,7 @@ public final class AttributeValueUtil {
     return av;
   }
 
-  /**
-   * Deserialize a {@link Key} from the given {@code raw}.
-   */
+  /** Deserialize a {@link Key} from the given {@code raw}. */
   static WithPayload<Key> deserializeKeyWithPayload(AttributeValue raw) {
     ImmutableKey.Builder keyBuilder = ImmutableKey.builder();
     String payloadString = raw.l().get(0).s();
@@ -299,6 +281,8 @@ public final class AttributeValueUtil {
    * @throws NullPointerException if {@code key} or {@code map} are null.
    */
   static int deserializeInt(Map<String, AttributeValue> map, String key) {
-    return Ints.saturatedCast(Long.parseLong(checkNotNull(attributeValue(map, key).n(), "mandatory number value is null")));
+    return Ints.saturatedCast(
+        Long.parseLong(
+            checkNotNull(attributeValue(map, key).n(), "mandatory number value is null")));
   }
 }

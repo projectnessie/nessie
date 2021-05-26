@@ -20,36 +20,36 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 class LoadStepCollector {
-  static final Collector<LoadStep, StepCollectorState, LoadStep> COLLECTOR = Collector.of(
-      StepCollectorState::new,
-      StepCollectorState::plus,
-      StepCollectorState::plus,
-      StepCollectorState::getStep
-  );
+  static final Collector<LoadStep, StepCollectorState, LoadStep> COLLECTOR =
+      Collector.of(
+          StepCollectorState::new,
+          StepCollectorState::plus,
+          StepCollectorState::plus,
+          StepCollectorState::getStep);
 
-  private static final LoadStep EMPTY_STEP = new LoadStep() {
-    @Override
-    public Optional<LoadStep> getNext() {
-      return Optional.empty();
-    }
+  private static final LoadStep EMPTY_STEP =
+      new LoadStep() {
+        @Override
+        public Optional<LoadStep> getNext() {
+          return Optional.empty();
+        }
 
-    @Override
-    public Stream<LoadOp<?>> getOps() {
-      return Stream.empty();
-    }
+        @Override
+        public Stream<LoadOp<?>> getOps() {
+          return Stream.empty();
+        }
 
-    @Override
-    public LoadStep combine(LoadStep other) {
-      return other;
-    }
-  };
+        @Override
+        public LoadStep combine(LoadStep other) {
+          return other;
+        }
+      };
 
   private static class StepCollectorState {
 
     private LoadStep step = EMPTY_STEP;
 
-    private StepCollectorState() {
-    }
+    private StepCollectorState() {}
 
     public LoadStep getStep() {
       return step;

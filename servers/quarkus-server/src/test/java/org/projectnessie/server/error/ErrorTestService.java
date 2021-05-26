@@ -32,7 +32,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
 import org.mockito.Mockito;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.versioned.BackendLimitExceededException;
@@ -43,9 +42,7 @@ import org.projectnessie.versioned.impl.TieredVersionStore;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 
-/**
- * REST service used to generate a bunch of violations for {@link TestNessieError}.
- */
+/** REST service used to generate a bunch of violations for {@link TestNessieError}. */
 @RequestScoped
 @Path("/nessieErrorTest")
 @Consumes(MediaType.WILDCARD)
@@ -115,6 +112,7 @@ public class ErrorTestService {
 
   /**
    * Throws an exception depending on the parameter via {@link Store#getValues(ValueType)}.
+   *
    * @return nothing
    * @see TestNessieError#unhandledRuntimeExceptionInStore()
    * @see TestNessieError#backendThrottledExceptionInStore()
@@ -138,9 +136,11 @@ public class ErrorTestService {
     Store store = Mockito.mock(Store.class);
     Mockito.when(store.getValues(ValueType.REF)).thenThrow(ex);
 
-    TieredVersionStore<String, String, StringSerializer.TestEnum> tvs = new TieredVersionStore<>(
-        StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance()), store,
-        ImmutableTieredVersionStoreConfig.builder().waitOnCollapse(true).build());
+    TieredVersionStore<String, String, StringSerializer.TestEnum> tvs =
+        new TieredVersionStore<>(
+            StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance()),
+            store,
+            ImmutableTieredVersionStoreConfig.builder().waitOnCollapse(true).build());
     tvs.getNamedRefs().forEach(ref -> {});
     return "we should not get here";
   }

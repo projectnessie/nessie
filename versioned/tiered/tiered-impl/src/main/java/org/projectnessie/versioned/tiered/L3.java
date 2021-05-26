@@ -16,20 +16,19 @@
 package org.projectnessie.versioned.tiered;
 
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.store.KeyDelta;
 
 /**
  * Consumer for L2s.
- * <p>
- * Implementations must return a shared state ({@code this}) from its method.
- * </p>
+ *
+ * <p>Implementations must return a shared state ({@code this}) from its method.
  */
 public interface L3 extends BaseValue<L3> {
 
   /**
    * Adds {@link KeyDelta}s for this L3.
-   * <p>Must be called exactly once.</p>
+   *
+   * <p>Must be called exactly once.
    *
    * @param keyDelta The stream providing the {@link KeyDelta}s of this L3
    * @return This consumer.

@@ -15,19 +15,14 @@
  */
 package org.projectnessie.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
-
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-@Schema(
-    type = SchemaType.OBJECT,
-    title = "MultiGetContentsResponse"
-  )
+@Schema(type = SchemaType.OBJECT, title = "MultiGetContentsResponse")
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableMultiGetContentsResponse.class)
 @JsonDeserialize(as = ImmutableMultiGetContentsResponse.class)
@@ -52,5 +47,4 @@ public interface MultiGetContentsResponse {
       return ImmutableContentsWithKey.builder().key(key).contents(contents).build();
     }
   }
-
 }

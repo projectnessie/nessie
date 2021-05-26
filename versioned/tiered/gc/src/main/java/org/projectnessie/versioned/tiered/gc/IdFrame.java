@@ -16,12 +16,9 @@
 package org.projectnessie.versioned.tiered.gc;
 
 import java.util.Arrays;
-
 import org.projectnessie.versioned.store.Id;
 
-/**
- * simple container to hold an Id in its byte[] form. Useful as a container in a Spark Row.
- */
+/** simple container to hold an Id in its byte[] form. Useful as a container in a Spark Row. */
 public class IdFrame {
 
   private byte[] id;
@@ -34,8 +31,7 @@ public class IdFrame {
     this.id = id;
   }
 
-  public IdFrame() {
-  }
+  public IdFrame() {}
 
   public IdFrame(byte[] id) {
     this.id = id;
@@ -73,6 +69,4 @@ public class IdFrame {
     IdFrame other = (IdFrame) obj;
     return Arrays.equals(id, other.id);
   }
-
-
 }

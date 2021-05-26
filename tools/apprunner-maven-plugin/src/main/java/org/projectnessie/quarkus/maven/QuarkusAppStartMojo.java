@@ -15,6 +15,7 @@
  */
 package org.projectnessie.quarkus.maven;
 
+import io.quarkus.bootstrap.model.AppArtifactCoords;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -23,7 +24,6 @@ import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.LogManager;
-
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -36,11 +36,7 @@ import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 
-import io.quarkus.bootstrap.model.AppArtifactCoords;
-
-/**
- * Starting Quarkus application.
- */
+/** Starting Quarkus application. */
 @Mojo(name = "start", requiresDependencyResolution = ResolutionScope.NONE, threadSafe = true)
 public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
   /*
@@ -62,51 +58,39 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
    *
    * @component
    */
-  @Component
-  private RepositorySystem repoSystem;
+  @Component private RepositorySystem repoSystem;
 
-  /**
-   * The current repository/network configuration of Maven.
-   */
+  /** The current repository/network configuration of Maven. */
   @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
   private RepositorySystemSession repoSession;
 
-  /**
-   * The plugin descriptor.
-   */
+  /** The plugin descriptor. */
   @Parameter(defaultValue = "${plugin}", readonly = true)
   private PluginDescriptor pluginDescriptor;
 
   /**
    * The application artifact id.
    *
-   *<p>Needs to be present as a plugin dependency.
+   * <p>Needs to be present as a plugin dependency.
    *
-   *<p>Supported format is groupId:artifactId[:type[:classifier]]:version
+   * <p>Supported format is groupId:artifactId[:type[:classifier]]:version
    */
   @Parameter(property = "nessie.apprunner.appArtifactId", required = true)
   private String appArtifactId;
 
-  /**
-   * Application configuration properties.
-   */
-  @Parameter
-  private Properties applicationProperties;
+  /** Application configuration properties. */
+  @Parameter private Properties applicationProperties;
 
-  /**
-   * Environment variable configuration properties.
-   */
-  @Parameter
-  private Properties systemProperties;
+  /** Environment variable configuration properties. */
+  @Parameter private Properties systemProperties;
 
   /**
    * Properties to get from Quarkus running application.
    *
-   * <p>The property key is the name of the build property to set, the value is
-   * the name of the quarkus configuration key to get.
+   * <p>The property key is the name of the build property to set, the value is the name of the
+   * quarkus configuration key to get.
    */
-  @Parameter
-  private Properties outputProperties;
+  @Parameter private Properties outputProperties;
 
   @Parameter(defaultValue = "true")
   private boolean resetJavaUtilLogging;
@@ -126,10 +110,19 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
 
     // Check that the artifact is present as it might cause some classloader
     // confusion if not
-    boolean appArtifactPresent = pluginDescriptor.getArtifacts().stream()
-        .map(artifact -> new AppArtifactCoords(artifact.getGroupId(), artifact.getArtifactId(),
-            artifact.getClassifier(), artifact.getType(), artifact.getVersion()))
-        .filter(coords -> coords.equals(appCoords)).findAny().isPresent();
+    boolean appArtifactPresent =
+        pluginDescriptor.getArtifacts().stream()
+            .map(
+                artifact ->
+                    new AppArtifactCoords(
+                        artifact.getGroupId(),
+                        artifact.getArtifactId(),
+                        artifact.getClassifier(),
+                        artifact.getType(),
+                        artifact.getVersion()))
+            .filter(coords -> coords.equals(appCoords))
+            .findAny()
+            .isPresent();
 
     if (!appArtifactPresent) {
       throw new MojoExecutionException(
@@ -138,9 +131,13 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
 
     getLog().info("Starting Quarkus application.");
 
-    final URL[] urls = pluginDescriptor.getArtifacts().stream().map(QuarkusAppStartMojo::toURL).toArray(URL[]::new);
+    final URL[] urls =
+        pluginDescriptor.getArtifacts().stream()
+            .map(QuarkusAppStartMojo::toURL)
+            .toArray(URL[]::new);
 
-    // Use MavenProject classloader as parent classloader as Maven classloader hierarchy is not linear
+    // Use MavenProject classloader as parent classloader as Maven classloader hierarchy is not
+    // linear
     final URLClassLoader mirrorCL = new URLClassLoader(urls, MavenProject.class.getClassLoader());
 
     String oldLogManager = System.getProperty("java.util.logging.manager");
@@ -153,14 +150,27 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
     final AutoCloseable quarkusApp;
     try {
       Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
-      Method newApplicationMethod = clazz.getMethod("newApplication", MavenProject.class,
-          RepositorySystem.class, RepositorySystemSession.class, String.class, Properties.class);
+      Method newApplicationMethod =
+          clazz.getMethod(
+              "newApplication",
+              MavenProject.class,
+              RepositorySystem.class,
+              RepositorySystemSession.class,
+              String.class,
+              Properties.class);
       synchronized (START_LOCK) {
-        quarkusApp = (AutoCloseable) newApplicationMethod.invoke(null, getProject(), repoSystem,
-            repoSession, appArtifactId, applicationProperties);
+        quarkusApp =
+            (AutoCloseable)
+                newApplicationMethod.invoke(
+                    null,
+                    getProject(),
+                    repoSystem,
+                    repoSession,
+                    appArtifactId,
+                    applicationProperties);
         if (outputProperties != null) {
           Properties projectProperties = getProject().getProperties();
-          for (Map.Entry<Object, Object> entry: outputProperties.entrySet()) {
+          for (Map.Entry<Object, Object> entry : outputProperties.entrySet()) {
             String outputKey = entry.getKey().toString();
             String quarkusKey = entry.getValue().toString();
             String value = System.getProperty(quarkusKey);
@@ -171,7 +181,8 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
         }
       }
     } catch (InvocationTargetException e) {
-      throw new MojoExecutionException("Cannot create an isolated quarkus application", e.getCause());
+      throw new MojoExecutionException(
+          "Cannot create an isolated quarkus application", e.getCause());
     } catch (ReflectiveOperationException e) {
       throw new MojoExecutionException("Cannot create an isolated quarkus application", e);
     }
@@ -179,23 +190,24 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
     getLog().info("Quarkus application started.");
 
     // Make sure classloader is closed too when the app is stopped
-    setApplicationHandle(() -> {
-      try {
-        quarkusApp.close();
-      } finally {
-        mirrorCL.close();
+    setApplicationHandle(
+        () -> {
+          try {
+            quarkusApp.close();
+          } finally {
+            mirrorCL.close();
 
-        if (resetJavaUtilLogging) {
-          // Quarkus uses the JBoss LogManager, have to set it
-          if (oldLogManager == null) {
-            System.getProperties().remove("java.util.logging.manager");
-          } else {
-            System.setProperty("java.util.logging.manager", oldLogManager);
+            if (resetJavaUtilLogging) {
+              // Quarkus uses the JBoss LogManager, have to set it
+              if (oldLogManager == null) {
+                System.getProperties().remove("java.util.logging.manager");
+              } else {
+                System.setProperty("java.util.logging.manager", oldLogManager);
+              }
+              LogManager.getLogManager().reset();
+            }
           }
-          LogManager.getLogManager().reset();
-        }
-      }
-    });
+        });
   }
 
   private static URL toURL(Artifact artifact) {

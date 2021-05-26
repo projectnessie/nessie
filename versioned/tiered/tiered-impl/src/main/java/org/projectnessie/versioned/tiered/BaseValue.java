@@ -19,17 +19,16 @@ import org.projectnessie.versioned.store.Id;
 
 /**
  * Base interface for all consumers.
- * <p>
- * Do not implement this interface in non-abstract implementation classes!
- * </p>
- * <p>
- * Implementations must return a shared state ({@code this}) from its method.
- * </p>
+ *
+ * <p>Do not implement this interface in non-abstract implementation classes!
+ *
+ * <p>Implementations must return a shared state ({@code this}) from its method.
  */
 public interface BaseValue<T extends BaseValue<T>> {
   /**
    * The id for this consumer.
-   * <p>Must be called exactly once.</p>
+   *
+   * <p>Must be called exactly once.
    *
    * @param id The id.
    * @return This consumer.
@@ -40,7 +39,9 @@ public interface BaseValue<T extends BaseValue<T>> {
   }
 
   /**
-   * Set the date-time in microseconds since epoch when this object was last modified (inserted/updated).
+   * Set the date-time in microseconds since epoch when this object was last modified
+   * (inserted/updated).
+   *
    * @param dt The date+time in microseconds since epoch.
    * @return This consumer.
    */
