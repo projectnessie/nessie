@@ -44,11 +44,11 @@ class InternalRefId implements HasId {
 
   public static InternalRefId of(Ref ref) throws ReferenceNotFoundException {
     if (ref instanceof BranchName) {
-      return InternalRefId.ofBranch(((BranchName)ref).getName());
+      return InternalRefId.ofBranch(((BranchName) ref).getName());
     } else if (ref instanceof TagName) {
-      return InternalRefId.ofTag(((TagName)ref).getName());
+      return InternalRefId.ofTag(((TagName) ref).getName());
     } else if (ref instanceof Hash) {
-      return InternalRefId.ofHash((Hash)ref);
+      return InternalRefId.ofHash((Hash) ref);
     } else {
       throw new IllegalStateException();
     }
@@ -86,5 +86,4 @@ class InternalRefId implements HasId {
   public String getName() {
     return name;
   }
-
 }

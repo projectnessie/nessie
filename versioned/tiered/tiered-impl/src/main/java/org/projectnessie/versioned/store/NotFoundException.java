@@ -15,9 +15,7 @@
  */
 package org.projectnessie.versioned.store;
 
-/**
- * Thrown when an expected object does not exist.
- */
+/** Thrown when an expected object does not exist. */
 @SuppressWarnings("serial")
 public class NotFoundException extends StoreException {
 
@@ -28,5 +26,4 @@ public class NotFoundException extends StoreException {
   public NotFoundException(String message) {
     super(message);
   }
-
 }

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -22,21 +21,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import com.sun.net.httpserver.HttpHandler;
+import io.jaegertracing.internal.JaegerTracer;
+import io.opentracing.Scope;
+import io.opentracing.util.GlobalTracer;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.Base64;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.client.NessieClient.AuthType;
 import org.projectnessie.client.util.TestServer;
-
-import com.sun.net.httpserver.HttpHandler;
-
-import io.jaegertracing.internal.JaegerTracer;
-import io.opentracing.Scope;
-import io.opentracing.util.GlobalTracer;
 
 class TestNessieHttpClient {
   @BeforeAll
@@ -56,16 +52,23 @@ class TestNessieHttpClient {
     AtomicReference<String> authHeader = new AtomicReference<>();
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Authorization", authHeader))) {
-      NessieClient client = NessieClient.builder().withUri(server.getUri())
-          .withAuthType(AuthType.BASIC).withUsername("my_username").withPassword("very_secret")
-          .build();
+      NessieClient client =
+          NessieClient.builder()
+              .withUri(server.getUri())
+              .withAuthType(AuthType.BASIC)
+              .withUsername("my_username")
+              .withPassword("very_secret")
+              .build();
       client.getConfigApi().getConfig();
     }
 
     assertThat(authHeader.get())
         .isNotNull()
-        .isEqualTo("Basic " + new String(
-            Base64.getUrlEncoder().encode("my_username:very_secret".getBytes(UTF_8)), UTF_8));
+        .isEqualTo(
+            "Basic "
+                + new String(
+                    Base64.getUrlEncoder().encode("my_username:very_secret".getBytes(UTF_8)),
+                    UTF_8));
   }
 
   @Test
@@ -73,9 +76,8 @@ class TestNessieHttpClient {
     AtomicReference<String> traceId = new AtomicReference<>();
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieClient client = NessieClient.builder().withUri(server.getUri())
-          .withTracing(true)
-          .build();
+      NessieClient client =
+          NessieClient.builder().withUri(server.getUri()).withTracing(true).build();
       try (Scope ignore = GlobalTracer.get().buildSpan("testOpenTracing").startActive(true)) {
         client.getConfigApi().getConfig();
       }
@@ -92,9 +94,8 @@ class TestNessieHttpClient {
     AtomicReference<String> traceId = new AtomicReference<>();
 
     try (TestServer server = new TestServer(handlerForHeaderTest("Uber-trace-id", traceId))) {
-      NessieClient client = NessieClient.builder().withUri(server.getUri())
-          .withTracing(false)
-          .build();
+      NessieClient client =
+          NessieClient.builder().withUri(server.getUri()).withTracing(false).build();
       try (Scope ignore = GlobalTracer.get().buildSpan("testOpenTracing").startActive(true)) {
         client.getConfigApi().getConfig();
       }

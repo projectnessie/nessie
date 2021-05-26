@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.dircache.DirCacheBuilder;
 import org.eclipse.jgit.dircache.DirCacheEntry;
@@ -52,16 +51,18 @@ public class TreeBuilder {
    * @return objectId of new tree
    * @throws IOException error in speaking w/ git
    */
-  public static <TABLE, TABLE_VALUE extends Enum<TABLE_VALUE>> ObjectId commitObjects(List<Operation<TABLE>> ops,
-                                                                                      Repository repository,
-                                                                                      SerializerWithPayload<TABLE, TABLE_VALUE> serializer,
-                                                                                      ObjectId emptyObjectId) throws IOException {
+  public static <TABLE, TABLE_VALUE extends Enum<TABLE_VALUE>> ObjectId commitObjects(
+      List<Operation<TABLE>> ops,
+      Repository repository,
+      SerializerWithPayload<TABLE, TABLE_VALUE> serializer,
+      ObjectId emptyObjectId)
+      throws IOException {
     ObjectInserter inserter = repository.newObjectInserter();
 
     DirCache dc = DirCache.newInCore();
 
     DirCacheBuilder builder = dc.builder();
-    for (Operation<TABLE> op: ops) {
+    for (Operation<TABLE> op : ops) {
       final ObjectId objectId;
       final FileMode fileMode;
       if (op instanceof Unchanged) {
@@ -118,16 +119,17 @@ public class TreeBuilder {
     return objectId;
   }
 
-  /**
-   * turn a set of commit hashes into an aggregate tree.
-   */
-  public static ObjectId transplant(Hash hash, Repository repository) throws IOException, ReferenceNotFoundException {
+  /** turn a set of commit hashes into an aggregate tree. */
+  public static ObjectId transplant(Hash hash, Repository repository)
+      throws IOException, ReferenceNotFoundException {
 
     ObjectId treeId = repository.resolve(hash.asString() + "^{tree}");
     if (treeId == null) {
       throw ReferenceNotFoundException.forReference(hash);
     }
-    RevCommit commit = RevCommit.parse(repository.open(repository.resolve(hash.asString() + "^{commit}")).getBytes());
+    RevCommit commit =
+        RevCommit.parse(
+            repository.open(repository.resolve(hash.asString() + "^{commit}")).getBytes());
     String parentTreeName = commit.getParent(0).name();
     ObjectId parentTree = repository.resolve(parentTreeName + "^{tree}");
     return merge(parentTree, treeId, repository);
@@ -139,9 +141,11 @@ public class TreeBuilder {
       ObjectId next = treeWalk.getObjectId(1);
       if (treeWalk.isSubtree()) {
         if (ObjectId.isEqual(next, ObjectId.zeroId())) {
-          builder.addTree(treeWalk.getRawPath(), 0, treeWalk.getObjectReader(), treeWalk.getObjectId(0));
+          builder.addTree(
+              treeWalk.getRawPath(), 0, treeWalk.getObjectReader(), treeWalk.getObjectId(0));
         } else if (ObjectId.isEqual(current, ObjectId.zeroId())) {
-          builder.addTree(treeWalk.getRawPath(), 0, treeWalk.getObjectReader(), treeWalk.getObjectId(1));
+          builder.addTree(
+              treeWalk.getRawPath(), 0, treeWalk.getObjectReader(), treeWalk.getObjectId(1));
         } else if (!treeWalk.idEqual(0, 1)) {
           treeWalk.enterSubtree();
         }
@@ -167,7 +171,8 @@ public class TreeBuilder {
     }
   }
 
-  private static List<String> testRead(ObjectId objectId, Repository repository) throws IOException {
+  private static List<String> testRead(ObjectId objectId, Repository repository)
+      throws IOException {
     TreeWalk tw = new TreeWalk(repository);
     tw.setRecursive(true);
     tw.addTree(objectId);
@@ -178,7 +183,8 @@ public class TreeBuilder {
     return fields;
   }
 
-  private static Map<String, String> testReadAll(ObjectId objectId, Repository repository) throws IOException {
+  private static Map<String, String> testReadAll(ObjectId objectId, Repository repository)
+      throws IOException {
     TreeWalk tw = new TreeWalk(repository);
     tw.setRecursive(true);
     tw.addTree(objectId);

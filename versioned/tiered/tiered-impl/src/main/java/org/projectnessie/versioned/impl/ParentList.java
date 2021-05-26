@@ -15,19 +15,15 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.immutables.value.Value.Immutable;
 import org.projectnessie.versioned.impl.ImmutableParentList.Builder;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.Id;
 
-import com.google.common.collect.ImmutableList;
-
-/**
- * Describes a list of parent hashes from the current hash.
- */
+/** Describes a list of parent hashes from the current hash. */
 @Immutable
 abstract class ParentList {
 
@@ -38,12 +34,11 @@ abstract class ParentList {
   public abstract List<Id> getParents();
 
   public ParentList cloneWithAdditional(Id id) {
-    return ImmutableParentList.builder().addAllParents(
-        Stream.concat(
-            Stream.of(id),
-            getParents().stream())
-        .limit(MAX_PARENT_LIST_SIZE)
-        .collect(ImmutableList.toImmutableList()))
+    return ImmutableParentList.builder()
+        .addAllParents(
+            Stream.concat(Stream.of(id), getParents().stream())
+                .limit(MAX_PARENT_LIST_SIZE)
+                .collect(ImmutableList.toImmutableList()))
         .build();
   }
 
@@ -55,16 +50,15 @@ abstract class ParentList {
     return Entity.ofList(getParents().stream().map(Id::toEntity));
   }
 
-  /**
-   * Construct a {@link ParentList} from a list of {@link Id}s.
-   */
+  /** Construct a {@link ParentList} from a list of {@link Id}s. */
   public static ParentList of(Stream<Id> ancestors) {
-    return ancestors.collect(
-        ImmutableParentList::builder,
-        Builder::addParents,
-        (a, b) -> {
-          throw new UnsupportedOperationException();
-        }
-    ).build();
+    return ancestors
+        .collect(
+            ImmutableParentList::builder,
+            Builder::addParents,
+            (a, b) -> {
+              throw new UnsupportedOperationException();
+            })
+        .build();
   }
 }

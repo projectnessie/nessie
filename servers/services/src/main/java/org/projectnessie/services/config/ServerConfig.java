@@ -15,21 +15,20 @@
  */
 package org.projectnessie.services.config;
 
-/**
- * Nessie server configuration to be injected into the JAX-RS application.
- */
+/** Nessie server configuration to be injected into the JAX-RS application. */
 public interface ServerConfig {
 
   /**
    * Gets the branch to use if not provided by the user.
+   *
    * @return the branch to use
    */
   String getDefaultBranch();
 
   /**
    * Returns if server stack trace should be sent to the client in case of error.
+   *
    * @return {@code true} if the server should send the stack trace to the client.
    */
   boolean sendStacktraceToClient();
-
 }

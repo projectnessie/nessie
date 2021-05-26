@@ -15,22 +15,21 @@
  */
 package org.projectnessie.client.rest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.Status;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieError;
 import org.projectnessie.error.NessieNotFoundException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-
 public class ResponseCheckFilter {
 
   /**
    * check that response had a valid return code. Throw exception if not.
+   *
    * @param con open http connection
    * @param mapper Jackson ObjectMapper instance for this client
    * @throws IOException Throws IOException for certain error types.
@@ -38,13 +37,15 @@ public class ResponseCheckFilter {
   public static void checkResponse(ResponseContext con, ObjectMapper mapper) throws IOException {
     final Status status;
     final NessieError error;
-    // this could IOException, in which case the error will be passed up to the client as an HttpClientException
+    // this could IOException, in which case the error will be passed up to the client as an
+    // HttpClientException
     status = con.getResponseCode();
     if (status.getCode() > 199 && status.getCode() < 300) {
       return;
     }
 
-    // this could IOException, in which case the error will be passed up to the client as an HttpClientException
+    // this could IOException, in which case the error will be passed up to the client as an
+    // HttpClientException
     try (InputStream is = con.getErrorStream()) {
       error = decodeErrorObject(status, is, mapper.readerFor(NessieError.class));
     }
@@ -67,15 +68,18 @@ public class ResponseCheckFilter {
       default:
         throw new NessieServiceException(error);
     }
-
   }
 
-  private static NessieError decodeErrorObject(Status status, InputStream inputStream, ObjectReader reader) {
+  private static NessieError decodeErrorObject(
+      Status status, InputStream inputStream, ObjectReader reader) {
     NessieError error;
     if (inputStream == null) {
-      error = new NessieError(status.getCode(), status.getReason(),
-                              "Could not parse error object in response.",
-                              new RuntimeException("Could not parse error object in response."));
+      error =
+          new NessieError(
+              status.getCode(),
+              status.getReason(),
+              "Could not parse error object in response.",
+              new RuntimeException("Could not parse error object in response."));
     } else {
       try {
         error = reader.readValue(inputStream);
@@ -85,5 +89,4 @@ public class ResponseCheckFilter {
     }
     return error;
   }
-
 }

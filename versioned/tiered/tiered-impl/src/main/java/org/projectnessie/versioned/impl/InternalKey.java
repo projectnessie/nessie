@@ -15,26 +15,22 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.base.Suppliers;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
+import com.google.common.primitives.Ints;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import org.projectnessie.versioned.ImmutableKey;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.store.HasId;
 import org.projectnessie.versioned.store.Id;
 
-import com.google.common.base.Suppliers;
-import com.google.common.hash.Hasher;
-import com.google.common.hash.Hashing;
-import com.google.common.primitives.Ints;
-
-/**
- * A version of key that memoizes the id of the key according to sha256 hashing.
- */
+/** A version of key that memoizes the id of the key according to sha256 hashing. */
 class InternalKey implements Comparable<InternalKey>, HasId {
 
   private final Key delegate;
@@ -77,8 +73,11 @@ class InternalKey implements Comparable<InternalKey>, HasId {
   }
 
   public static InternalKey fromEntity(Entity value) {
-    return new InternalKey(ImmutableKey.builder()
-        .addAllElements(value.getList().stream().map(Entity::getString).collect(Collectors.toList())).build());
+    return new InternalKey(
+        ImmutableKey.builder()
+            .addAllElements(
+                value.getList().stream().map(Entity::getString).collect(Collectors.toList()))
+            .build());
   }
 
   public List<String> getElements() {
@@ -103,13 +102,17 @@ class InternalKey implements Comparable<InternalKey>, HasId {
       return false;
     }
     InternalKey other = (InternalKey) obj;
-    List<String> thisLower = delegate.getElements().stream().map(String::toLowerCase).collect(Collectors.toList());
-    List<String> otherLower = other.getElements().stream().map(String::toLowerCase).collect(Collectors.toList());
+    List<String> thisLower =
+        delegate.getElements().stream().map(String::toLowerCase).collect(Collectors.toList());
+    List<String> otherLower =
+        other.getElements().stream().map(String::toLowerCase).collect(Collectors.toList());
     return thisLower.equals(otherLower);
   }
 
   public static Hasher addToHasher(InternalKey key, Hasher hasher) {
-    key.delegate.getElements().forEach(s -> hasher.putString(s.toLowerCase(), StandardCharsets.UTF_8));
+    key.delegate
+        .getElements()
+        .forEach(s -> hasher.putString(s.toLowerCase(), StandardCharsets.UTF_8));
     return hasher;
   }
 
@@ -128,8 +131,13 @@ class InternalKey implements Comparable<InternalKey>, HasId {
     private final int l2;
 
     private Position(Supplier<Id> idMemo) {
-      this(Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(0, 4).toByteArray()), InternalL1.SIZE),
-          Integer.remainderUnsigned(Ints.fromByteArray(idMemo.get().getValue().substring(4, 8).toByteArray()), InternalL2.SIZE));
+      this(
+          Integer.remainderUnsigned(
+              Ints.fromByteArray(idMemo.get().getValue().substring(0, 4).toByteArray()),
+              InternalL1.SIZE),
+          Integer.remainderUnsigned(
+              Ints.fromByteArray(idMemo.get().getValue().substring(4, 8).toByteArray()),
+              InternalL2.SIZE));
     }
 
     public Position(int l1, int l2) {
@@ -161,7 +169,5 @@ class InternalKey implements Comparable<InternalKey>, HasId {
     public int getL2() {
       return l2;
     }
-
-
   }
 }

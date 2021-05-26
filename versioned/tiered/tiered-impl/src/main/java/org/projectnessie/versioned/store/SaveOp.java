@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.store;
 
 import java.util.Objects;
-
 import org.projectnessie.versioned.tiered.BaseValue;
 
 /**
@@ -49,8 +48,8 @@ public abstract class SaveOp<C extends BaseValue<C>> {
   }
 
   /**
-   * Called by store implementations instructing the implementation to serialize the properties
-   * to the given {@link BaseValue}.
+   * Called by store implementations instructing the implementation to serialize the properties to
+   * the given {@link BaseValue}.
    *
    * @param consumer the consumer that will receive the properties
    */

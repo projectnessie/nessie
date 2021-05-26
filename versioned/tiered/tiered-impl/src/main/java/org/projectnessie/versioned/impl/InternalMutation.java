@@ -15,15 +15,12 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.stream.Stream;
-
 import javax.annotation.Nullable;
-
 import org.immutables.value.Value.Immutable;
 import org.projectnessie.versioned.store.Entity;
 import org.projectnessie.versioned.tiered.Mutation;
-
-import com.google.common.collect.ImmutableMap;
 
 abstract class InternalMutation {
   private static final char ZERO_BYTE = '\u0000';
@@ -81,8 +78,13 @@ abstract class InternalMutation {
 
     public Entity toEntity() {
       Entity key = getKey().toEntity();
-      Entity payload = Entity.ofString(getPayload() == null ? Character.toString(ZERO_BYTE) : getPayload().toString());
-      return Entity.ofMap(ImmutableMap.of(getType().field, Entity.ofList(Stream.concat(Stream.of(payload), key.getList().stream()))));
+      Entity payload =
+          Entity.ofString(
+              getPayload() == null ? Character.toString(ZERO_BYTE) : getPayload().toString());
+      return Entity.ofMap(
+          ImmutableMap.of(
+              getType().field,
+              Entity.ofList(Stream.concat(Stream.of(payload), key.getList().stream()))));
     }
   }
 
@@ -106,7 +108,10 @@ abstract class InternalMutation {
     public Entity toEntity() {
       Entity key = getKey().toEntity();
       Entity payload = Entity.ofString(Character.toString(ZERO_BYTE));
-      return Entity.ofMap(ImmutableMap.of(getType().field, Entity.ofList(Stream.concat(Stream.of(payload), key.getList().stream()))));
+      return Entity.ofMap(
+          ImmutableMap.of(
+              getType().field,
+              Entity.ofList(Stream.concat(Stream.of(payload), key.getList().stream()))));
     }
   }
 }

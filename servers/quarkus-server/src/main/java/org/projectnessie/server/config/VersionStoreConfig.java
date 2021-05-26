@@ -15,14 +15,11 @@
  */
 package org.projectnessie.server.config;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
 import io.quarkus.arc.config.ConfigProperties;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-/**
- * Version store configuration.
- */
+/** Version store configuration. */
 @ConfigProperties(prefix = "nessie.version.store")
 public interface VersionStoreConfig {
 
@@ -37,15 +34,13 @@ public interface VersionStoreConfig {
   VersionStoreType getVersionStoreType();
 
   /**
-   * Whether calls against the version-store are traced with
-   * OpenTracing/OpenTelemetry (Jaeger), enabled by default.
+   * Whether calls against the version-store are traced with OpenTracing/OpenTelemetry (Jaeger),
+   * enabled by default.
    */
   @ConfigProperty(name = "trace.enable", defaultValue = "true")
   boolean isTracingEnabled();
 
-  /**
-   * Whether metrics for the version-store are enabled (enabled by default).
-   */
+  /** Whether metrics for the version-store are enabled (enabled by default). */
   @ConfigProperty(name = "metrics.enable", defaultValue = "true")
   boolean isMetricsEnabled();
 }

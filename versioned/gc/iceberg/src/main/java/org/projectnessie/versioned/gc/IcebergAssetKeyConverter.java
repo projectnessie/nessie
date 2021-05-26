@@ -15,9 +15,9 @@
  */
 package org.projectnessie.versioned.gc;
 
+import com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.util.stream.Stream;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.DataFileCollector;
 import org.apache.iceberg.ManifestFile;
@@ -28,10 +28,8 @@ import org.apache.spark.util.SerializableConfiguration;
 import org.projectnessie.model.Contents;
 import org.projectnessie.model.IcebergTable;
 
-import com.google.common.base.Preconditions;
-
-
-public class IcebergAssetKeyConverter implements AssetKeyConverter<Contents, IcebergAssetKey>, Serializable {
+public class IcebergAssetKeyConverter
+    implements AssetKeyConverter<Contents, IcebergAssetKey>, Serializable {
 
   private final SerializableConfiguration hadoopConfig;
 
@@ -40,36 +38,79 @@ public class IcebergAssetKeyConverter implements AssetKeyConverter<Contents, Ice
   }
 
   private Stream<IcebergAssetKey> allFiles(TableMetadata metadata) {
-    //note the namespace is not stored here so we can't know for sure what the full table path is
+    // note the namespace is not stored here so we can't know for sure what the full table path is
     final String tableName = new Path(metadata.location()).getName();
-    final long snapshotId = metadata.currentSnapshot() == null ? -1L : metadata.currentSnapshot().snapshotId();
-    Stream<IcebergAssetKey> metadataFiles = Stream.of(
-      new IcebergAssetKey(metadata.metadataFileLocation(), hadoopConfig, IcebergAssetKey.AssetKeyType.ICEBERG_METADATA, snapshotId,
-          tableName), new IcebergAssetKey(metadata.location(), hadoopConfig, IcebergAssetKey.AssetKeyType.TABLE, 0, tableName));
+    final long snapshotId =
+        metadata.currentSnapshot() == null ? -1L : metadata.currentSnapshot().snapshotId();
+    Stream<IcebergAssetKey> metadataFiles =
+        Stream.of(
+            new IcebergAssetKey(
+                metadata.metadataFileLocation(),
+                hadoopConfig,
+                IcebergAssetKey.AssetKeyType.ICEBERG_METADATA,
+                snapshotId,
+                tableName),
+            new IcebergAssetKey(
+                metadata.location(),
+                hadoopConfig,
+                IcebergAssetKey.AssetKeyType.TABLE,
+                0,
+                tableName));
 
-    return Stream.concat(metadataFiles, metadata.snapshots().stream().flatMap(snapshot -> {
-      final long thisSnapshotId = snapshot.snapshotId();
+    return Stream.concat(
+        metadataFiles,
+        metadata.snapshots().stream()
+            .flatMap(
+                snapshot -> {
+                  final long thisSnapshotId = snapshot.snapshotId();
 
-      Stream<IcebergAssetKey> manifestLists = Stream.of(new IcebergAssetKey(snapshot.manifestListLocation(), hadoopConfig,
-          IcebergAssetKey.AssetKeyType.ICEBERG_MANIFEST_LIST, thisSnapshotId, tableName));
+                  Stream<IcebergAssetKey> manifestLists =
+                      Stream.of(
+                          new IcebergAssetKey(
+                              snapshot.manifestListLocation(),
+                              hadoopConfig,
+                              IcebergAssetKey.AssetKeyType.ICEBERG_MANIFEST_LIST,
+                              thisSnapshotId,
+                              tableName));
 
-      Stream<IcebergAssetKey> manifestsStream = snapshot.allManifests().stream().map(ManifestFile::path)
-          .map(x -> new IcebergAssetKey(x, hadoopConfig, IcebergAssetKey.AssetKeyType.ICEBERG_MANIFEST, thisSnapshotId, tableName));
+                  Stream<IcebergAssetKey> manifestsStream =
+                      snapshot.allManifests().stream()
+                          .map(ManifestFile::path)
+                          .map(
+                              x ->
+                                  new IcebergAssetKey(
+                                      x,
+                                      hadoopConfig,
+                                      IcebergAssetKey.AssetKeyType.ICEBERG_MANIFEST,
+                                      thisSnapshotId,
+                                      tableName));
 
-      Stream<IcebergAssetKey> files = DataFileCollector.dataFiles(new HadoopFileIO(hadoopConfig.value()), snapshot.allManifests())
-          .map(x -> new IcebergAssetKey(x, hadoopConfig, IcebergAssetKey.AssetKeyType.DATA_FILE, thisSnapshotId, tableName));
-      return Stream.concat(Stream.concat(manifestsStream, files), manifestLists);
-    }));
+                  Stream<IcebergAssetKey> files =
+                      DataFileCollector.dataFiles(
+                              new HadoopFileIO(hadoopConfig.value()), snapshot.allManifests())
+                          .map(
+                              x ->
+                                  new IcebergAssetKey(
+                                      x,
+                                      hadoopConfig,
+                                      IcebergAssetKey.AssetKeyType.DATA_FILE,
+                                      thisSnapshotId,
+                                      tableName));
+                  return Stream.concat(Stream.concat(manifestsStream, files), manifestLists);
+                }));
   }
-
 
   @Override
   public Stream<IcebergAssetKey> apply(Contents contents) {
-    Preconditions.checkArgument(contents instanceof IcebergTable,
-        String.format("Cannot process contents of type %s, only Iceberg Tables", contents.getClass().getName()));
-    TableMetadata metadata = TableMetadataParser.read(new HadoopFileIO(hadoopConfig.value()),
-        ((IcebergTable) contents).getMetadataLocation());
+    Preconditions.checkArgument(
+        contents instanceof IcebergTable,
+        String.format(
+            "Cannot process contents of type %s, only Iceberg Tables",
+            contents.getClass().getName()));
+    TableMetadata metadata =
+        TableMetadataParser.read(
+            new HadoopFileIO(hadoopConfig.value()),
+            ((IcebergTable) contents).getMetadataLocation());
     return allFiles(metadata);
   }
-
 }

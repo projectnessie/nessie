@@ -15,12 +15,12 @@
  */
 package org.projectnessie.versioned.tiered.gc;
 
+import com.google.protobuf.ByteString;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Dataset;
@@ -31,14 +31,9 @@ import org.projectnessie.versioned.gc.BinaryBloomFilter;
 import org.projectnessie.versioned.gc.CategorizedValue;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
-
-import com.google.protobuf.ByteString;
-
 import scala.Tuple2;
 
-/**
- * Operation which identifies the referenced state of all values in a tiered version store.
- */
+/** Operation which identifies the referenced state of all values in a tiered version store. */
 public class IdentifyUnreferencedValues<T> {
 
   private final StoreWorker<T, ?, ?> storeWorker;
@@ -47,9 +42,7 @@ public class IdentifyUnreferencedValues<T> {
   private final GcOptions options;
   private final Clock clock;
 
-  /**
-   * Drive a job that generates a dataset of unreferenced assets from known values.
-   */
+  /** Drive a job that generates a dataset of unreferenced assets from known values. */
   public IdentifyUnreferencedValues(
       StoreWorker<T, ?, ?> storeWorker,
       Supplier<Store> store,
@@ -73,25 +66,40 @@ public class IdentifyUnreferencedValues<T> {
       Supplier<Store> store,
       SparkSession spark,
       GcOptions options,
-      Clock clock) throws AnalysisException {
+      Clock clock)
+      throws AnalysisException {
 
-    //fix all times to be at the same start point. todo push up to GcOptions and remove System call
+    // fix all times to be at the same start point. todo push up to GcOptions and remove System call
     long now = clock.millis();
     long maxAgeMicros = TimeUnit.MILLISECONDS.toMicros(now) - options.getMaxAgeMicros();
     long maxSlopMicros = TimeUnit.MILLISECONDS.toMicros(now) - options.getTimeSlopMicros();
 
     // get bloomfilter of valid l2s (based on the given gc policy).
-    final BinaryBloomFilter l2BloomFilter = RefToL2Producer
-        .getL2BloomFilter(spark, store, maxAgeMicros, maxSlopMicros, options.getBloomFilterCapacity());
+    final BinaryBloomFilter l2BloomFilter =
+        RefToL2Producer.getL2BloomFilter(
+            spark, store, maxAgeMicros, maxSlopMicros, options.getBloomFilterCapacity());
 
     // get bloomfilter of valid l3s.
-    final BinaryBloomFilter l3BloomFilter = IdProducer
-        .getNextBloomFilter(spark, l2BloomFilter, ValueType.L2, store, options.getBloomFilterCapacity(), IdCarrier.L2_CONVERTER);
+    final BinaryBloomFilter l3BloomFilter =
+        IdProducer.getNextBloomFilter(
+            spark,
+            l2BloomFilter,
+            ValueType.L2,
+            store,
+            options.getBloomFilterCapacity(),
+            IdCarrier.L2_CONVERTER);
 
     // get a bloom filter of all values that are referenced by a valid value.
-    final BinaryBloomFilter validValueIds = IdProducer
-        .getNextBloomFilter(spark, l3BloomFilter, ValueType.L3, store, options.getBloomFilterCapacity(), IdCarrier.L3_CONVERTER);
-    Dataset<IdProducer.IdKeyPair> keys = IdProducer.getKeys(spark, ValueType.L3, store, IdCarrier.L3_CONVERTER);
+    final BinaryBloomFilter validValueIds =
+        IdProducer.getNextBloomFilter(
+            spark,
+            l3BloomFilter,
+            ValueType.L3,
+            store,
+            options.getBloomFilterCapacity(),
+            IdCarrier.L3_CONVERTER);
+    Dataset<IdProducer.IdKeyPair> keys =
+        IdProducer.getKeys(spark, ValueType.L3, store, IdCarrier.L3_CONVERTER);
 
     // get all values.
     final Dataset<ValueFrame> values = ValueFrame.asDataset(store, spark);
@@ -100,15 +108,17 @@ public class IdentifyUnreferencedValues<T> {
 
     // for each value, determine if it is a valid value.
     ValueCategorizer categorizer = new ValueCategorizer(validValueIds, maxSlopMicros);
-    //todo can we enrich this more w/o having to interpret the object? Eg related commit/commit message
+    // todo can we enrich this more w/o having to interpret the object? Eg related commit/commit
+    // message
     return valuesWithKeys.map(categorizer, Encoders.bean(CategorizedValue.class));
-
   }
 
   /**
-   * Spark flat map function to convert a value into an iterator of AssetKeys with their reference state.
+   * Spark flat map function to convert a value into an iterator of AssetKeys with their reference
+   * state.
    */
-  public static class ValueCategorizer implements MapFunction<Tuple2<ValueFrame, IdProducer.IdKeyPair>, CategorizedValue> {
+  public static class ValueCategorizer
+      implements MapFunction<Tuple2<ValueFrame, IdProducer.IdKeyPair>, CategorizedValue> {
 
     private static final long serialVersionUID = -4605489080345105845L;
 
@@ -133,7 +143,5 @@ public class IdentifyUnreferencedValues<T> {
       boolean referenced = r.getDt() > recentValues || bloomFilter.mightContain(r.getId().getId());
       return new CategorizedValue(referenced, ByteString.copyFrom(r.getBytes()), r.getDt(), key);
     }
-
   }
-
 }

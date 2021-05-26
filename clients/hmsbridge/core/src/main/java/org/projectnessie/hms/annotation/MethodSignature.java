@@ -15,18 +15,19 @@
  */
 package org.projectnessie.hms.annotation;
 
+import com.google.common.base.Preconditions;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.google.common.base.Preconditions;
-
 public class MethodSignature {
 
   public static enum SigType {
-    ORIG, ORIG_EXTEND, EXTENDED
+    ORIG,
+    ORIG_EXTEND,
+    EXTENDED
   }
 
   private final MethodSignature.SigType type;
@@ -37,6 +38,7 @@ public class MethodSignature {
 
   /**
    * Create a method signature key based on a Reflection method signature.
+   *
    * @param m The Reflect method to build from.
    */
   public MethodSignature(Method m) {
@@ -48,7 +50,12 @@ public class MethodSignature {
     this.type = hasCatalogExtend(m) ? SigType.ORIG_EXTEND : SigType.ORIG;
   }
 
-  private MethodSignature(MethodSignature.SigType type, Type returnType, Type[] argumentTypes, Type[] exceptionTypes, String name) {
+  private MethodSignature(
+      MethodSignature.SigType type,
+      Type returnType,
+      Type[] argumentTypes,
+      Type[] exceptionTypes,
+      String name) {
     super();
     this.type = type;
     this.returnType = returnType;
@@ -73,6 +80,7 @@ public class MethodSignature {
 
   /**
    * Extend this to a signature that includes catalog if appropriate.
+   *
    * @return Extended signature with Catalog argument.
    */
   public Optional<MethodSignature> extendIfNecessary() {
@@ -84,7 +92,8 @@ public class MethodSignature {
     Type[] args = new Type[argumentTypes.length + 1];
     System.arraycopy(argumentTypes, 0, args, 1, argumentTypes.length);
     args[0] = String.class;
-    return Optional.of(new MethodSignature(SigType.EXTENDED, returnType, args, exceptionTypes, name));
+    return Optional.of(
+        new MethodSignature(SigType.EXTENDED, returnType, args, exceptionTypes, name));
   }
 
   public boolean isExtended() {
@@ -100,7 +109,9 @@ public class MethodSignature {
       return false;
     }
     MethodSignature other = (MethodSignature) obj;
-    return Arrays.equals(argumentTypes, other.argumentTypes) && Arrays.equals(exceptionTypes, other.exceptionTypes)
-        && Objects.equals(name, other.name) && Objects.equals(returnType, other.returnType);
+    return Arrays.equals(argumentTypes, other.argumentTypes)
+        && Arrays.equals(exceptionTypes, other.exceptionTypes)
+        && Objects.equals(name, other.name)
+        && Objects.equals(returnType, other.returnType);
   }
 }

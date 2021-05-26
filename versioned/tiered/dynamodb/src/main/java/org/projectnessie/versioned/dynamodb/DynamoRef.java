@@ -28,20 +28,17 @@ import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.serializeK
 import static org.projectnessie.versioned.dynamodb.AttributeValueUtil.string;
 import static software.amazon.awssdk.services.dynamodb.model.AttributeValue.builder;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.Mutation;
 import org.projectnessie.versioned.tiered.Ref;
-
-import com.google.common.base.Preconditions;
-
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
@@ -62,7 +59,9 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
   static final String KEY_LIST = "keys";
 
   private enum Type {
-    INIT, TAG, BRANCH
+    INIT,
+    TAG,
+    BRANCH
   }
 
   private Type type = Type.INIT;
@@ -136,8 +135,8 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
     return addEntitySafe(NAME, string(name));
   }
 
-  private static class DynamoBranchCommit implements BranchCommit, SavedCommit,
-      UnsavedCommitDelta, UnsavedCommitMutations {
+  private static class DynamoBranchCommit
+      implements BranchCommit, SavedCommit, UnsavedCommitDelta, UnsavedCommitMutations {
     final Map<String, AttributeValue> builder = new HashMap<>();
     final List<AttributeValue> commitsList = new ArrayList<>();
     List<AttributeValue> deltas = null;
@@ -239,9 +238,7 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
     return super.build();
   }
 
-  /**
-   * Deserialize a DynamoDB entity into the given consumer.
-   */
+  /** Deserialize a DynamoDB entity into the given consumer. */
   static void toConsumer(Map<String, AttributeValue> entity, Ref consumer) {
     baseToConsumer(entity, consumer)
         .name(Preconditions.checkNotNull(attributeValue(entity, NAME).s()));
@@ -249,14 +246,14 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
     String refType = Preconditions.checkNotNull(attributeValue(entity, TYPE).s());
     switch (refType) {
       case REF_TYPE_BRANCH:
-        consumer.branch()
+        consumer
+            .branch()
             .metadata(deserializeId(entity, METADATA))
             .children(deserializeIdStream(entity, TREE))
             .commits(cc -> deserializeCommits(entity, cc));
         break;
       case REF_TYPE_TAG:
-        consumer.tag()
-            .commit(deserializeId(entity, COMMIT));
+        consumer.tag().commit(deserializeId(entity, COMMIT));
         break;
       default:
         throw new IllegalStateException("Invalid ref-type '" + refType + "'");
@@ -270,19 +267,17 @@ class DynamoRef extends DynamoBaseValue<Ref> implements Ref {
   }
 
   private static void deserializeCommit(Map<String, AttributeValue> map, BranchCommit cc) {
-    cc.id(deserializeId(map, ID))
-        .commit(deserializeId(map, COMMIT));
+    cc.id(deserializeId(map, ID)).commit(deserializeId(map, COMMIT));
 
     if (map.containsKey(PARENT)) {
-      cc.saved()
-          .parent(deserializeId(map, PARENT))
-          .done();
+      cc.saved().parent(deserializeId(map, PARENT)).done();
     } else {
       UnsavedCommitDelta deltas = cc.unsaved();
       if (map.containsKey(DELTAS)) {
         for (AttributeValue av : attributeValue(map, DELTAS).l()) {
           Map<String, AttributeValue> m = av.m();
-          deltas.delta(deserializeInt(m, POSITION), deserializeId(m, OLD_ID), deserializeId(m, NEW_ID));
+          deltas.delta(
+              deserializeInt(m, POSITION), deserializeId(m, OLD_ID), deserializeId(m, NEW_ID));
         }
       }
 

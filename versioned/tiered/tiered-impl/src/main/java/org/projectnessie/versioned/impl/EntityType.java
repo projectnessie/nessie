@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
 import org.projectnessie.versioned.impl.PersistentBase.EntityBuilder;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.NotFoundException;
@@ -36,7 +35,8 @@ import org.projectnessie.versioned.tiered.L3;
 import org.projectnessie.versioned.tiered.Ref;
 import org.projectnessie.versioned.tiered.Value;
 
-final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>> {
+final class EntityType<
+    C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>> {
 
   private static final Map<ValueType<?>, EntityType<?, ?, ?>> BY_VALUE_TYPE = new HashMap<>();
 
@@ -52,16 +52,18 @@ final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B ex
       new EntityType<>(ValueType.VALUE, InternalValue.Builder::new);
   static final EntityType<Fragment, InternalFragment, InternalFragment.Builder> KEY_FRAGMENT =
       new EntityType<>(ValueType.KEY_FRAGMENT, InternalFragment.Builder::new);
-  static final EntityType<CommitMetadata, InternalCommitMetadata, InternalCommitMetadata.Builder> COMMIT_METADATA =
-      new EntityType<>(ValueType.COMMIT_METADATA, InternalCommitMetadata.Builder::new);
+  static final EntityType<CommitMetadata, InternalCommitMetadata, InternalCommitMetadata.Builder>
+      COMMIT_METADATA =
+          new EntityType<>(ValueType.COMMIT_METADATA, InternalCommitMetadata.Builder::new);
 
   final ValueType<C> valueType;
   final Supplier<B> producerSupplier;
 
   private EntityType(ValueType<C> valueType, Supplier<B> producerSupplier) {
     if (!valueType.getValueClass().isInstance(producerSupplier.get())) {
-      throw new IllegalStateException("While you can't formally expose a value instance as the subclass of "
-          + "two separate generic parameters, this class does so internally. The builders provided must be of both C and B types.");
+      throw new IllegalStateException(
+          "While you can't formally expose a value instance as the subclass of "
+              + "two separate generic parameters, this class does so internally. The builders provided must be of both C and B types.");
     }
     this.valueType = valueType;
     this.producerSupplier = producerSupplier;
@@ -69,8 +71,8 @@ final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B ex
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>> EntityType<C, E, B>
-      forType(ValueType<C> type) {
+  static <C extends BaseValue<C>, E extends PersistentBase<C>, B extends EntityBuilder<E, C>>
+      EntityType<C, E, B> forType(ValueType<C> type) {
     return (EntityType) BY_VALUE_TYPE.get(type);
   }
 
@@ -93,12 +95,11 @@ final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B ex
 
   /**
    * Create a new "plain entity" producer for this type.
-   * <p>
-   * Using {@link #buildEntity(Consumer)} is a simpler approach though.
-   * </p>
-   * <p>
-   * Example:
-   * </p>
+   *
+   * <p>Using {@link #buildEntity(Consumer)} is a simpler approach though.
+   *
+   * <p>Example:
+   *
    * <pre><code>
    *   ValueConsumer producer = ValueType.VALUE.newEntityProducer();
    *   producer.id(theId);
@@ -113,17 +114,18 @@ final class EntityType<C extends BaseValue<C>, E extends PersistentBase<C>, B ex
   }
 
   /**
-   * Allows to create an entity instance of the type represented by this {@link ValueType}.
-   * This is a simplification of the code example mentioned in {@link #newEntityProducer()}.
-   * <p>
-   * Example:
-   * </p>
+   * Allows to create an entity instance of the type represented by this {@link ValueType}. This is
+   * a simplification of the code example mentioned in {@link #newEntityProducer()}.
+   *
+   * <p>Example:
+   *
    * <pre><code>
    * InternalValue value = ValueType.VALUE.buildEntity(
    *     (ValueConsumer producer) -&gt; producer.id(theId).value(someBytes));
    * </code></pre>
    *
-   * @param producerConsumer Java consumer that receives the producer created by {@link #newEntityProducer()}
+   * @param producerConsumer Java consumer that receives the producer created by {@link
+   *     #newEntityProducer()}
    * @return the built entity
    */
   @SuppressWarnings("unchecked")

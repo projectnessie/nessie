@@ -15,20 +15,19 @@
  */
 package org.projectnessie.versioned.mongodb;
 
+import com.google.protobuf.ByteString;
 import org.bson.BsonWriter;
 import org.bson.Document;
 import org.bson.types.Binary;
 import org.projectnessie.versioned.tiered.BaseWrappedValue;
 
-import com.google.protobuf.ByteString;
-
-class MongoWrappedValue<C extends BaseWrappedValue<C>> extends MongoBaseValue<C> implements BaseWrappedValue<C> {
+class MongoWrappedValue<C extends BaseWrappedValue<C>> extends MongoBaseValue<C>
+    implements BaseWrappedValue<C> {
 
   static final String VALUE = "value";
 
   static <C extends BaseWrappedValue<C>> void produce(Document document, C v) {
-    produceBase(document, v)
-        .value(ByteString.copyFrom(((Binary) document.get(VALUE)).getData()));
+    produceBase(document, v).value(ByteString.copyFrom(((Binary) document.get(VALUE)).getData()));
   }
 
   MongoWrappedValue(BsonWriter bsonWriter) {

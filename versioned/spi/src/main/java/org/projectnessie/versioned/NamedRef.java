@@ -17,13 +17,12 @@ package org.projectnessie.versioned;
 
 import javax.annotation.Nonnull;
 
-/**
- * A ref that has a name. Includes both branches and tags.
- */
+/** A ref that has a name. Includes both branches and tags. */
 public interface NamedRef extends Ref {
 
   /**
    * Get The reference's name.
+   *
    * @return the reference name
    */
   @Nonnull

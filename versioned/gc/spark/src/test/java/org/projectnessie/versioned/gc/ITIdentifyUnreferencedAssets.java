@@ -15,9 +15,13 @@
  */
 package org.projectnessie.versioned.gc;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
+import com.google.protobuf.ByteString;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +29,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.MapFunction;
@@ -39,21 +42,16 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
-import com.google.protobuf.ByteString;
-
 class ITIdentifyUnreferencedAssets {
 
-  private static final Multimap<String, GcTestUtils.DummyAsset> ASSETS = ImmutableMultimap.<String, GcTestUtils.DummyAsset>builder()
-      .put("a", get(1))
-      .put("a", get(2))
-      .put("b", get(1))
-      .put("c", get(1))
-      .put("c", get(3))
-      .build();
+  private static final Multimap<String, GcTestUtils.DummyAsset> ASSETS =
+      ImmutableMultimap.<String, GcTestUtils.DummyAsset>builder()
+          .put("a", get(1))
+          .put("a", get(2))
+          .put("b", get(1))
+          .put("c", get(1))
+          .put("c", get(3))
+          .build();
 
   private static GcTestUtils.DummyAsset get(int i) {
     return new GcTestUtils.DummyAsset(i);
@@ -61,18 +59,24 @@ class ITIdentifyUnreferencedAssets {
 
   @Test
   void test() {
-    SparkSession spark = SparkSession
-        .builder()
-        .appName("test-nessie-gc-collection")
-        .master("local[2]")
-        .getOrCreate();
+    SparkSession spark =
+        SparkSession.builder()
+            .appName("test-nessie-gc-collection")
+            .master("local[2]")
+            .getOrCreate();
 
-
-    IdentifyUnreferencedAssets<DummyValue, GcTestUtils.DummyAsset> ident = new IdentifyUnreferencedAssets<>(new DummyValueSerializer(),
-        new GcTestUtils.DummyAssetKeySerializer(), new DummyAssetConverter(), v -> true, spark);
+    IdentifyUnreferencedAssets<DummyValue, GcTestUtils.DummyAsset> ident =
+        new IdentifyUnreferencedAssets<>(
+            new DummyValueSerializer(),
+            new GcTestUtils.DummyAssetKeySerializer(),
+            new DummyAssetConverter(),
+            v -> true,
+            spark);
     Dataset<IdentifyUnreferencedAssets.UnreferencedItem> items = ident.identify(generate(spark));
-    Set<String> unreferencedItems = items.collectAsList().stream().map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
-        .collect(Collectors.toSet());
+    Set<String> unreferencedItems =
+        items.collectAsList().stream()
+            .map(IdentifyUnreferencedAssets.UnreferencedItem::getName)
+            .collect(Collectors.toSet());
     assertThat(unreferencedItems).containsExactlyInAnyOrder("2");
   }
 
@@ -87,31 +91,39 @@ class ITIdentifyUnreferencedAssets {
     JavaRDD<Row> rowRDD = sparkContext.parallelize(stringAsList).map(RowFactory::create);
 
     // Create schema
-    StructType schema = DataTypes
-        .createStructType(new StructField[] {
-          DataTypes.createStructField("id", DataTypes.StringType, false),
-          DataTypes.createStructField("referenced", DataTypes.StringType, false)
-        });
+    StructType schema =
+        DataTypes.createStructType(
+            new StructField[] {
+              DataTypes.createStructField("id", DataTypes.StringType, false),
+              DataTypes.createStructField("referenced", DataTypes.StringType, false)
+            });
     DummyValueSerializer ser = new DummyValueSerializer();
 
-    return spark.sqlContext().createDataFrame(rowRDD, schema)
-         .map((MapFunction<Row, CategorizedValue>) x -> {
-           boolean referenced = Boolean.parseBoolean(x.getString(1));
-           DummyValue value = new DummyValue(x.getString(0));
-           ByteString data = ser.toBytes(value);
-           return new CategorizedValue(referenced, data, 0L, Collections.singletonList("na"));
-         }, Encoders.bean(CategorizedValue.class));
+    return spark
+        .sqlContext()
+        .createDataFrame(rowRDD, schema)
+        .map(
+            (MapFunction<Row, CategorizedValue>)
+                x -> {
+                  boolean referenced = Boolean.parseBoolean(x.getString(1));
+                  DummyValue value = new DummyValue(x.getString(0));
+                  ByteString data = ser.toBytes(value);
+                  return new CategorizedValue(
+                      referenced, data, 0L, Collections.singletonList("na"));
+                },
+            Encoders.bean(CategorizedValue.class));
   }
 
-  private static class DummyValueSerializer extends GcTestUtils.JsonSerializer<DummyValue> implements Serializable {
+  private static class DummyValueSerializer extends GcTestUtils.JsonSerializer<DummyValue>
+      implements Serializable {
 
     public DummyValueSerializer() {
       super(DummyValue.class);
     }
-
   }
 
-  private static class DummyAssetConverter implements AssetKeyConverter<DummyValue, GcTestUtils.DummyAsset>, Serializable {
+  private static class DummyAssetConverter
+      implements AssetKeyConverter<DummyValue, GcTestUtils.DummyAsset>, Serializable {
 
     @Override
     public Stream<GcTestUtils.DummyAsset> apply(DummyValue value) {
@@ -124,16 +136,13 @@ class ITIdentifyUnreferencedAssets {
     private final String id;
 
     @JsonCreator
-    public DummyValue(@JsonProperty("id")String id) {
+    public DummyValue(@JsonProperty("id") String id) {
       super();
       this.id = id;
-
     }
 
     public String getId() {
       return id;
     }
-
   }
-
 }

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.client.rest;
 
 import org.projectnessie.error.NessieError;
@@ -23,5 +22,4 @@ public class NessieNotAuthorizedException extends NessieServiceException {
   public NessieNotAuthorizedException(NessieError serverError) {
     super(serverError);
   }
-
 }

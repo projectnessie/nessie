@@ -15,17 +15,16 @@
  */
 package org.projectnessie.versioned;
 
+import com.google.protobuf.ByteString;
 import java.io.Serializable;
 
-import com.google.protobuf.ByteString;
-
 /**
- * Used to serialize &amp; deserialize the values in the store. Provided to an implementation of VersionStore on construction.
+ * Used to serialize &amp; deserialize the values in the store. Provided to an implementation of
+ * VersionStore on construction.
  */
 public interface Serializer<V> extends Serializable {
 
   ByteString toBytes(V value);
 
   V fromBytes(ByteString bytes);
-
 }

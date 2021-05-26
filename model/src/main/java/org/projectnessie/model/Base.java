@@ -13,12 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.model;
 
-/**
- * base interface for all model/api classes.
- */
-public interface Base {
-
-}
+/** base interface for all model/api classes. */
+public interface Base {}

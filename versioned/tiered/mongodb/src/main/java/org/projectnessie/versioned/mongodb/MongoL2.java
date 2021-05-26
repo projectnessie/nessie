@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.mongodb;
 
 import java.util.stream.Stream;
-
 import org.bson.BsonWriter;
 import org.bson.Document;
 import org.projectnessie.versioned.store.Id;
@@ -27,8 +26,7 @@ final class MongoL2 extends MongoBaseValue<L2> implements L2 {
   static final String TREE = "tree";
 
   static void produce(Document document, L2 v) {
-    produceBase(document, v)
-        .children(MongoSerDe.deserializeIds(document, TREE));
+    produceBase(document, v).children(MongoSerDe.deserializeIds(document, TREE));
   }
 
   MongoL2(BsonWriter bsonWriter) {

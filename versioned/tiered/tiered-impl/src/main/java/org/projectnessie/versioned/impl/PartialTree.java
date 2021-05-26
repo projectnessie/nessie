@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Streams;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +31,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.SerializerWithPayload;
 import org.projectnessie.versioned.impl.InternalBranch.Commit;
 import org.projectnessie.versioned.impl.InternalBranch.UnsavedDelta;
@@ -45,23 +46,21 @@ import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.LoadStep;
 import org.projectnessie.versioned.store.SaveOp;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Streams;
-
 /**
- * Holds the portion of the commit tree structure that is necessary to manipulate the identified key(s).
- * Holds the information for a Tag, Hash or Branch.
+ * Holds the portion of the commit tree structure that is necessary to manipulate the identified
+ * key(s). Holds the information for a Tag, Hash or Branch.
  *
- * <p>If pointing to a branch, also provides mutability to allow updates and then commits of those updates.
+ * <p>If pointing to a branch, also provides mutability to allow updates and then commits of those
+ * updates.
  *
  * <p>Supports a collated loading model that will minimize the number of LoadSteps required to
  * populate the tree from the underlying storage.
- *
  */
 class PartialTree<V, E extends Enum<E>> {
 
   public enum LoadType {
-    NO_VALUES, SELECT_VALUES
+    NO_VALUES,
+    SELECT_VALUES
   }
 
   private final SerializerWithPayload<V, E> serializer;
@@ -74,12 +73,16 @@ class PartialTree<V, E extends Enum<E>> {
   private final Map<InternalKey, ValueHolder<V>> values = new HashMap<>();
   private final Collection<InternalKey> keys;
 
-  static <V, E extends Enum<E>> PartialTree<V, E> of(SerializerWithPayload<V, E> serializer, InternalRefId id, List<InternalKey> keys) {
+  static <V, E extends Enum<E>> PartialTree<V, E> of(
+      SerializerWithPayload<V, E> serializer, InternalRefId id, List<InternalKey> keys) {
     return new PartialTree<>(serializer, id, keys);
   }
 
-  static <V, E extends Enum<E>> PartialTree<V, E> of(SerializerWithPayload<V, E> serializer, InternalRef.Type refType, InternalL1 l1,
-        Collection<InternalKey> keys) {
+  static <V, E extends Enum<E>> PartialTree<V, E> of(
+      SerializerWithPayload<V, E> serializer,
+      InternalRef.Type refType,
+      InternalL1 l1,
+      Collection<InternalKey> keys) {
     PartialTree<V, E> tree = new PartialTree<>(serializer, InternalRefId.ofHash(l1.getId()), keys);
     tree.l1 = new Pointer<>(l1);
     tree.refType = refType;
@@ -87,18 +90,22 @@ class PartialTree<V, E extends Enum<E>> {
   }
 
   private void checkMutable() {
-    Preconditions.checkArgument(refType == Type.BRANCH,
-        "You can only mutate a partial tree that references a branch. This is type %s.", refType.name());
+    Preconditions.checkArgument(
+        refType == Type.BRANCH,
+        "You can only mutate a partial tree that references a branch. This is type %s.",
+        refType.name());
   }
 
-  private PartialTree(SerializerWithPayload<V, E> serializer, InternalRefId refId, Collection<InternalKey> keys) {
+  private PartialTree(
+      SerializerWithPayload<V, E> serializer, InternalRefId refId, Collection<InternalKey> keys) {
     super();
     this.refId = refId;
     this.serializer = serializer;
     this.keys = keys;
   }
 
-  public LoadStep getLoadChain(Function<InternalBranch, InternalL1> l1Converter, LoadType loadType) {
+  public LoadStep getLoadChain(
+      Function<InternalBranch, InternalL1> l1Converter, LoadType loadType) {
     if (refId.getType() == Type.HASH && l1 == null) {
       rootId = refId.getId();
       refType = Type.HASH;
@@ -110,18 +117,22 @@ class PartialTree<V, E extends Enum<E>> {
     }
 
     EntityLoadOps loadOps = new EntityLoadOps();
-    loadOps.load(EntityType.REF, InternalRef.class, refId.getId(), loadedRef -> {
-      refType = loadedRef.getType();
-      if (loadedRef.getType() == Type.BRANCH) {
-        InternalL1 loaded = l1Converter.apply(loadedRef.getBranch());
-        l1 = new Pointer<>(loaded);
-        rootId = loaded.getId();
-      } else if (loadedRef.getType() == Type.TAG) {
-        rootId = loadedRef.getTag().getCommit();
-      } else {
-        throw new IllegalStateException("Unknown type of ref to be loaded from store.");
-      }
-    });
+    loadOps.load(
+        EntityType.REF,
+        InternalRef.class,
+        refId.getId(),
+        loadedRef -> {
+          refType = loadedRef.getType();
+          if (loadedRef.getType() == Type.BRANCH) {
+            InternalL1 loaded = l1Converter.apply(loadedRef.getBranch());
+            l1 = new Pointer<>(loaded);
+            rootId = loaded.getId();
+          } else if (loadedRef.getType() == Type.TAG) {
+            rootId = loadedRef.getTag().getCommit();
+          } else {
+            throw new IllegalStateException("Unknown type of ref to be loaded from store.");
+          }
+        });
     return loadOps.build(() -> getLoadStep1(loadType));
   }
 
@@ -129,42 +140,52 @@ class PartialTree<V, E extends Enum<E>> {
     return l1.get();
   }
 
-  /**
-   * Gets value, l3 and l2 save ops. These ops are all non-conditional.
-   */
+  /** Gets value, l3 and l2 save ops. These ops are all non-conditional. */
   public Stream<SaveOp<?>> getMostSaveOps() {
     checkMutable();
     return Streams.concat(
-        l2s.values().stream().filter(Pointer::isDirty).map(l2p -> EntityType.L2.createSaveOpForEntity(l2p.get())).distinct(),
-        l3s.values().stream().filter(Pointer::isDirty).map(l3p -> EntityType.L3.createSaveOpForEntity(l3p.get())).distinct(),
-        values.values().stream().map(v -> EntityType.VALUE.createSaveOpForEntity(
-            (InternalValue) v.getPersistentValue())).distinct()
-        );
+        l2s.values().stream()
+            .filter(Pointer::isDirty)
+            .map(l2p -> EntityType.L2.createSaveOpForEntity(l2p.get()))
+            .distinct(),
+        l3s.values().stream()
+            .filter(Pointer::isDirty)
+            .map(l3p -> EntityType.L3.createSaveOpForEntity(l3p.get()))
+            .distinct(),
+        values.values().stream()
+            .map(
+                v -> EntityType.VALUE.createSaveOpForEntity((InternalValue) v.getPersistentValue()))
+            .distinct());
   }
 
-  /**
-   * Gets L1 mutations required to save tree.
-   */
-  public CommitOp getCommitOp(Id metadataId, Collection<InternalKey> unchangedKeys,
+  /** Gets L1 mutations required to save tree. */
+  public CommitOp getCommitOp(
+      Id metadataId,
+      Collection<InternalKey> unchangedKeys,
       boolean includeTreeUpdates,
       boolean includeCommitUpdates) {
     checkMutable();
 
     UpdateExpression treeUpdate = UpdateExpression.initial();
 
-    // record positions that we're checking so we don't add the same positional check twice (for unchanged statements).
+    // record positions that we're checking so we don't add the same positional check twice (for
+    // unchanged statements).
     final Set<Integer> conditionPositions = new HashSet<>();
 
     List<UnsavedDelta> deltas = new ArrayList<>();
 
-    ConditionExpression treeCondition = ConditionExpression.of(
-        ExpressionFunction.equals(ExpressionPath.builder(InternalRef.TYPE).build(), InternalRef.Type.BRANCH.toEntity()));
+    ConditionExpression treeCondition =
+        ConditionExpression.of(
+            ExpressionFunction.equals(
+                ExpressionPath.builder(InternalRef.TYPE).build(),
+                InternalRef.Type.BRANCH.toEntity()));
 
     // for all mutations that are dirty, create conditional and update expressions.
     for (PositionDelta pm : l1.get().getChanges()) {
       boolean added = conditionPositions.add(pm.getPosition());
       assert added;
-      ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(pm.getPosition()).build();
+      ExpressionPath p =
+          ExpressionPath.builder(InternalBranch.TREE).position(pm.getPosition()).build();
       if (includeTreeUpdates) {
         treeUpdate = treeUpdate.and(SetClause.equals(p, pm.getNewId().toEntity()));
         treeCondition = treeCondition.and(ExpressionFunction.equals(p, pm.getOldId().toEntity()));
@@ -177,15 +198,25 @@ class PartialTree<V, E extends Enum<E>> {
       if (includeTreeUpdates && conditionPositions.add(position)) {
         // this doesn't already have a condition. Add one.
         ExpressionPath p = ExpressionPath.builder(InternalBranch.TREE).position(position).build();
-        treeCondition = treeCondition.and(ExpressionFunction.equals(p, getCurrentL1().getId(position).toEntity()));
+        treeCondition =
+            treeCondition.and(
+                ExpressionFunction.equals(p, getCurrentL1().getId(position).toEntity()));
       }
     }
 
     Commit commitIntention = null;
     if (includeCommitUpdates) {
       // Add the new commit
-      commitIntention = new Commit(Id.generateRandom(), metadataId, deltas,
-          KeyMutationList.of(l3s.values().stream().map(Pointer::get).flatMap(InternalL3::getMutations).collect(Collectors.toList())));
+      commitIntention =
+          new Commit(
+              Id.generateRandom(),
+              metadataId,
+              deltas,
+              KeyMutationList.of(
+                  l3s.values().stream()
+                      .map(Pointer::get)
+                      .flatMap(InternalL3::getMutations)
+                      .collect(Collectors.toList())));
     }
 
     return new CommitOp(
@@ -194,12 +225,13 @@ class PartialTree<V, E extends Enum<E>> {
         includeTreeUpdates ? treeCondition : null);
   }
 
-  public static class CommitOp  {
+  public static class CommitOp {
     private final Commit commitIntention;
     private final UpdateExpression treeUpdate;
     private final ConditionExpression treeCondition;
 
-    public CommitOp(Commit commitIntention, UpdateExpression treeUpdate, ConditionExpression condition) {
+    public CommitOp(
+        Commit commitIntention, UpdateExpression treeUpdate, ConditionExpression condition) {
       super();
       this.commitIntention = commitIntention;
       this.treeUpdate = treeUpdate;
@@ -230,7 +262,8 @@ class PartialTree<V, E extends Enum<E>> {
   }
 
   private Optional<LoadStep> getLoadStep1(LoadType loadType) {
-    final Supplier<Optional<LoadStep>> loadFunc = () -> getLoadStep2(loadType == LoadType.SELECT_VALUES);
+    final Supplier<Optional<LoadStep>> loadFunc =
+        () -> getLoadStep2(loadType == LoadType.SELECT_VALUES);
 
     if (l1 != null) { // if we loaded a branch, we were able to pre-populate the l1 information.
       return loadFunc.get();
@@ -243,20 +276,30 @@ class PartialTree<V, E extends Enum<E>> {
 
   private Optional<LoadStep> getLoadStep2(boolean includeValues) {
     EntityLoadOps loadOps = new EntityLoadOps();
-    keys.forEach(id -> {
-      Id l2Id = l1.get().getId(id.getL1Position());
-      loadOps.load(EntityType.L2, InternalL2.class, l2Id, l -> l2s.putIfAbsent(id.getL1Position(), new Pointer<>(l)));
-    });
+    keys.forEach(
+        id -> {
+          Id l2Id = l1.get().getId(id.getL1Position());
+          loadOps.load(
+              EntityType.L2,
+              InternalL2.class,
+              l2Id,
+              l -> l2s.putIfAbsent(id.getL1Position(), new Pointer<>(l)));
+        });
     return Optional.of(loadOps.build(() -> getLoadStep3(includeValues)));
   }
 
   private Optional<LoadStep> getLoadStep3(boolean includeValues) {
     EntityLoadOps loadOps = new EntityLoadOps();
-    keys.forEach(keyId -> {
-      InternalL2 l2 = l2s.get(keyId.getL1Position()).get();
-      Id l3Id = l2.getId(keyId.getL2Position());
-      loadOps.load(EntityType.L3, InternalL3.class, l3Id, l -> l3s.putIfAbsent(keyId.getPosition(), new Pointer<>(l)));
-    });
+    keys.forEach(
+        keyId -> {
+          InternalL2 l2 = l2s.get(keyId.getL1Position()).get();
+          Id l3Id = l2.getId(keyId.getL2Position());
+          loadOps.load(
+              EntityType.L3,
+              InternalL3.class,
+              l3Id,
+              l -> l3s.putIfAbsent(keyId.getPosition(), new Pointer<>(l)));
+        });
     return Optional.of(loadOps.build(() -> getLoadStep4(includeValues)));
   }
 
@@ -271,10 +314,13 @@ class PartialTree<V, E extends Enum<E>> {
           Id id = l3.getId(key);
           if (!id.isEmpty()) {
             // no load needed for empty values.
-            loadOps.load(EntityType.VALUE, InternalValue.class, l3.getId(key),
+            loadOps.load(
+                EntityType.VALUE,
+                InternalValue.class,
+                l3.getId(key),
                 (wvb) -> values.putIfAbsent(key, ValueHolder.of(serializer, wvb)));
           }
-      });
+        });
     return loadOps.buildOptional();
   }
 
@@ -294,8 +340,8 @@ class PartialTree<V, E extends Enum<E>> {
   /**
    * Set operation that doesn't store values.
    *
-   * <p>This should be used in operations like merge and
-   * cherry-pick, when we know that the values are already stored.
+   * <p>This should be used in operations like merge and cherry-pick, when we know that the values
+   * are already stored.
    *
    * @param key The key to set.
    * @param id The value or empty to set.
@@ -330,7 +376,7 @@ class PartialTree<V, E extends Enum<E>> {
     Id valueId;
     Byte payload;
     if (value.isPresent()) {
-      ValueHolder<V> holder = ValueHolder.of(serializer,  value.get());
+      ValueHolder<V> holder = ValueHolder.of(serializer, value.get());
       values.put(key, holder);
       valueId = holder.getId();
       payload = serializer.getPayload(value.get());
@@ -348,11 +394,11 @@ class PartialTree<V, E extends Enum<E>> {
   public PartialTree<V, E> cleanClone() {
     PartialTree<V, E> clone = new PartialTree<>(serializer, refId, keys);
     this.l3s.entrySet().stream()
-            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(EntityType.L3, x.getValue())))
-            .forEach(x -> clone.l3s.put(x.getKey(), x.getValue()));
+        .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(EntityType.L3, x.getValue())))
+        .forEach(x -> clone.l3s.put(x.getKey(), x.getValue()));
     this.l2s.entrySet().stream()
-            .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(EntityType.L2, x.getValue())))
-            .forEach(x -> clone.l2s.put(x.getKey(), x.getValue()));
+        .map(x -> new SimpleImmutableEntry<>(x.getKey(), cloneInner(EntityType.L2, x.getValue())))
+        .forEach(x -> clone.l2s.put(x.getKey(), x.getValue()));
     this.values.forEach(clone.values::put);
     clone.refType = this.refType;
     clone.rootId = this.rootId;
@@ -361,9 +407,11 @@ class PartialTree<V, E extends Enum<E>> {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  private static <T extends PersistentBase<?>> Pointer<T> cloneInner(EntityType<?, T, ?> type, Pointer<T> value) {
+  private static <T extends PersistentBase<?>> Pointer<T> cloneInner(
+      EntityType<?, T, ?> type, Pointer<T> value) {
     if (value.isDirty()) {
-      return new Pointer(type.buildEntity(producer -> ((PersistentBase) value.get()).applyToConsumer(producer)));
+      return new Pointer(
+          type.buildEntity(producer -> ((PersistentBase) value.get()).applyToConsumer(producer)));
     } else {
       return value;
     }

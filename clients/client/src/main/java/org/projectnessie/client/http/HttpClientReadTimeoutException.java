@@ -16,7 +16,8 @@
 package org.projectnessie.client.http;
 
 /**
- * Specialization of HttpClientException in the case of a timeout while waiting to read the response.
+ * Specialization of HttpClientException in the case of a timeout while waiting to read the
+ * response.
  */
 public class HttpClientReadTimeoutException extends HttpClientException {
   public HttpClientReadTimeoutException() {

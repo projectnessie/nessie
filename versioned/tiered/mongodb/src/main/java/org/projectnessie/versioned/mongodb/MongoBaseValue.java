@@ -17,19 +17,17 @@ package org.projectnessie.versioned.mongodb;
 
 import static org.projectnessie.versioned.mongodb.MongoSerDe.deserializeId;
 
+import com.google.common.base.Preconditions;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
-
 import org.bson.BsonBinary;
 import org.bson.BsonWriter;
 import org.bson.Document;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.tiered.BaseValue;
-
-import com.google.common.base.Preconditions;
 
 abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
 
@@ -41,8 +39,7 @@ abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   private final Set<String> properties = new HashSet<>();
 
   static <C extends BaseValue<C>> C produceBase(Document document, C v) {
-    return v.id(deserializeId(document, ID))
-        .dt(document.getLong(DT));
+    return v.id(deserializeId(document, ID)).dt(document.getLong(DT));
   }
 
   protected MongoBaseValue(BsonWriter bsonWriter) {
@@ -87,13 +84,15 @@ abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
   void checkPresent(String id, String name) {
     Preconditions.checkArgument(
         properties.contains(id),
-        String.format("Method %s of consumer %s has not been called", name, getClass().getSimpleName()));
+        String.format(
+            "Method %s of consumer %s has not been called", name, getClass().getSimpleName()));
   }
 
   void checkNotPresent(String id, String name) {
     Preconditions.checkArgument(
         !properties.contains(id),
-        String.format("Method %s of consumer %s must not be called", name, getClass().getSimpleName()));
+        String.format(
+            "Method %s of consumer %s must not be called", name, getClass().getSimpleName()));
   }
 
   void serializeId(String property, Id id) {
@@ -124,5 +123,4 @@ abstract class MongoBaseValue<C extends BaseValue<C>> implements BaseValue<C> {
     addProperty(prop);
     MongoSerDe.serializeArray(bsonWriter, prop, src, inner);
   }
-
 }

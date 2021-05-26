@@ -27,11 +27,11 @@ public interface StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VAL
 
   Serializer<COMMIT_METADATA> getMetadataSerializer();
 
-  /**
-   * Create StoreWorker for provided helpers.
-   */
-  static <VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>> StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE>
-      of(SerializerWithPayload<VALUE, VALUE_TYPE> valueSerializer, Serializer<COMMIT_METADATA> commitSerializer) {
+  /** Create StoreWorker for provided helpers. */
+  static <VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VALUE_TYPE>>
+      StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE> of(
+          SerializerWithPayload<VALUE, VALUE_TYPE> valueSerializer,
+          Serializer<COMMIT_METADATA> commitSerializer) {
     return new StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE>() {
 
       @Override
@@ -43,8 +43,6 @@ public interface StoreWorker<VALUE, COMMIT_METADATA, VALUE_TYPE extends Enum<VAL
       public Serializer<COMMIT_METADATA> getMetadataSerializer() {
         return commitSerializer;
       }
-
     };
   }
-
 }

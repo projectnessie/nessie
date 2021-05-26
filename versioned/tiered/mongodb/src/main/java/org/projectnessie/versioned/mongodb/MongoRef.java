@@ -19,17 +19,15 @@ import static org.projectnessie.versioned.mongodb.MongoSerDe.deserializeId;
 import static org.projectnessie.versioned.mongodb.MongoSerDe.deserializeIds;
 import static org.projectnessie.versioned.mongodb.MongoSerDe.deserializeKeyMutations;
 
+import com.google.common.primitives.Ints;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
 import org.bson.BsonWriter;
 import org.bson.Document;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.Mutation;
 import org.projectnessie.versioned.tiered.Ref;
-
-import com.google.common.primitives.Ints;
 
 final class MongoRef extends MongoBaseValue<Ref> implements Ref {
 
@@ -49,8 +47,7 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
   static final String KEY_LIST = "keys";
 
   static void produce(Document document, Ref v) {
-    v = produceBase(document, v)
-        .name(document.getString(NAME));
+    v = produceBase(document, v).name(document.getString(NAME));
     String type = document.getString(TYPE);
     switch (type) {
       case REF_TYPE_TAG:
@@ -68,7 +65,9 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
   }
 
   private enum Type {
-    INIT, TAG, BRANCH
+    INIT,
+    TAG,
+    BRANCH
   }
 
   private Type type = Type.INIT;
@@ -144,7 +143,8 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     }
   }
 
-  private class MongoBranchCommit implements BranchCommit, SavedCommit, UnsavedCommitDelta, UnsavedCommitMutations {
+  private class MongoBranchCommit
+      implements BranchCommit, SavedCommit, UnsavedCommitDelta, UnsavedCommitMutations {
 
     int state;
 
@@ -225,7 +225,10 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
     private void assertState(int expected) {
       if (state != expected) {
         throw new IllegalStateException(
-            "Wrong order or consumer method invocations (" + expected + " != " + state
+            "Wrong order or consumer method invocations ("
+                + expected
+                + " != "
+                + state
                 + ". See Javadocs.");
       }
     }
@@ -278,18 +281,19 @@ final class MongoRef extends MongoBaseValue<Ref> implements Ref {
   }
 
   static void deserializeBranchCommits(BranchCommit bc, Document d) {
-    @SuppressWarnings("unchecked") List<Document> lst = (List<Document>) d.get(COMMITS);
+    @SuppressWarnings("unchecked")
+    List<Document> lst = (List<Document>) d.get(COMMITS);
     lst.forEach(c -> deserializeBranchCommit(bc, c));
   }
 
   private static void deserializeBranchCommit(BranchCommit consumer, Document d) {
-    consumer = consumer.id(deserializeId(d, ID))
-        .commit(deserializeId(d, COMMIT));
+    consumer = consumer.id(deserializeId(d, ID)).commit(deserializeId(d, COMMIT));
     if (d.containsKey(PARENT)) {
       consumer.saved().parent(deserializeId(d, PARENT)).done();
     } else {
       UnsavedCommitDelta unsaved = consumer.unsaved();
-      @SuppressWarnings("unchecked") List<Document> deltas = (List<Document>) d.get(DELTAS);
+      @SuppressWarnings("unchecked")
+      List<Document> deltas = (List<Document>) d.get(DELTAS);
       deltas.forEach(delta -> deserializeUnsavedDelta(unsaved, delta));
       UnsavedCommitMutations mutations = unsaved.mutations();
       deserializeKeyMutations(d, KEY_LIST).forEach(mutations::keyMutation);

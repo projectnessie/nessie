@@ -17,17 +17,13 @@ package org.projectnessie.model;
 
 import static org.projectnessie.model.Validation.validateHash;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.immutables.value.Value;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-@Schema(
-    type = SchemaType.OBJECT,
-    title = "Merge Operation"
-  )
+@Schema(type = SchemaType.OBJECT, title = "Merge Operation")
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableMerge.class)
 @JsonDeserialize(as = ImmutableMerge.class)
@@ -36,7 +32,8 @@ public interface Merge {
   String getFromHash();
 
   /**
-   * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)} (String)}.
+   * Validation rule using {@link org.projectnessie.model.Validation#validateHash(String)}
+   * (String)}.
    */
   @Value.Check
   default void checkHash() {

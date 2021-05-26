@@ -22,9 +22,7 @@ import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 
 public final class TestUtils {
-  private TestUtils() {
-
-  }
+  private TestUtils() {}
 
   static void resetData(TreeApi tree) throws NessieConflictException, NessieNotFoundException {
     for (Reference r : tree.getAllReferences()) {

@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.immutables.value.Value.Immutable;
 import org.projectnessie.versioned.store.Entity;
 
@@ -33,7 +32,8 @@ abstract class KeyMutationList {
   }
 
   public Entity toEntity() {
-    return Entity.ofList(getMutations().stream().map(InternalMutation::toEntity).collect(Collectors.toList()));
+    return Entity.ofList(
+        getMutations().stream().map(InternalMutation::toEntity).collect(Collectors.toList()));
   }
 
   /**
@@ -54,8 +54,8 @@ abstract class KeyMutationList {
   }
 
   /**
-   * Compare the given {@link KeyMutationList} with this one but ignores the order of the
-   * mutations in both lists.
+   * Compare the given {@link KeyMutationList} with this one but ignores the order of the mutations
+   * in both lists.
    */
   public boolean equalsIgnoreOrder(KeyMutationList o) {
     if (o == null) {

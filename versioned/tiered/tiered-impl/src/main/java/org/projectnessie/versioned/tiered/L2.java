@@ -16,20 +16,19 @@
 package org.projectnessie.versioned.tiered;
 
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.store.Id;
 
 /**
  * Consumer for L2s.
- * <p>
- * Implementations must return a shared state ({@code this}) from its method.
- * </p>
+ *
+ * <p>Implementations must return a shared state ({@code this}) from its method.
  */
 public interface L2 extends BaseValue<L2> {
 
   /**
    * Add a list of children ids indexed by position.
-   * <p>Must be called exactly once.</p>
+   *
+   * <p>Must be called exactly once.
    *
    * @param ids The list of ids
    * @return This consumer.

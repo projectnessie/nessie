@@ -15,15 +15,13 @@
  */
 package org.projectnessie.model;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-
-import org.immutables.value.Value;
-
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import org.immutables.value.Value;
 
 @Value.Immutable(prehash = true)
 @JsonSerialize(as = ImmutableHiveTable.class)
@@ -45,7 +43,7 @@ public abstract class HiveTable extends Contents {
     int h = 1;
     h += (31 * h) + Objects.hashCode(getId());
     h += (31 * h) + Arrays.hashCode(getTableDefinition());
-    for (byte[] p: getPartitions()) {
+    for (byte[] p : getPartitions()) {
       h += (31 * h) + Arrays.hashCode(p);
     }
     return h;
@@ -61,8 +59,7 @@ public abstract class HiveTable extends Contents {
     if (this == another) {
       return true;
     }
-    return another instanceof ImmutableHiveTable
-      && equalTo((ImmutableHiveTable) another);
+    return another instanceof ImmutableHiveTable && equalTo((ImmutableHiveTable) another);
   }
 
   private boolean equalTo(ImmutableHiveTable another) {
@@ -70,15 +67,15 @@ public abstract class HiveTable extends Contents {
       return false;
     }
     return Objects.equals(getId(), another.getId())
-      && Arrays.equals(getTableDefinition(), another.getTableDefinition())
-      && partitionsEqual(getPartitions(), another.getPartitions());
+        && Arrays.equals(getTableDefinition(), another.getTableDefinition())
+        && partitionsEqual(getPartitions(), another.getPartitions());
   }
 
   private boolean partitionsEqual(List<byte[]> partitions, List<byte[]> partitions1) {
     if (partitions.size() != partitions1.size()) {
       return false;
     }
-    for (int i = 0;i < partitions.size();i++) {
+    for (int i = 0; i < partitions.size(); i++) {
       if (!Arrays.equals(partitions.get(i), partitions1.get(i))) {
         return false;
       }

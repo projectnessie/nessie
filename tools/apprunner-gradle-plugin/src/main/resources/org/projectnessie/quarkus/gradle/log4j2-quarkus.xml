@@ -21,7 +21,8 @@
     </Console>
   </Appenders>
   <Loggers>
-    <Logger name="io.quarkus.http.access-log" level="${sys:nessie.quarkus.log.http.level:-info}">
+    <Logger name="io.quarkus.http.access-log"
+      level="${sys:nessie.quarkus.log.http.level:-info}">
       <AppenderRef ref="Console"/>
     </Logger>
     <Root level="${sys:nessie.quarkus.log.level:-info}">

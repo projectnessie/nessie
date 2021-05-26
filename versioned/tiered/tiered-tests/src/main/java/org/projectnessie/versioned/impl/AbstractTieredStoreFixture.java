@@ -20,7 +20,6 @@ import static org.mockito.Mockito.spy;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-
 import org.projectnessie.versioned.BranchName;
 import org.projectnessie.versioned.Diff;
 import org.projectnessie.versioned.Hash;
@@ -38,8 +37,8 @@ import org.projectnessie.versioned.WithHash;
 import org.projectnessie.versioned.WithType;
 import org.projectnessie.versioned.store.Store;
 
-public abstract class AbstractTieredStoreFixture<S extends Store, C> implements VersionStore<String, String, StringSerializer.TestEnum>,
-    AutoCloseable {
+public abstract class AbstractTieredStoreFixture<S extends Store, C>
+    implements VersionStore<String, String, StringSerializer.TestEnum>, AutoCloseable {
   protected static final StoreWorker<String, String, StringSerializer.TestEnum> WORKER =
       StoreWorker.of(StringSerializer.getInstance(), StringSerializer.getInstance());
 
@@ -48,9 +47,7 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   private final S store;
   private final VersionStore<String, String, StringSerializer.TestEnum> versionStore;
 
-  /**
-   * Create a new fixture.
-   */
+  /** Create a new fixture. */
   protected AbstractTieredStoreFixture(C config) {
     this.config = config;
     S storeImpl = createStoreImpl();
@@ -58,11 +55,14 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
 
     store = spy(storeImpl);
 
-    VersionStore<String, String, StringSerializer.TestEnum> versionStoreImpl = new TieredVersionStore<>(WORKER, store,
-        ImmutableTieredVersionStoreConfig.builder()
-            .enableTracing(true)
-            .waitOnCollapse(true)
-            .build());
+    VersionStore<String, String, StringSerializer.TestEnum> versionStoreImpl =
+        new TieredVersionStore<>(
+            WORKER,
+            store,
+            ImmutableTieredVersionStoreConfig.builder()
+                .enableTracing(true)
+                .waitOnCollapse(true)
+                .build());
     versionStore = spy(versionStoreImpl);
   }
 
@@ -82,15 +82,18 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   }
 
   @Override
-  public Hash commit(BranchName branch, Optional<Hash> expectedHash, String metadata,
+  public Hash commit(
+      BranchName branch,
+      Optional<Hash> expectedHash,
+      String metadata,
       List<Operation<String>> operations)
       throws ReferenceNotFoundException, ReferenceConflictException {
     return versionStore.commit(branch, expectedHash, metadata, operations);
   }
 
   @Override
-  public void transplant(BranchName targetBranch, Optional<Hash> expectedHash,
-      List<Hash> sequenceToTransplant)
+  public void transplant(
+      BranchName targetBranch, Optional<Hash> expectedHash, List<Hash> sequenceToTransplant)
       throws ReferenceNotFoundException, ReferenceConflictException {
     versionStore.transplant(targetBranch, expectedHash, sequenceToTransplant);
   }
@@ -130,7 +133,8 @@ public abstract class AbstractTieredStoreFixture<S extends Store, C> implements 
   }
 
   @Override
-  public Stream<WithType<Key, StringSerializer.TestEnum>> getKeys(Ref ref) throws ReferenceNotFoundException {
+  public Stream<WithType<Key, StringSerializer.TestEnum>> getKeys(Ref ref)
+      throws ReferenceNotFoundException {
     return versionStore.getKeys(ref);
   }
 

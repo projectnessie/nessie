@@ -15,15 +15,15 @@
  */
 package org.projectnessie.versioned.gc;
 
+import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
-
-import com.google.protobuf.ByteString;
 
 /**
  * Assets associated with one or more values.
  *
- * <p>Assets are pointers in a reference tree. The purpose of an Asset object is to expose the items pointed to by a stored value
+ * <p>Assets are pointers in a reference tree. The purpose of an Asset object is to expose the items
+ * pointed to by a stored value
  */
 public abstract class AssetKey {
 
@@ -32,10 +32,11 @@ public abstract class AssetKey {
    *
    * <p>Given the lack of consistency guarantees in deletion of external assets, Nessie may call
    * this method multiple times on the same AssetKey. This future should:
+   *
    * <ul>
-   * <li>Return {@code True} if the asset was deleted.
-   * <li>Return {@code False} if the asset was previously deleted and no longer exists.
-   * <li>Throw an exception if the asset could not be deleted.
+   *   <li>Return {@code True} if the asset was deleted.
+   *   <li>Return {@code False} if the asset was previously deleted and no longer exists.
+   *   <li>Throw an exception if the asset could not be deleted.
    * </ul>
    */
   public abstract CompletionStage<Boolean> delete();
@@ -47,18 +48,14 @@ public abstract class AssetKey {
    */
   public abstract List<String> toReportableName();
 
-  /**
-   * Expose a unique key for this asset for equality purposes.
-   */
+  /** Expose a unique key for this asset for equality purposes. */
   public abstract ByteString toUniqueKey();
 
   // included to ensure that an implementor overrides.
   @Override
   public abstract boolean equals(Object other);
 
-
   // included to ensure that an implementor overrides.
   @Override
   public abstract int hashCode();
-
 }

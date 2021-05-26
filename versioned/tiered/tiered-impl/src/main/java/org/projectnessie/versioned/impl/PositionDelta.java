@@ -19,14 +19,13 @@ import org.immutables.value.Value;
 import org.projectnessie.versioned.impl.InternalBranch.UnsavedDelta;
 import org.projectnessie.versioned.store.Id;
 
-/**
- * Describes the current and previous state of the value.
- */
+/** Describes the current and previous state of the value. */
 @Value.Immutable
 @Value.Style(builder = "getBuilder")
 abstract class PositionDelta {
 
-  static final PositionDelta SINGLE_ZERO = PositionDelta.builder().newId(Id.EMPTY).oldId(Id.EMPTY).position(0).build();
+  static final PositionDelta SINGLE_ZERO =
+      PositionDelta.builder().newId(Id.EMPTY).oldId(Id.EMPTY).position(0).build();
 
   abstract int getPosition();
 
@@ -67,6 +66,4 @@ abstract class PositionDelta {
     UnsavedDelta delta = new UnsavedDelta(getPosition(), getOldId(), getNewId());
     return delta;
   }
-
-
 }

@@ -18,9 +18,7 @@ package org.projectnessie.server.filters;
 import io.quarkus.vertx.web.RouteFilter;
 import io.vertx.ext.web.RoutingContext;
 
-/**
- * Routes UI routes to http page.
- */
+/** Routes UI routes to http page. */
 public class SinglePageAppRoutingFilter {
 
   // maintain list of base paths that should serve root html.
@@ -40,5 +38,4 @@ public class SinglePageAppRoutingFilter {
     // default routing
     rc.next();
   }
-
 }

@@ -17,11 +17,13 @@ package org.projectnessie.versioned.impl.condition;
 
 /**
  * Visitor for all classes in the UpdateClause hierarchy.
+ *
  * @param <T> The type to which the UpdateClause will be converted.
  */
 public interface UpdateClauseVisitor<T> {
   /**
    * Visit the passed in RemoveClause.
+   *
    * @param clause the clause to visit.
    * @return the possibly transformed value resulting from the visitation.
    */
@@ -29,6 +31,7 @@ public interface UpdateClauseVisitor<T> {
 
   /**
    * Visit the passed in SetClause.
+   *
    * @param clause the clause to visit.
    * @return the possibly transformed value resulting from the visitation.
    */
