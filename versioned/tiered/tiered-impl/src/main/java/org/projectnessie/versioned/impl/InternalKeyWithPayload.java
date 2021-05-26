@@ -16,7 +16,6 @@
 package org.projectnessie.versioned.impl;
 
 import javax.annotation.Nullable;
-
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 import org.projectnessie.versioned.WithPayload;
@@ -34,7 +33,10 @@ public interface InternalKeyWithPayload {
   }
 
   static InternalKeyWithPayload of(Byte payload, Key key) {
-    return ImmutableInternalKeyWithPayload.builder().payload(payload).key(new InternalKey(key)).build();
+    return ImmutableInternalKeyWithPayload.builder()
+        .payload(payload)
+        .key(new InternalKey(key))
+        .build();
   }
 
   static InternalKeyWithPayload of(Byte payload, InternalKey key) {

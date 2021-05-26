@@ -16,14 +16,14 @@
 package org.projectnessie.versioned.tiered;
 
 import javax.annotation.Nullable;
-
 import org.immutables.value.Value;
 import org.projectnessie.versioned.Key;
 
 /**
  * Record of a mutation.
  *
- * <p>Can be an addition (eg new key/value) a removal (eg remove k/v) or a modification (change to the payload of the value).
+ * <p>Can be an addition (eg new key/value) a removal (eg remove k/v) or a modification (change to
+ * the payload of the value).
  */
 public interface Mutation {
   enum MutationType {

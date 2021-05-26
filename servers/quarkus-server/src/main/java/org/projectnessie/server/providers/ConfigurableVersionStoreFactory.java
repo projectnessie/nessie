@@ -15,19 +15,18 @@
  */
 package org.projectnessie.server.providers;
 
+import io.quarkus.runtime.Startup;
 import java.io.IOError;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
 import org.projectnessie.server.config.VersionStoreConfig;
@@ -45,8 +44,6 @@ import org.projectnessie.versioned.WithHash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.quarkus.runtime.Startup;
-
 /**
  * A version store factory leveraging CDI to delegate to a {@code VersionStoreFactory} instance
  * based on the store type.
@@ -54,7 +51,8 @@ import io.quarkus.runtime.Startup;
 @ApplicationScoped
 public class ConfigurableVersionStoreFactory {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurableVersionStoreFactory.class);
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(ConfigurableVersionStoreFactory.class);
 
   private final Instance<VersionStoreFactory> versionStoreFactory;
   private final VersionStoreConfig storeConfig;
@@ -68,8 +66,10 @@ public class ConfigurableVersionStoreFactory {
    * @param serverConfig the server configuration
    */
   @Inject
-  public ConfigurableVersionStoreFactory(@Any Instance<VersionStoreFactory> versionStoreFactory,
-      VersionStoreConfig storeConfig, ServerConfig serverConfig) {
+  public ConfigurableVersionStoreFactory(
+      @Any Instance<VersionStoreFactory> versionStoreFactory,
+      VersionStoreConfig storeConfig,
+      ServerConfig serverConfig) {
     this.versionStoreFactory = versionStoreFactory;
     this.storeConfig = storeConfig;
     this.serverConfig = serverConfig;
@@ -78,9 +78,7 @@ public class ConfigurableVersionStoreFactory {
   private static final long START_RETRY_MIN_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(2);
   private volatile long lastUnsuccessfulStart = 0L;
 
-  /**
-   * Version store producer.
-   */
+  /** Version store producer. */
   @Produces
   @Singleton
   @Startup
@@ -103,14 +101,15 @@ public class ConfigurableVersionStoreFactory {
   private VersionStore<Contents, CommitMeta, Contents.Type> newVersionStore() {
     final VersionStoreType versionStoreType = storeConfig.getVersionStoreType();
     if (System.nanoTime() - lastUnsuccessfulStart < START_RETRY_MIN_INTERVAL_NANOS) {
-      LOGGER.warn("{} version store failed to start recently, try again later.",
-          versionStoreType);
-      throw new RuntimeException(String.format("%s version store failed to start recently, try again later.",
-          versionStoreType));
+      LOGGER.warn("{} version store failed to start recently, try again later.", versionStoreType);
+      throw new RuntimeException(
+          String.format(
+              "%s version store failed to start recently, try again later.", versionStoreType));
     }
 
     try {
-      VersionStoreFactory factory = versionStoreFactory.select(new StoreType.Literal(versionStoreType)).get();
+      VersionStoreFactory factory =
+          versionStoreFactory.select(new StoreType.Literal(versionStoreType)).get();
       LOGGER.info("Using {} Version store", versionStoreType);
       VersionStore<Contents, CommitMeta, Contents.Type> versionStore;
       try {

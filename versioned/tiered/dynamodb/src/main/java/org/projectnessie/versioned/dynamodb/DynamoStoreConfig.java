@@ -17,10 +17,8 @@ package org.projectnessie.versioned.dynamodb;
 
 import java.net.URI;
 import java.util.Optional;
-
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
-
 import software.amazon.awssdk.regions.Region;
 
 @Immutable

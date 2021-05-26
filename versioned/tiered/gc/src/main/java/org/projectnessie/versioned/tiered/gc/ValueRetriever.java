@@ -22,7 +22,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
@@ -30,9 +29,7 @@ import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
 
-/**
- * Utility class used to extract values from underlying store and convert to a Spark Dataset.
- */
+/** Utility class used to extract values from underlying store and convert to a Spark Dataset. */
 public class ValueRetriever<T extends BaseValue<T>, OUT> {
 
   private final Supplier<Store> supplier;
@@ -40,10 +37,12 @@ public class ValueRetriever<T extends BaseValue<T>, OUT> {
   private final Function<Store.Acceptor<T>, OUT> builder;
   private final Class<OUT> clazz;
 
-  /**
-   * Construct a retriever.
-   */
-  public ValueRetriever(Supplier<Store> supplier, ValueType<T> valueType, Function<Store.Acceptor<T>, OUT> builder, Class<OUT> clazz) {
+  /** Construct a retriever. */
+  public ValueRetriever(
+      Supplier<Store> supplier,
+      ValueType<T> valueType,
+      Function<Store.Acceptor<T>, OUT> builder,
+      Class<OUT> clazz) {
     super();
     this.supplier = supplier;
     this.valueType = valueType;
@@ -55,9 +54,7 @@ public class ValueRetriever<T extends BaseValue<T>, OUT> {
     return supplier.get().getValues(valueType).map(builder::apply);
   }
 
-  /**
-   * Get a dataset from this retriever.
-   */
+  /** Get a dataset from this retriever. */
   public Dataset<OUT> get(SparkSession spark, Optional<Predicate<OUT>> filter) {
     List<OUT> out = this.stream().filter(filter.orElse(t -> true)).collect(Collectors.toList());
     return spark.createDataset(out, Encoders.bean(clazz));
@@ -72,5 +69,4 @@ public class ValueRetriever<T extends BaseValue<T>, OUT> {
       Function<Store.Acceptor<IN>, OUT> converter) {
     return new ValueRetriever<IN, OUT>(supplier, valueType, converter, clazz).get(spark, filter);
   }
-
 }

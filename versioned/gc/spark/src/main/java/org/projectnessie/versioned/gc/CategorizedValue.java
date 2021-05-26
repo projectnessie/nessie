@@ -15,14 +15,11 @@
  */
 package org.projectnessie.versioned.gc;
 
+import com.google.protobuf.ByteString;
 import java.io.Serializable;
 import java.util.List;
 
-import com.google.protobuf.ByteString;
-
-/**
- * Referenced state of a value, its type and its byte[] representation.
- */
+/** Referenced state of a value, its type and its byte[] representation. */
 public final class CategorizedValue implements Serializable {
 
   private static final long serialVersionUID = -1466847843373432962L;
@@ -32,13 +29,9 @@ public final class CategorizedValue implements Serializable {
   private long timestamp;
   private List<String> key;
 
-  public CategorizedValue() {
+  public CategorizedValue() {}
 
-  }
-
-  /**
-   * Construct asset key.
-   */
+  /** Construct asset key. */
   public CategorizedValue(boolean referenced, ByteString data, long timestamp, List<String> key) {
     super();
     this.referenced = referenced;

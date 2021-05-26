@@ -15,6 +15,20 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import io.opentracing.Scope;
+import io.opentracing.Tracer;
+import io.opentracing.Tracer.SpanBuilder;
+import io.opentracing.log.Fields;
+import io.opentracing.noop.NoopSpanBuilder;
+import io.opentracing.tag.Tags;
+import io.opentracing.util.GlobalTracer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,7 +40,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
-
 import org.projectnessie.versioned.ReferenceConflictException;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStoreException;
@@ -47,22 +60,6 @@ import org.projectnessie.versioned.tiered.Ref.UnsavedCommitMutations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-
-import io.opentracing.Scope;
-import io.opentracing.Tracer;
-import io.opentracing.Tracer.SpanBuilder;
-import io.opentracing.log.Fields;
-import io.opentracing.noop.NoopSpanBuilder;
-import io.opentracing.tag.Tags;
-import io.opentracing.util.GlobalTracer;
-
 /**
  * Stores the current state of branch.
  *
@@ -74,7 +71,8 @@ class InternalBranch extends InternalRef {
   static final String TREE = "tree";
   static final String COMMITS = "commits";
 
-  private static final List<Commit> SINGLE_EMPTY_COMMIT = ImmutableList.of(new Commit(InternalL1.EMPTY_ID, Id.EMPTY, Id.EMPTY));
+  private static final List<Commit> SINGLE_EMPTY_COMMIT =
+      ImmutableList.of(new Commit(InternalL1.EMPTY_ID, Id.EMPTY, Id.EMPTY));
 
   private static final Logger LOGGER = LoggerFactory.getLogger(InternalBranch.class);
 
@@ -88,20 +86,33 @@ class InternalBranch extends InternalRef {
 
   /**
    * Create an empty branch.
+   *
    * @param name name of the branch.
    */
   public InternalBranch(String name) {
-    this(InternalRefId.ofBranch(name).getId(), name, InternalL1.EMPTY.getMap(), Id.EMPTY, SINGLE_EMPTY_COMMIT, DT.now());
+    this(
+        InternalRefId.ofBranch(name).getId(),
+        name,
+        InternalL1.EMPTY.getMap(),
+        Id.EMPTY,
+        SINGLE_EMPTY_COMMIT,
+        DT.now());
   }
 
   /**
    * Create a new branch targeting an L1.
+   *
    * @param name name of the branch
    * @param target the L1 to target (should already be persisted)
    */
   public InternalBranch(String name, InternalL1 target) {
-    this(InternalRefId.ofBranch(name).getId(), name, target.getMap(), Id.EMPTY,
-        ImmutableList.of(new Commit(target.getId(), target.getMetadataId(), target.getParentId())), DT.now());
+    this(
+        InternalRefId.ofBranch(name).getId(),
+        name,
+        target.getMap(),
+        Id.EMPTY,
+        ImmutableList.of(new Commit(target.getId(), target.getMetadataId(), target.getParentId())),
+        DT.now());
   }
 
   InternalBranch(Id id, String name, IdMap tree, Id metadata, List<Commit> commits, Long dt) {
@@ -113,7 +124,6 @@ class InternalBranch extends InternalRef {
     assert tree.size() == InternalL1.SIZE;
     ensureConsistentId();
   }
-
 
   /**
    * Get the most recent saved parent within the list of commits.
@@ -160,7 +170,8 @@ class InternalBranch extends InternalRef {
       this.keyMutationList = null;
     }
 
-    public Commit(Id unsavedId, Id commit, List<UnsavedDelta> deltas, KeyMutationList keyMutationList) {
+    public Commit(
+        Id unsavedId, Id commit, List<UnsavedDelta> deltas, KeyMutationList keyMutationList) {
       super();
       this.saved = false;
       this.deltas = ImmutableList.copyOf(Preconditions.checkNotNull(deltas));
@@ -206,17 +217,16 @@ class InternalBranch extends InternalRef {
 
     Map<String, Entity> itemToMap(Commit item) {
       ImmutableMap.Builder<String, Entity> builder = ImmutableMap.builder();
-      builder
-          .put(ID, item.getId().toEntity())
-          .put(COMMIT, item.commit.toEntity());
+      builder.put(ID, item.getId().toEntity()).put(COMMIT, item.commit.toEntity());
       if (item.saved) {
         builder.put(PARENT, item.parent.toEntity());
       } else {
-        Entity deltas = Entity.ofList(
-            item.deltas.stream()
-                .map(UnsavedDelta::itemToMap)
-                .map(Entity::ofMap)
-                .collect(Collectors.toList()));
+        Entity deltas =
+            Entity.ofList(
+                item.deltas.stream()
+                    .map(UnsavedDelta::itemToMap)
+                    .map(Entity::ofMap)
+                    .collect(Collectors.toList()));
         builder.put(DELTAS, deltas);
         builder.put(KEY_MUTATIONS, item.keyMutationList.toEntity());
       }
@@ -224,10 +234,8 @@ class InternalBranch extends InternalRef {
     }
   }
 
-  /**
-   * Identify the list of intended commits that need to be completed.
-   */
-  public UpdateState getUpdateState(Store store)  {
+  /** Identify the list of intended commits that need to be completed. */
+  public UpdateState getUpdateState(Store store) {
     // generate sublist of important commits.
     List<Commit> unsavedCommits = new ArrayList<>();
     Commit lastSavedCommit = null;
@@ -259,10 +267,14 @@ class InternalBranch extends InternalRef {
 
     IdMap tree = this.tree;
 
-    InternalL1 lastSavedL1 = lastSavedCommit.id.isEmpty() ? InternalL1.EMPTY : EntityType.L1.loadSingle(store, lastSavedCommit.id);
+    InternalL1 lastSavedL1 =
+        lastSavedCommit.id.isEmpty()
+            ? InternalL1.EMPTY
+            : EntityType.L1.loadSingle(store, lastSavedCommit.id);
 
     if (unsavedCommits.isEmpty()) {
-      return new UpdateState(Collections.emptyList(), deletes, lastSavedL1, 0, lastSavedL1.getId(), this);
+      return new UpdateState(
+          Collections.emptyList(), deletes, lastSavedL1, 0, lastSavedL1.getId(), this);
     }
 
     // first we rewind the tree to the original state
@@ -285,8 +297,10 @@ class InternalBranch extends InternalRef {
 
       unsavedL1s.put(lastL1.getId(), lastL1);
 
-      lastL1 = lastL1.getChildWithTree(c.commit, tree, c.keyMutationList)
-          .withCheckpointAsNecessary(store, unsavedL1s);
+      lastL1 =
+          lastL1
+              .getChildWithTree(c.commit, tree, c.keyMutationList)
+              .withCheckpointAsNecessary(store, unsavedL1s);
 
       toSave.add(EntityType.L1.createSaveOpForEntity(lastL1));
       lastId = c.id;
@@ -325,7 +339,8 @@ class InternalBranch extends InternalRef {
       this.finalL1RandomId = Preconditions.checkNotNull(finalL1RandomId);
       this.initialBranch = Preconditions.checkNotNull(initialBranch);
       if (finalL1position == 0 && !deletes.isEmpty()) {
-        throw new IllegalStateException("We should never have deletes if the final position is zero.");
+        throw new IllegalStateException(
+            "We should never have deletes if the final position is zero.");
       }
     }
 
@@ -338,6 +353,7 @@ class InternalBranch extends InternalRef {
      * Save any pending saves if they are not already saved.
      *
      * <p>It is safe to call this multiple times. Subsequent calls will be a no-op.
+     *
      * @param store The store to save any pending saves to.
      */
     private void save(Store store) {
@@ -355,15 +371,17 @@ class InternalBranch extends InternalRef {
     }
 
     /**
-     * Ensure that all l1s to save are available. Returns once the L1s reference in this object are available for
-     * reference. Before returning, will also submit a separate thread to the provided executor that will attempt to
-     * clean up the existing commit log. Once the log is cleaned up, the returned CompletableFuture will return a cleaned InternalBranch.
+     * Ensure that all l1s to save are available. Returns once the L1s reference in this object are
+     * available for reference. Before returning, will also submit a separate thread to the provided
+     * executor that will attempt to clean up the existing commit log. Once the log is cleaned up,
+     * the returned CompletableFuture will return a cleaned InternalBranch.
      *
      * @param store The store to save to.
      * @param executor The executor to do any necessary clean up of the commit log.
-     * @param config Config object holding the number of times we'll attempt to clean up the commit log and
-     *        whether or not the operation should wait on the final operation of collapsing the commit log successfully
-     *        before returning/failing. If false, the final collapse will be done in a separate thread.
+     * @param config Config object holding the number of times we'll attempt to clean up the commit
+     *     log and whether or not the operation should wait on the final operation of collapsing the
+     *     commit log successfully before returning/failing. If false, the final collapse will be
+     *     done in a separate thread.
      */
     void ensureAvailable(Store store, Executor executor, TieredVersionStoreConfig config) {
 
@@ -373,13 +391,16 @@ class InternalBranch extends InternalRef {
         return;
       }
 
-      CompletableFuture<InternalBranch> future = CompletableFuture.supplyAsync(() -> {
-        try {
-          return collapseIntentionLog(this, store, initialBranch, config);
-        } catch (ReferenceNotFoundException | ReferenceConflictException e) {
-          throw new CompletionException(e);
-        }
-      }, executor);
+      CompletableFuture<InternalBranch> future =
+          CompletableFuture.supplyAsync(
+              () -> {
+                try {
+                  return collapseIntentionLog(this, store, initialBranch, config);
+                } catch (ReferenceNotFoundException | ReferenceConflictException e) {
+                  throw new CompletionException(e);
+                }
+              },
+              executor);
 
       if (!config.waitOnCollapse()) {
         return;
@@ -398,35 +419,46 @@ class InternalBranch extends InternalRef {
     /**
      * Collapses the intention log within a branch, reattempting multiple times.
      *
-     * <p>After completing an operation, we should attempt to collapse the intention log. There are two steps associated with this:
+     * <p>After completing an operation, we should attempt to collapse the intention log. There are
+     * two steps associated with this:
      *
      * <ul>
-     * <li>Save all the unsaved items in the intention log.
-     * <li>Removing all the unsaved items in the intention log except the last one, which will be
-     * converted to an id pointer of the previous commit.
+     *   <li>Save all the unsaved items in the intention log.
+     *   <li>Removing all the unsaved items in the intention log except the last one, which will be
+     *       converted to an id pointer of the previous commit.
      * </ul>
      *
      * @param branch The branch that potentially has items to collapse.
-     * @param config Tiered-version-store configuration, the number of attempts to make before giving up on collapsing.
-     *               (This is an optimistic locking scheme.)
+     * @param config Tiered-version-store configuration, the number of attempts to make before
+     *     giving up on collapsing. (This is an optimistic locking scheme.)
      * @return The updated branch object after the intention log was collapsed.
      * @throws ReferenceNotFoundException when branch does not exist.
-     * @throws ReferenceConflictException If attempts are depleted and operation cannot be applied due to heavy concurrency
+     * @throws ReferenceConflictException If attempts are depleted and operation cannot be applied
+     *     due to heavy concurrency
      */
-    private static InternalBranch collapseIntentionLog(UpdateState updateState, Store store, InternalBranch branch,
-        TieredVersionStoreConfig config) throws ReferenceNotFoundException, ReferenceConflictException {
-      try (Scope outerScope = createSpan(config.enableTracing(), "InternalBranch.collapseIntentionLog")
-          .withTag(TAG_OPERATION, "CollapseIntentionLog")
-          .withTag(TAG_BRANCH, branch.getName())
-          .startActive(true)) {
+    private static InternalBranch collapseIntentionLog(
+        UpdateState updateState,
+        Store store,
+        InternalBranch branch,
+        TieredVersionStoreConfig config)
+        throws ReferenceNotFoundException, ReferenceConflictException {
+      try (Scope outerScope =
+          createSpan(config.enableTracing(), "InternalBranch.collapseIntentionLog")
+              .withTag(TAG_OPERATION, "CollapseIntentionLog")
+              .withTag(TAG_BRANCH, branch.getName())
+              .startActive(true)) {
         try {
           for (int attempt = 0; attempt < config.getP2CommitAttempts(); attempt++) {
-            try (Scope innerScope = createSpan(config.enableTracing(), "Attempt-" + attempt).startActive(true)) {
+            try (Scope innerScope =
+                createSpan(config.enableTracing(), "Attempt-" + attempt).startActive(true)) {
 
-              innerScope.span().setTag("nessie.num-saves", updateState.saves.size())
+              innerScope
+                  .span()
+                  .setTag("nessie.num-saves", updateState.saves.size())
                   .setTag("nessie.num-deletes", updateState.deletes.size());
 
-              Optional<InternalBranch> updated = tryCollapseIntentionLog(store, branch, updateState, attempt);
+              Optional<InternalBranch> updated =
+                  tryCollapseIntentionLog(store, branch, updateState, attempt);
 
               if (updated.isPresent()) {
                 innerScope.span().setTag("nessie.completed", true);
@@ -436,21 +468,29 @@ class InternalBranch extends InternalRef {
               // something must have changed, reload the branch.
               final InternalRef ref = EntityType.REF.loadSingle(store, branch.getId());
               if (ref.getType() != Type.BRANCH) {
-                throw new ReferenceNotFoundException("Failure while collapsing log. Former branch is now a " + ref.getType());
+                throw new ReferenceNotFoundException(
+                    "Failure while collapsing log. Former branch is now a " + ref.getType());
               }
               branch = ref.getBranch();
               updateState = branch.getUpdateState(store);
             }
           }
 
-          throw new ReferenceConflictException(String.format("Unable to collapse intention log after %d attempts, giving up.",
-              config.getP2CommitAttempts()));
+          throw new ReferenceConflictException(
+              String.format(
+                  "Unable to collapse intention log after %d attempts, giving up.",
+                  config.getP2CommitAttempts()));
 
         } catch (VersionStoreException ex) {
           throw ex;
         } catch (Exception ex) {
-          Tags.ERROR.set(outerScope.span().log(ImmutableMap.of(Fields.EVENT, Tags.ERROR.getKey(),
-              Fields.ERROR_OBJECT, ex.toString())), true);
+          Tags.ERROR.set(
+              outerScope
+                  .span()
+                  .log(
+                      ImmutableMap.of(
+                          Fields.EVENT, Tags.ERROR.getKey(), Fields.ERROR_OBJECT, ex.toString())),
+              true);
           LOGGER.debug("Exception when trying to collapse intention log.", ex);
           Throwables.throwIfUnchecked(ex);
           throw new RuntimeException(ex);
@@ -458,8 +498,8 @@ class InternalBranch extends InternalRef {
       }
     }
 
-    private static Optional<InternalBranch> tryCollapseIntentionLog(Store store, InternalBranch branch, UpdateState updateState,
-        int attempt) {
+    private static Optional<InternalBranch> tryCollapseIntentionLog(
+        Store store, InternalBranch branch, UpdateState updateState, int attempt) {
       // ensure that any to-be-saved items are saved. This is a noop on attempt 0 since
       // ensureAvailable will have already done a save.
       updateState.save(store);
@@ -473,33 +513,54 @@ class InternalBranch extends InternalRef {
 
       for (Delete d : updateState.deletes) {
         ExpressionPath path = commits.toBuilder().position(d.position).build();
-        condition = condition.and(ExpressionFunction.equals(path.toBuilder().name(ID).build(), d.id.toEntity()));
+        condition =
+            condition.and(
+                ExpressionFunction.equals(path.toBuilder().name(ID).build(), d.id.toEntity()));
         update = update.and(RemoveClause.of(path));
       }
 
-      condition = condition.and(ExpressionFunction.equals(last.toBuilder().name(ID).build(),
-          updateState.finalL1RandomId.toEntity()));
+      condition =
+          condition.and(
+              ExpressionFunction.equals(
+                  last.toBuilder().name(ID).build(), updateState.finalL1RandomId.toEntity()));
 
       // remove extra commits field for last commit.
-      update = update
-          .and(RemoveClause.of(last.toBuilder().name(Commit.DELTAS).build()))
-          .and(RemoveClause.of(last.toBuilder().name(Commit.KEY_MUTATIONS).build()))
-          .and(SetClause.equals(last.toBuilder().name(Commit.PARENT).build(), updateState.finalL1.getParentId().toEntity()))
-          .and(SetClause.equals(last.toBuilder().name(Commit.ID).build(), updateState.finalL1.getId().toEntity()));
+      update =
+          update
+              .and(RemoveClause.of(last.toBuilder().name(Commit.DELTAS).build()))
+              .and(RemoveClause.of(last.toBuilder().name(Commit.KEY_MUTATIONS).build()))
+              .and(
+                  SetClause.equals(
+                      last.toBuilder().name(Commit.PARENT).build(),
+                      updateState.finalL1.getParentId().toEntity()))
+              .and(
+                  SetClause.equals(
+                      last.toBuilder().name(Commit.ID).build(),
+                      updateState.finalL1.getId().toEntity()));
       InternalRef.Builder<?> producer = EntityType.REF.newEntityProducer();
-      if (store.update(ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer))) {
-        LOGGER.debug("Completed collapse update on attempt {}, L1.id={}, L1.parentId={}, position={}.",
-            attempt, updateState.finalL1.getId(), updateState.finalL1.getParentId(), updateState.finalL1position);
+      if (store.update(
+          ValueType.REF, branch.getId(), update, Optional.of(condition), Optional.of(producer))) {
+        LOGGER.debug(
+            "Completed collapse update on attempt {}, L1.id={}, L1.parentId={}, position={}.",
+            attempt,
+            updateState.finalL1.getId(),
+            updateState.finalL1.getParentId(),
+            updateState.finalL1position);
         return Optional.of(producer.build().getBranch());
       }
 
-      LOGGER.debug("Failed to collapse update on attempt {}, L1.id={}, L1.parentId={}, position={}.",
-          attempt, updateState.finalL1.getId(), updateState.finalL1.getParentId(), updateState.finalL1position);
+      LOGGER.debug(
+          "Failed to collapse update on attempt {}, L1.id={}, L1.parentId={}, position={}.",
+          attempt,
+          updateState.finalL1.getId(),
+          updateState.finalL1.getParentId(),
+          updateState.finalL1position);
       return Optional.empty();
     }
 
     public InternalL1 getL1() {
-      Preconditions.checkArgument(saved,
+      Preconditions.checkArgument(
+          saved,
           "You must call UpdateState.ensureAvailable() before attempting to retrieve the L1 state of this branch.");
       return finalL1;
     }
@@ -526,7 +587,6 @@ class InternalBranch extends InternalRef {
     private final Id oldId;
     private final Id newId;
 
-
     public UnsavedDelta(int position, Id oldId, Id newId) {
       this.position = position;
       this.oldId = oldId;
@@ -538,7 +598,7 @@ class InternalBranch extends InternalRef {
     }
 
     public IdMap reverse(IdMap tree) {
-      return tree.withId(position,  oldId);
+      return tree.withId(position, oldId);
     }
 
     @Override
@@ -550,7 +610,8 @@ class InternalBranch extends InternalRef {
         return false;
       }
       UnsavedDelta that = (UnsavedDelta) o;
-      return position == that.position && Objects.equal(oldId, that.oldId)
+      return position == that.position
+          && Objects.equal(oldId, that.oldId)
           && Objects.equal(newId, that.newId);
     }
 
@@ -592,8 +653,9 @@ class InternalBranch extends InternalRef {
       return false;
     }
     InternalBranch that = (InternalBranch) o;
-    return Objects.equal(name, that.name) && Objects
-        .equal(tree, that.tree) && Objects.equal(metadata, that.metadata)
+    return Objects.equal(name, that.name)
+        && Objects.equal(tree, that.tree)
+        && Objects.equal(metadata, that.metadata)
         && Objects.equal(commits, that.commits);
   }
 
@@ -609,29 +671,25 @@ class InternalBranch extends InternalRef {
         .branch()
         .metadata(metadata)
         .children(this.tree.stream())
-        .commits(cc -> {
-          for (Commit c : commits) {
-            cc.id(c.id)
-                .commit(c.commit);
-            if (c.saved) {
-              cc.saved()
-                  .parent(c.parent)
-                  .done();
-            } else {
-              UnsavedCommitDelta deltas = cc.unsaved();
-              c.deltas.forEach(d -> deltas.delta(
-                      d.position,
-                      d.oldId,
-                      d.newId
-                  ));
+        .commits(
+            cc -> {
+              for (Commit c : commits) {
+                cc.id(c.id).commit(c.commit);
+                if (c.saved) {
+                  cc.saved().parent(c.parent).done();
+                } else {
+                  UnsavedCommitDelta deltas = cc.unsaved();
+                  c.deltas.forEach(d -> deltas.delta(d.position, d.oldId, d.newId));
 
-              UnsavedCommitMutations mutations = deltas.mutations();
-              c.keyMutationList.getMutations().forEach(km -> mutations.keyMutation(km.toMutation()));
+                  UnsavedCommitMutations mutations = deltas.mutations();
+                  c.keyMutationList
+                      .getMutations()
+                      .forEach(km -> mutations.keyMutation(km.toMutation()));
 
-              mutations.done();
-            }
-          }
-        })
+                  mutations.done();
+                }
+              }
+            })
         .backToRef();
   }
 
@@ -643,8 +701,7 @@ class InternalBranch extends InternalRef {
   private static SpanBuilder createSpan(boolean enableTracing, String name) {
     if (enableTracing) {
       Tracer tracer = GlobalTracer.get();
-      return tracer.buildSpan(name)
-          .asChildOf(tracer.activeSpan());
+      return tracer.buildSpan(name).asChildOf(tracer.activeSpan());
     } else {
       return NoopSpanBuilder.INSTANCE;
     }

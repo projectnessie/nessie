@@ -21,9 +21,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-
-import org.projectnessie.versioned.impl.EntityType;
-import org.projectnessie.versioned.impl.PersistentBase;
 import org.projectnessie.versioned.impl.PersistentBase.EntityBuilder;
 import org.projectnessie.versioned.impl.condition.ConditionExpression;
 import org.projectnessie.versioned.impl.condition.UpdateExpression;
@@ -36,9 +33,7 @@ import org.projectnessie.versioned.store.Store;
 import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
 
-/**
- * Simple mock store that holds data in a map for simple tests.
- */
+/** Simple mock store that holds data in a map for simple tests. */
 public class MockStore implements Store {
 
   private final Map<ItemKey, Object> items = new HashMap<>();
@@ -65,7 +60,8 @@ public class MockStore implements Store {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <C extends BaseValue<C>> void put(SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
+  public <C extends BaseValue<C>> void put(
+      SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
     if (condition.isPresent()) {
       throw new UnsupportedOperationException();
     }
@@ -77,7 +73,8 @@ public class MockStore implements Store {
   }
 
   @Override
-  public <C extends BaseValue<C>> boolean delete(ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
+  public <C extends BaseValue<C>> boolean delete(
+      ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
     throw new UnsupportedOperationException();
   }
 
@@ -92,23 +89,23 @@ public class MockStore implements Store {
   }
 
   @Override
-  public <C extends BaseValue<C>> boolean update(ValueType<C> type, Id id, UpdateExpression update,
-      Optional<ConditionExpression> condition, Optional<BaseValue<C>> consumer) throws NotFoundException {
+  public <C extends BaseValue<C>> boolean update(
+      ValueType<C> type,
+      Id id,
+      UpdateExpression update,
+      Optional<ConditionExpression> condition,
+      Optional<BaseValue<C>> consumer)
+      throws NotFoundException {
     throw new UnsupportedOperationException();
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
-    return items.entrySet()
-        .stream()
+    return items.entrySet().stream()
         .filter(e -> e.getKey().type.valueType.equals(type))
-        .map(
-          e ->
-              c -> ((PersistentBase<C>) e.getValue()).applyToConsumer(c)
-          );
+        .map(e -> c -> ((PersistentBase<C>) e.getValue()).applyToConsumer(c));
   }
-
 
   private static class ItemKey {
 
@@ -137,6 +134,5 @@ public class MockStore implements Store {
       ItemKey other = (ItemKey) obj;
       return Objects.equals(id, other.id) && type == other.type;
     }
-
   }
 }

@@ -50,7 +50,8 @@ class DatabaseW extends Item {
     if (!(c instanceof HiveDatabase)) {
       throw new RuntimeException("Not a Hive datbaase.");
     }
-    return new DatabaseW(fromBytes(new Database(), ((HiveDatabase)c).getDatabaseDefinition()), c.getId());
+    return new DatabaseW(
+        fromBytes(new Database(), ((HiveDatabase) c).getDatabaseDefinition()), c.getId());
   }
 
   @Override

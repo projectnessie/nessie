@@ -26,5 +26,4 @@ public interface TransactionHandler {
   boolean commitTransaction();
 
   void shutdown();
-
 }

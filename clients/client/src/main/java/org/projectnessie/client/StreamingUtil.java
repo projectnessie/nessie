@@ -18,9 +18,7 @@ package org.projectnessie.client;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.Stream;
-
 import javax.validation.constraints.NotNull;
-
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -28,9 +26,7 @@ import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.EntriesResponse.Entry;
 import org.projectnessie.model.LogResponse;
 
-/**
- * Helper and utility methods around streaming of {@link TreeApi} et al.
- */
+/** Helper and utility methods around streaming of {@link TreeApi} et al. */
 public final class StreamingUtil {
 
   private StreamingUtil() {
@@ -40,34 +36,39 @@ public final class StreamingUtil {
   /**
    * Default implementation to return a stream of objects for a ref, functionally equivalent to
    * calling {@link TreeApi#getEntries(String, Integer, String, List)} with manual paging.
-   * <p>The {@link Stream} returned by {@code getEntriesStream(ref, OptionalInt.empty())},
-   * if not limited, returns all commit-log entries.</p>
+   *
+   * <p>The {@link Stream} returned by {@code getEntriesStream(ref, OptionalInt.empty())}, if not
+   * limited, returns all commit-log entries.
    *
    * @param ref a named reference (branch or tag name) or a commit-hash
    * @param pageSizeHint page-size hint for the backend
    * @param types types to filter on. Empty list means no filtering.
    * @return stream of {@link Entry} objects
    */
-  public static Stream<Entry> getEntriesStream(@NotNull TreeApi treeApi, @NotNull String ref,
-      OptionalInt pageSizeHint, List<String> types) throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(EntriesResponse::getEntries,
-        (ref1, pageSize, token) -> treeApi.getEntries(ref1, pageSize, token, types)).generateStream(ref, pageSizeHint);
+  public static Stream<Entry> getEntriesStream(
+      @NotNull TreeApi treeApi, @NotNull String ref, OptionalInt pageSizeHint, List<String> types)
+      throws NessieNotFoundException {
+    return new ResultStreamPaginator<>(
+            EntriesResponse::getEntries,
+            (ref1, pageSize, token) -> treeApi.getEntries(ref1, pageSize, token, types))
+        .generateStream(ref, pageSizeHint);
   }
 
   /**
    * Default implementation to return a stream of commit-log entries, functionally equivalent to
    * calling {@link TreeApi#getCommitLog(String, Integer, String)} with manual paging.
-   * <p>The {@link Stream} returned by {@code getCommitLogStream(ref, OptionalInt.empty())},
-   * if not limited, returns all commit-log entries.</p>
+   *
+   * <p>The {@link Stream} returned by {@code getCommitLogStream(ref, OptionalInt.empty())}, if not
+   * limited, returns all commit-log entries.
    *
    * @param ref a named reference (branch or tag name) or a commit-hash
    * @param pageSizeHint page-size hint for the backend
    * @return stream of {@link CommitMeta} objects
    */
-  public static Stream<CommitMeta> getCommitLogStream(@NotNull TreeApi treeApi, @NotNull String ref,
-      OptionalInt pageSizeHint) throws NessieNotFoundException {
+  public static Stream<CommitMeta> getCommitLogStream(
+      @NotNull TreeApi treeApi, @NotNull String ref, OptionalInt pageSizeHint)
+      throws NessieNotFoundException {
     return new ResultStreamPaginator<>(LogResponse::getOperations, treeApi::getCommitLog)
         .generateStream(ref, pageSizeHint);
   }
-
 }

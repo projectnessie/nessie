@@ -26,20 +26,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.projectnessie.model.Branch;
-import org.projectnessie.model.Hash;
-import org.projectnessie.model.Tag;
-import org.projectnessie.model.Validation;
 
 class TestValidation {
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "a",
-      "a_b-",
-      "a_-c",
-      "abc/def"
-  })
+  @ValueSource(strings = {"a", "a_b-", "a_-c", "abc/def"})
   void validNames(String referenceName) {
     validateReferenceName(referenceName);
     validateReferenceNameOrHash(referenceName);
@@ -48,50 +39,51 @@ class TestValidation {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "",
-      "abc/",
-      ".foo",
-      "abc/def/../blah",
-      "abc/de..blah",
-      "abc/de@{blah"
-  })
+  @ValueSource(strings = {"", "abc/", ".foo", "abc/def/../blah", "abc/de..blah", "abc/de@{blah"})
   void invalidNames(String referenceName) {
     assertAll(
-        () -> assertEquals(Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
-            assertThrows(IllegalArgumentException.class,
-                () -> validateReferenceName(referenceName)).getMessage()),
-        () -> assertEquals(Validation.REF_NAME_OR_HASH_MESSAGE + " - but was: " + referenceName,
-            assertThrows(IllegalArgumentException.class,
-                () -> validateReferenceNameOrHash(referenceName)).getMessage()),
-        () -> assertEquals(Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
-            assertThrows(IllegalArgumentException.class,
-                () -> Branch.of(referenceName, null)).getMessage()),
-        () -> assertEquals(Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
-            assertThrows(IllegalArgumentException.class,
-                () -> Tag.of(referenceName, null)).getMessage()));
+        () ->
+            assertEquals(
+                Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
+                assertThrows(
+                        IllegalArgumentException.class, () -> validateReferenceName(referenceName))
+                    .getMessage()),
+        () ->
+            assertEquals(
+                Validation.REF_NAME_OR_HASH_MESSAGE + " - but was: " + referenceName,
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> validateReferenceNameOrHash(referenceName))
+                    .getMessage()),
+        () ->
+            assertEquals(
+                Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
+                assertThrows(IllegalArgumentException.class, () -> Branch.of(referenceName, null))
+                    .getMessage()),
+        () ->
+            assertEquals(
+                Validation.REF_NAME_MESSAGE + " - but was: " + referenceName,
+                assertThrows(IllegalArgumentException.class, () -> Tag.of(referenceName, null))
+                    .getMessage()));
   }
 
   @Test
   void nullParam() {
     assertAll(
-        () -> assertThrows(NullPointerException.class,
-            () -> validateReferenceName(null)),
-        () -> assertThrows(NullPointerException.class,
-            () -> Hash.of(null)),
-        () -> assertThrows(NullPointerException.class,
-            () -> Branch.of(null, null)),
-        () -> assertThrows(NullPointerException.class,
-            () -> Tag.of(null, null)));
+        () -> assertThrows(NullPointerException.class, () -> validateReferenceName(null)),
+        () -> assertThrows(NullPointerException.class, () -> Hash.of(null)),
+        () -> assertThrows(NullPointerException.class, () -> Branch.of(null, null)),
+        () -> assertThrows(NullPointerException.class, () -> Tag.of(null, null)));
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "1122334455667788990011223344556677889900112233445566778899001122",
-      "abcDEF4242424242424242424242BEEF00DEAD42112233445566778899001122",
-      "0011223344556677",
-      "11223344556677889900"
-  })
+  @ValueSource(
+      strings = {
+        "1122334455667788990011223344556677889900112233445566778899001122",
+        "abcDEF4242424242424242424242BEEF00DEAD42112233445566778899001122",
+        "0011223344556677",
+        "11223344556677889900"
+      })
   void validHashes(String hash) {
     validateHash(hash);
     validateReferenceNameOrHash(hash);
@@ -99,40 +91,40 @@ class TestValidation {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {
-      "",
-      "abc/",
-      ".foo",
-      "abc/def/../blah",
-      "abc/de..blah",
-      "abc/de@{blah"
-  })
+  @ValueSource(strings = {"", "abc/", ".foo", "abc/def/../blah", "abc/de..blah", "abc/de@{blah"})
   void invalidHashes(String hash) {
     String referenceName = "thisIsAValidName";
     assertAll(
-        () -> assertEquals(Validation.HASH_MESSAGE + " - but was: " + hash,
-            assertThrows(IllegalArgumentException.class,
-                () -> validateHash(hash)).getMessage()),
-        () -> assertEquals(Validation.HASH_MESSAGE + " - but was: " + hash,
-            assertThrows(IllegalArgumentException.class,
-                () -> Hash.of(hash)).getMessage()),
-        () -> assertEquals(Validation.HASH_MESSAGE + " - but was: " + hash,
-            assertThrows(IllegalArgumentException.class,
-                () -> Branch.of(referenceName, hash)).getMessage()),
-        () -> assertEquals(Validation.HASH_MESSAGE + " - but was: " + hash,
-            assertThrows(IllegalArgumentException.class,
-                () -> Tag.of(referenceName, hash)).getMessage()));
+        () ->
+            assertEquals(
+                Validation.HASH_MESSAGE + " - but was: " + hash,
+                assertThrows(IllegalArgumentException.class, () -> validateHash(hash))
+                    .getMessage()),
+        () ->
+            assertEquals(
+                Validation.HASH_MESSAGE + " - but was: " + hash,
+                assertThrows(IllegalArgumentException.class, () -> Hash.of(hash)).getMessage()),
+        () ->
+            assertEquals(
+                Validation.HASH_MESSAGE + " - but was: " + hash,
+                assertThrows(IllegalArgumentException.class, () -> Branch.of(referenceName, hash))
+                    .getMessage()),
+        () ->
+            assertEquals(
+                Validation.HASH_MESSAGE + " - but was: " + hash,
+                assertThrows(IllegalArgumentException.class, () -> Tag.of(referenceName, hash))
+                    .getMessage()));
   }
 
   @ParameterizedTest
   @CsvSource({
-      "a,112233445566778899001122abcDEF4242424242424242424242BEEF00DEAD42",
-      "a,1122334455667788990011221122334455667788990011223344556677889900",
-      "a_b-,112233445566778899001122abcDEF4242424242424242424242BEEF00DEAD42",
-      "a_b-,1122334455667788990011221122334455667788990011223344556677889900",
-      "a_-c,1122334455667788",
-      "a_-c,112233445566778899001122",
-      "abc/def,1122334455667788990011223344556677889900"
+    "a,112233445566778899001122abcDEF4242424242424242424242BEEF00DEAD42",
+    "a,1122334455667788990011221122334455667788990011223344556677889900",
+    "a_b-,112233445566778899001122abcDEF4242424242424242424242BEEF00DEAD42",
+    "a_b-,1122334455667788990011221122334455667788990011223344556677889900",
+    "a_-c,1122334455667788",
+    "a_-c,112233445566778899001122",
+    "abc/def,1122334455667788990011223344556677889900"
   })
   void validNamesAndHashes(String referenceName, String hash) {
     Branch.of(referenceName, hash);
@@ -141,21 +133,25 @@ class TestValidation {
 
   @ParameterizedTest
   @CsvSource({
-      "a,abcDEF4242424242424242424242BEEF00DEADxy",
-      "a,11",
-      "a_b-,meep",
-      "a_b-,0",
-      "a_-c,##",
-      "a_-c,123",
-      "abc/def,nonono"
+    "a,abcDEF4242424242424242424242BEEF00DEADxy",
+    "a,11",
+    "a_b-,meep",
+    "a_b-,0",
+    "a_-c,##",
+    "a_-c,123",
+    "abc/def,nonono"
   })
   void validNamesAndInvalidHashes(String referenceName, String hash) {
     assertAll(
-        () -> assertEquals(Validation.HASH_MESSAGE + " - but was: " + hash,
-            assertThrows(IllegalArgumentException.class,
-                () -> Branch.of(referenceName, hash)).getMessage()),
-        () -> assertEquals(Validation.HASH_MESSAGE + " - but was: " + hash,
-            assertThrows(IllegalArgumentException.class,
-                () -> Tag.of(referenceName, hash)).getMessage()));
+        () ->
+            assertEquals(
+                Validation.HASH_MESSAGE + " - but was: " + hash,
+                assertThrows(IllegalArgumentException.class, () -> Branch.of(referenceName, hash))
+                    .getMessage()),
+        () ->
+            assertEquals(
+                Validation.HASH_MESSAGE + " - but was: " + hash,
+                assertThrows(IllegalArgumentException.class, () -> Tag.of(referenceName, hash))
+                    .getMessage()));
   }
 }

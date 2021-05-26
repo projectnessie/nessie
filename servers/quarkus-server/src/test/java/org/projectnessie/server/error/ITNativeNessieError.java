@@ -18,8 +18,8 @@ package org.projectnessie.server.error;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.quarkus.test.junit.NativeImageTest;
 import java.net.URI;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.projectnessie.api.ContentsApi;
@@ -28,12 +28,10 @@ import org.projectnessie.client.rest.NessieBadRequestException;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.IcebergTable;
 
-import io.quarkus.test.junit.NativeImageTest;
-
 /**
- * Rudimentary version of {@link TestNessieError}, because we cannot dynamically add beans
- * and REST-endpoints declared in test-source to the native-image-binary; so this test checks
- * just some very basic validation functionality.
+ * Rudimentary version of {@link TestNessieError}, because we cannot dynamically add beans and
+ * REST-endpoints declared in test-source to the native-image-binary; so this test checks just some
+ * very basic validation functionality.
  */
 @NativeImageTest
 public class ITNativeNessieError {
@@ -54,9 +52,8 @@ public class ITNativeNessieError {
     assertEquals(
         "Bad Request (HTTP/400): setContents.hash: must not be null",
         assertThrows(
-            NessieBadRequestException.class,
-            () -> contents.setContents(k, "branchName", null, "message", t))
-              .getMessage());
+                NessieBadRequestException.class,
+                () -> contents.setContents(k, "branchName", null, "message", t))
+            .getMessage());
   }
-
 }

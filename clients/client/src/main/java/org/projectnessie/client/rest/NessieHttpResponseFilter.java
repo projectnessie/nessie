@@ -15,13 +15,11 @@
  */
 package org.projectnessie.client.rest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-
 import org.projectnessie.client.http.HttpClientException;
 import org.projectnessie.client.http.ResponseContext;
 import org.projectnessie.client.http.ResponseFilter;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class NessieHttpResponseFilter implements ResponseFilter {
 

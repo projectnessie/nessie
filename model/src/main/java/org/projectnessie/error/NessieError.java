@@ -15,13 +15,12 @@
  */
 package org.projectnessie.error;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Objects;
 
 public class NessieError {
 
@@ -50,13 +49,18 @@ public class NessieError {
   /**
    * Create Error.
    *
-   * @param message             Message of error.
-   * @param status              Status of error.
-   * @param reason              Reason for status.
-   * @param serverStackTrace    Server stack trace, if available.
+   * @param message Message of error.
+   * @param status Status of error.
+   * @param reason Reason for status.
+   * @param serverStackTrace Server stack trace, if available.
    * @param processingException Any processing exceptions that happened on the client.
    */
-  public NessieError(String message, int status, String reason, String serverStackTrace, Exception processingException) {
+  public NessieError(
+      String message,
+      int status,
+      String reason,
+      String serverStackTrace,
+      Exception processingException) {
     this.message = message;
     this.status = status;
     this.reason = reason;
@@ -67,19 +71,19 @@ public class NessieError {
   /**
    * Create Error.
    *
-   * @param statusCode          Status of error.
-   * @param reason              Reason for status.
-   * @param serverStackTrace    Server stack trace, if available.
+   * @param statusCode Status of error.
+   * @param reason Reason for status.
+   * @param serverStackTrace Server stack trace, if available.
    * @param processingException Any processing exceptions that happened on the client.
    */
-  public NessieError(int statusCode, String reason, String serverStackTrace, Exception processingException) {
+  public NessieError(
+      int statusCode, String reason, String serverStackTrace, Exception processingException) {
     this.status = statusCode;
     this.message = reason;
     this.reason = reason;
     this.serverStackTrace = serverStackTrace;
     this.clientProcessingException = processingException;
   }
-
 
   public String getMessage() {
     return message;
@@ -111,8 +115,7 @@ public class NessieError {
   public String getFullMessage() {
     StringBuilder sb = new StringBuilder();
     if (reason != null) {
-      sb.append(reason)
-        .append(" (HTTP/").append(status).append(')');
+      sb.append(reason).append(" (HTTP/").append(status).append(')');
     }
 
     if (message != null) {
@@ -142,8 +145,9 @@ public class NessieError {
       return false;
     }
     NessieError error = (NessieError) o;
-    return status == error.status && Objects.equals(message, error.message) && Objects
-      .equals(serverStackTrace, error.serverStackTrace);
+    return status == error.status
+        && Objects.equals(message, error.message)
+        && Objects.equals(serverStackTrace, error.serverStackTrace);
   }
 
   @Override

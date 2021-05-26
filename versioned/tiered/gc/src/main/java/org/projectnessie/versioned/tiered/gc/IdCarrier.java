@@ -15,6 +15,8 @@
  */
 package org.projectnessie.versioned.tiered.gc;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +26,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.SparkSession;
 import org.projectnessie.versioned.store.Id;
@@ -35,9 +36,6 @@ import org.projectnessie.versioned.store.ValueType;
 import org.projectnessie.versioned.tiered.BaseValue;
 import org.projectnessie.versioned.tiered.L2;
 import org.projectnessie.versioned.tiered.L3;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 /**
  * Utility object used to encapsulate an id object that references additional ids.
@@ -82,63 +80,69 @@ public class IdCarrier implements Serializable {
       Function<Acceptor<T>, IdCarrier> converter,
       Optional<Predicate<IdCarrier>> predicate,
       SparkSession spark) {
-    return new ValueRetriever<T, IdCarrier>(store, valueType, converter, IdCarrier.class).get(spark, predicate);
+    return new ValueRetriever<T, IdCarrier>(store, valueType, converter, IdCarrier.class)
+        .get(spark, predicate);
   }
 
-  public static final Function<Acceptor<L2>, IdCarrier> L2_CONVERTER = a -> {
-    IdCarrier c = new IdCarrier();
-    a.applyValue(new L2() {
+  public static final Function<Acceptor<L2>, IdCarrier> L2_CONVERTER =
+      a -> {
+        IdCarrier c = new IdCarrier();
+        a.applyValue(
+            new L2() {
 
-      @Override
-      public L2 id(Id id) {
-        c.id = IdFrame.of(id);
-        return this;
-      }
+              @Override
+              public L2 id(Id id) {
+                c.id = IdFrame.of(id);
+                return this;
+              }
 
-      @Override
-      public L2 dt(long dt) {
-        // IdCarrier doesn't currently need dt so dropping information.
-        return this;
-      }
+              @Override
+              public L2 dt(long dt) {
+                // IdCarrier doesn't currently need dt so dropping information.
+                return this;
+              }
 
-      @Override
-      public L2 children(Stream<Id> ids) {
-        c.children = ids.map(IdFrame::of).collect(Collectors.toList());
-        return this;
-      }
-    });
-    return c;
-  };
+              @Override
+              public L2 children(Stream<Id> ids) {
+                c.children = ids.map(IdFrame::of).collect(Collectors.toList());
+                return this;
+              }
+            });
+        return c;
+      };
 
-  public static final Function<Acceptor<L3>, IdCarrier> L3_CONVERTER = a -> {
-    IdCarrier c = new IdCarrier();
-    a.applyValue(new L3() {
+  public static final Function<Acceptor<L3>, IdCarrier> L3_CONVERTER =
+      a -> {
+        IdCarrier c = new IdCarrier();
+        a.applyValue(
+            new L3() {
 
-      @Override
-      public L3 id(Id id) {
-        c.id = IdFrame.of(id);
-        return this;
-      }
+              @Override
+              public L3 id(Id id) {
+                c.id = IdFrame.of(id);
+                return this;
+              }
 
-      @Override
-      public L3 dt(long dt) {
-        return this;
-      }
+              @Override
+              public L3 dt(long dt) {
+                return this;
+              }
 
-      @Override
-      public L3 keyDelta(Stream<KeyDelta> keyDelta) {
-        List<IdFrame> children = Lists.newArrayList();
-        Map<IdFrame, List<String>> childKeys = Maps.newHashMap();
-        keyDelta.forEach(kd -> {
-          IdFrame id = IdFrame.of(kd.getId());
-          children.add(id);
-          childKeys.put(id, kd.getKey().getElements());
-        });
-        c.childKeys = childKeys;
-        c.children = children;
-        return this;
-      }
-    });
-    return c;
-  };
+              @Override
+              public L3 keyDelta(Stream<KeyDelta> keyDelta) {
+                List<IdFrame> children = Lists.newArrayList();
+                Map<IdFrame, List<String>> childKeys = Maps.newHashMap();
+                keyDelta.forEach(
+                    kd -> {
+                      IdFrame id = IdFrame.of(kd.getId());
+                      children.add(id);
+                      childKeys.put(id, kd.getKey().getElements());
+                    });
+                c.childKeys = childKeys;
+                c.children = children;
+                return this;
+              }
+            });
+        return c;
+      };
 }

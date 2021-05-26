@@ -17,7 +17,6 @@ package org.projectnessie.versioned.mongodb;
 
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
-import org.projectnessie.versioned.mongodb.ImmutableMongoStoreConfig;
 
 @Immutable
 public abstract class MongoStoreConfig {

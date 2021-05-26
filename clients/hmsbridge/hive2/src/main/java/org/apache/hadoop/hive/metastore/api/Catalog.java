@@ -17,12 +17,7 @@ package org.apache.hadoop.hive.metastore.api;
 
 public class Catalog {
 
-  public void setName(String name) {
+  public void setName(String name) {}
 
-  }
-
-  public void setLocationUri(String uri) {
-
-  }
-
+  public void setLocationUri(String uri) {}
 }

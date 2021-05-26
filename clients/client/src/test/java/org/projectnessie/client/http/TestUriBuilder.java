@@ -20,56 +20,60 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.net.URI;
-
 import org.junit.jupiter.api.Test;
 
 class TestUriBuilder {
 
   @Test
   void simple() {
-    assertEquals("http://localhost/foo/bar/",
-                 new UriBuilder(URI.create("http://localhost/foo/bar/")).build().toString());
+    assertEquals(
+        "http://localhost/foo/bar/",
+        new UriBuilder(URI.create("http://localhost/foo/bar/")).build().toString());
   }
 
   @Test
   void parameterValidation() {
     assertAll(
         () -> assertThrows(NullPointerException.class, () -> new UriBuilder(null)),
-        () -> assertThrows(NullPointerException.class, () -> new UriBuilder(URI.create("http://base/")).path(null)),
-        () -> assertThrows(NullPointerException.class, () -> new UriBuilder(URI.create("http://base/")).resolveTemplate(null, "value")),
-        () -> assertThrows(NullPointerException.class, () -> new UriBuilder(URI.create("http://base/")).resolveTemplate("name", null))
-    );
+        () ->
+            assertThrows(
+                NullPointerException.class,
+                () -> new UriBuilder(URI.create("http://base/")).path(null)),
+        () ->
+            assertThrows(
+                NullPointerException.class,
+                () -> new UriBuilder(URI.create("http://base/")).resolveTemplate(null, "value")),
+        () ->
+            assertThrows(
+                NullPointerException.class,
+                () -> new UriBuilder(URI.create("http://base/")).resolveTemplate("name", null)));
   }
 
   @Test
   void addMissingSlash() {
-    assertEquals("http://localhost/",
-                 new UriBuilder(URI.create("http://localhost"))
-                   .build().toString());
-    assertEquals("http://localhost/foo/bar",
-                 new UriBuilder(URI.create("http://localhost"))
-                   .path("foo")
-                   .path("bar")
-                   .build().toString());
+    assertEquals(
+        "http://localhost/", new UriBuilder(URI.create("http://localhost")).build().toString());
+    assertEquals(
+        "http://localhost/foo/bar",
+        new UriBuilder(URI.create("http://localhost")).path("foo").path("bar").build().toString());
   }
 
   @Test
   void pathTemplates() {
     UriBuilder builder = new UriBuilder(URI.create("http://localhost/foo/bar/"));
 
-    builder = builder.path("{my-var}")
-                     .resolveTemplate("my-var", "baz");
-    assertEquals("http://localhost/foo/bar/baz",
-                 builder.build().toString());
+    builder = builder.path("{my-var}").resolveTemplate("my-var", "baz");
+    assertEquals("http://localhost/foo/bar/baz", builder.build().toString());
 
-    builder = builder.path("something/{in}/here")
-                     .resolveTemplate("in", "out");
-    assertEquals("http://localhost/foo/bar/baz/something/out/here",
-                 builder.build().toString());
+    builder = builder.path("something/{in}/here").resolveTemplate("in", "out");
+    assertEquals("http://localhost/foo/bar/baz/something/out/here", builder.build().toString());
 
     builder = builder.resolveTemplate("no", "boo");
     UriBuilder bulder1 = builder;
-    assertEquals(String.format("Cannot build uri. Not all template keys (%s) were used in uri %s", "{no}", "{my-var}/something/{in}/here"),
+    assertEquals(
+        String.format(
+            "Cannot build uri. Not all template keys (%s) were used in uri %s",
+            "{no}", "{my-var}/something/{in}/here"),
         assertThrows(HttpClientException.class, bulder1::build).getMessage());
   }
 
@@ -78,8 +82,7 @@ class TestUriBuilder {
     UriBuilder builder = new UriBuilder(URI.create("http://localhost/foo/bar/"));
 
     builder = builder.path("some spaces in here");
-    assertEquals("http://localhost/foo/bar/some%20spaces%20in%20here",
-                 builder.build().toString());
+    assertEquals("http://localhost/foo/bar/some%20spaces%20in%20here", builder.build().toString());
   }
 
   @Test
@@ -96,6 +99,7 @@ class TestUriBuilder {
     assertEquals("http://localhost/foo/bar/?a=b&c=d&e=f%26%3F%20%2F", builder.build().toString());
 
     builder = builder.queryParam("c", "d-more");
-    assertEquals("http://localhost/foo/bar/?a=b&c=d&e=f%26%3F%20%2F&c=d-more", builder.build().toString());
+    assertEquals(
+        "http://localhost/foo/bar/?a=b&c=d&e=f%26%3F%20%2F&c=d-more", builder.build().toString());
   }
 }

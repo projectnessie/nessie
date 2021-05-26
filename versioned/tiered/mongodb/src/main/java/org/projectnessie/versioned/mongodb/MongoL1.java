@@ -19,15 +19,13 @@ import static org.projectnessie.versioned.mongodb.MongoSerDe.deserializeId;
 import static org.projectnessie.versioned.mongodb.MongoSerDe.deserializeIds;
 import static org.projectnessie.versioned.mongodb.MongoSerDe.deserializeKeyMutations;
 
+import com.google.common.primitives.Ints;
 import java.util.stream.Stream;
-
 import org.bson.BsonWriter;
 import org.bson.Document;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.L1;
 import org.projectnessie.versioned.tiered.Mutation;
-
-import com.google.common.primitives.Ints;
 
 final class MongoL1 extends MongoBaseValue<L1> implements L1 {
 
@@ -42,11 +40,12 @@ final class MongoL1 extends MongoBaseValue<L1> implements L1 {
   static final String KEY_LIST = "keys";
 
   static void produce(Document document, L1 v) {
-    v = produceBase(document, v)
-      .commitMetadataId(deserializeId(document, METADATA))
-      .ancestors(deserializeIds(document, PARENTS))
-      .children(deserializeIds(document, TREE))
-      .keyMutations(deserializeKeyMutations(document, MUTATIONS));
+    v =
+        produceBase(document, v)
+            .commitMetadataId(deserializeId(document, METADATA))
+            .ancestors(deserializeIds(document, PARENTS))
+            .children(deserializeIds(document, TREE))
+            .keyMutations(deserializeKeyMutations(document, MUTATIONS));
 
     Document keyList = (Document) document.get(KEY_LIST);
     boolean checkpoint = keyList.getBoolean(IS_CHECKPOINT);

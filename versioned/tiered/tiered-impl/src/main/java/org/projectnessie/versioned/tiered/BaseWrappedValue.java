@@ -19,17 +19,16 @@ import com.google.protobuf.ByteString;
 
 /**
  * Base consumer implementation for commit-metadata and binary values.
- * <p>
- * Do not implement this interface in non-abstract implementation classes!
- * </p>
- * <p>
- * Implementations must return a shared state ({@code this}) from its method.
- * </p>
+ *
+ * <p>Do not implement this interface in non-abstract implementation classes!
+ *
+ * <p>Implementations must return a shared state ({@code this}) from its method.
  */
 public interface BaseWrappedValue<C extends BaseWrappedValue<C>> extends BaseValue<C> {
   /**
    * The value for this bytes-value.
-   * <p>Must be called exactly once.</p>
+   *
+   * <p>Must be called exactly once.
    *
    * @param value The value to set.
    * @return This consumer.

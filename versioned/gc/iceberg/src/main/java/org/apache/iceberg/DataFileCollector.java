@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 import org.apache.iceberg.io.FileIO;
 
 /**
@@ -27,20 +26,20 @@ import org.apache.iceberg.io.FileIO;
  */
 public final class DataFileCollector {
 
-  private DataFileCollector() {
+  private DataFileCollector() {}
 
-  }
-
-  /**
-   * retrieve all data files from a set of manifest files.
-   */
+  /** retrieve all data files from a set of manifest files. */
   public static Stream<String> dataFiles(FileIO io, List<ManifestFile> allManifests) {
-    return allManifests.stream().flatMap(manifest -> {
-      try (ManifestReader<?> reader = ManifestFiles.open(manifest, io)) {
-        return StreamSupport.stream(reader.entries().spliterator(), false).map(entry -> entry.file().path().toString());
-      } catch (IOException e) {
-        throw new RuntimeException(String.format("Failed to read manifest file: %s", manifest.path()), e);
-      }
-    });
+    return allManifests.stream()
+        .flatMap(
+            manifest -> {
+              try (ManifestReader<?> reader = ManifestFiles.open(manifest, io)) {
+                return StreamSupport.stream(reader.entries().spliterator(), false)
+                    .map(entry -> entry.file().path().toString());
+              } catch (IOException e) {
+                throw new RuntimeException(
+                    String.format("Failed to read manifest file: %s", manifest.path()), e);
+              }
+            });
   }
 }

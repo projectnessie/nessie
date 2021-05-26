@@ -15,8 +15,10 @@
  */
 package org.projectnessie.hms;
 
+import com.klarna.hiverunner.HiveRunnerExtension;
+import com.klarna.hiverunner.HiveShell;
+import com.klarna.hiverunner.annotations.HiveSQL;
 import java.util.function.Function;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,10 +28,6 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.Reference;
 
-import com.klarna.hiverunner.HiveRunnerExtension;
-import com.klarna.hiverunner.HiveShell;
-import com.klarna.hiverunner.annotations.HiveSQL;
-
 @ExtendWith(HiveRunnerExtension.class)
 public abstract class BaseHiveOps {
 
@@ -38,7 +36,9 @@ public abstract class BaseHiveOps {
 
   protected static NessieClient client;
 
-  @HiveSQL(files = {}, autoStart = false)
+  @HiveSQL(
+      files = {},
+      autoStart = false)
   protected HiveShell shell;
 
   @AfterAll
@@ -63,5 +63,4 @@ public abstract class BaseHiveOps {
     client.getTreeApi().createReference(Branch.of("main", null));
     shell.start();
   }
-
 }

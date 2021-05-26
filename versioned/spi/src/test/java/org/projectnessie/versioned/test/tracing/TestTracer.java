@@ -18,13 +18,6 @@ package org.projectnessie.versioned.test.tracing;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import io.opentracing.Scope;
 import io.opentracing.ScopeManager;
 import io.opentracing.Span;
@@ -32,10 +25,16 @@ import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
 import io.opentracing.util.GlobalTracer;
+import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Tracer implementation used in tests of {@code TracingVersionStore} and {@code TracingStore}
- * to collect traced information.
+ * Tracer implementation used in tests of {@code TracingVersionStore} and {@code TracingStore} to
+ * collect traced information.
  */
 public class TestTracer implements Tracer {
 
@@ -46,15 +45,16 @@ public class TestTracer implements Tracer {
   private boolean parentSet;
   private String opName;
 
-  /**
-   * Registers a "mocked" {@link Tracer} via {@link GlobalTracer}.
-   */
+  /** Registers a "mocked" {@link Tracer} via {@link GlobalTracer}. */
   public static void registerGlobal() {
     // GlobalTracer doesn't allow resetting or changing an already registered "global tracer",
     // so this code delegates to some Tracer-per-test
-    GlobalTracer.register((Tracer) Proxy
-        .newProxyInstance(Thread.currentThread().getContextClassLoader(), new Class[]{Tracer.class},
-            (proxy, method, args) -> method.invoke(tracerPerTest, args)));
+    GlobalTracer.register(
+        (Tracer)
+            Proxy.newProxyInstance(
+                Thread.currentThread().getContextClassLoader(),
+                new Class[] {Tracer.class},
+                (proxy, method, args) -> method.invoke(tracerPerTest, args)));
   }
 
   public void registerForCurrentTest() {

@@ -15,12 +15,11 @@
  */
 package org.projectnessie.client;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.List;
-
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpRequest;
@@ -35,12 +34,10 @@ import org.projectnessie.model.Reference;
 import org.projectnessie.model.Tag;
 import org.projectnessie.model.Transplant;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
 class ClientTreeApi implements TreeApi {
 
-  private static final TypeReference<List<Reference>> REFERENCE_LIST = new TypeReference<List<Reference>>() {
-  };
+  private static final TypeReference<List<Reference>> REFERENCE_LIST =
+      new TypeReference<List<Reference>>() {};
 
   private final HttpClient client;
 
@@ -61,42 +58,57 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public Reference getReferenceByName(@NotNull String refName) throws NessieNotFoundException {
-    return client.newRequest().path("trees/tree/{ref}").resolveTemplate("ref", refName).get().readEntity(Reference.class);
+    return client
+        .newRequest()
+        .path("trees/tree/{ref}")
+        .resolveTemplate("ref", refName)
+        .get()
+        .readEntity(Reference.class);
   }
 
   @Override
   public void assignTag(@NotNull String tagName, @NotNull String expectedHash, @NotNull Tag tag)
       throws NessieNotFoundException, NessieConflictException {
-    client.newRequest().path("trees/tag/{tagName}")
-          .resolveTemplate("tagName", tagName)
-          .queryParam("expectedHash", expectedHash)
-          .put(tag);
+    client
+        .newRequest()
+        .path("trees/tag/{tagName}")
+        .resolveTemplate("tagName", tagName)
+        .queryParam("expectedHash", expectedHash)
+        .put(tag);
   }
 
   @Override
-  public void deleteTag(@NotNull String tagName, @NotNull String expectedHash) throws NessieConflictException, NessieNotFoundException {
-    client.newRequest().path("trees/tag/{tagName}")
-          .resolveTemplate("tagName", tagName)
-          .queryParam("expectedHash", expectedHash)
-          .delete();
+  public void deleteTag(@NotNull String tagName, @NotNull String expectedHash)
+      throws NessieConflictException, NessieNotFoundException {
+    client
+        .newRequest()
+        .path("trees/tag/{tagName}")
+        .resolveTemplate("tagName", tagName)
+        .queryParam("expectedHash", expectedHash)
+        .delete();
   }
 
   @Override
-  public void assignBranch(@NotNull String branchName, @NotNull String expectedHash,
-                           @NotNull Branch branch) throws NessieNotFoundException, NessieConflictException {
-    client.newRequest().path("trees/branch/{branchName}")
-          .resolveTemplate("branchName", branchName)
-          .queryParam("expectedHash", expectedHash)
-          .put(branch);
+  public void assignBranch(
+      @NotNull String branchName, @NotNull String expectedHash, @NotNull Branch branch)
+      throws NessieNotFoundException, NessieConflictException {
+    client
+        .newRequest()
+        .path("trees/branch/{branchName}")
+        .resolveTemplate("branchName", branchName)
+        .queryParam("expectedHash", expectedHash)
+        .put(branch);
   }
 
   @Override
   public void deleteBranch(@NotNull String branchName, @NotNull String expectedHash)
       throws NessieConflictException, NessieNotFoundException {
-    client.newRequest().path("trees/branch/{branchName}")
-          .resolveTemplate("branchName", branchName)
-          .queryParam("expectedHash", expectedHash)
-          .delete();
+    client
+        .newRequest()
+        .path("trees/branch/{branchName}")
+        .resolveTemplate("branchName", branchName)
+        .queryParam("expectedHash", expectedHash)
+        .delete();
   }
 
   @Override
@@ -105,12 +117,17 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(@NotNull String ref, @Nullable Integer maxEntriesHint,
-      @Nullable String pageToken) throws NessieNotFoundException {
-    return client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref)
+  public LogResponse getCommitLog(
+      @NotNull String ref, @Nullable Integer maxEntriesHint, @Nullable String pageToken)
+      throws NessieNotFoundException {
+    return client
+        .newRequest()
+        .path("trees/tree/{ref}/log")
+        .resolveTemplate("ref", ref)
         .queryParam("max", maxEntriesHint != null ? maxEntriesHint.toString() : null)
         .queryParam("pageToken", pageToken)
-        .get().readEntity(LogResponse.class);
+        .get()
+        .readEntity(LogResponse.class);
   }
 
   @Override
@@ -120,45 +137,54 @@ class ClientTreeApi implements TreeApi {
       String message,
       @Valid Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
-    client.newRequest().path("trees/branch/{branchName}/transplant")
-          .resolveTemplate("branchName", branchName)
-          .queryParam("expectedHash", expectedHash)
-          .queryParam("message", message)
-          .post(transplant);
+    client
+        .newRequest()
+        .path("trees/branch/{branchName}/transplant")
+        .resolveTemplate("branchName", branchName)
+        .queryParam("expectedHash", expectedHash)
+        .queryParam("message", message)
+        .post(transplant);
   }
 
   @Override
   public void mergeRefIntoBranch(
-      @NotNull String branchName,
-      @NotNull String expectedHash,
-      @NotNull @Valid Merge merge)
+      @NotNull String branchName, @NotNull String expectedHash, @NotNull @Valid Merge merge)
       throws NessieNotFoundException, NessieConflictException {
-    client.newRequest().path("trees/branch/{branchName}/merge")
-          .resolveTemplate("branchName", branchName)
-          .queryParam("expectedHash", expectedHash)
-          .post(merge);
+    client
+        .newRequest()
+        .path("trees/branch/{branchName}/merge")
+        .resolveTemplate("branchName", branchName)
+        .queryParam("expectedHash", expectedHash)
+        .post(merge);
   }
 
   @Override
-  public EntriesResponse getEntries(@NotNull String refName, @Nullable Integer maxEntriesHint,
-      @Nullable String pageToken, @NotNull List<String> valueTypes) throws NessieNotFoundException {
-    HttpRequest builder = client.newRequest().path("trees/tree/{ref}/entries").resolveTemplate("ref", refName);
+  public EntriesResponse getEntries(
+      @NotNull String refName,
+      @Nullable Integer maxEntriesHint,
+      @Nullable String pageToken,
+      @NotNull List<String> valueTypes)
+      throws NessieNotFoundException {
+    HttpRequest builder =
+        client.newRequest().path("trees/tree/{ref}/entries").resolveTemplate("ref", refName);
     valueTypes.forEach(x -> builder.queryParam("types", x));
-    return builder.queryParam("max", maxEntriesHint != null ? maxEntriesHint.toString() : null)
-                  .queryParam("pageToken", pageToken)
-                  .get()
-                  .readEntity(EntriesResponse.class);
+    return builder
+        .queryParam("max", maxEntriesHint != null ? maxEntriesHint.toString() : null)
+        .queryParam("pageToken", pageToken)
+        .get()
+        .readEntity(EntriesResponse.class);
   }
 
   @Override
   public Branch commitMultipleOperations(
-      String branch,
-      @NotNull String expectedHash,
-      @NotNull Operations operations) throws NessieNotFoundException, NessieConflictException {
-    return client.newRequest().path("trees/branch/{branchName}/commit")
-          .resolveTemplate("branchName", branch)
-          .queryParam("expectedHash", expectedHash)
-          .post(operations)
-          .readEntity(Branch.class);
+      String branch, @NotNull String expectedHash, @NotNull Operations operations)
+      throws NessieNotFoundException, NessieConflictException {
+    return client
+        .newRequest()
+        .path("trees/branch/{branchName}/commit")
+        .resolveTemplate("branchName", branch)
+        .queryParam("expectedHash", expectedHash)
+        .post(operations)
+        .readEntity(Branch.class);
   }
 }

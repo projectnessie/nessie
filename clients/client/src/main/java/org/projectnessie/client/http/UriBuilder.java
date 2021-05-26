@@ -24,7 +24,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Construct a URI from base and paths. Adds query parameters, supports templates and handles url encoding of path.
+ * Construct a URI from base and paths. Adds query parameters, supports templates and handles url
+ * encoding of path.
  */
 class UriBuilder {
 
@@ -42,7 +43,8 @@ class UriBuilder {
       uri.append('/');
     }
     String trimmedPath = HttpUtils.checkNonNullTrim(path);
-    HttpUtils.checkArgument(trimmedPath.length() > 0, "Path %s must be of length greater than 0", trimmedPath);
+    HttpUtils.checkArgument(
+        trimmedPath.length() > 0, "Path %s must be of length greater than 0", trimmedPath);
     uri.append(trimmedPath);
     return this;
   }
@@ -56,22 +58,26 @@ class UriBuilder {
       query.append('&');
     }
 
-    query.append(encode(HttpUtils.checkNonNullTrim(name)))
-         .append('=')
-         .append(encode(HttpUtils.checkNonNullTrim(value)));
+    query
+        .append(encode(HttpUtils.checkNonNullTrim(name)))
+        .append('=')
+        .append(encode(HttpUtils.checkNonNullTrim(value)));
 
     return this;
   }
 
   UriBuilder resolveTemplate(String name, String value) {
-    templateValues.put(String.format("{%s}", HttpUtils.checkNonNullTrim(name)), HttpUtils.checkNonNullTrim(value));
+    templateValues.put(
+        String.format("{%s}", HttpUtils.checkNonNullTrim(name)), HttpUtils.checkNonNullTrim(value));
     return this;
   }
 
   private static void checkEmpty(Map<String, String> templates, StringBuilder uri) {
     if (!templates.isEmpty()) {
       String keys = String.join(";", templates.keySet());
-      throw new HttpClientException(String.format("Cannot build uri. Not all template keys (%s) were used in uri %s", keys, uri));
+      throw new HttpClientException(
+          String.format(
+              "Cannot build uri. Not all template keys (%s) were used in uri %s", keys, uri));
     }
   }
 
@@ -86,15 +92,17 @@ class UriBuilder {
 
     if (uri.length() > 0) {
       Map<String, String> templates = new HashMap<>(templateValues);
-      // important note: this assumes an entire path component is the template. So /a/{b}/c will work but /a/b{b}/c will not.
+      // important note: this assumes an entire path component is the template. So /a/{b}/c will
+      // work but /a/b{b}/c will not.
       Arrays.stream(uri.toString().split("/"))
-            .map(p -> encode((templates.containsKey(p)) ? templates.remove(p) : p))
-            .forEach(x -> {
-              if ('/' != uriBuilder.charAt(uriBuilder.length() - 1)) {
-                uriBuilder.append('/');
-              }
-              uriBuilder.append(x);
-            });
+          .map(p -> encode((templates.containsKey(p)) ? templates.remove(p) : p))
+          .forEach(
+              x -> {
+                if ('/' != uriBuilder.charAt(uriBuilder.length() - 1)) {
+                  uriBuilder.append('/');
+                }
+                uriBuilder.append(x);
+              });
 
       checkEmpty(templates, uri);
 
@@ -116,11 +124,11 @@ class UriBuilder {
 
   private static String encode(String s) throws HttpClientException {
     try {
-      //URLEncoder encodes space ' ' to + according to how encoding forms should work. When encoding URLs %20 should be used instead.
+      // URLEncoder encodes space ' ' to + according to how encoding forms should work. When
+      // encoding URLs %20 should be used instead.
       return URLEncoder.encode(s, "UTF-8").replaceAll("\\+", "%20");
     } catch (UnsupportedEncodingException e) {
       throw new HttpClientException(String.format("Cannot url encode %s", s), e);
     }
   }
-
 }

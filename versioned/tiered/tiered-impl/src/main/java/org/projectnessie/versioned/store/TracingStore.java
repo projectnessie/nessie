@@ -19,21 +19,18 @@ import static org.projectnessie.versioned.TracingUtil.safeSize;
 import static org.projectnessie.versioned.TracingUtil.safeToString;
 import static org.projectnessie.versioned.TracingUtil.traceError;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.projectnessie.versioned.impl.condition.ConditionExpression;
-import org.projectnessie.versioned.impl.condition.UpdateExpression;
-import org.projectnessie.versioned.tiered.BaseValue;
-
 import com.google.common.annotations.VisibleForTesting;
-
 import io.opentracing.Scope;
 import io.opentracing.Tracer;
 import io.opentracing.Tracer.SpanBuilder;
 import io.opentracing.util.GlobalTracer;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.projectnessie.versioned.impl.condition.ConditionExpression;
+import org.projectnessie.versioned.impl.condition.UpdateExpression;
+import org.projectnessie.versioned.tiered.BaseValue;
 
 public class TracingStore implements Store {
 
@@ -95,12 +92,12 @@ public class TracingStore implements Store {
   }
 
   @Override
-  public <C extends BaseValue<C>> boolean putIfAbsent(
-      SaveOp<C> saveOp) {
-    try (Scope scope = createSpan("PutIfAbsent")
-        .withTag(TAG_VALUE_TYPE, safeOpTypeToString(saveOp))
-        .withTag(TAG_ID, safeOpIdToString(saveOp))
-        .startActive(true)) {
+  public <C extends BaseValue<C>> boolean putIfAbsent(SaveOp<C> saveOp) {
+    try (Scope scope =
+        createSpan("PutIfAbsent")
+            .withTag(TAG_VALUE_TYPE, safeOpTypeToString(saveOp))
+            .withTag(TAG_ID, safeOpIdToString(saveOp))
+            .startActive(true)) {
       try {
         return store.putIfAbsent(saveOp);
       } catch (RuntimeException e) {
@@ -111,12 +108,12 @@ public class TracingStore implements Store {
 
   @Override
   public <C extends BaseValue<C>> void put(
-      SaveOp<C> saveOp,
-      Optional<ConditionExpression> condition) {
-    try (Scope scope = createSpan("Put")
-        .withTag(TAG_VALUE_TYPE, safeOpTypeToString(saveOp))
-        .withTag(TAG_ID, safeOpIdToString(saveOp))
-        .startActive(true)) {
+      SaveOp<C> saveOp, Optional<ConditionExpression> condition) {
+    try (Scope scope =
+        createSpan("Put")
+            .withTag(TAG_VALUE_TYPE, safeOpTypeToString(saveOp))
+            .withTag(TAG_ID, safeOpIdToString(saveOp))
+            .startActive(true)) {
       try {
         store.put(saveOp, condition);
       } catch (RuntimeException e) {
@@ -127,12 +124,12 @@ public class TracingStore implements Store {
 
   @Override
   public <C extends BaseValue<C>> boolean delete(
-      ValueType<C> type, Id id,
-      Optional<ConditionExpression> condition) {
-    try (Scope scope = createSpan("Delete")
-        .withTag(TAG_VALUE_TYPE, safeName(type))
-        .withTag(TAG_ID, safeToString(id))
-        .startActive(true)) {
+      ValueType<C> type, Id id, Optional<ConditionExpression> condition) {
+    try (Scope scope =
+        createSpan("Delete")
+            .withTag(TAG_VALUE_TYPE, safeName(type))
+            .withTag(TAG_ID, safeToString(id))
+            .startActive(true)) {
       try {
         return store.delete(type, id, condition);
       } catch (RuntimeException e) {
@@ -143,14 +140,17 @@ public class TracingStore implements Store {
 
   @Override
   public void save(List<SaveOp<?>> ops) {
-    try (Scope scope = createSpan("Save")
-        .withTag(TAG_NUM_OPS, safeSize(ops))
-        .startActive(true)) {
+    try (Scope scope = createSpan("Save").withTag(TAG_NUM_OPS, safeSize(ops)).startActive(true)) {
       try {
-        scope.span().log(ops.stream().collect(Collectors.groupingBy(
-            op -> String.format("nessie.store.save.%s.ids", op.getType().name()),
-            Collectors.mapping(op -> op.getId().toString(), Collectors.joining(", "))
-        )));
+        scope
+            .span()
+            .log(
+                ops.stream()
+                    .collect(
+                        Collectors.groupingBy(
+                            op -> String.format("nessie.store.save.%s.ids", op.getType().name()),
+                            Collectors.mapping(
+                                op -> op.getId().toString(), Collectors.joining(", ")))));
 
         store.save(ops);
       } catch (RuntimeException e) {
@@ -160,12 +160,12 @@ public class TracingStore implements Store {
   }
 
   @Override
-  public <C extends BaseValue<C>> void loadSingle(
-      ValueType<C> type, Id id, C consumer) {
-    try (Scope scope = createSpan("LoadSingle")
-        .withTag(TAG_VALUE_TYPE, safeName(type))
-        .withTag(TAG_ID, safeToString(id))
-        .startActive(true)) {
+  public <C extends BaseValue<C>> void loadSingle(ValueType<C> type, Id id, C consumer) {
+    try (Scope scope =
+        createSpan("LoadSingle")
+            .withTag(TAG_VALUE_TYPE, safeName(type))
+            .withTag(TAG_ID, safeToString(id))
+            .startActive(true)) {
       try {
         store.loadSingle(type, id, consumer);
       } catch (RuntimeException e) {
@@ -176,15 +176,19 @@ public class TracingStore implements Store {
 
   @Override
   public <C extends BaseValue<C>> boolean update(
-      ValueType<C> type, Id id, UpdateExpression update,
+      ValueType<C> type,
+      Id id,
+      UpdateExpression update,
       Optional<ConditionExpression> condition,
-      Optional<BaseValue<C>> consumer) throws NotFoundException {
-    try (Scope scope = createSpan("Update")
-        .withTag(TAG_VALUE_TYPE, safeName(type))
-        .withTag(TAG_ID, safeToString(id))
-        .withTag(TAG_UPDATE, safeToString(update))
-        .withTag(TAG_CONDITION, safeToString(condition))
-        .startActive(true)) {
+      Optional<BaseValue<C>> consumer)
+      throws NotFoundException {
+    try (Scope scope =
+        createSpan("Update")
+            .withTag(TAG_VALUE_TYPE, safeName(type))
+            .withTag(TAG_ID, safeToString(id))
+            .withTag(TAG_UPDATE, safeToString(update))
+            .withTag(TAG_CONDITION, safeToString(condition))
+            .startActive(true)) {
       try {
         return store.update(type, id, update, condition, consumer);
       } catch (RuntimeException e) {
@@ -194,11 +198,8 @@ public class TracingStore implements Store {
   }
 
   @Override
-  public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(
-      ValueType<C> type) {
-    Scope scope = createSpan("GetValues")
-        .withTag(TAG_VALUE_TYPE, type.name())
-        .startActive(true);
+  public <C extends BaseValue<C>> Stream<Acceptor<C>> getValues(ValueType<C> type) {
+    Scope scope = createSpan("GetValues").withTag(TAG_VALUE_TYPE, type.name()).startActive(true);
     try {
       return store.getValues(type).onClose(scope::close);
     } catch (RuntimeException e) {

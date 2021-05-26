@@ -18,15 +18,16 @@ package org.projectnessie.versioned;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.spy;
 
+import com.google.protobuf.ByteString;
 import javax.annotation.Nonnull;
 
-import com.google.protobuf.ByteString;
-
 /**
- * ValueWorker implementation for {@code String class}. Can also be used as simple {@link Serializer}.
+ * ValueWorker implementation for {@code String class}. Can also be used as simple {@link
+ * Serializer}.
  */
 public class StringSerializer implements SerializerWithPayload<String, StringSerializer.TestEnum> {
-  private static final SerializerWithPayload<String, TestEnum> INSTANCE = spy(new StringSerializer());
+  private static final SerializerWithPayload<String, TestEnum> INSTANCE =
+      spy(new StringSerializer());
 
   public enum TestEnum {
     YES,
@@ -34,11 +35,11 @@ public class StringSerializer implements SerializerWithPayload<String, StringSer
     NULL;
   }
 
-  private StringSerializer() {
-  }
+  private StringSerializer() {}
 
   /**
    * Get a instance of a string serializer.
+   *
    * @return the instance
    */
   @Nonnull

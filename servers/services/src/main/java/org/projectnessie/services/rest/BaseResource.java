@@ -19,7 +19,6 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
@@ -46,7 +45,10 @@ abstract class BaseResource {
     this(null, null, null);
   }
 
-  protected BaseResource(ServerConfig config, Principal principal, VersionStore<Contents, CommitMeta, Contents.Type> store) {
+  protected BaseResource(
+      ServerConfig config,
+      Principal principal,
+      VersionStore<Contents, CommitMeta, Contents.Type> store) {
     this.config = config;
     this.principal = principal;
     this.store = store;
@@ -62,7 +64,8 @@ abstract class BaseResource {
   }
 
   Hash getHashOrThrow(String ref) throws NessieNotFoundException {
-    return getHash(ref).orElseThrow(() -> new NessieNotFoundException(String.format("Ref for %s not found", ref)));
+    return getHash(ref)
+        .orElseThrow(() -> new NessieNotFoundException(String.format("Ref for %s not found", ref)));
   }
 
   protected ServerConfig getConfig() {
@@ -73,15 +76,15 @@ abstract class BaseResource {
     return store;
   }
 
-  protected Hash doOps(String branch, String hash, CommitMeta commitMeta, List<Operation<Contents>> operations)
+  protected Hash doOps(
+      String branch, String hash, CommitMeta commitMeta, List<Operation<Contents>> operations)
       throws NessieConflictException, NessieNotFoundException {
     try {
       return store.commit(
           BranchName.of(Optional.ofNullable(branch).orElse(config.getDefaultBranch())),
           Optional.ofNullable(hash).map(Hash::of),
           meta(principal, commitMeta),
-          operations
-      );
+          operations);
     } catch (IllegalArgumentException e) {
       throw new NessieNotFoundException("Invalid hash provided. " + e.getMessage(), e);
     } catch (ReferenceConflictException e) {
@@ -91,9 +94,11 @@ abstract class BaseResource {
     }
   }
 
-  private static CommitMeta meta(Principal principal, CommitMeta commitMeta) throws NessieConflictException {
+  private static CommitMeta meta(Principal principal, CommitMeta commitMeta)
+      throws NessieConflictException {
     if (commitMeta.getCommitter() != null) {
-      throw new NessieConflictException("Cannot set the committer on the client side. It is set by the server.");
+      throw new NessieConflictException(
+          "Cannot set the committer on the client side. It is set by the server.");
     }
     String committer = principal == null ? "" : principal.getName();
     Instant now = Instant.now();

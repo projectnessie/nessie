@@ -15,7 +15,6 @@
  */
 package org.projectnessie.error;
 
-
 public class NessieConflictException extends BaseNessieClientServerException {
 
   public NessieConflictException(String message, Throwable cause) {

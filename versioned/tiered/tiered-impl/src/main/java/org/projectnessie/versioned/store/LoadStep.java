@@ -25,6 +25,7 @@ public interface LoadStep {
 
   /**
    * Merge the current LoadStep with another to create a new compound LoadStep.
+   *
    * @param other The second LoadStep to combine with this.
    * @return A newly created combined LoadStep
    */
@@ -35,5 +36,4 @@ public interface LoadStep {
   static Collector<LoadStep, ?, LoadStep> toLoadStep() {
     return LoadStepCollector.COLLECTOR;
   }
-
 }

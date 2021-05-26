@@ -44,6 +44,4 @@ public abstract class RemoveClause implements UpdateClause {
   public String toClauseString() {
     return getPath().asString();
   }
-
-
 }

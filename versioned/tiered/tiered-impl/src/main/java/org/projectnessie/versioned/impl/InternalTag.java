@@ -15,10 +15,9 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.common.base.Objects;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.Ref;
-
-import com.google.common.base.Objects;
 
 class InternalTag extends InternalRef {
 
@@ -65,8 +64,7 @@ class InternalTag extends InternalRef {
       return false;
     }
     InternalTag that = (InternalTag) o;
-    return Objects.equal(name, that.name) && Objects
-        .equal(commit, that.commit);
+    return Objects.equal(name, that.name) && Objects.equal(commit, that.commit);
   }
 
   @Override
@@ -76,13 +74,6 @@ class InternalTag extends InternalRef {
 
   @Override
   Ref applyToConsumer(Ref consumer) {
-    return super.applyToConsumer(consumer)
-        .name(name)
-        .tag()
-        .commit(commit)
-        .backToRef();
+    return super.applyToConsumer(consumer).name(name).tag().commit(commit).backToRef();
   }
-
 }
-
-

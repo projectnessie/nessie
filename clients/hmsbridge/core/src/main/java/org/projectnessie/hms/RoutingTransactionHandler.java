@@ -17,7 +17,6 @@ package org.projectnessie.hms;
 
 import java.util.Optional;
 import java.util.function.Supplier;
-
 import org.apache.hadoop.hive.metastore.RawStore;
 
 class RoutingTransactionHandler implements TransactionHandler {
@@ -31,13 +30,9 @@ class RoutingTransactionHandler implements TransactionHandler {
     this.delegate = delegate;
   }
 
-  public void routedDelegate() {
+  public void routedDelegate() {}
 
-  }
-
-  public void routedNessie() {
-
-  }
+  public void routedNessie() {}
 
   private boolean hasDelegate() {
     return delegate.get().isPresent();
@@ -55,8 +50,7 @@ class RoutingTransactionHandler implements TransactionHandler {
   }
 
   @Override
-  public void rollbackTransaction() {
-  }
+  public void rollbackTransaction() {}
 
   @Override
   public boolean openTransaction() {
@@ -77,5 +71,4 @@ class RoutingTransactionHandler implements TransactionHandler {
     nessie.get().shutdown();
     delegate.get().ifPresent(r -> r.shutdown());
   }
-
 }

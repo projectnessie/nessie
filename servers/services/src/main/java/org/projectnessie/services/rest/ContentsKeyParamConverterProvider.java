@@ -17,16 +17,14 @@ package org.projectnessie.services.rest;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
-
 import org.projectnessie.model.ContentsKey;
 
 /**
- * JAX-RS parameter converter provider to transform {@code String} into {@code ContentsKey}, and vice-versa.
- *
+ * JAX-RS parameter converter provider to transform {@code String} into {@code ContentsKey}, and
+ * vice-versa.
  */
 @Provider
 public class ContentsKeyParamConverterProvider implements ParamConverterProvider {
@@ -53,7 +51,8 @@ public class ContentsKeyParamConverterProvider implements ParamConverterProvider
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
+  public <T> ParamConverter<T> getConverter(
+      Class<T> rawType, Type genericType, Annotation[] annotations) {
     if (rawType.equals(ContentsKey.class)) {
       return (ParamConverter<T>) new ContentsKeyParamConverter();
     }

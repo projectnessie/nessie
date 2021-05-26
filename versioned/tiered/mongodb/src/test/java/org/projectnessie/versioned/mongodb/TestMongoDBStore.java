@@ -21,9 +21,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.projectnessie.versioned.impl.AbstractTestStore;
 
-/**
- * A test class that contains MongoDB specific tests.
- */
+/** A test class that contains MongoDB specific tests. */
 @ExtendWith(LocalMongo.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
@@ -44,6 +42,7 @@ class TestMongoDBStore extends AbstractTestStore<MongoDBStore> {
 
   /**
    * Creates an instance of MongoDBStore on which tests are executed.
+   *
    * @return the store to test.
    */
   @Override

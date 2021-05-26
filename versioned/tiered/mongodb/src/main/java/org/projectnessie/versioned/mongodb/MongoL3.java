@@ -17,7 +17,6 @@ package org.projectnessie.versioned.mongodb;
 
 import java.util.List;
 import java.util.stream.Stream;
-
 import org.bson.BsonWriter;
 import org.bson.Document;
 import org.projectnessie.versioned.Key;
@@ -33,8 +32,7 @@ final class MongoL3 extends MongoBaseValue<L3> implements L3 {
   static final String TREE_ID = "id";
 
   static void produce(Document document, L3 v) {
-    produceBase(document, v)
-        .keyDelta(deserializeKeyDeltas(document));
+    produceBase(document, v).keyDelta(deserializeKeyDeltas(document));
   }
 
   MongoL3(BsonWriter bsonWriter) {
@@ -58,8 +56,7 @@ final class MongoL3 extends MongoBaseValue<L3> implements L3 {
 
   static Stream<KeyDelta> deserializeKeyDeltas(Document entity) {
     List<Document> deltas = (List<Document>) entity.get(TREE);
-    return deltas.stream()
-        .map(MongoL3::deserializeKeyDelta);
+    return deltas.stream().map(MongoL3::deserializeKeyDelta);
   }
 
   private static KeyDelta deserializeKeyDelta(Document d) {

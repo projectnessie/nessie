@@ -16,7 +16,6 @@
 package org.projectnessie.hms.apis;
 
 import java.util.List;
-
 import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.SQLForeignKey;
@@ -31,5 +30,4 @@ public interface AnnotatedHive2RawStore extends BaseRawStoreUnion {
 
   @NoopThrow
   void addPrimaryKeys(@Route List<SQLPrimaryKey> pks) throws InvalidObjectException, MetaException;
-
 }

@@ -15,10 +15,9 @@
  */
 package org.projectnessie.versioned.impl;
 
+import com.google.protobuf.ByteString;
 import org.projectnessie.versioned.store.Id;
 import org.projectnessie.versioned.tiered.CommitMetadata;
-
-import com.google.protobuf.ByteString;
 
 class InternalCommitMetadata extends WrappedValueBean<CommitMetadata> {
 
@@ -32,14 +31,14 @@ class InternalCommitMetadata extends WrappedValueBean<CommitMetadata> {
 
   @Override
   protected long getSeed() {
-    return 2279557414590649190L;// an arbitrary but consistent seed to ensure no hash conflicts.
+    return 2279557414590649190L; // an arbitrary but consistent seed to ensure no hash conflicts.
   }
 
-  /**
-   * Implements {@link CommitMetadata} to build an {@link InternalCommitMetadata} object.
-   */
-  // Needs to be a package private class, otherwise class-initialization of ValueType fails with j.l.IllegalAccessError
-  static final class Builder extends WrappedValueBean.Builder<InternalCommitMetadata, CommitMetadata>
+  /** Implements {@link CommitMetadata} to build an {@link InternalCommitMetadata} object. */
+  // Needs to be a package private class, otherwise class-initialization of ValueType fails with
+  // j.l.IllegalAccessError
+  static final class Builder
+      extends WrappedValueBean.Builder<InternalCommitMetadata, CommitMetadata>
       implements CommitMetadata {
     Builder() {
       super(InternalCommitMetadata::new);
@@ -48,7 +47,8 @@ class InternalCommitMetadata extends WrappedValueBean<CommitMetadata> {
 
   @SuppressWarnings("unchecked")
   @Override
-  EntityType<CommitMetadata, InternalCommitMetadata, InternalCommitMetadata.Builder> getEntityType() {
+  EntityType<CommitMetadata, InternalCommitMetadata, InternalCommitMetadata.Builder>
+      getEntityType() {
     return EntityType.COMMIT_METADATA;
   }
 }

@@ -15,13 +15,11 @@
  */
 package org.projectnessie.versioned.impl.condition;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.immutables.value.Value;
 import org.projectnessie.versioned.impl.condition.AliasCollector.Aliasable;
-
-import com.google.common.collect.ImmutableList;
 
 @Value.Immutable
 public abstract class ProjectionExpression implements Aliasable<ProjectionExpression> {
@@ -46,5 +44,4 @@ public abstract class ProjectionExpression implements Aliasable<ProjectionExpres
         .paths(getPaths().stream().map(p -> p.alias(c)).collect(ImmutableList.toImmutableList()))
         .build();
   }
-
 }

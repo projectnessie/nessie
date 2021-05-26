@@ -15,6 +15,12 @@
  */
 package org.projectnessie.versioned.store;
 
+import com.google.common.base.Preconditions;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
+import com.google.protobuf.ByteOutput;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.UnsafeByteOperations;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -22,16 +28,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
-
 import org.projectnessie.versioned.Hash;
 import org.projectnessie.versioned.ReferenceNotFoundException;
-
-import com.google.common.base.Preconditions;
-import com.google.common.hash.Hasher;
-import com.google.common.hash.Hashing;
-import com.google.protobuf.ByteOutput;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.UnsafeByteOperations;
 
 public final class Id {
 
@@ -42,8 +40,12 @@ public final class Id {
 
   private Id(ByteString value) {
     Preconditions.checkNotNull(value);
-    Preconditions.checkArgument(value.size() == LENGTH, "Invalid key for this version store. Expected a binary value of "
-        + "length %s but value was actually %s bytes long.", LENGTH, value.size());
+    Preconditions.checkArgument(
+        value.size() == LENGTH,
+        "Invalid key for this version store. Expected a binary value of "
+            + "length %s but value was actually %s bytes long.",
+        LENGTH,
+        value.size());
     this.value = value;
   }
 
@@ -65,6 +67,7 @@ public final class Id {
 
   /**
    * Create an Id based on a VersionStore Hash.
+   *
    * @param hash The hash the id should use.
    * @return The Id object
    * @throws ReferenceNotFoundException Thrown if the hash can't be a valid Id.
@@ -79,24 +82,28 @@ public final class Id {
 
   /**
    * Create an Id based on a collection of arbitrary bytes.
+   *
    * @param bytes The bytes to hash.
    * @return The generated id.
    */
   public static Id build(ByteBuffer bytes) {
-    return build(hasher -> {
-      hasher.putBytes(bytes);
-    });
+    return build(
+        hasher -> {
+          hasher.putBytes(bytes);
+        });
   }
 
   /**
    * Create a Id by hashing the lower case value of the provided string.
+   *
    * @param string The string to hash
    * @return The generated Id object.
    */
   public static Id build(String string) {
-    return build(hasher -> {
-      hasher.putString(string.toLowerCase(Locale.US), StandardCharsets.UTF_8);
-    });
+    return build(
+        hasher -> {
+          hasher.putString(string.toLowerCase(Locale.US), StandardCharsets.UTF_8);
+        });
   }
 
   public static Id build(ByteString bytes) {
@@ -105,6 +112,7 @@ public final class Id {
 
   /**
    * Create an id by using a provided hasher.
+   *
    * @param consumer The lambda that contains the require hashing.
    * @return The generated Id.
    */
@@ -147,6 +155,7 @@ public final class Id {
 
   /**
    * Generate a random valid Id.
+   *
    * @return The generated Id.
    */
   public static Id generateRandom() {
@@ -161,33 +170,35 @@ public final class Id {
 
   private static void hashByteString(ByteString bytes, Hasher hasher) {
     try {
-      UnsafeByteOperations.unsafeWriteTo(bytes, new ByteOutput() {
+      UnsafeByteOperations.unsafeWriteTo(
+          bytes,
+          new ByteOutput() {
 
-        @Override
-        public void write(byte value) throws IOException {
-          hasher.putByte(value);
-        }
+            @Override
+            public void write(byte value) throws IOException {
+              hasher.putByte(value);
+            }
 
-        @Override
-        public void write(byte[] value, int offset, int length) throws IOException {
-          hasher.putBytes(value, offset, length);
-        }
+            @Override
+            public void write(byte[] value, int offset, int length) throws IOException {
+              hasher.putBytes(value, offset, length);
+            }
 
-        @Override
-        public void write(ByteBuffer value) throws IOException {
-          hasher.putBytes(value);
-        }
+            @Override
+            public void write(ByteBuffer value) throws IOException {
+              hasher.putBytes(value);
+            }
 
-        @Override
-        public void writeLazy(byte[] value, int offset, int length) throws IOException {
-          write(value, offset, length);
-        }
+            @Override
+            public void writeLazy(byte[] value, int offset, int length) throws IOException {
+              write(value, offset, length);
+            }
 
-        @Override
-        public void writeLazy(ByteBuffer value) throws IOException {
-          write(value);
-        }
-      });
+            @Override
+            public void writeLazy(ByteBuffer value) throws IOException {
+              write(value);
+            }
+          });
     } catch (IOException e) {
       throw new RuntimeException(e); // can't happen.
     }
@@ -208,5 +219,4 @@ public final class Id {
   public Id getHash() {
     return this;
   }
-
 }

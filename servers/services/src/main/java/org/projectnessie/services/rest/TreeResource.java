@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.services.rest;
 
+import com.google.common.collect.ImmutableList;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
@@ -23,10 +23,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -64,18 +62,16 @@ import org.projectnessie.versioned.Unchanged;
 import org.projectnessie.versioned.VersionStore;
 import org.projectnessie.versioned.WithHash;
 
-import com.google.common.collect.ImmutableList;
-
-/**
- * REST endpoint for trees.
- */
+/** REST endpoint for trees. */
 @RequestScoped
 public class TreeResource extends BaseResource implements TreeApi {
 
   private static final int MAX_COMMIT_LOG_ENTRIES = 250;
 
   @Inject
-  public TreeResource(ServerConfig config, Principal principal,
+  public TreeResource(
+      ServerConfig config,
+      Principal principal,
       VersionStore<Contents, CommitMeta, Contents.Type> store) {
     super(config, principal, store);
   }
@@ -92,7 +88,8 @@ public class TreeResource extends BaseResource implements TreeApi {
     try {
       return makeRef(getStore().toRef(refName));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("Unable to find reference [%s].", refName), e);
+      throw new NessieNotFoundException(
+          String.format("Unable to find reference [%s].", refName), e);
     }
   }
 
@@ -113,13 +110,15 @@ public class TreeResource extends BaseResource implements TreeApi {
     }
   }
 
-  private Hash createReference(NamedRef reference, String hash) throws NessieNotFoundException, NessieConflictException {
+  private Hash createReference(NamedRef reference, String hash)
+      throws NessieNotFoundException, NessieConflictException {
     try {
       return getStore().create(reference, toHash(hash, false));
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException("Failure while searching for provided targeted hash.", e);
     } catch (ReferenceAlreadyExistsException e) {
-      throw new NessieConflictException(String.format("A reference of name [%s] already exists.", reference.getName()), e);
+      throw new NessieConflictException(
+          String.format("A reference of name [%s] already exists.", reference.getName()), e);
     }
   }
 
@@ -139,7 +138,8 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public void deleteTag(String tagName, String hash) throws NessieConflictException, NessieNotFoundException {
+  public void deleteTag(String tagName, String hash)
+      throws NessieConflictException, NessieNotFoundException {
     deleteReference(TagName.of(tagName), hash);
   }
 
@@ -150,33 +150,42 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public void deleteBranch(String branchName, String hash) throws NessieConflictException, NessieNotFoundException {
+  public void deleteBranch(String branchName, String hash)
+      throws NessieConflictException, NessieNotFoundException {
     deleteReference(BranchName.of(branchName), hash);
   }
 
   @Override
-  public LogResponse getCommitLog(String ref, Integer maxEntriesHint, String pageToken) throws NessieNotFoundException {
-    int max = Math.min(maxEntriesHint != null ? maxEntriesHint : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
+  public LogResponse getCommitLog(String ref, Integer maxEntriesHint, String pageToken)
+      throws NessieNotFoundException {
+    int max =
+        Math.min(
+            maxEntriesHint != null ? maxEntriesHint : MAX_COMMIT_LOG_ENTRIES,
+            MAX_COMMIT_LOG_ENTRIES);
     Hash startRef = getHashOrThrow(pageToken != null ? pageToken : ref);
-    try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef).limit(max + 1)
-        .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
+    try (Stream<ImmutableCommitMeta> s =
+        getStore()
+            .getCommits(startRef)
+            .limit(max + 1)
+            .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
       List<CommitMeta> items = s.collect(Collectors.toList());
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
-            .hasMore(true).token(items.get(max).getHash())
+            .hasMore(true)
+            .token(items.get(max).getHash())
             .build();
       }
-      return ImmutableLogResponse.builder()
-          .addAllOperations(items)
-          .build();
+      return ImmutableLogResponse.builder().addAllOperations(items).build();
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("Unable to find the requested ref [%s].", ref), e);
+      throw new NessieNotFoundException(
+          String.format("Unable to find the requested ref [%s].", ref), e);
     }
   }
 
   @Override
-  public void transplantCommitsIntoBranch(String branchName, String hash, String message, Transplant transplant)
+  public void transplantCommitsIntoBranch(
+      String branchName, String hash, String message, Transplant transplant)
       throws NessieNotFoundException, NessieConflictException {
     try {
       List<Hash> transplants;
@@ -186,28 +195,40 @@ public class TreeResource extends BaseResource implements TreeApi {
       getStore().transplant(BranchName.of(branchName), toHash(hash, true), transplants);
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(
-          String.format("Unable to find the requested branch we're transplanting to of [%s].", branchName), e);
+          String.format(
+              "Unable to find the requested branch we're transplanting to of [%s].", branchName),
+          e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(
-          String.format("The hash provided %s does not match the current status of the branch %s.",
-              hash, branchName), e);
+          String.format(
+              "The hash provided %s does not match the current status of the branch %s.",
+              hash, branchName),
+          e);
     }
   }
 
   @Override
-  public void mergeRefIntoBranch(String branchName, String hash, Merge merge) throws NessieNotFoundException, NessieConflictException {
+  public void mergeRefIntoBranch(String branchName, String hash, Merge merge)
+      throws NessieNotFoundException, NessieConflictException {
     try {
-      getStore().merge(toHash(merge.getFromHash(), true).get(), BranchName.of(branchName), toHash(hash, true));
+      getStore()
+          .merge(
+              toHash(merge.getFromHash(), true).get(),
+              BranchName.of(branchName),
+              toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("At least one of the references provided does not exist."), e);
+      throw new NessieNotFoundException(
+          String.format("At least one of the references provided does not exist."), e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(
-          String.format("The branch [%s] does not have the expected hash [%s].", branchName, hash), e);
+          String.format("The branch [%s] does not have the expected hash [%s].", branchName, hash),
+          e);
     }
   }
 
   @Override
-  public EntriesResponse getEntries(String refName, Integer maxEntriesHint, String pageToken, List<String> types)
+  public EntriesResponse getEntries(
+      String refName, Integer maxEntriesHint, String pageToken, List<String> types)
       throws NessieNotFoundException {
     final Set<Type> payloads;
     if (types.isEmpty()) {
@@ -222,32 +243,43 @@ public class TreeResource extends BaseResource implements TreeApi {
     //  server or client. We have to figure out _how_ to implement paging for keys/entries, i.e.
     //  whether we shall just do the whole computation for a specific hash for every page or have
     //  a more sophisticated approach, potentially with support from the (tiered-)version-store.
-    //  note currently we are filtering types at the REST level. This could in theory be pushed down to the store though
+    //  note currently we are filtering types at the REST level. This could in theory be pushed down
+    // to the store though
     //  all existing VersionStore implementations have to read all keys anyways so we don't get much
     try {
       List<EntriesResponse.Entry> entries;
-      try (Stream<EntriesResponse.Entry> s = getStore().getKeys(hash).filter(x -> payloads.contains(x.getType()))
-          .map(key -> EntriesResponse.Entry.builder().name(fromKey(key.getValue())).type((Type) key.getType()).build())) {
+      try (Stream<EntriesResponse.Entry> s =
+          getStore()
+              .getKeys(hash)
+              .filter(x -> payloads.contains(x.getType()))
+              .map(
+                  key ->
+                      EntriesResponse.Entry.builder()
+                          .name(fromKey(key.getValue()))
+                          .type((Type) key.getType())
+                          .build())) {
         entries = s.collect(ImmutableList.toImmutableList());
       }
       return EntriesResponse.builder().addAllEntries(entries).build();
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("Unable to find the reference [%s].", refName), e);
+      throw new NessieNotFoundException(
+          String.format("Unable to find the reference [%s].", refName), e);
     }
   }
 
   @Override
   public Branch commitMultipleOperations(String branch, String hash, Operations operations)
       throws NessieNotFoundException, NessieConflictException {
-    List<org.projectnessie.versioned.Operation<Contents>> ops = operations.getOperations()
-        .stream()
-        .map(TreeResource::toOp)
-        .collect(ImmutableList.toImmutableList());
+    List<org.projectnessie.versioned.Operation<Contents>> ops =
+        operations.getOperations().stream()
+            .map(TreeResource::toOp)
+            .collect(ImmutableList.toImmutableList());
     String newHash = doOps(branch, hash, operations.getCommitMeta(), ops).asString();
     return Branch.of(branch, newHash);
   }
 
-  private static Optional<Hash> toHash(String hash, boolean required) throws NessieConflictException {
+  private static Optional<Hash> toHash(String hash, boolean required)
+      throws NessieConflictException {
     if (hash == null || hash.isEmpty()) {
       if (required) {
         throw new NessieConflictException("Must provide expected hash value for operation.");
@@ -257,15 +289,19 @@ public class TreeResource extends BaseResource implements TreeApi {
     return Optional.of(Hash.of(hash));
   }
 
-  private void deleteReference(NamedRef name, String hash) throws NessieConflictException, NessieNotFoundException {
+  private void deleteReference(NamedRef name, String hash)
+      throws NessieConflictException, NessieNotFoundException {
     try {
       getStore().delete(name, toHash(hash, true));
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("Unable to find reference [%s] to delete.", name.getName()), e);
+      throw new NessieNotFoundException(
+          String.format("Unable to find reference [%s] to delete.", name.getName()), e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(
-          String.format("The hash provided %s does not match the current status of the reference %s.",
-              hash, name.getName()), e);
+          String.format(
+              "The hash provided %s does not match the current status of the reference %s.",
+              hash, name.getName()),
+          e);
     }
   }
 
@@ -275,8 +311,15 @@ public class TreeResource extends BaseResource implements TreeApi {
       WithHash<Ref> resolved = getStore().toRef(ref.getName());
       Ref resolvedRef = resolved.getValue();
       if (resolvedRef instanceof NamedRef) {
-        getStore().assign((NamedRef) resolvedRef, toHash(oldHash, true), toHash(newHash, true)
-            .orElseThrow(() -> new NessieConflictException("Must provide target hash value for operation.")));
+        getStore()
+            .assign(
+                (NamedRef) resolvedRef,
+                toHash(oldHash, true),
+                toHash(newHash, true)
+                    .orElseThrow(
+                        () ->
+                            new NessieConflictException(
+                                "Must provide target hash value for operation.")));
       } else {
         throw new IllegalArgumentException("Can only assign branch and tag types.");
       }
@@ -284,8 +327,10 @@ public class TreeResource extends BaseResource implements TreeApi {
       throw new NessieNotFoundException("Unable to find a ref or hash provided.", e);
     } catch (ReferenceConflictException e) {
       throw new NessieConflictException(
-          String.format("The hash provided %s does not match the current status of the reference %s.",
-              oldHash, ref), e);
+          String.format(
+              "The hash provided %s does not match the current status of the reference %s.",
+              oldHash, ref),
+          e);
     }
   }
 
@@ -299,16 +344,23 @@ public class TreeResource extends BaseResource implements TreeApi {
 
   private static Reference makeRef(WithHash<? extends Ref> refWithHash) {
     Ref ref = refWithHash.getValue();
-    //todo do we want to send back Hash object or the string. I don't want internal API escaping so maybe an external representation of hash
+    // todo do we want to send back Hash object or the string. I don't want internal API escaping so
+    // maybe an external representation of hash
     if (ref instanceof TagName) {
-      return ImmutableTag.builder().name(((NamedRef)ref).getName()).hash(refWithHash.getHash().asString()).build();
+      return ImmutableTag.builder()
+          .name(((NamedRef) ref).getName())
+          .hash(refWithHash.getHash().asString())
+          .build();
     } else if (ref instanceof BranchName) {
-      return ImmutableBranch.builder().name(((NamedRef)ref).getName()).hash(refWithHash.getHash().asString()).build();
+      return ImmutableBranch.builder()
+          .name(((NamedRef) ref).getName())
+          .hash(refWithHash.getHash().asString())
+          .build();
     } else if (ref instanceof Hash) {
       String hash = refWithHash.getHash().asString();
       return ImmutableHash.builder().name(hash).build();
     } else {
-      throw new UnsupportedOperationException("only converting tags or branches"); //todo
+      throw new UnsupportedOperationException("only converting tags or branches"); // todo
     }
   }
 
@@ -317,7 +369,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     if (o instanceof Operation.Delete) {
       return Delete.of(key);
     } else if (o instanceof Operation.Put) {
-      return Put.of(key, ((Operation.Put)o).getContents());
+      return Put.of(key, ((Operation.Put) o).getContents());
     } else if (o instanceof Operation.Unchanged) {
       return Unchanged.of(key);
     } else {

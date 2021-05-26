@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.projectnessie.services.rest;
 
 import java.security.Principal;
@@ -22,10 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -44,14 +41,14 @@ import org.projectnessie.versioned.Put;
 import org.projectnessie.versioned.ReferenceNotFoundException;
 import org.projectnessie.versioned.VersionStore;
 
-/**
- * REST endpoint for contents.
- */
+/** REST endpoint for contents. */
 @RequestScoped
 public class ContentsResource extends BaseResource implements ContentsApi {
 
   @Inject
-  public ContentsResource(ServerConfig config, Principal principal,
+  public ContentsResource(
+      ServerConfig config,
+      Principal principal,
       VersionStore<Contents, CommitMeta, Contents.Type> store) {
     super(config, principal, store);
   }
@@ -66,18 +63,19 @@ public class ContentsResource extends BaseResource implements ContentsApi {
       }
       throw new NessieNotFoundException("Requested contents do not exist for specified reference.");
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("Provided reference [%s] does not exist.", incomingRef), e);
+      throw new NessieNotFoundException(
+          String.format("Provided reference [%s] does not exist.", incomingRef), e);
     }
   }
 
-
   @Override
-  public MultiGetContentsResponse getMultipleContents(String refName, MultiGetContentsRequest request)
-      throws NessieNotFoundException {
+  public MultiGetContentsResponse getMultipleContents(
+      String refName, MultiGetContentsRequest request) throws NessieNotFoundException {
     try {
       Hash ref = getHashOrThrow(refName);
       List<ContentsKey> externalKeys = request.getRequestedKeys();
-      List<Key> internalKeys = externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
+      List<Key> internalKeys =
+          externalKeys.stream().map(ContentsResource::toKey).collect(Collectors.toList());
       List<Optional<Contents>> values = getStore().getValues(ref, internalKeys);
       List<ContentsWithKey> output = new ArrayList<>();
 
@@ -93,7 +91,8 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   }
 
   @Override
-  public void setContents(ContentsKey key, String branch, String hash, String message, Contents contents)
+  public void setContents(
+      ContentsKey key, String branch, String hash, String message, Contents contents)
       throws NessieNotFoundException, NessieConflictException {
     CommitMeta meta = CommitMeta.builder().message(message == null ? "" : message).build();
     doOps(branch, hash, meta, Arrays.asList(Put.of(toKey(key), contents)));
@@ -109,5 +108,4 @@ public class ContentsResource extends BaseResource implements ContentsApi {
   static Key toKey(ContentsKey key) {
     return Key.of(key.getElements().toArray(new String[key.getElements().size()]));
   }
-
 }

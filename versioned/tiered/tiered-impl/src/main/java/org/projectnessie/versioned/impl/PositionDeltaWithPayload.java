@@ -16,19 +16,20 @@
 package org.projectnessie.versioned.impl;
 
 import javax.annotation.Nullable;
-
 import org.immutables.value.Value;
 import org.projectnessie.versioned.store.Id;
 
-/**
- * Describes the current and previous state of the value.
- */
+/** Describes the current and previous state of the value. */
 @Value.Immutable
 @Value.Style(builder = "getBuilder")
 abstract class PositionDeltaWithPayload extends PositionDelta {
 
-  static final PositionDeltaWithPayload SINGLE_ZERO = PositionDeltaWithPayload.builderWithPayload().newId(Id.EMPTY).oldId(Id.EMPTY)
-      .position(0).build();
+  static final PositionDeltaWithPayload SINGLE_ZERO =
+      PositionDeltaWithPayload.builderWithPayload()
+          .newId(Id.EMPTY)
+          .oldId(Id.EMPTY)
+          .position(0)
+          .build();
 
   @Value.Auxiliary
   @Nullable
@@ -49,10 +50,12 @@ abstract class PositionDeltaWithPayload extends PositionDelta {
   }
 
   static PositionDeltaWithPayload of(int position, Id id, Byte payload) {
-    return ImmutablePositionDeltaWithPayload.getBuilder().oldId(id).newId(id).position(position).oldPayload(payload).newPayload(payload)
+    return ImmutablePositionDeltaWithPayload.getBuilder()
+        .oldId(id)
+        .newId(id)
+        .position(position)
+        .oldPayload(payload)
+        .newPayload(payload)
         .build();
   }
-
-
-
 }

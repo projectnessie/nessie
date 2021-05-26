@@ -25,18 +25,15 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface WithHash<T> {
 
-  /**
-   * Get the value of the hash associated with this commit.
-   */
+  /** Get the value of the hash associated with this commit. */
   Hash getHash();
 
-  /**
-   * Get the value this object wraps.
-   */
+  /** Get the value this object wraps. */
   T getValue();
 
   /**
    * Build a WithHash object of type T.
+   *
    * @param <T> The value type to hold
    * @param hash The hash this value type is connected to.
    * @param value The value held.
