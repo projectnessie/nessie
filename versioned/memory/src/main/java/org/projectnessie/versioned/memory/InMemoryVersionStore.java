@@ -157,8 +157,10 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
         .filter(hash -> hash.equals(referenceHash))
         .collect(MoreCollectors.toOptional());
 
-    foundHash.orElseThrow(() -> new ReferenceNotFoundException(format("'%s' hash is not a valid commit from branch '%s'(%s)",
-        referenceHash, branch, currentBranchHash)));
+    if (!foundHash.isPresent()) {
+      throw new ReferenceNotFoundException(format("'%s' hash is not a valid commit from branch '%s'(%s)",
+          referenceHash, branch, currentBranchHash));
+    }
   }
 
   @Override
