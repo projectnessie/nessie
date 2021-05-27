@@ -1227,12 +1227,6 @@ limitations under the License.
                     <exclude>**/node_modules/**</exclude>
                     <exclude>**/venv/**</exclude>
                   </excludes>
-                  <trimTrailingWhitespace/>
-                  <endWithNewline/>
-                  <indent>
-                    <spaces>true</spaces>
-                    <spacesPerTab>2</spacesPerTab>
-                  </indent>
                   <eclipseWtp>
                     <type>XML</type>
                     <files>
