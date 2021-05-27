@@ -629,7 +629,6 @@ class TestRest {
     );
   }
 
-
   void unwrap(Executable exec) throws Throwable {
     try {
       exec.execute();
