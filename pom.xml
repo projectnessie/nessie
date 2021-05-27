@@ -1212,8 +1212,8 @@ limitations under the License.
                 </format>
                 <format>
                   <includes>
-                    <include>**/*.xml</include>
-                    <include>**/*.xsd</include>
+                    <include>src/**/*.xml</include>
+                    <include>src/**/*.xsd</include>
                   </includes>
                   <excludes>
                     <exclude>**/.idea/**</exclude>
