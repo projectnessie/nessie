@@ -106,10 +106,15 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public LogResponse getCommitLog(@NotNull String ref, @Nullable Integer maxEntriesHint,
-      @Nullable String pageToken) throws NessieNotFoundException {
+      @Nullable String pageToken, @Nullable String author, @Nullable String committer,
+      @Nullable String after, @Nullable String before) throws NessieNotFoundException {
     return client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref)
         .queryParam("max", maxEntriesHint != null ? maxEntriesHint.toString() : null)
         .queryParam("pageToken", pageToken)
+        .queryParam("author", author)
+        .queryParam("committer", committer)
+        .queryParam("before", before)
+        .queryParam("after", after)
         .get().readEntity(LogResponse.class);
   }
 
