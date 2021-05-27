@@ -974,80 +974,6 @@ limitations under the License.
         </executions>
       </plugin>
       <plugin>
-        <groupId>com.diffplug.spotless</groupId>
-        <artifactId>spotless-maven-plugin</artifactId>
-        <configuration>
-          <formats>
-            <format>
-              <includes>
-                <include>.gitignore</include>
-              </includes>
-              <trimTrailingWhitespace/>
-              <endWithNewline/>
-              <indent>
-                <spaces>true</spaces>
-                <spacesPerTab>2</spacesPerTab>
-              </indent>
-            </format>
-            <format>
-              <includes>
-                <include>**/*.xml</include>
-                <include>**/*.xsd</include>
-              </includes>
-              <excludes>
-                <exclude>.idea/**</exclude>
-                <exclude>spotless/**</exclude>
-                <exclude>python/**</exclude>
-                <exclude>site/**</exclude>
-                <exclude>**/pom.xml</exclude>
-                <exclude>**/.flattened-pom.xml</exclude>
-                <exclude>**/target/**</exclude>
-                <exclude>**/build/**</exclude>
-                <exclude>**/node_modules/**</exclude>
-                <exclude>**/venv/**</exclude>
-              </excludes>
-              <trimTrailingWhitespace/>
-              <endWithNewline/>
-              <indent>
-                <spaces>true</spaces>
-                <spacesPerTab>2</spacesPerTab>
-              </indent>
-              <eclipseWtp>
-                <type>XML</type>
-                <files>
-                  <file>${maven.multiModuleProjectDirectory}/spotless/org.eclipse.wst.xml.core.prefs</file>
-                </files>
-              </eclipseWtp>
-            </format>
-          </formats>
-          <java>
-            <google-java-format>
-              <version>1.10.0</version>
-            </google-java-format>
-            <licenseHeader>
-              <file>${maven.multiModuleProjectDirectory}/spotless/copyright-header-java.txt</file>
-              <delimiter>package </delimiter>
-            </licenseHeader>
-          </java>
-          <scala>
-            <scalafmt/>
-            <licenseHeader>
-              <file>${maven.multiModuleProjectDirectory}/spotless/copyright-header-java.txt</file>
-              <delimiter>package </delimiter>
-            </licenseHeader>
-          </scala>
-        </configuration>
-        <executions>
-          <execution>
-            <id>spotless-check</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-enforcer-plugin</artifactId>
         <executions>
           <execution>
@@ -1253,6 +1179,92 @@ limitations under the License.
                     <arg>loopback</arg>
                   </gpgArguments>
                 </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>spotless</id>
+      <activation>
+        <property>
+          <name>!skipSpotless</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <configuration>
+              <formats>
+                <format>
+                  <includes>
+                    <include>.gitignore</include>
+                  </includes>
+                  <trimTrailingWhitespace/>
+                  <endWithNewline/>
+                  <indent>
+                    <spaces>true</spaces>
+                    <spacesPerTab>2</spacesPerTab>
+                  </indent>
+                </format>
+                <format>
+                  <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.xsd</include>
+                  </includes>
+                  <excludes>
+                    <exclude>**/.idea/**</exclude>
+                    <exclude>spotless/**</exclude>
+                    <exclude>site/**</exclude>
+                    <exclude>**/pom.xml</exclude>
+                    <exclude>**/.flattened-pom.xml</exclude>
+                    <exclude>**/.tox/**</exclude>
+                    <exclude>**/target/**</exclude>
+                    <exclude>**/build/**</exclude>
+                    <exclude>**/node_modules/**</exclude>
+                    <exclude>**/venv/**</exclude>
+                  </excludes>
+                  <trimTrailingWhitespace/>
+                  <endWithNewline/>
+                  <indent>
+                    <spaces>true</spaces>
+                    <spacesPerTab>2</spacesPerTab>
+                  </indent>
+                  <eclipseWtp>
+                    <type>XML</type>
+                    <files>
+                      <file>${maven.multiModuleProjectDirectory}/spotless/org.eclipse.wst.xml.core.prefs</file>
+                    </files>
+                  </eclipseWtp>
+                </format>
+              </formats>
+              <java>
+                <google-java-format>
+                  <version>1.10.0</version>
+                </google-java-format>
+                <licenseHeader>
+                  <file>${maven.multiModuleProjectDirectory}/spotless/copyright-header-java.txt</file>
+                  <delimiter>package </delimiter>
+                </licenseHeader>
+              </java>
+              <scala>
+                <scalafmt/>
+                <licenseHeader>
+                  <file>${maven.multiModuleProjectDirectory}/spotless/copyright-header-java.txt</file>
+                  <delimiter>package </delimiter>
+                </licenseHeader>
+              </scala>
+            </configuration>
+            <executions>
+              <execution>
+                <id>spotless-check</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
               </execution>
             </executions>
           </plugin>
