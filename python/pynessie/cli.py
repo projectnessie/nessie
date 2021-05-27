@@ -204,7 +204,7 @@ def log(ctx: ContextObject, number: int, since: str, until: str, author: str, re
             start = revision_range
             end = None
 
-    log_result = show_log(ctx.nessie, start, number, since, until, author, end, paths)
+    log_result = show_log(nessie=ctx.nessie, start=start, number=number, after=since, before=until, author=author, end=end, limits=paths)
     if ctx.json:
         click.echo(CommitMetaSchema().dumps(log_result, many=True))
     else:

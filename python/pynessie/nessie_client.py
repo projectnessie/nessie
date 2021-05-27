@@ -2,10 +2,10 @@
 """Main module."""
 import re
 from typing import Any
+from typing import cast
 from typing import Generator
 from typing import List
 from typing import Optional
-from typing import cast
 
 import confuse
 
@@ -183,9 +183,14 @@ class NessieClient(object):
         cherry_pick(self._base_url, branch, transplant_json, old_hash, self._ssl_verify)
 
     def get_log(
-        self: "NessieClient", start_ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None,
-        author: Optional[str] = None, committer: Optional[str] = None,
-        after: Optional[str] = None, before: Optional[str] = None
+        self: "NessieClient",
+        start_ref: str,
+        max_result_hint: Optional[int] = None,
+        page_token: Optional[str] = None,
+        author: Optional[str] = None,
+        committer: Optional[str] = None,
+        after: Optional[str] = None,
+        before: Optional[str] = None,
     ) -> Generator[CommitMeta, Any, None]:
         """Fetch all logs starting at start_ref.
 
@@ -197,10 +202,17 @@ class NessieClient(object):
         """
 
         def fetch_logs(token: Optional[str] = page_token) -> LogResponse:
-            fetched_logs = list_logs(base_url=self._base_url, ref=start_ref,
-                                     max_result_hint=max_result_hint, page_token=token,
-                                     ssl_verify=self._ssl_verify, author=author,
-                                     committer=committer, after=after, before=before)
+            fetched_logs = list_logs(
+                base_url=self._base_url,
+                ref=start_ref,
+                max_result_hint=max_result_hint,
+                page_token=token,
+                ssl_verify=self._ssl_verify,
+                author=author,
+                committer=committer,
+                after=after,
+                before=before,
+            )
             log_schema = LogResponseSchema().load(fetched_logs)
             return log_schema
 

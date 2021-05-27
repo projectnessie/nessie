@@ -171,8 +171,15 @@ def list_tables(
 
 
 def list_logs(
-    base_url: str, ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None, ssl_verify: bool = True,
-    author: Optional[str] = None, committer: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None
+    base_url: str,
+    ref: str,
+    max_result_hint: Optional[int] = None,
+    page_token: Optional[str] = None,
+    ssl_verify: bool = True,
+    author: Optional[str] = None,
+    committer: Optional[str] = None,
+    after: Optional[str] = None,
+    before: Optional[str] = None,
 ) -> dict:
     """Fetch a list of all logs from a known starting reference.
 
