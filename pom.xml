@@ -606,6 +606,18 @@
           <version>3.0.0-M4</version>
         </plugin>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>3.1.2</version>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>8.42</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
           <groupId>com.diffplug.spotless</groupId>
           <artifactId>spotless-maven-plugin</artifactId>
           <version>2.11.1</version>
@@ -746,6 +758,38 @@
             <phase>initialize</phase>
             <goals>
               <goal>detect</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <!-- Specify source and test directories to not included generated source directories -->
+          <sourceDirectories>
+            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+          </sourceDirectories>
+          <testSourceDirectories>
+            <testSourceDirectory>${project.basedir}/src/test/java</testSourceDirectory>
+          </testSourceDirectories>
+          <encoding>UTF-8</encoding>
+          <failsOnError>true</failsOnError>
+          <failOnViolation>true</failOnViolation>
+          <violationSeverity>warning</violationSeverity>
+          <consoleOutput>true</consoleOutput>
+          <includeResources>true</includeResources>
+          <includeTestResources>true</includeTestResources>
+          <resourceIncludes>**/*.properties,**/*.conf,**/*.json,**/*.xml</resourceIncludes>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <configLocation>codestyle/checkstyle-config.xml</configLocation>
+        </configuration>
+        <executions>
+          <execution>
+            <id>checkstyle-verification</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
             </goals>
           </execution>
         </executions>
@@ -1217,7 +1261,7 @@ limitations under the License.
                   </includes>
                   <excludes>
                     <exclude>**/.idea/**</exclude>
-                    <exclude>spotless/**</exclude>
+                    <exclude>codestyle/**</exclude>
                     <exclude>site/**</exclude>
                     <exclude>**/pom.xml</exclude>
                     <exclude>**/.flattened-pom.xml</exclude>
@@ -1230,7 +1274,7 @@ limitations under the License.
                   <eclipseWtp>
                     <type>XML</type>
                     <files>
-                      <file>${maven.multiModuleProjectDirectory}/spotless/org.eclipse.wst.xml.core.prefs</file>
+                      <file>${maven.multiModuleProjectDirectory}/codestyle/org.eclipse.wst.xml.core.prefs</file>
                     </files>
                   </eclipseWtp>
                 </format>
@@ -1240,14 +1284,14 @@ limitations under the License.
                   <version>1.10.0</version>
                 </google-java-format>
                 <licenseHeader>
-                  <file>${maven.multiModuleProjectDirectory}/spotless/copyright-header-java.txt</file>
+                  <file>${maven.multiModuleProjectDirectory}/codestyle/copyright-header-java.txt</file>
                   <delimiter>package </delimiter>
                 </licenseHeader>
               </java>
               <scala>
                 <scalafmt/>
                 <licenseHeader>
-                  <file>${maven.multiModuleProjectDirectory}/spotless/copyright-header-java.txt</file>
+                  <file>${maven.multiModuleProjectDirectory}/codestyle/copyright-header-java.txt</file>
                   <delimiter>package </delimiter>
                 </licenseHeader>
               </scala>
