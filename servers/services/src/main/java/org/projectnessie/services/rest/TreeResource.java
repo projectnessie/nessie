@@ -17,6 +17,8 @@
 package org.projectnessie.services.rest;
 
 import java.security.Principal;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.Nullable;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 
@@ -155,12 +158,29 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(String ref, Integer maxEntriesHint, String pageToken) throws NessieNotFoundException {
+  public LogResponse getCommitLog(String ref, Integer maxEntriesHint, String pageToken, @Nullable String author, @Nullable String committer,
+      @Nullable String after, @Nullable String before) throws NessieNotFoundException {
     int max = Math.min(maxEntriesHint != null ? maxEntriesHint : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
     Hash startRef = getHashOrThrow(pageToken != null ? pageToken : ref);
+    final Instant afterInstant = parseToInstant(after);
+    final Instant beforeInstant = parseToInstant(before);
+
     try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef).limit(max + 1)
         .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
-      List<CommitMeta> items = s.collect(Collectors.toList());
+      Stream<ImmutableCommitMeta> commits = s;
+      if (null != author) {
+        commits = commits.filter(commit -> author.equals(commit.getAuthor()));
+      }
+      if (null != committer) {
+        commits = commits.filter(commit -> committer.equals(commit.getCommitter()));
+      }
+      if (null != afterInstant) {
+        commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isAfter(afterInstant));
+      }
+      if (null != beforeInstant) {
+        commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isBefore(beforeInstant));
+      }
+      List<CommitMeta> items = commits.collect(Collectors.toList());
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
@@ -301,9 +321,9 @@ public class TreeResource extends BaseResource implements TreeApi {
     Ref ref = refWithHash.getValue();
     //todo do we want to send back Hash object or the string. I don't want internal API escaping so maybe an external representation of hash
     if (ref instanceof TagName) {
-      return ImmutableTag.builder().name(((NamedRef)ref).getName()).hash(refWithHash.getHash().asString()).build();
+      return ImmutableTag.builder().name(((NamedRef) ref).getName()).hash(refWithHash.getHash().asString()).build();
     } else if (ref instanceof BranchName) {
-      return ImmutableBranch.builder().name(((NamedRef)ref).getName()).hash(refWithHash.getHash().asString()).build();
+      return ImmutableBranch.builder().name(((NamedRef) ref).getName()).hash(refWithHash.getHash().asString()).build();
     } else if (ref instanceof Hash) {
       String hash = refWithHash.getHash().asString();
       return ImmutableHash.builder().name(hash).build();
@@ -317,11 +337,23 @@ public class TreeResource extends BaseResource implements TreeApi {
     if (o instanceof Operation.Delete) {
       return Delete.of(key);
     } else if (o instanceof Operation.Put) {
-      return Put.of(key, ((Operation.Put)o).getContents());
+      return Put.of(key, ((Operation.Put) o).getContents());
     } else if (o instanceof Operation.Unchanged) {
       return Unchanged.of(key);
     } else {
       throw new IllegalStateException("Unknown operation " + o);
     }
+  }
+
+  @Nullable
+  private Instant parseToInstant(String instant) {
+    try {
+      if (null != instant) {
+        return Instant.parse(instant);
+      }
+    } catch (DateTimeParseException e) {
+      throw new IllegalArgumentException(String.format("'%s' could not be parsed to an Instant in ISO-8601 format", instant), e);
+    }
+    return null;
   }
 }

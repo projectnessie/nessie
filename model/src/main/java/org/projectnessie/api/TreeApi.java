@@ -233,7 +233,19 @@ public interface TreeApi {
           Integer maxRecords,
       @Parameter(description = "pagination continuation token, as returned in the previous LogResponse.token")
       @QueryParam("pageToken")
-          String pageToken)
+          String pageToken,
+      @Parameter(description = "The author of a commit. This is the original committer")
+      @QueryParam("author")
+      String author,
+      @Parameter(description = "The entity that performed the commit")
+      @QueryParam("committer")
+      String committer,
+      @Parameter(description = "Commits newer than the specified date in ISO-8601 format")
+      @QueryParam("after")
+          String after,
+      @Parameter(description = "Commits older than the specified date in ISO-8601 format")
+      @QueryParam("before")
+          String before)
           throws NessieNotFoundException;
 
   /**

@@ -56,7 +56,7 @@ public final class StreamingUtil {
 
   /**
    * Default implementation to return a stream of commit-log entries, functionally equivalent to
-   * calling {@link TreeApi#getCommitLog(String, Integer, String)} with manual paging.
+   * calling {@link TreeApi#getCommitLog(String, Integer, String, String, String, String, String)}  with manual paging.
    * <p>The {@link Stream} returned by {@code getCommitLogStream(ref, OptionalInt.empty())},
    * if not limited, returns all commit-log entries.</p>
    *
@@ -66,8 +66,8 @@ public final class StreamingUtil {
    */
   public static Stream<CommitMeta> getCommitLogStream(@NotNull TreeApi treeApi, @NotNull String ref,
       OptionalInt pageSizeHint) throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(LogResponse::getOperations, treeApi::getCommitLog)
+    return new ResultStreamPaginator<>(LogResponse::getOperations,
+        (reference, pageSize, token) -> treeApi.getCommitLog(reference, pageSize, token, null, null, null, null))
         .generateStream(ref, pageSizeHint);
   }
-
 }

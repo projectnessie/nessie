@@ -31,6 +31,8 @@ import static org.projectnessie.model.Validation.REF_NAME_MESSAGE;
 import static org.projectnessie.model.Validation.REF_NAME_OR_HASH_MESSAGE;
 
 import java.net.URI;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -198,16 +200,16 @@ class TestRest {
     entries = tree.getEntries(branchName, null, null, Collections.emptyList());
     assertThat(entries).isNotNull();
 
-    LogResponse log = tree.getCommitLog(tagName, null, null);
+    LogResponse log = tree.getCommitLog(tagName, null, null, null, null, null, null);
     assertThat(log).isNotNull();
-    log = tree.getCommitLog(branchName, null, null);
+    log = tree.getCommitLog(branchName, null, null, null, null, null, null);
     assertThat(log).isNotNull();
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
     ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
     Operations ops = ImmutableOperations.builder().addOperations(op).commitMeta(CommitMeta.fromMessage("One dummy op")).build();
     tree.commitMultipleOperations(branchName, branchHash, ops);
-    log = tree.getCommitLog(branchName, null, null);
+    log = tree.getCommitLog(branchName, null, null, null, null, null, null);
     String newHash = log.getOperations().get(0).getHash();
 
     tree.assignTag(tagName, tagHash, Tag.of(tagName, newHash));
@@ -217,6 +219,117 @@ class TestRest {
 
     tree.deleteTag(tagName, newHash);
     tree.deleteBranch(branchName, newHash);
+  }
+
+  @Test
+  public void filterCommitLogByAuthor() throws NessieNotFoundException, NessieConflictException {
+    Reference main = tree.getReferenceByName("main");
+    Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByAuthor", main.getHash());
+    Reference branch = tree.createReference(filterCommitLogByAuthor);
+    assertThat(branch).isEqualTo(filterCommitLogByAuthor);
+
+    int numAuthors = 5;
+    int commitsPerAuthor = 10;
+
+    String currentHash = main.getHash();
+    createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
+    LogResponse log = tree.getCommitLog(branch.getName(), null, null, null, null, null, null);
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
+
+    log = tree.getCommitLog(branch.getName(), null, null, "author-3", null, null, null);
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(commitsPerAuthor);
+    log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
+
+    log = tree.getCommitLog(branch.getName(), null, null, "author-3", "random-committer", null, null);
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).isEmpty();
+
+    log = tree.getCommitLog(branch.getName(), null, null, "author-3", "", null, null);
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(commitsPerAuthor);
+    log.getOperations().forEach(commit -> {
+      assertThat(commit.getAuthor()).isEqualTo("author-3");
+      assertThat(commit.getCommitter()).isEmpty();
+    });
+  }
+
+  @Test
+  public void filterCommitLogByTimeRange() throws NessieNotFoundException, NessieConflictException {
+    Reference main = tree.getReferenceByName("main");
+    Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByTimeRange", main.getHash());
+    Reference branch = tree.createReference(filterCommitLogByAuthor);
+    assertThat(branch).isEqualTo(filterCommitLogByAuthor);
+
+    int numAuthors = 5;
+    int commitsPerAuthor = 10;
+    int expectedTotalSize = numAuthors * commitsPerAuthor;
+
+    String currentHash = main.getHash();
+    createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
+    LogResponse log = tree.getCommitLog(branch.getName(), null, null, null, null, null, null);
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(expectedTotalSize);
+
+    Instant initialCommitTime = log.getOperations().get(log.getOperations().size() - 1).getCommitTime();
+    assertThat(initialCommitTime).isNotNull();
+    Instant lastCommitTime = log.getOperations().get(0).getCommitTime();
+    assertThat(lastCommitTime).isNotNull();
+    Instant fiveMinLater = initialCommitTime.plus(5, ChronoUnit.MINUTES);
+
+    log = tree.getCommitLog(branch.getName(), null, null, null, null, initialCommitTime.toString(), null);
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(expectedTotalSize - 1);
+    log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isAfter(initialCommitTime));
+
+    log = tree.getCommitLog(branch.getName(), null, null, null, null, null, fiveMinLater.toString());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(expectedTotalSize);
+    log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isBefore(fiveMinLater));
+
+    log = tree.getCommitLog(branch.getName(), null, null, null, null, initialCommitTime.toString(), lastCommitTime.toString());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(expectedTotalSize - 2);
+    log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isAfter(initialCommitTime).isBefore(lastCommitTime));
+
+    log = tree.getCommitLog(branch.getName(), null, null, null, null, fiveMinLater.toString(), null);
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).isEmpty();
+  }
+
+  @Test
+  public void filterCommitLogByInvalidTimeRange() throws NessieNotFoundException, NessieConflictException {
+    Reference main = tree.getReferenceByName("main");
+    Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByInvalidTimeRange", main.getHash());
+    Reference branch = tree.createReference(filterCommitLogByAuthor);
+    assertThat(branch).isEqualTo(filterCommitLogByAuthor);
+
+    assertThatThrownBy(() -> tree.getCommitLog(branch.getName(), null, null, null, null, "invalidAfter", null))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessage("Bad Request (HTTP/400): 'invalidAfter' could not be parsed to an Instant in ISO-8601 format");
+
+    assertThatThrownBy(() -> tree.getCommitLog(branch.getName(), null, null, null, null, null, "invalidBefore"))
+        .isInstanceOf(NessieBadRequestException.class)
+        .hasMessage("Bad Request (HTTP/400): 'invalidBefore' could not be parsed to an Instant in ISO-8601 format");
+  }
+
+  private void createCommits(Reference branch, int numAuthors, int commitsPerAuthor, String currentHash)
+      throws NessieNotFoundException, NessieConflictException {
+    for (int j = 0; j < numAuthors; j++) {
+      String author = "author-" + j;
+      for (int i = 0; i < commitsPerAuthor; i++) {
+        String nextHash = tree.commitMultipleOperations(branch.getName(), currentHash,
+            ImmutableOperations.builder()
+                .commitMeta(CommitMeta.builder().author(author)
+                    .message("committed-by-" + author)
+                    .build())
+                .addOperations(Put.of(ContentsKey.of("table"), IcebergTable.of("some-file-" + i)))
+                .build()).getHash();
+        assertThat(currentHash).isNotEqualTo(nextHash);
+        currentHash = nextHash;
+      }
+    }
   }
 
   @Test
@@ -246,7 +359,7 @@ class TestRest {
 
     String pageToken = null;
     for (int pos = 0; pos < commits; pos += pageSizeHint) {
-      LogResponse response = tree.getCommitLog(branchName, pageSizeHint, pageToken);
+      LogResponse response = tree.getCommitLog(branchName, pageSizeHint, pageToken, null, null, null, null);
       if (pos + pageSizeHint <= commits) {
         assertTrue(response.hasMore());
         assertNotNull(response.getToken());
@@ -367,7 +480,7 @@ class TestRest {
                 () -> tree.deleteBranch(invalidBranchName, validHash)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): getCommitLog.ref: " + REF_NAME_OR_HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.getCommitLog(invalidBranchName, null, null)).getMessage()),
+                () -> tree.getCommitLog(invalidBranchName, null, null, null, null, null, null)).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): getEntries.refName: " + REF_NAME_OR_HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.getEntries(invalidBranchName, null, null, Collections.emptyList())).getMessage()),
@@ -515,6 +628,7 @@ class TestRest {
                 + "`org.projectnessie.model.Tag`: known type ids = []\n")
     );
   }
+
 
   void unwrap(Executable exec) throws Throwable {
     try {
