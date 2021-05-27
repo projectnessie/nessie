@@ -31,22 +31,8 @@ def show_log(
 
     def generator() -> Generator[CommitMeta, Any, None]:
         for i in raw_log:
-            if committer and i.committer != committer:
-                continue
-            if after and _is_after(after, i.commitTime):
-                continue
-            if before and _is_before(before, i.commitTime):
-                continue
             if end and i.hash_ == end:
                 break
             yield i
 
     return generator()
-
-
-def _is_after(after: str, commit_time: datetime) -> bool:
-    return parse(after) < commit_time
-
-
-def _is_before(before: str, commit_time: datetime) -> bool:
-    return parse(before) < commit_time

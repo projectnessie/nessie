@@ -171,7 +171,8 @@ def list_tables(
 
 
 def list_logs(
-    base_url: str, ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None, ssl_verify: bool = True
+    base_url: str, ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None, ssl_verify: bool = True,
+    author: Optional[str] = None, committer: Optional[str] = None, after: Optional[str] = None, before: Optional[str] = None
 ) -> dict:
     """Fetch a list of all logs from a known starting reference.
 
@@ -180,6 +181,10 @@ def list_logs(
     :param max_result_hint: hint for the server, maximum number of results to return
     :param page_token: the token retrieved from a previous page returned for the same ref
     :param ssl_verify: ignore ssl errors if False
+    :param author: The author of a commit. This is the original committer
+    :param committer: The entity that performed the commit
+    :param after: Commits newer than the specified date in ISO-8601 format
+    :param before: Commits older than the specified date in ISO-8601 format
     :return: json dict of Nessie logs
     """
     params = {}
@@ -187,6 +192,14 @@ def list_logs(
         params["max"] = str(max_result_hint)
     if page_token:
         params["pageToken"] = page_token
+    if author:
+        params["author"] = author
+    if committer:
+        params["committer"] = committer
+    if after:
+        params["after"] = after
+    if before:
+        params["before"] = before
     return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), ssl_verify=ssl_verify, params=params))
 
 
