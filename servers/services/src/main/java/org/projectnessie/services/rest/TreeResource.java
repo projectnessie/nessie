@@ -162,20 +162,7 @@ public class TreeResource extends BaseResource implements TreeApi {
 
     try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef)
         .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
-      Stream<ImmutableCommitMeta> commits = s;
-      if (null != params.getAuthor()) {
-        commits = commits.filter(commit -> params.getAuthor().equals(commit.getAuthor()));
-      }
-      if (null != params.getCommitter()) {
-        commits = commits.filter(commit -> params.getCommitter().equals(commit.getCommitter()));
-      }
-      if (null != params.getAfter()) {
-        commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isAfter(params.getAfter()));
-      }
-      if (null != params.getBefore()) {
-        commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isBefore(params.getBefore()));
-      }
-      List<CommitMeta> items = commits.limit(max + 1).collect(Collectors.toList());
+      List<CommitMeta> items = filterCommitLog(s, params).limit(max + 1).collect(Collectors.toList());
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
@@ -188,6 +175,29 @@ public class TreeResource extends BaseResource implements TreeApi {
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("Unable to find the requested ref [%s].", params.getRef()), e);
     }
+  }
+
+  /**
+   * Applies different filters to the {@link Stream} of commits based on the settings in {@link CommitLogParams}.
+   *
+   * @param commits The commit log that different filters will be applied to
+   * @param params  The commit log filter parameters
+   * @return A potentially filtered {@link Stream} of commits based on {@link CommitLogParams}
+   */
+  private Stream<ImmutableCommitMeta> filterCommitLog(Stream<ImmutableCommitMeta> commits, CommitLogParams params) {
+    if (null != params.getAuthor()) {
+      commits = commits.filter(commit -> params.getAuthor().equals(commit.getAuthor()));
+    }
+    if (null != params.getCommitter()) {
+      commits = commits.filter(commit -> params.getCommitter().equals(commit.getCommitter()));
+    }
+    if (null != params.getAfter()) {
+      commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isAfter(params.getAfter()));
+    }
+    if (null != params.getBefore()) {
+      commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isBefore(params.getBefore()));
+    }
+    return commits;
   }
 
   @Override
