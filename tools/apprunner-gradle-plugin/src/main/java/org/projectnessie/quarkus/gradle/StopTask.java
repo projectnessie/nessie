@@ -46,13 +46,14 @@ public class StopTask extends DefaultTask {
       application = null;
 
       // Restore System properties
-      restoreSystemProps.forEach((k, v) -> {
-        if (v != null) {
-          System.setProperty(k, v);
-        } else {
-          System.getProperties().remove(k);
-        }
-      });
+      restoreSystemProps.forEach(
+          (k, v) -> {
+            if (v != null) {
+              System.setProperty(k, v);
+            } else {
+              System.getProperties().remove(k);
+            }
+          });
     }
   }
 
@@ -63,5 +64,4 @@ public class StopTask extends DefaultTask {
   public void setQuarkusApplication(AutoCloseable quarkusApplication) {
     application = quarkusApplication;
   }
-
 }
