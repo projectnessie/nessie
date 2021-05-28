@@ -15,16 +15,16 @@
  */
 package org.projectnessie.quarkus.maven;
 
-import io.quarkus.bootstrap.model.AppArtifactCoords;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Map;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
-import java.util.logging.LogManager;
-import org.apache.maven.artifact.Artifact;
+import java.util.stream.Collectors;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
@@ -33,8 +33,17 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.projectnessie.quarkus.runner.JavaVM;
+import org.projectnessie.quarkus.runner.ProcessHandler;
 
 /** Starting Quarkus application. */
 @Mojo(name = "start", requiresDependencyResolution = ResolutionScope.NONE, threadSafe = true)
@@ -60,9 +69,17 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
    */
   @Component private RepositorySystem repoSystem;
 
+  @Component private ToolchainManager toolchainManager;
+
   /** The current repository/network configuration of Maven. */
   @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
   private RepositorySystemSession repoSession;
+
+  /**
+   * The project's remote repositories to use for the resolution of plugins and their dependencies.
+   */
+  @Parameter(defaultValue = "${project.remotePluginRepositories}", readonly = true)
+  private List<RemoteRepository> remoteRepos;
 
   /** The plugin descriptor. */
   @Parameter(defaultValue = "${plugin}", readonly = true)
@@ -71,18 +88,22 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
   /**
    * The application artifact id.
    *
-   * <p>Needs to be present as a plugin dependency.
+   * <p><<<<<<< HEAD
+   *
+   * <p>Needs to be present as a plugin dependency. =======
+   *
+   * <p>Needs to be present as a plugin dependency, if {@link #executableJar} is not set.
+   *
+   * <p>Mutually exclusive with {@link #executableJar} >>>>>>> 31da54591 (Update Maven+Gradle
+   * plugins to launch the Nessie-Server via `java -jar`)
    *
    * <p>Supported format is groupId:artifactId[:type[:classifier]]:version
    */
-  @Parameter(property = "nessie.apprunner.appArtifactId", required = true)
+  @Parameter(property = "nessie.apprunner.appArtifactId")
   private String appArtifactId;
 
-  /** Application configuration properties. */
-  @Parameter private Properties applicationProperties;
-
   /** Environment variable configuration properties. */
-  @Parameter private Properties systemProperties;
+  @Parameter private Properties systemProperties = new Properties();
 
   /**
    * Properties to get from Quarkus running application.
@@ -90,10 +111,46 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
    * <p>The property key is the name of the build property to set, the value is the name of the
    * quarkus configuration key to get.
    */
-  @Parameter private Properties outputProperties;
+  @Parameter private Properties environment;
 
-  @Parameter(defaultValue = "true")
-  private boolean resetJavaUtilLogging;
+  @Parameter private List<String> arguments;
+
+  @Parameter private List<String> jvmArguments;
+
+  @Parameter(defaultValue = "11")
+  private int javaVersion;
+
+  /**
+   * The path to the executable jar to run.
+   *
+   * <p>If in doubt and not using the plugin inside the Nessie source tree, use {@link
+   * #appArtifactId}.
+   *
+   * <p>Mutually exclusive with {@link #appArtifactId}
+   */
+  @Parameter private String executableJar;
+
+  @Parameter(defaultValue = "quarkus.http.test-port")
+  private String httpListenPortProperty;
+
+  @Parameter(defaultValue = "quarkus.http.test-url")
+  private String httpListenUrlProperty;
+
+  @Parameter(defaultValue = "${project.builddir}/nessie-quarkus")
+  private String workingDirectory;
+
+  @Parameter private long timeToListenUrlMillis;
+
+  @Parameter private long timeToStopMillis;
+
+  static String noJavaVMMessage(int version) {
+    return String.format(
+        "Could not find a Java-VM for Java version %d. "
+            + "Either configure a type=jdk in Maven's toolchain with version=%d or "
+            + "set the Java-Home for a compatible JVM using the environment variable JDK%d_HOME or "
+            + "JAVA%d_HOME.",
+        version, version, version, version);
+  }
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -102,119 +159,155 @@ public class QuarkusAppStartMojo extends AbstractQuarkusAppMojo {
       return;
     }
 
-    if (systemProperties != null) {
-      systemProperties.forEach(System.getProperties()::put);
+    getLog().debug(String.format("Searching for Java %d ...", javaVersion));
+    String javaExecutable =
+        toolchainManager
+            .getToolchains(
+                getSession(),
+                "jdk",
+                Collections.singletonMap("version", Integer.toString(javaVersion)))
+            .stream()
+            .map(tc -> tc.findTool("java"))
+            .findFirst()
+            .orElseGet(
+                () -> {
+                  getLog()
+                      .debug(
+                          String.format(
+                              "... using JavaVM as Maven toolkit returned no toolchain "
+                                  + "for type==jdk and version==%d",
+                              javaVersion));
+                  JavaVM javaVM = JavaVM.findJavaVM(javaVersion);
+                  return javaVM != null ? javaVM.getJavaExecutable().toString() : null;
+                });
+    if (javaExecutable == null) {
+      throw new MojoExecutionException(noJavaVMMessage(javaVersion));
+    }
+    getLog().debug(String.format("Using javaExecutable %s", javaExecutable));
+
+    Path workDir = Paths.get(workingDirectory);
+    if (!Files.isDirectory(workDir)) {
+      try {
+        Files.createDirectories(workDir);
+      } catch (IOException e) {
+        throw new MojoExecutionException(
+            String.format("Failed to create working directory %s", workingDirectory), e);
+      }
     }
 
-    final AppArtifactCoords appCoords = AppArtifactCoords.fromString(appArtifactId);
-
-    // Check that the artifact is present as it might cause some classloader
-    // confusion if not
-    boolean appArtifactPresent =
-        pluginDescriptor.getArtifacts().stream()
-            .map(
-                artifact ->
-                    new AppArtifactCoords(
-                        artifact.getGroupId(),
-                        artifact.getArtifactId(),
-                        artifact.getClassifier(),
-                        artifact.getType(),
-                        artifact.getVersion()))
-            .filter(coords -> coords.equals(appCoords))
-            .findAny()
-            .isPresent();
-
-    if (!appArtifactPresent) {
-      throw new MojoExecutionException(
-          String.format("Artifact %s not found in plugin dependencies", appCoords));
-    }
-
-    getLog().info("Starting Quarkus application.");
-
-    final URL[] urls =
-        pluginDescriptor.getArtifacts().stream()
-            .map(QuarkusAppStartMojo::toURL)
-            .toArray(URL[]::new);
-
-    // Use MavenProject classloader as parent classloader as Maven classloader hierarchy is not
-    // linear
-    final URLClassLoader mirrorCL = new URLClassLoader(urls, MavenProject.class.getClassLoader());
-
-    String oldLogManager = System.getProperty("java.util.logging.manager");
-    if (resetJavaUtilLogging) {
-      // Quarkus uses the JBoss LogManager, have to set it
-      System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
-      LogManager.getLogManager().reset();
-    }
-
-    final AutoCloseable quarkusApp;
-    try {
-      Class<?> clazz = mirrorCL.loadClass(QuarkusApp.class.getName());
-      Method newApplicationMethod =
-          clazz.getMethod(
-              "newApplication",
-              MavenProject.class,
-              RepositorySystem.class,
-              RepositorySystemSession.class,
-              String.class,
-              Properties.class);
-      synchronized (START_LOCK) {
-        quarkusApp =
-            (AutoCloseable)
-                newApplicationMethod.invoke(
-                    null,
-                    getProject(),
-                    repoSystem,
-                    repoSession,
-                    appArtifactId,
-                    applicationProperties);
-        if (outputProperties != null) {
-          Properties projectProperties = getProject().getProperties();
-          for (Map.Entry<Object, Object> entry : outputProperties.entrySet()) {
-            String outputKey = entry.getKey().toString();
-            String quarkusKey = entry.getValue().toString();
-            String value = System.getProperty(quarkusKey);
-            if (value != null) {
-              projectProperties.setProperty(outputKey, value);
-            }
+    String execJar = executableJar;
+    if (execJar == null && appArtifactId == null) {
+      if (getProject().getGroupId().equals("org.projectnessie")) {
+        getLog().debug("Nessie source-tree build.");
+        // Special case handling for Nessie source-tree builds.
+        // Find the root-project (org.projectnessie:nessie) from the current project and resolve the
+        // 'quarkus-run.jar' from there.
+        // Unfortunately, it's not possible to declare a Maven project property to ease this/make it
+        // clearer, because project property
+        // evaluation, even for parent-poms, happens in the context of the currently executed
+        // project.
+        //
+        // To use this Maven plugin within the Nessie source tree do specify neither appArtifactId
+        // nor executableJar.
+        // Using this Maven plugin outside the Nessie source tree requires using either
+        // appArtifactId (preferred) or executableJar.
+        for (MavenProject p = getProject().getParent();
+            p.getGroupId().equals("org.projectnessie");
+            p = p.getParent()) {
+          if (p.getArtifactId().equals("nessie")) {
+            getLog().info("Using quarkus-run.jar from org.projectnessie source tree build");
+            execJar =
+                p.getBasedir()
+                    .toPath()
+                    .resolve(
+                        Paths.get(
+                            "servers",
+                            "quarkus-server",
+                            "target",
+                            "quarkus-app",
+                            "quarkus-run.jar"))
+                    .toString();
+            break;
           }
         }
       }
-    } catch (InvocationTargetException e) {
+      if (execJar == null) {
+        throw new MojoExecutionException(
+            "Either appArtifactId or executableJar config option must be specified, prefer appArtifactId");
+      }
+    }
+    if (execJar == null) {
+      Artifact artifact = new DefaultArtifact(appArtifactId);
+      ArtifactRequest artifactRequest = new ArtifactRequest(artifact, remoteRepos, null);
+      try {
+        ArtifactResult result = repoSystem.resolveArtifact(repoSession, artifactRequest);
+        execJar = result.getArtifact().getFile().toString();
+      } catch (ArtifactResolutionException e) {
+        throw new MojoExecutionException(
+            String.format("Failed to resolve artifact %s", appArtifactId), e);
+      }
+    } else if (appArtifactId != null) {
       throw new MojoExecutionException(
-          "Cannot create an isolated quarkus application", e.getCause());
-    } catch (ReflectiveOperationException e) {
-      throw new MojoExecutionException("Cannot create an isolated quarkus application", e);
+          "The options appArtifactId and executableJar are mutually exclusive");
     }
 
-    getLog().info("Quarkus application started.");
+    List<String> command = new ArrayList<>();
+    command.add(javaExecutable);
+    if (jvmArguments != null) {
+      command.addAll(jvmArguments);
+    }
+    if (systemProperties != null) {
+      systemProperties.forEach(
+          (k, v) -> command.add(String.format("-D%s=%s", k.toString(), v.toString())));
+    }
+    command.add("-Dquarkus.http.port=0");
+    command.add("-jar");
+    command.add(execJar);
+    if (arguments != null) {
+      command.addAll(arguments);
+    }
 
-    // Make sure classloader is closed too when the app is stopped
-    setApplicationHandle(
-        () -> {
-          try {
-            quarkusApp.close();
-          } finally {
-            mirrorCL.close();
+    getLog()
+        .info(
+            String.format(
+                "Starting process: %s, additional env: %s",
+                String.join(" ", command),
+                environment != null
+                    ? environment.entrySet().stream()
+                        .map(e -> String.format("%s=%s", e.getKey(), e.getValue()))
+                        .collect(Collectors.joining(", "))
+                    : "<none>"));
 
-            if (resetJavaUtilLogging) {
-              // Quarkus uses the JBoss LogManager, have to set it
-              if (oldLogManager == null) {
-                System.getProperties().remove("java.util.logging.manager");
-              } else {
-                System.setProperty("java.util.logging.manager", oldLogManager);
-              }
-              LogManager.getLogManager().reset();
-            }
-          }
-        });
-  }
+    ProcessBuilder processBuilder = new ProcessBuilder().command(command);
+    if (environment != null) {
+      environment.forEach((k, v) -> processBuilder.environment().put(k.toString(), v.toString()));
+    }
+    processBuilder.directory(workDir.toFile());
 
-  private static URL toURL(Artifact artifact) {
     try {
-      return artifact.getFile().toURI().toURL();
-    } catch (MalformedURLException e) {
-      throw new IllegalArgumentException(e);
+      ProcessHandler processHandler = new ProcessHandler();
+      if (timeToListenUrlMillis > 0L) {
+        processHandler.setTimeToListenUrlMillis(timeToListenUrlMillis);
+      }
+      if (timeToStopMillis > 0L) {
+        processHandler.setTimeStopMillis(timeToStopMillis);
+      }
+      processHandler.start(processBuilder);
+
+      setApplicationHandle(processHandler);
+
+      String listenUrl = processHandler.getListenUrl();
+
+      Properties projectProperties = getProject().getProperties();
+      projectProperties.setProperty(httpListenUrlProperty, listenUrl);
+      projectProperties.setProperty(
+          httpListenPortProperty, Integer.toString(URI.create(listenUrl).getPort()));
+
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new MojoExecutionException(String.format("Process-start interrupted: %s", command), e);
+    } catch (Exception e) {
+      throw new MojoExecutionException(String.format("Failed to start the process %s", command), e);
     }
   }
 }

@@ -15,10 +15,8 @@
  */
 package org.projectnessie.quarkus.gradle;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.collect.Streams;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,6 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,8 +41,7 @@ class TestQuarkusApp {
 
   Path buildFile;
 
-  String nessieVersion;
-  String quarkusVersion;
+  String nessieVersionForTest;
 
   List<String> prefix;
 
@@ -56,8 +54,9 @@ class TestQuarkusApp {
     Path testTargetDir = testProjectDir.resolve("src/test/java/org/projectnessie/quarkus/gradle");
     Files.createDirectories(testTargetDir);
     Files.copy(
-        Paths.get("src/test/resources/org/projectnessie/quarkus/gradle/TestTest.java"),
-        testTargetDir.resolve("TestTest.java"));
+        Paths.get(
+            "src/test/resources/org/projectnessie/quarkus/gradle/TestSimulatingTestUsingThePlugin.java"),
+        testTargetDir.resolve("TestSimulatingTestUsingThePlugin.java"));
 
     Files.write(
         testProjectDir.resolve("settings.gradle"),
@@ -71,17 +70,14 @@ class TestQuarkusApp {
             "include 'sub'"));
 
     // Versions injected from build.gradle
-    nessieVersion = System.getProperty("nessie-version");
-    quarkusVersion = System.getProperty("quarkus-version");
+    nessieVersionForTest = System.getProperty("nessie-version-for-test", "0.6.1");
     String junitVersion = System.getProperty("junit-version");
     String jacksonVersion = System.getProperty("jackson-version");
 
-    assertTrue(
-        nessieVersion != null
-            && quarkusVersion != null
-            && junitVersion != null
-            && jacksonVersion != null,
-        "System property required for this test is missing, run this test via Gradle or set the system properties manually");
+    assertThat(junitVersion != null && jacksonVersion != null)
+        .withFailMessage(
+            "System property required for this test is missing, run this test via Gradle or set the system properties manually")
+        .isTrue();
 
     prefix =
         Arrays.asList(
@@ -103,7 +99,7 @@ class TestQuarkusApp {
             "    testCompile 'org.junit.jupiter:junit-jupiter-api:" + junitVersion + "'",
             "    testCompile 'org.junit.jupiter:junit-jupiter-engine:" + junitVersion + "'",
             "    testCompile 'com.fasterxml.jackson.core:jackson-databind:" + jacksonVersion + "'",
-            "    testCompile 'org.projectnessie:nessie-client:" + nessieVersion + "'");
+            "    testCompile 'org.projectnessie:nessie-client:" + nessieVersionForTest + "'");
   }
 
   /**
@@ -115,7 +111,14 @@ class TestQuarkusApp {
     Files.write(
         buildFile, Streams.concat(prefix.stream(), Stream.of("}")).collect(Collectors.toList()));
 
-    failingBuild();
+    BuildResult result = createGradleRunner("test").buildAndFail();
+    assertThat(result.task(":test"))
+        .isNotNull()
+        .extracting(BuildTask::getOutcome)
+        .isEqualTo(TaskOutcome.FAILED);
+    assertThat(Arrays.asList(result.getOutput().split("\n")))
+        .contains(
+            "> Dependency org.projectnessie:nessie-quarkus:runner missing in configuration nessieQuarkusServer");
   }
 
   /**
@@ -126,69 +129,87 @@ class TestQuarkusApp {
   void tooManyAppConfigDeps() throws Exception {
     Files.write(
         buildFile,
-        Streams.concat(
+        Stream.concat(
                 prefix.stream(),
                 Stream.of(
                     "    nessieQuarkusServer 'org.projectnessie:nessie-quarkus:"
-                        + nessieVersion
+                        + nessieVersionForTest
+                        + ":runner'",
+                    "    nessieQuarkusServer 'org.projectnessie:nessie-model:"
+                        + nessieVersionForTest
                         + "'",
-                    "    nessieQuarkusServer(enforcedPlatform('io.quarkus:quarkus-bom:"
-                        + quarkusVersion
-                        + "'))",
                     "}"))
             .collect(Collectors.toList()));
 
-    failingBuild();
+    BuildResult result = createGradleRunner("test").buildAndFail();
+    assertThat(result.task(":test"))
+        .isNotNull()
+        .extracting(BuildTask::getOutcome)
+        .isEqualTo(TaskOutcome.FAILED);
+    assertThat(Arrays.asList(result.getOutput().split("\n")))
+        .contains(
+            "> Configuration nessieQuarkusServer must only contain the org.projectnessie:nessie-quarkus:runner dependency, "
+                + "but resolves to these artifacts: "
+                + "org.projectnessie:nessie-quarkus:"
+                + nessieVersionForTest
+                + ", "
+                + "org.projectnessie:nessie-model:"
+                + nessieVersionForTest);
   }
 
   /**
-   * Starting the Nessie-Server via the Nessie-Quarkus-Gradle-Plugin must work fine, if the
-   * quarkus-bom dependency is explicitly specified, although there are conflicting dependencies
-   * declared.
+   * Ensure that the plugin fails when both the config-dependency and the exec-jar are specified.
    */
   @Test
-  void conflictingDependenciesQuarkus() throws Exception {
+  void configAndExecJar() throws Exception {
     Files.write(
         buildFile,
-        Streams.concat(
+        Stream.concat(
                 prefix.stream(),
                 Stream.of(
-                    "    compile 'io.quarkus:quarkus-bom:1.11.0.Final'",
                     "    nessieQuarkusServer 'org.projectnessie:nessie-quarkus:"
-                        + nessieVersion
-                        + "'",
-                    "    nessieQuarkusRuntime(enforcedPlatform('io.quarkus:quarkus-bom:"
-                        + quarkusVersion
-                        + "'))",
+                        + nessieVersionForTest
+                        + ":runner'",
+                    "}",
+                    "nessieQuarkusApp {",
+                    "    executableJar.set(file('/foo/bar/jar'))",
                     "}"))
             .collect(Collectors.toList()));
 
-    workingBuild();
+    BuildResult result = createGradleRunner("test").buildAndFail();
+    assertThat(result.task(":test"))
+        .isNotNull()
+        .extracting(BuildTask::getOutcome)
+        .isEqualTo(TaskOutcome.FAILED);
+    assertThat(Arrays.asList(result.getOutput().split("\n")))
+        .contains(
+            "> Configuration nessieQuarkusServer contains a dependency and option 'executableJar' are mutually exclusive");
   }
 
-  /**
-   * Starting the Nessie-Server via the Nessie-Quarkus-Gradle-Plugin must work fine, if the
-   * quarkus-bom dependency is explicitly specified, although there are conflicting dependencies
-   * declared.
-   */
+  /** Ensure that the plugin fails when it doesn't find a matching Java. */
   @Test
-  void conflictingDependenciesQuarkusEnforced() throws Exception {
+  void unknownJdk() throws Exception {
     Files.write(
         buildFile,
-        Streams.concat(
+        Stream.concat(
                 prefix.stream(),
                 Stream.of(
-                    "    compile(enforcedPlatform('io.quarkus:quarkus-bom:1.11.0.Final'))",
                     "    nessieQuarkusServer 'org.projectnessie:nessie-quarkus:"
-                        + nessieVersion
-                        + "'",
-                    "    nessieQuarkusRuntime(enforcedPlatform('io.quarkus:quarkus-bom:"
-                        + quarkusVersion
-                        + "'))",
+                        + nessieVersionForTest
+                        + ":runner'",
+                    "}",
+                    "nessieQuarkusApp {",
+                    "    javaVersion.set(42)",
                     "}"))
             .collect(Collectors.toList()));
 
-    workingBuild();
+    BuildResult result = createGradleRunner("test").buildAndFail();
+    assertThat(result.task(":test"))
+        .isNotNull()
+        .extracting(BuildTask::getOutcome)
+        .isEqualTo(TaskOutcome.FAILED);
+    assertThat(Arrays.asList(result.getOutput().split("\n")))
+        .contains("> " + ProcessState.noJavaMessage(42));
   }
 
   /**
@@ -213,52 +234,44 @@ class TestQuarkusApp {
                     "}"))
             .collect(Collectors.toList()));
 
-    workingBuild();
+    BuildResult result = createGradleRunner("test").build();
+    assertThat(result.task(":test"))
+        .isNotNull()
+        .extracting(BuildTask::getOutcome)
+        .isEqualTo(TaskOutcome.SUCCESS);
+
+    assertThat(Arrays.asList(result.getOutput().split("\n")))
+        .anyMatch(l -> l.contains("Listening on: http://0.0.0.0:"))
+        .contains("Quarkus application stopped.");
+
+    // 2nd run must be up-to-date
+
+    result = createGradleRunner("test").build();
+    assertThat(result.task(":test"))
+        .isNotNull()
+        .extracting(BuildTask::getOutcome)
+        .isEqualTo(TaskOutcome.UP_TO_DATE);
+
+    // 3rd run after a 'clean' must use the cached result
+
+    result = createGradleRunner("clean").build();
+    assertThat(result.task(":clean"))
+        .isNotNull()
+        .extracting(BuildTask::getOutcome)
+        .isEqualTo(TaskOutcome.SUCCESS);
+
+    result = createGradleRunner("test").build();
+    assertThat(result.task(":test"))
+        .isNotNull()
+        .extracting(BuildTask::getOutcome)
+        .isEqualTo(TaskOutcome.FROM_CACHE);
   }
 
-  /**
-   * Starting the Nessie-Server via the Nessie-Quarkus-Gradle-Plugin does NOT WORK, if there is no
-   * enforced-platform with the quarkus-bom dependency.
-   */
-  @Test
-  void noConflictingDependencies() throws Exception {
-    Files.write(
-        buildFile,
-        Streams.concat(
-                prefix.stream(),
-                Stream.of(
-                    "    nessieQuarkusServer 'org.projectnessie:nessie-quarkus:"
-                        + nessieVersion
-                        + "'",
-                    "}"))
-            .collect(Collectors.toList()));
-
-    failingBuild();
-  }
-
-  @SuppressWarnings("ConstantConditions") // prevent IntelliJ NPE warning
-  private void workingBuild() {
-    BuildResult result =
-        GradleRunner.create()
-            .withPluginClasspath()
-            .withProjectDir(testProjectDir.toFile())
-            .withArguments("--build-cache", "--info", "test")
-            .forwardOutput()
-            .build();
-
-    assertEquals(TaskOutcome.SUCCESS, result.task(":test").getOutcome());
-  }
-
-  @SuppressWarnings("ConstantConditions") // prevent IntelliJ NPE warning
-  private void failingBuild() {
-    BuildResult result =
-        GradleRunner.create()
-            .withPluginClasspath()
-            .withProjectDir(testProjectDir.toFile())
-            .withArguments("--build-cache", "--info", "test")
-            .forwardOutput()
-            .buildAndFail();
-
-    assertEquals(TaskOutcome.FAILED, result.task(":test").getOutcome());
+  private GradleRunner createGradleRunner(String task) {
+    return GradleRunner.create()
+        .withPluginClasspath()
+        .withProjectDir(testProjectDir.toFile())
+        .withArguments("--build-cache", "--info", "--stacktrace", task)
+        .forwardOutput();
   }
 }
