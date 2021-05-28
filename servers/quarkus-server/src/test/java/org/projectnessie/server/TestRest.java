@@ -48,10 +48,9 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.projectnessie.api.params.CommitLogParams;
-import org.projectnessie.api.params.CommitLogParams.Builder;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.http.HttpClient;
@@ -201,16 +200,16 @@ class TestRest {
     entries = tree.getEntries(branchName, null, null, Collections.emptyList());
     assertThat(entries).isNotNull();
 
-    LogResponse log = tree.getCommitLog(new CommitLogParams.Builder().ref(tagName).build());
+    LogResponse log = tree.getCommitLog(CommitLogParams.builder().ref(tagName).build());
     assertThat(log).isNotNull();
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branchName).build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branchName).build());
     assertThat(log).isNotNull();
 
     // Need to have at least one op, otherwise all following operations (assignTag/Branch, merge, delete) will fail
     ImmutablePut op = ImmutablePut.builder().key(ContentsKey.of("some-key")).contents(IcebergTable.of("foo")).build();
     Operations ops = ImmutableOperations.builder().addOperations(op).commitMeta(CommitMeta.fromMessage("One dummy op")).build();
     tree.commitMultipleOperations(branchName, branchHash, ops);
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branchName).build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branchName).build());
     String newHash = log.getOperations().get(0).getHash();
 
     tree.assignTag(tagName, tagHash, Tag.of(tagName, newHash));
@@ -234,20 +233,20 @@ class TestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).build());
+    LogResponse log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).author("author-3").build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).author("author-3").build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).author("author-3").committer("random-committer").build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).author("author-3").committer("random-committer").build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).author("author-3").committer("").build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).author("author-3").committer("").build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations().forEach(commit -> {
@@ -269,7 +268,7 @@ class TestRest {
 
     String currentHash = main.getHash();
     createCommits(branch, numAuthors, commitsPerAuthor, currentHash);
-    LogResponse log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).build());
+    LogResponse log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
 
@@ -280,22 +279,22 @@ class TestRest {
     Instant fiveMinLater = initialCommitTime.plus(5, ChronoUnit.MINUTES);
 
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).after(initialCommitTime).build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).after(initialCommitTime).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 1);
     log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isAfter(initialCommitTime));
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).before(fiveMinLater).build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).before(fiveMinLater).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
     log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isBefore(fiveMinLater));
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).after(initialCommitTime).before(lastCommitTime).build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).after(initialCommitTime).before(lastCommitTime).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 2);
     log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isAfter(initialCommitTime).isBefore(lastCommitTime));
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).after(fiveMinLater).build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).after(fiveMinLater).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
   }
@@ -345,7 +344,7 @@ class TestRest {
 
     String pageToken = null;
     for (int pos = 0; pos < commits; pos += pageSizeHint) {
-      CommitLogParams commitLogParams = new Builder().ref(branchName).maxRecords(pageSizeHint).pageToken(pageToken).build();
+      CommitLogParams commitLogParams = CommitLogParams.builder().ref(branchName).maxRecords(pageSizeHint).pageToken(pageToken).build();
       System.out.println("commitLogParams = " + commitLogParams);
       LogResponse response = tree.getCommitLog(commitLogParams);
       if (pos + pageSizeHint <= commits) {
@@ -367,7 +366,7 @@ class TestRest {
       }
     }
 
-    List<CommitMeta> completeLog = StreamingUtil.getCommitLogStream(tree, new CommitLogParams.Builder()
+    List<CommitMeta> completeLog = StreamingUtil.getCommitLogStream(tree, CommitLogParams.builder()
         .ref(branchName)
         .maxRecords(pageSizeHint)
         .build())
@@ -471,7 +470,7 @@ class TestRest {
                 () -> tree.deleteBranch(invalidBranchName, validHash)).getMessage()),
         () ->  assertEquals("Bad Request (HTTP/400): getCommitLog.commitLogParams.ref: " + REF_NAME_OR_HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.getCommitLog(new CommitLogParams.Builder().ref(invalidBranchName).build())).getMessage()),
+                () -> tree.getCommitLog(CommitLogParams.builder().ref(invalidBranchName).build())).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): getEntries.refName: " + REF_NAME_OR_HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.getEntries(invalidBranchName, null, null, Collections.emptyList())).getMessage()),
