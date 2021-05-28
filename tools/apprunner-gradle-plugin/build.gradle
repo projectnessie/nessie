@@ -2,6 +2,7 @@ plugins {
   id 'java-gradle-plugin'
   id 'maven-publish'
   id 'com.gradle.plugin-publish' version '0.12.0'
+  id "com.diffplug.spotless" version "5.12.5"
 }
 
 def readVersion(expr) {
@@ -25,6 +26,13 @@ allprojects {
   repositories {
     mavenCentral()
     mavenLocal()
+  }
+}
+
+spotless {
+  java {
+    googleJavaFormat()
+    licenseHeaderFile(file("../../codestyle/copyright-header-java.txt"))
   }
 }
 
