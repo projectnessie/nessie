@@ -19,6 +19,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.projectnessie.quarkus.runner.ProcessHandler;
 
 /** Stop Quarkus application. */
 @Mojo(name = "stop", requiresDependencyResolution = ResolutionScope.NONE, threadSafe = true)
@@ -31,13 +32,14 @@ public class QuarkusAppStopMojo extends AbstractQuarkusAppMojo {
       return;
     }
 
-    final AutoCloseable application = getApplication();
+    ProcessHandler application = getApplication();
     if (application == null) {
       getLog().warn(String.format("No application found for execution id '%s'.", getExecutionId()));
+      return;
     }
 
     try {
-      application.close();
+      application.stop();
       getLog().info("Quarkus application stopped.");
     } catch (Exception e) {
       throw new MojoExecutionException("Error while stopping Quarkus application", e);
