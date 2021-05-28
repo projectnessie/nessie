@@ -17,6 +17,7 @@
 package org.projectnessie.api;
 
 
+import java.time.Instant;
 import java.util.StringJoiner;
 
 import javax.validation.constraints.NotNull;
@@ -57,18 +58,18 @@ public class CommitLogParams {
   @Parameter(description = "Only include commits newer than the specified date in ISO-8601 format. "
       + "No filtering will happen if this is set to null")
   @QueryParam("after")
-  private String after;
+  private Instant after;
 
   @Parameter(description = "Only include commits older than the specified date in ISO-8601 format. "
       + "No filtering will happen if this is set to null")
   @QueryParam("before")
-  private String before;
+  private Instant before;
 
   public CommitLogParams() {
   }
 
-  private CommitLogParams(String ref, Integer maxRecords, String pageToken, String author, String committer, String after,
-      String before) {
+  private CommitLogParams(String ref, Integer maxRecords, String pageToken, String author, String committer, Instant after,
+      Instant before) {
     this.ref = ref;
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
@@ -102,11 +103,11 @@ public class CommitLogParams {
     return committer;
   }
 
-  public String getAfter() {
+  public Instant getAfter() {
     return after;
   }
 
-  public String getBefore() {
+  public Instant getBefore() {
     return before;
   }
 
@@ -130,8 +131,8 @@ public class CommitLogParams {
     private String pageToken;
     private String author;
     private String committer;
-    private String after;
-    private String before;
+    private Instant after;
+    private Instant before;
 
     public Builder ref(String ref) {
       this.ref = ref;
@@ -158,12 +159,12 @@ public class CommitLogParams {
       return this;
     }
 
-    public Builder after(String after) {
+    public Builder after(Instant after) {
       this.after = after;
       return this;
     }
 
-    public Builder before(String before) {
+    public Builder before(Instant before) {
       this.before = before;
       return this;
     }
