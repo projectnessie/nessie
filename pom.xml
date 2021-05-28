@@ -143,6 +143,7 @@
     <maven.compiler.release>8</maven.compiler.release>
     <argLine />
     <quarkus.native.builder-image>quay.io/quarkus/ubi-quarkus-native-image:21.3-java11</quarkus.native.builder-image>
+    <test.log.level>INFO</test.log.level>
 
     <!-- Version properties -->
     <antlr.version>4.9.3</antlr.version>
@@ -167,6 +168,7 @@
     <iceberg.version>0.12.1</iceberg.version>
     <immutables.version>2.9.0</immutables.version>
     <jackson.version>2.13.1</jackson.version>
+    <jacoco.version>0.8.7</jacoco.version>
     <javax.version>4.0.1</javax.version>
     <javax.ws.rs.version>2.1.1</javax.ws.rs.version>
     <jersey.version>2.35</jersey.version>
@@ -189,6 +191,7 @@
     <scala2.13.version>2.13.8</scala2.13.version>
     <serverless.version>1.5</serverless.version>
     <slf4j.version>1.7.35</slf4j.version>
+    <soebes.itf.version>0.11.0</soebes.itf.version>
     <spark3.jackson.version>2.13.1</spark3.jackson.version>
     <spark3.version>3.1.2</spark3.version>
     <sqlite.version>1.0.392</sqlite.version>
@@ -423,6 +426,16 @@
         <groupId>org.openjdk.jmh</groupId>
         <artifactId>jmh-generator-annprocess</artifactId>
         <version>${jmh.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.soebes.itf.jupiter.extension</groupId>
+        <artifactId>itf-jupiter-extension</artifactId>
+        <version>${soebes.itf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.soebes.itf.jupiter.extension</groupId>
+        <artifactId>itf-assertj</artifactId>
+        <version>${soebes.itf.version}</version>
       </dependency>
       <dependency>
         <groupId>org.immutables</groupId>
@@ -692,6 +705,11 @@
           </configuration>
         </plugin>
         <plugin>
+          <groupId>com.soebes.itf.jupiter.extension</groupId>
+          <artifactId>itf-maven-plugin</artifactId>
+          <version>${soebes.itf.version}</version>
+        </plugin>
+        <plugin>
           <groupId>com.github.eirslett</groupId>
           <artifactId>frontend-maven-plugin</artifactId>
           <version>1.12.1</version>
@@ -742,7 +760,7 @@
         <plugin>
           <groupId>org.jacoco</groupId>
           <artifactId>jacoco-maven-plugin</artifactId>
-          <version>0.8.7</version>
+          <version>${jacoco.version}</version>
         </plugin>
         <plugin>
           <groupId>org.jboss.jandex</groupId>

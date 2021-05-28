@@ -46,33 +46,42 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>com.bazaarvoice.maven.plugins</groupId>
-        <artifactId>process-exec-maven-plugin</artifactId>
+        <groupId>org.projectnessie</groupId>
+        <artifactId>nessie-apprunner-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <configuration>
+          <skip>${skipITs}</skip>
+          <systemProperties>
+            <!-- Use INMEMORY version store for testing -->
+            <nessie.version.store.type>INMEMORY</nessie.version.store.type>
+          </systemProperties>
+          <applicationProperties>
+            <quarkus.http.test-port>0</quarkus.http.test-port>
+          </applicationProperties>
+          <outputProperties>
+            <quarkus.http.test-port>quarkus.http.test-port</quarkus.http.test-port>
+          </outputProperties>
+          <environment>
+            <HTTP_ACCESS_LOG_LEVEL>${test.log.level}</HTTP_ACCESS_LOG_LEVEL>
+          </environment>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.projectnessie</groupId>
+            <artifactId>nessie-quarkus</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <id>start</id>
             <phase>pre-integration-test</phase>
             <goals><goal>start</goal></goals>
-            <configuration>
-              <skip>${skipITs}</skip>
-              <name>nessie</name>
-              <waitAfterLaunch>1</waitAfterLaunch>
-              <workingDir>${project.basedir}</workingDir>
-              <arguments>
-                <argument>java</argument>
-                <argument>-Dnessie.version.store.type=INMEMORY</argument>
-                <argument>-Dquarkus.log.console.level=WARN</argument>
-                <argument>-jar</argument>
-                <argument>${project.basedir}/../../servers/quarkus-server/target/quarkus-app/quarkus-run.jar</argument>
-              </arguments>
-            </configuration>
           </execution>
           <execution>
-            <id>stop-all</id>
+            <id>stop</id>
             <phase>post-integration-test</phase>
-            <goals>
-              <goal>stop-all</goal>
-            </goals>
+            <goals><goal>stop</goal></goals>
           </execution>
         </executions>
       </plugin>

@@ -32,8 +32,10 @@ class TestSimulatingTestUsingThePlugin {
   void pingNessie() throws Exception {
     String port = System.getProperty("quarkus.http.test-port");
     assertNotNull(port);
+    String url = System.getProperty("quarkus.http.test-url");
+    assertNotNull(url);
 
-    String uri = String.format("http://localhost:%s/api/v1", port);
+    String uri = String.format("http://127.0.0.1:%s/api/v1", port);
 
     NessieClient client = NessieClient.builder().withUri(uri).build();
     // Just some simple REST request to verify that Nessie is started - no fancy interactions w/ Nessie
