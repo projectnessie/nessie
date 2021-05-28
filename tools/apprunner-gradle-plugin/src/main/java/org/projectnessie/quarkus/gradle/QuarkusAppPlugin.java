@@ -20,40 +20,26 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.file.RegularFile;
 import org.gradle.api.tasks.testing.Test;
 
 @SuppressWarnings("Convert2Lambda") // Gradle complains when using lambdas (build-cache won't wonk)
 public class QuarkusAppPlugin implements Plugin<Project> {
 
-  static final String START_TASK_NAME = "nessie-quarkus-start";
-  static final String STOP_TASK_NAME = "nessie-quarkus-stop";
   static final String EXTENSION_NAME = "nessieQuarkusApp";
 
   /**
    * The configuration that contains the Quarkus server application as the only dependency.
    */
   static final String APP_CONFIG_NAME = "nessieQuarkusServer";
-  /**
-   * The configuration that contains optional runtime dependencies, if required.
-   */
-  static final String RUNTIME_CONFIG_NAME = "nessieQuarkusRuntime";
-  /**
-   * INTERNAL configuration that extends {@link #APP_CONFIG_NAME} + {@link #RUNTIME_CONFIG_NAME}.
-   */
-  static final String LAUNCH_CONFIG_NAME = "nessieQuarkusLaunch";
 
   @Override
   public void apply(Project target) {
     QuarkusAppExtension extension = target.getExtensions().create(EXTENSION_NAME, QuarkusAppExtension.class, target);
 
     Configuration appConfig = target.getConfigurations().create(APP_CONFIG_NAME)
+        .setTransitive(false)
         .setDescription("References the Nessie-Quarkus server dependency, only a single dependency allowed.");
-    Configuration runtimeConfig = target.getConfigurations().create(RUNTIME_CONFIG_NAME)
-        .setDescription("Optional/additional runtime dependencies.");
-    Configuration launchConfig = target.getConfigurations().create(LAUNCH_CONFIG_NAME)
-        .setDescription(String.format("Extends %s and %s - plugin internal use only.", APP_CONFIG_NAME, RUNTIME_CONFIG_NAME))
-        .setVisible(false)
-        .extendsFrom(runtimeConfig, appConfig);
 
     // Cannot use the task name "test" here, because the "test" task might not have been registered yet.
     // This `withType(Test.class...)` construct will configure any current and future task of type `Test`.
@@ -61,28 +47,36 @@ public class QuarkusAppPlugin implements Plugin<Project> {
       @SuppressWarnings("UnstableApiUsage") // omit warning about `Property`+`MapProperty`
       @Override
       public void execute(Test test) {
-        test.dependsOn(START_TASK_NAME);
-        test.finalizedBy(STOP_TASK_NAME);
-
         // Add the StartTask's properties as "inputs" to the Test task, so the Test task is
         // executed, when those properties change.
-        test.getInputs().property("nessie.quarkus.props", extension.getPropsProperty());
-        test.getInputs().property("quarkus.native.builderImage", extension.getNativeBuilderImageProperty());
+        test.getInputs().properties(extension.getEnvironment().get());
+        test.getInputs().properties(extension.getSystemProperties().get());
+        test.getInputs().property("nessie.quarkus.arguments", extension.getArguments().get().toString());
+        test.getInputs().property("nessie.quarkus.jvmArguments", extension.getJvmArguments().get().toString());
+        RegularFile execJar = extension.getExecutableJar().getOrNull();
+        if (execJar != null) {
+          test.getInputs().property("nessie.quarkus.execJar", execJar);
+        }
+        test.getInputs().property("nessie.quarkus.javaVersion", extension.getJavaVersion().get());
 
-        test.getInputs().files(launchConfig);
+        test.getInputs().files(appConfig);
+
+        ProcessState processState = new ProcessState();
 
         // Start the Nessie-Quarkus-App only when the Test task actually runs
         test.doFirst(new Action<Task>() {
           @Override
           public void execute(Task ignore) {
-            StartTask startTask = (StartTask) target.getTasks().getByName(START_TASK_NAME);
-            startTask.quarkusStart(test);
+            processState.quarkusStart(test);
+          }
+        });
+        test.doLast(new Action<Task>() {
+          @Override
+          public void execute(Task task) {
+            processState.quarkusStop(test);
           }
         });
       }
     });
-
-    target.getTasks().register(START_TASK_NAME, StartTask.class);
-    target.getTasks().register(STOP_TASK_NAME, StopTask.class);
   }
 }

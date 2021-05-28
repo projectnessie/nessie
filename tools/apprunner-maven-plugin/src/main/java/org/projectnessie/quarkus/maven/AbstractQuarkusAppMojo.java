@@ -15,12 +15,11 @@
  */
 package org.projectnessie.quarkus.maven;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-
-import io.quarkus.bootstrap.model.AppArtifact;
-import io.quarkus.bootstrap.model.AppArtifactCoords;
+import org.projectnessie.quarkus.runner.ProcessHandler;
 
 /*
  * Base class to share configuration between mojo.
@@ -35,6 +34,12 @@ abstract class AbstractQuarkusAppMojo extends AbstractMojo {
   private MavenProject project;
 
   /**
+   * Maven session.
+   */
+  @Parameter(defaultValue = "${session}", readonly = true, required = true)
+  private MavenSession session;
+
+  /**
    * Whether execution should be skipped.
    */
   @Parameter(property = "nessie.apprunner.skip", required = false, defaultValue = "false")
@@ -45,7 +50,6 @@ abstract class AbstractQuarkusAppMojo extends AbstractMojo {
    */
   @Parameter(property = "nessie.apprunner.executionId", required = false, defaultValue = "default")
   private String executionId;
-
 
   public boolean isSkipped() {
     return skip;
@@ -59,14 +63,18 @@ abstract class AbstractQuarkusAppMojo extends AbstractMojo {
     return project;
   }
 
+  public MavenSession getSession() {
+    return session;
+  }
+
   private String getContextKey() {
     final String key = CONTEXT_KEY + '.' + getExecutionId();
     return key;
   }
 
-  protected AutoCloseable getApplication() {
+  protected ProcessHandler getApplication() {
     final String key = getContextKey();
-    return (AutoCloseable) project.getContextValue(key);
+    return (ProcessHandler) project.getContextValue(key);
   }
 
   protected void resetApplication() {
@@ -74,19 +82,12 @@ abstract class AbstractQuarkusAppMojo extends AbstractMojo {
     project.setContextValue(key, null);
   }
 
-  protected void setApplicationHandle(AutoCloseable application) {
+  protected void setApplicationHandle(ProcessHandler application) {
     final String key = getContextKey();
     final Object previous = project.getContextValue(key);
     if (previous != null) {
-      getLog().warn(String.format("Found a previous application for execution id %s.", getExecutionId()));
+      getLog().warn(String.format("Found a previous ProcessHandler for execution id %s.", getExecutionId()));
     }
     project.setContextValue(key, application);
-  }
-
-
-  static AppArtifact fromString(String artifactId) {
-    AppArtifactCoords coords = AppArtifactCoords.fromString(artifactId);
-    return new AppArtifact(coords.getGroupId(), coords.getArtifactId(), coords.getClassifier(),
-        coords.getType(), coords.getVersion());
   }
 }
