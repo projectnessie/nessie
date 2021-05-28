@@ -137,22 +137,20 @@
       <plugin>
         <groupId>org.projectnessie</groupId>
         <artifactId>nessie-apprunner-maven-plugin</artifactId>
-        <version>${client.nessie.version}</version>
+        <version>${project.version}</version>
         <configuration>
           <skip>${skipTests}</skip>
-          <appArtifactId>org.projectnessie:nessie-quarkus:${client.nessie.version}</appArtifactId>
-          <applicationProperties>
-            <quarkus.http.test-port>0</quarkus.http.test-port>
-          </applicationProperties>
-          <outputProperties>
-            <quarkus.http.test-port>quarkus.http.test-port</quarkus.http.test-port>
-          </outputProperties>
+          <appArtifactId>org.projectnessie:nessie-quarkus:jar:runner:${client.nessie.version}</appArtifactId>
+          <environment>
+            <HTTP_ACCESS_LOG_LEVEL>${test.log.level}</HTTP_ACCESS_LOG_LEVEL>
+          </environment>
         </configuration>
         <dependencies>
           <dependency>
             <groupId>org.projectnessie</groupId>
             <artifactId>nessie-quarkus</artifactId>
             <version>${client.nessie.version}</version>
+            <classifier>runner</classifier>
           </dependency>
         </dependencies>
         <executions>
