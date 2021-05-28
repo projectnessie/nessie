@@ -194,7 +194,7 @@ class NessieClient(object):
         page_token = filtering_args.get("pageToken", None)
 
         def fetch_logs(token: Optional[str] = page_token) -> LogResponse:
-            if page_token:
+            if token:
                 filtering_args["pageToken"] = token
 
             fetched_logs = list_logs(base_url=self._base_url, ssl_verify=self._ssl_verify, **filtering_args)
