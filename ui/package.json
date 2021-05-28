@@ -13,7 +13,7 @@
     "@testing-library/user-event": "^7.2.1",
     "@types/bootstrap": "^5.0.15",
     "@types/history": "^4.7.8",
-    "@types/http-proxy-middleware": "^0.19.3",
+    "@types/http-proxy-middleware": "^1.0.0",
     "@types/material-ui": "^0.21.8",
     "@types/ramda": "^0.27.40",
     "@types/react": "^17.0.8",
