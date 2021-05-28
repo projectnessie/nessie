@@ -17,7 +17,6 @@ package org.projectnessie.quarkus.gradle;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.gradle.api.Project;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
@@ -40,8 +39,13 @@ public class QuarkusAppExtension {
 
     systemProperties = project.getObjects().mapProperty(String.class, String.class);
 
-    // This is not doing anything with Docker or building a native image, just a quirk of Quarkus since 1.10.
-    nativeBuilderImage = project.getObjects().property(String.class).convention("quay.io/quarkus/ubi-quarkus-native-image:21.0.0-java11");
+    // This is not doing anything with Docker or building a native image, just a quirk of Quarkus
+    // since 1.10.
+    nativeBuilderImage =
+        project
+            .getObjects()
+            .property(String.class)
+            .convention("quay.io/quarkus/ubi-quarkus-native-image:21.0.0-java11");
   }
 
   public MapProperty<String, Object> getPropsProperty() {
