@@ -161,6 +161,7 @@
     <quarkus.version>1.13.6.Final</quarkus.version>
     <openapi.version>1.1.2</openapi.version>
     <jsr305.version>3.0.2</jsr305.version>
+    <soebes.itf.version>0.10.0</soebes.itf.version>
   </properties>
 
   <dependencyManagement>
@@ -423,6 +424,16 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>com.soebes.itf.jupiter.extension</groupId>
+        <artifactId>itf-jupiter-extension</artifactId>
+        <version>${soebes.itf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.soebes.itf.jupiter.extension</groupId>
+        <artifactId>itf-assertj</artifactId>
+        <version>${soebes.itf.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.immutables</groupId>
         <artifactId>value</artifactId>
         <version>${immutables.version}</version>
@@ -649,6 +660,11 @@
         </plugin>
 
         <!-- 3rd party plugins -->
+        <plugin>
+          <groupId>com.soebes.itf.jupiter.extension</groupId>
+          <artifactId>itf-maven-plugin</artifactId>
+          <version>${soebes.itf.version}</version>
+        </plugin>
         <plugin>
           <groupId>com.github.eirslett</groupId>
           <artifactId>frontend-maven-plugin</artifactId>
