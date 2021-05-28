@@ -51,6 +51,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.CommitLogParams.Builder;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.http.HttpClient;
@@ -318,6 +319,40 @@ class TestRest {
   }
 
   @Test
+  void commitLogPagingAndFilteringByAuthor() throws NessieNotFoundException, NessieConflictException {
+    String someHash = tree.getReferenceByName("main").getHash();
+    String branchName = "commitLogPagingAndFiltering";
+    Branch branch = Branch.of(branchName, someHash);
+    tree.createReference(branch);
+
+    int numAuthors = 3;
+    int commits = 45;
+    int pageSizeHint = 10;
+    int expectedTotalSize = numAuthors * commits;
+
+    createCommits(branch, numAuthors, commits, someHash);
+    LogResponse log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(expectedTotalSize);
+
+    String author = "author-1";
+    List<String> messagesOfAuthorOne = log.getOperations()
+        .stream()
+        .filter(c -> author.equals(c.getAuthor()))
+        .map(CommitMeta::getMessage)
+        .collect(Collectors.toList());
+    verifyPaging(branchName, commits, pageSizeHint, messagesOfAuthorOne, author);
+
+    List<String> allMessages = log.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList());
+    List<CommitMeta> completeLog = StreamingUtil.getCommitLogStream(tree, CommitLogParams.builder()
+        .ref(branchName)
+        .maxRecords(pageSizeHint)
+        .build())
+        .collect(Collectors.toList());
+    assertThat(completeLog.stream().map(CommitMeta::getMessage)).containsExactlyElementsOf(allMessages);
+  }
+
+  @Test
   void commitLogPaging() throws NessieNotFoundException, NessieConflictException {
     String someHash = tree.getReferenceByName("main").getHash();
     String branchName = "commitLogPaging";
@@ -342,29 +377,7 @@ class TestRest {
     }
     Collections.reverse(allMessages);
 
-    String pageToken = null;
-    for (int pos = 0; pos < commits; pos += pageSizeHint) {
-      CommitLogParams commitLogParams = CommitLogParams.builder().ref(branchName).maxRecords(pageSizeHint).pageToken(pageToken).build();
-      System.out.println("commitLogParams = " + commitLogParams);
-      LogResponse response = tree.getCommitLog(commitLogParams);
-      if (pos + pageSizeHint <= commits) {
-        assertTrue(response.hasMore());
-        assertNotNull(response.getToken());
-        assertEquals(
-            allMessages.subList(pos, pos + pageSizeHint),
-            response.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList())
-        );
-        pageToken = response.getToken();
-      } else {
-        assertFalse(response.hasMore());
-        assertNull(response.getToken());
-        assertEquals(
-            allMessages.subList(pos, allMessages.size()),
-            response.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList())
-        );
-        break;
-      }
-    }
+    verifyPaging(branchName, commits, pageSizeHint, allMessages, null);
 
     List<CommitMeta> completeLog = StreamingUtil.getCommitLogStream(tree, CommitLogParams.builder()
         .ref(branchName)
@@ -375,6 +388,36 @@ class TestRest {
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()),
         allMessages
     );
+  }
+
+  private void verifyPaging(String branchName, int commits, int pageSizeHint, List<String> commitMessages, String filterByAuthor)
+      throws NessieNotFoundException {
+    String pageToken = null;
+    for (int pos = 0; pos < commits; pos += pageSizeHint) {
+      Builder builder = CommitLogParams.builder().ref(branchName).maxRecords(pageSizeHint).pageToken(pageToken);
+      if (null != filterByAuthor) {
+        builder = builder.author(filterByAuthor);
+      }
+      CommitLogParams commitLogParams = builder.build();
+      LogResponse response = tree.getCommitLog(commitLogParams);
+      if (pos + pageSizeHint <= commits) {
+        assertTrue(response.hasMore());
+        assertNotNull(response.getToken());
+        assertEquals(
+            commitMessages.subList(pos, pos + pageSizeHint),
+            response.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList())
+        );
+        pageToken = response.getToken();
+      } else {
+        assertFalse(response.hasMore());
+        assertNull(response.getToken());
+        assertEquals(
+            commitMessages.subList(pos, commitMessages.size()),
+            response.getOperations().stream().map(CommitMeta::getMessage).collect(Collectors.toList())
+        );
+        break;
+      }
+    }
   }
 
   @Test
