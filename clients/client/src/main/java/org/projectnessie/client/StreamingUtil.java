@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 
 import javax.validation.constraints.NotNull;
 
-import org.projectnessie.api.CommitLogParams;
+import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;

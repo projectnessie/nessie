@@ -21,7 +21,7 @@ import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-import org.projectnessie.api.CommitLogParams;
+import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpRequest;

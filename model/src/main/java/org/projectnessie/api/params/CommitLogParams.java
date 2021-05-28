@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.projectnessie.api;
+package org.projectnessie.api.params;
 
 
 import java.time.Instant;
