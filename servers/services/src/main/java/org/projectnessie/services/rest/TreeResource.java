@@ -160,7 +160,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     int max = Math.min(params.getMaxRecords() != null ? params.getMaxRecords() : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
     Hash startRef = getHashOrThrow(params.getPageToken() != null ? params.getPageToken() : params.getRef());
 
-    try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef).limit(max + 1)
+    try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef)
         .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
       Stream<ImmutableCommitMeta> commits = s;
       if (null != params.getAuthor()) {
@@ -175,7 +175,7 @@ public class TreeResource extends BaseResource implements TreeApi {
       if (null != params.getBefore()) {
         commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isBefore(params.getBefore()));
       }
-      List<CommitMeta> items = commits.collect(Collectors.toList());
+      List<CommitMeta> items = commits.limit(max + 1).collect(Collectors.toList());
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
