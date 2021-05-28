@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -368,7 +367,10 @@ class TestRest {
       }
     }
 
-    List<CommitMeta> completeLog = StreamingUtil.getCommitLogStream(tree, new CommitLogParams.Builder().ref(branchName).maxRecords(pageSizeHint).build())
+    List<CommitMeta> completeLog = StreamingUtil.getCommitLogStream(tree, new CommitLogParams.Builder()
+        .ref(branchName)
+        .maxRecords(pageSizeHint)
+        .build())
         .collect(Collectors.toList());
     assertEquals(
         completeLog.stream().map(CommitMeta::getMessage).collect(Collectors.toList()),
