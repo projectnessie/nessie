@@ -111,6 +111,10 @@ public class CommitLogParams {
     return before;
   }
 
+  public static CommitLogParams.Builder builder() {
+    return new CommitLogParams.Builder();
+  }
+
   @Override
   public String toString() {
     return new StringJoiner(", ", CommitLogParams.class.getSimpleName() + "[", "]")
@@ -133,6 +137,9 @@ public class CommitLogParams {
     private String committer;
     private Instant after;
     private Instant before;
+
+    private Builder() {
+    }
 
     public Builder ref(String ref) {
       this.ref = ref;

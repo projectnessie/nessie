@@ -21,8 +21,8 @@ import java.util.stream.Stream;
 
 import javax.validation.constraints.NotNull;
 
-import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.EntriesResponse;
@@ -69,7 +69,7 @@ public final class StreamingUtil {
       throws NessieNotFoundException {
     return new ResultStreamPaginator<>(LogResponse::getOperations, (reference, pageSize, token) ->
         treeApi
-            .getCommitLog(new CommitLogParams.Builder().from(commitLogParams).ref(reference).maxRecords(pageSize).pageToken(token).build())
+            .getCommitLog(CommitLogParams.builder().from(commitLogParams).ref(reference).maxRecords(pageSize).pageToken(token).build())
     ).generateStream(commitLogParams.getRef(), OptionalInt.of(commitLogParams.getMaxRecords()));
   }
 }
