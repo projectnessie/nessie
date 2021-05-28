@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 
+import org.projectnessie.api.CommitLogParams;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
@@ -158,21 +159,20 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(String ref, Integer maxEntriesHint, String pageToken, @Nullable String author, @Nullable String committer,
-      @Nullable String after, @Nullable String before) throws NessieNotFoundException {
-    int max = Math.min(maxEntriesHint != null ? maxEntriesHint : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
-    Hash startRef = getHashOrThrow(pageToken != null ? pageToken : ref);
-    final Instant afterInstant = parseToInstant(after);
-    final Instant beforeInstant = parseToInstant(before);
+  public LogResponse getCommitLog(CommitLogParams params) throws NessieNotFoundException {
+    int max = Math.min(params.getMaxRecords() != null ? params.getMaxRecords() : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
+    Hash startRef = getHashOrThrow(params.getPageToken() != null ? params.getPageToken() : params.getRef());
+    final Instant afterInstant = parseToInstant(params.getAfter());
+    final Instant beforeInstant = parseToInstant(params.getBefore());
 
     try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef).limit(max + 1)
         .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
       Stream<ImmutableCommitMeta> commits = s;
-      if (null != author) {
-        commits = commits.filter(commit -> author.equals(commit.getAuthor()));
+      if (null != params.getAuthor()) {
+        commits = commits.filter(commit -> params.getAuthor().equals(commit.getAuthor()));
       }
-      if (null != committer) {
-        commits = commits.filter(commit -> committer.equals(commit.getCommitter()));
+      if (null != params.getCommitter()) {
+        commits = commits.filter(commit -> params.getCommitter().equals(commit.getCommitter()));
       }
       if (null != afterInstant) {
         commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isAfter(afterInstant));
@@ -191,7 +191,7 @@ public class TreeResource extends BaseResource implements TreeApi {
           .addAllOperations(items)
           .build();
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("Unable to find the requested ref [%s].", ref), e);
+      throw new NessieNotFoundException(String.format("Unable to find the requested ref [%s].", params.getRef()), e);
     }
   }
 
