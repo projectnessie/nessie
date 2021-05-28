@@ -162,8 +162,6 @@ public class TreeResource extends BaseResource implements TreeApi {
   public LogResponse getCommitLog(CommitLogParams params) throws NessieNotFoundException {
     int max = Math.min(params.getMaxRecords() != null ? params.getMaxRecords() : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
     Hash startRef = getHashOrThrow(params.getPageToken() != null ? params.getPageToken() : params.getRef());
-    final Instant afterInstant = parseToInstant(params.getAfter());
-    final Instant beforeInstant = parseToInstant(params.getBefore());
 
     try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef).limit(max + 1)
         .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
@@ -174,11 +172,11 @@ public class TreeResource extends BaseResource implements TreeApi {
       if (null != params.getCommitter()) {
         commits = commits.filter(commit -> params.getCommitter().equals(commit.getCommitter()));
       }
-      if (null != afterInstant) {
-        commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isAfter(afterInstant));
+      if (null != params.getAfter()) {
+        commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isAfter(params.getAfter()));
       }
-      if (null != beforeInstant) {
-        commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isBefore(beforeInstant));
+      if (null != params.getBefore()) {
+        commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isBefore(params.getBefore()));
       }
       List<CommitMeta> items = commits.collect(Collectors.toList());
       if (items.size() == max + 1) {
@@ -343,17 +341,5 @@ public class TreeResource extends BaseResource implements TreeApi {
     } else {
       throw new IllegalStateException("Unknown operation " + o);
     }
-  }
-
-  @Nullable
-  private Instant parseToInstant(String instant) {
-    try {
-      if (null != instant) {
-        return Instant.parse(instant);
-      }
-    } catch (DateTimeParseException e) {
-      throw new IllegalArgumentException(String.format("'%s' could not be parsed to an Instant in ISO-8601 format", instant), e);
-    }
-    return null;
   }
 }

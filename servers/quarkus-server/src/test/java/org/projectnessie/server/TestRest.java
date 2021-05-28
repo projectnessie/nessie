@@ -281,40 +281,24 @@ class TestRest {
     Instant fiveMinLater = initialCommitTime.plus(5, ChronoUnit.MINUTES);
 
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).after(initialCommitTime.toString()).build());
+    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).after(initialCommitTime).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 1);
     log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isAfter(initialCommitTime));
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).before(fiveMinLater.toString()).build());
+    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).before(fiveMinLater).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize);
     log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isBefore(fiveMinLater));
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).after(initialCommitTime.toString()).before(lastCommitTime.toString()).build());
+    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).after(initialCommitTime).before(lastCommitTime).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(expectedTotalSize - 2);
     log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isAfter(initialCommitTime).isBefore(lastCommitTime));
 
-    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).after(fiveMinLater.toString()).build());
+    log = tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).after(fiveMinLater).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
-  }
-
-  @Test
-  public void filterCommitLogByInvalidTimeRange() throws NessieNotFoundException, NessieConflictException {
-    Reference main = tree.getReferenceByName("main");
-    Branch filterCommitLogByAuthor = Branch.of("filterCommitLogByInvalidTimeRange", main.getHash());
-    Reference branch = tree.createReference(filterCommitLogByAuthor);
-    assertThat(branch).isEqualTo(filterCommitLogByAuthor);
-
-    assertThatThrownBy(() -> tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).after("invalidAfter").build()))
-        .isInstanceOf(NessieBadRequestException.class)
-        .hasMessage("Bad Request (HTTP/400): 'invalidAfter' could not be parsed to an Instant in ISO-8601 format");
-
-    assertThatThrownBy(() -> tree.getCommitLog(new CommitLogParams.Builder().ref(branch.getName()).before("invalidBefore").build()))
-        .isInstanceOf(NessieBadRequestException.class)
-        .hasMessage("Bad Request (HTTP/400): 'invalidBefore' could not be parsed to an Instant in ISO-8601 format");
   }
 
   private void createCommits(Reference branch, int numAuthors, int commitsPerAuthor, String currentHash)
