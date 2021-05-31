@@ -185,7 +185,6 @@ public class ProcessState {
     }
   }
 
-  //@VisibleForTesting
   static String noJavaMessage(int version) {
     return String.format("Could not find a Java-VM for Java version %d. "
             + "Set the Java-Home for a compatible JVM using the environment variable JDK%d_HOME or "

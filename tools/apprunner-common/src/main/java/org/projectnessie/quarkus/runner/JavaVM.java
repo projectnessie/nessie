@@ -41,7 +41,6 @@ public final class JavaVM {
   private static final AtomicReference<JavaVM> CURRENT_JVM = new AtomicReference<>();
   private final Path javaHome;
 
-  //@VisibleForTesting
   static String locateJavaHome(int majorVersion, Function<String, String> getenv,
       Function<String, String> getProperty, IntFunction<String> macosHelper) {
 
@@ -193,7 +192,6 @@ public final class JavaVM {
     return javaHome.resolve("bin").resolve(executableName(executable));
   }
 
-  //@VisibleForTesting
   static String executableName(String executable) {
     if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows")) {
       return executable + ".exe";

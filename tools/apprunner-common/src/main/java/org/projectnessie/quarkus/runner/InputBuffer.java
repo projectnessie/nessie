@@ -37,7 +37,6 @@ final class InputBuffer {
     this(new BufferedReader(new InputStreamReader(input, Charset.defaultCharset())), output);
   }
 
-  //@VisibleForTesting
   InputBuffer(Reader input, Consumer<String> output) {
     this.input = input;
     this.output = output;
@@ -64,9 +63,9 @@ final class InputBuffer {
         }
 
         any = true;
-        if (c == 13) {
+        if (c == 13) { // CR
           // ignore
-        } else if (c == 10) {
+        } else if (c == 10) { // LF
           output.accept(lineBuffer.toString());
           lineBuffer.setLength(0);
         } else {

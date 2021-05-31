@@ -62,6 +62,7 @@ public class ProcessHandler {
 
   private volatile ExecutorService watchdogExecutor;
   private volatile Future<?> watchdogFuture;
+  private volatile Thread shutdownHook;
 
   /**
    * The name for this process handler.
@@ -115,7 +116,6 @@ public class ProcessHandler {
    * @param process running process
    * @return {@code this}
    */
-  //@VisibleForTesting
   ProcessHandler started(Process process) {
     if (this.process != null) {
       throw new IllegalStateException("Process already started");
@@ -125,6 +125,9 @@ public class ProcessHandler {
 
     this.process = process;
     exitCode.set(RUNNING);
+
+    shutdownHook = new Thread(this::shutdownHandler);
+    Runtime.getRuntime().addShutdownHook(shutdownHook);
 
     watchdogExecutor = Executors.newSingleThreadExecutor();
     watchdogFuture = watchdogExecutor.submit(this::watchdog);
@@ -161,23 +164,33 @@ public class ProcessHandler {
     watchdogExitGrace();
   }
 
+  private void shutdownHandler() {
+    doStop();
+  }
+
   private void doStop() {
     if (stopped.compareAndSet(false, true)) {
-      listenUrlWaiter.cancel();
-      process.destroy();
       try {
-        if (!process.waitFor(timeStopMillis, TimeUnit.MILLISECONDS)) {
+        listenUrlWaiter.cancel();
+        process.destroy();
+        try {
+          if (!process.waitFor(timeStopMillis, TimeUnit.MILLISECONDS)) {
+            process.destroyForcibly();
+          }
+        } catch (InterruptedException e) {
           process.destroyForcibly();
+          Thread.currentThread().interrupt();
         }
-      } catch (InterruptedException e) {
-        process.destroyForcibly();
-        Thread.currentThread().interrupt();
+        watchdogExecutor.shutdown();
+      } finally {
+        if (Thread.currentThread() != shutdownHook) {
+          // Don't remove the shutdown-hook if we're running in the shutdown-hook
+          Runtime.getRuntime().removeShutdownHook(shutdownHook);
+        }
       }
-      watchdogExecutor.shutdown();
     }
   }
 
-  //@VisibleForTesting
   void watchdogExitGrace() {
     try {
       // Give the watchdog task/thread some time to finish its work

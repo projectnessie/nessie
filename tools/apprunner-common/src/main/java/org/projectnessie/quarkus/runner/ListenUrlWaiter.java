@@ -56,7 +56,6 @@ final class ListenUrlWaiter implements Consumer<String> {
     stdoutTarget.accept(line);
   }
 
-  //@VisibleForTesting
   String peekListenUrl() {
     try {
       return listenUrl.isDone() ? listenUrl.get() : null;
