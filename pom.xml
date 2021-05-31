@@ -1257,7 +1257,6 @@ limitations under the License.
               <configuration>
                 <format>HTML</format>
                 <skipProvidedScope>true</skipProvidedScope>
-                <skipRuntimeScope>true</skipRuntimeScope>
                 <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
                 <msbuildAnalyzerEnabled>false</msbuildAnalyzerEnabled>
               </configuration>
