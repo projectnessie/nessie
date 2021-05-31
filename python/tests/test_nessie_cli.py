@@ -100,17 +100,7 @@ def test_log() -> None:
     empty_hash = refs[0].hash_
     _run(
         runner,
-        [
-            "contents",
-            "--set",
-            "foo.bar",
-            "--ref",
-            "main",
-            "-m",
-            "test_message",
-            "-c",
-            empty_hash,
-        ],
+        ["contents", "--set", "foo.bar", "--ref", "main", "-m", "test_message", "-c", empty_hash, "--author", "nessie_user1"],
         input=ContentsSchema().dumps(IcebergTable("uuid", "/a/b/c")),
     )
     result = _run(runner, ["--json", "contents", "foo.bar"])
@@ -126,13 +116,41 @@ def test_log() -> None:
     result = _run(runner, ["--json", "contents", "--list"])
     entries = EntrySchema().loads(result.output, many=True)
     assert len(entries) == 1
-    _run(runner, ["--json", "contents", "--delete", "foo.bar", "--ref", "main", "-m", "delete_message", "-c", logs[0]["hash"]])
+    _run(
+        runner,
+        [
+            "--json",
+            "contents",
+            "--delete",
+            "foo.bar",
+            "--ref",
+            "main",
+            "-m",
+            "delete_message",
+            "-c",
+            logs[0]["hash"],
+            "--author",
+            "nessie_user2",
+        ],
+    )
     result = _run(runner, ["--json", "log"])
     logs = simplejson.loads(result.output)
     assert len(logs) == 2
     result = _run(runner, ["--json", "log", "{}..{}".format(logs[0]["hash"], logs[1]["hash"])])
     logs = simplejson.loads(result.output)
     assert len(logs) == 1
+    result = _run(runner, ["--json", "log"])
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 2
+    result = _run(runner, ["--json", "log", "--author", "nessie_user1"])
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 1
+    result = _run(runner, ["--json", "log", "--author", "nessie_user2"])
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 1
+    result = _run(runner, ["--json", "log", "--author", "nessie_user2", "--author", "nessie_user1"])
+    logs = simplejson.loads(result.output)
+    assert len(logs) == 2
 
 
 @pytest.mark.vcr

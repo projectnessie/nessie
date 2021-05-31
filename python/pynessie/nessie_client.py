@@ -142,9 +142,13 @@ class NessieClient(object):
         """
         return (ContentsSchema().load(get_table(self._base_url, ref, _format_key(i), self._ssl_verify)) for i in tables)
 
-    def commit(self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, *ops: Operation) -> Branch:
+    def commit(
+        self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, author: Optional[str] = None, *ops: Operation
+    ) -> Branch:
         """Modify a set of Nessie tables."""
         meta = CommitMeta(message=reason if reason else "")
+        if author:
+            meta.author = author
         ref_obj = commit(self._base_url, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
         return cast(Branch, ReferenceSchema().load(ref_obj))
 
