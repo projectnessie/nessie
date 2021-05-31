@@ -185,11 +185,11 @@ public class TreeResource extends BaseResource implements TreeApi {
    * @return A potentially filtered {@link Stream} of commits based on {@link CommitLogParams}
    */
   private Stream<ImmutableCommitMeta> filterCommitLog(Stream<ImmutableCommitMeta> commits, CommitLogParams params) {
-    if (null != params.getAuthor()) {
-      commits = commits.filter(commit -> params.getAuthor().equals(commit.getAuthor()));
+    if (null != params.getAuthors() && !params.getAuthors().isEmpty()) {
+      commits = commits.filter(commit -> params.getAuthors().contains(commit.getAuthor()));
     }
-    if (null != params.getCommitter()) {
-      commits = commits.filter(commit -> params.getCommitter().equals(commit.getCommitter()));
+    if (null != params.getCommitters() && !params.getCommitters().isEmpty()) {
+      commits = commits.filter(commit -> params.getCommitters().contains(commit.getCommitter()));
     }
     if (null != params.getAfter()) {
       commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isAfter(params.getAfter()));

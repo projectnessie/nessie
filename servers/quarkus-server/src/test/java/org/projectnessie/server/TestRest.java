@@ -238,20 +238,31 @@ class TestRest {
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(numAuthors * commitsPerAuthor);
 
-    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).author("author-3").build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).authors(ImmutableList.of("author-3")).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations().forEach(commit -> assertThat(commit.getAuthor()).isEqualTo("author-3"));
 
-    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).author("author-3").committer("random-committer").build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).authors(ImmutableList.of("author-3"))
+        .committers(ImmutableList.of("random-committer")).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).isEmpty();
 
-    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).author("author-3").committer("").build());
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).authors(ImmutableList.of("author-3"))
+        .committers(ImmutableList.of("")).build());
     assertThat(log).isNotNull();
     assertThat(log.getOperations()).hasSize(commitsPerAuthor);
     log.getOperations().forEach(commit -> {
       assertThat(commit.getAuthor()).isEqualTo("author-3");
+      assertThat(commit.getCommitter()).isEmpty();
+    });
+
+    List<String> authors = ImmutableList.of("author-1", "author-3", "author-4");
+    log = tree.getCommitLog(CommitLogParams.builder().ref(branch.getName()).authors(authors).committers(ImmutableList.of("")).build());
+    assertThat(log).isNotNull();
+    assertThat(log.getOperations()).hasSize(commitsPerAuthor * authors.size());
+    log.getOperations().forEach(commit -> {
+      assertThat(authors).contains(commit.getAuthor());
       assertThat(commit.getCommitter()).isEmpty();
     });
   }
@@ -396,7 +407,7 @@ class TestRest {
     for (int pos = 0; pos < commits; pos += pageSizeHint) {
       Builder builder = CommitLogParams.builder().ref(branchName).maxRecords(pageSizeHint).pageToken(pageToken);
       if (null != filterByAuthor) {
-        builder = builder.author(filterByAuthor);
+        builder = builder.authors(ImmutableList.of(filterByAuthor));
       }
       CommitLogParams commitLogParams = builder.build();
       LogResponse response = tree.getCommitLog(commitLogParams);

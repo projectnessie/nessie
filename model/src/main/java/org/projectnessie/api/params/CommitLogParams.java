@@ -18,6 +18,9 @@ package org.projectnessie.api.params;
 
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.StringJoiner;
 
 import javax.validation.constraints.NotNull;
@@ -45,42 +48,43 @@ public class CommitLogParams {
   @QueryParam("pageToken")
   private String pageToken;
 
-  @Parameter(description = "The author of a commit. This is the original committer. "
-      + "No filtering by author will happen if this is set to null")
-  @QueryParam("author")
-  private String author;
+  @Parameter(description = "List of authors to filter by. The author is the original committer. "
+      + "No filtering by author will happen if this is set to null/empty")
+  @QueryParam("authors")
+  private List<String> authors;
 
-  @Parameter(description = "The logged in user/account who performed the commit. "
-      + "No filtering by committer will happen if this is set to null")
-  @QueryParam("committer")
-  private String committer;
+  @Parameter(description = "List of committers to filter by. This is the logged in user/account who performed the commit. "
+      + "No filtering by committer will happen if this is set to null/empty")
+  @QueryParam("committers")
+  private List<String> committers;
 
   @Parameter(description = "Only include commits newer than the specified date in ISO-8601 format. "
-      + "No filtering will happen if this is set to null")
+      + "No filtering will happen if this is set to null", examples = {@ExampleObject(ref = "javaInstant")})
   @QueryParam("after")
   private Instant after;
 
   @Parameter(description = "Only include commits older than the specified date in ISO-8601 format. "
-      + "No filtering will happen if this is set to null")
+      + "No filtering will happen if this is set to null", examples = {@ExampleObject(ref = "javaInstant")})
   @QueryParam("before")
   private Instant before;
 
   public CommitLogParams() {
   }
 
-  private CommitLogParams(String ref, Integer maxRecords, String pageToken, String author, String committer, Instant after,
+  private CommitLogParams(String ref, Integer maxRecords, String pageToken, List<String> authors, List<String> committers, Instant after,
       Instant before) {
     this.ref = ref;
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
-    this.author = author;
-    this.committer = committer;
+    this.authors = authors;
+    this.committers = committers;
     this.after = after;
     this.before = before;
   }
 
   private CommitLogParams(Builder builder) {
-    this(builder.ref, builder.maxRecords, builder.pageToken, builder.author, builder.committer, builder.after, builder.before);
+    this(builder.ref, builder.maxRecords, builder.pageToken, new ArrayList<>(builder.authors),
+        new ArrayList<>(builder.committers), builder.after, builder.before);
   }
 
   public String getRef() {
@@ -95,12 +99,12 @@ public class CommitLogParams {
     return pageToken;
   }
 
-  public String getAuthor() {
-    return author;
+  public List<String> getAuthors() {
+    return authors;
   }
 
-  public String getCommitter() {
-    return committer;
+  public List<String> getCommitters() {
+    return committers;
   }
 
   public Instant getAfter() {
@@ -121,10 +125,10 @@ public class CommitLogParams {
         .add("ref='" + ref + "'")
         .add("maxRecords=" + maxRecords)
         .add("pageToken='" + pageToken + "'")
-        .add("author='" + author + "'")
-        .add("committer='" + committer + "'")
-        .add("after='" + after + "'")
-        .add("before='" + before + "'")
+        .add("authors=" + authors)
+        .add("committers=" + committers)
+        .add("after=" + after)
+        .add("before=" + before)
         .toString();
   }
 
@@ -133,8 +137,8 @@ public class CommitLogParams {
     private String ref;
     private Integer maxRecords;
     private String pageToken;
-    private String author;
-    private String committer;
+    private List<String> authors = Collections.emptyList();
+    private List<String> committers = Collections.emptyList();
     private Instant after;
     private Instant before;
 
@@ -156,13 +160,13 @@ public class CommitLogParams {
       return this;
     }
 
-    public Builder author(String author) {
-      this.author = author;
+    public Builder authors(List<String> authors) {
+      this.authors = authors;
       return this;
     }
 
-    public Builder committer(String committer) {
-      this.committer = committer;
+    public Builder committers(List<String> committers) {
+      this.committers = committers;
       return this;
     }
 
@@ -177,7 +181,7 @@ public class CommitLogParams {
     }
 
     public Builder from(CommitLogParams params) {
-      return ref(params.ref).maxRecords(params.maxRecords).pageToken(params.pageToken).author(params.author).committer(params.committer)
+      return ref(params.ref).maxRecords(params.maxRecords).pageToken(params.pageToken).authors(params.authors).committers(params.committers)
           .after(params.after).before(params.before);
     }
 

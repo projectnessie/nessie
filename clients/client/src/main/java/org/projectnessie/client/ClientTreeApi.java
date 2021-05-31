@@ -107,11 +107,16 @@ class ClientTreeApi implements TreeApi {
 
   @Override
   public LogResponse getCommitLog(CommitLogParams params) throws NessieNotFoundException {
-    return client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", params.getRef())
+    HttpRequest builder = client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", params.getRef());
+    if (null != params.getAuthors()) {
+      params.getAuthors().forEach(x -> builder.queryParam("authors", x));
+    }
+    if (null != params.getCommitters()) {
+      params.getCommitters().forEach(x -> builder.queryParam("committers", x));
+    }
+    return builder
         .queryParam("max", params.getMaxRecords() != null ? params.getMaxRecords().toString() : null)
         .queryParam("pageToken", params.getPageToken())
-        .queryParam("author", params.getAuthor())
-        .queryParam("committer", params.getCommitter())
         .queryParam("before", null != params.getBefore() ? params.getBefore().toString() : null)
         .queryParam("after", null != params.getAfter() ? params.getAfter().toString() : null)
         .get().readEntity(LogResponse.class);
