@@ -516,6 +516,26 @@ class TestRest {
     );
   }
 
+  @Test
+  void testMerge() throws NessieConflictException, NessieNotFoundException {
+    final String branch1 = "foofoo";
+    Reference r1 = tree.createReference(Branch.of(branch1, null));
+    final String branch2 = "barbar";
+    Reference r2 = tree.createReference(Branch.of(branch2, null));
+    ContentsKey a = ContentsKey.of("a");
+    IcebergTable ta = IcebergTable.of("path1");
+    IcebergTable tb = IcebergTable.of("path2");
+    Operations oa = ImmutableOperations.builder().addOperations(Put.of(a, ta)).commitMeta(CommitMeta.fromMessage("commit 1")).build();
+    Operations ob = ImmutableOperations.builder().addOperations(Put.of(a, tb)).commitMeta(CommitMeta.fromMessage("commit 2")).build();
+    Branch foo = tree.commitMultipleOperations(branch1, r1.getHash(), oa);
+    Branch bar = tree.commitMultipleOperations(branch2, r2.getHash(), ob);
+
+    assertThatThrownBy(() -> unwrap(() ->
+        tree.mergeRefIntoBranch(foo.getName(), foo.getHash(), ImmutableMerge.builder().fromHash(bar.getHash()).build())))
+      .isInstanceOf(NessieConflictException.class)
+      .hasMessageStartingWith("The branch [foofoo] does not have the expected hash");
+  }
+
   void unwrap(Executable exec) throws Throwable {
     try {
       exec.execute();
