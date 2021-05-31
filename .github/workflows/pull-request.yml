@@ -74,22 +74,25 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
     - name: Build with Maven
-      run: mvn -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
+      run: ./mvnw -B install javadoc:javadoc-no-fork --file pom.xml -Pcode-coverage,jdk8-tests -Dtest.log.level=WARN
       env:
         SPARK_LOCAL_IP: localhost
+    - name: Build with Gradle
+      run: ./gradlew --rerun-tasks --no-daemon --info build
+      working-directory: ./tools/apprunner-gradle-plugin
     - name: Capture test results
       uses: actions/upload-artifact@v2
+      if: failure()
       with:
         name: test-results
         path: |
           **/target/surefire-reports/*
           **/target/failsafe-reports/*
+          **/build/reports/*
+          **/build/test-results/*
     - uses: codecov/codecov-action@v1
       with:
         flags: java
-    - name: Build with Gradle
-      run: ./gradlew build
-      working-directory: ./tools/apprunner-gradle-plugin
   python:
     name: Python
     runs-on: ubuntu-latest
