@@ -219,8 +219,8 @@ public interface TreeApi {
           + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
           + "will return all commit log entries. "
           + "\n"
-          + "Additional filtering of the log is provided based on 'author' (the actual author of a commit) or "
-          + "'committer' (the logged in user/account that performed the commit) fields."
+          + "It is possible to filter the log using a list of 'authors' (the actual author of a commit) and/or"
+          + "'committers' (the logged in user/account that performed the commit) fields."
           + "Filtering the log by ISO-8601 dates is supported via the 'after' and 'before' fields.")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Returned commits.",

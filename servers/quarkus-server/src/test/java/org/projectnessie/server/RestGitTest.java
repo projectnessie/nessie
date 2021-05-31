@@ -219,7 +219,7 @@ public class RestGitTest {
 
     String author = "author-1";
     log = rest()
-        .queryParam("author", author)
+        .queryParam("authors", author)
         .get(String.format("trees/tree/%s/log", branchName)).then().statusCode(200).extract()
         .as(LogResponse.class);
     assertThat(log.getOperations()).hasSize(1);
