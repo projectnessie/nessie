@@ -316,8 +316,8 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
 
 
 @cli.command("merge")
-@click.option("-b", "--branch", "from_branch", help="branch to merge onto. If not supplied the default branch from config is used")
-@click.argument("onto_branch", nargs=1, required=False)
+@click.option("-b", "--branch", "onto_branch", help="branch to merge onto. If not supplied the default branch from config is used")
+@click.argument("from_branch", nargs=1, required=False)
 @click.option(
     "-f",
     "--force",
@@ -335,7 +335,7 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
 )
 @pass_client
 @error_handler
-def merge(ctx: ContextObject, from_branch: str, force: bool, condition: str, onto_branch: str) -> None:
+def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, from_branch: str) -> None:
     """Merge BRANCH into current branch. BRANCH can be a hash or branch."""
     if not force and not condition:
         raise UsageError(
