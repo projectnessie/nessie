@@ -170,15 +170,16 @@ def list_tables(
     return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), ssl_verify=ssl_verify, params=params))
 
 
-def list_logs(base_url: str, ssl_verify: bool = True, **filtering_args: str) -> dict:
+def list_logs(base_url: str, ref: str, ssl_verify: bool = True, **filtering_args: str) -> dict:
     """Fetch a list of all logs from a known starting reference.
 
     :param base_url: base Nessie url
+    :param ref: starting reference
     :param ssl_verify: ignore ssl errors if False
     :param filtering_args: All of the args used to filter the log
     :return: json dict of Nessie logs
     """
-    return cast(dict, _get(base_url + "/trees/tree/{}/log".format(filtering_args.pop("ref")), ssl_verify=ssl_verify, params=filtering_args))
+    return cast(dict, _get(base_url + "/trees/tree/{}/log".format(ref), ssl_verify=ssl_verify, params=filtering_args))
 
 
 def get_table(base_url: str, ref: str, table: str, ssl_verify: bool = True) -> dict:
