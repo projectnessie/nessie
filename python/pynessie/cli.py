@@ -213,12 +213,10 @@ def log(ctx: ContextObject, number: int, since: str, until: str, author: str, re
         filtering_args["after"] = since
     if until:
         filtering_args["before"] = until
-    if start:
-        filtering_args["ref"] = start
     if end:
         filtering_args["end"] = end
 
-    log_result = show_log(nessie=ctx.nessie, limits=paths, **filtering_args)
+    log_result = show_log(nessie=ctx.nessie, start_ref=start, limits=paths, **filtering_args)
     if ctx.json:
         click.echo(CommitMetaSchema().dumps(log_result, many=True))
     else:

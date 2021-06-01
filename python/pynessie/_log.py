@@ -11,14 +11,16 @@ from pynessie import NessieClient
 from pynessie.model import CommitMeta
 
 
-def show_log(nessie: NessieClient, limits: Tuple[click.Path] = None, **filtering_args: str) -> Generator[CommitMeta, Any, None]:
+def show_log(
+    nessie: NessieClient, start_ref: str, limits: Tuple[click.Path] = None, **filtering_args: str
+) -> Generator[CommitMeta, Any, None]:
     """Fetch and filter commit log.
 
     Note:
         limiting by path is not yet supported.
     """
     end = filtering_args.pop("end", None)
-    raw_log = nessie.get_log(**filtering_args)
+    raw_log = nessie.get_log(start_ref=start_ref, **filtering_args)
     committer = filtering_args.get("author", None)
     after = filtering_args.get("after", None)
     before = filtering_args.get("before", None)

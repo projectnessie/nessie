@@ -182,7 +182,7 @@ class NessieClient(object):
         transplant_json = TransplantSchema().dump(Transplant(list(hashes)))
         cherry_pick(self._base_url, branch, transplant_json, old_hash, self._ssl_verify)
 
-    def get_log(self: "NessieClient", **filtering_args: str) -> Generator[CommitMeta, Any, None]:
+    def get_log(self: "NessieClient", start_ref: str, **filtering_args: str) -> Generator[CommitMeta, Any, None]:
         """Fetch all logs starting at start_ref.
 
         start_ref can be any ref.
@@ -197,7 +197,7 @@ class NessieClient(object):
             if token:
                 filtering_args["pageToken"] = token
 
-            fetched_logs = list_logs(base_url=self._base_url, ssl_verify=self._ssl_verify, **filtering_args)
+            fetched_logs = list_logs(base_url=self._base_url, ref=start_ref, ssl_verify=self._ssl_verify, **filtering_args)
             log_schema = LogResponseSchema().load(fetched_logs)
             return log_schema
 
