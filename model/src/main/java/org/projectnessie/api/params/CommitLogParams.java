@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringJoiner;
 
 import javax.validation.constraints.NotNull;
@@ -185,7 +186,12 @@ public class CommitLogParams {
           .after(params.after).before(params.before);
     }
 
+    private void validate() {
+      Objects.requireNonNull(ref, "ref must be set");
+    }
+
     public CommitLogParams build() {
+      validate();
       return new CommitLogParams(this);
     }
   }
