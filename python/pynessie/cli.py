@@ -316,8 +316,8 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
 
 
 @cli.command("merge")
-@click.option("-b", "--branch", help="branch to merge onto. If not supplied the default branch from config is used")
-@click.argument("merge_branch", nargs=1, required=False)
+@click.option("-b", "--branch", "onto_branch", help="branch to merge onto. If not supplied the default branch from config is used")
+@click.argument("from_branch", nargs=1, required=False)
 @click.option(
     "-f",
     "--force",
@@ -335,14 +335,14 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
 )
 @pass_client
 @error_handler
-def merge(ctx: ContextObject, branch: str, force: bool, condition: str, merge_branch: str) -> None:
-    """Merge BRANCH into current branch. BRANCH can be a hash or branch."""
+def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, from_branch: str) -> None:
+    """Merge FROM_BRANCH into current branch. FROM_BRANCH can be a hash or branch."""
     if not force and not condition:
         raise UsageError(
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.merge(branch if branch else ctx.nessie.get_default_branch(), merge_branch, condition)
+    ctx.nessie.merge(from_branch, onto_branch if onto_branch else ctx.nessie.get_default_branch(), condition)
     click.echo()
 
 

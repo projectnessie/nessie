@@ -1,8 +1,8 @@
 .. code-block:: bash
 
-	Usage: cli merge [OPTIONS] [MERGE_BRANCH]
+	Usage: cli merge [OPTIONS] [FROM_BRANCH]
 
-	  Merge BRANCH into current branch. BRANCH can be a hash or branch.
+	  Merge FROM_BRANCH into current branch. FROM_BRANCH can be a hash or branch.
 
 	Options:
 	  -b, --branch TEXT     branch to merge onto. If not supplied the default branch
