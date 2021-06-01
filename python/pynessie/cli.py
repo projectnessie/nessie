@@ -336,13 +336,13 @@ def tag(ctx: ContextObject, list: bool, force: bool, delete: bool, tag_name: str
 @pass_client
 @error_handler
 def merge(ctx: ContextObject, onto_branch: str, force: bool, condition: str, from_branch: str) -> None:
-    """Merge BRANCH into current branch. BRANCH can be a hash or branch."""
+    """Merge FROM_BRANCH into current branch. FROM_BRANCH can be a hash or branch."""
     if not force and not condition:
         raise UsageError(
             """Either condition or force must be set. Condition should be set to a valid hash for concurrency
             control or force to ignore current state of Nessie Store."""
         )
-    ctx.nessie.merge(from_branch if from_branch else ctx.nessie.get_default_branch(), onto_branch, condition)
+    ctx.nessie.merge(from_branch, onto_branch if onto_branch else ctx.nessie.get_default_branch(), condition)
     click.echo()
 
 
