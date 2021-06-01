@@ -164,7 +164,7 @@ class NessieClient(object):
         tag_json = ReferenceSchema().dumps(Tag(tag, self.get_reference(to_ref).hash_))
         assign_tag(self._base_url, tag, tag_json, old_hash, self._ssl_verify)
 
-    def merge(self: "NessieClient", onto_branch: str, from_branch: str, old_hash: Optional[str] = None) -> None:
+    def merge(self: "NessieClient", from_branch: str, onto_branch: str, old_hash: Optional[str] = None) -> None:
         """Merge a branch into another branch."""
         if not old_hash:
             old_hash = self.get_reference(onto_branch).hash_
