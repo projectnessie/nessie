@@ -52,6 +52,7 @@ import org.projectnessie.api.ContentsApi;
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.api.params.CommitLogParams.Builder;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.NessieClient;
 import org.projectnessie.client.StreamingUtil;
 import org.projectnessie.client.http.HttpClient;
@@ -63,6 +64,7 @@ import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.Contents;
+import org.projectnessie.model.Contents.Type;
 import org.projectnessie.model.ContentsKey;
 import org.projectnessie.model.EntriesResponse;
 import org.projectnessie.model.Hash;
@@ -196,9 +198,9 @@ class TestRest {
     assertThat(tree.getReferenceByName(tagName)).isEqualTo(tagRef);
     assertThat(tree.getReferenceByName(branchName)).isEqualTo(branchRef);
 
-    EntriesResponse entries = tree.getEntries(tagName, null, null, Collections.emptyList());
+    EntriesResponse entries = tree.getEntries(tagName, EntriesParams.empty());
     assertThat(entries).isNotNull();
-    entries = tree.getEntries(branchName, null, null, Collections.emptyList());
+    entries = tree.getEntries(branchName, EntriesParams.empty());
     assertThat(entries).isNotNull();
 
     LogResponse log = tree.getCommitLog(tagName, CommitLogParams.empty());
@@ -447,7 +449,7 @@ class TestRest {
   }
 
   @Test
-  void filters() throws NessieNotFoundException, NessieConflictException {
+  void filterEntriesByType() throws NessieNotFoundException, NessieConflictException {
     final String branch = "filterTypes";
     Reference r = tree.createReference(Branch.of(branch, null));
     ContentsKey a = ContentsKey.of("a");
@@ -457,20 +459,65 @@ class TestRest {
         .dialect(SqlView.Dialect.DREMIO).build();
     contents.setContents(a, branch, r.getHash(), "commit 1", ta);
     contents.setContents(b, branch, r.getHash(), "commit 2", tb);
-    List<EntriesResponse.Entry> entries = tree.getEntries(branch, null, null, Collections.emptyList()).getEntries();
+    List<EntriesResponse.Entry> entries = tree.getEntries(branch, EntriesParams.empty()).getEntries();
     List<EntriesResponse.Entry> expected = Arrays.asList(
         EntriesResponse.Entry.builder().name(a).type(Contents.Type.ICEBERG_TABLE).build(),
         EntriesResponse.Entry.builder().name(b).type(Contents.Type.VIEW).build());
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
-    entries = tree.getEntries(branch, null, null, ImmutableList.of(Contents.Type.ICEBERG_TABLE.name())).getEntries();
+
+    entries = tree.getEntries(branch, EntriesParams.builder()
+        .types(ImmutableList.of(Contents.Type.ICEBERG_TABLE.name()))
+        .build())
+        .getEntries();
     assertEquals(Collections.singletonList(expected.get(0)), entries);
 
-    entries = tree.getEntries(branch, null, null, ImmutableList.of(Contents.Type.VIEW.name())).getEntries();
+    entries = tree.getEntries(branch, EntriesParams.builder().types(ImmutableList.of(Type.VIEW.name())).build()).getEntries();
     assertEquals(Collections.singletonList(expected.get(1)), entries);
 
-    entries = tree.getEntries(branch, null, null, ImmutableList.of(Contents.Type.VIEW.name(),
-        Contents.Type.ICEBERG_TABLE.name())).getEntries();
+    entries = tree.getEntries(branch, EntriesParams.builder()
+        .types(ImmutableList.of(Contents.Type.VIEW.name(), Contents.Type.ICEBERG_TABLE.name()))
+        .build())
+        .getEntries();
     assertThat(entries).containsExactlyInAnyOrderElementsOf(expected);
+
+    tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
+  }
+
+  @Test
+  public void filterEntriesByNamespace() throws NessieConflictException, NessieNotFoundException {
+    final String branch = "filterEntriesByNamespace";
+    Reference r = tree.createReference(Branch.of(branch, null));
+    ContentsKey first = ContentsKey.of("a", "b", "c", "firstTable");
+    ContentsKey second = ContentsKey.of("a", "b", "c", "secondTable");
+    ContentsKey third = ContentsKey.of("a", "thirdTable");
+    ContentsKey fourth = ContentsKey.of("a", "fourthTable");
+    contents.setContents(first, branch, r.getHash(), "commit 1", IcebergTable.of("path1"));
+    contents.setContents(second, branch, r.getHash(), "commit 2", IcebergTable.of("path2"));
+    contents.setContents(third, branch, r.getHash(), "commit 3", IcebergTable.of("path3"));
+    contents.setContents(fourth, branch, r.getHash(), "commit 4", IcebergTable.of("path4"));
+
+    List<EntriesResponse.Entry> entries = tree.getEntries(branch, EntriesParams.empty()).getEntries();
+    assertThat(entries).isNotNull().hasSize(4);
+
+    entries = tree.getEntries(branch, EntriesParams.builder().namespace("").build()).getEntries();
+    assertThat(entries).isNotNull().hasSize(4);
+
+    entries = tree.getEntries(branch, EntriesParams.builder().namespace(null).build()).getEntries();
+    assertThat(entries).isNotNull().hasSize(4);
+
+    entries = tree.getEntries(branch, EntriesParams.builder().namespace("a.b").build()).getEntries();
+    assertThat(entries).hasSize(2);
+    entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a.b"));
+
+    entries = tree.getEntries(branch, EntriesParams.builder().namespace("a").build()).getEntries();
+    assertThat(entries).hasSize(4);
+    entries.forEach(e -> assertThat(e.getName().getNamespace().name()).startsWith("a"));
+
+    entries = tree.getEntries(branch, EntriesParams.builder().namespace("a.b.c.firstTable").build()).getEntries();
+    assertThat(entries).isEmpty();
+
+    entries = tree.getEntries(branch, EntriesParams.builder().namespace("a.fourthTable").build()).getEntries();
+    assertThat(entries).isEmpty();
 
     tree.deleteBranch(branch, tree.getReferenceByName(branch).getHash());
   }
@@ -525,7 +572,7 @@ class TestRest {
                 () -> tree.getCommitLog(invalidBranchName, CommitLogParams.empty())).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): getEntries.refName: " + REF_NAME_OR_HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
-                () -> tree.getEntries(invalidBranchName, null, null, Collections.emptyList())).getMessage()),
+                () -> tree.getEntries(invalidBranchName, EntriesParams.empty())).getMessage()),
         () -> assertEquals("Bad Request (HTTP/400): getReferenceByName.refName: " + REF_NAME_OR_HASH_MESSAGE,
             assertThrows(NessieBadRequestException.class,
                 () -> tree.getReferenceByName(invalidBranchName)).getMessage()),

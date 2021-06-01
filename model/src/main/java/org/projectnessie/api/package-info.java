@@ -40,6 +40,7 @@
         + "}"),
       @ExampleObject(name = "ref", value = "main"),
       @ExampleObject(name = "javaInstant", value = "2021-05-31T08:23:15Z"),
+      @ExampleObject(name = "namespace", value = "a.b.c"),
       @ExampleObject(name = "hash", value = "abcDEF4242424242424242424242BEEF00DEAD42112233445566778899001122"),
       @ExampleObject(name = "commitMessage", value = "testCommitMessage"),
       @ExampleObject(name = "multiGetResponse", value = "{\n"

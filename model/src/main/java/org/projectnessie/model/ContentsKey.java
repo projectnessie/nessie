@@ -41,13 +41,20 @@ public abstract class ContentsKey {
 
   public abstract List<String> getElements();
 
+  /**
+   * Returns the namespace that is always consisting of the first <b>N-1</b> elements from {@link ContentsKey#getElements()}.
+   *
+   * @return A {@link Namespace} instance that is always consisting of the first <b>N-1</b> elements from {@link ContentsKey#getElements()}.
+   */
+  public abstract Namespace getNamespace();
+
   public static ContentsKey of(String... elements) {
-    return ImmutableContentsKey.builder().elements(Arrays.asList(elements)).build();
+    return ImmutableContentsKey.builder().elements(Arrays.asList(elements)).namespace(Namespace.of(elements)).build();
   }
 
   @JsonCreator
   public static ContentsKey of(@JsonProperty("elements") List<String> elements) {
-    return ImmutableContentsKey.builder().elements(elements).build();
+    return ImmutableContentsKey.builder().elements(elements).namespace(Namespace.of(elements)).build();
   }
 
   @Value.Check

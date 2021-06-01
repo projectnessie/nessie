@@ -17,12 +17,12 @@ package org.projectnessie.client;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.projectnessie.api.TreeApi;
 import org.projectnessie.api.params.CommitLogParams;
+import org.projectnessie.api.params.EntriesParams;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.error.NessieConflictException;
@@ -149,12 +149,12 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public EntriesResponse getEntries(@NotNull String refName, @Nullable Integer maxEntriesHint,
-      @Nullable String pageToken, @NotNull List<String> valueTypes) throws NessieNotFoundException {
+  public EntriesResponse getEntries(@NotNull String refName, @NotNull EntriesParams params) throws NessieNotFoundException {
     HttpRequest builder = client.newRequest().path("trees/tree/{ref}/entries").resolveTemplate("ref", refName);
-    valueTypes.forEach(x -> builder.queryParam("types", x));
-    return builder.queryParam("max", maxEntriesHint != null ? maxEntriesHint.toString() : null)
-                  .queryParam("pageToken", pageToken)
+    params.getTypes().forEach(x -> builder.queryParam("types", x));
+    return builder.queryParam("max", params.getMaxRecords() != null ? params.getMaxRecords().toString() : null)
+                  .queryParam("pageToken", params.getPageToken())
+                  .queryParam("namespace", params.getNamespace())
                   .get()
                   .readEntity(EntriesResponse.class);
   }
