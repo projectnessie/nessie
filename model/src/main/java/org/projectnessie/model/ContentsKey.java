@@ -15,93 +15,73 @@
  */
 package org.projectnessie.model;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
+
+import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Key for the contents of an object.
  *
  * <p>For URL encoding, embedded periods within a segment are replaced with zero byte values before passing in a url string.
  */
-public class ContentsKey {
+@Value.Immutable(prehash = true)
+@JsonSerialize(as = ImmutableContentsKey.class)
+@JsonDeserialize(as = ImmutableContentsKey.class)
+public abstract class ContentsKey {
+
   private static final char ZERO_BYTE = '\u0000';
   private static final String ZERO_BYTE_STRING = Character.toString(ZERO_BYTE);
 
-  private final List<String> elements;
-
-  // internal constructor for a list that doesn't need a defensive copy.
-  private ContentsKey(List<String> elements) {
-    this.elements = Collections.unmodifiableList(elements);
-    validate();
-  }
+  public abstract List<String> getElements();
 
   public static ContentsKey of(String... elements) {
-    return new ContentsKey(Arrays.asList(elements));
+    return ImmutableContentsKey.builder().elements(Arrays.asList(elements)).build();
   }
 
   @JsonCreator
   public static ContentsKey of(@JsonProperty("elements") List<String> elements) {
-    return new ContentsKey(new ArrayList<>(elements));
+    return ImmutableContentsKey.builder().elements(elements).build();
   }
 
-  public List<String> getElements() {
-    return elements;
-  }
-
-  private void validate() {
-    for (String e : elements) {
+  @Value.Check
+  protected void validate() {
+    for (String e : getElements()) {
       if (e.contains(ZERO_BYTE_STRING)) {
-        throw new IllegalArgumentException("A object key cannot contain a zero byte.");
+        throw new IllegalArgumentException("An object key cannot contain a zero byte.");
       }
     }
   }
 
   /**
    * Convert from path encoded string to normal string.
+   *
    * @param encoded Path encoded string
    * @return Actual key.
    */
   public static ContentsKey fromPathString(String encoded) {
     List<String> elements = Arrays.stream(encoded.split("\\."))
         .map(x -> x.replace('\u0000', '.')).collect(Collectors.toList());
-    return new ContentsKey(elements);
+    return of(elements);
   }
 
   /**
    * Convert this key to a url encoded path string.
+   *
    * @return String encoded for path use.
    */
   public String toPathString() {
-    String pathString = getElements().stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
-    return pathString;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(elements);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (!(obj instanceof ContentsKey)) {
-      return false;
-    }
-    ContentsKey other = (ContentsKey) obj;
-    return Objects.equals(elements, other.elements);
+    return getElements().stream().map(x -> x.replace('.', '\u0000')).collect(Collectors.joining("."));
   }
 
   @Override
   public String toString() {
-    return elements.stream().collect(Collectors.joining("."));
+    return String.join(".", getElements());
   }
 }
