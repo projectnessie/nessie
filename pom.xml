@@ -126,7 +126,7 @@
 
     <!-- Version properties -->
     <assertj.version>3.19.0</assertj.version>
-    <awssdk.version>2.16.74</awssdk.version>
+    <awssdk.version>2.16.75</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
     <deltalake2.version>0.6.2-nessie</deltalake2.version>
     <deltalake3.version>0.8.0-nessie</deltalake3.version>
