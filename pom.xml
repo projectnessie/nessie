@@ -125,6 +125,7 @@
     <!--<dynamodb-local.repository.url>https://s3.us-west-2.amazonaws.com/dynamodb-local/release</dynamodb-local.repository.url>-->
 
     <!-- Version properties -->
+    <antlr.version>4.7.1</antlr.version>
     <assertj.version>3.20.1</assertj.version>
     <awssdk.version>2.16.86</awssdk.version>
     <bouncycastle.version>1.66</bouncycastle.version>
@@ -143,11 +144,15 @@
     <jetty.version>9.4.31.v20200723</jetty.version>
     <jjwt.version>0.11.2</jjwt.version>
     <jgit.version>5.12.0.202106070339-r</jgit.version>
+    <jsr305.version>3.0.2</jsr305.version>
     <junit.version>5.7.2</junit.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.17.3</protobuf.version>
     <mockito.version>3.11.1</mockito.version>
+    <openapi.version>1.1.2</openapi.version>
     <prometheus.version>0.9.0</prometheus.version>
+    <protobuf.version>3.17.2</protobuf.version>
+    <quarkus.version>1.13.7.Final</quarkus.version>
     <reactor.version>2020.0.7</reactor.version>
     <serverless.version>1.5</serverless.version>
     <surefire.version>3.0.0-M5</surefire.version>
@@ -159,9 +164,6 @@
     <spark3.version>3.0.2</spark3.version>
     <spark3.jackson.version>2.10.2</spark3.jackson.version>
     <sqlite.version>1.0.392</sqlite.version>
-    <quarkus.version>1.13.7.Final</quarkus.version>
-    <openapi.version>1.1.2</openapi.version>
-    <jsr305.version>3.0.2</jsr305.version>
   </properties>
 
   <dependencyManagement>
@@ -492,6 +494,11 @@
         <artifactId>assertj-core</artifactId>
         <version>${assertj.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-runtime</artifactId>
+        <version>${antlr.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -639,6 +646,14 @@
         </plugin>
 
         <!-- 3rd party plugins -->
+        <plugin>
+          <groupId>org.antlr</groupId>
+          <artifactId>antlr4-maven-plugin</artifactId>
+          <version>${antlr.version}</version>
+          <configuration>
+            <visitor>true</visitor>
+          </configuration>
+        </plugin>
         <plugin>
           <groupId>com.github.eirslett</groupId>
           <artifactId>frontend-maven-plugin</artifactId>
@@ -1006,6 +1021,7 @@ limitations under the License.
             <tsx>SLASHSTAR_STYLE</tsx>
             <ts>SLASHSTAR_STYLE</ts>
             <jmx>XML_STYLE</jmx>
+            <g4>SLASHSTAR_STYLE</g4>
           </mapping>
         </configuration>
         <executions>
