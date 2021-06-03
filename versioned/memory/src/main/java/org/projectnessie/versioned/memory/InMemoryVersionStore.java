@@ -315,9 +315,7 @@ public class InMemoryVersionStore<ValueT, MetadataT, EnumT extends Enum<EnumT>> 
       toMerge.add(commit.getValue());
       commit.getValue().getOperations().forEach(op -> keys.add(op.getKey()));
     }
-    if (commonAncestor == null) {
-      throw ReferenceConflictException.forReference(toBranch, Optional.of(currentHash), expectedBranchHash);
-    }
+
     checkConcurrentModification(toBranch, currentHash, expectedBranchHash, new ArrayList<>(keys));
 
     // Create new commits

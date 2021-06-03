@@ -1030,6 +1030,22 @@ public abstract class AbstractITVersionStore {
       assertThrows(ReferenceNotFoundException.class,
           () -> store().merge(Hash.of("1234567890abcdef"), newBranch, Optional.of(initialHash)));
     }
+
+
+    @Test
+    void testMergeFailsWithoutCommonAncestor() throws VersionStoreException {
+      final BranchName foofoo = BranchName.of("foofoo");
+      final BranchName barbar = BranchName.of("barbar");
+      store().create(foofoo, Optional.empty());
+      store().create(barbar, Optional.empty());
+
+      Key key = Key.of("a");
+      Hash fooHash = store().commit(foofoo, Optional.empty(), "commit 1", Arrays.<Operation<String>>asList(Put.of(key, "value1")));
+      Hash barHash = store().commit(barbar, Optional.empty(), "commit 2", Arrays.<Operation<String>>asList(Put.of(key, "value2")));
+
+      assertThrows(ReferenceConflictException.class, () -> store().merge(barHash, foofoo, Optional.of(initialHash)));
+    }
+
   }
 
   @Test
