@@ -145,7 +145,7 @@
     <jmeter.version>5.4.1</jmeter.version>
     <junit.version>5.7.2</junit.version>
     <logback.version>1.2.3</logback.version>
-    <protobuf.version>3.17.1</protobuf.version>
+    <protobuf.version>3.17.2</protobuf.version>
     <mockito.version>3.10.0</mockito.version>
     <prometheus.version>0.9.0</prometheus.version>
     <reactor.version>2020.0.7</reactor.version>
