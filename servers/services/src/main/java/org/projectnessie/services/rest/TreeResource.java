@@ -156,9 +156,9 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(CommitLogParams params) throws NessieNotFoundException {
+  public LogResponse getCommitLog(String ref, CommitLogParams params) throws NessieNotFoundException {
     int max = Math.min(params.getMaxRecords() != null ? params.getMaxRecords() : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
-    Hash startRef = getHashOrThrow(params.getPageToken() != null ? params.getPageToken() : params.getRef());
+    Hash startRef = getHashOrThrow(params.getPageToken() != null ? params.getPageToken() : ref);
 
     try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef)
         .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
@@ -173,7 +173,7 @@ public class TreeResource extends BaseResource implements TreeApi {
           .addAllOperations(items)
           .build();
     } catch (ReferenceNotFoundException e) {
-      throw new NessieNotFoundException(String.format("Unable to find the requested ref [%s].", params.getRef()), e);
+      throw new NessieNotFoundException(String.format("Unable to find the requested ref [%s].", ref), e);
     }
   }
 

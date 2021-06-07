@@ -224,11 +224,20 @@ public interface TreeApi {
           + "Filtering the log by ISO-8601 dates is supported via the 'after' and 'before' fields.")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Returned commits.",
-        content = {@Content(examples = {@ExampleObject(ref = "logResponse")})}),
+          content = {@Content(examples = {@ExampleObject(ref = "logResponse")})}),
       @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists")
   })
-  LogResponse getCommitLog(@Valid @BeanParam CommitLogParams commitLogParams) throws NessieNotFoundException;
+  LogResponse getCommitLog(
+      @NotNull
+      @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
+      @Parameter(description = "ref to show log from", examples = {@ExampleObject(ref = "ref")})
+      @PathParam("ref")
+          String ref,
+      @NotNull
+      @Valid
+      @BeanParam
+          CommitLogParams commitLogParams) throws NessieNotFoundException;
 
   /**
    * Update a tag.

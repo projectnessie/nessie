@@ -24,22 +24,18 @@ import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 
 import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.projectnessie.model.Validation;
 
+/**
+ * The purpose of this class is to include optional parameters that can be passed to
+ * {@link org.projectnessie.api.TreeApi#getCommitLog(String, CommitLogParams)}.
+ *
+ * <p>For easier usage of this class, there is {@link CommitLogParams#builder()}, which allows configuring/setting the different parameters.
+ */
 public class CommitLogParams {
-
-  @NotNull
-  @Pattern(regexp = Validation.REF_NAME_OR_HASH_REGEX, message = Validation.REF_NAME_OR_HASH_MESSAGE)
-  @Parameter(description = "ref to show log from", examples = {@ExampleObject(ref = "ref")})
-  @PathParam("ref")
-  private String ref;
 
   @Parameter(description = "maximum number of commit-log entries to return, just a hint for the server")
   @QueryParam("max")
@@ -72,9 +68,8 @@ public class CommitLogParams {
   public CommitLogParams() {
   }
 
-  private CommitLogParams(String ref, Integer maxRecords, String pageToken, List<String> authors, List<String> committers, Instant after,
+  private CommitLogParams(Integer maxRecords, String pageToken, List<String> authors, List<String> committers, Instant after,
       Instant before) {
-    this.ref = ref;
     this.maxRecords = maxRecords;
     this.pageToken = pageToken;
     this.authors = authors;
@@ -84,12 +79,8 @@ public class CommitLogParams {
   }
 
   private CommitLogParams(Builder builder) {
-    this(builder.ref, builder.maxRecords, builder.pageToken, new ArrayList<>(builder.authors),
+    this(builder.maxRecords, builder.pageToken, new ArrayList<>(builder.authors),
         new ArrayList<>(builder.committers), builder.after, builder.before);
-  }
-
-  public String getRef() {
-    return ref;
   }
 
   public Integer getMaxRecords() {
@@ -120,10 +111,13 @@ public class CommitLogParams {
     return new CommitLogParams.Builder();
   }
 
+  public static CommitLogParams empty() {
+    return new CommitLogParams.Builder().build();
+  }
+
   @Override
   public String toString() {
     return new StringJoiner(", ", CommitLogParams.class.getSimpleName() + "[", "]")
-        .add("ref='" + ref + "'")
         .add("maxRecords=" + maxRecords)
         .add("pageToken='" + pageToken + "'")
         .add("authors=" + authors)
@@ -135,7 +129,6 @@ public class CommitLogParams {
 
   public static class Builder {
 
-    private String ref;
     private Integer maxRecords;
     private String pageToken;
     private List<String> authors = Collections.emptyList();
@@ -144,11 +137,6 @@ public class CommitLogParams {
     private Instant before;
 
     private Builder() {
-    }
-
-    public Builder ref(String ref) {
-      this.ref = ref;
-      return this;
     }
 
     public Builder maxRecords(Integer maxRecords) {
@@ -182,12 +170,13 @@ public class CommitLogParams {
     }
 
     public Builder from(CommitLogParams params) {
-      return ref(params.ref).maxRecords(params.maxRecords).pageToken(params.pageToken).authors(params.authors).committers(params.committers)
+      return maxRecords(params.maxRecords).pageToken(params.pageToken).authors(params.authors).committers(params.committers)
           .after(params.after).before(params.before);
     }
 
     private void validate() {
-      Objects.requireNonNull(ref, "ref must be set");
+      Objects.requireNonNull(authors, "authors must be non-null");
+      Objects.requireNonNull(committers, "committers must be non-null");
     }
 
     public CommitLogParams build() {

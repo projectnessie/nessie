@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -28,22 +29,13 @@ import org.junit.jupiter.api.Test;
 public class CommitLogParamsTest {
 
   @Test
-  public void testWithNullRef() {
-    assertThatThrownBy(() -> CommitLogParams.builder().build())
+  public void testValidation() {
+    assertThatThrownBy(() -> CommitLogParams.builder().authors(null).build())
         .isInstanceOf(NullPointerException.class)
-        .hasMessage("ref must be set");
-  }
-
-  @Test
-  public void testWithRefOnly() {
-    CommitLogParams params = CommitLogParams.builder().ref("some_ref").build();
-    assertThat(params.getRef()).isEqualTo("some_ref");
-    assertThat(params.getAfter()).isNull();
-    assertThat(params.getBefore()).isNull();
-    assertThat(params.getCommitters()).isNotNull().isEmpty();
-    assertThat(params.getAuthors()).isNotNull().isEmpty();
-    assertThat(params.getPageToken()).isNull();
-    assertThat(params.getMaxRecords()).isNull();
+        .hasMessage("authors must be non-null");
+    assertThatThrownBy(() -> CommitLogParams.builder().authors(Collections.emptyList()).committers(null).build())
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("committers must be non-null");
   }
 
   @Test
@@ -52,11 +44,9 @@ public class CommitLogParamsTest {
     Instant before = Instant.now();
     List<String> authors = Arrays.asList("author1", "author2");
     List<String> committers = Arrays.asList("committer1", "committer2");
-    String ref = "some_ref";
     Integer maxRecords = 23;
     String pageToken = "aabbcc";
     CommitLogParams params = CommitLogParams.builder()
-        .ref(ref)
         .authors(authors)
         .committers(committers)
         .after(after)
@@ -65,12 +55,23 @@ public class CommitLogParamsTest {
         .pageToken(pageToken)
         .build();
 
-    assertThat(params.getRef()).isEqualTo(ref);
     assertThat(params.getAfter()).isEqualTo(after);
     assertThat(params.getBefore()).isEqualTo(before);
     assertThat(params.getAuthors()).containsExactlyElementsOf(authors);
     assertThat(params.getCommitters()).containsExactlyElementsOf(committers);
     assertThat(params.getPageToken()).isEqualTo(pageToken);
     assertThat(params.getMaxRecords()).isEqualTo(maxRecords);
+  }
+
+  @Test
+  public void testEmpty() {
+    CommitLogParams params = CommitLogParams.empty();
+    assertThat(params).isNotNull();
+    assertThat(params.getMaxRecords()).isNull();
+    assertThat(params.getPageToken()).isNull();
+    assertThat(params.getCommitters()).isEmpty();
+    assertThat(params.getAuthors()).isEmpty();
+    assertThat(params.getAfter()).isNull();
+    assertThat(params.getBefore()).isNull();
   }
 }

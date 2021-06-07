@@ -106,8 +106,8 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(CommitLogParams params) throws NessieNotFoundException {
-    HttpRequest builder = client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", params.getRef());
+  public LogResponse getCommitLog(String ref, CommitLogParams params) throws NessieNotFoundException {
+    HttpRequest builder = client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref);
     if (null != params.getAuthors()) {
       params.getAuthors().forEach(x -> builder.queryParam("authors", x));
     }
