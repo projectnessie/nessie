@@ -170,7 +170,7 @@ def list_tables(
     return cast(list, _get(base_url + "/trees/tree/{}/entries".format(ref), ssl_verify=ssl_verify, params=params))
 
 
-def list_logs(base_url: str, ref: str, ssl_verify: bool = True, **filtering_args: str) -> dict:
+def list_logs(base_url: str, ref: str, ssl_verify: bool = True, **filtering_args: Any) -> dict:
     """Fetch a list of all logs from a known starting reference.
 
     :param base_url: base Nessie url

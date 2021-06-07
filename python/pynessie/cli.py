@@ -204,7 +204,7 @@ def log(ctx: ContextObject, number: int, since: str, until: str, author: List[st
             start = revision_range
             end = None
 
-    filtering_args = {}
+    filtering_args: Any = {}
     if number:
         filtering_args["max"] = str(number)
     if author:

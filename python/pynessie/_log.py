@@ -12,7 +12,7 @@ from pynessie.model import CommitMeta
 
 
 def show_log(
-    nessie: NessieClient, start_ref: str, limits: Tuple[click.Path] = None, **filtering_args: str
+    nessie: NessieClient, start_ref: str, limits: Tuple[click.Path] = None, **filtering_args: Any
 ) -> Generator[CommitMeta, Any, None]:
     """Fetch and filter commit log.
 
