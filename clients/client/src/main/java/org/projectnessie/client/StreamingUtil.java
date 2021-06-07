@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.CommitMeta;
 import org.projectnessie.model.EntriesResponse;
@@ -56,18 +57,21 @@ public final class StreamingUtil {
 
   /**
    * Default implementation to return a stream of commit-log entries, functionally equivalent to
-   * calling {@link TreeApi#getCommitLog(String, Integer, String)} with manual paging.
+   * calling {@link TreeApi#getCommitLog(String, CommitLogParams)} with manual paging.
    * <p>The {@link Stream} returned by {@code getCommitLogStream(ref, OptionalInt.empty())},
    * if not limited, returns all commit-log entries.</p>
    *
+   * @param treeApi The {@link TreeApi} to use
    * @param ref a named reference (branch or tag name) or a commit-hash
-   * @param pageSizeHint page-size hint for the backend
+   * @param commitLogParams A wrapper object holding all filtering parameters for the commit log
    * @return stream of {@link CommitMeta} objects
    */
   public static Stream<CommitMeta> getCommitLogStream(@NotNull TreeApi treeApi, @NotNull String ref,
-      OptionalInt pageSizeHint) throws NessieNotFoundException {
-    return new ResultStreamPaginator<>(LogResponse::getOperations, treeApi::getCommitLog)
-        .generateStream(ref, pageSizeHint);
+      @NotNull CommitLogParams commitLogParams)
+      throws NessieNotFoundException {
+    return new ResultStreamPaginator<>(LogResponse::getOperations, (reference, pageSize, token) ->
+        treeApi
+            .getCommitLog(reference, CommitLogParams.builder().from(commitLogParams).maxRecords(pageSize).pageToken(token).build())
+    ).generateStream(ref, OptionalInt.of(commitLogParams.getMaxRecords()));
   }
-
 }

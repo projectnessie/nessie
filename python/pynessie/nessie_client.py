@@ -182,9 +182,7 @@ class NessieClient(object):
         transplant_json = TransplantSchema().dump(Transplant(list(hashes)))
         cherry_pick(self._base_url, branch, transplant_json, old_hash, self._ssl_verify)
 
-    def get_log(
-        self: "NessieClient", start_ref: str, max_result_hint: Optional[int] = None, page_token: Optional[str] = None
-    ) -> Generator[CommitMeta, Any, None]:
+    def get_log(self: "NessieClient", start_ref: str, **filtering_args: str) -> Generator[CommitMeta, Any, None]:
         """Fetch all logs starting at start_ref.
 
         start_ref can be any ref.
@@ -193,9 +191,13 @@ class NessieClient(object):
             this will load the log into local memory and filter at the client. Currently there are no
             primitives in the REST api to limit logs or perform paging. TODO
         """
+        page_token = filtering_args.get("pageToken", None)
 
         def fetch_logs(token: Optional[str] = page_token) -> LogResponse:
-            fetched_logs = list_logs(self._base_url, start_ref, max_result_hint, token, self._ssl_verify)
+            if token:
+                filtering_args["pageToken"] = token
+
+            fetched_logs = list_logs(base_url=self._base_url, ref=start_ref, ssl_verify=self._ssl_verify, **filtering_args)
             log_schema = LogResponseSchema().load(fetched_logs)
             return log_schema
 
@@ -206,7 +208,7 @@ class NessieClient(object):
                 for i in log_schema.operations:
                     yield i
                 if log_schema.has_more:
-                    log_schema = fetch_logs(log_schema.token)
+                    log_schema = fetch_logs(token=log_schema.token)
                 else:
                     break
 

@@ -22,6 +22,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.client.http.HttpClient;
 import org.projectnessie.client.http.HttpRequest;
 import org.projectnessie.error.NessieConflictException;
@@ -105,11 +106,19 @@ class ClientTreeApi implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(@NotNull String ref, @Nullable Integer maxEntriesHint,
-      @Nullable String pageToken) throws NessieNotFoundException {
-    return client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref)
-        .queryParam("max", maxEntriesHint != null ? maxEntriesHint.toString() : null)
-        .queryParam("pageToken", pageToken)
+  public LogResponse getCommitLog(String ref, CommitLogParams params) throws NessieNotFoundException {
+    HttpRequest builder = client.newRequest().path("trees/tree/{ref}/log").resolveTemplate("ref", ref);
+    if (null != params.getAuthors()) {
+      params.getAuthors().forEach(x -> builder.queryParam("authors", x));
+    }
+    if (null != params.getCommitters()) {
+      params.getCommitters().forEach(x -> builder.queryParam("committers", x));
+    }
+    return builder
+        .queryParam("max", params.getMaxRecords() != null ? params.getMaxRecords().toString() : null)
+        .queryParam("pageToken", params.getPageToken())
+        .queryParam("before", null != params.getBefore() ? params.getBefore().toString() : null)
+        .queryParam("after", null != params.getAfter() ? params.getAfter().toString() : null)
         .get().readEntity(LogResponse.class);
   }
 

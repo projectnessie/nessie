@@ -2,7 +2,6 @@
 from datetime import datetime
 from typing import Any
 from typing import Generator
-from typing import Optional
 from typing import Tuple
 
 import click
@@ -13,22 +12,25 @@ from pynessie.model import CommitMeta
 
 
 def show_log(
-    nessie: NessieClient,
-    start: str,
-    number: Optional[int] = -1,
-    after: Optional[str] = None,
-    before: Optional[str] = None,
-    committer: Optional[str] = None,
-    end: Optional[str] = None,
-    limits: Tuple[click.Path] = None,
+    nessie: NessieClient, start_ref: str, limits: Tuple[click.Path] = None, **filtering_args: str
 ) -> Generator[CommitMeta, Any, None]:
     """Fetch and filter commit log.
 
     Note:
         limiting by path is not yet supported.
     """
-    raw_log = nessie.get_log(start)
+    end = filtering_args.pop("end", None)
+    raw_log = nessie.get_log(start_ref=start_ref, **filtering_args)
+    committer = filtering_args.get("author", None)
+    after = filtering_args.get("after", None)
+    before = filtering_args.get("before", None)
 
+    # since #1325 we do filter by author/committer/before/after on the
+    # server-side. However, we want to still keep client-side filtering here
+    # in case the client connects to an older server that doesn't support
+    # server-side filtering.
+    # Once we have full backward compatibility in place, this filtering
+    # here should be removed.
     def generator() -> Generator[CommitMeta, Any, None]:
         for i in raw_log:
             if committer and i.committer != committer:

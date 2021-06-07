@@ -20,6 +20,7 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -38,6 +39,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -215,10 +217,14 @@ public interface TreeApi {
           + "treat is as an opaque value.\n"
           + "\n"
           + "It is wrong to assume that invoking this method with a very high 'maxRecords' value "
-          + "will return all commit log entries.")
+          + "will return all commit log entries. "
+          + "\n"
+          + "It is possible to filter the log using a list of 'authors' (the actual author of a commit) and/or"
+          + "'committers' (the logged in user/account that performed the commit) fields."
+          + "Filtering the log by ISO-8601 dates is supported via the 'after' and 'before' fields.")
   @APIResponses({
       @APIResponse(responseCode = "200", description = "Returned commits.",
-        content = {@Content(examples = {@ExampleObject(ref = "logResponse")})}),
+          content = {@Content(examples = {@ExampleObject(ref = "logResponse")})}),
       @APIResponse(responseCode = "400", description = "Invalid input, ref name not valid"),
       @APIResponse(responseCode = "404", description = "Ref doesn't exists")
   })
@@ -228,13 +234,10 @@ public interface TreeApi {
       @Parameter(description = "ref to show log from", examples = {@ExampleObject(ref = "ref")})
       @PathParam("ref")
           String ref,
-      @Parameter(description = "maximum number of commit-log entries to return, just a hint for the server")
-      @QueryParam("max")
-          Integer maxRecords,
-      @Parameter(description = "pagination continuation token, as returned in the previous LogResponse.token")
-      @QueryParam("pageToken")
-          String pageToken)
-          throws NessieNotFoundException;
+      @NotNull
+      @Valid
+      @BeanParam
+          CommitLogParams commitLogParams) throws NessieNotFoundException;
 
   /**
    * Update a tag.

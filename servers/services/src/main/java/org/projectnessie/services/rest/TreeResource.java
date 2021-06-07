@@ -28,6 +28,7 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 
 import org.projectnessie.api.TreeApi;
+import org.projectnessie.api.params.CommitLogParams;
 import org.projectnessie.error.NessieConflictException;
 import org.projectnessie.error.NessieNotFoundException;
 import org.projectnessie.model.Branch;
@@ -155,12 +156,13 @@ public class TreeResource extends BaseResource implements TreeApi {
   }
 
   @Override
-  public LogResponse getCommitLog(String ref, Integer maxEntriesHint, String pageToken) throws NessieNotFoundException {
-    int max = Math.min(maxEntriesHint != null ? maxEntriesHint : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
-    Hash startRef = getHashOrThrow(pageToken != null ? pageToken : ref);
-    try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef).limit(max + 1)
+  public LogResponse getCommitLog(String ref, CommitLogParams params) throws NessieNotFoundException {
+    int max = Math.min(params.getMaxRecords() != null ? params.getMaxRecords() : MAX_COMMIT_LOG_ENTRIES, MAX_COMMIT_LOG_ENTRIES);
+    Hash startRef = getHashOrThrow(params.getPageToken() != null ? params.getPageToken() : ref);
+
+    try (Stream<ImmutableCommitMeta> s = getStore().getCommits(startRef)
         .map(cwh -> cwh.getValue().toBuilder().hash(cwh.getHash().asString()).build())) {
-      List<CommitMeta> items = s.collect(Collectors.toList());
+      List<CommitMeta> items = filterCommitLog(s, params).limit(max + 1).collect(Collectors.toList());
       if (items.size() == max + 1) {
         return ImmutableLogResponse.builder()
             .addAllOperations(items.subList(0, max))
@@ -173,6 +175,29 @@ public class TreeResource extends BaseResource implements TreeApi {
     } catch (ReferenceNotFoundException e) {
       throw new NessieNotFoundException(String.format("Unable to find the requested ref [%s].", ref), e);
     }
+  }
+
+  /**
+   * Applies different filters to the {@link Stream} of commits based on the settings in {@link CommitLogParams}.
+   *
+   * @param commits The commit log that different filters will be applied to
+   * @param params  The commit log filter parameters
+   * @return A potentially filtered {@link Stream} of commits based on {@link CommitLogParams}
+   */
+  private Stream<ImmutableCommitMeta> filterCommitLog(Stream<ImmutableCommitMeta> commits, CommitLogParams params) {
+    if (null != params.getAuthors() && !params.getAuthors().isEmpty()) {
+      commits = commits.filter(commit -> params.getAuthors().contains(commit.getAuthor()));
+    }
+    if (null != params.getCommitters() && !params.getCommitters().isEmpty()) {
+      commits = commits.filter(commit -> params.getCommitters().contains(commit.getCommitter()));
+    }
+    if (null != params.getAfter()) {
+      commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isAfter(params.getAfter()));
+    }
+    if (null != params.getBefore()) {
+      commits = commits.filter(commit -> null != commit.getCommitTime() && commit.getCommitTime().isBefore(params.getBefore()));
+    }
+    return commits;
   }
 
   @Override
@@ -301,9 +326,9 @@ public class TreeResource extends BaseResource implements TreeApi {
     Ref ref = refWithHash.getValue();
     //todo do we want to send back Hash object or the string. I don't want internal API escaping so maybe an external representation of hash
     if (ref instanceof TagName) {
-      return ImmutableTag.builder().name(((NamedRef)ref).getName()).hash(refWithHash.getHash().asString()).build();
+      return ImmutableTag.builder().name(((NamedRef) ref).getName()).hash(refWithHash.getHash().asString()).build();
     } else if (ref instanceof BranchName) {
-      return ImmutableBranch.builder().name(((NamedRef)ref).getName()).hash(refWithHash.getHash().asString()).build();
+      return ImmutableBranch.builder().name(((NamedRef) ref).getName()).hash(refWithHash.getHash().asString()).build();
     } else if (ref instanceof Hash) {
       String hash = refWithHash.getHash().asString();
       return ImmutableHash.builder().name(hash).build();
@@ -317,7 +342,7 @@ public class TreeResource extends BaseResource implements TreeApi {
     if (o instanceof Operation.Delete) {
       return Delete.of(key);
     } else if (o instanceof Operation.Put) {
-      return Put.of(key, ((Operation.Put)o).getContents());
+      return Put.of(key, ((Operation.Put) o).getContents());
     } else if (o instanceof Operation.Unchanged) {
       return Unchanged.of(key);
     } else {

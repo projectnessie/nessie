@@ -178,7 +178,7 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 
 
 @cli.command("log")
-@click.option("-n", "--number", help="number of log entries to return", type=int, default=-1)
+@click.option("-n", "--number", help="number of log entries to return", type=int)
 @click.option("--since", "--after", help="Commits more recent than specific date")
 @click.option("--until", "--before", help="Commits older than specific date")
 @click.option("--author", "--committer", is_flag=True, help="limit commits to specific committer")
@@ -204,7 +204,19 @@ def log(ctx: ContextObject, number: int, since: str, until: str, author: str, re
             start = revision_range
             end = None
 
-    log_result = show_log(ctx.nessie, start, number, since, until, author, end, paths)
+    filtering_args = {}
+    if number:
+        filtering_args["max"] = str(number)
+    if author:
+        filtering_args["author"] = author
+    if since:
+        filtering_args["after"] = since
+    if until:
+        filtering_args["before"] = until
+    if end:
+        filtering_args["end"] = end
+
+    log_result = show_log(nessie=ctx.nessie, start_ref=start, limits=paths, **filtering_args)
     if ctx.json:
         click.echo(CommitMetaSchema().dumps(log_result, many=True))
     else:

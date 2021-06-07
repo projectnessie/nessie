@@ -20,6 +20,8 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.time.Instant;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,9 +67,9 @@ public class RestGitTest {
     Assertions.assertEquals(preSize + 1, references.length);
 
     Reference reference = rest().get("trees/tree/mainx").then()
-                 .statusCode(200)
-                 .extract()
-                 .as(Reference.class);
+        .statusCode(200)
+        .extract()
+        .as(Reference.class);
     assertEquals("mainx", reference.getName());
 
     Branch newReference = ImmutableBranch.builder()
@@ -76,26 +78,26 @@ public class RestGitTest {
         .build();
     rest().queryParam("expectedHash", reference.getHash()).body(Branch.of("test", null)).post("trees/tree").then().statusCode(200);
     assertEquals(newReference, rest().get("trees/tree/test").then()
-           .statusCode(200).extract().as(Branch.class));
+        .statusCode(200).extract().as(Branch.class));
 
     IcebergTable table = IcebergTable.of("/the/directory/over/there");
 
     rest()
-      .body(table)
-      .queryParam("branch", newReference.getName()).queryParam("hash", newReference.getHash())
-      .post("contents/xxx.test")
+        .body(table)
+        .queryParam("branch", newReference.getName()).queryParam("hash", newReference.getHash())
+        .post("contents/xxx.test")
         .then().statusCode(204);
 
     Put[] updates = new Put[11];
     for (int i = 0; i < 10; i++) {
       updates[i] =
           ImmutablePut.builder().key(ContentsKey.of("item", Integer.toString(i)))
-          .contents(ImmutableIcebergTable.builder().from(table)
-                                 .metadataLocation("/the/directory/over/there/" + i)
-                                 .build())
-          .build();
+              .contents(ImmutableIcebergTable.builder().from(table)
+                  .metadataLocation("/the/directory/over/there/" + i)
+                  .build())
+              .build();
     }
-    updates[10] = ImmutablePut.builder().key(ContentsKey.of("xxx","test"))
+    updates[10] = ImmutablePut.builder().key(ContentsKey.of("xxx", "test"))
         .contents(ImmutableIcebergTable.builder().from(table).metadataLocation("/the/directory/over/there/has/been/moved").build()).build();
 
     Reference branch = rest().get("trees/tree/test").as(Reference.class);
@@ -119,8 +121,8 @@ public class RestGitTest {
 
     Branch b2 = rest().get("trees/tree/test").as(Branch.class);
     rest().body(table)
-           .queryParam("branch", b2.getName()).queryParam("hash", b2.getHash())
-           .post("contents/xxx.test").then().statusCode(204);
+        .queryParam("branch", b2.getName()).queryParam("hash", b2.getHash())
+        .post("contents/xxx.test").then().statusCode(204);
     Contents returned = rest()
         .queryParam("ref", "test")
         .get("contents/xxx.test").then().statusCode(200).extract().as(Contents.class);
@@ -153,9 +155,13 @@ public class RestGitTest {
   }
 
   private Branch commit(Branch branch, String contentsKey, String metadataUrl) {
+    return commit(branch, contentsKey, metadataUrl, "nessieAuthor");
+  }
+
+  private Branch commit(Branch branch, String contentsKey, String metadataUrl, String author) {
     Operations contents = ImmutableOperations.builder()
         .addOperations(Put.of(ContentsKey.of(contentsKey), IcebergTable.of(metadataUrl)))
-        .commitMeta(CommitMeta.fromMessage(""))
+        .commitMeta(CommitMeta.builder().author(author).message("").build())
         .build();
     return rest()
         .body(contents).queryParam("expectedHash", branch.getHash()).post("trees/branch/{branch}/commit", branch.getName())
@@ -192,4 +198,55 @@ public class RestGitTest {
     Assertions.assertNotEquals(b3.getHash(), newHash);
   }
 
+  @Test
+  @TestSecurity(authorizationEnabled = false)
+  public void testLogFiltering() {
+    String branchName = "logFiltering";
+    makeBranch(branchName);
+    Branch branch = getBranch(branchName);
+    int numCommits = 3;
+    for (int i = 0; i < numCommits; i++) {
+      String newHash = commit(branch, "xxx.test", "/the/directory/over/there", "author-" + i).getHash();
+      assertThat(newHash).isNotEqualTo(branch.getHash());
+      branch = getBranch(branchName);
+    }
+    LogResponse log = rest().get(String.format("trees/tree/%s/log", branchName)).then().statusCode(200).extract().as(LogResponse.class);
+    assertThat(log.getOperations()).hasSize(numCommits);
+    Instant firstCommitTime = log.getOperations().get(log.getOperations().size() - 1).getCommitTime();
+    Instant lastCommitTime = log.getOperations().get(0).getCommitTime();
+    assertThat(firstCommitTime).isNotNull();
+    assertThat(lastCommitTime).isNotNull();
+
+    String author = "author-1";
+    log = rest()
+        .queryParam("authors", author)
+        .get(String.format("trees/tree/%s/log", branchName)).then().statusCode(200).extract()
+        .as(LogResponse.class);
+    assertThat(log.getOperations()).hasSize(1);
+    assertThat(log.getOperations().get(0).getAuthor()).isEqualTo(author);
+
+    log = rest()
+        .queryParam("after", firstCommitTime.toString())
+        .get(String.format("trees/tree/%s/log", branchName)).then().statusCode(200)
+        .extract()
+        .as(LogResponse.class);
+    assertThat(log.getOperations()).hasSize(numCommits - 1);
+    log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isAfter(firstCommitTime));
+
+    log = rest()
+        .queryParam("before", lastCommitTime.toString())
+        .get(String.format("trees/tree/%s/log", branchName)).then().statusCode(200)
+        .extract()
+        .as(LogResponse.class);
+    assertThat(log.getOperations()).hasSize(numCommits - 1);
+    log.getOperations().forEach(commit -> assertThat(commit.getCommitTime()).isBefore(lastCommitTime));
+
+    log = rest()
+        .queryParam("before", lastCommitTime.toString())
+        .queryParam("after", firstCommitTime.toString())
+        .get(String.format("trees/tree/%s/log", branchName)).then().statusCode(200).extract()
+        .as(LogResponse.class);
+    assertThat(log.getOperations()).hasSize(1);
+    assertThat(log.getOperations().get(0).getCommitTime()).isBefore(lastCommitTime).isAfter(firstCommitTime);
+  }
 }
