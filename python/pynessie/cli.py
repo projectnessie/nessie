@@ -181,12 +181,12 @@ def set_head(ctx: ContextObject, head: str, delete: bool) -> None:
 @click.option("-n", "--number", help="number of log entries to return", type=int)
 @click.option("--since", "--after", help="Commits more recent than specific date")
 @click.option("--until", "--before", help="Commits older than specific date")
-@click.option("--author", "--committer", is_flag=True, help="limit commits to specific committer")
+@click.option("--author", "--committer", multiple=True, help="limit commits to specific committer")
 @click.argument("revision_range", nargs=1, required=False)
 @click.argument("paths", nargs=-1, type=click.Path(exists=False), required=False)
 @pass_client
 @error_handler
-def log(ctx: ContextObject, number: int, since: str, until: str, author: str, revision_range: str, paths: Tuple[click.Path]) -> None:
+def log(ctx: ContextObject, number: int, since: str, until: str, author: List[str], revision_range: str, paths: Tuple[click.Path]) -> None:
     """Show commit log.
 
     REVISION_RANGE optional branch, tag or hash to start viewing log from. If of the form <hash>..<hash> only show log
@@ -204,11 +204,11 @@ def log(ctx: ContextObject, number: int, since: str, until: str, author: str, re
             start = revision_range
             end = None
 
-    filtering_args = {}
+    filtering_args: Any = {}
     if number:
         filtering_args["max"] = str(number)
     if author:
-        filtering_args["author"] = author
+        filtering_args["authors"] = author
     if since:
         filtering_args["after"] = since
     if until:
@@ -428,11 +428,21 @@ def cherry_pick(ctx: ContextObject, branch: str, force: bool, condition: str, ha
     help="entity types to filter on, if no entity types are passed then all types are returned",
     multiple=True,
 )
+@click.option("--author", help="The author to use for the commit")
 @click.argument("key", nargs=-1, required=False)
 @pass_client
 @error_handler
 def contents(
-    ctx: ContextObject, list: bool, delete: bool, set: bool, key: List[str], ref: str, message: str, condition: str, entity_type: list
+    ctx: ContextObject,
+    list: bool,
+    delete: bool,
+    set: bool,
+    key: List[str],
+    ref: str,
+    message: str,
+    condition: str,
+    entity_type: list,
+    author: str,
 ) -> None:
     """Contents operations.
 
@@ -442,10 +452,10 @@ def contents(
         keys = ctx.nessie.list_keys(ref if ref else ctx.nessie.get_default_branch(), entity_types=entity_type)
         results = EntrySchema().dumps(_format_keys_json(keys, *key), many=True) if ctx.json else _format_keys(keys, *key)
     elif delete:
-        ctx.nessie.commit(ref, condition, _get_message(message), *_get_contents(ctx.nessie, ref, delete, *key))
+        ctx.nessie.commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
         results = ""
     elif set:
-        ctx.nessie.commit(ref, condition, _get_message(message), *_get_contents(ctx.nessie, ref, delete, *key))
+        ctx.nessie.commit(ref, condition, _get_message(message), author, *_get_contents(ctx.nessie, ref, delete, *key))
         results = ""
     else:
 

@@ -142,9 +142,13 @@ class NessieClient(object):
         """
         return (ContentsSchema().load(get_table(self._base_url, ref, _format_key(i), self._ssl_verify)) for i in tables)
 
-    def commit(self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, *ops: Operation) -> Branch:
+    def commit(
+        self: "NessieClient", branch: str, old_hash: str, reason: Optional[str] = None, author: Optional[str] = None, *ops: Operation
+    ) -> Branch:
         """Modify a set of Nessie tables."""
         meta = CommitMeta(message=reason if reason else "")
+        if author:
+            meta.author = author
         ref_obj = commit(self._base_url, branch, MultiContentsSchema().dumps(MultiContents(meta, list(ops))), old_hash)
         return cast(Branch, ReferenceSchema().load(ref_obj))
 
@@ -182,7 +186,7 @@ class NessieClient(object):
         transplant_json = TransplantSchema().dump(Transplant(list(hashes)))
         cherry_pick(self._base_url, branch, transplant_json, old_hash, self._ssl_verify)
 
-    def get_log(self: "NessieClient", start_ref: str, **filtering_args: str) -> Generator[CommitMeta, Any, None]:
+    def get_log(self: "NessieClient", start_ref: str, **filtering_args: Any) -> Generator[CommitMeta, Any, None]:
         """Fetch all logs starting at start_ref.
 
         start_ref can be any ref.
